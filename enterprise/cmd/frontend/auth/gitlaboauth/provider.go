@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -25,7 +24,7 @@ func parseProvider(callbackURL string, p *schema.GitLabAuthProvider, sourceCfg s
 		messages = append(messages, fmt.Sprintf("Could not parse GitLab URL %q. You will not be able to login via this GitLab instance.", rawURL))
 		return nil, messages
 	}
-	codeHost := extsvc.NewCodeHost(parsedURL, gitlab.ServiceType)
+	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeGitLab)
 	oauth2Cfg := oauth2.Config{
 		RedirectURL:  callbackURL,
 		ClientID:     p.ClientID,

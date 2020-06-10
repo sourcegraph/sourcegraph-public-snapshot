@@ -33,14 +33,14 @@ add('Errored', () => (
                         '```'
                 ),
             },
+            hasUnpublishedPatches: false,
             changesets: {
                 totalCount: 0,
             },
-            publishedAt: boolean('Is draft', false) ? null : new Date().toISOString(),
             closedAt: null,
         }}
-        onPublish={action('Publish')}
         afterRetry={action('Retry')}
+        afterPublish={action('Publish')}
         history={createMemoryHistory()}
     />
 ))

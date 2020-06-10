@@ -47,7 +47,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 							Platform:   PlatformAWS,
 							Identifier: *instance.InstanceId,
 							Location:   *instance.Placement.AvailabilityZone,
-							Owner:      *reservation.OwnerId,
+							Owner:      "-",
 							Type:       fmt.Sprintf("EC2::Instances::%s", string(instance.InstanceType)),
 							Created:    *instance.LaunchTime,
 							Meta: map[string]interface{}{
@@ -125,7 +125,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 	},
 }
 
-func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tagsWhitelist map[string]string) ([]Resource, error) {
+func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tagsAllowlist map[string]string) ([]Resource, error) {
 	logger := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
 		logger.Printf("collecting resources since %s", since)
@@ -180,11 +180,11 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tag
 		case r, ok := <-results:
 			if ok {
 				resource := r
-				// whitelist resource if configured - all AWS tags should be converted to maps
-				if tagsWhitelist != nil {
+				// allowlist resource if configured - all AWS tags should be converted to maps
+				if tagsAllowlist != nil {
 					if tags, ok := resource.Meta["tags"].(map[string]string); ok {
-						if hasKeyValue(tags, tagsWhitelist) {
-							resource.Whitelisted = true
+						if hasKeyValue(tags, tagsAllowlist) {
+							resource.Allowed = true
 						}
 					}
 				}

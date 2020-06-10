@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -75,8 +76,8 @@ func setMockDBGetPackage(t *testing.T, mockDB *dbmocks.MockDB, expectedScheme, e
 	})
 }
 
-func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedFile string, dumps []db.Dump) {
-	mockDB.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
+func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedFile, expectedIndexer string, dumps []db.Dump) {
+	mockDB.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file, indexer string) ([]db.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -85,6 +86,9 @@ func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRep
 		}
 		if file != expectedFile {
 			t.Errorf("unexpected file for FindClosestDumps. want=%s have=%s", expectedFile, file)
+		}
+		if indexer != expectedIndexer {
+			t.Errorf("unexpected indexer for FindClosestDumps. want=%s have=%s", expectedIndexer, indexer)
 		}
 		return dumps, nil
 	})
@@ -209,15 +213,24 @@ func setMockBundleClientReferences(t *testing.T, mockBundleClient *bundlemocks.M
 func setMockBundleClientHover(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
 	mockBundleClient.HoverFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) (string, bundles.Range, bool, error) {
 		if path != expectedPath {
-			t.Errorf("unexpected path Hover. want=%s have=%s", expectedPath, path)
+			t.Errorf("unexpected path for Hover. want=%s have=%s", expectedPath, path)
 		}
 		if line != expectedLine {
-			t.Errorf("unexpected line Hover. want=%d have=%d", expectedLine, line)
+			t.Errorf("unexpected line for Hover. want=%d have=%d", expectedLine, line)
 		}
 		if character != expectedCharacter {
-			t.Errorf("unexpected character Hover. want=%d have=%d", expectedCharacter, character)
+			t.Errorf("unexpected character for Hover. want=%d have=%d", expectedCharacter, character)
 		}
 		return text, r, exists, nil
+	})
+}
+
+func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPrefix string, diagnostics []client.Diagnostic) {
+	mockBundleClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, prefix string) ([]client.Diagnostic, error) {
+		if prefix != expectedPrefix {
+			t.Errorf("unexpected prefix for Diagnostics. want=%s have=%s", expectedPrefix, prefix)
+		}
+		return diagnostics, nil
 	})
 }
 

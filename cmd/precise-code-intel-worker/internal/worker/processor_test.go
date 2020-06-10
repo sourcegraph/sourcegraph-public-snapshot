@@ -40,7 +40,7 @@ func TestProcess(t *testing.T) {
 	// Give correlation package a valid input dump
 	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
 
-	// Whitelist all files in dump
+	// Allowlist all files in dump
 	gitserverClient.DirectoryChildrenFunc.SetDefaultReturn(map[string][]string{
 		"": {"foo.go", "bar.go"},
 	}, nil)

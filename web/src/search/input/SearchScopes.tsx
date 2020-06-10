@@ -55,11 +55,11 @@ export const SearchScopes: React.FunctionComponent<Props> = ({
         <>
             {scopes
                 .filter(scope => scope.value !== '') // clicking on empty scope would not trigger search
-                .map((scope, i) => (
+                .map((scope, index) => (
                     <FilterChip
                         query={query}
                         onFilterChosen={onSearchScopeClicked}
-                        key={i}
+                        key={index}
                         value={scope.value}
                         name={scope.name}
                     />

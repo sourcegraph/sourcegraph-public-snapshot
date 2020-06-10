@@ -23,7 +23,7 @@ type Resource struct {
 	Created    time.Time
 	Meta       map[string]interface{}
 
-	Whitelisted bool
+	Allowed bool
 }
 
 type Resources []Resource
@@ -36,11 +36,11 @@ func (r Resources) Swap(i, j int) {
 	r[j] = tmp
 }
 
-// NonWhitelisted returns only resources that are not whitelisted
-func (r Resources) NonWhitelisted() (filtered Resources, whitelisted int) {
+// NonAllowed returns only resources that are not allowed
+func (r Resources) NonAllowed() (filtered Resources, allowed int) {
 	for _, resource := range r {
-		if resource.Whitelisted {
-			whitelisted++
+		if resource.Allowed {
+			allowed++
 		} else {
 			filtered = append(filtered, resource)
 		}
@@ -58,8 +58,8 @@ func hasPrefix(value string, prefixes []string) bool {
 }
 
 func generateReport(ctx context.Context, opts options, resources Resources) error {
-	// count and drop whitelisted resources
-	filteredResources, whitelisted := resources.NonWhitelisted()
+	// count and drop allowed resources
+	filteredResources, allowed := resources.NonAllowed()
 
 	// resources are sorted by creation beforehand
 	highlightSince := time.Now().Add(-*opts.highlightWindow).UTC()
@@ -73,8 +73,10 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 	}
 
 	// populate google sheet with data
+	var reportPage string
 	if *opts.sheetID != "" {
-		if err := updateSheet(ctx, *opts.sheetID, filteredResources, highlighted); err != nil {
+		var err error
+		if reportPage, err = updateSheet(ctx, *opts.sheetID, filteredResources, highlighted); err != nil {
 			return fmt.Errorf("sheets: %w", err)
 		}
 	}
@@ -82,7 +84,7 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 	// generate message to deliver
 	if *opts.slackWebhook != "" {
 		buttons := []slackBlock{
-			newSlackButtonSheet(*opts.sheetID),
+			newSlackButtonSheet(*opts.sheetID, reportPage),
 			newSlackButtonDocs(),
 		}
 		if *opts.runID != "" {
@@ -96,8 +98,8 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 					Text: fmt.Sprintf(`:package: I've found:
 - %d resources created in the past %s
 - %d resources created in the past %s
-- %d resources were whitelisted`,
-						highlighted, opts.highlightWindow, len(filteredResources), opts.window, whitelisted),
+- %d resources were allowed`,
+						highlighted, opts.highlightWindow, len(filteredResources), opts.window, allowed),
 				},
 			},
 			{

@@ -700,7 +700,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			}
 
 			alice := &authz.UserPendingPermissions{
-				ServiceType: "gitlab",
+				ServiceType: extsvc.TypeGitLab,
 				ServiceID:   "https://gitlab.com/",
 				BindID:      "alice",
 				Perm:        authz.Read,
@@ -1215,7 +1215,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 			updates: []update{
 				{
 					accounts: &extsvc.Accounts{
-						ServiceType: "gitlab",
+						ServiceType: extsvc.TypeGitLab,
 						ServiceID:   "https://gitlab.com/",
 						AccountIDs:  []string{"bob@example.com"},
 					},
@@ -1408,7 +1408,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 						},
 						{
 							accounts: &extsvc.Accounts{
-								ServiceType: "gitlab",
+								ServiceType: extsvc.TypeGitLab,
 								ServiceID:   "https://gitlab.com/",
 								AccountIDs:  []string{"alice"},
 							},
@@ -1443,7 +1443,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 				}, {
 					userID: 3,
 					perm: &authz.UserPendingPermissions{
-						ServiceType: "gitlab",
+						ServiceType: extsvc.TypeGitLab,
 						ServiceID:   "https://gitlab.com/",
 						BindID:      "alice",
 						Perm:        authz.Read,
@@ -1838,9 +1838,9 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
 
-			sqlf.Sprintf(extSQL, 1, "gitlab", "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
-			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()), // ID=2
-			sqlf.Sprintf(extSQL, 2, "gitlab", "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()),          // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -1860,7 +1860,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 					ID:     1,
 					UserID: 1,
 					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "gitlab",
+						ServiceType: extsvc.TypeGitLab,
 						ServiceID:   "https://gitlab.com/",
 						AccountID:   "alice_gitlab",
 						ClientID:    "alice_gitlab_client_id",
@@ -1898,7 +1898,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 					ID:     3,
 					UserID: 2,
 					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "gitlab",
+						ServiceType: extsvc.TypeGitLab,
 						ServiceID:   "https://gitlab.com/",
 						AccountID:   "bob_gitlab",
 						ClientID:    "bob_gitlab_client_id",
@@ -1933,10 +1933,10 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`), // ID=3
 
-			sqlf.Sprintf(extSQL, 1, "gitlab", "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
-			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()), // ID=2
-			sqlf.Sprintf(extSQL, 2, "gitlab", "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
-			sqlf.Sprintf(extSQL, 3, "gitlab", "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock()), // ID=4
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()),          // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
+			sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock()), // ID=4
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {

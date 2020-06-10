@@ -97,14 +97,14 @@ export async function createExtensionHostClientConnection(
     )
 
     const clientWindows = new ClientWindows(
-        (params: ShowNotificationParams) => services.notifications.showMessages.next({ ...params }),
-        (params: ShowMessageRequestParams) =>
+        (parameters: ShowNotificationParams) => services.notifications.showMessages.next({ ...parameters }),
+        (parameters: ShowMessageRequestParams) =>
             new Promise<MessageActionItem | null>(resolve => {
-                services.notifications.showMessageRequests.next({ ...params, resolve })
+                services.notifications.showMessageRequests.next({ ...parameters, resolve })
             }),
-        (params: ShowInputParams) =>
+        (parameters: ShowInputParams) =>
             new Promise<string | null>(resolve => {
-                services.notifications.showInputs.next({ ...params, resolve })
+                services.notifications.showInputs.next({ ...parameters, resolve })
             }),
         ({ title }: ProgressOptions) => {
             const reporter = new Subject<Progress>()

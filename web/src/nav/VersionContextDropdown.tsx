@@ -31,6 +31,12 @@ export interface VersionContextDropdownProps
     availableVersionContexts: VersionContext[] | undefined
     history: H.History
     navbarSearchQuery: string
+
+    /**
+     * Whether to always show the expanded state. Used for testing.
+     */
+    alwaysExpanded?: boolean
+    portal?: boolean
 }
 
 export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = ({
@@ -42,6 +48,8 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     setVersionContext,
     availableVersionContexts,
     versionContext: currentVersionContext,
+    alwaysExpanded,
+    portal,
 }: VersionContextDropdownProps) => {
     // Whether the user has dismissed the info blurb in the dropdown.
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, false)
@@ -51,7 +59,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
             const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
             const activation = undefined
             const source = 'filter'
-            const queryParameters: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
+            const searchParameters: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
             if (searchQueryNotEmpty) {
                 submitSearch({
                     history,
@@ -62,7 +70,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                     versionContext,
                     activation,
                     filtersInQuery,
-                    queryParams: queryParameters,
+                    searchParameters,
                 })
             }
         },
@@ -125,8 +133,9 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                 </ListboxButton>
                                 <ListboxPopover
                                     className={classNames('version-context-dropdown__popover dropdown-menu', {
-                                        show: isExpanded,
+                                        show: isExpanded || alwaysExpanded,
                                     })}
+                                    portal={portal}
                                 >
                                     {hasDismissedInfo && (
                                         <div className="version-context-dropdown__title pl-2 mb-1">

@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	indexabilityupdater "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/indexability_updater"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/indexer"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -30,6 +31,7 @@ func main() {
 
 	var (
 		frontendURL                      = mustGet(rawFrontendURL, "SRC_FRONTEND_INTERNAL")
+		resetInterval                    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 		indexerPollInterval              = mustParseInterval(rawIndexerPollInterval, "PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL")
 		schedulerInterval                = mustParseInterval(rawSchedulerInterval, "PRECISE_CODE_INTEL_SCHEDULER_INTERVAL")
 		indexabilityUpdaterInterval      = mustParseInterval(rawIndexabilityUpdaterInterval, "PRECISE_CODE_INTEL_INDEXABILITY_UPDATER_INTERVAL")
@@ -48,10 +50,17 @@ func main() {
 
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
-	indexerMetrics := indexer.NewIndexerMetrics(prometheus.DefaultRegisterer)
+	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
 	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
+	indexerMetrics := indexer.NewIndexerMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
+
+	indexResetter := resetter.IndexResetter{
+		DB:            db,
+		ResetInterval: resetInterval,
+		Metrics:       resetterMetrics,
+	}
 
 	indexabilityUpdater := indexabilityupdater.NewUpdater(
 		db,
@@ -81,6 +90,7 @@ func main() {
 	)
 
 	go server.Start()
+	go indexResetter.Run()
 	go indexabilityUpdater.Start()
 	go scheduler.Start()
 	go indexer.Start()

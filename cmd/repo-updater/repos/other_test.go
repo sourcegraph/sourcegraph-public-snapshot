@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestSrcExpose(t *testing.T) {
@@ -49,7 +50,7 @@ func TestSrcExpose(t *testing.T) {
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
 			Sources: map[string]*SourceInfo{
@@ -63,7 +64,7 @@ func TestSrcExpose(t *testing.T) {
 			Name: "bar/baz",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "bar/baz",
 			},
 			Sources: map[string]*SourceInfo{
@@ -82,7 +83,7 @@ func TestSrcExpose(t *testing.T) {
 			Description: "hi",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
 			Sources: map[string]*SourceInfo{
@@ -100,7 +101,7 @@ func TestSrcExpose(t *testing.T) {
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
 			Sources: map[string]*SourceInfo{
@@ -114,7 +115,7 @@ func TestSrcExpose(t *testing.T) {
 
 	source, err := NewOtherSource(&ExternalService{
 		ID:     1,
-		Kind:   "OTHER",
+		Kind:   extsvc.KindOther,
 		Config: fmt.Sprintf(`{"url": %q}`, s.URL),
 	}, nil)
 	if err != nil {

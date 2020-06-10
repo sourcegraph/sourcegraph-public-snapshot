@@ -124,9 +124,9 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
     }
 
-    private editorWillMount = (e: typeof monaco): void => {
-        this.monaco = e
-        if (e) {
+    private editorWillMount = (editor: typeof monaco): void => {
+        this.monaco = editor
+        if (editor) {
             this.onDidEditorMount()
         }
     }
@@ -249,8 +249,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(m: typeof monaco, jsonSchema: any): void {
-    m.languages.json.jsonDefaults.setDiagnosticsOptions({
+function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: any): void {
+    editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,
         schemas: [
@@ -281,8 +281,8 @@ function toMonacoEdits(
     model: monaco.editor.IModel,
     edits: jsonc.Edit[]
 ): monaco.editor.IIdentifiedSingleEditOperation[] {
-    return edits.map((edit, i) => ({
-        identifier: { major: model.getVersionId(), minor: i },
+    return edits.map((edit, index) => ({
+        identifier: { major: model.getVersionId(), minor: index },
         range: monaco.Range.fromPositions(
             model.getPositionAt(edit.offset),
             model.getPositionAt(edit.offset + edit.length)
@@ -315,12 +315,12 @@ export type ConfigInsertionFunction = (
 
 function getPositionAt(text: string, offset: number): monaco.IPosition {
     const lines = text.split('\n')
-    let pos = 0
-    for (const [i, line] of lines.entries()) {
-        if (offset < pos + line.length + 1) {
-            return new monaco.Position(i + 1, offset - pos + 1)
+    let position = 0
+    for (const [index, line] of lines.entries()) {
+        if (offset < position + line.length + 1) {
+            return new monaco.Position(index + 1, offset - position + 1)
         }
-        pos += line.length + 1
+        position += line.length + 1
     }
     throw new Error(`offset ${offset} out of bounds in text of length ${text.length}`)
 }

@@ -13,7 +13,7 @@ export interface ExtExtensionsAPI extends ProxyMarked {
 declare const self: any
 
 /** @internal */
-export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyMarked {
+export class Extensions implements ExtExtensionsAPI, Unsubscribable, ProxyMarked {
     public readonly [proxyMarker] = true
 
     /** Extensions' deactivate functions. */

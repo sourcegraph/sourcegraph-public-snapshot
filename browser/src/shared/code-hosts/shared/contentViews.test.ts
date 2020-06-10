@@ -21,10 +21,10 @@ describe('contentViews', () => {
         })
 
         const createTestElement = (): HTMLElement => {
-            const el = document.createElement('div')
-            el.className = `test test-${uniqueId()}`
-            document.body.append(el)
-            return el
+            const element = document.createElement('div')
+            element.className = `test test-${uniqueId()}`
+            document.body.append(element)
+            return element
         }
 
         test('detects addition, mutation, and removal of content views (and annotates them)', async () => {
@@ -75,8 +75,8 @@ describe('contentViews', () => {
                     },
                     {
                         contentViewResolvers: [{ selector: 'div', resolveView: () => ({ element }) }],
-                        setElementTooltip: (e, text) =>
-                            text !== null ? (e.dataset.tooltip = text) : e.removeAttribute('data-tooltip'),
+                        setElementTooltip: (element, text) =>
+                            text !== null ? (element.dataset.tooltip = text) : element.removeAttribute('data-tooltip'),
                     }
                 )
             )
@@ -124,8 +124,8 @@ describe('contentViews', () => {
                     },
                     {
                         contentViewResolvers: [{ selector: 'div', resolveView: () => ({ element }) }],
-                        setElementTooltip: (e, text) =>
-                            text !== null ? (e.dataset.tooltip = text) : e.removeAttribute('data-tooltip'),
+                        setElementTooltip: (element, text) =>
+                            text !== null ? (element.dataset.tooltip = text) : element.removeAttribute('data-tooltip'),
                     }
                 )
             )

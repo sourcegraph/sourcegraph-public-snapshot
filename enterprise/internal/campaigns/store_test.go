@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -64,7 +65,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
 				Description:  "All the Javascripts are belong to us",
 				Branch:       "upgrade-es-lint",
-				AuthorID:     23,
+				AuthorID:     int32(i) + 50,
 				ChangesetIDs: []int64{int64(i) + 1},
 				PatchSetID:   42 + int64(i),
 				ClosedAt:     clock.now(),
@@ -79,7 +80,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			if i%2 == 0 {
 				c.NamespaceOrgID = 23
 			} else {
-				c.NamespaceUserID = 42
+				c.NamespaceUserID = c.AuthorID
 			}
 
 			want := c.Clone()
@@ -140,10 +141,21 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if have, want := count, int64(2); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := count, int64(1); have != want {
+					t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
+				}
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -269,6 +281,24 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			}
 			if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if next != 0 {
+					t.Fatal("Next value was true, but false expected")
+				}
+				if have, want := len(have), 1; have != want {
+					t.Fatalf("Incorrect number of campaigns returned, want=%d have=%d", want, have)
+				}
+				if diff := cmp.Diff(have[0], c); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 		})
 	})
@@ -421,8 +451,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(1, "github")
-	deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(1, extsvc.TypeGitHub)
+	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
 	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
 		t.Fatal(err)
@@ -433,7 +463,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	deletedRepoChangeset := &cmpgn.Changeset{
 		RepoID:              deletedRepo.ID,
 		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 	}
 
 	t.Run("Create", func(t *testing.T) {
@@ -446,7 +476,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				Metadata:            githubPR,
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
-				ExternalServiceType: "github",
+				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      "campaigns/test",
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetStateOpen,
@@ -502,7 +532,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "external-id",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"foo"})
@@ -518,7 +548,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "invalid",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
@@ -534,7 +564,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "external-id",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "invalid",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
@@ -831,7 +861,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{1},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
-			ExternalServiceType: "github",
+			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       "",
@@ -946,7 +976,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		clock.add(1 * time.Second)
 		for _, c := range changesets {
 			c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
-			c.ExternalServiceType = bitbucketserver.ServiceType
+			c.ExternalServiceType = extsvc.TypeBitbucketServer
 
 			have = append(have, c.Clone())
 
@@ -1283,7 +1313,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	}
 
 	var extSvcID int64 = 1
-	repo := testRepo(int(extSvcID), "github")
+	repo := testRepo(int(extSvcID), extsvc.TypeGitHub)
 	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -1299,7 +1329,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{int64(i) + 1},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
-			ExternalServiceType: "github",
+			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       cmpgn.ChangesetStateOpen,
@@ -1653,8 +1683,8 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
 	patches := make([]*cmpgn.Patch, 0, 3)
 
-	repo := testRepo(1, "github")
-	deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(1, extsvc.TypeGitHub)
+	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -1883,8 +1913,8 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		// List the patches and see what we get back.
-		opts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
-		have, _, err := s.ListPatches(ctx, opts)
+		listOpts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		have, _, err := s.ListPatches(ctx, listOpts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1897,7 +1927,17 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		countOpts := CountPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		count, err := s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := count, int64(len(patches[2:])); have != want {
+			t.Fatalf("Invalid count retrieved: want=%d have=%d", want, have)
 		}
 
 		// Update the changeset jobs to change the campaign IDs and try again.
@@ -1909,7 +1949,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 			}
 		}
 
-		have, _, err = s.ListPatches(ctx, opts)
+		have, _, err = s.ListPatches(ctx, listOpts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1920,7 +1960,16 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		count, err = s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := count, int64(len(patches)); have != want {
+			t.Fatalf("Invalid count retrieved: want=%d have=%d", want, have)
 		}
 	})
 
@@ -2182,7 +2231,7 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 		},
 		{
 			hasCampaign: false,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 			wantDeleted: true,
 		},
 		{
@@ -2192,12 +2241,12 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 		},
 		{
 			hasCampaign: true,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 			wantDeleted: false,
 		},
 		{
 			hasCampaign: false,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 
 			patchesAttachedToOtherCampaign: true,
 			patches: []*cmpgn.Patch{
@@ -2263,7 +2312,7 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 					Metadata:            &github.PullRequest{},
 					CampaignIDs:         []int64{otherCampaign.ID},
 					ExternalID:          fmt.Sprintf("foobar-%d", i),
-					ExternalServiceType: "github",
+					ExternalServiceType: extsvc.TypeGitHub,
 					ExternalBranch:      "campaigns/test",
 					ExternalUpdatedAt:   clock.now(),
 					ExternalState:       cmpgn.ChangesetStateOpen,
@@ -2777,8 +2826,19 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 
 		for campaignID, tc := range tests {
 			for i, j := range tc.jobs {
+				p := &cmpgn.Patch{
+					RepoID:     api.RepoID(i),
+					PatchSetID: int64(campaignID),
+					BaseRef:    "deadbeef",
+					Diff:       "foobar",
+				}
+
+				if err := s.CreatePatch(ctx, p); err != nil {
+					t.Fatal(err)
+				}
+
 				j.CampaignID = int64(campaignID)
-				j.PatchID = int64(i)
+				j.PatchID = p.ID
 
 				err := s.CreateChangesetJob(ctx, j)
 				if err != nil {
@@ -2799,224 +2859,241 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 			}
 		}
 	})
+	t.Run("BackgroundProcessStatus_ErrorsOnlyInRepos", func(t *testing.T) {
+		var campaignID int64 = 123456
 
-	t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
-		campaignID := 9999
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
-			// completed, error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
-			// completed, another error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
+		patches := []*cmpgn.Patch{
+			{RepoID: 444, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 555, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 666, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+		}
+		for _, p := range patches {
+			if err := s.CreatePatch(ctx, p); err != nil {
+				t.Fatal(err)
+			}
 		}
 
-		for i, j := range jobs {
-			j.CampaignID = int64(campaignID)
-			j.PatchID = int64(i)
+		jobs := []*cmpgn.ChangesetJob{
+			// completed, no errors
+			{PatchID: patches[0].ID, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+			// completed, error
+			{PatchID: patches[1].ID, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+			// completed, another error
+			{PatchID: patches[2].ID, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
+		}
+
+		for _, j := range jobs {
+			j.CampaignID = campaignID
 
 			err := s.CreateChangesetJob(ctx, j)
 			if err != nil {
 				t.Fatal(err)
 			}
-
 		}
 
-		mustReset := map[int64]bool{
-			jobs[1].ID: true,
-			jobs[2].ID: true,
+		opts := GetCampaignStatusOpts{
+			ID:                   campaignID,
+			ExcludeErrorsInRepos: []api.RepoID{patches[2].RepoID},
 		}
 
-		err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
+		want := &cmpgn.BackgroundProcessStatus{
+			ProcessState:  cmpgn.BackgroundProcessStateErrored,
+			Total:         3,
+			Completed:     3,
+			Failed:        2,
+			Pending:       0,
+			ProcessErrors: []string{"error1"},
+			// error2 should be excluded
+		}
+
+		status, err := s.GetCampaignStatus(ctx, opts)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
+		if diff := cmp.Diff(status, want); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
+		}
+
+		// Now we filter out all errors, but still want the ProcessState to be
+		// correct
+		opts = GetCampaignStatusOpts{
+			ID: campaignID,
+			ExcludeErrorsInRepos: []api.RepoID{
+				patches[0].RepoID,
+				patches[1].RepoID,
+				patches[2].RepoID,
+			},
+		}
+
+		want = &cmpgn.BackgroundProcessStatus{
+			// This should stay "Errored", even though no errors are returned.
+			ProcessState:  cmpgn.BackgroundProcessStateErrored,
+			Total:         3,
+			Completed:     3,
+			Failed:        2,
+			Pending:       0,
+			ProcessErrors: nil,
+			// error1 and error2 should be excluded
+		}
+
+		status, err = s.GetCampaignStatus(ctx, opts)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if len(have) != len(jobs) {
-			t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
-		}
-
-		for _, job := range have {
-			if _, ok := mustReset[job.ID]; ok {
-				if job.Error != "" {
-					t.Errorf("job should be reset but has error: %+v", job.Error)
-				}
-				if !job.FinishedAt.IsZero() {
-					t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
-				}
-				if !job.StartedAt.IsZero() {
-					t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
-				}
-			} else {
-				if job.StartedAt.IsZero() {
-					t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
-				}
-				if job.FinishedAt.IsZero() {
-					t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
-				}
-			}
+		if diff := cmp.Diff(status, want); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
 		}
 	})
 
 	t.Run("ResetChangesetJobs", func(t *testing.T) {
-		campaignID := 12345
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 12345},
-			// completed, error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+		tests := []struct {
+			jobs              []*cmpgn.ChangesetJob
+			opts              ResetChangesetJobsOpts
+			wantResetPatchIDs []int64
+		}{
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+					// completed, another error
+					{PatchID: 3, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
+				},
+				opts:              ResetChangesetJobsOpts{OnlyFailed: true},
+				wantResetPatchIDs: []int64{2, 3},
+			},
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				opts:              ResetChangesetJobsOpts{},
+				wantResetPatchIDs: []int64{1, 2},
+			},
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				opts:              ResetChangesetJobsOpts{PatchIDs: []int64{2}},
+				wantResetPatchIDs: []int64{2},
+			},
 		}
 
-		for i, j := range jobs {
-			j.CampaignID = int64(campaignID)
-			j.PatchID = int64(i)
+		for i, tc := range tests {
+			var campaignID int64 = int64(9999 + i)
+
+			for _, j := range tc.jobs {
+				j.CampaignID = campaignID
+
+				if err := s.CreateChangesetJob(ctx, j); err != nil {
+					t.Fatal(err)
+				}
+
+			}
+
+			tc.opts.CampaignID = campaignID
+			if err := s.ResetChangesetJobs(ctx, tc.opts); err != nil {
+				t.Fatal(err)
+			}
+
+			have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: campaignID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != len(tc.jobs) {
+				t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(tc.jobs))
+			}
+
+			mustReset := map[int64]bool{}
+			for _, patchID := range tc.wantResetPatchIDs {
+				mustReset[patchID] = true
+			}
+
+			for _, job := range have {
+				if _, ok := mustReset[job.PatchID]; ok {
+					if job.UnsuccessfullyCompleted() {
+						t.Errorf("job should be reset but is not: %+v", job)
+					}
+				} else {
+					if job.StartedAt.IsZero() {
+						t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
+					}
+					if job.FinishedAt.IsZero() {
+						t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
+					}
+				}
+			}
+		}
+	})
+
+	t.Run("GetRepoIDsForFailedChangesetJobs", func(t *testing.T) {
+		var campaignID int64 = 654321
+
+		patches := []*cmpgn.Patch{
+			{RepoID: 111, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 222, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 333, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+		}
+		for _, p := range patches {
+			if err := s.CreatePatch(ctx, p); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		jobs := []*cmpgn.ChangesetJob{
+			// completed, no errors
+			{
+				PatchID:     patches[0].ID,
+				StartedAt:   clock.now(),
+				FinishedAt:  clock.now(),
+				ChangesetID: 23,
+			},
+			// completed, error
+			{
+				PatchID:    patches[1].ID,
+				StartedAt:  clock.now(),
+				FinishedAt: clock.now(),
+				Error:      "error1",
+			},
+			// completed, another error
+			{
+				PatchID:    patches[2].ID,
+				StartedAt:  clock.now(),
+				FinishedAt: clock.now(),
+				Error:      "error2",
+			},
+		}
+
+		for _, j := range jobs {
+			j.CampaignID = campaignID
 
 			err := s.CreateChangesetJob(ctx, j)
 			if err != nil {
 				t.Fatal(err)
 			}
-
 		}
 
-		err := s.ResetChangesetJobs(ctx, int64(campaignID))
+		want := []api.RepoID{
+			patches[1].RepoID,
+			patches[2].RepoID,
+		}
+
+		have, err := s.GetRepoIDsForFailedChangesetJobs(ctx, campaignID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(have) != len(jobs) {
-			t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
-		}
-
-		for _, job := range have {
-			if job.Error != "" {
-				t.Errorf("job should be reset but has error: %+v", job.Error)
-			}
-			if !job.FinishedAt.IsZero() {
-				t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
-			}
-			if !job.StartedAt.IsZero() {
-				t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
-			}
-		}
-	})
-
-	t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
-		patchSet := &cmpgn.PatchSet{}
-		err := s.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		campaign := testCampaign(123, patchSet.ID)
-		err = s.CreateCampaign(ctx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Cleanup existing ChangesetJobs so we don't have interference
-		// between the previous tests and this one.
-		chjs, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: -1})
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, j := range chjs {
-			err := s.DeleteChangesetJob(ctx, j.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		patch := &cmpgn.Patch{
-			PatchSetID: patchSet.ID,
-			BaseRef:    "x",
-			RepoID:     api.RepoID(123),
-		}
-		err = s.CreatePatch(ctx, patch)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 0 ChangesetJob, 1 Patches
-		have, err := s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts don't match, should get back null
-		if !have.IsZero() {
-			t.Fatalf("publishedAt is not zero: %v", have)
-		}
-
-		changesetJob1 := &cmpgn.ChangesetJob{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		}
-		err = s.CreateChangesetJob(ctx, changesetJob1)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 1 ChangesetJob, 1 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts are the same, we should get a valid time
-		if !have.Equal(clock.now()) {
-			t.Fatalf("want %v, got %v", clock.now(), have)
-		}
-
-		// Create another patch to ensure that we get the latest date when
-		// there are more than one.
-		clock.add(5 * time.Minute)
-
-		patch = &cmpgn.Patch{
-			PatchSetID: patchSet.ID,
-			BaseRef:    "x",
-			RepoID:     api.RepoID(123),
-		}
-		err = s.CreatePatch(ctx, patch)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 1 ChangesetJob, 2 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts don't match, should get back null
-		if !have.IsZero() {
-			t.Fatalf("publishedAt is not zero: %v", have)
-		}
-
-		// Add another changesetjob
-		changesetJob2 := &cmpgn.ChangesetJob{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		}
-		err = s.CreateChangesetJob(ctx, changesetJob2)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 2 ChangesetJob, 2 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts are the same, we should get a valid time
-		if !have.Equal(clock.now()) {
-			t.Fatalf("want %v, got %v", clock.now(), have)
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
 		}
 	})
 }
@@ -3033,7 +3110,7 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			Name: "github.com/sourcegraph/changeset-job-test",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
-				ServiceType: "github",
+				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
 			Sources: map[string]*repos.SourceInfo{

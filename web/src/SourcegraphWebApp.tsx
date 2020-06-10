@@ -37,7 +37,7 @@ import { createPlatformContext } from './platform/context'
 import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
-import { RepoRevContainerRoute } from './repo/RepoRevContainer'
+import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
 import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -58,7 +58,7 @@ import {
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
+import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 import { generateFiltersQuery } from '../../shared/src/util/url'
 import { NotificationType } from '../../shared/src/api/client/services/notifications'
@@ -81,10 +81,10 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
     orgAreaRoutes: readonly OrgAreaRoute[]
     repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
     showCampaigns: boolean
 }

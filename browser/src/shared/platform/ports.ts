@@ -85,7 +85,7 @@ export function browserPortToMessagePort(
         const adapterListener = (event: MessageEvent): void => {
             const data: Message = event.data
             // Message from comlink needing to be forwarded to browser port with MessagePorts removed
-            const portRefs: PortRef[] = []
+            const portReferences: PortReference[] = []
             // Find message port references and connect to the other side with the found IDs.
             for (const { value, path, key, parent } of iteratePropertiesDeep(data)) {
                 if (value instanceof MessagePort) {
@@ -96,11 +96,11 @@ export function browserPortToMessagePort(
                     const browserPort = connect(prefix + id)
                     link(browserPort, value)
                     // Include the ID of the browser port in the message
-                    portRefs.push({ path, id })
+                    portReferences.push({ path, id })
                 }
             }
             // Wrap message for the browser port to include all port IDs
-            const browserPortMessage: BrowserPortMessage = { message: data, portRefs }
+            const browserPortMessage: BrowserPortMessage = { message: data, portRefs: portReferences }
 
             browserPort.postMessage(browserPortMessage)
 
@@ -115,15 +115,15 @@ export function browserPortToMessagePort(
 
         const browserPortListener = ({ message, portRefs }: BrowserPortMessage): void => {
             const transfer: MessagePort[] = []
-            for (const portRef of portRefs) {
+            for (const portReference of portRefs) {
                 const { port1: comlinkMessagePort, port2: intermediateMessagePort } = new MessageChannel()
 
                 // Replace the port reference at the given path with a MessagePort that will be transferred.
-                replaceValueAtPath(message, portRef.path, comlinkMessagePort)
+                replaceValueAtPath(message, portReference.path, comlinkMessagePort)
                 transfer.push(comlinkMessagePort)
 
                 // Once the port with the mentioned ID is connected, link it up
-                whenConnected(portRef.id, browserPort => link(browserPort, intermediateMessagePort))
+                whenConnected(portReference.id, browserPort => link(browserPort, intermediateMessagePort))
             }
 
             // Forward message, with MessagePorts
@@ -154,7 +154,7 @@ export function browserPortToMessagePort(
     }
 }
 
-interface PortRef {
+interface PortReference {
     /** Path at which the MessagePort appeared. */
     path: Path
 
@@ -174,7 +174,7 @@ interface BrowserPortMessage {
     /**
      * Where in the message `MessagePort`s were referenced and the ID of the `browser.runtime.Port` created for each.
      */
-    portRefs: PortRef[]
+    portRefs: PortReference[]
 }
 
 type Key = string | number | symbol
@@ -209,12 +209,12 @@ interface PropertyIteratorEntry<T = unknown> {
  * @returns The old value at the path.
  */
 function replaceValueAtPath(value: any, path: Path, newValue: unknown): unknown {
-    const lastProp = path[path.length - 1]
-    for (const prop of path.slice(0, -1)) {
-        value = value[prop]
+    const lastProperty = path[path.length - 1]
+    for (const property of path.slice(0, -1)) {
+        value = value[property]
     }
-    const oldValue = value[lastProp]
-    value[lastProp] = newValue
+    const oldValue = value[lastProperty]
+    value[lastProperty] = newValue
     return oldValue
 }
 

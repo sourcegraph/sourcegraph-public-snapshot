@@ -48,7 +48,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     public componentDidMount(): void {
         this.subscriptions.add(
             queryRepositories(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS)
-                .pipe(catchError(err => [asError(err)]))
+                .pipe(catchError(error => [asError(error)]))
                 .subscribe(repositoriesOrError => this.setState({ repositoriesOrError }))
         )
     }
@@ -76,14 +76,14 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                     ) : repositoriesOrError.length === 0 ? (
                         <p>No repositories.</p>
                     ) : (
-                        repositoriesOrError.map((repo /* or loading */, i) =>
+                        repositoriesOrError.map((repo /* or loading */, index) =>
                             repo === LOADING ? (
-                                <div key={i} className={`${itemClass} list-group-item`}>
+                                <div key={index} className={`${itemClass} list-group-item`}>
                                     <h4 className="text-muted mb-0">⋯</h4>&nbsp;
                                 </div>
                             ) : (
                                 <Link
-                                    key={i}
+                                    key={index}
                                     className={`${itemClass} list-group-item list-group-item-action text-truncate`}
                                     to={repo.url}
                                 >

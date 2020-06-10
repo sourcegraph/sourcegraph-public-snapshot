@@ -1,6 +1,6 @@
 import '../../shared/polyfills'
 
-import io from 'socket.io-client'
+import socketIoClient from 'socket.io-client'
 
 /**
  * Reloads the extension when notified from the development server. Only enabled
@@ -10,7 +10,7 @@ async function main(): Promise<void> {
     const self = await browser.management.getSelf()
     if (self.installType === 'development') {
         // Since the port is hard-coded, it must match scripts/dev.ts
-        io.connect('http://localhost:8890').on('file.change', () => browser.runtime.reload())
+        socketIoClient.connect('http://localhost:8890').on('file.change', () => browser.runtime.reload())
     }
 }
 

@@ -173,12 +173,12 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value, errorDescription: undefined })
+    private onEmailFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ email: event.target.value, errorDescription: undefined })
     }
 
-    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ username: e.target.value, errorDescription: undefined })
+    private onUsernameFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ username: event.target.value, errorDescription: undefined })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

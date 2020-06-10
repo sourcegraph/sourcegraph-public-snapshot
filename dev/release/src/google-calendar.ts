@@ -90,12 +90,12 @@ export async function ensureEvent(
 
 async function listEvents(auth: OAuth2Client): Promise<calendar_v3.Schema$Event[] | undefined> {
     const calendar = google.calendar({ version: 'v3', auth })
-    const res = await calendar.events.list({
+    const result = await calendar.events.list({
         calendarId: 'primary',
         timeMin: new Date().toISOString(),
         maxResults: 2500,
         singleEvents: true,
         orderBy: 'startTime',
     })
-    return res.data.items
+    return result.data.items
 }

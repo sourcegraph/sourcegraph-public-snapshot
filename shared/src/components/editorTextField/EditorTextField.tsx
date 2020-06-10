@@ -62,7 +62,7 @@ export const EditorTextFieldUtils = {
         modelService: Pick<ModelService, 'observeModel'>,
         editor: ViewerId,
         setValue: (text: string) => void,
-        textAreaRef: React.RefObject<Pick<HTMLTextAreaElement, 'value' | 'setSelectionRange'>>
+        textAreaReference: React.RefObject<Pick<HTMLTextAreaElement, 'value' | 'setSelectionRange'>>
     ): Unsubscribable => {
         const subscriptions = new Subscription()
 
@@ -85,7 +85,7 @@ export const EditorTextFieldUtils = {
                     filter(selections => selections.length !== 0)
                 )
                 .subscribe(selections => {
-                    const textArea = textAreaRef.current
+                    const textArea = textAreaReference.current
                     if (textArea) {
                         const sel = selections[0] // TODO: Only a single selection is supported.
                         const start = positionToOffset(textArea.value, sel.start)
@@ -138,7 +138,7 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
     viewerId,
     modelUri,
     onValueChange,
-    textAreaRef: _textAreaRef,
+    textAreaRef: _textAreaReference,
     className,
     extensionsController: {
         services: { viewer: viewerService, model: modelService },
@@ -149,7 +149,7 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
     // The new, preferred React hooks API requires use of lambdas.
     //
 
-    const textAreaRef = _textAreaRef || createRef<HTMLTextAreaElement>()
+    const textAreaReference = _textAreaReference || createRef<HTMLTextAreaElement>()
 
     const [value, setValue] = useState<string>()
     useEffect(() => {
@@ -165,33 +165,33 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
                     onValueChange(text)
                 }
             },
-            textAreaRef
+            textAreaReference
         )
         return () => subscription.unsubscribe()
-    }, [viewerId, viewerService, modelService, onValueChange, textAreaRef])
+    }, [viewerId, viewerService, modelService, onValueChange, textAreaReference])
 
     return (
         <textarea
             className={className}
             value={value}
-            onInput={e => {
-                EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, e.currentTarget)
-                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, e.currentTarget)
+            onInput={event => {
+                EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, event.currentTarget)
+                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, event.currentTarget)
             }}
             // Listen on keyup and keydown to get the cursor position when the cursor moves due to
             // the arrow keys. For a single keypress, keyup is used. If the user holds down the
             // arrow key, keydown lets us get the key repeat for (most) intermediate positions so we
             // can be more responsive to user input instead of waiting for keyup.
-            onKeyDown={e => {
-                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, e.currentTarget)
-                if (parentOnKeyDown && !e.isPropagationStopped()) {
-                    parentOnKeyDown(e)
+            onKeyDown={event => {
+                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, event.currentTarget)
+                if (parentOnKeyDown && !event.isPropagationStopped()) {
+                    parentOnKeyDown(event)
                 }
             }}
-            onKeyUp={e => {
-                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, e.currentTarget)
+            onKeyUp={event => {
+                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, event.currentTarget)
             }}
-            ref={textAreaRef}
+            ref={textAreaReference}
             {...textAreaProps}
         />
     )

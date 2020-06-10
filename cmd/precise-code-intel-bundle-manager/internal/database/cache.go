@@ -5,7 +5,6 @@ import (
 
 	"github.com/dgraph-io/ristretto"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 // DatabaseCache is an in-memory LRU cache of Database instances.
@@ -79,78 +78,4 @@ func (c *DatabaseCache) WithDatabase(filename string, openDatabase func() (Datab
 	}
 
 	return handler(entry.db)
-}
-
-// DocumentCache is an in-memory LRU cache of unmarshalled DocumentData instances.
-type DocumentCache struct {
-	cache *ristretto.Cache
-}
-
-// NewDocumentCache creates a DocumentData instance cache with the given maximum size.
-// The size of the cache is determined by the number of field in each DocumentData value.
-func NewDocumentCache(size int64) (*DocumentCache, *ristretto.Metrics, error) {
-	cache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: size * 10,
-		MaxCost:     size,
-		BufferItems: 64,
-		Metrics:     true,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return &DocumentCache{cache: cache}, cache.Metrics, nil
-}
-
-// GetOrCreate returns the document data cached at the given key or calls the given factory
-// to create it. This method is goroutine-safe.
-func (c *DocumentCache) GetOrCreate(key string, factory func() (types.DocumentData, error)) (types.DocumentData, error) {
-	if value, ok := c.cache.Get(key); ok {
-		return value.(types.DocumentData), nil
-	}
-
-	data, err := factory()
-	if err != nil {
-		return types.DocumentData{}, err
-	}
-
-	c.cache.Set(key, data, int64(1+len(data.HoverResults)+len(data.Monikers)+len(data.PackageInformation)+len(data.Ranges)))
-	return data, nil
-}
-
-// ResultChunkCache is an in-memory LRU cache of unmarshalled ResultChunkData instances.
-type ResultChunkCache struct {
-	cache *ristretto.Cache
-}
-
-// ResultChunkCache creates a ResultChunkData instance cache with the given maximum size.
-// The size of the cache is determined by the number of field in each ResultChunkData value.
-func NewResultChunkCache(size int64) (*ResultChunkCache, *ristretto.Metrics, error) {
-	cache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: size * 10,
-		MaxCost:     size,
-		BufferItems: 64,
-		Metrics:     true,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return &ResultChunkCache{cache: cache}, cache.Metrics, nil
-}
-
-// GetOrCreate returns the result chunk data cached at the given key or calls the given factory
-// to create it. This method is goroutine-safe.
-func (c *ResultChunkCache) GetOrCreate(key string, factory func() (types.ResultChunkData, error)) (types.ResultChunkData, error) {
-	if value, ok := c.cache.Get(key); ok {
-		return value.(types.ResultChunkData), nil
-	}
-
-	data, err := factory()
-	if err != nil {
-		return types.ResultChunkData{}, err
-	}
-
-	c.cache.Set(key, data, int64(1+len(data.DocumentPaths)+len(data.DocumentIDRangeIDs)))
-	return data, nil
 }

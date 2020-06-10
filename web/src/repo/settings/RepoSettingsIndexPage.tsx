@@ -66,7 +66,7 @@ function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryT
     )
 }
 
-const TextSearchIndexedRef: React.FunctionComponent<{
+const TextSearchIndexedReference: React.FunctionComponent<{
     repo: GQL.IRepository
     indexedRef: GQL.IRepositoryTextSearchIndexedRef
 }> = ({ repo, indexedRef }) => {
@@ -174,8 +174,12 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                             <p>Index branches to enhance search performance at scale.</p>
                             {this.state.textSearchIndex.refs && (
                                 <ul className="repo-settings-index-page__refs">
-                                    {this.state.textSearchIndex.refs.map((ref, i) => (
-                                        <TextSearchIndexedRef key={i} repo={this.props.repo} indexedRef={ref} />
+                                    {this.state.textSearchIndex.refs.map((reference, index) => (
+                                        <TextSearchIndexedReference
+                                            key={index}
+                                            repo={this.props.repo}
+                                            indexedRef={reference}
+                                        />
                                     ))}
                                 </ul>
                             )}

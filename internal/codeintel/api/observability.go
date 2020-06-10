@@ -16,6 +16,7 @@ type ObservedCodeIntelAPI struct {
 	definitionsOperation      *observation.Operation
 	referencesOperation       *observation.Operation
 	hoverOperation            *observation.Operation
+	diagnosticsOperation      *observation.Operation
 }
 
 var _ CodeIntelAPI = &ObservedCodeIntelAPI{}
@@ -51,14 +52,19 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 			MetricLabels: []string{"hover"},
 			Metrics:      metrics,
 		}),
+		diagnosticsOperation: observationContext.Operation(observation.Op{
+			Name:         "CodeIntelAPI.Diagnostics",
+			MetricLabels: []string{"diagnostics"},
+			Metrics:      metrics,
+		}),
 	}
 }
 
 // FindClosestDumps calls into the inner CodeIntelAPI and registers the observed results.
-func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) (dumps []db.Dump, err error) {
+func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (dumps []db.Dump, err error) {
 	ctx, endObservation := api.findClosestDumpsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
-	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, file)
+	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, file, indexer)
 }
 
 // Definitions calls into the inner CodeIntelAPI and registers the observed results.
@@ -80,4 +86,11 @@ func (api *ObservedCodeIntelAPI) Hover(ctx context.Context, file string, line, c
 	ctx, endObservation := api.hoverOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return api.codeIntelAPI.Hover(ctx, file, line, character, uploadID)
+}
+
+// Diagnostics calls into the inner CodeIntelAPI and registers the observed results.
+func (api *ObservedCodeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID int) (diagnostics []bundles.Diagnostic, err error) {
+	ctx, endObservation := api.diagnosticsOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(diagnostics)), observation.Args{}) }()
+	return api.codeIntelAPI.Diagnostics(ctx, prefix, uploadID)
 }

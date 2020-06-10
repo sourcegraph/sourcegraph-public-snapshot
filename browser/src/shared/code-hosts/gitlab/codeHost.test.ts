@@ -26,7 +26,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.com/sourcegraph/sourcegraph',
-                        rev: 'master',
+                        revision: 'master',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
@@ -48,7 +48,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.sgdev.org/sourcegraph/sourcegraph',
-                        rev: 'master',
+                        revision: 'master',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
@@ -68,7 +68,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.com/sourcegraph/sourcegraph',
-                        rev: 'master',
+                        revision: 'master',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
@@ -88,7 +88,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/jsonrpc2',
                         rawRepoName: 'gitlab.com/sourcegraph/jsonrpc2',
-                        rev: 'changes',
+                        revision: 'changes',
                         filePath: 'call_opt.go',
                         position: {
                             line: 5,

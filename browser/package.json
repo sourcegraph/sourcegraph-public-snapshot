@@ -5,7 +5,7 @@
     "yarn": ">1.10.0"
   },
   "scripts": {
-    "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" node -r ts-node/register scripts/dev",
+    "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" node -r ts-node/register scripts/development",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
     "dev:firefox": "if type web-ext 2>/dev/null; then web-ext run --source-dir ./build/firefox; else echo 'web-ext not found. Install it with: yarn global add web-ext'; exit 1; fi",
     "build": "NODE_ENV=production NODE_OPTIONS=--max_old_space_size=4096 TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" node -r ts-node/register scripts/build",
@@ -17,8 +17,8 @@
     "eslint": "eslint --cache '**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
-    "test": "jest --testPathIgnorePatterns e2e",
-    "test-e2e": "mocha './src/e2e/**/*.test.ts'",
+    "test": "jest --testPathIgnorePatterns end-to-end",
+    "test-e2e": "mocha './src/end-to-end/**/*.test.ts'",
     "bundlesize": "GITHUB_TOKEN= bundlesize"
   },
   "browserslist": [

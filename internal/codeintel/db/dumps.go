@@ -88,12 +88,12 @@ func (db *dbImpl) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.finished_at,
 			d.repository_id,
 			d.indexer
-		FROM lsif_dumps d WHERE id = %d
+		FROM lsif_dumps d WHERE id = %s
 	`, id)))
 }
 
-// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, and file.
-func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) (_ []Dump, err error) {
+// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
+func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (_ []Dump, err error) {
 	tx, started, err := db.transact(ctx)
 	if err != nil {
 		return nil, err
@@ -114,6 +114,12 @@ func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit
 		return nil, err
 	}
 
+	var conds []*sqlf.Query
+	conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(intsToQueries(ids), ", ")))
+	if indexer != "" {
+		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
+	}
+
 	dumps, err := scanDumps(tx.query(
 		ctx,
 		sqlf.Sprintf(`
@@ -130,8 +136,8 @@ func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit
 				d.finished_at,
 				d.repository_id,
 				d.indexer
-			FROM lsif_dumps d WHERE id IN (%s)
-		`, sqlf.Join(intsToQueries(ids), ", ")),
+			FROM lsif_dumps d WHERE %s
+		`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return nil, err
@@ -185,6 +191,6 @@ func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID in
 func (db *dbImpl) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
 	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		DELETE from lsif_uploads
-		WHERE repository_id = %d AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
+		WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
 	`, repositoryID, commit, root, indexer))
 }

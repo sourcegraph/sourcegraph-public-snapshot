@@ -73,7 +73,7 @@ func run(token, org string, dry, verbose bool) (err error) {
 
 	var toUpdate []*Issue
 	for _, issue := range tracking {
-		work := issue.Workloads().Markdown(issue.LabelWhitelist)
+		work := issue.Workloads().Markdown(issue.LabelAllowlist)
 		if updated, err := issue.UpdateWork(work); err != nil {
 			log.Printf("failed to patch work section in %q %s: %v", issue.Title, issue.URL, err)
 		} else if !updated {
@@ -154,7 +154,7 @@ func patch(s, replacement string) (string, error) {
 
 type Workloads map[string]*Workload
 
-func (ws Workloads) Markdown(labelWhitelist []string) string {
+func (ws Workloads) Markdown(labelAllowlist []string) string {
 	assignees := make([]string, 0, len(ws))
 	for assignee := range ws {
 		assignees = append(assignees, assignee)
@@ -165,7 +165,7 @@ func (ws Workloads) Markdown(labelWhitelist []string) string {
 	var b strings.Builder
 
 	for _, assignee := range assignees {
-		b.WriteString(ws[assignee].Markdown(labelWhitelist))
+		b.WriteString(ws[assignee].Markdown(labelAllowlist))
 	}
 
 	return b.String()
@@ -188,7 +188,7 @@ func (wl *Workload) AddIssue(newIssue *Issue) {
 	wl.Issues = append(wl.Issues, newIssue)
 }
 
-func (wl *Workload) Markdown(labelWhitelist []string) string {
+func (wl *Workload) Markdown(labelAllowlist []string) string {
 	var b strings.Builder
 
 	var days string
@@ -200,7 +200,7 @@ func (wl *Workload) Markdown(labelWhitelist []string) string {
 	fmt.Fprintf(&b, "@%s%s\n\n", wl.Assignee, days)
 
 	for _, issue := range wl.Issues {
-		b.WriteString(issue.Markdown(labelWhitelist))
+		b.WriteString(issue.Markdown(labelAllowlist))
 
 		for _, pr := range issue.LinkedPRs {
 			b.WriteString("  ") // Nested list
@@ -244,7 +244,7 @@ func (wl *Workload) FillExistingIssuesFromTrackingBody(tracking *TrackingIssue) 
 		}
 
 		for _, issue := range tracking.Issues {
-			if parsedIssueURL == issue.URL {
+			if parsedIssueURL == issue.URL && Assignee(issue.Assignees) == wl.Assignee {
 				wl.AddIssue(issue)
 			}
 		}
@@ -287,24 +287,24 @@ type TrackingIssue struct {
 	*Issue
 	Issues         []*Issue
 	PRs            []*PullRequest
-	LabelWhitelist []string
+	LabelAllowlist []string
 }
 
 func NewTrackingIssue(issue *Issue) *TrackingIssue {
 	t := &TrackingIssue{Issue: issue}
-	t.FillLabelWhitelist()
+	t.FillLabelAllowlist()
 	return t
 }
 
 var labelMatcher = regexp.MustCompile(labelMarkerRegexp)
 
 // NOTE: labels specified inside the WORK section will be silently discarded
-func (t *TrackingIssue) FillLabelWhitelist() {
+func (t *TrackingIssue) FillLabelAllowlist() {
 	lines := strings.Split(t.Body, "\n")
 	for _, line := range lines {
 		matches := labelMatcher.FindStringSubmatch(line)
 		if matches != nil {
-			t.LabelWhitelist = append(t.LabelWhitelist, matches[1])
+			t.LabelAllowlist = append(t.LabelAllowlist, matches[1])
 		}
 	}
 }
@@ -387,7 +387,7 @@ type Issue struct {
 	LinkedPRs     []*PullRequest `json:"-"`
 }
 
-func (issue *Issue) Markdown(labelWhitelist []string) string {
+func (issue *Issue) Markdown(labelAllowlist []string) string {
 	state := " "
 	if strings.EqualFold(issue.State, "closed") {
 		state = "x"
@@ -399,7 +399,7 @@ func (issue *Issue) Markdown(labelWhitelist []string) string {
 		estimate = "__" + estimate + "__ "
 	}
 
-	labels := issue.RenderedLabels(labelWhitelist)
+	labels := issue.RenderedLabels(labelAllowlist)
 
 	return fmt.Sprintf("- [%s] %s [#%d](%s) %s%s%s\n",
 		state,
@@ -412,11 +412,11 @@ func (issue *Issue) Markdown(labelWhitelist []string) string {
 	)
 }
 
-func (issue *Issue) RenderedLabels(labelWhitelist []string) string {
+func (issue *Issue) RenderedLabels(labelAllowlist []string) string {
 	var b strings.Builder
 	for _, label := range issue.Labels {
-		for _, whitelistedLabel := range labelWhitelist {
-			if whitelistedLabel == label {
+		for _, allowedLabel := range labelAllowlist {
+			if allowedLabel == label {
 				b.WriteString(fmt.Sprintf("`%s` ", label))
 				break
 			}

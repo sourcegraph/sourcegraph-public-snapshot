@@ -49,7 +49,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                         deleteRegistryExtensionWithConfirmation(this.props.node.id).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
-                            map(c => ({ deletionOrError: c })),
+                            map(deletionOrError => ({ deletionOrError })),
                             tap(() => {
                                 if (this.props.onDidUpdate) {
                                     this.props.onDidUpdate()

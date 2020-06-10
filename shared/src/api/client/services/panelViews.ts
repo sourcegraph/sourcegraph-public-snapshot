@@ -88,12 +88,12 @@ export function getPanelViews(
         switchMap(entries =>
             combineLatestOrDefault(
                 entries
-                    .filter(e => e.registrationOptions.container === container)
+                    .filter(entry => entry.registrationOptions.container === container)
                     .map(entry =>
                         addRegistrationOptions(entry).pipe(
-                            catchError(err => {
+                            catchError(error => {
                                 if (logErrors) {
-                                    console.error(err)
+                                    console.error(error)
                                 }
                                 return [null]
                             })

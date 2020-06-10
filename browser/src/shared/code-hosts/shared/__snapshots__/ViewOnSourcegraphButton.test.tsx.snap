@@ -210,7 +210,7 @@ exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a
 </a>
 `;
 
-exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a link with the rev when provided 1`] = `
+exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a link with the revision when provided 1`] = `
 <a
   aria-label="View repository on Sourcegraph"
   className="open-on-sourcegraph test"

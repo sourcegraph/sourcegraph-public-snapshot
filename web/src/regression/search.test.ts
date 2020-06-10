@@ -1,7 +1,7 @@
 import expect from 'expect'
 import { describe, test } from 'mocha'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { Driver } from '../../../shared/src/testing/driver'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQlClient'
@@ -11,21 +11,21 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { Key } from 'ts-key-enum'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 import { editUserSettings } from './util/settings'
 import assert from 'assert'
 
 /**
  * Reads the number of results from the text at the top of the results page
  */
-function getNumResults() {
+function getNumberOfResults() {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const matches = document.body.textContent!.match(/(\d+)\+?\sresults?/)
     if (!matches || matches.length < 2) {
         return null
     }
-    const numResults = parseInt(matches[1], 10)
-    return isNaN(numResults) ? null : numResults
+    const numberOfResults = parseInt(matches[1], 10)
+    return isNaN(numberOfResults) ? null : numberOfResults
 }
 
 /**
@@ -37,11 +37,11 @@ function hasNoResultsOrError(): boolean {
         throw new Error('Expected "No results", but there were search results.')
     }
 
-    const resultsElem = document.querySelector('.e2e-search-results')
-    if (!resultsElem) {
+    const resultsElement = document.querySelector('.e2e-search-results')
+    if (!resultsElement) {
         return false
     }
-    const resultsText = (resultsElem as HTMLElement).textContent
+    const resultsText = (resultsElement as HTMLElement).textContent
     if (!resultsText) {
         return false
     }
@@ -211,7 +211,9 @@ describe('Search regression test suite', () => {
                 if (results.length === 0) {
                     return false
                 }
-                const hasExcludedRepo = results.some(el => el.textContent && el.textContent.includes('google'))
+                const hasExcludedRepo = results.some(
+                    element => element.textContent && element.textContent.includes('google')
+                )
                 if (hasExcludedRepo) {
                     throw new Error('Results contain excluded repository')
                 }
@@ -239,12 +241,12 @@ describe('Search regression test suite', () => {
         test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: getNumResults.toString() })
-            await driver.page.waitForFunction(() => getNumResults() !== null)
+            await driver.page.addScriptTag({ content: getNumberOfResults.toString() })
+            await driver.page.waitForFunction(() => getNumberOfResults() !== null)
             await driver.page.waitForFunction(
                 () => {
-                    const numResults = getNumResults()
-                    return numResults !== null && numResults > 1000
+                    const numberOfResults = getNumberOfResults()
+                    return numberOfResults && numberOfResults > 1000
                 },
                 { timeout: 500 }
             )
@@ -297,15 +299,15 @@ describe('Search regression test suite', () => {
             const filenames: string[] = await driver.page.evaluate(
                 () =>
                     [...document.querySelectorAll('.e2e-search-result')]
-                        .map(el => {
-                            const header = el.querySelector('[data-testid="result-container-header"')
+                        .map(element => {
+                            const header = element.querySelector('[data-testid="result-container-header"')
                             if (!header?.textContent) {
                                 return null
                             }
                             const components = header.textContent.split(/\s/)
                             return components[components.length - 1]
                         })
-                        .filter(el => el !== null) as string[]
+                        .filter(element => element !== null) as string[]
             )
             if (!filenames.every(filename => filename.endsWith('.js'))) {
                 throw new Error('found Go results when filtering for JavaScript')
@@ -322,12 +324,12 @@ describe('Search regression test suite', () => {
         test('Global search for a filename with many results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:doc.go')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: getNumResults.toString() })
-            await driver.page.waitForFunction(() => getNumResults() !== null)
+            await driver.page.addScriptTag({ content: getNumberOfResults.toString() })
+            await driver.page.waitForFunction(() => getNumberOfResults() !== null)
             await driver.page.waitForFunction(
                 () => {
-                    const numResults = getNumResults()
-                    return numResults !== null && numResults > 25
+                    const numberResults = getNumberOfResults()
+                    return numberResults !== null && numberResults > 25
                 },
                 { timeout: 500 }
             )
@@ -335,8 +337,8 @@ describe('Search regression test suite', () => {
         test('Global symbol search with many results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+test+count:100')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: getNumResults.toString() })
-            await driver.page.waitForFunction(() => (getNumResults() || 0) >= 100)
+            await driver.page.addScriptTag({ content: getNumberOfResults.toString() })
+            await driver.page.waitForFunction(() => (getNumberOfResults() || 0) >= 100)
         })
         test('Global symbol search with 0 results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+asdfasdf')
@@ -487,12 +489,12 @@ describe('Search regression test suite', () => {
             const response = await search(gqlClient, 'repogroup:test_group route', 'V2', GQL.SearchPatternType.literal)
             expect(
                 response.results.results.length > 0 &&
-                    response.results.results.every(r => {
-                        switch (r.__typename) {
+                    response.results.results.every(result => {
+                        switch (result.__typename) {
                             case 'FileMatch':
-                                return r.repository.name === 'github.com/auth0/go-jwt-middleware'
+                                return result.repository.name === 'github.com/auth0/go-jwt-middleware'
                             case 'Repository':
-                                return r.name === 'github.com/auth0/go-jwt-middleware'
+                                return result.name === 'github.com/auth0/go-jwt-middleware'
                             default:
                                 return false
                         }

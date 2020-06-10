@@ -60,6 +60,7 @@ type bigQueryEvent struct {
 	Source          string `json:"source"`
 	Timestamp       string `json:"timestamp"`
 	Version         string `json:"version"`
+	Argument        string `json:"argument"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -78,6 +79,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 		Source:          args.Source,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
 		Version:         version.Version(),
+		Argument:        string(args.Argument),
 	})
 	if err != nil {
 		return err

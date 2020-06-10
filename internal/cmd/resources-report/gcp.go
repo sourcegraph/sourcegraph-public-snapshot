@@ -140,7 +140,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 	},
 }
 
-func collectGCPResources(ctx context.Context, since time.Time, verbose bool, labelsWhitelist map[string]string) ([]Resource, error) {
+func collectGCPResources(ctx context.Context, since time.Time, verbose bool, labelsAllowlist map[string]string) ([]Resource, error) {
 	logger := log.New(os.Stdout, "gcp: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
 		logger.Printf("collecting resources since %s", since)
@@ -187,11 +187,11 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool, lab
 		case r, ok := <-results:
 			if ok {
 				resource := r
-				// whitelist resource if configured - all GCP labels are maps
-				if labelsWhitelist != nil {
+				// allowlist resource if configured - all GCP labels are maps
+				if labelsAllowlist != nil {
 					if labels, ok := resource.Meta["labels"].(map[string]string); ok {
-						if hasKeyValue(labels, labelsWhitelist) {
-							resource.Whitelisted = true
+						if hasKeyValue(labels, labelsAllowlist) {
+							resource.Allowed = true
 						}
 					}
 				}

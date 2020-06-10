@@ -12,6 +12,7 @@ import (
 type ObservedReader struct {
 	reader                   Reader
 	readMetaOperation        *observation.Operation
+	pathsWithPrefixOperation *observation.Operation
 	readDocumentOperation    *observation.Operation
 	readResultChunkOperation *observation.Operation
 	readDefinitionsOperation *observation.Operation
@@ -43,6 +44,11 @@ func NewObserved(reader Reader, observationContext *observation.Context) Reader 
 			MetricLabels: []string{"read_meta"},
 			Metrics:      metrics,
 		}),
+		pathsWithPrefixOperation: observationContext.Operation(observation.Op{
+			Name:         "Reader.PathsWithPrefix",
+			MetricLabels: []string{"paths_with_prefix"},
+			Metrics:      metrics,
+		}),
 		readDocumentOperation: observationContext.Operation(observation.Op{
 			Name:         "Reader.ReadDocument",
 			MetricLabels: []string{"read_document"},
@@ -71,6 +77,13 @@ func (r *ObservedReader) ReadMeta(ctx context.Context) (_ types.MetaData, err er
 	ctx, endObservation := r.readMetaOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return r.reader.ReadMeta(ctx)
+}
+
+// PathsWithPrefix calls into the inner Reader and registers the observed results.
+func (r *ObservedReader) PathsWithPrefix(ctx context.Context, prefix string) (_ []string, err error) {
+	ctx, endObservation := r.pathsWithPrefixOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return r.reader.PathsWithPrefix(ctx, prefix)
 }
 
 // ReadDocument calls into the inner Reader and registers the observed results.

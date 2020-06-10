@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// MockBundleClient is a mock impelementation of the BundleClient interface
+// MockBundleClient is a mock implementation of the BundleClient interface
 // (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client)
 // used for unit testing.
@@ -16,6 +16,9 @@ type MockBundleClient struct {
 	// DefinitionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Definitions.
 	DefinitionsFunc *BundleClientDefinitionsFunc
+	// DiagnosticsFunc is an instance of a mock function object controlling
+	// the behavior of the method Diagnostics.
+	DiagnosticsFunc *BundleClientDiagnosticsFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *BundleClientExistsFunc
@@ -45,6 +48,11 @@ func NewMockBundleClient() *MockBundleClient {
 	return &MockBundleClient{
 		DefinitionsFunc: &BundleClientDefinitionsFunc{
 			defaultHook: func(context.Context, string, int, int) ([]client.Location, error) {
+				return nil, nil
+			},
+		},
+		DiagnosticsFunc: &BundleClientDiagnosticsFunc{
+			defaultHook: func(context.Context, string) ([]client.Diagnostic, error) {
 				return nil, nil
 			},
 		},
@@ -93,6 +101,9 @@ func NewMockBundleClientFrom(i client.BundleClient) *MockBundleClient {
 	return &MockBundleClient{
 		DefinitionsFunc: &BundleClientDefinitionsFunc{
 			defaultHook: i.Definitions,
+		},
+		DiagnosticsFunc: &BundleClientDiagnosticsFunc{
+			defaultHook: i.Diagnostics,
 		},
 		ExistsFunc: &BundleClientExistsFunc{
 			defaultHook: i.Exists,
@@ -230,6 +241,115 @@ func (c BundleClientDefinitionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BundleClientDefinitionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BundleClientDiagnosticsFunc describes the behavior when the Diagnostics
+// method of the parent MockBundleClient instance is invoked.
+type BundleClientDiagnosticsFunc struct {
+	defaultHook func(context.Context, string) ([]client.Diagnostic, error)
+	hooks       []func(context.Context, string) ([]client.Diagnostic, error)
+	history     []BundleClientDiagnosticsFuncCall
+	mutex       sync.Mutex
+}
+
+// Diagnostics delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBundleClient) Diagnostics(v0 context.Context, v1 string) ([]client.Diagnostic, error) {
+	r0, r1 := m.DiagnosticsFunc.nextHook()(v0, v1)
+	m.DiagnosticsFunc.appendCall(BundleClientDiagnosticsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Diagnostics method
+// of the parent MockBundleClient instance is invoked and the hook queue is
+// empty.
+func (f *BundleClientDiagnosticsFunc) SetDefaultHook(hook func(context.Context, string) ([]client.Diagnostic, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Diagnostics method of the parent MockBundleClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BundleClientDiagnosticsFunc) PushHook(hook func(context.Context, string) ([]client.Diagnostic, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleClientDiagnosticsFunc) SetDefaultReturn(r0 []client.Diagnostic, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]client.Diagnostic, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleClientDiagnosticsFunc) PushReturn(r0 []client.Diagnostic, r1 error) {
+	f.PushHook(func(context.Context, string) ([]client.Diagnostic, error) {
+		return r0, r1
+	})
+}
+
+func (f *BundleClientDiagnosticsFunc) nextHook() func(context.Context, string) ([]client.Diagnostic, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleClientDiagnosticsFunc) appendCall(r0 BundleClientDiagnosticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleClientDiagnosticsFuncCall objects
+// describing the invocations of this function.
+func (f *BundleClientDiagnosticsFunc) History() []BundleClientDiagnosticsFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleClientDiagnosticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleClientDiagnosticsFuncCall is an object that describes an invocation
+// of method Diagnostics on an instance of MockBundleClient.
+type BundleClientDiagnosticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []client.Diagnostic
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleClientDiagnosticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleClientDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -19,14 +19,14 @@ describe('CodeEditor (integration)', () => {
 
             const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                 .pipe(
-                    switchMap(c => (c && c.type === 'CodeEditor' ? c.selectionsChanges : [])),
+                    switchMap(viewer => (viewer && viewer.type === 'CodeEditor' ? viewer.selectionsChanges : [])),
                     distinctUntilChanged(),
                     take(3),
                     toArray()
                 )
                 .toPromise()
             assertToJSON(
-                values.map(v => v.map(v => Selection.fromPlain(v).toPlain())),
+                values.map(selections => selections.map(selection => Selection.fromPlain(selection).toPlain())),
                 [[], [new Selection(1, 2, 3, 4).toPlain()], []]
             )
         })
@@ -35,11 +35,11 @@ describe('CodeEditor (integration)', () => {
     describe('setDecorations', () => {
         test('adds decorations', async () => {
             const { services, extensionAPI } = await integrationTestContext()
-            const dt = extensionAPI.app.createDecorationType()
+            const decorationType = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
             const editor = await getFirstCodeEditor(extensionAPI)
-            editor.setDecorations(dt, [
+            editor.setDecorations(decorationType, [
                 {
                     range: new Range(1, 2, 3, 4),
                     backgroundColor: 'red',
@@ -56,7 +56,7 @@ describe('CodeEditor (integration)', () => {
             ] as clientType.TextDocumentDecoration[])
 
             // Clear the decorations and ensure they are removed.
-            editor.setDecorations(dt, [])
+            editor.setDecorations(decorationType, [])
             await extensionAPI.internal.sync()
             expect(
                 await services.textDocumentDecoration.getDecorations({ uri: 'file:///f' }).pipe(take(1)).toPromise()
@@ -146,11 +146,11 @@ describe('CodeEditor (integration)', () => {
 
         it('is backwards compatible with extensions that do not provide a decoration type', async () => {
             const { services, extensionAPI } = await integrationTestContext()
-            const dt = extensionAPI.app.createDecorationType()
+            const decorationType = extensionAPI.app.createDecorationType()
 
             // Set some decorations and check they are present on the client.
             const editor = await getFirstCodeEditor(extensionAPI)
-            editor.setDecorations(dt, [
+            editor.setDecorations(decorationType, [
                 {
                     range: new Range(1, 2, 3, 4),
                     backgroundColor: 'red',

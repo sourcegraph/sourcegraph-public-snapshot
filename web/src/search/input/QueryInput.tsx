@@ -282,8 +282,8 @@ export class QueryInput extends React.Component<Props, State> {
                         state => {
                             this.setState(state)
                         },
-                        err => {
-                            console.error(err)
+                        error => {
+                            console.error(error)
                         }
                     )
             )
@@ -299,9 +299,9 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(props => {
                         this.focusInputAndPositionCursorAtEnd()
-                        const q = new URLSearchParams(props.location.search)
-                        q.delete('focus')
-                        this.props.history.replace({ search: q.toString() })
+                        const searchParameters = new URLSearchParams(props.location.search)
+                        searchParameters.delete('focus')
+                        this.props.history.replace({ search: searchParameters.toString() })
                     })
             )
         }
@@ -319,8 +319,8 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (this.props.value.cursorPosition && prevProps.value.cursorPosition !== this.props.value.cursorPosition) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (this.props.value.cursorPosition && previousProps.value.cursorPosition !== this.props.value.cursorPosition) {
             this.focusInputAndPositionCursor(this.props.value.cursorPosition)
         }
         this.componentUpdates.next(this.props)
@@ -427,8 +427,8 @@ export class QueryInput extends React.Component<Props, State> {
                     }}
                 </Downshift>
                 {this.props.keyboardShortcutForFocus &&
-                    this.props.keyboardShortcutForFocus.keybindings.map((keybinding, i) => (
-                        <Shortcut key={i} {...keybinding} onMatch={this.focusInputAndPositionCursorAtEnd} />
+                    this.props.keyboardShortcutForFocus.keybindings.map((keybinding, index) => (
+                        <Shortcut key={index} {...keybinding} onMatch={this.focusInputAndPositionCursorAtEnd} />
                     ))}
             </>
         )

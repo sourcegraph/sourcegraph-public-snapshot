@@ -101,12 +101,12 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     private editor: monaco.editor.ICodeEditor | undefined
 
-    private setRef = (e: HTMLElement | null): void => {
-        if (!e) {
+    private setRef = (element: HTMLElement | null): void => {
+        if (!element) {
             return
         }
         this.props.editorWillMount(monaco)
-        const editor = monaco.editor.create(e, {
+        const editor = monaco.editor.create(element, {
             value: this.props.value,
             language: this.props.language,
             theme: this.props.isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK,
@@ -118,8 +118,8 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         this.editor = editor
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (this.props.value !== prevProps.value && this.editor && this.editor.getValue() !== this.props.value) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (this.props.value !== previousProps.value && this.editor && this.editor.getValue() !== this.props.value) {
             this.editor.setValue(this.props.value || '')
         }
         this.componentUpdates.next(this.props)
@@ -160,8 +160,8 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                     className={classNames(this.props.className, this.props.border !== false && 'border')}
                 />
                 {this.props.keyboardShortcutForFocus &&
-                    this.props.keyboardShortcutForFocus.keybindings.map((keybinding, i) => (
-                        <Shortcut key={i} {...keybinding} onMatch={this.focusInput} />
+                    this.props.keyboardShortcutForFocus.keybindings.map((keybinding, index) => (
+                        <Shortcut key={index} {...keybinding} onMatch={this.focusInput} />
                     ))}
             </>
         )

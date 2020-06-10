@@ -71,8 +71,28 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
-        path: '/lsif-uploads/:id',
+        path: '/code-intelligence/uploads',
+        render: lazyComponent(() => import('../codeintel/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
         exact: true,
+    },
+    {
+        path: '/code-intelligence/uploads/:id',
+        render: lazyComponent(() => import('../codeintel/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
+        exact: true,
+    },
+    {
+        path: '/code-intelligence/indexes',
+        render: lazyComponent(() => import('../codeintel/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
+        exact: true,
+    },
+    {
+        path: '/code-intelligence/indexes/:id',
+        render: lazyComponent(() => import('../codeintel/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
+        exact: true,
+    },
+    {
+        path: '/lsif-uploads/:id',
         render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
+        exact: true,
     },
 ]

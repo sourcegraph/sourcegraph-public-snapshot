@@ -25,6 +25,19 @@ exports[`CloseDeleteCampaignPrompt none still open 1`] = `
           <p>
             message
           </p>
+          <div
+            className="form-group"
+          >
+            <label>
+              <input
+                checked={false}
+                onChange={[Function]}
+                type="checkbox"
+              />
+               
+              Close open changesets on code hosts
+            </label>
+          </div>
           <button
             className="btn mr-1 btn-danger"
             disabled={false}
@@ -75,11 +88,7 @@ exports[`CloseDeleteCampaignPrompt some still open 1`] = `
                 type="checkbox"
               />
                
-              Close 
-              2
-               open 
-              changesets
-               on code hosts
+              Close open changesets on code hosts
             </label>
           </div>
           <button

@@ -82,11 +82,11 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 	gitlab.MockListTree = gitlabMock.ListTree
 
 	repos := map[string]*types.Repo{
-		"u1/repo1":       repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"),
-		"u2/repo1":       repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"),
-		"u3/repo1":       repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"),
-		"internal/repo1": repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"),
-		"public/repo1":   repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"),
+		"u1/repo1":       repo("u1/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "10"),
+		"u2/repo1":       repo("u2/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "20"),
+		"u3/repo1":       repo("u3/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "30"),
+		"internal/repo1": repo("internal/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "981"),
+		"public/repo1":   repo("public/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "991"),
 	}
 
 	tests := []test{
@@ -248,7 +248,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 
 	// Initial request for private repo
 	if _, err := authzProvider.RepoPerms(ctx,
-		acct(t, 1, gitlab.ServiceType, "https://gitlab.mine/", "1", "oauth-u1"),
+		acct(t, 1, extsvc.TypeGitLab, "https://gitlab.mine/", "1", "oauth-u1"),
 		[]*types.Repo{
 			repo("10", "gitlab", "https://gitlab.mine/", "10"),
 		},
@@ -268,7 +268,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 
 	// Exact same request
 	if _, err := authzProvider.RepoPerms(ctx,
-		acct(t, 1, gitlab.ServiceType, "https://gitlab.mine/", "1", "oauth-u1"),
+		acct(t, 1, extsvc.TypeGitLab, "https://gitlab.mine/", "1", "oauth-u1"),
 		[]*types.Repo{
 			repo("10", "gitlab", "https://gitlab.mine/", "10"),
 		},
@@ -288,7 +288,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 
 	// Different request, on internal repo
 	if _, err := authzProvider.RepoPerms(ctx,
-		acct(t, 2, gitlab.ServiceType, "https://gitlab.mine/", "2", "oauth-u2"),
+		acct(t, 2, extsvc.TypeGitLab, "https://gitlab.mine/", "2", "oauth-u2"),
 		[]*types.Repo{
 			repo("981", "gitlab", "https://gitlab.mine/", "981"),
 		},
@@ -307,7 +307,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 
 	// Make initial request twice again, expect cache miss the first time around
 	if _, err := authzProvider.RepoPerms(ctx,
-		acct(t, 1, gitlab.ServiceType, "https://gitlab.mine/", "1", "oauth-u1"),
+		acct(t, 1, extsvc.TypeGitLab, "https://gitlab.mine/", "1", "oauth-u1"),
 		[]*types.Repo{
 			repo("10", "gitlab", "https://gitlab.mine/", "10"),
 		},
@@ -366,10 +366,10 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 		},
 	}
 	repos := map[string]*types.Repo{
-		"u1/repo1":       repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"),
-		"u2/repo1":       repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"),
-		"internal/repo1": repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"),
-		"public/repo1":   repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"),
+		"u1/repo1":       repo("u1/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "10"),
+		"u2/repo1":       repo("u2/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "20"),
+		"internal/repo1": repo("internal/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "981"),
+		"public/repo1":   repo("public/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "991"),
 	}
 	repoSlice := make([]*types.Repo, 0, len(repos))
 	for _, r := range repos {

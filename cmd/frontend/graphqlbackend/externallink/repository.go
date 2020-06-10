@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -30,7 +31,7 @@ func Repository(ctx context.Context, repo *types.Repo) (links []*Resolver, err e
 	if phabRepo != nil {
 		links = append(links, &Resolver{
 			url:         strings.TrimSuffix(phabRepo.URL, "/") + "/diffusion/" + phabRepo.Callsign,
-			serviceType: "phabricator",
+			serviceType: extsvc.TypePhabricator,
 		})
 	}
 	if link != nil && link.Root != "" {
@@ -55,7 +56,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 		if err == nil && string(branchName) != "" {
 			links = append(links, &Resolver{
 				url:         fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
-				serviceType: "phabricator",
+				serviceType: extsvc.TypePhabricator,
 			})
 		}
 	}
@@ -84,7 +85,7 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 	if phabRepo != nil {
 		links = append(links, &Resolver{
 			url:         fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitStr),
-			serviceType: "phabricator",
+			serviceType: extsvc.TypePhabricator,
 		})
 	}
 

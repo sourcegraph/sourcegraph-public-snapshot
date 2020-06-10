@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// MockBundleManagerClient is a mock impelementation of the
+// MockBundleManagerClient is a mock implementation of the
 // BundleManagerClient interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client)
 // used for unit testing.

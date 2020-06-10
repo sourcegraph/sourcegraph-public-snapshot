@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -24,7 +25,7 @@ func TestCalcCounts(t *testing.T) {
 		want       []*ChangesetCounts
 	}{
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -72,7 +73,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset created and closed before start time",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(8)),
@@ -122,7 +123,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -158,7 +159,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open merged different times",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -198,7 +199,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "changeset merged and closed at same time",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -215,7 +216,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "changeset merged and closed at same time, reversed order in slice",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -232,7 +233,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open closed reopened merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(4)),
@@ -274,7 +275,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open closed reopened merged different times",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(5)),
@@ -326,7 +327,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open closed reopened merged, unsorted events",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(4)),
@@ -368,7 +369,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, approved, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -425,7 +426,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, approved, closed, reopened",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -463,7 +464,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, approved, closed, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -503,7 +504,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, changes-requested, closed, reopened",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -541,7 +542,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, changes-requested, closed, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -560,7 +561,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, comment review, approved, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -600,7 +601,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset multiple approvals counting once",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
@@ -632,7 +633,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset multiple changes-requested reviews counting once",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
@@ -664,7 +665,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, changes-requested, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -702,7 +703,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open different review stages before merge",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(6)),
@@ -762,7 +763,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "time slice of multiple changesets in different stages before merge",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(6)),
@@ -787,7 +788,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested then approved by same person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
@@ -819,7 +820,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approved then changes-requested by same person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
@@ -851,7 +852,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approval by one person then changes-requested by another",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
@@ -883,7 +884,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested by one person then approval by another",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
@@ -915,7 +916,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested by one person, approval by another, then approval by first person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -951,7 +952,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approval by one person, changes-requested by another, then changes-requested by first person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -1144,7 +1145,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested then dismissed event by same person with dismissed state",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
@@ -1161,7 +1162,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approval by one person, changes-requested by another, then dismissal of changes-requested",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -1180,7 +1181,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested, then another dismissed review by same person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
