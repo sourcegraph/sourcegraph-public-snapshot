@@ -13,5 +13,18 @@ func main() {
 	if debug {
 		log.Println("enterprise edition")
 	}
+
+	shared.ProcfileAdditions = append(
+		shared.ProcfileAdditions,
+		`precise-code-intel-bundle-manager: precise-code-intel-bundle-manager`,
+		`precise-code-intel-worker: precise-code-intel-worker`,
+	)
+
+	shared.SrcProfServices = append(
+		shared.SrcProfServices,
+		map[string]string{"Name": "precise-code-intel-bundle-manager", "Host": "127.0.0.1:6087"},
+		map[string]string{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
+	)
+
 	shared.Main()
 }

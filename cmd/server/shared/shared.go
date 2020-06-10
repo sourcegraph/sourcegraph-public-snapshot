@@ -136,8 +136,6 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`precise-code-intel-bundle-manager: precise-code-intel-bundle-manager`,
-		`precise-code-intel-worker: precise-code-intel-worker`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,
