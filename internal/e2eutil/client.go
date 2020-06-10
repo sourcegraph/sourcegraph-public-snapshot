@@ -182,7 +182,7 @@ func (c *Client) authenticate(path string, body interface{}) error {
 	}
 	c.sessionCookie = sessionCookie
 
-	userID, err := c.currentUserID()
+	userID, err := c.CurrentUserID("")
 	if err != nil {
 		return errors.Wrap(err, "get current user")
 	}
@@ -190,8 +190,9 @@ func (c *Client) authenticate(path string, body interface{}) error {
 	return nil
 }
 
-// currentUserID returns the current user's GraphQL node ID.
-func (c *Client) currentUserID() (string, error) {
+// CurrentUserID returns the current authenticated user's GraphQL node ID.
+// An optional token can be passed to impersonate other users.
+func (c *Client) CurrentUserID(token string) (string, error) {
 	const query = `
 	query {
 		currentUser {
@@ -206,7 +207,7 @@ func (c *Client) currentUserID() (string, error) {
 			} `json:"currentUser"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", query, nil, &resp)
+	err := c.GraphQL(token, query, nil, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "request GraphQL")
 	}
@@ -251,26 +252,29 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 		return errors.Wrap(err, "read response body")
 	}
 
-	// Try and see unmarshalling to errors
-	var errResp struct {
-		Errors []struct {
-			Message string `json:"message"`
-		} `json:"errors"`
-	}
-	err = jsoniter.Unmarshal(body, &errResp)
-	if err != nil {
-		return errors.Wrap(err, "unmarshal response body to errors")
-	}
-	if len(errResp.Errors) > 0 {
-		var errs *multierror.Error
-		for _, err := range errResp.Errors {
-			errs = multierror.Append(errs, errors.New(err.Message))
+	// Check if the response format should be JSON
+	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+		// Try and see unmarshalling to errors
+		var errResp struct {
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
 		}
-		return errs
+		err = jsoniter.Unmarshal(body, &errResp)
+		if err != nil {
+			return errors.Wrap(err, "unmarshal response body to errors")
+		}
+		if len(errResp.Errors) > 0 {
+			var errs *multierror.Error
+			for _, err := range errResp.Errors {
+				errs = multierror.Append(errs, errors.New(err.Message))
+			}
+			return errs
+		}
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(string(body))
+		return errors.Errorf("%d: %s", resp.StatusCode, string(body))
 	}
 
 	if target == nil {
