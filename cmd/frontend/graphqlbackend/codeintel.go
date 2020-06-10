@@ -9,9 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// NewCodeIntelResolver will be set by enterprise.
-var NewCodeIntelResolver func() CodeIntelResolver
-
 type CodeIntelResolver interface {
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
 	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
@@ -27,6 +24,8 @@ type CodeIntelResolver interface {
 var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
 
 type defaultCodeIntelResolver struct{}
+
+var DefaultCodeIntelResolver CodeIntelResolver = defaultCodeIntelResolver{}
 
 func (defaultCodeIntelResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error) {
 	return nil, codeIntelOnlyInEnterprise

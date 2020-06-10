@@ -52,9 +52,9 @@ import (
 func main() {
 	shared.Main(func() enterprise.Services {
 		initLicensing()
-		initAuthz()
-		initCampaigns()
-		NewCodeIntelUploadHandler := initCodeIntel()
+		authzResolver := initAuthz()
+		campaignsResolver := initCampaigns()
+		codeIntelResolver, NewCodeIntelUploadHandler := initCodeIntel()
 
 		clock := func() time.Time {
 			return time.Now().UTC().Truncate(time.Microsecond)
@@ -117,6 +117,9 @@ func main() {
 			GithubWebhook:             GithubWebhook,
 			BitbucketServerWebhook:    BitbucketServerWebhook,
 			NewCodeIntelUploadHandler: NewCodeIntelUploadHandler,
+			AuthzResolver:             authzResolver,
+			CampaignsResolver:         campaignsResolver,
+			CodeIntelResolver:         codeIntelResolver,
 		}
 	})
 }
@@ -156,21 +159,19 @@ func initLicensing() {
 	}
 }
 
-func initAuthz() {
-	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
-		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
-			return time.Now().UTC().Truncate(time.Microsecond)
-		})
-	}
+func initAuthz() graphqlbackend.AuthzResolver {
+	return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	})
 }
 
-func initCampaigns() {
-	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
+func initCampaigns() graphqlbackend.CampaignsResolver {
+	return campaignsResolvers.NewResolver(dbconn.Global)
 }
 
 var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
 
-func initCodeIntel() enterprise.CodeIntelUploadHandlerFactory {
+func initCodeIntel() (graphqlbackend.CodeIntelResolver, enterprise.NewCodeIntelUploadHandler) {
 	if bundleManagerURL == "" {
 		log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
 	}
@@ -185,17 +186,13 @@ func initCodeIntel() enterprise.CodeIntelUploadHandlerFactory {
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	api := codeintelapi.NewObserved(codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
 
-	graphqlbackend.NewCodeIntelResolver = func() graphqlbackend.CodeIntelResolver {
-		return codeintelResolvers.NewResolver(
+	return codeintelResolvers.NewResolver(
 			db,
 			bundleManagerClient,
 			api,
-		)
-	}
-
-	return func(internal bool) http.Handler {
-		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient, internal)
-	}
+		), func(internal bool) http.Handler {
+			return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient, internal)
+		}
 }
 
 type usersStore struct{}

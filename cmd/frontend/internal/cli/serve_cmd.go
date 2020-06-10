@@ -202,25 +202,7 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	// graphqlbackend.CampaignsResolver is set by enterprise frontend
-	var campaignsResolver graphqlbackend.CampaignsResolver
-	if graphqlbackend.NewCampaignsResolver != nil {
-		campaignsResolver = graphqlbackend.NewCampaignsResolver(dbconn.Global)
-	}
-
-	// graphqlbackend.CodeIntelResolver is set by enterprise frontend
-	var codeIntelResolver graphqlbackend.CodeIntelResolver
-	if graphqlbackend.NewCodeIntelResolver != nil {
-		codeIntelResolver = graphqlbackend.NewCodeIntelResolver()
-	}
-
-	// graphqlbackend.AuthzResolver is set by enterprise frontend
-	var authzResolver graphqlbackend.AuthzResolver
-	if graphqlbackend.NewAuthzResolver != nil {
-		authzResolver = graphqlbackend.NewAuthzResolver()
-	}
-
-	schema, err := graphqlbackend.NewSchema(campaignsResolver, codeIntelResolver, authzResolver)
+	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver)
 	if err != nil {
 		return err
 	}
