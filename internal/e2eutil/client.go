@@ -252,8 +252,8 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 		return errors.Wrap(err, "read response body")
 	}
 
-	// Quick check if the response is a JSON
-	if len(body) > 0 && body[0] == '{' {
+	// Check if the response format should be JSON
+	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
 		// Try and see unmarshalling to errors
 		var errResp struct {
 			Errors []struct {
