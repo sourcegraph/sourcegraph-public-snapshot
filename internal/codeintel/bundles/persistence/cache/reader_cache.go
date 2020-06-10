@@ -2,8 +2,8 @@ package cache
 
 import (
 	"context"
-	"errors"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 )
@@ -32,9 +32,6 @@ type ReaderOpener func(key string) (persistence.Reader, error)
 // locks the given reader argument so that it is not closed while in use.
 type HandlerFunc func(reader persistence.Reader) error
 
-// ErrReaderInitializationDeadlineExceeded occurs when a new reader takes too long to initialize.
-var ErrReaderInitializationDeadlineExceeded = errors.New("reader initialization deadline exceeded")
-
 type readerCache struct {
 	opener ReaderOpener
 
@@ -59,13 +56,16 @@ func newReaderCache(opener ReaderOpener) *readerCache {
 // initialization is not canceled due to a context deadline here and will continue to run in the
 // background until completion.
 func (c *readerCache) WithReader(ctx context.Context, key string, f HandlerFunc) error {
-	entry := c.getLockedEntry(key)
+	entry, err := c.getLockedEntry(ctx, key)
+	if err != nil {
+		return err
+	}
 	defer entry.dec()
 
 	select {
 	case <-makeInitChannel(entry):
 	case <-ctx.Done():
-		return ErrReaderInitializationDeadlineExceeded
+		return ctx.Err()
 	}
 
 	if entry.err != nil {
@@ -75,25 +75,26 @@ func (c *readerCache) WithReader(ctx context.Context, key string, f HandlerFunc)
 	return f(entry.reader)
 }
 
-// getLockedEntry gets or creates a cache entry and ensures that the entry's refcount can be
-// incremented. This method will retry until such an entry is available. The caller must ensure
+// getLockedEntry gets a non-disposed cache entry or creates a new one. The caller must ensure
 // that the returned entry's refcount is decremented after use.
-func (c *readerCache) getLockedEntry(key string) *readerCacheEntry {
+func (c *readerCache) getLockedEntry(ctx context.Context, key string) (*readerCacheEntry, error) {
 	for {
-		// This loop should not run for long, so we don't bother checking the
-		// cache request's context deadline. This condition is only hit when we
-		// fall between the entry's refCount decrement and its removal from the
-		// cache map.
 		if entry, locked := c.getOrCreateEntry(key); locked || entry.inc() {
-			return entry
+			return entry, nil
+		}
+
+		select {
+		case <-time.After(time.Millisecond):
+		case <-ctx.Done():
+			return nil, ctx.Err()
 		}
 	}
 }
 
 // getOrCreateEntry retrieves an existing reader cache entry for the given key. If one does not
 // exist, a new one is created. This method also returns a boolean flag indicating whether or not
-// the refCount was incremented as part of construction. If this value is true, the caller is expected
-// to decrement the entry's refcount after use (but not increment it).
+// the refCount was incremented as part of construction. If this value is true, the caller is
+// expected to decrement the entry's refcount after use (but not increment it).
 func (c *readerCache) getOrCreateEntry(key string) (*readerCacheEntry, bool) {
 	if entry := c.getEntry(key); entry != nil {
 		return entry, false
@@ -111,8 +112,8 @@ func (c *readerCache) getEntry(key string) *readerCacheEntry {
 }
 
 // createEntry attempts to create a new entry for the given key if such an entry does not already exist.
-// This method also returns a boolean flag indicating whether or not the entry was just created. In this
-// case, the entry's refcount is set to one.
+// This method also returns a boolean flag indicating whether or not the entry was just created. Newly
+// created entries have a refcount of zero (and are already marked as in-use for the calling function).
 func (c *readerCache) createEntry(key string) (*readerCacheEntry, bool) {
 	c.m.Lock()
 	defer c.m.Unlock()
@@ -214,7 +215,7 @@ func (e *readerCacheEntry) waitUntilInitialized() {
 
 // closeOnceUnused blocks until the refcount of the entry goes to zero. The entry's disposed
 // flag is set to indicate to future users that the underlying reader is no longer usable. The
-// entry's reader is then closedK (if it was initialized successfully).
+// entry's reader is then closed (if it was initialized successfully).
 func (e *readerCacheEntry) closeOnceUnused() {
 	e.m.Lock()
 	for e.refCount > 0 {

@@ -181,7 +181,40 @@ func TestReaderCacheDisposedEntry(t *testing.T) {
 	}
 }
 
-func TestReaderContextCancel(t *testing.T) {
+func TestReaderCacheDisposedEntryContextCanceled(t *testing.T) {
+	sync := make(chan struct{}) // signals close routine has been scheduled
+
+	reader := persistencemocks.NewMockReader()
+	reader.CloseFunc.PushHook(func() error {
+		close(sync)
+		select {} // block forever
+	})
+
+	opener := func(filename string) (persistence.Reader, error) {
+		return reader, nil
+	}
+
+	handler := func(reader persistence.Reader) error {
+		return nil
+	}
+
+	cache := newReaderCache(opener)
+
+	if err := cache.WithReader(context.Background(), "test", handler); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	<-sync
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if err := cache.WithReader(ctx, "test", handler); err != context.Canceled {
+		t.Fatalf("unexpected error. want=%q have=%q", context.Canceled, err)
+	}
+}
+
+func TestReaderContextCanceled(t *testing.T) {
 	wait := make(chan struct{})
 	defer close(wait)
 
@@ -199,7 +232,7 @@ func TestReaderContextCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	if err := cache.WithReader(ctx, "test", handler); err != ErrReaderInitializationDeadlineExceeded {
-		t.Fatalf("unexpected error. want=%q have=%q", ErrReaderInitializationDeadlineExceeded, err)
+	if err := cache.WithReader(ctx, "test", handler); err != context.Canceled {
+		t.Fatalf("unexpected error. want=%q have=%q", context.Canceled, err)
 	}
 }
