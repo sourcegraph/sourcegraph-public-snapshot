@@ -213,12 +213,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             <Menu>
                 {({ isExpanded }) => (
                     <div className="nav-link py-0 px-0 status-messages-nav-item__nav-link">
-                        <MenuButton
-                            className="btn btn-link"
-                            nav={true}
-                            onKeyDown={this.toggleIsOpen}
-                            onClick={this.toggleIsOpen}
-                        >
+                        <MenuButton className="btn btn-link" onKeyDown={this.toggleIsOpen} onClick={this.toggleIsOpen}>
                             {this.renderIcon()}
                         </MenuButton>
                         <MenuPopover
