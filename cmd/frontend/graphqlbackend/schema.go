@@ -2354,6 +2354,7 @@ type Diagnostic {
     message: String
 }
 
+# Represents the severity level of a diagnostic.
 enum DiagnosticSeverity {
     ERROR
     WARNING
