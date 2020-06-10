@@ -1,11 +1,60 @@
 package ratelimit
 
 import (
+	"context"
+	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
 )
+
+// Limiter is implemented by rate limiters. It is up to the implementation as to whether
+// it blocks or fails fast when the limit has been exceeded.
+type Limiter interface {
+	Limit(ctx context.Context, n int) error
+}
+
+func NewBlockingLimiter(r *rate.Limiter) *BlockingLimiter {
+	return &BlockingLimiter{
+		r: r,
+	}
+}
+
+type BlockingLimiter struct {
+	r *rate.Limiter
+}
+
+// Limit blocks until bl permits n events to happen.
+// It returns an error if n exceeds the Limiter's burst size, the Context is
+// canceled, or the expected wait time exceeds the Context's Deadline.
+// The burst limit is ignored if the rate limit is Inf.
+func (bl *BlockingLimiter) Limit(ctx context.Context, n int) error {
+	return bl.r.WaitN(ctx, n)
+}
+
+func NewNonBlockingLimiter(r *rate.Limiter) *NonBlockingLimiter {
+	return &NonBlockingLimiter{
+		r: r,
+	}
+}
+
+type NonBlockingLimiter struct {
+	r *rate.Limiter
+}
+
+// Limit checks if the rate limit has been exceeded and returns ErrExceeded otherwise nil
+func (bl *NonBlockingLimiter) Limit(ctx context.Context, n int) error {
+	res := bl.r.ReserveN(time.Now(), n)
+	if res.OK() {
+		return nil
+	}
+	res.Cancel()
+	return ErrExceeded
+}
+
+var ErrExceeded = errors.New("rate limit exceeded")
 
 // Monitor monitors an external service's rate limit based on the X-RateLimit-Remaining or RateLimit-Remaining
 // headers. It supports both GitHub's and GitLab's APIs.
