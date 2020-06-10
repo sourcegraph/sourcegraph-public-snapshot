@@ -316,6 +316,11 @@ export const ContributableViewContainer = {
      * A view contributed to directory pages.
      */
     Directory: 'directory',
+
+    /**
+     * A view contributed to the area on the homepage below the search box.
+     */
+    Homepage: 'homepage',
 } as const
 export type ContributableViewContainer = typeof ContributableViewContainer[keyof typeof ContributableViewContainer]
 

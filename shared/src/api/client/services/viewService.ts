@@ -17,6 +17,7 @@ export interface View extends ExtensionView {}
  */
 export interface ViewContexts {
     [ContributableViewContainer.Panel]: never
+    [ContributableViewContainer.Homepage]: {}
     [ContributableViewContainer.GlobalPage]: Record<string, string>
     [ContributableViewContainer.Directory]: DeepReplace<DirectoryViewContext, URL, string>
 }
