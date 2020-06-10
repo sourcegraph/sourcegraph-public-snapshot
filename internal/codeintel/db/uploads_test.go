@@ -691,7 +691,7 @@ func TestRequeue(t *testing.T) {
 	} else if upload.State != "queued" {
 		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
 	} else if upload.ProcessAfter == nil || *upload.ProcessAfter != after {
-		t.Errorf("unexpected process after. want=%s have=%s", after, upload.State)
+		t.Errorf("unexpected process after. want=%s have=%s", after, upload.ProcessAfter)
 	}
 }
 

@@ -562,7 +562,7 @@ func TestRequeueIndex(t *testing.T) {
 	} else if index.State != "queued" {
 		t.Errorf("unexpected state. want=%q have=%q", "queued", index.State)
 	} else if index.ProcessAfter == nil || *index.ProcessAfter != after {
-		t.Errorf("unexpected process after. want=%s have=%s", after, index.State)
+		t.Errorf("unexpected process after. want=%s have=%s", after, index.ProcessAfter)
 	}
 }
 
