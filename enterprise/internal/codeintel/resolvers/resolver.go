@@ -157,7 +157,7 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*graphql
 }
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *graphqlbackend.GitBlobLSIFDataArgs) (graphqlbackend.GitBlobLSIFDataResolver, error) {
-	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path, args.ExactPath, args.Indexer)
+	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
 	if err != nil {
 		return nil, err
 	}

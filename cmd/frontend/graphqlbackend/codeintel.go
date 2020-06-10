@@ -172,7 +172,7 @@ type GitBlobLSIFDataArgs struct {
 	Commit     api.CommitID
 	Path       string
 	ExactPath  bool
-	Indexer    string
+	ToolName   string
 	UploadID   int64
 }
 
