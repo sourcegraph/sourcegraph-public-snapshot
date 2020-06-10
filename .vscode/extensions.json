@@ -14,5 +14,5 @@
     "foxundermoon.shell-format",
     "timonwong.shellcheck",
   ],
-  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint", "ms-vscode.Go"],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"],
 }
