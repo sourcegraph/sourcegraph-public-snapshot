@@ -678,7 +678,7 @@ func TestRequeue(t *testing.T) {
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "processing"})
 
-	after := time.Now().UTC().Add(time.Hour)
+	after := time.Unix(1587396557, 0).UTC().Add(time.Hour)
 
 	if err := db.Requeue(context.Background(), 1, after); err != nil {
 		t.Fatalf("unexpected error requeueing index: %s", err)

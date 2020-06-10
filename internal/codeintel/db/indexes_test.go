@@ -549,7 +549,7 @@ func TestRequeueIndex(t *testing.T) {
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "processing"})
 
-	after := time.Now().UTC().Add(time.Hour)
+	after := time.Unix(1587396557, 0).UTC().Add(time.Hour)
 
 	if err := db.RequeueIndex(context.Background(), 1, after); err != nil {
 		t.Fatalf("unexpected error requeueing index: %s", err)
