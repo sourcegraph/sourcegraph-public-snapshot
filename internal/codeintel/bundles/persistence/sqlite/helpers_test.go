@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -31,7 +32,7 @@ func testReader(t *testing.T, filename string) persistence.Reader {
 		t.Fatalf("unexpected error writing file: %s", err)
 	}
 
-	cache, err := NewCache(1)
+	cache, err := cache.NewDataCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}

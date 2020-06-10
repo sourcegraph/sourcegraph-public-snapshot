@@ -10,7 +10,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
-	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
 )
 
@@ -22,7 +23,7 @@ var NumMigrateRoutines = 1 // runtime.NumCPU() * 2
 // cost cost some intersection of migrations and database size, we try to pay this cost up-front instead
 // of being paid on-demand when the database is opened within the query path. This method does not block
 // the startup of the bundle manager as it does not change the correctness of the service.
-func Migrate(bundleDir string, cache sqlitereader.Cache) error {
+func Migrate(bundleDir string, readerCache cache.ReaderCache) error {
 	version := migrate.CurrentSchemaVersion
 	migrationMarkerFilename := paths.MigrationMarkerFilename(bundleDir, version)
 
@@ -60,7 +61,7 @@ func Migrate(bundleDir string, cache sqlitereader.Cache) error {
 			for filename := range ch {
 				log15.Debug("Migrating bundle", "filename", filename)
 
-				if err := migrateDB(context.Background(), filename, cache); err != nil {
+				if err := readerCache.WithReader(context.Background(), filename, noopHandler); err != nil {
 					log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
 				}
 			}
@@ -75,20 +76,6 @@ func Migrate(bundleDir string, cache sqlitereader.Cache) error {
 
 	for _, path := range paths {
 		ch <- path
-	}
-
-	return nil
-}
-
-// migrateDB opens then immediately closes a reader instance for the given db filename.
-func migrateDB(ctx context.Context, filename string, cache sqlitereader.Cache) error {
-	sqliteReader, err := sqlitereader.NewReader(ctx, filename, cache)
-	if err != nil {
-		return err
-	}
-
-	if err := sqliteReader.Close(); err != nil {
-		return err
 	}
 
 	return nil
@@ -144,4 +131,8 @@ func touchFile(filename string) {
 		log15.Error("Failed to create migration marker", "err", err)
 		return
 	}
+}
+
+func noopHandler(reader persistence.Reader) error {
+	return nil
 }
