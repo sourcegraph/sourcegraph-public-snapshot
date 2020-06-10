@@ -1129,7 +1129,7 @@ func computeCampaignUpdateDiff(
 	}
 
 	for _, j := range newPatches {
-		// If the user is missing permissions for any if the new patches, we
+		// If the user is missing permissions for any of the new patches, we
 		// return an error instead of skipping patches, so we don't end up with
 		// an unfixable state (i.e. unpublished patch + changeset for same
 		// repo).
