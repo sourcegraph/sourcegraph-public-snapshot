@@ -164,6 +164,7 @@ type LSIFQueryArgs struct {
 	Repository *RepositoryResolver
 	Commit     api.CommitID
 	Path       string
+	ExactPath  bool
 	Indexer    string
 	UploadID   int64
 }

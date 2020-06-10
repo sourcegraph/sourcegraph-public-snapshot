@@ -303,6 +303,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ Indexer *
 		Repository: r.Repository(),
 		Commit:     api.CommitID(r.Commit().OID()),
 		Path:       r.Path(),
+		ExactPath:  !r.stat.IsDir(),
 		Indexer:    indexer,
 	})
 }
