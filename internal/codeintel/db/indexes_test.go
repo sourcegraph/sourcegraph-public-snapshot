@@ -59,11 +59,12 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	db := testDB()
 
 	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(+time.Minute * 5)
+	t2 := t1.Add(+time.Minute * 6)
 	t3 := t1.Add(+time.Minute * 3)
 	t4 := t1.Add(+time.Minute * 1)
 	t5 := t1.Add(+time.Minute * 4)
 	t6 := t1.Add(+time.Minute * 2)
+	t7 := t1.Add(+time.Minute * 5)
 
 	insertIndexes(t, dbconn.Global,
 		Index{ID: 1, QueuedAt: t1, State: "queued"},
@@ -72,12 +73,13 @@ func TestGetQueuedIndexRank(t *testing.T) {
 		Index{ID: 4, QueuedAt: t4, State: "queued"},
 		Index{ID: 5, QueuedAt: t5, State: "queued"},
 		Index{ID: 6, QueuedAt: t6, State: "processing"},
+		Index{ID: 7, QueuedAt: t1, State: "queued", ProcessAfter: &t7},
 	)
 
 	if index, _, _ := db.GetIndexByID(context.Background(), 1); index.Rank == nil || *index.Rank != 1 {
 		t.Errorf("unexpected rank. want=%d have=%s", 1, printableRank{index.Rank})
 	}
-	if index, _, _ := db.GetIndexByID(context.Background(), 2); index.Rank == nil || *index.Rank != 5 {
+	if index, _, _ := db.GetIndexByID(context.Background(), 2); index.Rank == nil || *index.Rank != 6 {
 		t.Errorf("unexpected rank. want=%d have=%s", 5, printableRank{index.Rank})
 	}
 	if index, _, _ := db.GetIndexByID(context.Background(), 3); index.Rank == nil || *index.Rank != 3 {
@@ -93,6 +95,11 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	// Only considers queued indexes to determine rank
 	if index, _, _ := db.GetIndexByID(context.Background(), 6); index.Rank != nil {
 		t.Errorf("unexpected rank. want=%s have=%s", "nil", printableRank{index.Rank})
+	}
+
+	// Process after takes priority over upload time
+	if upload, _, _ := db.GetIndexByID(context.Background(), 7); upload.Rank == nil || *upload.Rank != 5 {
+		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
 	}
 }
 
@@ -475,6 +482,47 @@ func TestDequeueIndexSkipsLocked(t *testing.T) {
 	}
 }
 
+func TestDequeueIndexSkipsDelayed(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t2.Add(time.Minute)
+	insertIndexes(
+		t,
+		dbconn.Global,
+		Index{ID: 1, State: "queued", QueuedAt: t1, ProcessAfter: &t2},
+		Index{ID: 2, State: "processing", QueuedAt: t2},
+		Index{ID: 3, State: "queued", QueuedAt: t3},
+	)
+
+	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx1.Rollback() }()
+
+	index, tx2, ok, err := db.DequeueIndex(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing index: %s", err)
+	}
+	if !ok {
+		t.Fatalf("expected something to be dequeueable")
+	}
+	defer func() { _ = tx2.Done(nil) }()
+
+	if index.ID != 3 {
+		t.Errorf("unexpected index id. want=%d have=%d", 3, index.ID)
+	}
+	if index.State != "processing" {
+		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
+	}
+}
+
 func TestDequeueIndexEmpty(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -489,6 +537,32 @@ func TestDequeueIndexEmpty(t *testing.T) {
 	if ok {
 		_ = tx.Done(nil)
 		t.Fatalf("unexpected dequeue")
+	}
+}
+
+func TestRequeueIndex(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "processing"})
+
+	after := time.Unix(1587396557, 0).UTC().Add(time.Hour)
+
+	if err := db.RequeueIndex(context.Background(), 1, after); err != nil {
+		t.Fatalf("unexpected error requeueing index: %s", err)
+	}
+
+	if index, exists, err := db.GetIndexByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if index.State != "queued" {
+		t.Errorf("unexpected state. want=%q have=%q", "queued", index.State)
+	} else if index.ProcessAfter == nil || *index.ProcessAfter != after {
+		t.Errorf("unexpected process after. want=%s have=%s", after, index.ProcessAfter)
 	}
 }
 

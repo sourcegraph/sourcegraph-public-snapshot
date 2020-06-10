@@ -62,6 +62,8 @@
 // 1528395679_change_error_index_on_changeset_jobs.up.sql (146B)
 // 1528395680_lsif_packages_index.down.sql (154B)
 // 1528395680_lsif_packages_index.up.sql (147B)
+// 1528395681_lsif_queue_delay.down.sql (299B)
+// 1528395681_lsif_queue_delay.up.sql (342B)
 
 package migrations
 
@@ -1370,6 +1372,46 @@ func _1528395680_lsif_packages_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395681_lsif_queue_delayDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\xc1\x4a\xc4\x30\x14\x45\xf7\xf9\x8a\xbb\x1b\x10\x67\x7e\x20\xb8\xe8\xd4\xa7\x16\xda\xa9\x64\xa2\xb3\x2c\xa1\x79\x75\x02\x69\x53\x9a\xc4\xf1\xf3\x45\x8b\x0b\x15\x66\xf9\x78\xf7\x70\xee\xdd\xd3\x63\x75\x90\x42\xdc\xab\xf6\x19\xaf\x15\x9d\xe0\xa3\x1b\x3a\x9b\xc7\x39\x4a\x21\x8a\x5a\x93\x82\x2e\xf6\x35\xad\x8f\x3c\xfb\x60\x6c\xc4\x77\xbe\x6c\xeb\x97\xe6\x80\x79\x09\x3d\xc7\xd8\x99\x21\xf1\x22\xff\x33\x6e\xb2\xfc\xc1\x57\x19\xb1\xdd\x42\x71\xbf\xb0\x49\x8c\x77\xc7\x17\x5c\x5c\x3a\x23\x2c\xee\xcd\x4d\xc6\xa3\x0f\x3e\x8f\x53\x14\xa5\xa2\x42\xd3\xdf\xa2\x28\x8e\x38\x52\x4d\xa5\x46\xde\xdd\xdc\x22\xef\x06\x37\xb9\x78\x66\xdb\x99\x04\x13\x7f\x6c\xeb\xfd\xa0\xda\xe6\xf7\x98\x8c\xd3\x13\x29\x42\x4c\x5f\xfa\x3b\x6c\xfa\x30\xce\x9e\x13\xdb\x8d\x14\xa2\x6c\x9b\xa6\xd2\x52\x7c\x06\x00\x00\xff\xff\x66\xf2\xd8\xba\x2b\x01\x00\x00")
+
+func _1528395681_lsif_queue_delayDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395681_lsif_queue_delayDownSql,
+		"1528395681_lsif_queue_delay.down.sql",
+	)
+}
+
+func _1528395681_lsif_queue_delayDownSql() (*asset, error) {
+	bytes, err := _1528395681_lsif_queue_delayDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395681_lsif_queue_delay.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x94, 0x8a, 0xd9, 0x91, 0xe3, 0xf3, 0x0, 0x7b, 0x43, 0xf, 0xaa, 0x17, 0xbf, 0x50, 0x17, 0x1b, 0x3b, 0x98, 0x33, 0x65, 0xf9, 0x3d, 0xe7, 0x41, 0x3d, 0x2, 0x7a, 0x33, 0xac, 0x5d, 0x51, 0x40}}
+	return a, nil
+}
+
+var __1528395681_lsif_queue_delayUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x8f\xc1\x4e\x83\x40\x10\x86\xef\xfb\x14\xff\xad\x89\xb1\x7d\x01\xe2\x81\xc2\xa8\x24\x50\xcc\x16\xed\x91\x6c\x60\x48\x37\x01\x76\xc3\xec\x8a\xf1\xe9\x8d\x12\x0f\xea\xcd\xe3\x97\x99\x7c\x33\xdf\x91\x1e\x8a\x53\xa2\x54\xae\xeb\x27\xbc\x14\x74\xc1\x28\x76\x68\xfb\x38\x79\x49\x94\x4a\xcb\x86\x34\x9a\xf4\x58\xd2\x36\x88\x7e\x74\xa6\x17\xa4\x79\x8e\xac\x2e\x9f\xab\x13\xfc\xe2\x3a\x16\x69\xcd\x10\x78\x41\xb0\x13\x4b\x30\x93\xc7\x6a\xc3\xf5\x0b\xf1\xee\x66\x4e\xfe\xba\xec\xdc\xf3\x1b\xff\xcb\xa5\xf6\x7b\x68\xee\x16\x36\x81\xf1\x6a\x79\xdd\x36\x66\x5e\xd1\xb9\x31\x4e\xb3\xa8\x4c\x53\xda\xd0\xef\x26\xa4\x67\x9c\xa9\xa4\xac\x41\x3c\xdc\xdc\x22\x1e\x06\x3b\x5b\xb9\x72\xdf\x9a\x00\x23\xdf\x1f\x6c\x7c\xaf\xeb\xea\x67\x77\xc4\xe5\x91\x34\x41\xc2\xe7\xe5\x3b\xec\x3a\x37\xf9\x91\x03\xf7\xbb\x44\xa9\xac\xae\xaa\xa2\x49\xd4\x47\x00\x00\x00\xff\xff\xcf\x78\xbc\xb0\x56\x01\x00\x00")
+
+func _1528395681_lsif_queue_delayUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395681_lsif_queue_delayUpSql,
+		"1528395681_lsif_queue_delay.up.sql",
+	)
+}
+
+func _1528395681_lsif_queue_delayUpSql() (*asset, error) {
+	bytes, err := _1528395681_lsif_queue_delayUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395681_lsif_queue_delay.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x82, 0xb7, 0xab, 0x3d, 0xe5, 0x1a, 0x17, 0x14, 0xf0, 0x85, 0x33, 0xb, 0x21, 0x1d, 0xb6, 0x72, 0xed, 0xa6, 0xb9, 0x91, 0x48, 0x1e, 0xcc, 0x59, 0x8b, 0x56, 0x92, 0xd2, 0x1b, 0xdb, 0x54, 0x93}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1523,6 +1565,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395679_change_error_index_on_changeset_jobs.up.sql":                  _1528395679_change_error_index_on_changeset_jobsUpSql,
 	"1528395680_lsif_packages_index.down.sql":                                 _1528395680_lsif_packages_indexDownSql,
 	"1528395680_lsif_packages_index.up.sql":                                   _1528395680_lsif_packages_indexUpSql,
+	"1528395681_lsif_queue_delay.down.sql":                                    _1528395681_lsif_queue_delayDownSql,
+	"1528395681_lsif_queue_delay.up.sql":                                      _1528395681_lsif_queue_delayUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1631,6 +1675,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395679_change_error_index_on_changeset_jobs.up.sql":                  {_1528395679_change_error_index_on_changeset_jobsUpSql, map[string]*bintree{}},
 	"1528395680_lsif_packages_index.down.sql":                                 {_1528395680_lsif_packages_indexDownSql, map[string]*bintree{}},
 	"1528395680_lsif_packages_index.up.sql":                                   {_1528395680_lsif_packages_indexUpSql, map[string]*bintree{}},
+	"1528395681_lsif_queue_delay.down.sql":                                    {_1528395681_lsif_queue_delayDownSql, map[string]*bintree{}},
+	"1528395681_lsif_queue_delay.up.sql":                                      {_1528395681_lsif_queue_delayUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

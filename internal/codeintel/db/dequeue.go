@@ -15,8 +15,8 @@ type dequeueScanner func(rows *sql.Rows, err error) (interface{}, bool, error)
 // This transaction must be closed by the caller. If there is no such unlocked record, a nil record and a nil DB
 // will be returned along with a false-valued flag. This method must not be called from within a transaction.
 //
-// Assumptions: The table name describes a record with an `id`, `state`, and `started_at` column, where state can
-// be one of (at least) 'queued' or 'processing'.
+// Assumptions: The table name describes a record with an `id`, `state`, `started_at`, and `process_after` column,
+// where state can be one of (at least) 'queued' or 'processing'.
 func (db *dbImpl) dequeueRecord(
 	ctx context.Context,
 	tableName string,
@@ -29,7 +29,7 @@ func (db *dbImpl) dequeueRecord(
 		// any rows that are currently locked inside of a transaction of another dequeue process.
 		id, ok, err := scanFirstInt(db.query(ctx, sqlf.Sprintf(`
 			UPDATE `+tableName+` SET state = 'processing', started_at = now() WHERE id = (
-				SELECT id FROM `+tableName+` WHERE state = 'queued' ORDER BY %s
+				SELECT id FROM `+tableName+` WHERE state = 'queued' AND (process_after IS NULL OR process_after >= NOW()) ORDER BY %s
 				FOR UPDATE SKIP LOCKED LIMIT 1
 			)
 			RETURNING id

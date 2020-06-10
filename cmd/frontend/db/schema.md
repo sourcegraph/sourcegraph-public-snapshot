@@ -373,6 +373,7 @@ Indexes:
  started_at         | timestamp with time zone | 
  finished_at        | timestamp with time zone | 
  repository_id      | integer                  | not null
+ process_after      | timestamp with time zone | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -433,6 +434,7 @@ Foreign-key constraints:
  indexer            | text                     | not null
  num_parts          | integer                  | not null
  uploaded_parts     | integer[]                | not null
+ process_after      | timestamp with time zone | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state

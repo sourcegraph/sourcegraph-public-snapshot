@@ -73,6 +73,9 @@ type DB interface {
 	// valued flag. This method must not be called from within a transaction.
 	Dequeue(ctx context.Context) (Upload, DB, bool, error)
 
+	// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
+	Requeue(ctx context.Context, id int, after time.Time) error
+
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 
@@ -163,6 +166,9 @@ type DB interface {
 	// closed. If there is no such unlocked index, a zero-value index and nil DB will be returned along with a
 	// false valued flag. This method must not be called from within a transaction.
 	DequeueIndex(ctx context.Context) (Index, DB, bool, error)
+
+	// RequeueIndex updates the state of the index to queued and adds a processing delay before the next dequeue attempt.
+	RequeueIndex(ctx context.Context, id int, after time.Time) error
 
 	// DeleteIndexByID deletes an index by its identifier.
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
