@@ -3,7 +3,13 @@ import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toAbsoluteBlobURL } from '../../../../../shared/src/util/url'
+import {
+    FileSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+    toAbsoluteBlobURL,
+} from '../../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -33,8 +39,8 @@ export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElemen
         return existingMount
     }
 
-    const mountEl = document.createElement('div')
-    mountEl.className = className
+    const mountElement = document.createElement('div')
+    mountElement.className = className
 
     const fileActions = codeView.querySelector('.file-actions')
     if (!fileActions) {
@@ -48,12 +54,12 @@ export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElemen
     // Old GitHub Enterprise PR views have a "☑ show comments" text that we want to insert *after*
     const showCommentsElement = codeView.querySelector('.show-file-notes')
     if (showCommentsElement) {
-        showCommentsElement.after(mountEl)
+        showCommentsElement.after(mountElement)
     } else {
-        fileActions.prepend(mountEl)
+        fileActions.prepend(mountElement)
     }
 
-    return mountEl
+    return mountElement
 }
 
 const toolbarButtonProps = {
@@ -94,7 +100,7 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
  */
 const getSnippetPositionAdjuster = (
     requestGraphQL: PlatformContext['requestGraphQL']
-): PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> => ({ direction, codeView, position }) =>
+): PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> => ({ direction, codeView, position }) =>
     fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
         map(lines => {
             const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
@@ -143,18 +149,18 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     if (existingMount) {
         return existingMount
     }
-    const mountEl = document.createElement('div')
-    mountEl.style.display = 'inline-flex'
-    mountEl.style.verticalAlign = 'middle'
-    mountEl.style.alignItems = 'center'
-    mountEl.className = className
+    const mountElement = document.createElement('div')
+    mountElement.style.display = 'inline-flex'
+    mountElement.style.verticalAlign = 'middle'
+    mountElement.style.alignItems = 'center'
+    mountElement.className = className
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
     if (!buttonGroup?.parentNode) {
         throw new Error('File actions not found')
     }
-    buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
-    return mountEl
+    buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
+    return mountElement
 }
 
 /**
@@ -195,14 +201,14 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
 
 const genericCodeViewResolver: ViewResolver<CodeView> = {
     selector: '.file',
-    resolveView: (elem: HTMLElement): CodeView | null => {
-        if (elem.querySelector('article.markdown-body')) {
+    resolveView: (element: HTMLElement): CodeView | null => {
+        if (element.querySelector('article.markdown-body')) {
             // This code view is rendered markdown, we shouldn't add code intelligence
             return null
         }
 
         // This is a suggested change on a GitHub PR
-        if (elem.closest('.js-suggested-changes-blob')) {
+        if (element.closest('.js-suggested-changes-blob')) {
             return null
         }
 
@@ -213,15 +219,15 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
             document.querySelectorAll('.diff-view').length === 0
 
         if (isSingleCodeFile) {
-            return { element: elem, ...singleFileCodeView }
+            return { element, ...singleFileCodeView }
         }
 
-        if (elem.closest('.discussion-item-body') || elem.classList.contains('js-comment-container')) {
+        if (element.closest('.discussion-item-body') || element.classList.contains('js-comment-container')) {
             // This code view is embedded on a PR conversation page.
-            return { element: elem, ...diffConversationCodeView }
+            return { element, ...diffConversationCodeView }
         }
 
-        return { element: elem, ...diffCodeView }
+        return { element, ...diffCodeView }
     },
 }
 
@@ -287,7 +293,8 @@ export const githubCodeHost: CodeHost = {
         const parsedURL = parseURL()
         return {
             ...parsedURL,
-            rev: parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().rev : undefined,
+            revision:
+                parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().revision : undefined,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },
@@ -357,12 +364,12 @@ export const githubCodeHost: CodeHost = {
             return toAbsoluteBlobURL(sourcegraphURL, target)
         }
 
-        const rev = target.rev || 'HEAD'
+        const revision = target.revision || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
         const { rawRepoName } = parseURL()
 
         // Stay on same page in PR if possible.
-        // TODO to be entirely correct, this would need to compare the rev of the code view with the target rev.
+        // TODO to be entirely correct, this would need to compare the revision of the code view with the target revision.
         const isSameRepo = rawRepoName === target.rawRepoName
         if (isSameRepo && context.part !== undefined) {
             const containers = getFileContainers()
@@ -397,7 +404,7 @@ export const githubCodeHost: CodeHost = {
         const fragment = target.position
             ? `#L${target.position.line}${target.position.character ? ':' + target.position.character : ''}`
             : ''
-        return `https://${target.rawRepoName}/blob/${rev}/${target.filePath}${fragment}`
+        return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
     codeViewsRequireTokenization: true,
 }

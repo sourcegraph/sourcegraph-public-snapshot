@@ -66,7 +66,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := GitCommitResolver{
-		repo:            &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		repoResolver:    &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
 		oid:             "c1",
 		author:          *toSignatureResolver(&gitSignatureWithDate, true),
 		includeUserInfo: true,

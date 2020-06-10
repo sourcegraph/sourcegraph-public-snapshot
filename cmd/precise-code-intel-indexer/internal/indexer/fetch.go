@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/tar"
 )
 
 func fetchRepository(ctx context.Context, db db.DB, gitserverClient gitserver.Client, repositoryID int, commit string) (string, error) {
@@ -26,8 +27,8 @@ func fetchRepository(ctx context.Context, db db.DB, gitserverClient gitserver.Cl
 		return "", errors.Wrap(err, "gitserver.Archive")
 	}
 
-	if err := extractTarfile(tempDir, archive); err != nil {
-		return "", errors.Wrap(err, "extractTarfile")
+	if err := tar.Extract(tempDir, archive); err != nil {
+		return "", errors.Wrap(err, "tar.Extract")
 	}
 
 	return tempDir, nil

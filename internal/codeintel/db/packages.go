@@ -26,6 +26,7 @@ func (db *dbImpl) GetPackage(ctx context.Context, scheme, name, version string) 
 		FROM lsif_packages p
 		JOIN lsif_dumps d ON p.dump_id = d.id
 		WHERE p.scheme = %s AND p.name = %s AND p.version = %s
+		ORDER BY d.uploaded_at DESC
 		LIMIT 1
 	`, scheme, name, version)))
 }
@@ -41,9 +42,5 @@ func (db *dbImpl) UpdatePackages(ctx context.Context, packages []types.Package) 
 		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s)", p.DumpID, p.Scheme, p.Name, p.Version))
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
-		INSERT INTO lsif_packages (dump_id, scheme, name, version)
-		VALUES %s
-		ON CONFLICT DO NOTHING
-	`, sqlf.Join(values, ",")))
+	return db.queryForEffect(ctx, sqlf.Sprintf(`INSERT INTO lsif_packages (dump_id, scheme, name, version) VALUES %s`, sqlf.Join(values, ",")))
 }

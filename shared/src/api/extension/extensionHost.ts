@@ -6,16 +6,15 @@ import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
-import { ExtCommands } from './api/commands'
-import { ExtContent } from './api/content'
-import { ExtContext } from './api/context'
+import { ExtensionContent } from './api/content'
+import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
-import { ExtDocuments } from './api/documents'
-import { ExtExtensions } from './api/extensions'
-import { ExtLanguageFeatures } from './api/languageFeatures'
-import { ExtSearch } from './api/search'
-import { ExtViews } from './api/views'
-import { ExtWindows } from './api/windows'
+import { ExtensionDocuments } from './api/documents'
+import { Extensions } from './api/extensions'
+import { ExtensionLanguageFeatures } from './api/languageFeatures'
+import { ExtensionSearch } from './api/search'
+import { ExtensionViewsApi } from './api/views'
+import { ExtensionWindows } from './api/windows'
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
 
@@ -55,11 +54,11 @@ export function startExtensionHost(
                 throw new Error('extension host is already initialized')
             }
             initialized = true
-            const { subscription: extHostSubscription, extensionAPI, extensionHostAPI } = initializeExtensionHost(
+            const { subscription: extensionHostSubscription, extensionAPI, extensionHostAPI } = initializeExtensionHost(
                 endpoints,
                 initData
             )
-            subscription.add(extHostSubscription)
+            subscription.add(extensionHostSubscription)
             resolve(extensionAPI)
             return extensionHostAPI
         }
@@ -121,27 +120,24 @@ function createExtensionAPI(
 
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
-    ;(endpoints.proxy as any).role = 'proxy'
-    ;(endpoints.proxy as any).side = 'ext-host'
 
     // For debugging/tests.
     const sync = async (): Promise<void> => {
         await proxy.ping()
     }
-    const context = new ExtContext(proxy.context)
-    const documents = new ExtDocuments(sync)
+    const context = new ExtensionContext(proxy.context)
+    const documents = new ExtensionDocuments(sync)
 
-    const extensions = new ExtExtensions()
+    const extensions = new Extensions()
     subscription.add(extensions)
 
-    const windows = new ExtWindows(proxy, documents)
-    const views = new ExtViews(proxy.views)
-    const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
-    const search = new ExtSearch(proxy.search)
-    const commands = new ExtCommands(proxy.commands)
-    const content = new ExtContent(proxy.content)
+    const windows = new ExtensionWindows(proxy, documents)
+    const views = new ExtensionViewsApi(proxy.views)
+    const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
+    const search = new ExtensionSearch(proxy.search)
+    const content = new ExtensionContent(proxy.content)
 
-    const { configuration, exposedToMain, workspace, state } = initNewExtensionAPI(proxy)
+    const { configuration, exposedToMain, workspace, state, commands } = initNewExtensionAPI(proxy)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -253,13 +249,7 @@ function createExtensionAPI(
                 search.registerQueryTransformer(provider),
         },
 
-        commands: {
-            registerCommand: (command: string, callback: (...args: any[]) => any) =>
-                commands.registerCommand({ command, callback }),
-
-            executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
-        },
-
+        commands,
         content: {
             registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
                 content.registerLinkPreviewProvider(urlMatchPattern, provider),

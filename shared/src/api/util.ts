@@ -50,7 +50,7 @@ export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscriba
  * Runs f and returns a resolved promise with its value or a rejected promise with its exception,
  * regardless of whether it returns a promise or not.
  */
-export const tryCatchPromise = async <T>(f: () => T | Promise<T>): Promise<T> => f()
+export const tryCatchPromise = async <T>(function_: () => T | Promise<T>): Promise<T> => function_()
 
 /**
  * Reports whether value is a Promise.
@@ -72,17 +72,17 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
  * NOTE: it does not handle ProxyMethods and callbacks yet
  * NOTE2: for testing purposes only!!
  */
-export const pretendRemote = <T>(obj: Partial<T>): Remote<T> =>
+export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    (new Proxy(obj, {
-        get: (a, prop) => {
-            if (prop in a) {
-                if (typeof (a as any)[prop] !== 'function') {
-                    return Promise.resolve((a as any)[prop])
+    (new Proxy(object, {
+        get: (a, property) => {
+            if (property in a) {
+                if (typeof (a as any)[property] !== 'function') {
+                    return Promise.resolve((a as any)[property])
                 }
 
-                return (...args: any[]) => Promise.resolve((a as any)[prop](...args))
+                return (...args: any[]) => Promise.resolve((a as any)[property](...args))
             }
-            throw new Error(`unspecified property in the stub ${prop.toString()}`)
+            throw new Error(`unspecified property in the stub ${property.toString()}`)
         },
     }) as unknown) as Remote<T>

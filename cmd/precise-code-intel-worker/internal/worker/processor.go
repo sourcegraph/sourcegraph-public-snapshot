@@ -2,11 +2,11 @@ package worker
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -32,18 +32,18 @@ type processor struct {
 // process converts a raw upload into a dump within the given transaction context.
 func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (err error) {
 	// Create scratch directory that we can clean on completion/failure
-	name, err := ioutil.TempDir("", "")
+	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if cleanupErr := os.RemoveAll(name); cleanupErr != nil {
-			log15.Warn("Failed to remove temporary directory", "path", name, "err", cleanupErr)
+		if cleanupErr := os.RemoveAll(tempDir); cleanupErr != nil {
+			log15.Warn("Failed to remove temporary directory", "path", tempDir, "err", cleanupErr)
 		}
 	}()
 
 	// Pull raw uploaded data from bundle manager
-	filename, err := p.bundleManagerClient.GetUpload(ctx, upload.ID, name)
+	r, err := p.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
@@ -56,19 +56,10 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
-	// Create target file for converted database
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
-	newFilename := filepath.Join(name, uuid.String())
-
-	// Read raw upload and write converted database to newFilename. This process also correlates
-	// and returns the  data we need to insert into Postgres to support cross-dump/repo queries.
 	packages, packageReferences, err := convert(
 		ctx,
-		filename,
-		newFilename,
+		r,
+		tempDir,
 		upload.ID,
 		upload.Root,
 		func(dirnames []string) (map[string][]string, error) {
@@ -130,7 +121,7 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 	}
 
 	// Send converted database file to bundle manager
-	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, newFilename); err != nil {
+	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, tempDir); err != nil {
 		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
@@ -176,20 +167,13 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 }
 
 // convert correlates the raw input data and commits the correlated data to disk.
-func convert(
-	ctx context.Context,
-	filename string,
-	newFilename string,
-	dumpID int,
-	root string,
-	getChildren existence.GetChildrenFunc,
-) (_ []types.Package, _ []types.PackageReference, err error) {
-	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
+func convert(ctx context.Context, r io.Reader, tempDir string, dumpID int, root string, getChildren existence.GetChildrenFunc) ([]types.Package, []types.PackageReference, error) {
+	groupedBundleData, err := correlation.Correlate(r, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := write(ctx, newFilename, groupedBundleData); err != nil {
+	if err := write(ctx, tempDir, groupedBundleData); err != nil {
 		return nil, nil, err
 	}
 
@@ -197,55 +181,30 @@ func convert(
 }
 
 // write commits the correlated data to disk.
-func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
-	writer, err := sqlitewriter.NewWriter(filename)
+func write(ctx context.Context, dirname string, groupedBundleData *correlation.GroupedBundleData) (err error) {
+	writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(dirname, "sqlite.db"))
 	if err != nil {
-		return errors.Wrap(err, "sqlitewriter.NewWriter")
+		return err
 	}
 	defer func() {
-		if closeErr := writer.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
+		err = writer.Close(err)
 	}()
 
-	writers := []func() error{
-		func() error {
-			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks), "writer.WriteMeta")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteDocuments(ctx, groupedBundleData.Documents), "writer.WriteDocuments")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks), "writer.WriteResultChunks")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteDefinitions(ctx, groupedBundleData.Definitions), "writer.WriteDefinitions")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteReferences(ctx, groupedBundleData.References), "writer.WriteReferences")
-		},
+	if err := writer.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
+		return errors.Wrap(err, "writer.WriteMeta")
+	}
+	if err := writer.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
+		return errors.Wrap(err, "writer.WriteDocuments")
+	}
+	if err := writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
+		return errors.Wrap(err, "writer.WriteResultChunks")
+	}
+	if err := writer.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
+		return errors.Wrap(err, "writer.WriteDefinitions")
+	}
+	if err := writer.WriteReferences(ctx, groupedBundleData.References); err != nil {
+		return errors.Wrap(err, "writer.WriteReferences")
 	}
 
-	errs := make(chan error, len(writers))
-	defer close(errs)
-
-	for _, w := range writers {
-		go func(w func() error) { errs <- w() }(w)
-	}
-
-	var writeErr error
-	for i := 0; i < len(writers); i++ {
-		if err := <-errs; err != nil {
-			writeErr = multierror.Append(writeErr, err)
-		}
-	}
-	if writeErr != nil {
-		return writeErr
-	}
-
-	if err := writer.Flush(ctx); err != nil {
-		return errors.Wrap(err, "writer.Flush")
-	}
-
-	return nil
+	return err
 }

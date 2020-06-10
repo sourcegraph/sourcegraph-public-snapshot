@@ -12,7 +12,7 @@ const onSelectItem = action('onSelectItem')
 // Disable keyboard shortcuts because in CompletionWidget the cursor is in a contenteditable element,
 // which Storybook doesn't consider to be an input, so it intercepts keyboard shortcuts instead of
 // propagating them to the CompletionWidget element.
-const { add } = storiesOf('CompletionWidget', module)
+const { add } = storiesOf('shared/CompletionWidget', module)
     .addParameters({ options: { enableShortcuts: false } })
     .addDecorator(story => (
         <>

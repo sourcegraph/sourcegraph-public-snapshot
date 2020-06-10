@@ -182,7 +182,7 @@ export const applyDecorations = (
             if (decoration.after) {
                 const style = decorationAttachmentStyleForTheme(decoration.after, IS_LIGHT_THEME)
 
-                const linkTo = (url: string) => (e: HTMLElement): HTMLElement => {
+                const linkTo = (url: string) => (element: HTMLElement): HTMLElement => {
                     const link = document.createElement('a')
                     link.setAttribute('href', url)
 
@@ -194,7 +194,7 @@ export const applyDecorations = (
                     link.setAttribute('rel', 'noreferrer noopener')
 
                     link.style.color = style.color || ''
-                    link.append(e)
+                    link.append(element)
                     return link
                 }
 

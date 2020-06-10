@@ -74,17 +74,17 @@ function match1(selector: DocumentSelector, document: Pick<TextDocument, 'uri' |
  */
 export function score(selector: DocumentSelector, candidateUri: URL, candidateLanguage: string): number {
     // array -> take max individual value
-    let ret = 0
+    let returnValue = 0
     for (const filter of selector) {
         const value = score1(filter, candidateUri, candidateLanguage)
         if (value === 10) {
             return value // already at the highest
         }
-        if (value > ret) {
-            ret = value
+        if (value > returnValue) {
+            returnValue = value
         }
     }
-    return ret
+    return returnValue
 }
 
 function score1(selector: DocumentSelector[0], candidateUri: URL, candidateLanguage: string): number {
@@ -104,28 +104,28 @@ function score1(selector: DocumentSelector[0], candidateUri: URL, candidateLangu
         // `{}` was passed as a document filter, treat it like a wildcard
         return 5
     }
-    let ret = 0
+    let returnValue = 0
     if (scheme) {
         if (candidateUri.protocol === scheme + ':') {
-            ret = 10
+            returnValue = 10
         } else if (scheme === '*') {
-            ret = 5
+            returnValue = 5
         } else {
             return 0
         }
     }
     if (baseUri) {
         if (candidateUri.href.startsWith(baseUri.toString())) {
-            ret = 5
+            returnValue = 5
         } else {
             return 0
         }
     }
     if (language) {
         if (language === candidateLanguage) {
-            ret = 10
+            returnValue = 10
         } else if (language === '*') {
-            ret = Math.max(ret, 5)
+            returnValue = Math.max(returnValue, 5)
         } else {
             return 0
         }
@@ -135,14 +135,14 @@ function score1(selector: DocumentSelector[0], candidateUri: URL, candidateLangu
             candidateUri.protocol === 'git:' ? candidateUri.hash.slice(1) : candidateUri.pathname.replace(/^\//, '')
         )
         if (filePath.endsWith(pattern) || minimatch(filePath, pattern)) {
-            ret = 10
+            returnValue = 10
         } else if (filePath && minimatch(filePath, pattern, { dot: true, matchBase: true })) {
-            ret = 5
+            returnValue = 5
         } else {
             return 0
         }
     }
-    return ret
+    return returnValue
 }
 
 /**
@@ -162,15 +162,15 @@ export function offsetToPosition(text: string, offset: number): Position {
 /**
  * Convert a position in text to the equivalent character offset.
  */
-export function positionToOffset(text: string, pos: Position): number {
-    if (pos.line === 0) {
-        return pos.character
+export function positionToOffset(text: string, position: Position): number {
+    if (position.line === 0) {
+        return position.character
     }
     let line = 0
     let lastNewLineOffset = -1
     do {
-        if (pos.line === line) {
-            return lastNewLineOffset + 1 + pos.character
+        if (position.line === line) {
+            return lastNewLineOffset + 1 + position.character
         }
         lastNewLineOffset = text.indexOf('\n', lastNewLineOffset + 1)
         line++

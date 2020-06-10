@@ -18,42 +18,38 @@ var tests = []test{
 	// Repo search (part 1).
 	{
 		Name:  `Global search, repo search by name, nonzero result`,
-		Query: `repo:auth0/go-jwt-middleware$`,
+		Query: `repo:auth0-go-jwt-middleware$`,
 	},
 	{
 		Name:  `Global search, repo search by name, case yes, nonzero result`,
-		Query: `String repo:^github.com/adjust/go-wrk$ case:yes count:1 stable:yes`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ String case:yes count:1 stable:yes`,
 	},
 	// Text search, focused to repo.
 	{
-		Name:  `Global search, non-master branch, large repo, nonzero result`,
+		Name:  `Repo search, non-master branch, nonzero result`,
 		Query: `repo:^github.com/facebook/react$@0.3-stable var ExecutionEnvironment = require('ExecutionEnvironment'); patterntype:literal count:1 stable:yes`,
 	},
 	{
-		Name:  `Global search, indexed multiline search, nonzero result`,
-		Query: `repo:^github\.com/facebook/react$ componentDidMount\(\) {\n\s*this patterntype:regexp count:1 stable:yes`,
+		Name:  `Repo search, indexed multiline search, nonzero result`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \nimport index:only count:1 stable:yes`,
 	},
 	{
-		Name:  `Global search, indexed multiline search, zero results`,
-		Query: `repo:^github\.com/facebook/react$ componentDidMount\(\) {\n\s*this\.props\.sourcegraph\(`,
+		Name:  `Repo search, unindexed multiline search, nonzero result`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \nimport index:no count:1 stable:yes`,
 	},
 	{
-		Name:  `Global search, unindexed multiline search, nonzero result`,
-		Query: `repo:^github\.com/facebook/react$ componentDidMount\(\) {\n\s*this index:no count:1 stable:yes`,
-	},
-	{
-		Name:  `Global search, unindexed multiline search, zero results`,
-		Query: `repo:^github\.com/facebook/react$ componentDidMount\(\) {\n\s*this\.props\.sourcegraph\( index:no`,
+		Name:  `Repo search, zero results`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ doesnot734734743734743exist`,
 	},
 	// Commit search.
 	{
 		Name:  `Commit search, nonzero result`,
-		Query: `repo:^github\.com/facebook/react$ type:commit hello world count:1`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ type:commit count:1`,
 	},
 	// Diff search.
 	{
 		Name:  `Diff search, nonzero result`,
-		Query: `repo:^github\.com/sgtest/mux$ type:diff main count:1`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ type:diff os.Args count:1`,
 	},
 	// Timeout search options.
 	{
@@ -67,17 +63,13 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, double-quoted pattern, nonzero result`,
-		Query: `"error type:\n" count:1 stable:yes`,
+		Query: `"error type:\n" patterntype:regexp count:1 stable:yes`,
 	},
 	{
 		Name:  `Global search, exclude repo, nonzero result`,
-		Query: `"error type:\n" count:1 -repo:DirectXMan12 stable:yes`,
+		Query: `"error type:\n" -repo:DirectXMan12 patterntype:regexp count:1 stable:yes`,
 	},
 	// Repohascommitafter.
-	{
-		Name:  `Global search, repohascommitafter, nonzero result`,
-		Query: `repohascommitafter:"5 months ago" test patterntype:literal count:1 stable:yes`,
-	},
 	{
 		Name:  `Global search, repohascommitafter, nonzero result`,
 		Query: `repohascommitafter:"5 months ago" test patterntype:literal count:1 stable:yes`,
@@ -85,7 +77,7 @@ var tests = []test{
 	// Global regex text search.
 	{
 		Name:  `Global search, regex, unindexed, nonzero result`,
-		Query: `^func.*$ index:only count:1 stable:yes`,
+		Query: `^func.*$ patterntype:regexp index:only count:1 stable:yes`,
 	},
 	{
 		Name:  `Global search, fork only, nonzero result`,
@@ -93,7 +85,7 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, filter by language`,
-		Query: `\bfunc\b lang:js count:1 stable:yes`,
+		Query: `\bfunc\b lang:go count:1 stable:yes`,
 	},
 	{
 		Name:  `Global search, filename, zero results`,
@@ -111,7 +103,7 @@ var tests = []test{
 	// Structural search.
 	{
 		Name:  `Global search, structural, index only, nonzero result`,
-		Query: `repo:^github\.com/facebook/react$ index:only patterntype:structural toHaveYielded(:[args]) count:5`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ make(:[1]) index:only patterntype:structural count:3`,
 	},
 	// Repo search (part 2).
 	{
@@ -128,15 +120,15 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, fork excluded, zero results`,
-		Query: `type:repo sgtest/mux`,
+		Query: `type:repo sgtest-mux`,
 	},
 	{
 		Name:  `Global search, fork included, nonzero result`,
-		Query: `type:repo sgtest/mux fork:yes`,
+		Query: `type:repo sgtest-mux fork:yes`,
 	},
 	{
 		Name:  `Global search, fork included if exact without option, nonzero result`,
-		Query: `repo:^github\.com/sgtest/mux$`,
+		Query: `repo:^github\.com/rvantonderp/sgtest-mux$`,
 	},
 	{
 		Name:  `Global search, exclude counts for fork and archive`,
@@ -144,16 +136,64 @@ var tests = []test{
 	},
 	// And/Or queries.
 	{
-		Name:  `Literals, escaped`,
-		Query: `repo:^github\.com/facebook/react$ (\(\) or \(\)) stable:yes type:file count:1 patterntype:regexp`,
-	},
-	{
-		Name:  `Literals, no parens escaped`,
-		Query: `repo:^github\.com/facebook/react$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
-	},
-	{
 		Name:  `And operator, basic`,
-		Query: `repo:^github\.com/facebook/react$ func and main stable:yes type:file count:1 file:^dangerfile.js$`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ func and main count:1 stable:yes type:file`,
+	},
+	{
+		Name:  `Or operator, single and double quoted`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ "readConfig()" or 'buildHeaders' stable:yes type:file count:1 patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, grouped parens with parens-as-patterns heuristic`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (() or ()) stable:yes type:file count:1 patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, no grouped parens`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ () or () stable:yes type:file count:1 patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, escaped parens`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, escaped and unescaped parens`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, escaped and unescaped parens, no group`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ () or \(\)`,
+	},
+	{
+		Name:  `Literals, double paren`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ ()() or ()()`,
+	},
+	{
+		Name:  `Literals, double paren, dangling paren right side`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ ()() or main()(`,
+	},
+	{
+		Name:  `Literals, double paren, dangling paren left side`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ ()( or ()()`,
+	},
+	{
+		Name:  `Mixed regexp and literal`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ func(.*) or does_not_exist_3744 count:1 stable:yes type:file`,
+	},
+	{
+		Name:  `Mixed regexp and literal heuristic`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ func( or func(.*) count:1 stable:yes type:file`,
+	},
+	{
+		Name:  `Mixed regexp and quoted literal`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ "*" and cert.*Load count:1 stable:yes type:file`,
+	},
+	{
+		Name:  `Escape sequences`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \' and \" and \\ and /`,
+	},
+	{
+		Name:  `Escaped whitespace sequences with 'and'`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \ and /`,
 	},
 }
 
@@ -186,8 +226,19 @@ func runSearchTests() error {
 		}
 		filename := strings.ToLower(sanitizeFilename(test.Name))
 		goldenPath := path.Join(searchTestDataDir, fmt.Sprintf("%s.golden", filename))
-		if err := assertGolden(test.Name, goldenPath, got, update); err != nil {
-			return fmt.Errorf("TEST FAILURE: %s\n%s", test.Name, err)
+		if err := assertGolden(goldenPath, got); err != nil {
+			if update || updateAll {
+				err := assertUpdate(goldenPath, got)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("Updated Test %s\n", test.Name)
+				if update {
+					return nil
+				}
+				continue
+			}
+			return fmt.Errorf("TEST FAILURE: %s\nQuery: %s\n%s", test.Name, test.Query, err)
 		}
 	}
 	return nil

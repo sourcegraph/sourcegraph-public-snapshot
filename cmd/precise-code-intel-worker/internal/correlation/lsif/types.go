@@ -22,8 +22,9 @@ type MetaData struct {
 }
 
 type Document struct {
-	URI      string
-	Contains datastructures.IDSet
+	URI         string
+	Contains    datastructures.IDSet
+	Diagnostics datastructures.IDSet
 }
 
 type Range struct {
@@ -151,4 +152,19 @@ func (d Moniker) SetPackageInformationID(id string) Moniker {
 type PackageInformation struct {
 	Name    string
 	Version string
+}
+
+type DiagnosticResult struct {
+	Result []Diagnostic
+}
+
+type Diagnostic struct {
+	Severity       int
+	Code           string
+	Message        string
+	Source         string
+	StartLine      int
+	StartCharacter int
+	EndLine        int
+	EndCharacter   int
 }

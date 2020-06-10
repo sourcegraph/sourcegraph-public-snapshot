@@ -192,6 +192,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	}
 
 	matches := make([]*FileMatchResolver, len(resp.Files))
+	repoResolvers := make(RepositoryResolverCache)
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -200,10 +201,14 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			limitHit = true
 		}
 		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		if repoResolvers[repoRev.Repo.Name] == nil {
+			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
+		}
 		inputRev := repoRev.RevSpecs()[0]
 		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
+		var matchCount int
 		for _, l := range file.LineMatches {
 			if !l.FileName {
 				if len(l.LineFragments) > maxLineFragmentMatches {
@@ -216,9 +221,9 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
 						commit := &GitCommitResolver{
-							repo:     &RepositoryResolver{repo: repoRev.Repo},
-							oid:      GitObjectID(file.Version),
-							inputRev: &inputRev,
+							repoResolver: repoResolvers[repoRev.Repo.Name],
+							oid:          GitObjectID(file.Version),
+							inputRev:     &inputRev,
 						}
 
 						symbols = append(symbols, &searchSymbolResult{
@@ -237,6 +242,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					}
 				}
 				if !isSymbol {
+					matchCount += len(offsets)
 					lines = append(lines, &lineMatch{
 						JPreview:          string(l.Line),
 						JLineNumber:       int32(l.LineNumber - 1),
@@ -249,9 +255,10 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
+			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			symbols:      symbols,
-			Repo:         repoRev.Repo,
+			Repo:         repoResolvers[repoRev.Repo.Name],
 			CommitID:     api.CommitID(file.Version),
 		}
 	}

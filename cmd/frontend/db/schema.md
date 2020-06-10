@@ -99,7 +99,7 @@ Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, patch_id)
     "changeset_jobs_campaign_job_id" btree (patch_id)
-    "changeset_jobs_error" btree (error)
+    "changeset_jobs_error_not_null" btree ((error IS NOT NULL))
     "changeset_jobs_finished_at" btree (finished_at)
     "changeset_jobs_started_at" btree (started_at)
 Foreign-key constraints:
@@ -391,7 +391,7 @@ Check constraints:
  dump_id | integer | not null
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
-    "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
+    "lsif_packages_scheme_name_version" btree (scheme, name, version)
 Foreign-key constraints:
     "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 

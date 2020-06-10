@@ -11,32 +11,39 @@ import (
 )
 
 // FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
-// queries for the given file. These dump IDs should be subsequently passed to invocations of
+// queries for the given path. If exactPath is true, then only dumps that definitely contain the
+// exact document path are returned. Otherwise, dumps containing any document for which the given
+// path is a prefix are returned. These dump IDs should be subsequently passed to invocations of
 // Definitions, References, and Hover.
-func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
+func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]db.Dump, error) {
 	// See if we know about this commit. If not, we need to update our commits table
 	// and the visibility of the dumps in this repository.
 	if err := api.updateCommitsAndVisibility(ctx, repositoryID, commit); err != nil {
 		return nil, err
 	}
 
-	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, file)
+	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, path, indexer)
 	if err != nil {
 		return nil, errors.Wrap(err, "db.FindClosestDumps")
 	}
 
 	var dumps []db.Dump
 	for _, dump := range candidates {
-		exists, err := api.bundleManagerClient.BundleClient(dump.ID).Exists(ctx, strings.TrimPrefix(file, dump.Root))
-		if err != nil {
-			if err == client.ErrNotFound {
-				log15.Warn("Bundle does not exist")
-				return nil, nil
+		// TODO(efritz) - ensure there's a valid document path
+		// for the other condition. This should probably look like
+		// an additional parameter on the following exists query.
+		if exactPath {
+			exists, err := api.bundleManagerClient.BundleClient(dump.ID).Exists(ctx, strings.TrimPrefix(path, dump.Root))
+			if err != nil {
+				if err == client.ErrNotFound {
+					log15.Warn("Bundle does not exist")
+					return nil, nil
+				}
+				return nil, errors.Wrap(err, "bundleManagerClient.BundleClient")
 			}
-			return nil, errors.Wrap(err, "bundleManagerClient.BundleClient")
-		}
-		if !exists {
-			continue
+			if !exists {
+				continue
+			}
 		}
 
 		dumps = append(dumps, dump)

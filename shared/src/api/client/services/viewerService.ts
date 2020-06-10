@@ -3,7 +3,7 @@ import { BehaviorSubject, Subscribable, throwError, Observable, Subject } from '
 import { map, filter, takeWhile, startWith, switchMap } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel, PartialModel } from './modelService'
-import { RefCount } from '../../../util/RefCount'
+import { ReferenceCounter } from '../../../util/ReferenceCounter'
 
 export type Viewer = CodeEditor | DirectoryViewer
 export type ViewerData = CodeEditorData | DirectoryViewerData
@@ -174,7 +174,7 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
         return viewer
     }
 
-    const modelRefs = new RefCount()
+    const modelReferences = new ReferenceCounter()
     return {
         viewers,
         viewerUpdates,
@@ -182,7 +182,7 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
         addViewer: viewerData => {
             const viewerId = nextId()
             if (viewerData.type === 'CodeEditor') {
-                modelRefs.increment(viewerData.resource)
+                modelReferences.increment(viewerData.resource)
             }
             const viewer: Viewer = {
                 ...viewerData,
@@ -199,8 +199,10 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
             try {
                 const viewer = getViewer(viewerId)
                 return viewerUpdates.pipe(
-                    filter(updates => updates.some(u => u.viewerId === viewerId)),
-                    takeWhile(updates => updates.every(u => u.viewerId !== viewerId || u.type !== 'deleted')),
+                    filter(updates => updates.some(update => update.viewerId === viewerId)),
+                    takeWhile(updates =>
+                        updates.every(update => update.viewerId !== viewerId || update.type !== 'deleted')
+                    ),
                     map(() => getViewer(viewerId)),
                     startWith(viewer)
                 )
@@ -224,7 +226,7 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
             if (activeViewerUpdates.value && activeViewerUpdates.value.viewerId === viewerId) {
                 activeViewerUpdates.next(undefined)
             }
-            if (viewer.type === 'CodeEditor' && modelRefs.decrement(viewer.resource)) {
+            if (viewer.type === 'CodeEditor' && modelReferences.decrement(viewer.resource)) {
                 modelService.removeModel(viewer.resource)
             }
         },

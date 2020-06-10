@@ -3,7 +3,7 @@ import { InfoDropdown } from '../input/InfoDropdown'
 import { QueryBuilderState } from './QueryBuilder'
 
 /** An example demonstrating the capabilities of the search field. */
-export interface QueryFieldExamples {
+export interface QueryFieldExample {
     /** A markdown string describing the example. */
     description: string
     /** The value for the example. Will be displayed as an inline code block. */
@@ -24,7 +24,7 @@ interface Props {
      */
     shortName: keyof QueryBuilderState['fields']
     /** A list of useful examples demonstrating valid values that can be inputted for this search field. */
-    examples: QueryFieldExamples[]
+    examples: QueryFieldExample[]
     /** Handler for when an input field changes. */
     onInputChange: Record<
         keyof QueryBuilderState['fields'],

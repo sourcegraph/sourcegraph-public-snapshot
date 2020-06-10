@@ -93,7 +93,7 @@ Multiple or combined **repo:** and **file:** keywords are intersected. For examp
 
 Use operators to create more expressive searches.
 
-> NOTE: Operators are available as of 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in site settings. Built-in operator support is planned for the upcoming 3.16 release and onwards.
+> NOTE: Operators are available as of 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in the site configuration. Built-in operator support is planned for an upcoming release.
 
 | Operator | Example |
 | --- | --- |

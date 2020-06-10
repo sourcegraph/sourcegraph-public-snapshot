@@ -50,7 +50,7 @@ It works as follows:
         Code shared between multiple code hosts.
   - `config/`
     Configuration code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
-  - `e2e/`
+  - `end-to-end/`
     E2E test suite.
 - `scripts/`
   Build scripts.
@@ -130,16 +130,16 @@ Click reload for Sourcegraph at `about:debugging`
 
 ### e2e tests
 
-The test suite in e2e/github.test.ts runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
+The test suite in `end-to-end/github.test.ts` runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
 
-The test suite in e2e/phabricator.test.ts tests the Phabricator native integration.
+The test suite in end-to-end/phabricator.test.ts tests the Phabricator native integration.
 It assumes an existing Sourcegraph and Phabricator instance that has the Phabricator extension installed.
 There are automated scripts to set up the Phabricator instance, see https://docs.sourcegraph.com/dev/phabricator_gitolite.
 It currently does not run in CI and is intended to be run manually for release testing.
 
-e2e/bitbucket.test.ts tests the browser extension on a Bitbucket Server instance.
+`end-to-end/bitbucket.test.ts` tests the browser extension on a Bitbucket Server instance.
 
-e2e/gitlab.test.ts tests the browser extension on gitlab.com (or a private Gitlab instance).
+`end-to-end/gitlab.test.ts` tests the browser extension on gitlab.com (or a private Gitlab instance).
 
 ## Deploy
 

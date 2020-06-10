@@ -103,7 +103,7 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	}
 }
 
-func TestGetUploadsByRepo(t *testing.T) {
+func TestGetUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -160,7 +160,14 @@ func TestGetUploadsByRepo(t *testing.T) {
 					hi = len(testCase.expectedIDs)
 				}
 
-				uploads, totalCount, err := db.GetUploadsByRepo(context.Background(), 50, testCase.state, testCase.term, testCase.visibleAtTip, 3, lo)
+				uploads, totalCount, err := db.GetUploads(context.Background(), GetUploadsOptions{
+					RepositoryID: 50,
+					State:        testCase.state,
+					Term:         testCase.term,
+					VisibleAtTip: testCase.visibleAtTip,
+					Limit:        3,
+					Offset:       lo,
+				})
 				if err != nil {
 					t.Fatalf("unexpected error getting uploads for repo: %s", err)
 				}
@@ -430,7 +437,7 @@ func TestDequeueConversionSuccess(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -441,7 +448,7 @@ func TestDequeueConversionSuccess(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "completed" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
@@ -473,7 +480,7 @@ func TestDequeueConversionError(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -484,19 +491,19 @@ func TestDequeueConversionError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if summary, err := scanString(dbconn.Global.QueryRow("SELECT failure_summary FROM lsif_uploads WHERE id = 1")); err != nil {
+	if summary, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_summary FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_summary: %s", err)
 	} else if summary != "test summary" {
 		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "test summary", summary)
 	}
 
-	if stacktrace, err := scanString(dbconn.Global.QueryRow("SELECT failure_stacktrace FROM lsif_uploads WHERE id = 1")); err != nil {
+	if stacktrace, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_stacktrace FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_stacktrace: %s", err)
 	} else if stacktrace != "test stacktrace" {
 		t.Errorf("unexpected failure stacktrace outside of txn. want=%s have=%s", "test stacktrace", stacktrace)
@@ -528,7 +535,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	}
 
 	// alter record in the underlying transacted db
-	if err := unwrapDB(tx).exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
+	if err := unwrapDB(tx).queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
 		t.Fatalf("unexpected error altering record: %s", err)
 	}
 
@@ -544,7 +551,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 		t.Fatalf("unexpected error closing transaction: %s", err)
 	}
 
-	if indexerName, err := scanString(dbconn.Global.QueryRow("SELECT indexer FROM lsif_uploads WHERE id = 1")); err != nil {
+	if indexerName, _, err := scanFirstString(dbconn.Global.Query("SELECT indexer FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting indexer: %s", err)
 	} else if indexerName != "lsif-go" {
 		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "lsif-go", indexerName)

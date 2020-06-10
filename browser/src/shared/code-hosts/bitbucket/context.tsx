@@ -1,4 +1,4 @@
-import { RawRepoSpec, RevSpec } from '../../../../../shared/src/util/url'
+import { RawRepoSpec, RevisionSpec } from '../../../../../shared/src/util/url'
 import { CodeHostContext } from '../shared/codeHost'
 
 // example pathname: /projects/TEST/repos/some-repo/browse/src/extension.ts
@@ -20,39 +20,41 @@ interface RevisionRefInfo {
     latestCommit?: string
 }
 
-function getRevSpecFromRevisionSelector(): RevSpec {
+function getRevisionSpecFromRevisionSelector(): RevisionSpec {
     const branchNameElement = document.querySelector('#repository-layout-revision-selector .name[data-revision-ref]')
     if (!branchNameElement) {
         throw new Error('branchNameElement not found')
     }
-    const revisionRefStr = branchNameElement.getAttribute('data-revision-ref')
-    let revisionRefInfo: RevisionRefInfo | null = null
-    if (revisionRefStr) {
+    const revisionReferenceString = branchNameElement.getAttribute('data-revision-ref')
+    let revisionReferenceInfo: RevisionRefInfo | null = null
+    if (revisionReferenceString) {
         try {
-            revisionRefInfo = JSON.parse(revisionRefStr)
+            revisionReferenceInfo = JSON.parse(revisionReferenceString)
         } catch {
-            throw new Error(`Could not parse revisionRefStr: ${revisionRefStr}`)
+            throw new Error(`Could not parse revisionRefStr: ${revisionReferenceString}`)
         }
     }
-    if (revisionRefInfo?.latestCommit) {
+    if (revisionReferenceInfo?.latestCommit) {
         return {
-            rev: revisionRefInfo.latestCommit,
+            revision: revisionReferenceInfo.latestCommit,
         }
     }
-    throw new Error(`revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${String(revisionRefStr)})`)
+    throw new Error(
+        `revisionRefInfo is empty or has no latestCommit (revisionRefStr: ${String(revisionReferenceString)})`
+    )
 }
 
 export function getContext(): CodeHostContext {
     const repoSpec = getRawRepoSpecFromLocation(window.location)
-    let revSpec: Partial<RevSpec> = {}
+    let revisionSpec: Partial<RevisionSpec> = {}
     try {
-        revSpec = getRevSpecFromRevisionSelector()
+        revisionSpec = getRevisionSpecFromRevisionSelector()
     } catch {
         // RevSpec is optional in CodeHostContext
     }
     return {
         ...repoSpec,
-        ...revSpec,
+        ...revisionSpec,
         privateRepository: window.location.hostname !== 'bitbucket.org',
     }
 }

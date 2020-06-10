@@ -10,7 +10,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { fetchRepository } from './backend'
-import { RepoSettingsSidebar, RepoSettingsSideBarItems } from './RepoSettingsSidebar'
+import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 import { RouteDescriptor } from '../../util/contributions'
 import { ErrorMessage } from '../../components/alerts'
 import { asError } from '../../../../shared/src/util/errors'
@@ -33,7 +33,7 @@ export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaR
 
 interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: RepoSettingsSideBarItems
+    repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
@@ -65,7 +65,7 @@ export class RepoSettingsArea extends React.Component<Props> {
                 )
                 .subscribe(
                     repo => this.setState({ repo }),
-                    err => this.setState({ error: asError(err).message })
+                    error => this.setState({ error: asError(error).message })
                 )
         )
         this.componentUpdates.next(this.props)

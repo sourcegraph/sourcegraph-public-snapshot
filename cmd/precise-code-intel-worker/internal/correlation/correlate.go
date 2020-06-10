@@ -1,11 +1,9 @@
 package correlation
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -16,22 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 )
 
-// Correlate reads the given gzipped upload file and returns a correlation state object with the
-// same data canonicalized and pruned for storage.
-func Correlate(filename string, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	gzipReader, err := gzip.NewReader(f)
-	if err != nil {
-		return nil, err
-	}
-
+// Correlate reads LSIF data from the given reader and returns a correlation state object with
+// the same data canonicalized and pruned for storage.
+func Correlate(r io.Reader, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
 	// Read raw upload stream and return a correlation state
-	state, err := correlateFromReader(gzipReader, root)
+	state, err := correlateFromReader(r, root)
 	if err != nil {
 		return nil, err
 	}
@@ -124,6 +111,7 @@ var vertexHandlers = map[string]func(state *wrappedState, element lsif.Element) 
 	"hoverResult":        correlateHoverResult,
 	"moniker":            correlateMoniker,
 	"packageInformation": correlatePackageInformation,
+	"diagnosticResult":   correlateDiagnosticResult,
 }
 
 // correlateElement maps a single vertex element into the correlation state.
@@ -152,6 +140,7 @@ var edgeHandlers = map[string]func(state *wrappedState, id string, edge lsif.Edg
 	"moniker":                 correlateMonikerEdge,
 	"nextMoniker":             correlateNextMonikerEdge,
 	"packageInformation":      correlatePackageInformationEdge,
+	"textDocument/diagnostic": correlateDiagnosticEdge,
 }
 
 // correlateElement maps a single edge element into the correlation state.
@@ -272,6 +261,16 @@ func correlatePackageInformation(state *wrappedState, element lsif.Element) erro
 	}
 
 	state.PackageInformationData[element.ID] = payload
+	return nil
+}
+
+func correlateDiagnosticResult(state *wrappedState, element lsif.Element) error {
+	payload, ok := element.Payload.(lsif.DiagnosticResult)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
+	state.Diagnostics[element.ID] = payload
 	return nil
 }
 
@@ -441,5 +440,19 @@ func correlatePackageInformationEdge(state *wrappedState, id string, edge lsif.E
 		state.ExportedMonikers.Add(edge.OutV)
 	}
 
+	return nil
+}
+
+func correlateDiagnosticEdge(state *wrappedState, id string, edge lsif.Edge) error {
+	document, ok := state.DocumentData[edge.OutV]
+	if !ok {
+		return malformedDump(id, edge.OutV, "document")
+	}
+
+	if _, ok := state.Diagnostics[edge.InV]; !ok {
+		return malformedDump(id, edge.InV, "diagnosticResult")
+	}
+
+	document.Diagnostics.Add(edge.InV)
 	return nil
 }

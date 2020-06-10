@@ -29,7 +29,7 @@ import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
-import { RepoRevContainerRoute } from './repo/RepoRevContainer'
+import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
 import {
     parseSearchURLQuery,
@@ -53,9 +53,9 @@ import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { VersionContextProps } from '../../shared/src/search/util'
 import { VersionContext } from './schema/site.schema'
+import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -88,10 +88,10 @@ export interface LayoutProps
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
     orgAreaRoutes: readonly OrgAreaRoute[]
     repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: GQL.IUser | null

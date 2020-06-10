@@ -26,8 +26,8 @@ import {
     UIPositionSpec,
     RenderMode,
     RepoSpec,
-    ResolvedRevSpec,
-    RevSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
     toPositionOrRangeHash,
     toURIWithPath,
 } from '../../../../shared/src/util/url'
@@ -155,7 +155,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         const hoverifier = createHoverifier<
-            RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+            RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
             HoverMerged,
             ActionItemAction
         >({
@@ -192,20 +192,20 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 ),
                 resolveContext: () => ({
                     repoName: this.props.repoName,
-                    rev: this.props.rev,
+                    revision: this.props.revision,
                     commitID: this.props.commitID,
                     filePath: this.props.filePath,
                 }),
                 dom: domFunctions,
             })
         )
-        const goToDefinition = (ev: MouseEvent): void => {
+        const goToDefinition = (event: MouseEvent): void => {
             const goToDefinitionAction =
                 Array.isArray(this.state.actionsOrError) &&
                 this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
             if (goToDefinitionAction) {
                 this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
-                ev.stopPropagation()
+                event.stopPropagation()
             }
         }
 
@@ -298,14 +298,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         const modelChanges: Observable<
             AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
         > = this.componentUpdates.pipe(
-            map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')),
+            map(props =>
+                pick(props, 'repoName', 'revision', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')
+            ),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
         )
 
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
-            combineLatest([modelChanges, locationPositions]).subscribe(([model, pos]) => {
+            combineLatest([modelChanges, locationPositions]).subscribe(([model, position]) => {
                 const uri = toURIWithPath(model)
                 if (!this.props.extensionsController.services.model.hasModel(uri)) {
                     this.props.extensionsController.services.model.addModel({
@@ -318,7 +320,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 this.props.extensionsController.services.viewer.addViewer({
                     type: 'CodeEditor' as const,
                     resource: uri,
-                    selections: lprToSelectionsZeroIndexed(pos),
+                    selections: lprToSelectionsZeroIndexed(position),
                     isActive: true,
                 })
             })
@@ -416,13 +418,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     }
 
     private getLSPTextDocumentPositionParams(
-        position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
+        position: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+    ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,
             commitID: position.commitID,
-            rev: position.rev,
+            revision: position.revision,
             mode: this.props.mode,
             position,
         }
@@ -491,15 +493,19 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 {this.state.decorationsOrError &&
                     !isErrorLike(this.state.decorationsOrError) &&
                     this.state.decorationsOrError
-                        .filter(d => !!d.after && this.state.lineDecorationAttachmentIDs[d.range.start.line + 1])
-                        .map(d => {
-                            const line = d.range.start.line + 1
+                        .filter(
+                            decoration =>
+                                !!decoration.after &&
+                                this.state.lineDecorationAttachmentIDs[decoration.range.start.line + 1]
+                        )
+                        .map(decoration => {
+                            const line = decoration.range.start.line + 1
                             return (
                                 <LineDecorationAttachment
                                     key={this.state.lineDecorationAttachmentIDs[line]}
                                     portalID={this.state.lineDecorationAttachmentIDs[line]}
                                     line={line}
-                                    attachment={d.after!}
+                                    attachment={decoration.after!}
                                     {...this.props}
                                 />
                             )

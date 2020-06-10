@@ -31,9 +31,9 @@ export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<Pr
     className = '',
 }) => {
     const onUserCountChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => {
+        event => {
             // Check for NaN (which is the value if the user deletes the input's value).
-            onChange(Number.isNaN(e.currentTarget.valueAsNumber) ? null : e.currentTarget.valueAsNumber)
+            onChange(Number.isNaN(event.currentTarget.valueAsNumber) ? null : event.currentTarget.valueAsNumber)
         },
         [onChange]
     )

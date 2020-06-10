@@ -17,12 +17,12 @@ export type ExpressionNode =
 export class Parser {
     protected lexer!: Lexer
 
-    public parse(exprStr: string): ExpressionNode {
+    public parse(expressionString: string): ExpressionNode {
         if (!this.lexer) {
             this.lexer = new Lexer()
         }
-        this.lexer.reset(exprStr)
-        const expr = this.parseExpression()
+        this.lexer.reset(expressionString)
+        const expression = this.parseExpression()
 
         const token = this.lexer.next()
         if (token !== undefined) {
@@ -31,7 +31,7 @@ export class Parser {
             )
         }
 
-        return expr
+        return expression
     }
 
     // ArgumentList := Expression |
@@ -39,15 +39,15 @@ export class Parser {
     private parseArgumentList(): ExpressionNode[] {
         const args: ExpressionNode[] = []
         while (true) {
-            const expr = this.parseExpression()
-            if (expr === undefined) {
+            const expression = this.parseExpression()
+            if (expression === undefined) {
                 throw new Error(
                     `Parse error on token in arguments list: ${JSON.stringify(this.lexer.peek())} (at ${
                         this.lexer.index
                     })`
                 )
             }
-            args.push(expr)
+            args.push(expression)
             const token = this.lexer.peek()
             if (!matchOp(token, ',')) {
                 break
@@ -176,12 +176,12 @@ export class Parser {
 
         if (matchOp(token, '(')) {
             this.lexer.next()
-            const expr = this.parseAdditive()
+            const expression = this.parseAdditive()
             const token = this.lexer.next()
             if (!matchOp(token, ')')) {
                 throw new SyntaxError(`Expected ")" (at ${this.lexer.index})`)
             }
-            return expr
+            return expression
         }
 
         throw new SyntaxError(`Parse error on token: ${JSON.stringify(token.value)} (at ${this.lexer.index})`)
@@ -193,11 +193,11 @@ export class Parser {
         const token = this.lexer.peek()
         if (token !== undefined && (matchOp(token, '-') || matchOp(token, '+') || matchOp(token, '!'))) {
             this.lexer.next()
-            const expr = this.parseUnary()
+            const expression = this.parseUnary()
             return {
                 Unary: {
                     operator: token.value,
-                    expression: expr,
+                    expression,
                 },
             }
         }
@@ -207,26 +207,26 @@ export class Parser {
     // Multiplicative ::= Unary |
     //                    Multiplicative BinaryOp Unary
     private parseMultiplicative(): ExpressionNode {
-        let expr = this.parseUnary()
+        let expression = this.parseUnary()
         let token = this.lexer.peek()
         while (token !== undefined && (matchOp(token, '*') || matchOp(token, '/') || matchOp(token, '%'))) {
             this.lexer.next()
-            expr = {
+            expression = {
                 Binary: {
                     operator: token.value,
-                    left: expr,
+                    left: expression,
                     right: this.parseUnary(),
                 },
             }
             token = this.lexer.peek()
         }
-        return expr
+        return expression
     }
 
     // Additive ::= Multiplicative |
     //              Additive BinaryOp Multiplicative
     private parseAdditive(): ExpressionNode {
-        let expr = this.parseMultiplicative()
+        let expression = this.parseMultiplicative()
         let token = this.lexer.peek()
         while (
             token !== undefined &&
@@ -244,16 +244,16 @@ export class Parser {
                 matchOp(token, '||'))
         ) {
             this.lexer.next()
-            expr = {
+            expression = {
                 Binary: {
                     operator: token.value,
-                    left: expr,
+                    left: expression,
                     right: this.parseMultiplicative(),
                 },
             }
             token = this.lexer.peek()
         }
-        return expr
+        return expression
     }
 
     // Expression ::= Additive
@@ -264,13 +264,13 @@ export class Parser {
 
 /** Parses a template. */
 export class TemplateParser extends Parser {
-    public parse(templateStr: string): ExpressionNode {
+    public parse(templateString: string): ExpressionNode {
         if (!this.lexer) {
             this.lexer = new TemplateLexer()
         }
 
-        this.lexer.reset(templateStr)
-        const expr = this.parseTemplate()
+        this.lexer.reset(templateString)
+        const expression = this.parseTemplate()
 
         const token = this.lexer.next()
         if (token !== undefined) {
@@ -279,10 +279,10 @@ export class TemplateParser extends Parser {
             )
         }
 
-        return expr
+        return expression
     }
 }
 
-function matchOp(token: Pick<Token, 'type' | 'value'> | undefined, op: Operator): boolean {
-    return token !== undefined && token.type === TokenType.Operator && token.value === op
+function matchOp(token: Pick<Token, 'type' | 'value'> | undefined, operator: Operator): boolean {
+    return token !== undefined && token.type === TokenType.Operator && token.value === operator
 }

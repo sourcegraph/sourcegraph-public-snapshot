@@ -18,23 +18,26 @@ interface Props {
 
 export class CodeExcerpt2 extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        const maxDigits = this.props.items.reduce((n, { line }) => {
+        const maxDigits = this.props.items.reduce((digitsTotal, { line }) => {
             const digits = (line + 1).toString().length
-            return digits > n ? digits : n
+            return digits > digitsTotal ? digits : digitsTotal
         }, 1)
         return (
             <pre className="file-match__code">
-                {this.props.items.map(({ line, preview, highlightRanges }, i) => (
+                {this.props.items.map(({ line, preview, highlightRanges }, index) => (
                     <code
                         data-line={(line + 1).toString().padStart(maxDigits)}
-                        key={i}
-                        ref={e => e && highlightNode(e, highlightRanges[0].start, highlightRanges[0].highlightLength)}
+                        key={index}
+                        ref={element =>
+                            element &&
+                            highlightNode(element, highlightRanges[0].start, highlightRanges[0].highlightLength)
+                        }
                     >
                         <Link
                             to={`${this.props.urlWithoutPosition}${toPositionOrRangeHash({
                                 position: { line: line + 1, character: highlightRanges[0].start + 1 },
                             })}`}
-                            key={i}
+                            key={index}
                             onClick={this.props.onSelect}
                         >
                             {preview}

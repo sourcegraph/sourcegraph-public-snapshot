@@ -137,7 +137,7 @@ export class OrgArea extends React.Component<Props> {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
                         return queryOrganization({ name }).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
-                            map((c): PartialStateUpdate => ({ orgOrError: c })),
+                            map((orgOrError): PartialStateUpdate => ({ orgOrError })),
 
                             // Don't clear old org data while we reload, to avoid unmounting all components during
                             // loading.
@@ -147,7 +147,7 @@ export class OrgArea extends React.Component<Props> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 

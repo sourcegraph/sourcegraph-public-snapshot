@@ -67,7 +67,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			results: []SearchResultResolver{
 				&FileMatchResolver{
 					JPath:    "three.go",
-					Repo:     &types.Repo{Name: "r"},
+					Repo:     &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID: wantCommitID,
 				},
 			},
@@ -77,7 +77,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			results: []SearchResultResolver{
 				&FileMatchResolver{
 					JPath:        "three.go",
-					Repo:         &types.Repo{Name: "r"},
+					Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID:     wantCommitID,
 					JLineMatches: []*lineMatch{{JLineNumber: 1}},
 				},
@@ -88,13 +88,13 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			results: []SearchResultResolver{
 				&FileMatchResolver{
 					JPath:        "two.go",
-					Repo:         &types.Repo{Name: "r"},
+					Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID:     wantCommitID,
 					JLineMatches: []*lineMatch{{JLineNumber: 1}, {JLineNumber: 2}},
 				},
 				&FileMatchResolver{
 					JPath:        "three.go",
-					Repo:         &types.Repo{Name: "r"},
+					Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID:     wantCommitID,
 					JLineMatches: []*lineMatch{{JLineNumber: 1}},
 				},

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -44,8 +45,8 @@ type DB interface {
 	// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 	GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 
-	// GetUploadsByRepo returns a list of uploads for a particular repo and the total count of records matching the given conditions.
-	GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) ([]Upload, int, error)
+	// GetUploads returns a list of uploads and the total count of records matching the given conditions.
+	GetUploads(ctx context.Context, opts GetUploadsOptions) ([]Upload, int, error)
 
 	// QueueSize returns the number of uploads in the queued state.
 	QueueSize(ctx context.Context) (int, error)
@@ -90,8 +91,8 @@ type DB interface {
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)
 
-	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, and file.
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]Dump, error)
+	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) ([]Dump, error)
 
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
@@ -139,6 +140,9 @@ type DB interface {
 	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
 
+	// GetIndexes returns a list of indexes and the total count of records matching the given conditions.
+	GetIndexes(ctx context.Context, opts GetIndexesOptions) ([]Index, int, error)
+
 	// IndexQueueSize returns the number of indexes in the queued state.
 	IndexQueueSize(ctx context.Context) (int, error)
 
@@ -159,6 +163,13 @@ type DB interface {
 	// closed. If there is no such unlocked index, a zero-value index and nil DB will be returned along with a
 	// false valued flag. This method must not be called from within a transaction.
 	DequeueIndex(ctx context.Context) (Index, DB, bool, error)
+
+	// DeleteIndexByID deletes an index by its identifier.
+	DeleteIndexByID(ctx context.Context, id int) (bool, error)
+
+	// ResetStalledIndexes moves all unlocked indexes processing for more than `StalledIndexMaxAge` back to the
+	// queued state. This method returns a list of updated index identifiers.
+	ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error)
 
 	// RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
 	// code intelligence activity within the last week grouped by repository. The resulting slice is ordered
@@ -198,11 +209,92 @@ func (db *dbImpl) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, erro
 	return db.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
-// exec performs a query and throws away the result.
-func (db *dbImpl) exec(ctx context.Context, query *sqlf.Query) error {
+// queryForEffect performs a query and throws away the result.
+func (db *dbImpl) queryForEffect(ctx context.Context, query *sqlf.Query) error {
 	rows, err := db.query(ctx, query)
 	if err != nil {
 		return err
 	}
-	return rows.Close()
+	return closeRows(rows, nil)
+}
+
+// scanStrings scans a slice of strings from the return value of `*dbImpl.query`.
+func scanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var values []string
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// scanFirstString scans a slice of strings from the return value of `*dbImpl.query` and returns the first.
+func scanFirstString(rows *sql.Rows, err error) (string, bool, error) {
+	values, err := scanStrings(rows, err)
+	if err != nil || len(values) == 0 {
+		return "", false, err
+	}
+	return values[0], true, nil
+}
+
+// scanInts scans a slice of ints from the return value of `*dbImpl.query`.
+func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var values []int
+	for rows.Next() {
+		var value int
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// scanFirstInt scans a slice of ints from the return value of `*dbImpl.query` and returns the first.
+func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
+	values, err := scanInts(rows, err)
+	if err != nil || len(values) == 0 {
+		return 0, false, err
+	}
+	return values[0], true, nil
+}
+
+// closeRows closes the rows object and checks its error value.
+func closeRows(rows *sql.Rows, err error) error {
+	if closeErr := rows.Close(); closeErr != nil {
+		err = multierror.Append(err, closeErr)
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		err = multierror.Append(err, rowsErr)
+	}
+
+	return err
+}
+
+// intsToQueries converts a slice of ints into a slice of queries.
+func intsToQueries(values []int) []*sqlf.Query {
+	var queries []*sqlf.Query
+	for _, value := range values {
+		queries = append(queries, sqlf.Sprintf("%d", value))
+	}
+
+	return queries
 }

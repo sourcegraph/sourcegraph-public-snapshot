@@ -44,11 +44,11 @@ const DEFAULT_CONDUIT_RESPONSES: ConduitResponseMap = {
                 repositoryPHID: '1',
             },
         }),
-    '/api/differential.querydiffs': (params: { ids: string[]; revisionIDs: string[] }) =>
+    '/api/differential.querydiffs': (parameters: { ids: string[]; revisionIDs: string[] }) =>
         of({
-            [params.ids[0]]: {
-                id: params.ids[0],
-                revisionID: params.revisionIDs[0],
+            [parameters.ids[0]]: {
+                id: parameters.ids[0],
+                revisionID: parameters.revisionIDs[0],
                 dateCreated: '1566329300',
                 dateModified: '1566329305',
                 sourceControlBaseRevision: 'base-revision',
@@ -67,15 +67,15 @@ const DEFAULT_CONDUIT_RESPONSES: ConduitResponseMap = {
                         status: 'pushed',
                         refs: [
                             {
-                                ref: `refs/tags/phabricator/base/${params.ids[0]}`,
+                                ref: `refs/tags/phabricator/base/${parameters.ids[0]}`,
                                 type: 'base',
-                                commit: `base-${params.ids[0]}`,
+                                commit: `base-${parameters.ids[0]}`,
                                 remote: { uri: 'https://github.com/lguychard/testing.git' },
                             },
                             {
-                                ref: `refs/tags/phabricator/diff/${params.ids[0]}`,
+                                ref: `refs/tags/phabricator/diff/${parameters.ids[0]}`,
                                 type: 'diff',
-                                commit: `diff-${params.ids[0]}`,
+                                commit: `diff-${parameters.ids[0]}`,
                                 remote: { uri: 'https://github.com/lguychard/testing.git' },
                             },
                         ],
@@ -103,18 +103,18 @@ const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         } as SuccessGraphQLResult<IQuery>),
     ResolveStagingRev: () =>
         of({
-            data: { resolvePhabricatorDiff: { oid: 'staging-rev' } },
+            data: { resolvePhabricatorDiff: { oid: 'staging-revision' } },
             errors: undefined,
         } as SuccessGraphQLResult<IMutation>),
 }
 
 function mockQueryConduit(responseMap?: ConduitResponseMap): QueryConduitHelper<any> {
-    return (endpoint, params) => {
+    return (endpoint, parameters) => {
         const mock = responseMap?.[endpoint] || DEFAULT_CONDUIT_RESPONSES[endpoint]
         if (!mock) {
             return throwError(new Error(`No mock for endpoint ${endpoint}`))
         }
-        return mock(params)
+        return mock(parameters)
     }
 }
 
@@ -304,11 +304,11 @@ describe('Phabricator file info', () => {
                         codeViewSelector: '.differential-changeset',
                         conduitResponseMap: {
                             // Returns diff details without staging details
-                            '/api/differential.querydiffs': params =>
+                            '/api/differential.querydiffs': parameters =>
                                 of({
-                                    [params.ids[0]]: {
-                                        id: params.ids[0],
-                                        revisionID: params.revisionIDs[0],
+                                    [parameters.ids[0]]: {
+                                        id: parameters.ids[0],
+                                        revisionID: parameters.revisionIDs[0],
                                         dateCreated: '1566329300',
                                         dateModified: '1566329305',
                                         sourceControlBaseRevision: 'base-revision',
@@ -328,7 +328,7 @@ describe('Phabricator file info', () => {
                 baseCommitID: 'base-revision',
                 baseFilePath: 'helpers/add.go',
                 baseRawRepoName: 'github.com/gorilla/mux',
-                commitID: 'staging-rev',
+                commitID: 'staging-revision',
                 filePath: 'helpers/add.go',
                 rawRepoName: 'github.com/gorilla/mux',
             })
@@ -347,7 +347,7 @@ describe('Phabricator file info', () => {
                 baseCommitID: 'base-revision',
                 baseFilePath: 'helpers/add.go',
                 baseRawRepoName: 'github.com/gorilla/mux',
-                commitID: 'staging-rev',
+                commitID: 'staging-revision',
                 filePath: 'helpers/add.go',
                 rawRepoName: 'github.com/gorilla/mux',
             })
@@ -395,23 +395,25 @@ describe('Phabricator file info', () => {
                             ResolveStagingRev: (variables: any) =>
                                 of({
                                     data: {
-                                        resolvePhabricatorDiff: { oid: `staging-rev-${variables.patch as string}` },
+                                        resolvePhabricatorDiff: {
+                                            oid: `staging-revision-${variables.patch as string}`,
+                                        },
                                     },
                                     errors: undefined,
                                 } as SuccessGraphQLResult<IMutation>),
                         },
                         conduitResponseMap: {
-                            '/api/differential.getrawdiff': params =>
-                                of(`raw-diff-for-diffid-${params.diffID as string}`),
+                            '/api/differential.getrawdiff': parameters =>
+                                of(`raw-diff-for-diffid-${parameters.diffID as string}`),
                         },
                     },
                     resolveDiffFileInfo
                 )
             ).toEqual({
-                baseCommitID: 'staging-rev-raw-diff-for-diffid-2',
+                baseCommitID: 'staging-revision-raw-diff-for-diffid-2',
                 baseFilePath: '.arcconfig',
                 baseRawRepoName: 'github.com/gorilla/mux',
-                commitID: 'staging-rev-raw-diff-for-diffid-3',
+                commitID: 'staging-revision-raw-diff-for-diffid-3',
                 filePath: '.arcconfig',
                 rawRepoName: 'github.com/gorilla/mux',
             })

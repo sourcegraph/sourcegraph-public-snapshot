@@ -96,6 +96,86 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	}
 }
 
+func TestGetIndexes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(-time.Minute * 1)
+	t3 := t1.Add(-time.Minute * 2)
+	t4 := t1.Add(-time.Minute * 3)
+	t5 := t1.Add(-time.Minute * 4)
+	t6 := t1.Add(-time.Minute * 5)
+	t7 := t1.Add(-time.Minute * 6)
+	t8 := t1.Add(-time.Minute * 7)
+	t9 := t1.Add(-time.Minute * 8)
+	t10 := t1.Add(-time.Minute * 9)
+	failureSummary := "unlucky 333"
+
+	insertIndexes(t, dbconn.Global,
+		Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued"},
+		Index{ID: 2, QueuedAt: t2, State: "errored", FailureSummary: &failureSummary},
+		Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued"},
+		Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51},
+		Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing"},
+		Index{ID: 6, QueuedAt: t6, State: "processing"},
+		Index{ID: 7, QueuedAt: t7},
+		Index{ID: 8, QueuedAt: t8},
+		Index{ID: 9, QueuedAt: t9, State: "queued"},
+		Index{ID: 10, QueuedAt: t10},
+	)
+
+	testCases := []struct {
+		state       string
+		term        string
+		expectedIDs []int
+	}{
+		{expectedIDs: []int{1, 2, 3, 5, 6, 7, 8, 9, 10}},
+		{state: "completed", expectedIDs: []int{7, 8, 10}},
+		{term: "003", expectedIDs: []int{1, 3, 5}},    // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}}, // searches commits and failure summary
+	}
+
+	for _, testCase := range testCases {
+		name := fmt.Sprintf("state=%s term=%s", testCase.state, testCase.term)
+
+		t.Run(name, func(t *testing.T) {
+			for lo := 0; lo < len(testCase.expectedIDs); lo++ {
+				hi := lo + 3
+				if hi > len(testCase.expectedIDs) {
+					hi = len(testCase.expectedIDs)
+				}
+
+				indexes, totalCount, err := db.GetIndexes(context.Background(), GetIndexesOptions{
+					RepositoryID: 50,
+					State:        testCase.state,
+					Term:         testCase.term,
+					Limit:        3,
+					Offset:       lo,
+				})
+				if err != nil {
+					t.Fatalf("unexpected error getting indexes for repo: %s", err)
+				}
+				if totalCount != len(testCase.expectedIDs) {
+					t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
+				}
+
+				var ids []int
+				for _, index := range indexes {
+					ids = append(ids, index.ID)
+				}
+
+				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
+					t.Errorf("unexpected index ids at offset %d (-want +got):\n%s", lo, diff)
+				}
+			}
+		})
+	}
+}
+
 func TestIndexQueueSize(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -276,7 +356,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -287,7 +367,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "completed" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
@@ -319,7 +399,7 @@ func TestDequeueIndexProcessError(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -330,19 +410,19 @@ func TestDequeueIndexProcessError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if summary, err := scanString(dbconn.Global.QueryRow("SELECT failure_summary FROM lsif_indexes WHERE id = 1")); err != nil {
+	if summary, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_summary FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_summary: %s", err)
 	} else if summary != "test summary" {
 		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "test summary", summary)
 	}
 
-	if stacktrace, err := scanString(dbconn.Global.QueryRow("SELECT failure_stacktrace FROM lsif_indexes WHERE id = 1")); err != nil {
+	if stacktrace, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_stacktrace FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_stacktrace: %s", err)
 	} else if stacktrace != "test stacktrace" {
 		t.Errorf("unexpected failure stacktrace outside of txn. want=%s have=%s", "test stacktrace", stacktrace)
@@ -409,5 +489,86 @@ func TestDequeueIndexEmpty(t *testing.T) {
 	if ok {
 		_ = tx.Done(nil)
 		t.Fatalf("unexpected dequeue")
+	}
+}
+
+func TestDeleteIndexByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	insertIndexes(t, dbconn.Global,
+		Index{ID: 1},
+	)
+
+	if found, err := db.DeleteIndexByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error deleting index: %s", err)
+	} else if !found {
+		t.Fatalf("expected record to exist")
+	}
+
+	// Index no longer exists
+	if _, exists, err := db.GetIndexByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
+func TestDeleteIndexByIDMissingRow(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	if found, err := db.DeleteIndexByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error deleting index: %s", err)
+	} else if found {
+		t.Fatalf("unexpected record")
+	}
+}
+
+func TestResetStalledIndexes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	now := time.Unix(1587396557, 0).UTC()
+	t1 := now.Add(-time.Second * 6) // old
+	t2 := now.Add(-time.Second * 2) // new enough
+	t3 := now.Add(-time.Second * 3) // new enough
+	t4 := now.Add(-time.Second * 8) // old
+	t5 := now.Add(-time.Second * 8) // old
+
+	insertIndexes(t, dbconn.Global,
+		Index{ID: 1, State: "processing", StartedAt: &t1},
+		Index{ID: 2, State: "processing", StartedAt: &t2},
+		Index{ID: 3, State: "processing", StartedAt: &t3},
+		Index{ID: 4, State: "processing", StartedAt: &t4},
+		Index{ID: 5, State: "processing", StartedAt: &t5},
+	)
+
+	tx, err := dbconn.Global.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// Row lock index 5 in a transaction which should be skipped by ResetStalled
+	if _, err := tx.Query(`SELECT * FROM lsif_indexes WHERE id = 5 FOR UPDATE`); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := []int{1, 4}
+
+	if ids, err := db.ResetStalledIndexes(context.Background(), now); err != nil {
+		t.Fatalf("unexpected error resetting stalled indexes: %s", err)
+	} else if diff := cmp.Diff(expected, ids); diff != "" {
+		t.Errorf("unexpected ids (-want +got):\n%s", diff)
 	}
 }

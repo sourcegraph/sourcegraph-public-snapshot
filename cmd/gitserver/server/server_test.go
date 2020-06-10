@@ -159,7 +159,7 @@ func TestRequest(t *testing.T) {
 	}
 }
 
-func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
+func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	tmp, err := ioutil.TempDir("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
@@ -172,10 +172,11 @@ func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
 		b.Fatal(err)
 	}
 
+	masterRef := "refs/heads/master"
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err = ioutil.WriteFile(filepath.Join(dir, "HEAD"), []byte("ref: refs/heads/master\n"), 0600)
+	err = ioutil.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -223,13 +224,20 @@ func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
 		if rev != masterRev {
 			b.Fatal("unexpected rev: ", rev)
 		}
+		ref, err := quickSymbolicRefHead(gitDir)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if ref != masterRef {
+			b.Fatal("unexpected ref: ", ref)
+		}
 	}
 
 	// Exclude cleanup (defers)
 	b.StopTimer()
 }
 
-func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
+func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
 	tmp, err := ioutil.TempDir("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
@@ -244,9 +252,10 @@ func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
 
 	// This simulates the usual case for a repo that HEAD is often
 	// updated. The master ref will be unpacked.
+	masterRef := "refs/heads/master"
 	masterRev := "4d5092a09bca95e0153c423d76ef62d4fcd168ec"
 	files := map[string]string{
-		"HEAD":              "ref: refs/heads/master\n",
+		"HEAD":              fmt.Sprintf("ref: %s\n", masterRef),
 		"refs/heads/master": masterRev + "\n",
 	}
 	for path, content := range files {
@@ -271,6 +280,13 @@ func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
 		}
 		if rev != masterRev {
 			b.Fatal("unexpected rev: ", rev)
+		}
+		ref, err := quickSymbolicRefHead(gitDir)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if ref != masterRef {
+			b.Fatal("unexpected ref: ", ref)
 		}
 	}
 

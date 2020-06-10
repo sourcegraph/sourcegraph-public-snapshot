@@ -255,8 +255,8 @@ export class FilterInput extends React.Component<Props, State> {
         this.setFiniteFilterDefault.next()
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (isFiniteFilter(this.props.filterType) && this.props.value !== prevProps.value) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (isFiniteFilter(this.props.filterType) && this.props.value !== previousProps.value) {
             this.inputValues.next(this.props.value)
         }
     }
@@ -265,13 +265,13 @@ export class FilterInput extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private onInputUpdate: React.ChangeEventHandler<HTMLInputElement> = e => {
-        this.inputValues.next(e.target.value)
+    private onInputUpdate: React.ChangeEventHandler<HTMLInputElement> = event => {
+        this.inputValues.next(event.target.value)
     }
 
-    private onSubmitInput = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
-        e.stopPropagation()
+    private onSubmitInput = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
+        event.stopPropagation()
 
         if (this.state.inputValue !== '' || this.props.filterType === FilterType.type) {
             // Don't allow empty filters, unless it's the type filter.
@@ -322,8 +322,8 @@ export class FilterInput extends React.Component<Props, State> {
      * Checks that the newly focused element is not a child of the previously focused element.
      * Prevents onBlur from firing if we are clicking inside the filter input chip.
      */
-    private focusInCurrentTarget = (e: React.FocusEvent<HTMLDivElement>): boolean => {
-        const { relatedTarget, currentTarget } = e
+    private focusInCurrentTarget = (event: React.FocusEvent<HTMLDivElement>): boolean => {
+        const { relatedTarget, currentTarget } = event
 
         if (relatedTarget === null) {
             return false
@@ -335,8 +335,8 @@ export class FilterInput extends React.Component<Props, State> {
     /**
      * Handles the input field in the filter input becoming unfocused.
      */
-    private onInputBlur: React.FocusEventHandler<HTMLDivElement> = e => {
-        const focusIsNotChildElement = this.focusInCurrentTarget(e)
+    private onInputBlur: React.FocusEventHandler<HTMLDivElement> = event => {
+        const focusIsNotChildElement = this.focusInCurrentTarget(event)
         if (focusIsNotChildElement) {
             return
         }
@@ -511,19 +511,19 @@ export class FilterInput extends React.Component<Props, State> {
                     <div className="filter-input__radio-button-container">
                         <span>{`${FilterTypeToProseNames[this.props.filterType]}:`}</span>
                         {isFiniteFilter(this.props.filterType) &&
-                            finiteFilters[this.props.filterType].values.map(val => (
-                                <div key={val.value} className="filter-input__radio">
+                            finiteFilters[this.props.filterType].values.map(value => (
+                                <div key={value.value} className="filter-input__radio">
                                     <input
                                         type="radio"
-                                        className={`e2e-filter-input-radio-button-${val.value}`}
-                                        id={val.value}
-                                        name={val.value}
-                                        onChange={() => this.setState({ inputValue: val.value })}
-                                        checked={this.state.inputValue === val.value}
+                                        className={`e2e-filter-input-radio-button-${value.value}`}
+                                        id={value.value}
+                                        name={value.value}
+                                        onChange={() => this.setState({ inputValue: value.value })}
+                                        checked={this.state.inputValue === value.value}
                                         autoFocus={true}
                                     />
-                                    <label htmlFor={val.value} tabIndex={0} className="filter-input__radio-label">
-                                        {val.displayValue ? startCase(val.displayValue) : startCase(val.value)}
+                                    <label htmlFor={value.value} tabIndex={0} className="filter-input__radio-label">
+                                        {value.displayValue ? startCase(value.displayValue) : startCase(value.value)}
                                     </label>
                                 </div>
                             ))}

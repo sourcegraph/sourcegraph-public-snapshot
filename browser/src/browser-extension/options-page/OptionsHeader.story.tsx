@@ -4,7 +4,7 @@ import { action } from '@storybook/addon-actions'
 import { OptionsHeader } from './OptionsHeader'
 import optionsStyles from '../../options.scss'
 
-storiesOf('Options - OptionsHeader', module)
+storiesOf('browser/Options/OptionsHeader', module)
     .addDecorator(story => (
         <>
             <style>{optionsStyles}</style>

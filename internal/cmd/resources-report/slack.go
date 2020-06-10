@@ -29,7 +29,7 @@ func newSlackButtonRun(runID string) slackBlock {
 		"type": "button",
 		"text": slackText{
 			Type: "plain_text",
-			Text: "Run logs",
+			Text: "View run",
 		},
 		"url": fmt.Sprintf("https://github.com/sourcegraph/sourcegraph/actions/runs/%s", runID),
 	}
@@ -46,7 +46,11 @@ func newSlackButtonDocs() slackBlock {
 	}
 }
 
-func newSlackButtonSheet(sheetID string) slackBlock {
+func newSlackButtonSheet(sheetID, sheetPage string) slackBlock {
+	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s", sheetID)
+	if sheetPage != "" {
+		url = fmt.Sprintf("%s#gid=%s", url, sheetPage)
+	}
 	return slackBlock{
 		"type": "button",
 		"text": slackText{
@@ -54,7 +58,7 @@ func newSlackButtonSheet(sheetID string) slackBlock {
 			Text: "Report",
 		},
 		"style": "primary",
-		"url":   fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s", sheetID),
+		"url":   url,
 	}
 }
 
@@ -101,9 +105,8 @@ func sendSlackBlocks(ctx context.Context, webhook string, blocks []slackBlock) e
 		message, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("failed to post report to slack: %s", resp.Status)
-		} else {
-			return fmt.Errorf("failed to post report to slack: %s", string(message))
 		}
+		return fmt.Errorf("failed to post report to slack: %s", string(message))
 	}
 	return nil
 }

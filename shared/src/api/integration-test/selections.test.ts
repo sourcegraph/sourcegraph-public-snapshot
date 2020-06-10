@@ -55,7 +55,9 @@ describe('Selections (integration)', () => {
                 await extensionAPI.internal.sync()
             }
             assertToJSON(
-                selectionValues.map(selections => selections.map(s => ({ start: s.start.line, end: s.end.line }))),
+                selectionValues.map(selections =>
+                    selections.map(selection => ({ start: selection.start.line, end: selection.end.line }))
+                ),
                 [[], ...testValues]
             )
         })

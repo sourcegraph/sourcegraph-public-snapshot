@@ -3,13 +3,13 @@ import { DOMFunctions } from '../shared/codeViews'
 import { isDiffPageType, parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
-    const td = codeElement.closest('td')!
+    const tableCell = codeElement.closest('td')!
 
-    if (td.classList.contains('blob-code-addition')) {
+    if (tableCell.classList.contains('blob-code-addition')) {
         return 'head'
     }
 
-    if (td.classList.contains('blob-code-deletion')) {
+    if (tableCell.classList.contains('blob-code-deletion')) {
         return 'base'
     }
     // If we can't determine the diff part the code element's parent `<td>`
@@ -18,7 +18,7 @@ const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     // code view to determine whether this is a split or unified diff view.
     if (isDomSplitDiff(codeElement)) {
         // If there are more cells on the right, this is the base, otherwise the head
-        return td.nextElementSibling ? 'base' : 'head'
+        return tableCell.nextElementSibling ? 'base' : 'head'
     }
 
     return 'head'
@@ -161,8 +161,8 @@ export const diffDomFunctions: DOMFunctions = {
             )
 
         // Some versions of GitHub have data-code-marker attributes instead of the first character diff indicator.
-        const tr = codeElement.closest('tr')
-        const hasDataCodeMarkerUnified = tr?.querySelector('td[data-code-marker]')
+        const tableRow = codeElement.closest('tr')
+        const hasDataCodeMarkerUnified = tableRow?.querySelector('td[data-code-marker]')
         const hasDataCodeMarkerSplit = blobCodeInner?.hasAttribute('data-code-marker')
         const hasDataCodeMarker = hasDataCodeMarkerUnified || hasDataCodeMarkerSplit
 

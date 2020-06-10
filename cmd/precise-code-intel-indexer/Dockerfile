@@ -1,3 +1,12 @@
+FROM golang:1.14.4-alpine@sha256:9887985d9de3d1c2a37be9e2e9c6dbc44f4cbcc7afe3d564cf6c3916a58b1a5c AS go
+FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c AS lsif-go
+
+ENV LSIF_GO_VERSION=0.8.0
+
+RUN curl -L "https://github.com/sourcegraph/lsif-go/releases/download/v${LSIF_GO_VERSION}/lsif-go_${LSIF_GO_VERSION}_linux_amd64.tar.gz" -o lsif-go.tar.gz && \
+    tar -C /usr/local/bin -zvxf lsif-go.tar.gz lsif-go && \
+    rm lsif-go.tar.gz
+
 FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
 
 ARG COMMIT_SHA="unknown"
@@ -11,19 +20,21 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
-    tini musl-dev go
+    git \
+    tini
 
-ENV GOROOT=/usr/lib/go GOPATH=/go PATH=/go/bin:$PATH
-RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+# Steal latest go from canned build
+COPY --from=go /usr/local/go/ /usr/local/go/
+COPY --from=lsif-go /usr/local/bin/lsif-go /usr/local/bin/lsif-go
 
-RUN mkdir temp && \
-    curl -L https://github.com/sourcegraph/src-cli/releases/download/3.12.0/src-cli_3.12.0_linux_amd64.tar.gz -o src-cli.tar.gz && \
-    tar -C temp -zvxf src-cli.tar.gz && \
-    mv temp/src /usr/local/bin && \
-    curl -L https://github.com/sourcegraph/lsif-go/releases/download/v0.8.0/lsif-go_0.8.0_linux_amd64.tar.gz -o lsif-go.tar.gz && \
-    tar -C temp -zvxf lsif-go.tar.gz && \
-    mv temp/lsif-go /usr/local/bin && \
-    rm -rf temp src-cli.tar.gz lsif-go.tar.gz
+ENV GOROOT=/usr/local/go \
+    GOPATH=/go \
+    PATH=/go/bin:/usr/local/go/bin/:$PATH
+
+# TODO(efritz) - mount ssd cache
+# TODO(efritz) - periodically run `go clean -modcache`
+RUN mkdir -p "${GOPATH}/bin" "${GOPATH}/pkg" "${GOPATH}/src" && \
+    chown -R sourcegraph:sourcegraph "${GOPATH}"
 
 USER sourcegraph
 EXPOSE 3189

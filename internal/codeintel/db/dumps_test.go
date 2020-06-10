@@ -324,6 +324,50 @@ func TestFindClosestDumpsMaxTraversalLimit(t *testing.T) {
 	})
 }
 
+func TestFindClosestDumpsIndexerName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	// This database has the following commit graph:
+	//
+	// [1] --+-- [2] --+-- [3] --+-- [4] --+-- 5
+
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
+		makeCommit(1): {},
+		makeCommit(2): {makeCommit(1)},
+		makeCommit(3): {makeCommit(2)},
+		makeCommit(4): {makeCommit(3)},
+		makeCommit(5): {makeCommit(4)},
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
+		Upload{ID: 2, Commit: makeCommit(2), Root: "root2/", Indexer: "idx1"},
+		Upload{ID: 3, Commit: makeCommit(3), Root: "root3/", Indexer: "idx1"},
+		Upload{ID: 4, Commit: makeCommit(4), Root: "root4/", Indexer: "idx1"},
+		Upload{ID: 5, Commit: makeCommit(1), Root: "root1/", Indexer: "idx2"},
+		Upload{ID: 6, Commit: makeCommit(2), Root: "root2/", Indexer: "idx2"},
+		Upload{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
+		Upload{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
+	)
+
+	testFindClosestDumps(t, db, []FindClosestDumpsTestCase{
+		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx1", allOfIDs: []int{1}},
+		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx1", allOfIDs: []int{2}},
+		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx1", allOfIDs: []int{3}},
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx1", allOfIDs: []int{4}},
+		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx2", allOfIDs: []int{5}},
+		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", allOfIDs: []int{6}},
+		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", allOfIDs: []int{7}},
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", allOfIDs: []int{8}},
+	})
+}
+
 func TestDeleteOldestDump(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -372,6 +416,7 @@ func TestDeleteOldestDump(t *testing.T) {
 type FindClosestDumpsTestCase struct {
 	commit   string
 	file     string
+	indexer  string
 	anyOfIDs []int
 	allOfIDs []int
 }
@@ -381,7 +426,7 @@ func testFindClosestDumps(t *testing.T, db DB, testCases []FindClosestDumpsTestC
 		name := fmt.Sprintf("commit=%s file=%s", testCase.commit, testCase.file)
 
 		t.Run(name, func(t *testing.T) {
-			dumps, err := db.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file)
+			dumps, err := db.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.indexer)
 			if err != nil {
 				t.Fatalf("unexpected error finding closest dumps: %s", err)
 			}

@@ -14,7 +14,7 @@ const cssVars = css`
     }
 `
 
-const { add } = storiesOf('Toggle', module).addDecorator(story => (
+const { add } = storiesOf('shared/Toggle', module).addDecorator(story => (
     <>
         <style>{toggleStyles}</style>
         <style>{cssVars}</style>

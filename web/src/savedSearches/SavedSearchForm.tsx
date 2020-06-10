@@ -179,8 +179,8 @@ export class SavedSearchForm extends React.Component<Props, State> {
     /**
      * Tells if the query is unsupported for sending notifications.
      */
-    private isUnsupportedNotifyQuery(v: Omit<SavedQueryFields, 'id'>): boolean {
-        const notifying = v.notify || v.notifySlack
-        return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
+    private isUnsupportedNotifyQuery(savedQuery: Omit<SavedQueryFields, 'id'>): boolean {
+        const notifying = savedQuery.notify || savedQuery.notifySlack
+        return notifying && !savedQuery.query.includes('type:diff') && !savedQuery.query.includes('type:commit')
     }
 }

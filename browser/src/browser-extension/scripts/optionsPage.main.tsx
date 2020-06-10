@@ -14,10 +14,10 @@ import { OptionsMenuProps } from '../options-page/OptionsMenu'
 import { initSentry } from '../../shared/sentry'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
-import { assertEnv } from '../envAssertion'
+import { assertEnvironment } from '../environmentAssertion'
 import { observeSourcegraphURL } from '../../shared/util/context'
 
-assertEnv('OPTIONS')
+assertEnvironment('OPTIONS')
 
 initSentry('options')
 
@@ -29,7 +29,7 @@ type State = Pick<
 > & { sourcegraphURL: string | null; isActivated: boolean }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
-    !!Object.keys(featureFlagDefaults).find(k => key === k)
+    !!Object.keys(featureFlagDefaults).find(featureFlag => key === featureFlag)
 
 const toggleFeatureFlag = (key: string): void => {
     if (keyIsFeatureFlag(key)) {

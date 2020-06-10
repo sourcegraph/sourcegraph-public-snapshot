@@ -443,7 +443,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 					otlog.Object(state+".repos", repos.Names()))
 
 				if len(repos) > 0 && s.Logger != nil {
-					s.Logger.Debug(family, "diff."+state, repos.Names())
+					s.Logger.Debug(family, "diff."+state, repos.NamesSummary())
 				}
 			}
 			syncedTotal.WithLabelValues(state).Add(float64(len(repos)))

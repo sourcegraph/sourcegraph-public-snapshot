@@ -80,15 +80,15 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                 sourcegraphURL: props.sourcegraphURL,
                                 repoName: props.fileInfoOrError.baseRepoName || props.fileInfoOrError.repoName,
                                 filePath: props.fileInfoOrError.baseFilePath || props.fileInfoOrError.filePath,
-                                rev: props.fileInfoOrError.baseRev || props.fileInfoOrError.baseCommitID,
+                                revision: props.fileInfoOrError.baseRevision || props.fileInfoOrError.baseCommitID,
                                 query: {
                                     diff: {
-                                        rev: props.fileInfoOrError.baseCommitID,
+                                        revision: props.fileInfoOrError.baseCommitID,
                                     },
                                 },
                                 commit: {
-                                    baseRev: props.fileInfoOrError.baseRev || props.fileInfoOrError.baseCommitID,
-                                    headRev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
+                                    baseRev: props.fileInfoOrError.baseRevision || props.fileInfoOrError.baseCommitID,
+                                    headRev: props.fileInfoOrError.revision || props.fileInfoOrError.commitID,
                                 },
                             }}
                         />
@@ -109,7 +109,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                         sourcegraphURL: props.sourcegraphURL,
                                         repoName: props.fileInfoOrError.repoName,
                                         filePath: props.fileInfoOrError.filePath,
-                                        rev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
+                                        revision: props.fileInfoOrError.revision || props.fileInfoOrError.commitID,
                                     }}
                                 />
                             </li>

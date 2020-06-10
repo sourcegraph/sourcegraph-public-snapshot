@@ -79,7 +79,7 @@ describe('ResultContainer', () => {
         allExpanded: false,
     }
 
-    const findRefsProps = {
+    const findReferencesProps = {
         location: history.location,
         collapsible: true,
         defaultExpanded: true,
@@ -138,14 +138,14 @@ describe('ResultContainer', () => {
     })
 
     it('displays all results by default, when allExpanded is true', () => {
-        const { container } = render(<ResultContainer {...findRefsProps} />)
+        const { container } = render(<ResultContainer {...findReferencesProps} />)
 
         const expandedItems = container.querySelectorAll('.file-match-children__item')
         expect(expandedItems.length).toBe(5)
     })
 
     it('collapses to show no results when the header is clicked, when allExpanded is true', () => {
-        const { container } = render(<ResultContainer {...findRefsProps} />)
+        const { container } = render(<ResultContainer {...findReferencesProps} />)
 
         let expandedItems = container.querySelectorAll('.file-match-children__item')
         expect(expandedItems.length).toBe(5)

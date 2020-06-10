@@ -5,12 +5,12 @@
  * TODO could this be eliminated with shadow DOM?
  */
 export function metaClickOverride(): void {
-    const JX = (window as any).JX
-    if (JX.Stratcom._dispatchProxyPreMeta) {
+    const javelin = (window as any).JX
+    if (javelin.Stratcom._dispatchProxyPreMeta) {
         return
     }
-    JX.Stratcom._dispatchProxyPreMeta = JX.Stratcom._dispatchProxy
-    JX.Stratcom._dispatchProxy = (proxyEvent: {
+    javelin.Stratcom._dispatchProxyPreMeta = javelin.Stratcom._dispatchProxy
+    javelin.Stratcom._dispatchProxy = (proxyEvent: {
         __auto__type: string
         __auto__rawEvent: KeyboardEvent
         __auto__target: HTMLElement
@@ -22,6 +22,6 @@ export function metaClickOverride(): void {
         ) {
             return
         }
-        return JX.Stratcom._dispatchProxyPreMeta(proxyEvent)
+        return javelin.Stratcom._dispatchProxyPreMeta(proxyEvent)
     }
 }

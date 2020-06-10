@@ -30,7 +30,7 @@ func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, m
 	client := &clientAdapter{Client: github.NewClient(apiURL, baseToken, nil)}
 
 	p := &Provider{
-		codeHost: extsvc.NewCodeHost(githubURL, github.ServiceType),
+		codeHost: extsvc.NewCodeHost(githubURL, extsvc.TypeGitHub),
 		client:   client,
 		cache:    mockCache,
 		cacheTTL: cacheTTL,

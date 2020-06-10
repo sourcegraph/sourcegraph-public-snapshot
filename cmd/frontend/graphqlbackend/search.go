@@ -19,13 +19,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -971,7 +971,7 @@ func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver,
 	var queryInfo query.QueryInfo
 	var err error
 	if conf.AndOrQueryEnabled() {
-		andOrQuery, _, err := query.ParseAndOr(plainQuery)
+		andOrQuery, err := query.ParseAndOr(plainQuery)
 		if err != nil {
 			return nil, err
 		}

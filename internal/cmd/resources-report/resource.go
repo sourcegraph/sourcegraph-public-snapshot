@@ -22,6 +22,8 @@ type Resource struct {
 	Owner      string
 	Created    time.Time
 	Meta       map[string]interface{}
+
+	Allowed bool
 }
 
 type Resources []Resource
@@ -34,6 +36,18 @@ func (r Resources) Swap(i, j int) {
 	r[j] = tmp
 }
 
+// NonAllowed returns only resources that are not allowed
+func (r Resources) NonAllowed() (filtered Resources, allowed int) {
+	for _, resource := range r {
+		if resource.Allowed {
+			allowed++
+		} else {
+			filtered = append(filtered, resource)
+		}
+	}
+	return
+}
+
 func hasPrefix(value string, prefixes []string) bool {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(value, prefix) {
@@ -43,11 +57,14 @@ func hasPrefix(value string, prefixes []string) bool {
 	return false
 }
 
-func generateReport(ctx context.Context, opts options, resources []Resource) error {
+func generateReport(ctx context.Context, opts options, resources Resources) error {
+	// count and drop allowed resources
+	filteredResources, allowed := resources.NonAllowed()
+
 	// resources are sorted by creation beforehand
 	highlightSince := time.Now().Add(-*opts.highlightWindow).UTC()
 	var highlighted int
-	for i, r := range resources {
+	for i, r := range filteredResources {
 		if r.Created.UTC().After(highlightSince) {
 			highlighted = i + 1
 		} else {
@@ -56,8 +73,10 @@ func generateReport(ctx context.Context, opts options, resources []Resource) err
 	}
 
 	// populate google sheet with data
+	var reportPage string
 	if *opts.sheetID != "" {
-		if err := updateSheet(ctx, *opts.sheetID, resources, highlighted); err != nil {
+		var err error
+		if reportPage, err = updateSheet(ctx, *opts.sheetID, filteredResources, highlighted); err != nil {
 			return fmt.Errorf("sheets: %w", err)
 		}
 	}
@@ -65,7 +84,7 @@ func generateReport(ctx context.Context, opts options, resources []Resource) err
 	// generate message to deliver
 	if *opts.slackWebhook != "" {
 		buttons := []slackBlock{
-			newSlackButtonSheet(*opts.sheetID),
+			newSlackButtonSheet(*opts.sheetID, reportPage),
 			newSlackButtonDocs(),
 		}
 		if *opts.runID != "" {
@@ -76,8 +95,11 @@ func generateReport(ctx context.Context, opts options, resources []Resource) err
 				"type": "section",
 				"text": &slackText{
 					Type: slackTextMarkdown,
-					Text: fmt.Sprintf(":package: I've found %d resources created in the past %s, with %d resources created in the past %s",
-						len(resources), opts.window, highlighted, opts.highlightWindow),
+					Text: fmt.Sprintf(`:package: I've found:
+- %d resources created in the past %s
+- %d resources created in the past %s
+- %d resources were allowed`,
+						highlighted, opts.highlightWindow, len(filteredResources), opts.window, allowed),
 				},
 			},
 			{
@@ -91,4 +113,14 @@ func generateReport(ctx context.Context, opts options, resources []Resource) err
 	}
 
 	return nil
+}
+
+// hasKeyValue returns true if the given data has a key-value entry matching one in kvs
+func hasKeyValue(data, kvs map[string]string) bool {
+	for key, value := range kvs {
+		if data[key] == value {
+			return true
+		}
+	}
+	return false
 }

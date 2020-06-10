@@ -67,9 +67,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         )}
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
-                        {this.state.siteFlags.alerts.map((alert, i) => (
+                        {this.state.siteFlags.alerts.map((alert, index) => (
                             <GlobalAlert
-                                key={i}
+                                key={index}
                                 alert={alert}
                                 className="global-alerts__alert"
                                 history={this.props.history}
@@ -93,13 +93,13 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                 {isSettingsValid<Settings>(this.props.settingsCascade) &&
                     this.props.settingsCascade.final.motd &&
                     Array.isArray(this.props.settingsCascade.final.motd) &&
-                    this.props.settingsCascade.final.motd.map(m => (
+                    this.props.settingsCascade.final.motd.map(motd => (
                         <DismissibleAlert
-                            key={m}
-                            partialStorageKey={`motd.${m}`}
+                            key={motd}
+                            partialStorageKey={`motd.${motd}`}
                             className="alert alert-info global-alerts__alert"
                         >
-                            <Markdown dangerousInnerHTML={renderMarkdown(m)} history={this.props.history} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(motd)} history={this.props.history} />
                         </DismissibleAlert>
                     ))}
                 <Notices
@@ -111,4 +111,19 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             </div>
         )
     }
+}
+
+function isMinorUpdateAvailable(currentVersion: string, updateVersion: string): boolean {
+    const parsedCurrentVersion = semverParse(currentVersion, { loose: false })
+    const parsedUpdateVersion = semverParse(updateVersion, { loose: false })
+    // If either current or update versions aren't semvers (e.g., a user is on a date-based build version, or "dev"),
+    // always return true and allow any alerts to be shown. This has the effect of simply deferring to the response
+    // from Sourcegraph.com about whether an update alert is needed.
+    if (parsedCurrentVersion === null || parsedUpdateVersion === null) {
+        return true
+    }
+    return (
+        parsedCurrentVersion.major !== parsedUpdateVersion.major ||
+        parsedCurrentVersion.minor !== parsedUpdateVersion.minor
+    )
 }

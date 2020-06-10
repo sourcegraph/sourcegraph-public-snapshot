@@ -9,14 +9,14 @@ export class MockIntersectionObserver implements IntersectionObserver {
     public readonly rootMargin: string
     public readonly thresholds: readonly number[]
 
-    constructor(private cb: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    constructor(private callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
         this.root = options?.root ?? null
         this.rootMargin = options?.rootMargin ?? '0px 0px 0px 0px'
         this.thresholds = castArray(options?.threshold)
     }
 
     public observe(target: Element): void {
-        this.cb(
+        this.callback(
             [
                 {
                     target,

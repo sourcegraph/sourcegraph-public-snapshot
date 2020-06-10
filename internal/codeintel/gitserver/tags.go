@@ -21,7 +21,7 @@ func Tags(ctx context.Context, db db.DB, repositoryID int, commit string) (strin
 	// git describe --tags will exit with status 128 (fatal: No names found, cannot describe anything)
 	// when there are no tags known to the given repo. In order to prevent a gitserver error from
 	// occurring, we first check to see if there are any tags and early-exit.
-	tags, err := execGitCommand(ctx, db, repositoryID, "tag", commit)
+	tags, err := execGitCommand(ctx, db, repositoryID, "tag")
 	if err != nil {
 		return "", false, err
 	}

@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -19,9 +19,7 @@ const Port = 3187
 
 type Server struct {
 	bundleDir          string
-	databaseCache      *database.DatabaseCache
-	documentCache      *database.DocumentCache
-	resultChunkCache   *database.ResultChunkCache
+	readerCache        cache.ReaderCache
 	observationContext *observation.Context
 	server             *http.Server
 	once               sync.Once
@@ -29,9 +27,7 @@ type Server struct {
 
 func New(
 	bundleDir string,
-	databaseCache *database.DatabaseCache,
-	documentCache *database.DocumentCache,
-	resultChunkCache *database.ResultChunkCache,
+	readerCache cache.ReaderCache,
 	observationContext *observation.Context,
 ) *Server {
 	host := ""
@@ -41,9 +37,7 @@ func New(
 
 	s := &Server{
 		bundleDir:          bundleDir,
-		databaseCache:      databaseCache,
-		documentCache:      documentCache,
-		resultChunkCache:   resultChunkCache,
+		readerCache:        readerCache,
 		observationContext: observationContext,
 	}
 

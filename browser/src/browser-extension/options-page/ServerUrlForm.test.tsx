@@ -101,7 +101,7 @@ describe('ServerUrlForm', () => {
                 a: 'https://different.com',
             }
 
-            const submitObs = cold('a', urls).pipe(
+            const submitObservable = cold('a', urls).pipe(
                 switchMap(url => {
                     const emit = of(undefined).pipe(
                         tap(() => {
@@ -114,7 +114,7 @@ describe('ServerUrlForm', () => {
                 })
             )
 
-            expectObservable(submitObs).toBe('5s a', { a: undefined })
+            expectObservable(submitObservable).toBe('5s a', { a: undefined })
         })
     })
 
@@ -148,7 +148,7 @@ describe('ServerUrlForm', () => {
                 a: 'https://different.com',
             }
 
-            const submitObs = cold('a', urls).pipe(
+            const submitObservable = cold('a', urls).pipe(
                 switchMap(url => {
                     const emit = of(undefined).pipe(
                         tap(() => {
@@ -161,7 +161,7 @@ describe('ServerUrlForm', () => {
                 })
             )
 
-            expectObservable(submitObs).toBe('a', { a: undefined })
+            expectObservable(submitObservable).toBe('a', { a: undefined })
         })
     })
 })

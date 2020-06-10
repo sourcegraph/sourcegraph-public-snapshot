@@ -89,12 +89,12 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value })
+    private onEmailFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ email: event.target.value })
     }
 
-    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ password: e.target.value })
+    private onPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ password: event.target.value })
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

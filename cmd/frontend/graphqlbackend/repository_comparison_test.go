@@ -25,6 +25,7 @@ func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
+	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
 	wantHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
 
 	repo := &types.Repo{
@@ -33,7 +34,7 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 
 	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
-		if string(id) != wantBaseRevision && string(id) != wantHeadRevision {
+		if string(id) != wantMergeBaseRevision && string(id) != wantHeadRevision {
 			t.Fatalf("GetCommit received wrong ID: %s", id)
 		}
 
@@ -45,9 +46,17 @@ func TestRepositoryComparison(t *testing.T) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
-		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
+		return ioutil.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	}
-	defer func() { git.Mocks.ExecReader = nil }()
+	t.Cleanup(func() { git.Mocks.ExecReader = nil })
+
+	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
+			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
+		}
+		return api.CommitID(wantMergeBaseRevision), nil
+	}
+	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
 	repoResolver := NewRepositoryResolver(repo)
@@ -183,8 +192,16 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", wantStat, have)
 			}
 
-			if n.OldFile() == nil {
+			oldFile := n.OldFile()
+			if oldFile == nil {
 				t.Fatalf("OldFile() is nil")
+			}
+			gitBlob, ok := oldFile.ToGitBlob()
+			if !ok {
+				t.Fatalf("OldFile() is no GitBlob")
+			}
+			if have, want := string(gitBlob.Commit().OID()), wantMergeBaseRevision; have != want {
+				t.Fatalf("Got wrong commit ID for OldFile(): want=%s have=%s", want, have)
 			}
 			newFile := n.NewFile()
 			if newFile == nil {
@@ -469,6 +486,14 @@ index 9bd8209..d2acfa9 100644
  Line 9
  Line 10
 +Another line
+`
+
+// This is unparseable by go-diff. Once it isn't anymore, the test should fail, reminding
+// us of the TODO comment in repository_comparison to reenable it.
+const testCopyDiff = `diff --git a/test.txt b/test2.txt
+similarity index 100%
+copy from test.txt
+copy to test2.txt
 `
 const testDiffFirstHunk = ` Line 1
  Line 2
