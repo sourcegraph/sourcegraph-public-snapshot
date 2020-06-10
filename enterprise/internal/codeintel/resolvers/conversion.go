@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/go-lsp"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 )
 
 func convertRange(r bundles.Range) lsp.Range {
