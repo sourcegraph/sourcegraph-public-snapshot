@@ -50,11 +50,11 @@ import (
 )
 
 func main() {
-	shared.Main(func() {
+	shared.Main(func() enterprise.Services {
 		initLicensing()
 		initAuthz()
 		initCampaigns()
-		initCodeIntel()
+		NewCodeIntelUploadHandler := initCodeIntel()
 
 		clock := func() time.Time {
 			return time.Now().UTC().Truncate(time.Microsecond)
@@ -103,15 +103,21 @@ func main() {
 
 		repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-		enterprise.GithubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
+		GithubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
 
 		bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
-		enterprise.BitbucketServerWebhook = campaigns.NewBitbucketServerWebhook(
+		BitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
 			campaignsStore,
 			repositories,
 			clock,
 			bitbucketWebhookName,
 		)
+
+		return enterprise.Services{
+			GithubWebhook:             GithubWebhook,
+			BitbucketServerWebhook:    BitbucketServerWebhook,
+			NewCodeIntelUploadHandler: NewCodeIntelUploadHandler,
+		}
 	})
 }
 
@@ -164,7 +170,7 @@ func initCampaigns() {
 
 var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
 
-func initCodeIntel() {
+func initCodeIntel() enterprise.CodeIntelUploadHandlerFactory {
 	if bundleManagerURL == "" {
 		log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
 	}
@@ -187,7 +193,7 @@ func initCodeIntel() {
 		)
 	}
 
-	enterprise.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
+	return func(internal bool) http.Handler {
 		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient, internal)
 	}
 }

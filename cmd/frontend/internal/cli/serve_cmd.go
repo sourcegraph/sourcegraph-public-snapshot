@@ -112,7 +112,7 @@ func InitDB() error {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func()) error {
+func Main(enterpriseSetupHook func() enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
@@ -132,7 +132,7 @@ func Main(enterpriseSetupHook func()) error {
 	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
 
 	// Run enterprise setup hook
-	enterpriseSetupHook()
+	enterprise := enterpriseSetupHook()
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
