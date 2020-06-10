@@ -24,6 +24,7 @@ type ObservedDB struct {
 	markCompleteOperation              *observation.Operation
 	markErroredOperation               *observation.Operation
 	dequeueOperation                   *observation.Operation
+	requeueOperation                   *observation.Operation
 	getStatesOperation                 *observation.Operation
 	deleteUploadByIDOperation          *observation.Operation
 	resetStalledOperation              *observation.Operation
@@ -50,6 +51,7 @@ type ObservedDB struct {
 	markIndexCompleteOperation         *observation.Operation
 	markIndexErroredOperation          *observation.Operation
 	dequeueIndexOperation              *observation.Operation
+	requeueIndexOperation              *observation.Operation
 	deleteIndexByIdOperation           *observation.Operation
 	resetStalledIndexesOperation       *observation.Operation
 	repoUsageStatisticsOperation       *observation.Operation
@@ -127,6 +129,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 		dequeueOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.Dequeue",
 			MetricLabels: []string{"dequeue"},
+			Metrics:      metrics,
+		}),
+		requeueOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.Requeue",
+			MetricLabels: []string{"requeue"},
 			Metrics:      metrics,
 		}),
 		getStatesOperation: observationContext.Operation(observation.Op{
@@ -259,6 +266,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"dequeue_index"},
 			Metrics:      metrics,
 		}),
+		requeueIndexOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.RequeueIndex",
+			MetricLabels: []string{"requeue_index"},
+			Metrics:      metrics,
+		}),
 		deleteIndexByIdOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.DeleteIndexByID",
 			MetricLabels: []string{"delete_index_by_id"},
@@ -302,6 +314,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		markCompleteOperation:              db.markCompleteOperation,
 		markErroredOperation:               db.markErroredOperation,
 		dequeueOperation:                   db.dequeueOperation,
+		requeueOperation:                   db.requeueOperation,
 		getStatesOperation:                 db.getStatesOperation,
 		deleteUploadByIDOperation:          db.deleteUploadByIDOperation,
 		resetStalledOperation:              db.resetStalledOperation,
@@ -328,6 +341,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		markIndexCompleteOperation:         db.markIndexCompleteOperation,
 		markIndexErroredOperation:          db.markIndexErroredOperation,
 		dequeueIndexOperation:              db.dequeueIndexOperation,
+		requeueIndexOperation:              db.requeueIndexOperation,
 		deleteIndexByIdOperation:           db.deleteIndexByIdOperation,
 		resetStalledIndexesOperation:       db.resetStalledIndexesOperation,
 		repoUsageStatisticsOperation:       db.repoUsageStatisticsOperation,
@@ -436,6 +450,13 @@ func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ DB, _ bool, err 
 
 	upload, tx, ok, err := db.db.Dequeue(ctx)
 	return upload, db.wrap(tx), ok, err
+}
+
+// Requeue calls into the inner DB and registers the observed results.
+func (db *ObservedDB) Requeue(ctx context.Context, id int, after time.Time) (err error) {
+	ctx, endObservation := db.requeueOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.Requeue(ctx, id, after)
 }
 
 // GetStates calls into the inner DB and registers the observed results.
@@ -618,6 +639,13 @@ func (db *ObservedDB) DequeueIndex(ctx context.Context) (_ Index, _ DB, _ bool, 
 	ctx, endObservation := db.dequeueIndexOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return db.db.DequeueIndex(ctx)
+}
+
+// RequeueIndex calls into the inner DB and registers the observed results.
+func (db *ObservedDB) RequeueIndex(ctx context.Context, id int, after time.Time) (err error) {
+	ctx, endObservation := db.requeueIndexOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.RequeueIndex(ctx, id, after)
 }
 
 // DeleteIndexByID calls into the inner DB and registers the observed results.

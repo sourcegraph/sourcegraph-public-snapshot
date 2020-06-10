@@ -13,6 +13,7 @@ import (
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
 type Upload struct {
+<<<<<<< HEAD
 	ID             int        `json:"id"`
 	Commit         string     `json:"commit"`
 	Root           string     `json:"root"`
@@ -27,6 +28,24 @@ type Upload struct {
 	NumParts       int        `json:"numParts"`
 	UploadedParts  []int      `json:"uploadedParts"`
 	Rank           *int       `json:"placeInQueue"`
+=======
+	ID                int        `json:"id"`
+	Commit            string     `json:"commit"`
+	Root              string     `json:"root"`
+	VisibleAtTip      bool       `json:"visibleAtTip"`
+	UploadedAt        time.Time  `json:"uploadedAt"`
+	State             string     `json:"state"`
+	FailureSummary    *string    `json:"failureSummary"`
+	FailureStacktrace *string    `json:"failureStacktrace"`
+	StartedAt         *time.Time `json:"startedAt"`
+	FinishedAt        *time.Time `json:"finishedAt"`
+	ProcessAfter      *time.Time `json:"processAfter"`
+	RepositoryID      int        `json:"repositoryId"`
+	Indexer           string     `json:"indexer"`
+	NumParts          int        `json:"numParts"`
+	UploadedParts     []int      `json:"uploadedParts"`
+	Rank              *int       `json:"placeInQueue"`
+>>>>>>> master
 }
 
 // scanUploads scans a slice of uploads from the return value of `*dbImpl.query`.
@@ -50,6 +69,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.FailureMessage,
 			&upload.StartedAt,
 			&upload.FinishedAt,
+			&upload.ProcessAfter,
 			&upload.RepositoryID,
 			&upload.Indexer,
 			&upload.NumParts,
@@ -140,6 +160,7 @@ func (db *dbImpl) GetUploadByID(ctx context.Context, id int) (Upload, bool, erro
 			u.failure_message,
 			u.started_at,
 			u.finished_at,
+			u.process_after,
 			u.repository_id,
 			u.indexer,
 			u.num_parts,
@@ -147,7 +168,7 @@ func (db *dbImpl) GetUploadByID(ctx context.Context, id int) (Upload, bool, erro
 			s.rank
 		FROM lsif_uploads u
 		LEFT JOIN (
-			SELECT r.id, RANK() OVER (ORDER BY r.uploaded_at) as rank
+			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
 			FROM lsif_uploads r
 			WHERE r.state = 'queued'
 		) s
@@ -215,6 +236,7 @@ func (db *dbImpl) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []U
 				u.failure_message,
 				u.started_at,
 				u.finished_at,
+				u.process_after,
 				u.repository_id,
 				u.indexer,
 				u.num_parts,
@@ -222,7 +244,7 @@ func (db *dbImpl) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []U
 				s.rank
 			FROM lsif_uploads u
 			LEFT JOIN (
-				SELECT r.id, RANK() OVER (ORDER BY r.uploaded_at) as rank
+				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
 				FROM lsif_uploads r
 				WHERE r.state = 'queued'
 			) s
@@ -304,8 +326,8 @@ func (db *dbImpl) AddUploadPart(ctx context.Context, uploadID, partIndex int) er
 }
 
 // MarkQueued updates the state of the upload to queued.
-func (db *dbImpl) MarkQueued(ctx context.Context, uploadID int) error {
-	return db.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, uploadID))
+func (db *dbImpl) MarkQueued(ctx context.Context, id int) error {
+	return db.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, id))
 }
 
 // MarkComplete updates the state of the upload to complete.
@@ -336,6 +358,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("failure_message"),
 	sqlf.Sprintf("started_at"),
 	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("repository_id"),
 	sqlf.Sprintf("indexer"),
 	sqlf.Sprintf("num_parts"),
@@ -354,6 +377,11 @@ func (db *dbImpl) Dequeue(ctx context.Context) (Upload, DB, bool, error) {
 	}
 
 	return upload.(Upload), tx, true, nil
+}
+
+// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
+func (db *dbImpl) Requeue(ctx context.Context, id int, after time.Time) error {
+	return db.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', process_after = %s WHERE id = %s`, after, id))
 }
 
 // GetStates returns the states for the uploads with the given identifiers.

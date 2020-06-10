@@ -20,6 +20,7 @@ func (db *dbImpl) GetPackage(ctx context.Context, scheme, name, version string) 
 			d.failure_message,
 			d.started_at,
 			d.finished_at,
+			d.process_after,
 			d.repository_id,
 			d.indexer
 		FROM lsif_packages p

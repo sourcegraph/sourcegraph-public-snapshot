@@ -76,6 +76,7 @@ func TestGetDumpByID(t *testing.T) {
 	}
 
 	insertUploads(t, dbconn.Global, Upload{
+<<<<<<< HEAD
 		ID:             expected.ID,
 		Commit:         expected.Commit,
 		Root:           expected.Root,
@@ -87,6 +88,21 @@ func TestGetDumpByID(t *testing.T) {
 		FinishedAt:     expected.FinishedAt,
 		RepositoryID:   expected.RepositoryID,
 		Indexer:        expected.Indexer,
+=======
+		ID:                expected.ID,
+		Commit:            expected.Commit,
+		Root:              expected.Root,
+		VisibleAtTip:      expected.VisibleAtTip,
+		UploadedAt:        expected.UploadedAt,
+		State:             expected.State,
+		FailureSummary:    expected.FailureSummary,
+		FailureStacktrace: expected.FailureStacktrace,
+		StartedAt:         expected.StartedAt,
+		FinishedAt:        expected.FinishedAt,
+		ProcessAfter:      expected.ProcessAfter,
+		RepositoryID:      expected.RepositoryID,
+		Indexer:           expected.Indexer,
+>>>>>>> master
 	})
 
 	if dump, exists, err := db.GetDumpByID(context.Background(), 1); err != nil {

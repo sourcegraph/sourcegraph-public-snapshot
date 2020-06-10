@@ -11,6 +11,7 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
+<<<<<<< HEAD
 	ID             int        `json:"id"`
 	Commit         string     `json:"commit"`
 	QueuedAt       time.Time  `json:"queuedAt"`
@@ -20,6 +21,19 @@ type Index struct {
 	FinishedAt     *time.Time `json:"finishedAt"`
 	RepositoryID   int        `json:"repositoryId"`
 	Rank           *int       `json:"placeInQueue"`
+=======
+	ID                int        `json:"id"`
+	Commit            string     `json:"commit"`
+	QueuedAt          time.Time  `json:"queuedAt"`
+	State             string     `json:"state"`
+	FailureSummary    *string    `json:"failureSummary"`
+	FailureStacktrace *string    `json:"failureStacktrace"`
+	StartedAt         *time.Time `json:"startedAt"`
+	FinishedAt        *time.Time `json:"finishedAt"`
+	ProcessAfter      *time.Time `json:"processAfter"`
+	RepositoryID      int        `json:"repositoryId"`
+	Rank              *int       `json:"placeInQueue"`
+>>>>>>> master
 }
 
 // scanIndexes scans a slice of indexes from the return value of `*dbImpl.query`.
@@ -40,6 +54,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.FailureMessage,
 			&index.StartedAt,
 			&index.FinishedAt,
+			&index.ProcessAfter,
 			&index.RepositoryID,
 			&index.Rank,
 		); err != nil {
@@ -77,11 +92,12 @@ func (db *dbImpl) GetIndexByID(ctx context.Context, id int) (Index, bool, error)
 			u.failure_message,
 			u.started_at,
 			u.finished_at,
+			u.process_after,
 			u.repository_id,
 			s.rank
 		FROM lsif_indexes u
 		LEFT JOIN (
-			SELECT r.id, RANK() OVER (ORDER BY r.queued_at) as rank
+			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
 			FROM lsif_indexes r
 			WHERE r.state = 'queued'
 		) s
@@ -143,11 +159,12 @@ func (db *dbImpl) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []I
 				u.failure_message,
 				u.started_at,
 				u.finished_at,
+				u.process_after,
 				u.repository_id,
 				s.rank
 			FROM lsif_indexes u
 			LEFT JOIN (
-				SELECT r.id, RANK() OVER (ORDER BY r.queued_at) as rank
+				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
 				FROM lsif_indexes r
 				WHERE r.state = 'queued'
 			) s
@@ -243,6 +260,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("failure_message"),
 	sqlf.Sprintf("started_at"),
 	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("repository_id"),
 	sqlf.Sprintf("NULL"),
 }
@@ -258,6 +276,11 @@ func (db *dbImpl) DequeueIndex(ctx context.Context) (Index, DB, bool, error) {
 	}
 
 	return index.(Index), tx, true, nil
+}
+
+// RequeueIndex updates the state of the index to queued and adds a processing delay before the next dequeue attempt.
+func (db *dbImpl) RequeueIndex(ctx context.Context, id int, after time.Time) error {
+	return db.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_indexes SET state = 'queued', process_after = %s WHERE id = %s`, after, id))
 }
 
 // DeleteIndexByID deletes an index by its identifier.
