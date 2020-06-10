@@ -278,6 +278,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	if provider == nil {
+		log15.Debug("PermsSyncer.syncRepoPerms.noProvider", "repoID", repo.ID)
+
 		// We have no authz provider configured for this private repository.
 		// However, we need to upsert the dummy record in order to prevent
 		// scheduler keep scheduling this repository.
