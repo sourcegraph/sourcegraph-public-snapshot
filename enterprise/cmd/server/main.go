@@ -27,10 +27,8 @@ func main() {
 		map[string]string{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
 	)
 
-	shared.AdditionalDefaultEnv = map[string]string{
-		"PRECISE_CODE_INTEL_BUNDLE_DIR":         filepath.Join(shared.DataDir, "lsif-storage"),
-		"PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL": "http://127.0.0.1:3187",
-	}
+	shared.DefaultEnv["PRECISE_CODE_INTEL_BUNDLE_DIR"] = filepath.Join(shared.DataDir, "lsif-storage")
+	shared.DefaultEnv["PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL"] = "http://127.0.0.1:3187"
 
 	shared.Main()
 }

@@ -21,8 +21,11 @@ import (
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
 const FrontendInternalHost = "127.0.0.1:3090"
 
-// defaultEnv is environment variables that will be set if not already set.
-var defaultEnv = map[string]string{
+// DefaultEnv is environment variables that will be set if not already set.
+//
+// If it is modified by an external package, it must be modified immediately on startup,
+// before `shared.Main` is called.
+var DefaultEnv = map[string]string{
 	// Sourcegraph services running in this container
 	"SRC_GIT_SERVERS":       "127.0.0.1:3178",
 	"SEARCHER_URL":          "http://127.0.0.1:3181",
@@ -58,12 +61,6 @@ var defaultEnv = map[string]string{
 	// TODO other bits
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
 }
-
-// AdditionalDefaultEnv is a list of environment variables that will be set if not already set.
-//
-// If it is modified by an external package, it must be modified immediately on startup, before
-// `shared.Main` is called.
-var AdditionalDefaultEnv map[string]string
 
 // Set verbosity based on simple interpretation of env var to avoid external dependencies (such as
 // on github.com/sourcegraph/sourcegraph/internal/env).
@@ -109,11 +106,7 @@ func Main() {
 		SetDefaultEnv("SRC_PROF_SERVICES", string(data))
 	}
 
-	for k, v := range defaultEnv {
-		SetDefaultEnv(k, v)
-	}
-
-	for k, v := range AdditionalDefaultEnv {
+	for k, v := range DefaultEnv {
 		SetDefaultEnv(k, v)
 	}
 
