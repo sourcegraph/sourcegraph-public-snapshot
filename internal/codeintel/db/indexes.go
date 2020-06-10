@@ -11,7 +11,6 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-<<<<<<< HEAD
 	ID             int        `json:"id"`
 	Commit         string     `json:"commit"`
 	QueuedAt       time.Time  `json:"queuedAt"`
@@ -19,21 +18,9 @@ type Index struct {
 	FailureMessage *string    `json:"failureMessage"`
 	StartedAt      *time.Time `json:"startedAt"`
 	FinishedAt     *time.Time `json:"finishedAt"`
+	ProcessAfter   *time.Time `json:"processAfter"`
 	RepositoryID   int        `json:"repositoryId"`
 	Rank           *int       `json:"placeInQueue"`
-=======
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	QueuedAt          time.Time  `json:"queuedAt"`
-	State             string     `json:"state"`
-	FailureSummary    *string    `json:"failureSummary"`
-	FailureStacktrace *string    `json:"failureStacktrace"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	ProcessAfter      *time.Time `json:"processAfter"`
-	RepositoryID      int        `json:"repositoryId"`
-	Rank              *int       `json:"placeInQueue"`
->>>>>>> master
 }
 
 // scanIndexes scans a slice of indexes from the return value of `*dbImpl.query`.

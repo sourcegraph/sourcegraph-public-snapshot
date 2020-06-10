@@ -70,11 +70,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				indexer,
 				num_parts,
 				uploaded_parts
-<<<<<<< HEAD
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-=======
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
->>>>>>> master
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -122,11 +118,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				finished_at,
 				process_after,
 				repository_id
-<<<<<<< HEAD
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-=======
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
->>>>>>> master
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,

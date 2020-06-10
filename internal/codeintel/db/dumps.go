@@ -11,7 +11,6 @@ import (
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps view) and stores
 // only processed records.
 type Dump struct {
-<<<<<<< HEAD
 	ID             int        `json:"id"`
 	Commit         string     `json:"commit"`
 	Root           string     `json:"root"`
@@ -21,23 +20,9 @@ type Dump struct {
 	FailureMessage *string    `json:"failureMessage"`
 	StartedAt      *time.Time `json:"startedAt"`
 	FinishedAt     *time.Time `json:"finishedAt"`
+	ProcessAfter   *time.Time `json:"processAfter"`
 	RepositoryID   int        `json:"repositoryId"`
 	Indexer        string     `json:"indexer"`
-=======
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	Root              string     `json:"root"`
-	VisibleAtTip      bool       `json:"visibleAtTip"`
-	UploadedAt        time.Time  `json:"uploadedAt"`
-	State             string     `json:"state"`
-	FailureSummary    *string    `json:"failureSummary"`
-	FailureStacktrace *string    `json:"failureStacktrace"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	ProcessAfter      *time.Time `json:"processAfter"`
-	RepositoryID      int        `json:"repositoryId"`
-	Indexer           string     `json:"indexer"`
->>>>>>> master
 }
 
 // scanDumps scans a slice of dumps from the return value of `*dbImpl.query`.

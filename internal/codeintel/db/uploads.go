@@ -13,7 +13,6 @@ import (
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
 type Upload struct {
-<<<<<<< HEAD
 	ID             int        `json:"id"`
 	Commit         string     `json:"commit"`
 	Root           string     `json:"root"`
@@ -23,29 +22,12 @@ type Upload struct {
 	FailureMessage *string    `json:"failureMessage"`
 	StartedAt      *time.Time `json:"startedAt"`
 	FinishedAt     *time.Time `json:"finishedAt"`
+	ProcessAfter   *time.Time `json:"processAfter"`
 	RepositoryID   int        `json:"repositoryId"`
 	Indexer        string     `json:"indexer"`
 	NumParts       int        `json:"numParts"`
 	UploadedParts  []int      `json:"uploadedParts"`
 	Rank           *int       `json:"placeInQueue"`
-=======
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	Root              string     `json:"root"`
-	VisibleAtTip      bool       `json:"visibleAtTip"`
-	UploadedAt        time.Time  `json:"uploadedAt"`
-	State             string     `json:"state"`
-	FailureSummary    *string    `json:"failureSummary"`
-	FailureStacktrace *string    `json:"failureStacktrace"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	ProcessAfter      *time.Time `json:"processAfter"`
-	RepositoryID      int        `json:"repositoryId"`
-	Indexer           string     `json:"indexer"`
-	NumParts          int        `json:"numParts"`
-	UploadedParts     []int      `json:"uploadedParts"`
-	Rank              *int       `json:"placeInQueue"`
->>>>>>> master
 }
 
 // scanUploads scans a slice of uploads from the return value of `*dbImpl.query`.
