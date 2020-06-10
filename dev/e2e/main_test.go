@@ -59,49 +59,6 @@ func TestMain(m *testing.M) {
 		log.Println("Site admin authenticated:", *username)
 	}
 
-	// Set up external service
-	err = client.AddExternalService(e2eutil.AddExternalServiceInput{
-		Kind:        "GITHUB",
-		DisplayName: "e2e-test-github",
-		Config: mustMarshalJSONString(struct {
-			URL   string   `json:"url"`
-			Token string   `json:"token"`
-			Repos []string `json:"repos"`
-		}{
-			URL:   "http://github.com",
-			Token: *githubToken,
-			Repos: []string{
-				"sourcegraph/java-langserver",
-				"gorilla/mux",
-				"gorilla/securecookie",
-				"sourcegraph/jsonrpc2",
-				"sourcegraph/go-diff",
-				"sourcegraph/appdash",
-				"sourcegraph/sourcegraph-typescript",
-				"sourcegraph-testing/automation-e2e-test",
-				"sourcegraph/e2e-test-private-repository",
-			},
-		}),
-	})
-	if err != nil {
-		log.Fatal("Failed to add external service: ", err)
-	}
-
-	err = client.WaitForReposToBeCloned(
-		"github.com/sourcegraph/java-langserver",
-		"github.com/gorilla/mux",
-		"github.com/gorilla/securecookie",
-		"github.com/sourcegraph/jsonrpc2",
-		"github.com/sourcegraph/go-diff",
-		"github.com/sourcegraph/appdash",
-		"github.com/sourcegraph/sourcegraph-typescript",
-		"github.com/sourcegraph-testing/automation-e2e-test",
-		"github.com/sourcegraph/e2e-test-private-repository",
-	)
-	if err != nil {
-		log.Fatal("Failed to wait for repos to be cloned: ", err)
-	}
-
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
