@@ -309,62 +309,39 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 	return c.doAndDecode(ctx, "GET", url, nil, &target)
 }
 
-// postPayload makes a POST request to the bundle manager with the given reader as the request body. If a
-// transient network error occurs, the request will be re-attempted.
+// postPayload makes a POST request to the bundle manager with the given reader as the request body. If
+// a transient network error occurs, the request will be re-attempted.
 //
 // The retries are attempted here for simplicity in outer layers. If an upload or upload part fails to
 // make it to the bundle manager from the frontend, then the src-cli client would need to be responsible
 // for distinguishing which errors are retryable. Similarly, if a database part fails to make it to the
 // bundle manager from the worker, then the worker needs to distinguish the same errors.
-//
-// In order to be able to replay the reader (which is not necessarily seek-able), we tee all writes to a
-// request into a scratch file on disk, which is removed once the function returns. On failure, we re-read
-// the content of the file before continuing to consume the original reader.
 func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) error {
-	tempDir, err := ioutil.TempDir("", "")
+	file, err := ioutil.TempFile("", "")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempDir)
+	defer file.Close()
+	defer os.Remove(file.Name())
 
-	var files []*os.File
-	defer func() {
-		for _, file := range files {
-			_ = file.Close()
-		}
-	}()
+	if _, err := io.Copy(file, r); err != nil {
+		return err
+	}
+
+	if err := file.Sync(); err != nil {
+		return err
+	}
 
 	return retry(ctx, c.clock, func(ctx context.Context) error {
-		file, err := ioutil.TempFile(tempDir, "")
-		if err != nil {
-			return err
-		}
-		// Ensure we close file handle on exit
-		files = append(files, file)
-
-		// Write everything we read from r into a scratch file
-		tee := io.TeeReader(r, file)
-
-		if err := c.doAndDrop(ctx, "POST", url, tee); err != nil {
-			// Flush all pending writes to the file
-			if err := file.Sync(); err != nil {
-				return err
-			}
-
-			// Reset file so we can read from the beginning
-			if _, err := file.Seek(0, io.SeekStart); err != nil {
-				return err
-			}
-
-			// Replace the original reader with a multi reader that will be used on any
-			// subsequent request attempt. This new reader will first read from the file
-			// anything that was already consumed. Once the file has been read to completion,
-			// the remaining data in the original reader will be read.
-			r = io.MultiReader(file, r)
+		// Reset file to beginning after writing or previous read
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
 			return err
 		}
 
-		return nil
+		// The http client will attempt to close the body after use.
+		// Prevent this by wrapping the file ina  NopCloser so that
+		// the file remains open for a second attempt, if necessary.
+		return c.doAndDrop(ctx, "POST", url, ioutil.NopCloser(file))
 	})
 }
 
