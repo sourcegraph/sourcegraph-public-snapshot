@@ -4,7 +4,7 @@ package database
 
 import (
 	"context"
-	client "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	client "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"sync"
 )
 

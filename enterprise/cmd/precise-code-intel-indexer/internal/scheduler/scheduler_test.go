@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
-	gitservermocks "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
+	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 

@@ -4,7 +4,7 @@ package worker
 
 import (
 	"context"
-	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	db "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"sync"
 )
 

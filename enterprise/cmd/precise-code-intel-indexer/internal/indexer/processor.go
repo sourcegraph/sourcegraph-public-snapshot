@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/codeintelutils"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
 
 type Processor interface {

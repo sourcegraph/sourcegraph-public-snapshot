@@ -12,11 +12,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	sqlitewriter "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	sqlitewriter "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
 
 // Processor converts raw uploads into dumps.

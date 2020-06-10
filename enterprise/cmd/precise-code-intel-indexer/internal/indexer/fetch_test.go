@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
-	gitservermocks "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver/mocks"
+	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
+	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 )
 
 func TestFetchRepository(t *testing.T) {

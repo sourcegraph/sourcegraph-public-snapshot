@@ -36,6 +36,6 @@ SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat "$DEV_PRIVATE_PATH"/enterprise/dev/test
 export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
 export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/internal"
-export ENTERPRISE_COMMANDS="frontend repo-updater"
+export ENTERPRISE_COMMANDS="frontend repo-updater precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-worker"
 export ENTERPRISE=1
 ../dev/start.sh

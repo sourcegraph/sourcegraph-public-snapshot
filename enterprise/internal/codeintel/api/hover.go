@@ -6,8 +6,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 )
 
 // Hover returns the hover text and range for the symbol at the given position.

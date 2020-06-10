@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 )
 
 type IndexResetter struct {

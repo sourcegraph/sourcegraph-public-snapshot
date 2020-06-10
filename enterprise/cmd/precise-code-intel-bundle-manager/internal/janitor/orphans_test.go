@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
+	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 

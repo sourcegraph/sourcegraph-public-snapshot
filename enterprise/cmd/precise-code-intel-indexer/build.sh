@@ -2,7 +2,7 @@
 
 # This script builds the precise-code-intel-indexer docker image.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 set -eu
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
@@ -22,7 +22,7 @@ pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexe
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 echo "--- docker build"
-docker build -f cmd/precise-code-intel-indexer/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build -f enterprise/cmd/precise-code-intel-indexer/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

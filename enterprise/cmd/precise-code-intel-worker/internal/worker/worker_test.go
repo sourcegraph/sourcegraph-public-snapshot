@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 

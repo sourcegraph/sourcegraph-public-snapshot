@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client/mocks"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
 )
 
 var (

@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 )
 
 type lsifIndexFailureReasonResolver struct {

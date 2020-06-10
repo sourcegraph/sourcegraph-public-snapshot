@@ -10,9 +10,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/cache"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite/migrate"
 )
 
 // NumMigrateRoutines is the number of goroutines launched to migrate bundle files.
