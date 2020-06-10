@@ -1,23 +1,53 @@
 package sqlite
 
-import "github.com/dgraph-io/ristretto"
+import (
+	"context"
+	"errors"
+	"os"
 
-// Cache is a LFU cache that holds the results of values deserialized by the reader.
-type Cache interface {
-	// Get returns the value (if any) and a boolean representing whether the
-	// value was found or not.
-	Get(key interface{}) (interface{}, bool)
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/util"
+)
 
-	// Set attempts to add the key-value item to the cache with the given cost. If it
-	// returns false, then the value as dropped and the item isn't added to the cache.
-	Set(key, value interface{}, cost int64) bool
-}
+// ErrUnknownDatabase occurs when a request for an unknown database is made.
+var ErrUnknownDatabase = errors.New("unknown database")
 
-// NewCache creates a cache instance with the given maximum capacity.
-func NewCache(size int64) (Cache, error) {
-	return ristretto.NewCache(&ristretto.Config{
-		NumCounters: size * 10,
-		MaxCost:     size,
-		BufferItems: 64,
+// NewReaderCache creates a new reader cache. All readers share the same data cache with the
+// given maximum capacity.
+func NewReaderCache(dataCacheSize int) (cache.ReaderCache, error) {
+	readerDataCache, err := cache.NewDataCache(dataCacheSize)
+	if err != nil {
+		return nil, err
+	}
+
+	cache := cache.NewReaderCache(func(filename string) (persistence.Reader, error) {
+		// Ensure database exists prior to opening
+		if exists, err := util.PathExists(filename); err != nil {
+			return nil, err
+		} else if !exists {
+			return nil, ErrUnknownDatabase
+		}
+
+		reader, err := NewReader(context.Background(), filename, readerDataCache)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check to see if the database exists after opening it. If it doesn't, then
+		// the DB file was deleted between the exists check and opening the database
+		// and SQLite has created a new, empty database that is not yet been written
+		// to disk.
+		if exists, err := util.PathExists(filename); err != nil {
+			return nil, err
+		} else if !exists {
+			reader.Close()
+			os.Remove(filename) // Possibly created on close
+			return nil, ErrUnknownDatabase
+		}
+
+		return reader, nil
 	})
+
+	return cache, nil
 }

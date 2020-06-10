@@ -149,7 +149,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 			message = errcode.PresentationMessage(err)
 			statusCode = http.StatusConflict
 		default:
-			// Do not show non-whitelisted error messages to user, in case they contain sensitive or confusing
+			// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
 			// information.
 			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError

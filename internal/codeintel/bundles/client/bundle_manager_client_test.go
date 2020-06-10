@@ -66,6 +66,52 @@ func TestSendUploadBadResponse(t *testing.T) {
 	}
 }
 
+func TestSendUploadRetry(t *testing.T) {
+	var fullContents []byte
+	for i := 0; i < 10000; i++ {
+		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
+	}
+
+	bufSize := 32
+	var payloads [][]byte
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		payload := make([]byte, bufSize)
+		n, err := io.ReadFull(r.Body, payload)
+		payloads = append(payloads, payload[:n])
+		bufSize *= 8
+
+		// ReadFull returns unexpected EOF if it can't fill the buffer
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			return
+		}
+
+		// Simulate a network error
+		conn, _, _ := w.(http.Hijacker).Hijack()
+		conn.Close()
+	}))
+	defer ts.Close()
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, clock: advancingClock()}
+	err := client.SendUpload(context.Background(), 42, bytes.NewReader(fullContents))
+	if err != nil {
+		t.Fatalf("unexpected error sending upload: %s", err)
+	}
+
+	if len(payloads) != 5 {
+		t.Errorf("unexpected number of requests. want=%d have=%d", 5, len(payloads))
+	}
+
+	for i := 1; i < len(payloads); i++ {
+		if !bytes.HasPrefix(payloads[i], payloads[i-1]) {
+			t.Errorf("expected payloads[%d] to be a prefix of payloads[%d]", i-1, i)
+		}
+	}
+
+	if diff := cmp.Diff(fullContents, payloads[len(payloads)-1]); diff != "" {
+		t.Errorf("unexpected payload (-want +got):\n%s", diff)
+	}
+}
+
 func TestSendUploadPart(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {

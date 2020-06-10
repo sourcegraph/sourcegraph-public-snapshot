@@ -225,6 +225,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 
 	maxLineMatches := 25 + k
 	matches := make([]*FileMatchResolver, len(resp.Files))
+	repoResolvers := make(RepositoryResolverCache)
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -233,11 +234,14 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 			limitHit = true
 		}
 		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		if repoResolvers[repoRev.Repo.Name] == nil {
+			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
+		}
 		matches[i] = &FileMatchResolver{
 			JPath:     file.FileName,
 			JLimitHit: fileLimitHit,
 			uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
-			Repo:      repoRev.Repo,
+			Repo:      repoResolvers[repoRev.Repo.Name],
 			CommitID:  api.CommitID(file.Version),
 		}
 	}

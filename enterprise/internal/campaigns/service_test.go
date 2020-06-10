@@ -264,48 +264,61 @@ func TestService(t *testing.T) {
 	t.Run("CreatePatchSetFromPatches", func(t *testing.T) {
 		svc := NewServiceWithClock(store, nil, clock)
 
-		const patch = `diff f f
---- f
-+++ f
-@@ -1,1 +1,2 @@
-+x
- y
-`
-		patches := []*campaigns.Patch{
-			{RepoID: api.RepoID(rs[0].ID), Rev: "deadbeef", BaseRef: "refs/heads/master", Diff: patch},
-			{RepoID: api.RepoID(rs[1].ID), Rev: "f00b4r", BaseRef: "refs/heads/master", Diff: patch},
+		input := []*campaigns.Patch{
+			{RepoID: api.RepoID(rs[0].ID), Rev: "deadbeef", BaseRef: "refs/heads/master", Diff: "+-"},
+			{RepoID: api.RepoID(rs[1].ID), Rev: "f00b4r", BaseRef: "refs/heads/master", Diff: "+-"},
 		}
 
-		patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
+		// Filter out rs[0] in authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			var filtered []*types.Repo
+			for _, r := range repos {
+				if r.ID == rs[0].ID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+
+		if _, err := svc.CreatePatchSetFromPatches(ctx, input, user.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("want not found error, got: %s", err)
+		}
+
+		// Now reset filter and try again
+		db.MockAuthzFilter = nil
+
+		patchSet, err := svc.CreatePatchSetFromPatches(ctx, input, user.ID)
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		want := make([]*campaigns.Patch, 0, len(input))
+		for _, in := range input {
+			want = append(want, &campaigns.Patch{
+				PatchSetID: patchSet.ID,
+				RepoID:     in.RepoID,
+				Rev:        in.Rev,
+				BaseRef:    in.BaseRef,
+				Diff:       in.Diff,
+				CreatedAt:  now,
+				UpdatedAt:  now,
+			})
 		}
 
 		if _, err := store.GetPatchSet(ctx, GetPatchSetOpts{ID: patchSet.ID}); err != nil {
 			t.Fatal(err)
 		}
 
-		jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{PatchSetID: patchSet.ID})
+		have, _, err := store.ListPatches(ctx, ListPatchesOpts{PatchSetID: patchSet.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, job := range jobs {
-			job.ID = 0 // ignore database ID when checking for expected output
+		for _, p := range have {
+			p.ID = 0 // ignore database ID when checking for expected output
 		}
-		wantJobs := make([]*campaigns.Patch, len(patches))
-		for i, patch := range patches {
-			wantJobs[i] = &campaigns.Patch{
-				PatchSetID: patchSet.ID,
-				RepoID:     patch.RepoID,
-				Rev:        patch.Rev,
-				BaseRef:    patch.BaseRef,
-				Diff:       patch.Diff,
-				CreatedAt:  now,
-				UpdatedAt:  now,
-			}
-		}
-		if !cmp.Equal(jobs, wantJobs) {
-			t.Error("jobs != wantJobs", cmp.Diff(jobs, wantJobs))
+		if !cmp.Equal(have, want) {
+			t.Error("have != want", cmp.Diff(have, want))
 		}
 	})
 
@@ -1344,6 +1357,22 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			updateDescription: true,
 			oldPatches:        repoNames{"repo-0"},
 			wantModified:      repoNames{"repo-0"},
+		},
+		{
+			name:             "no new patch set but name update, missing repo permissions",
+			updateName:       true,
+			oldPatches:       repoNames{"repo-0", "repo-1"},
+			missingRepoPerms: repoNames{"repo-1"},
+			wantModified:     repoNames{"repo-0"},
+			wantUnmodified:   repoNames{"repo-1"},
+		},
+		{
+			name:              "no new patch set but description update, missing repo permissions",
+			updateDescription: true,
+			oldPatches:        repoNames{"repo-0", "repo-1"},
+			missingRepoPerms:  repoNames{"repo-1"},
+			wantModified:      repoNames{"repo-0"},
+			wantUnmodified:    repoNames{"repo-1"},
 		},
 		{
 			name:           "1 modified diff",

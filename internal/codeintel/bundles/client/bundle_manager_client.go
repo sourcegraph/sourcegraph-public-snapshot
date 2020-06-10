@@ -7,19 +7,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/efritz/glock"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/tar"
@@ -98,6 +99,7 @@ type bundleManagerClientImpl struct {
 	bundleManagerURL    string
 	userAgent           string
 	maxPayloadSizeBytes int
+	clock               glock.Clock
 	ioCopy              func(io.Writer, io.Reader) (int64, error)
 }
 
@@ -111,6 +113,7 @@ func New(bundleManagerURL string) BundleManagerClient {
 		bundleManagerURL:    bundleManagerURL,
 		userAgent:           filepath.Base(os.Args[0]),
 		maxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
+		clock:               glock.NewRealClock(),
 		ioCopy:              io.Copy,
 	}
 }
@@ -130,12 +133,7 @@ func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, 
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, r)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.postPayload(ctx, url, r)
 }
 
 // SendUploadPart transfers a partial LSIF upload to the bundle manager to be stored on disk.
@@ -145,12 +143,7 @@ func (c *bundleManagerClientImpl) SendUploadPart(ctx context.Context, bundleID, 
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, r)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.postPayload(ctx, url, r)
 }
 
 // StitchParts instructs the bundle manager to collapse multipart uploads into a single file.
@@ -160,12 +153,7 @@ func (c *bundleManagerClientImpl) StitchParts(ctx context.Context, bundleID int)
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, nil)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.doAndDrop(ctx, "POST", url, nil)
 }
 
 // DeleteUpload removes the upload file with the given identifier from disk.
@@ -175,12 +163,7 @@ func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int
 		return err
 	}
 
-	body, err := c.do(ctx, "DELETE", url, nil)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.doAndDrop(ctx, "DELETE", url, nil)
 }
 
 // GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
@@ -239,7 +222,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 // getUploadChunk retrieves a raw LSIF upload from the bundle manager starting from the offset as
 // indicated by seek. The number of bytes written to the given writer is returned, along with any
 // error.
-func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (n int64, err error) {
+func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (int64, error) {
 	q := url.Query()
 	q.Set("seek", fmt.Sprintf("%d", seek))
 	url.RawQuery = q.Encode()
@@ -276,16 +259,16 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, path
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, nil)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.doAndDrop(ctx, "POST", url, nil)
 }
 
 // sendPart sends a portion of the database to the bundle manager.
 func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, filename string, index int) (err error) {
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/%d", bundleID, index), nil)
+	if err != nil {
+		return err
+	}
+
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -296,22 +279,11 @@ func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, fi
 		}
 	}()
 
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/%d", bundleID, index), nil)
-	if err != nil {
-		return err
-	}
-
-	body, err := c.do(ctx, "POST", url, codeintelutils.Gzip(f))
-	if err != nil {
-		return err
-	}
-	defer body.Close()
-
-	return nil
+	return c.postPayload(ctx, url, codeintelutils.Gzip(f))
 }
 
 // Exists determines if a file exists on disk for all the supplied identifiers.
-func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, err error) {
+func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, _ error) {
 	var bundleIDStrings []string
 	for _, bundleID := range bundleIDs {
 		bundleIDStrings = append(bundleIDStrings, fmt.Sprintf("%d", bundleID))
@@ -324,26 +296,68 @@ func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (
 		return nil, err
 	}
 
-	body, err := c.do(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer body.Close()
-
-	if err := json.NewDecoder(body).Decode(&target); err != nil {
-		return nil, err
-	}
-
-	return target, nil
+	err = c.doAndDecode(ctx, "GET", url, nil, &target)
+	return target, err
 }
 
-func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) (err error) {
+func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) error {
 	url, err := makeBundleURL(c.bundleManagerURL, bundleID, op, qs)
 	if err != nil {
 		return err
 	}
 
-	body, err := c.do(ctx, "GET", url, nil)
+	return c.doAndDecode(ctx, "GET", url, nil, &target)
+}
+
+// postPayload makes a POST request to the bundle manager with the given reader as the request body. If
+// a transient network error occurs, the request will be re-attempted.
+//
+// The retries are attempted here for simplicity in outer layers. If an upload or upload part fails to
+// make it to the bundle manager from the frontend, then the src-cli client would need to be responsible
+// for distinguishing which errors are retryable. Similarly, if a database part fails to make it to the
+// bundle manager from the worker, then the worker needs to distinguish the same errors.
+func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) error {
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	defer os.Remove(file.Name())
+
+	if _, err := io.Copy(file, r); err != nil {
+		return err
+	}
+
+	if err := file.Sync(); err != nil {
+		return err
+	}
+
+	return retry(ctx, c.clock, func(ctx context.Context) error {
+		// Reset file to beginning after writing or previous read
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			return err
+		}
+
+		// The http client will attempt to close the body after use.
+		// Prevent this by wrapping the file ina  NopCloser so that
+		// the file remains open for a second attempt, if necessary.
+		return c.doAndDrop(ctx, "POST", url, ioutil.NopCloser(file))
+	})
+}
+
+// doAndDrop performs an HTTP request to the bundle manager and ignores the body contents.
+func (c *bundleManagerClientImpl) doAndDrop(ctx context.Context, method string, url *url.URL, payload io.Reader) error {
+	body, err := c.do(ctx, method, url, payload)
+	if err != nil {
+		return err
+	}
+	body.Close()
+	return nil
+}
+
+// doAndDecode performs an HTTP request to the bundle manager and decodes the body into target.
+func (c *bundleManagerClientImpl) doAndDecode(ctx context.Context, method string, url *url.URL, payload io.Reader, target interface{}) error {
+	body, err := c.do(ctx, method, url, payload)
 	if err != nil {
 		return err
 	}
@@ -352,6 +366,7 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 	return json.NewDecoder(body).Decode(&target)
 }
 
+// do performs an HTTP request to the bundle manager and returns the body content as a reader.
 func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *url.URL, body io.Reader) (_ io.ReadCloser, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "BundleManagerClient.do")
 	defer func() {
@@ -435,21 +450,8 @@ func limitTransferRate(r io.Reader) io.ReadCloser {
 	return flowrate.NewReader(r, 1000*1000*1000)
 }
 
-//
-// Temporary network debugging code
-
-var connectionErrors = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "src_bundle_manager_connection_reset_by_peer_read",
-	Help: "The total number connection reset by peer errors (client) when trying to transfer upload payloads.",
-})
-
-func init() {
-	prometheus.MustRegister(connectionErrors)
-}
-
 func isConnectionError(err error) bool {
 	if err != nil && strings.Contains(err.Error(), "read: connection reset by peer") {
-		connectionErrors.Inc()
 		return true
 	}
 

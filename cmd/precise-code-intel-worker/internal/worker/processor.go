@@ -42,13 +42,6 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
-	// // Create target file for converted database
-	// uuid, err := uuid.NewRandom()
-	// if err != nil {
-	// 	return err
-	// }
-	// newFilename := filepath.Join(tempDir, uuid.String())
-
 	// Pull raw uploaded data from bundle manager
 	r, err := p.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {

@@ -50,74 +50,69 @@ import (
 )
 
 func main() {
-	// Connect to the database.
-	if err := shared.InitDB(); err != nil {
-		log.Fatalf("FATAL: %v", err)
-	}
+	shared.Main(func() {
+		initLicensing()
+		initAuthz()
+		initCampaigns()
+		initCodeIntel()
 
-	initLicensing()
-	initAuthz()
-	initCampaigns()
-	initCodeIntel()
-
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	eauthz.Init(dbconn.Global, clock)
-
-	ctx := context.Background()
-	go func() {
-		t := time.NewTicker(5 * time.Second)
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _ :=
-				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
+		clock := func() time.Time {
+			return time.Now().UTC().Truncate(time.Microsecond)
 		}
-	}()
+		eauthz.Init(dbconn.Global, clock)
 
-	goroutine.Go(func() {
-		licensing.StartMaxUserCount(&usersStore{})
+		ctx := context.Background()
+		go func() {
+			t := time.NewTicker(5 * time.Second)
+			for range t.C {
+				allowAccessByDefault, authzProviders, _, _ :=
+					eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+				authz.SetProviders(allowAccessByDefault, authzProviders)
+			}
+		}()
+
+		goroutine.Go(func() {
+			licensing.StartMaxUserCount(&usersStore{})
+		})
+		if envvar.SourcegraphDotComMode() {
+			goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
+		}
+
+		debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+		if debug {
+			log.Println("enterprise edition")
+		}
+
+		globalState, err := globalstatedb.Get(ctx)
+		if err != nil {
+			log.Fatalf("FATAL: %v", err)
+		}
+
+		campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
+
+		// Migrate all patches in the database to cache their diff stats.
+		// Since we validate each Patch's diff before we store it in the database,
+		// this migration should never fail, except in exceptional circumstances
+		// (database not reachable), in which case it's okay to exit.
+		//
+		// This can be removed in 3.19.
+		err = campaigns.MigratePatchesWithoutDiffStats(ctx, campaignsStore)
+		if err != nil {
+			log.Fatalf("FATAL: Migrating patches without diff stats: %v", err)
+		}
+
+		repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+		enterprise.GithubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
+
+		bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
+		enterprise.BitbucketServerWebhook = campaigns.NewBitbucketServerWebhook(
+			campaignsStore,
+			repositories,
+			clock,
+			bitbucketWebhookName,
+		)
 	})
-	if envvar.SourcegraphDotComMode() {
-		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
-	}
-
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
-
-	globalState, err := globalstatedb.Get(ctx)
-	if err != nil {
-		log.Fatalf("FATAL: %v", err)
-	}
-
-	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
-
-	// Migrate all patches in the database to cache their diff stats.
-	// Since we validate each Patch's diff before we store it in the database,
-	// this migration should never fail, except in exceptional circumstances
-	// (database not reachable), in which case it's okay to exit.
-	//
-	// This can be removed in 3.19.
-	err = campaigns.MigratePatchesWithoutDiffStats(ctx, campaignsStore)
-	if err != nil {
-		log.Fatalf("FATAL: Migrating patches without diff stats: %v", err)
-	}
-
-	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-
-	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
-
-	bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
-	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
-		campaignsStore,
-		repositories,
-		clock,
-		bitbucketWebhookName,
-	)
-
-	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
 
 func initLicensing() {
@@ -165,7 +160,6 @@ func initAuthz() {
 
 func initCampaigns() {
 	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
-
 }
 
 var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
