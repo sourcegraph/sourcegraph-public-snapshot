@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CampaignSpec",
+  "description": "CampaignSpec is a description of a campaign.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["changesets"],
+  "properties": {
+    "changesets": {
+      "description": "A list of changesets that this campaign ensures the existence of.",
+      "type": "array",
+      "items": {"$ref": "#/definitions/Changeset"}
+    }
+  },
+  "definitions": {
+    "Changeset": {
+      "description": "A changeset is a list of commits to a repository at a particular commit (along with other metadata, such as a title and description, used to create a code review on a code host).",
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": {"type":"string"},
+        "description":{"type":"string"},
+        "base": "TODO(sqs)",
+        "head": "TODO(sqs)",
+        "commits"
+      }
+    }
+  }
+}
