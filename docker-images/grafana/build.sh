@@ -10,7 +10,6 @@ BINDIR=".bin"
 # we do not use a separate go.mod/go.sum in the monitoring/ directory because
 # editor tooling would occassionally include and not include it in the root
 # go.mod/go.sum.
-rm -rf monitoring
 cp -R ../../monitoring .
 cp ../../go.* ./monitoring
 
@@ -39,3 +38,6 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
+
+# clean up for convenience
+rm -rf monitoring
