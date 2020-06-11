@@ -72,7 +72,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 1. Make sure the changes look right.
 
     > If you want to run the campaign on fewer repositories, change the roots query in `hello-world.campaign.yml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
-1. Click the **Apply** button.
+1. Click the **Update campaign** button.
 
 Your campaign now has changesets! They are still unpublished, which means they exist only on Sourcegraph and haven't been pushed to your code host yet.
 
