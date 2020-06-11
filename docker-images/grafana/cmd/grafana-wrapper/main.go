@@ -6,41 +6,47 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 var noConfig = os.Getenv("GRAFANA_WRAPPER_NO_CONFIG")
+var grafanaPort = env.Get("GRAFANA_PORT", "3370", "grafana port")
+var grafanaCredentials = env.Get("GRAFANA_CREDENTIALS", "admin:admin", "credentials for accessing the grafana server")
 
 func main() {
 	log := log15.New("cmd", "grafana-wrapper")
 	ctx := context.Background()
 
-	// controller for running/stopping grafana
-	grafana := newGrafanaController(log)
+	// spin up grafana
+	grafanaErrs := make(chan error)
+	go func() {
+		grafanaErrs <- newGrafanaRunCmd().Run()
+	}()
 
 	// subscribe to configuration
 	if noConfig != "true" {
 		log.Info("initializing configuration")
-		config, err := newConfigSubscriber(ctx, log)
+		grafanaClient := sdk.NewClient(fmt.Sprintf("http://localhost:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
+		config, err := newConfigSubscriber(ctx, log, grafanaClient)
 		if err != nil {
 			log.Crit("failed to initialize configuration", "error", err)
 			os.Exit(1)
 		}
-		config.Subscribe(grafana)
+		config.Subscribe(ctx)
 	} else {
 		log.Info("configuration sync disabled")
 	}
 
-	// initial grafana startup
-	if err := grafana.Restart(); err != nil {
-		log.Error("failed to start grafana", "error", err)
-		os.Exit(1)
-	}
-
-	// block
 	select {
-	case <-ctx.Done():
+	case err := <-grafanaErrs:
+		log.Crit("grafana stopped", "error", err)
+		os.Exit(1)
 	}
 }

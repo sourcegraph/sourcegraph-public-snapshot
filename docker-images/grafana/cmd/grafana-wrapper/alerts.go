@@ -6,21 +6,15 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
+	"strings"
 	"sync"
 
+	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/yaml.v2"
 )
-
-var grafanaProvisioningPath = os.Getenv("GF_PATHS_PROVISIONING")
-var grafanaProvisioningNotifiersPath = path.Join(grafanaProvisioningPath, "notifiers")
-var srcNotifiersPath = path.Join(grafanaProvisioningNotifiersPath, "sourcegraph.yaml")
 
 // #nosec G306  grafana runs as UID 472
 const fileMode = 0666
@@ -35,14 +29,15 @@ func generateAlertsChecksum(alerts []*schema.ObservabilityAlerts) []byte {
 }
 
 type configSubscriber struct {
-	log log15.Logger
-	mux sync.RWMutex
+	log     log15.Logger
+	grafana *sdk.Client
 
+	mux       sync.RWMutex
 	alerts    []*schema.ObservabilityAlerts // can be any conf.GrafanaNotifierX
 	alertsSum []byte
 }
 
-func newConfigSubscriber(ctx context.Context, logger log15.Logger) (*configSubscriber, error) {
+func newConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *sdk.Client) (*configSubscriber, error) {
 	log := logger.New("logger", "config-subscriber")
 
 	// Syncing relies on access to frontend, so wait until it is ready
@@ -52,19 +47,22 @@ func newConfigSubscriber(ctx context.Context, logger log15.Logger) (*configSubsc
 	}
 	log.Debug("detected frontend ready")
 
-	// initialize directory for config, in case it does not exist
-	if err := os.MkdirAll(grafanaProvisioningNotifiersPath, fileMode); err != nil {
-		return nil, fmt.Errorf("failed to initialize configuration: %w", err)
+	// Need grafana to be ready to intialize alerts
+	log.Info("waiting for grafana")
+	if err := waitForGrafana(ctx, grafana); err != nil {
+		return nil, fmt.Errorf("grafana not reachable: %w", err)
 	}
+	log.Debug("detected grafana ready")
 
 	// Load initial alerts configuration
 	alerts := conf.Get().ObservabilityAlerts
 	sum := generateAlertsChecksum(alerts)
-	subscriber := &configSubscriber{log: log}
-	return subscriber, subscriber.updateGrafanaConfig(alerts, sum)
+
+	subscriber := &configSubscriber{log: log, grafana: grafana}
+	return subscriber, subscriber.updateGrafanaConfig(ctx, alerts, sum)
 }
 
-func (c *configSubscriber) Subscribe(grafana *grafanaController) {
+func (c *configSubscriber) Subscribe(ctx context.Context) {
 	conf.Watch(func() {
 		c.mux.RLock()
 		newAlerts := conf.Get().ObservabilityAlerts
@@ -79,47 +77,49 @@ func (c *configSubscriber) Subscribe(grafana *grafanaController) {
 		}
 
 		// update configuration
-		if err := c.updateGrafanaConfig(newAlerts, newAlertsSum); err != nil {
+		if err := c.updateGrafanaConfig(ctx, newAlerts, newAlertsSum); err != nil {
 			c.log.Error("failed to apply config changes - ignoring update", "error", err)
-		} else {
-			// grafana must be restarted for config changes to apply
-			if err := grafana.Restart(); err != nil {
-				c.log.Crit("error occured while restarting grafana", "error", err)
-			}
 		}
 	})
 }
 
+func (c *configSubscriber) resetSrcAlerts(ctx context.Context) error {
+	alerts, err := c.grafana.GetAllAlertNotifications(ctx)
+	if err != nil {
+		return err
+	}
+	for _, alert := range alerts {
+		if strings.HasPrefix(alert.UID, "src-") {
+			if err := c.grafana.DeleteAlertNotificationUID(ctx, alert.UID); err != nil {
+				return fmt.Errorf("failed to delete alert %q: %w", alert.UID, err)
+			}
+		}
+	}
+	return nil
+}
+
 // updateGrafanaConfig updates grafanaAlertsSubscriber state and writes it to disk
-func (c *configSubscriber) updateGrafanaConfig(newAlerts []*schema.ObservabilityAlerts, newSum []byte) error {
+func (c *configSubscriber) updateGrafanaConfig(ctx context.Context, newAlerts []*schema.ObservabilityAlerts, newSum []byte) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	c.log.Debug("updating grafana configuration")
 
 	// generate new configuration
-	var current notificationsAsConfig
-	b, err := ioutil.ReadFile(srcNotifiersPath)
-	if err == nil {
-		if err := yaml.Unmarshal(b, &current); err != nil {
-			return fmt.Errorf("failed to read existing configuration: %w", err)
-		}
-	}
-	notifiersConfig, err := generateNotifiersConfig(&current, newAlerts)
+	created, err := generateNotifiersConfig(c.alerts, newAlerts)
 	if err != nil {
 		return err
 	}
-	c.log.Debug("new configuration prepared",
-		"notifiers", len(notifiersConfig.Notifications),
-		"notifiers_removed", len(notifiersConfig.DeleteNotifications))
 
-	// replace existing configuration
-	b, err = yaml.Marshal(&notifiersConfig)
-	if err != nil {
-		return fmt.Errorf("failed write new configuration: %w", err)
+	// TODO: error handling and rollback. how do we propagage warnings back to the frontend?
+	// could maybe revert back to c.alerts
+	if err := c.resetSrcAlerts(ctx); err != nil {
+		return err
 	}
-	os.Remove(srcNotifiersPath)
-	if err := ioutil.WriteFile(srcNotifiersPath, b, fileMode); err != nil {
-		return fmt.Errorf("failed write new configuration: %w", err)
+	for _, alert := range created {
+		_, err = c.grafana.CreateAlertNotification(ctx, alert)
+		if err != nil {
+			return fmt.Errorf("failed to create alert %q: %w", alert.UID, err)
+		}
 	}
 
 	// update state
@@ -133,34 +133,23 @@ func newAlertUID(alertType string, alert *schema.ObservabilityAlerts) string {
 	return fmt.Sprintf("src-%s-%v-%s", alert.Level, alertType, alert.Id)
 }
 
-func generateNotifiersConfig(current *notificationsAsConfig, newAlerts []*schema.ObservabilityAlerts) (*notificationsAsConfig, error) {
-	var notifiersConfig notificationsAsConfig
-
-	// mark existing alerts as deleted
-	if current != nil {
-		for _, n := range current.Notifications {
-			notifiersConfig.DeleteNotifications = append(notifiersConfig.DeleteNotifications, &deleteNotificationConfig{
-				Uid:  n.Uid,
-				Name: n.Name,
-			})
-		}
-	}
-
+func generateNotifiersConfig(current []*schema.ObservabilityAlerts, newAlerts []*schema.ObservabilityAlerts) ([]sdk.AlertNotification, error) {
 	// generate grafana notifiers
+	var newGrafanaAlerts []sdk.AlertNotification
 	for _, alert := range newAlerts {
 		alertType, fields, err := structToNotifierSettings(alert.Notifier)
 		if err != nil {
-			return nil, fmt.Errorf("notifier '%s' is invalid: %w", alert.Id, err)
+			return nil, fmt.Errorf("new notifier '%s' is invalid: %w", alert.Id, err)
 		}
-		notifiersConfig.Notifications = append(notifiersConfig.Notifications, &notificationFromConfig{
-			Uid:      newAlertUID(alertType, alert),
+		uid := newAlertUID(alertType, alert)
+		newGrafanaAlerts = append(newGrafanaAlerts, sdk.AlertNotification{
+			UID:      uid,
 			Name:     alert.Id,
 			Type:     alertType,
 			Settings: fields,
 		})
 	}
-
-	return &notifiersConfig, nil
+	return newGrafanaAlerts, nil
 }
 
 // structToNotifierSettings marshals the provided notifier and unmarshals it into a map
