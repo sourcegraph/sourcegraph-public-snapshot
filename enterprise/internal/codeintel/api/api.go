@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // CodeIntelAPI is the main interface into precise code intelligence data.
@@ -16,7 +16,7 @@ type CodeIntelAPI interface {
 	// exact document path are returned. Otherwise, dumps containing any document for which the given
 	// path is a prefix are returned. These dump IDs should be subsequently passed to invocations of
 	// Definitions, References, and Hover.
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]db.Dump, error)
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error)
 
 	// Definitions returns the list of source locations that define the symbol at the given position.
 	// This may include remote definitions if the remote repository is also indexed.
@@ -34,7 +34,7 @@ type CodeIntelAPI interface {
 }
 
 type codeIntelAPI struct {
-	db                  db.DB
+	store               store.Store
 	bundleManagerClient bundles.BundleManagerClient
 	gitserverClient     gitserver.Client
 }
@@ -43,9 +43,9 @@ var _ CodeIntelAPI = &codeIntelAPI{}
 
 var ErrMissingDump = errors.New("missing dump")
 
-func New(db db.DB, bundleManagerClient bundles.BundleManagerClient, gitserverClient gitserver.Client) CodeIntelAPI {
+func New(store store.Store, bundleManagerClient bundles.BundleManagerClient, gitserverClient gitserver.Client) CodeIntelAPI {
 	return &codeIntelAPI{
-		db:                  db,
+		store:               store,
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
 	}

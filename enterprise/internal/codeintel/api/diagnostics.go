@@ -8,19 +8,19 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type ResolvedDiagnostic struct {
-	Dump       db.Dump
+	Dump       store.Dump
 	Diagnostic bundles.Diagnostic
 }
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (api *codeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDiagnostic, int, error) {
-	dump, exists, err := api.db.GetDumpByID(ctx, uploadID)
+	dump, exists, err := api.store.GetDumpByID(ctx, uploadID)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "db.GetDumpByID")
+		return nil, 0, errors.Wrap(err, "store.GetDumpByID")
 	}
 	if !exists {
 		return nil, 0, ErrMissingDump
@@ -41,7 +41,7 @@ func (api *codeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadI
 	return resolveDiagnosticsWithDump(dump, diagnostics), totalCount, nil
 }
 
-func resolveDiagnosticsWithDump(dump db.Dump, diagnostics []bundles.Diagnostic) []ResolvedDiagnostic {
+func resolveDiagnosticsWithDump(dump store.Dump, diagnostics []bundles.Diagnostic) []ResolvedDiagnostic {
 	var resolvedDiagnostics []ResolvedDiagnostic
 	for _, diagnostic := range diagnostics {
 		diagnostic.Path = dump.Root + diagnostic.Path

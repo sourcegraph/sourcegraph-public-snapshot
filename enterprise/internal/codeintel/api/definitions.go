@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // DefintionMonikersLimit is the maximum number of definition moniker results we'll ask
@@ -20,9 +20,9 @@ const DefintionMonikersLimit = 100
 // Definitions returns the list of source locations that define the symbol at the given position.
 // This may include remote definitions if the remote repository is also indexed.
 func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error) {
-	dump, exists, err := api.db.GetDumpByID(ctx, uploadID)
+	dump, exists, err := api.store.GetDumpByID(ctx, uploadID)
 	if err != nil {
-		return nil, errors.Wrap(err, "db.GetDumpByID")
+		return nil, errors.Wrap(err, "store.GetDumpByID")
 	}
 	if !exists {
 		return nil, ErrMissingDump
@@ -33,7 +33,7 @@ func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, cha
 	return api.definitionsRaw(ctx, dump, bundleClient, pathInBundle, line, character)
 }
 
-func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
+func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump store.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
 	locations, err := bundleClient.Definitions(ctx, pathInBundle, line, character)
 	if err != nil {
 		if err == client.ErrNotFound {
@@ -58,7 +58,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 	for _, monikers := range rangeMonikers {
 		for _, moniker := range monikers {
 			if moniker.Kind == "import" {
-				locations, _, err := lookupMoniker(api.db, api.bundleManagerClient, dump.ID, pathInBundle, "definition", moniker, 0, DefintionMonikersLimit)
+				locations, _, err := lookupMoniker(api.store, api.bundleManagerClient, dump.ID, pathInBundle, "definition", moniker, 0, DefintionMonikersLimit)
 				if err != nil {
 					return nil, err
 				}
@@ -66,9 +66,9 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 					return locations, nil
 				}
 			} else {
-				// This symbol was not imported from another database. We search the definitions
-				// table of our own database in case there was a definition that wasn't properly
-				// attached to a result set but did have the correct monikers attached.
+				// This symbol was not imported from another bundle. We search the definitions
+				// of our own bundle in case there was a definition that wasn't properly attached
+				// to a result set but did have the correct monikers attached.
 
 				locations, _, err := bundleClient.MonikerResults(context.Background(), "definition", moniker.Scheme, moniker.Identifier, 0, DefintionMonikersLimit)
 				if err != nil {
@@ -88,7 +88,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 	return nil, nil
 }
 
-func (api *codeIntelAPI) definitionRaw(ctx context.Context, dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) (ResolvedLocation, bool, error) {
+func (api *codeIntelAPI) definitionRaw(ctx context.Context, dump store.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) (ResolvedLocation, bool, error) {
 	resolved, err := api.definitionsRaw(ctx, dump, bundleClient, pathInBundle, line, character)
 	if err != nil || len(resolved) == 0 {
 		return ResolvedLocation{}, false, errors.Wrap(err, "api.definitionsRaw")

@@ -12,16 +12,16 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
-	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 var (
 	testCommit             = makeCommit(0)
-	testDump1              = db.Dump{ID: 42, Root: "sub1/"}
-	testDump2              = db.Dump{ID: 50, Root: "sub2/"}
-	testDump3              = db.Dump{ID: 51, Root: "sub3/"}
-	testDump4              = db.Dump{ID: 52, Root: "sub4/"}
+	testDump1              = store.Dump{ID: 42, Root: "sub1/"}
+	testDump2              = store.Dump{ID: 50, Root: "sub2/"}
+	testDump3              = store.Dump{ID: 51, Root: "sub3/"}
+	testDump4              = store.Dump{ID: 52, Root: "sub4/"}
 	testMoniker1           = bundles.MonikerData{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
 	testMoniker2           = bundles.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
 	testMoniker3           = bundles.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad"}
@@ -54,15 +54,15 @@ func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
 }
 
-func setMockDBGetDumpByID(t *testing.T, mockDB *dbmocks.MockDB, dumps map[int]db.Dump) {
-	mockDB.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (db.Dump, bool, error) {
+func setMockStoreGetDumpByID(t *testing.T, mockStore *storemocks.MockStore, dumps map[int]store.Dump) {
+	mockStore.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (store.Dump, bool, error) {
 		dump, ok := dumps[id]
 		return dump, ok, nil
 	})
 }
 
-func setMockDBGetPackage(t *testing.T, mockDB *dbmocks.MockDB, expectedScheme, expectedName, expectedVersion string, dump db.Dump, exists bool) {
-	mockDB.GetPackageFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string) (db.Dump, bool, error) {
+func setMockStoreGetPackage(t *testing.T, mockStore *storemocks.MockStore, expectedScheme, expectedName, expectedVersion string, dump store.Dump, exists bool) {
+	mockStore.GetPackageFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string) (store.Dump, bool, error) {
 		if scheme != expectedScheme {
 			t.Errorf("unexpected scheme for GetPackage. want=%s have=%s", expectedScheme, scheme)
 		}
@@ -76,8 +76,8 @@ func setMockDBGetPackage(t *testing.T, mockDB *dbmocks.MockDB, expectedScheme, e
 	})
 }
 
-func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedFile, expectedIndexer string, dumps []db.Dump) {
-	mockDB.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file, indexer string) ([]db.Dump, error) {
+func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedFile, expectedIndexer string, dumps []store.Dump) {
+	mockStore.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file, indexer string) ([]store.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -94,8 +94,8 @@ func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRep
 	})
 }
 
-func setMockDBSameRepoPager(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedScheme, expectedName, expectedVersion string, expectedLimit, totalCount int, pager db.ReferencePager) {
-	mockDB.SameRepoPagerFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, db.ReferencePager, error) {
+func setMockStoreSameRepoPager(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedScheme, expectedName, expectedVersion string, expectedLimit, totalCount int, pager store.ReferencePager) {
+	mockStore.SameRepoPagerFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, store.ReferencePager, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for SameRepoPager. want=%v have=%v", expectedRepositoryID, repositoryID)
 		}
@@ -118,8 +118,8 @@ func setMockDBSameRepoPager(t *testing.T, mockDB *dbmocks.MockDB, expectedReposi
 	})
 }
 
-func setMockDBPackageReferencePager(t *testing.T, mockDB *dbmocks.MockDB, expectedScheme, expectedName, expectedVersion string, expectedRepositoryID, expectedLimit int, totalCount int, pager db.ReferencePager) {
-	mockDB.PackageReferencePagerFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, db.ReferencePager, error) {
+func setMockStorePackageReferencePager(t *testing.T, mockStore *storemocks.MockStore, expectedScheme, expectedName, expectedVersion string, expectedRepositoryID, expectedLimit int, totalCount int, pager store.ReferencePager) {
+	mockStore.PackageReferencePagerFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, store.ReferencePager, error) {
 		if scheme != expectedScheme {
 			t.Errorf("unexpected scheme for PackageReferencePager. want=%s have=%s", expectedScheme, scheme)
 		}
@@ -139,8 +139,8 @@ func setMockDBPackageReferencePager(t *testing.T, mockDB *dbmocks.MockDB, expect
 	})
 }
 
-func setMockDBHasCommit(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit string, exists bool) {
-	mockDB.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+func setMockStoreHasCommit(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit string, exists bool) {
+	mockStore.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for HasCommit. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -151,7 +151,7 @@ func setMockDBHasCommit(t *testing.T, mockDB *dbmocks.MockDB, expectedRepository
 	})
 }
 
-func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *dbmocks.MockReferencePager, expectedOffset int, references []types.PackageReference) {
+func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *storemocks.MockReferencePager, expectedOffset int, references []types.PackageReference) {
 	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(ctx context.Context, offset int) ([]types.PackageReference, error) {
 		if offset != expectedOffset {
 			t.Errorf("unexpected offset for PageFromOffset. want=%d have=%d", expectedOffset, offset)

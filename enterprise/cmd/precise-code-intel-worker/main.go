@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -43,20 +43,20 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db := db.NewObserved(mustInitializeDatabase(), observationContext)
-	MustRegisterQueueMonitor(observationContext.Registerer, db)
+	store := store.NewObserved(mustInitializeStore(), observationContext)
+	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
 
 	uploadResetter := resetter.UploadResetter{
-		DB:            db,
+		Store:         store,
 		ResetInterval: resetInterval,
 		Metrics:       resetterMetrics,
 	}
 
 	worker := worker.NewWorker(
-		db,
+		store,
 		bundles.New(bundleManagerURL),
 		gitserver.DefaultClient,
 		workerPollInterval,
@@ -83,7 +83,7 @@ func main() {
 	worker.Stop()
 }
 
-func mustInitializeDatabase() db.DB {
+func mustInitializeStore() store.Store {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
@@ -91,10 +91,10 @@ func mustInitializeDatabase() db.DB {
 		}
 	})
 
-	db, err := db.New(postgresDSN)
+	store, err := store.New(postgresDSN)
 	if err != nil {
-		log.Fatalf("failed to initialize db store: %s", err)
+		log.Fatalf("failed to initialize store: %s", err)
 	}
 
-	return db
+	return store
 }

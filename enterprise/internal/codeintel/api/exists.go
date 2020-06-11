@@ -7,7 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
@@ -15,19 +15,19 @@ import (
 // exact document path are returned. Otherwise, dumps containing any document for which the given
 // path is a prefix are returned. These dump IDs should be subsequently passed to invocations of
 // Definitions, References, and Hover.
-func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]db.Dump, error) {
+func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error) {
 	// See if we know about this commit. If not, we need to update our commits table
 	// and the visibility of the dumps in this repository.
 	if err := api.updateCommitsAndVisibility(ctx, repositoryID, commit); err != nil {
 		return nil, err
 	}
 
-	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, path, indexer)
+	candidates, err := api.store.FindClosestDumps(ctx, repositoryID, commit, path, indexer)
 	if err != nil {
-		return nil, errors.Wrap(err, "db.FindClosestDumps")
+		return nil, errors.Wrap(err, "store.FindClosestDumps")
 	}
 
-	var dumps []db.Dump
+	var dumps []store.Dump
 	for _, dump := range candidates {
 		// TODO(efritz) - ensure there's a valid document path
 		// for the other condition. This should probably look like
@@ -55,28 +55,28 @@ func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 // updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
 // visibility of all dumps for the given repository.
 func (api *codeIntelAPI) updateCommitsAndVisibility(ctx context.Context, repositoryID int, commit string) error {
-	commitExists, err := api.db.HasCommit(ctx, repositoryID, commit)
+	commitExists, err := api.store.HasCommit(ctx, repositoryID, commit)
 	if err != nil {
-		return errors.Wrap(err, "db.HasCommit")
+		return errors.Wrap(err, "store.HasCommit")
 	}
 	if commitExists {
 		return nil
 	}
 
-	newCommits, err := api.gitserverClient.CommitsNear(ctx, api.db, repositoryID, commit)
+	newCommits, err := api.gitserverClient.CommitsNear(ctx, api.store, repositoryID, commit)
 	if err != nil {
 		return errors.Wrap(err, "gitserverClient.CommitsNear")
 	}
-	if err := api.db.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
-		return errors.Wrap(err, "db.UpdateCommits")
+	if err := api.store.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
+		return errors.Wrap(err, "store.UpdateCommits")
 	}
 
-	tipCommit, err := api.gitserverClient.Head(ctx, api.db, repositoryID)
+	tipCommit, err := api.gitserverClient.Head(ctx, api.store, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserverClient.Head")
 	}
-	if err := api.db.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-		return errors.Wrap(err, "db.UpdateDumpsVisibleFromTip")
+	if err := api.store.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
+		return errors.Wrap(err, "store.UpdateDumpsVisibleFromTip")
 	}
 
 	return nil

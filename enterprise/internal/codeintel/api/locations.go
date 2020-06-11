@@ -2,11 +2,11 @@ package api
 
 import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type ResolvedLocation struct {
-	Dump  db.Dump       `json:"dump"`
+	Dump  store.Dump    `json:"dump"`
 	Path  string        `json:"path"`
 	Range bundles.Range `json:"range"`
 }
@@ -21,7 +21,7 @@ func sliceLocations(locations []bundles.Location, lo, hi int) []bundles.Location
 	return locations[lo:hi]
 }
 
-func resolveLocationsWithDump(dump db.Dump, locations []bundles.Location) []ResolvedLocation {
+func resolveLocationsWithDump(dump store.Dump, locations []bundles.Location) []ResolvedLocation {
 	var resolvedLocations []ResolvedLocation
 	for _, location := range locations {
 		resolvedLocations = append(resolvedLocations, ResolvedLocation{

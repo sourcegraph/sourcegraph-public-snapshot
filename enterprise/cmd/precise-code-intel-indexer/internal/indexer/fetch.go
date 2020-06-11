@@ -6,12 +6,12 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/tar"
 )
 
-func fetchRepository(ctx context.Context, db db.DB, gitserverClient gitserver.Client, repositoryID int, commit string) (string, error) {
+func fetchRepository(ctx context.Context, store store.Store, gitserverClient gitserver.Client, repositoryID int, commit string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return "", err
@@ -22,7 +22,7 @@ func fetchRepository(ctx context.Context, db db.DB, gitserverClient gitserver.Cl
 		}
 	}()
 
-	archive, err := gitserverClient.Archive(ctx, db, repositoryID, commit)
+	archive, err := gitserverClient.Archive(ctx, store, repositoryID, commit)
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver.Archive")
 	}

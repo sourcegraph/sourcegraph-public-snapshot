@@ -12,9 +12,9 @@ import (
 
 // Hover returns the hover text and range for the symbol at the given position.
 func (api *codeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (string, bundles.Range, bool, error) {
-	dump, exists, err := api.db.GetDumpByID(ctx, uploadID)
+	dump, exists, err := api.store.GetDumpByID(ctx, uploadID)
 	if err != nil {
-		return "", bundles.Range{}, false, errors.Wrap(err, "db.GetDumpByID")
+		return "", bundles.Range{}, false, errors.Wrap(err, "store.GetDumpByID")
 	}
 	if !exists {
 		return "", bundles.Range{}, false, ErrMissingDump

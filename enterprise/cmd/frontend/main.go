@@ -36,10 +36,10 @@ import (
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	codeinteldb "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
 	codeintelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -177,18 +177,18 @@ func initCodeIntel(enterpriseServices *enterprise.Services) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
+	store := store.NewObserved(store.NewWithHandle(dbconn.Global), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
-	api := codeintelapi.NewObserved(codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
+	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
 
 	enterpriseServices.CodeIntelResolver = codeintelResolvers.NewResolver(
-		db,
+		store,
 		bundleManagerClient,
 		api,
 	)
 
 	enterpriseServices.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
-		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient, internal)
+		return codeintelhttpapi.NewUploadHandler(store, bundleManagerClient, internal)
 	}
 }
 

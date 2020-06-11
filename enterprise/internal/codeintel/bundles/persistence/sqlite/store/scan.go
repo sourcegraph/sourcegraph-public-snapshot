@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-// ScanStrings scans a slice of strings from the return value of `*dbImpl.query`.
+// ScanStrings scans a slice of strings from the return value of `*store.query`.
 func ScanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -26,7 +26,7 @@ func ScanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
 	return values, nil
 }
 
-// ScanFirstString scans a slice of strings from the return value of `*dbImpl.query` and returns the first.
+// ScanFirstString scans a slice of strings from the return value of `*store.query` and returns the first.
 func ScanFirstString(rows *sql.Rows, err error) (string, bool, error) {
 	values, err := ScanStrings(rows, err)
 	if err != nil || len(values) == 0 {
@@ -35,7 +35,7 @@ func ScanFirstString(rows *sql.Rows, err error) (string, bool, error) {
 	return values[0], true, nil
 }
 
-// ScanInts scans a slice of ints from the return value of `*dbImpl.query`.
+// ScanInts scans a slice of ints from the return value of `*store.query`.
 func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -55,7 +55,7 @@ func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 	return values, nil
 }
 
-// ScanFirstInt scans a slice of ints from the return value of `*dbImpl.query` and returns the first.
+// ScanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
 func ScanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
 	values, err := ScanInts(rows, err)
 	if err != nil || len(values) == 0 {
@@ -64,7 +64,7 @@ func ScanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
 	return values[0], true, nil
 }
 
-// ScanBytes scans a slice of bytes from the return value of `*dbImpl.query`.
+// ScanBytes scans a slice of bytes from the return value of `*store.query`.
 func ScanBytes(rows *sql.Rows, queryErr error) (_ [][]byte, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -84,7 +84,7 @@ func ScanBytes(rows *sql.Rows, queryErr error) (_ [][]byte, err error) {
 	return values, nil
 }
 
-// ScanFirstBytes scans a slice of bytes from the return value of `*dbImpl.query` and returns the first.
+// ScanFirstBytes scans a slice of bytes from the return value of `*store.query` and returns the first.
 func ScanFirstBytes(rows *sql.Rows, err error) ([]byte, bool, error) {
 	values, err := ScanBytes(rows, err)
 	if err != nil || len(values) == 0 {

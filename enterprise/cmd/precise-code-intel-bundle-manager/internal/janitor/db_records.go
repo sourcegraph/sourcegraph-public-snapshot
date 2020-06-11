@@ -16,7 +16,7 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	ctx := context.Background()
 
 	getTipCommit := func(repositoryID int) (string, error) {
-		tipCommit, err := gitserver.Head(ctx, j.db, repositoryID)
+		tipCommit, err := gitserver.Head(ctx, j.store, repositoryID)
 		if err != nil && !isRepoNotExist(err) {
 			return "", errors.Wrap(err, "gitserver.Head")
 		}
@@ -24,9 +24,9 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	}
 
 	// TODO(efritz) - request in batches
-	ids, err := j.db.GetDumpIDs(ctx)
+	ids, err := j.store.GetDumpIDs(ctx)
 	if err != nil {
-		return errors.Wrap(err, "db.GetDumpIDs")
+		return errors.Wrap(err, "store.GetDumpIDs")
 	}
 
 	for _, id := range ids {
@@ -38,9 +38,9 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 			continue
 		}
 
-		deleted, err := j.db.DeleteUploadByID(ctx, id, getTipCommit)
+		deleted, err := j.store.DeleteUploadByID(ctx, id, getTipCommit)
 		if err != nil {
-			return errors.Wrap(err, "db.DeleteUploadByID")
+			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
 
 		if deleted {

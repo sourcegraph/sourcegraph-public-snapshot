@@ -7,12 +7,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type Indexer struct {
-	db           db.DB
+	store        store.Store
 	processor    Processor
 	frontendURL  string
 	pollInterval time.Duration
@@ -22,20 +22,20 @@ type Indexer struct {
 }
 
 func NewIndexer(
-	db db.DB,
+	store store.Store,
 	gitserverClient gitserver.Client,
 	frontendURL string,
 	pollInterval time.Duration,
 	metrics IndexerMetrics,
 ) *Indexer {
 	processor := &processor{
-		db:              db,
+		store:           store,
 		gitserverClient: gitserverClient,
 		frontendURL:     frontendURL,
 	}
 
 	return &Indexer{
-		db:           db,
+		store:        store,
 		processor:    processor,
 		frontendURL:  frontendURL,
 		pollInterval: pollInterval,
@@ -71,9 +71,9 @@ func (i *Indexer) Stop() {
 func (i *Indexer) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 	start := time.Now()
 
-	index, tx, ok, err := i.db.DequeueIndex(ctx)
+	index, tx, ok, err := i.store.DequeueIndex(ctx)
 	if err != nil || !ok {
-		return false, errors.Wrap(err, "db.DequeueIndex")
+		return false, errors.Wrap(err, "store.DequeueIndex")
 	}
 	defer func() {
 		err = tx.Done(err)
@@ -98,7 +98,7 @@ func (i *Indexer) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 		)
 
 		if markErr := tx.MarkIndexComplete(ctx, index.ID); markErr != nil {
-			return true, errors.Wrap(markErr, "db.MarkIndexComplete")
+			return true, errors.Wrap(markErr, "store.MarkIndexComplete")
 		}
 	} else {
 		// TODO(efritz) - distinguish between index and system errors
@@ -111,7 +111,7 @@ func (i *Indexer) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 		)
 
 		if markErr := tx.MarkIndexErrored(ctx, index.ID, processErr.Error()); markErr != nil {
-			return true, errors.Wrap(markErr, "db.MarkIndexErrored")
+			return true, errors.Wrap(markErr, "store.MarkIndexErrored")
 		}
 	}
 

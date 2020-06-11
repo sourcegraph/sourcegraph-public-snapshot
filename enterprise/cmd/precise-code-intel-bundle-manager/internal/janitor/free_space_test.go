@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -34,14 +34,14 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 	}
 
 	calls := 0
-	mockDB := dbmocks.NewMockDB()
-	mockDB.DeleteOldestDumpFunc.SetDefaultHook(func(ctx context.Context) (int, bool, error) {
+	mockStore := storemocks.NewMockStore()
+	mockStore.DeleteOldestDumpFunc.SetDefaultHook(func(ctx context.Context) (int, bool, error) {
 		calls++
 		return calls, true, nil
 	})
 
 	j := &Janitor{
-		db:        mockDB,
+		store:     mockStore,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
@@ -85,8 +85,8 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 
 	idsToPrune := []int{1, 2, 3, 4, 5}
 
-	mockDB := dbmocks.NewMockDB()
-	mockDB.DeleteOldestDumpFunc.SetDefaultHook(func(ctx context.Context) (int, bool, error) {
+	mockStore := storemocks.NewMockStore()
+	mockStore.DeleteOldestDumpFunc.SetDefaultHook(func(ctx context.Context) (int, bool, error) {
 		if len(idsToPrune) == 0 {
 			return 0, false, nil
 		}
@@ -97,7 +97,7 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 	})
 
 	j := &Janitor{
-		db:        mockDB,
+		store:     mockStore,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
@@ -121,8 +121,8 @@ func TestEvictBundlesNoBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 
 	called := false
-	mockDB := dbmocks.NewMockDB()
-	mockDB.DeleteOldestDumpFunc.SetDefaultHook(func(ctx context.Context) (int, bool, error) {
+	mockStore := storemocks.NewMockStore()
+	mockStore.DeleteOldestDumpFunc.SetDefaultHook(func(ctx context.Context) (int, bool, error) {
 		if !called {
 			called = true
 			return 42, true, nil
@@ -131,7 +131,7 @@ func TestEvictBundlesNoBundleFile(t *testing.T) {
 	})
 
 	j := &Janitor{
-		db:        mockDB,
+		store:     mockStore,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}

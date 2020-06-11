@@ -7,13 +7,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type Scheduler struct {
-	db                          db.DB
+	store                       store.Store
 	gitserverClient             gitserver.Client
 	interval                    time.Duration
 	batchSize                   int
@@ -27,7 +27,7 @@ type Scheduler struct {
 }
 
 func NewScheduler(
-	db db.DB,
+	store store.Store,
 	gitserverClient gitserver.Client,
 	interval time.Duration,
 	batchSize int,
@@ -38,7 +38,7 @@ func NewScheduler(
 	metrics SchedulerMetrics,
 ) *Scheduler {
 	return &Scheduler{
-		db:                          db,
+		store:                       store,
 		gitserverClient:             gitserverClient,
 		interval:                    interval,
 		batchSize:                   batchSize,
@@ -73,7 +73,7 @@ func (s *Scheduler) Stop() {
 }
 
 func (s *Scheduler) update(ctx context.Context) error {
-	indexableRepositories, err := s.db.IndexableRepositories(ctx, db.IndexableRepositoryQueryOptions{
+	indexableRepositories, err := s.store.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
 		Limit:                       s.batchSize,
 		MinimumTimeSinceLastEnqueue: s.minimumTimeSinceLastEnqueue,
 		MinimumSearchCount:          s.minimumSearchCount,
@@ -81,7 +81,7 @@ func (s *Scheduler) update(ctx context.Context) error {
 		MinimumSearchRatio:          s.minimumSearchRatio,
 	})
 	if err != nil {
-		return errors.Wrap(err, "db.IndexableRepositories")
+		return errors.Wrap(err, "store.IndexableRepositories")
 	}
 
 	for _, indexableRepository := range indexableRepositories {
@@ -97,44 +97,44 @@ func (s *Scheduler) update(ctx context.Context) error {
 	return nil
 }
 
-func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository db.IndexableRepository) (err error) {
-	commit, err := s.gitserverClient.Head(ctx, s.db, indexableRepository.RepositoryID)
+func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository store.IndexableRepository) (err error) {
+	commit, err := s.gitserverClient.Head(ctx, s.store, indexableRepository.RepositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 
-	isQueued, err := s.db.IsQueued(ctx, indexableRepository.RepositoryID, commit)
+	isQueued, err := s.store.IsQueued(ctx, indexableRepository.RepositoryID, commit)
 	if err != nil {
-		return errors.Wrap(err, "db.IsQueued")
+		return errors.Wrap(err, "store.IsQueued")
 	}
 	if isQueued {
 		return nil
 	}
 
-	tx, err := s.db.Transact(ctx)
+	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return errors.Wrap(err, "db.Transact")
+		return errors.Wrap(err, "store.Transact")
 	}
 	defer func() {
 		err = tx.Done(err)
 	}()
 
-	id, err := tx.InsertIndex(ctx, db.Index{
+	id, err := tx.InsertIndex(ctx, store.Index{
 		Commit:       commit,
 		RepositoryID: indexableRepository.RepositoryID,
 		State:        "queued",
 	})
 	if err != nil {
-		return errors.Wrap(err, "db.QueueIndex")
+		return errors.Wrap(err, "store.QueueIndex")
 	}
 
 	now := time.Now()
 
-	if err := tx.UpdateIndexableRepository(ctx, db.UpdateableIndexableRepository{
+	if err := tx.UpdateIndexableRepository(ctx, store.UpdateableIndexableRepository{
 		RepositoryID:        indexableRepository.RepositoryID,
 		LastIndexEnqueuedAt: &now,
 	}); err != nil {
-		return errors.Wrap(err, "db.UpdateIndexableRepository")
+		return errors.Wrap(err, "store.UpdateIndexableRepository")
 	}
 
 	log15.Info(
