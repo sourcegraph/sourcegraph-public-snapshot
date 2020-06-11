@@ -204,8 +204,8 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 		return nil
 	}
 	offline := globalUpdateStatus.Err != nil // Whether or not instance can connect to Sourcegraph.com for update checks
-	monthsOutOfDate, err := version.HowLongOutOfDate(version.Version())
-	if err == nil {
+	monthsOutOfDate, err := version.HowLongOutOfDate()
+	if err != nil {
 		log15.Error("failed to determine how out of date Sourcegraph is", "error", err)
 		return nil
 	}
