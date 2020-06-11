@@ -34,7 +34,7 @@ func main() {
 	if noConfig != "true" {
 		log.Info("initializing configuration")
 		grafanaClient := sdk.NewClient(fmt.Sprintf("http://localhost:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
-		config, err := newConfigSubscriber(ctx, log, grafanaClient)
+		config, err := newSiteConfigSubscriber(ctx, log, grafanaClient)
 		if err != nil {
 			log.Crit("failed to initialize configuration", "error", err)
 			os.Exit(1)
