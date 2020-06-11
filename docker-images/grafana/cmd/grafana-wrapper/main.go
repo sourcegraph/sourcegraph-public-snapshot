@@ -32,7 +32,9 @@ func main() {
 	}()
 
 	// subscribe to configuration
-	if noConfig != "true" {
+	if noConfig == "true" {
+		log.Info("configuration sync disabled")
+	} else {
 		log.Info("initializing configuration")
 		grafanaClient := sdk.NewClient(fmt.Sprintf("http://localhost:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
 
@@ -47,8 +49,6 @@ func main() {
 
 		// watch for configuration updates in the background
 		config.Subscribe(ctx)
-	} else {
-		log.Info("configuration sync disabled")
 	}
 
 	err := <-grafanaErrs
