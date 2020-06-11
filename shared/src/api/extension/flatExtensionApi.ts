@@ -46,13 +46,10 @@ export const initNewExtensionAPI = (
 ): InitResult => {
     const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings }
 
-    const configChanges = new ReplaySubject<void>(1)
-    // TODO (simon) why it is needed?
-    // the idea here is to emit immediately after listening to changes
-    // because initial settings were not passed in as a parameter but via syncSettingsData
-    // but we ALREADY have settings available? I think it will result in unneeded update
-    // for original version see https://github.com/sourcegraph/sourcegraph/pull/10874/files
-    configChanges.next()
+    const configChanges = new BehaviorSubject<void>(undefined)
+    // Most extensions never call `configuration.get()` synchronously in `activate()` to get
+    // the initial settings data, and instead only subscribe to configuration changes.
+    // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
     const rootChanges = new Subject<void>()
     const versionContextChanges = new Subject<string | undefined>()
