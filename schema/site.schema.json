@@ -624,7 +624,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["slack", "pagerduty", "email", "webook"]
+                "enum": ["slack", "pagerduty", "email", "webhook"]
               }
             },
             "oneOf": [
