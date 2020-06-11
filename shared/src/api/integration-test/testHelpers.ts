@@ -1,6 +1,6 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, NEVER, throwError, of } from 'rxjs'
+import { BehaviorSubject, from, throwError, of } from 'rxjs'
 import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
