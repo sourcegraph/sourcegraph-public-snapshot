@@ -409,9 +409,9 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-// listConfigs decodes the list configs into result. In addition to populating
-// loaded configs into the given result, it also populates "URN" field of elements
-// in result when such field exists.
+// listConfigs decodes the list of configs into result. In addition to populating
+// loaded configs into the given result, it also populates the "URN" field of elements
+// in result when the field exists.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
