@@ -15,13 +15,13 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	sqlitewriter "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // Processor converts raw uploads into dumps.
 type Processor interface {
-	Process(ctx context.Context, tx db.DB, upload db.Upload) error
+	Process(ctx context.Context, tx store.Store, upload store.Upload) error
 }
 
 type processor struct {
@@ -30,7 +30,7 @@ type processor struct {
 }
 
 // process converts a raw upload into a dump within the given transaction context.
-func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (err error) {
+func (p *processor) Process(ctx context.Context, store store.Store, upload store.Upload) (err error) {
 	// Create scratch directory that we can clean on completion/failure
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -63,7 +63,7 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		upload.ID,
 		upload.Root,
 		func(dirnames []string) (map[string][]string, error) {
-			directoryChildren, err := p.gitserverClient.DirectoryChildren(ctx, tx, upload.RepositoryID, upload.Commit, dirnames)
+			directoryChildren, err := p.gitserverClient.DirectoryChildren(ctx, store, upload.RepositoryID, upload.Commit, dirnames)
 			if err != nil {
 				return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 			}
@@ -79,44 +79,44 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 	// update the upload record with an error message but do not want to alter any other data in
 	// the database. Rolling back to this savepoint will allow us to discard any other changes
 	// but still commit the transaction as a whole.
-	savepointID, err := tx.Savepoint(ctx)
+	savepointID, err := store.Savepoint(ctx)
 	if err != nil {
-		return errors.Wrap(err, "db.Savepoint")
+		return errors.Wrap(err, "store.Savepoint")
 	}
 	defer func() {
 		if err != nil {
-			if rollbackErr := tx.RollbackToSavepoint(ctx, savepointID); rollbackErr != nil {
+			if rollbackErr := store.RollbackToSavepoint(ctx, savepointID); rollbackErr != nil {
 				err = multierror.Append(err, rollbackErr)
 			}
 		}
 	}()
 
 	// Update package and package reference data to support cross-repo queries.
-	if err := tx.UpdatePackages(ctx, packages); err != nil {
-		return errors.Wrap(err, "db.UpdatePackages")
+	if err := store.UpdatePackages(ctx, packages); err != nil {
+		return errors.Wrap(err, "store.UpdatePackages")
 	}
-	if err := tx.UpdatePackageReferences(ctx, packageReferences); err != nil {
-		return errors.Wrap(err, "db.UpdatePackageReferences")
+	if err := store.UpdatePackageReferences(ctx, packageReferences); err != nil {
+		return errors.Wrap(err, "store.UpdatePackageReferences")
 	}
 
 	// Before we mark the upload as complete, we need to delete any existing completed uploads
 	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 	// will fail as these values form a unique constraint.
-	if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-		return errors.Wrap(err, "db.DeleteOverlappingDumps")
+	if err := store.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+		return errors.Wrap(err, "store.DeleteOverlappingDumps")
 	}
 
 	// Almost-success: we need to mark this upload as complete at this point as the next step changes
 	// the visibility of the dumps for this repository. This requires that the new dump be available in
 	// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
 	// still roll back to the save point and mark the upload as errored.
-	if err := tx.MarkComplete(ctx, upload.ID); err != nil {
-		return errors.Wrap(err, "db.MarkComplete")
+	if err := store.MarkComplete(ctx, upload.ID); err != nil {
+		return errors.Wrap(err, "store.MarkComplete")
 	}
 
 	// Discover commits around the current tip commit and the commit of this upload. Upsert these
 	// commits into the lsif_commits table, then update the visibility of all dumps for this repository.
-	if err := p.updateCommitsAndVisibility(ctx, tx, upload.RepositoryID, upload.Commit); err != nil {
+	if err := p.updateCommitsAndVisibility(ctx, store, upload.RepositoryID, upload.Commit); err != nil {
 		return errors.Wrap(err, "updateCommitsAndVisibility")
 	}
 
@@ -130,12 +130,12 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 
 // updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
 // visibility of all dumps for the given repository.
-func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, repositoryID int, commit string) error {
-	tipCommit, err := p.gitserverClient.Head(ctx, db, repositoryID)
+func (p *processor) updateCommitsAndVisibility(ctx context.Context, store store.Store, repositoryID int, commit string) error {
+	tipCommit, err := p.gitserverClient.Head(ctx, store, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
-	newCommits, err := p.gitserverClient.CommitsNear(ctx, db, repositoryID, tipCommit)
+	newCommits, err := p.gitserverClient.CommitsNear(ctx, store, repositoryID, tipCommit)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.CommitsNear")
 	}
@@ -145,7 +145,7 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 		// commit and the tip so that we can accurately determine what is visible from the tip. If we
 		// do not do this before the updateDumpsVisibleFromTip call below, no dumps will be reachable
 		// from the tip and all dumps will be invisible.
-		additionalCommits, err := p.gitserverClient.CommitsNear(ctx, db, repositoryID, commit)
+		additionalCommits, err := p.gitserverClient.CommitsNear(ctx, store, repositoryID, commit)
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitsNear")
 		}
@@ -155,12 +155,12 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 		}
 	}
 
-	if err := db.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
-		return errors.Wrap(err, "db.UpdateCommits")
+	if err := store.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
+		return errors.Wrap(err, "store.UpdateCommits")
 	}
 
-	if err := db.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-		return errors.Wrap(err, "db.UpdateDumpsVisibleFromTip")
+	if err := store.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
+		return errors.Wrap(err, "store.UpdateDumpsVisibleFromTip")
 	}
 
 	return nil

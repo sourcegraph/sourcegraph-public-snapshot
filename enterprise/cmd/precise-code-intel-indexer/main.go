@@ -14,8 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/server"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -48,8 +48,8 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db := db.NewObserved(mustInitializeDatabase(), observationContext)
-	MustRegisterQueueMonitor(observationContext.Registerer, db)
+	store := store.NewObserved(mustInitializeStore(), observationContext)
+	MustRegisterQueueMonitor(observationContext.Registerer, store)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
 	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
@@ -57,20 +57,20 @@ func main() {
 	server := server.New()
 
 	indexResetter := resetter.IndexResetter{
-		DB:            db,
+		Store:         store,
 		ResetInterval: resetInterval,
 		Metrics:       resetterMetrics,
 	}
 
 	indexabilityUpdater := indexabilityupdater.NewUpdater(
-		db,
+		store,
 		gitserver.DefaultClient,
 		indexabilityUpdaterInterval,
 		indexabilityUpdaterMetrics,
 	)
 
 	scheduler := scheduler.NewScheduler(
-		db,
+		store,
 		gitserver.DefaultClient,
 		schedulerInterval,
 		indexBatchSize,
@@ -82,7 +82,7 @@ func main() {
 	)
 
 	indexer := indexer.NewIndexer(
-		db,
+		store,
 		gitserver.DefaultClient,
 		frontendURL,
 		indexerPollInterval,
@@ -113,7 +113,7 @@ func main() {
 	indexabilityUpdater.Stop()
 }
 
-func mustInitializeDatabase() db.DB {
+func mustInitializeStore() store.Store {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
@@ -121,10 +121,10 @@ func mustInitializeDatabase() db.DB {
 		}
 	})
 
-	db, err := db.New(postgresDSN)
+	store, err := store.New(postgresDSN)
 	if err != nil {
-		log.Fatalf("failed to initialize db store: %s", err)
+		log.Fatalf("failed to initialize store: %s", err)
 	}
 
-	return db
+	return store
 }

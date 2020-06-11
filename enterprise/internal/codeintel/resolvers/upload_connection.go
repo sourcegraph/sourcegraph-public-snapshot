@@ -11,17 +11,17 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type lsifUploadConnectionResolver struct {
-	db db.DB
+	store store.Store
 
 	opt LSIFUploadsListOptions
 
 	// cache results because they are used by multiple fields
 	once               sync.Once
-	uploads            []db.Upload
+	uploads            []store.Upload
 	repositoryResolver *graphqlbackend.RepositoryResolver
 	totalCount         *int
 	nextURL            string
@@ -78,7 +78,7 @@ func (r *lsifUploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload, *graphqlbackend.RepositoryResolver, *int, string, error) {
+func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]store.Upload, *graphqlbackend.RepositoryResolver, *int, string, error) {
 	r.once.Do(func() {
 		var id int
 		if r.opt.RepositoryID != "" {
@@ -110,7 +110,7 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload
 			offset, _ = strconv.Atoi(*r.opt.NextURL)
 		}
 
-		uploads, totalCount, err := r.db.GetUploads(ctx, db.GetUploadsOptions{
+		uploads, totalCount, err := r.store.GetUploads(ctx, store.GetUploadsOptions{
 			RepositoryID: id,
 			State:        state,
 			Term:         query,

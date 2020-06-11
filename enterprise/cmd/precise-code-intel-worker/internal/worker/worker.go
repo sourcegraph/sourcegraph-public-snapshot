@@ -8,12 +8,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type Worker struct {
-	db           db.DB
+	store        store.Store
 	processor    Processor
 	pollInterval time.Duration
 	metrics      WorkerMetrics
@@ -22,7 +22,7 @@ type Worker struct {
 }
 
 func NewWorker(
-	db db.DB,
+	store store.Store,
 	bundleManagerClient bundles.BundleManagerClient,
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
@@ -34,7 +34,7 @@ func NewWorker(
 	}
 
 	return &Worker{
-		db:           db,
+		store:        store,
 		processor:    processor,
 		pollInterval: pollInterval,
 		metrics:      metrics,
@@ -73,12 +73,12 @@ func (w *Worker) Stop() {
 func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 	start := time.Now()
 
-	upload, tx, ok, err := w.db.Dequeue(ctx)
+	upload, store, ok, err := w.store.Dequeue(ctx)
 	if err != nil || !ok {
-		return false, errors.Wrap(err, "db.Dequeue")
+		return false, errors.Wrap(err, "store.Dequeue")
 	}
 	defer func() {
-		err = tx.Done(err)
+		err = store.Done(err)
 
 		// TODO(efritz) - set error if correlation failed
 		w.metrics.Processor.Observe(time.Since(start).Seconds(), 1, &err)
@@ -86,14 +86,14 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 
 	log15.Info("Dequeued upload for processing", "id", upload.ID)
 
-	if processErr := w.processor.Process(ctx, tx, upload); processErr == nil {
+	if processErr := w.processor.Process(ctx, store, upload); processErr == nil {
 		log15.Info("Processed upload", "id", upload.ID)
 	} else {
 		// TODO(efritz) - distinguish between correlation and system errors
 		log15.Warn("Failed to process upload", "id", upload.ID, "err", processErr)
 
-		if markErr := tx.MarkErrored(ctx, upload.ID, processErr.Error()); markErr != nil {
-			return true, errors.Wrap(markErr, "db.MarkErrored")
+		if markErr := store.MarkErrored(ctx, upload.ID, processErr.Error()); markErr != nil {
+			return true, errors.Wrap(markErr, "store.MarkErrored")
 		}
 	}
 
