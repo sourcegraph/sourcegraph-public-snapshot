@@ -69,7 +69,7 @@ export function createController(context: PlatformContext): Controller {
 
     const services = new Services(context)
     const extensionHostEndpoint = context.createExtensionHost()
-    const initData: InitData = {
+    const initData: Omit<InitData, 'initialSettings'> = {
         sourcegraphURL: context.sourcegraphURL,
         clientApplication: context.clientApplication,
     }

@@ -1,7 +1,7 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ReplaySubject, Subject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 
@@ -10,7 +10,7 @@ import { syncSubscription } from '../util'
  * as a single plain object
  */
 export interface ExtState {
-    settings?: Readonly<SettingsCascade<object>>
+    settings: Readonly<SettingsCascade<object>>
 
     // Workspace
     roots: readonly sourcegraph.WorkspaceRoot[]
@@ -40,10 +40,16 @@ export type PartialWorkspaceNamespace = Omit<
  *
  * @param mainAPI
  */
-export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult => {
-    const state: ExtState = { roots: [], versionContext: undefined }
+export const initNewExtensionAPI = (
+    mainAPI: Remote<MainThreadAPI>,
+    initialSettings: Readonly<SettingsCascade<object>>
+): InitResult => {
+    const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings }
 
-    const configChanges = new ReplaySubject<void>(1)
+    const configChanges = new BehaviorSubject<void>(undefined)
+    // Most extensions never call `configuration.get()` synchronously in `activate()` to get
+    // the initial settings data, and instead only subscribe to configuration changes.
+    // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
     const rootChanges = new Subject<void>()
     const versionContextChanges = new Subject<string | undefined>()
@@ -68,10 +74,6 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
 
     // Configuration
     const getConfiguration = <C extends object>(): sourcegraph.Configuration<C> => {
-        if (!state.settings) {
-            throw new Error('unexpected internal error: settings data is not yet available')
-        }
-
         const snapshot = state.settings.final as Readonly<C>
 
         const configuration: sourcegraph.Configuration<C> & { toJSON: any } = {

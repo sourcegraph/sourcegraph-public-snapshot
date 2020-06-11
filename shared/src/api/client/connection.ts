@@ -1,6 +1,6 @@
 import * as comlink from 'comlink'
 import { from, merge, Subject, Subscription, of } from 'rxjs'
-import { concatMap } from 'rxjs/operators'
+import { concatMap, first } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
@@ -25,6 +25,7 @@ import { TextModelUpdate } from './services/modelService'
 import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
 import { initMainThreadAPI } from './mainthread-api'
+import { isSettingsValid } from '../../settings/settings'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -54,7 +55,7 @@ export interface ActivatedExtension {
 export async function createExtensionHostClientConnection(
     endpoints: EndpointPair,
     services: Services,
-    initData: InitData,
+    initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
 ): Promise<Unsubscribable> {
     const subscription = new Subscription()
@@ -65,7 +66,13 @@ export async function createExtensionHostClientConnection(
 
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
-    const proxy = await initializeExtensionHost(initData)
+
+    const initialSettings = await from(platformContext.settings).pipe(first()).toPromise()
+    const proxy = await initializeExtensionHost({
+        ...initData,
+        // TODO what to do in error case?
+        initialSettings: isSettingsValid(initialSettings) ? initialSettings : { final: {}, subjects: [] },
+    })
 
     const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
