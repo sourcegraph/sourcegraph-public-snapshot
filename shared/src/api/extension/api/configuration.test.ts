@@ -23,7 +23,7 @@ describe('ConfigurationService', () => {
     })
 
     describe('changes', () => {
-        test('emits immediately on subscription with initial settings (why btw?)', () => {
+        test('emits immediately on subscription', () => {
             const { configuration } = initNewExtensionAPI(pretendRemote({}), initialSettings({ a: 'a' }))
             let calledTimes = 0
             configuration.subscribe(() => calledTimes++)
