@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/goware/urlx"
@@ -23,9 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
-	"golang.org/x/time/rate"
 )
 
 // A Changeset of an existing Repo.
@@ -958,44 +957,28 @@ type externalServiceLister interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 }
 
-type RateLimiterRegistry struct {
-	serviceLister externalServiceLister
-
-	mu sync.Mutex
-	// Rate limiter per code host, keys are the normalized base URL for a
-	// code host.
-	rateLimiters map[string]*rate.Limiter
-}
-
-// NewRateLimitRegistry returns a new registry and attempts to populate it. On error, an
-// empty registry is returned which can still to handle syncs.
-func NewRateLimiterRegistry(ctx context.Context, serviceLister externalServiceLister) (*RateLimiterRegistry, error) {
-	r := &RateLimiterRegistry{
+// NewRateLimitSyncer returns a new syncer and attempts to perform an initial sync it. On error, an
+// empty syncer is returned which can still to handle syncs.
+func NewRateLimitSyncer(ctx context.Context, registry *ratelimit.Registry, serviceLister externalServiceLister) (*RateLimitSyncer, error) {
+	r := &RateLimitSyncer{
+		registry:      registry,
 		serviceLister: serviceLister,
-		rateLimiters:  make(map[string]*rate.Limiter),
 	}
 
 	// We'll return r either way as we'll try again if a service is added or updated
 	return r, r.SyncRateLimiters(ctx)
 }
 
-// GetRateLimiter fetches the rate limiter associated with the given code host. If none has been
-// configured an infinite limiter is returned.
-func (r *RateLimiterRegistry) GetRateLimiter(baseURL string) *rate.Limiter {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	l := r.rateLimiters[baseURL]
-	if l == nil {
-		l = rate.NewLimiter(rate.Inf, 100)
-		r.rateLimiters[baseURL] = l
-	}
-	return l
+// RateLimitSyncer syncs rate limits based on external service configuration
+type RateLimitSyncer struct {
+	registry      *ratelimit.Registry
+	serviceLister externalServiceLister
 }
 
 // SyncRateLimiters syncs all rate limiters using current config.
 // We sync them all as we need to pick the most restrictive configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
-func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
+func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 	services, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
 		return errors.Wrap(err, "listing external services")
@@ -1028,7 +1011,7 @@ func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
 	}
 
 	for u, rl := range byURL {
-		l := r.GetRateLimiter(u)
+		l := r.registry.GetRateLimiter(u)
 		l.SetLimit(rl.Limit)
 	}
 

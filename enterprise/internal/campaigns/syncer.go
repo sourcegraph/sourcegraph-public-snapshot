@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"golang.org/x/time/rate"
 )
 
@@ -26,7 +27,7 @@ type SyncRegistry struct {
 	SyncStore           SyncStore
 	RepoStore           RepoStore
 	HTTPFactory         *httpcli.Factory
-	RateLimiterRegistry *repos.RateLimiterRegistry
+	RateLimiterRegistry *ratelimit.Registry
 
 	priorityNotify chan []int64
 
@@ -41,7 +42,7 @@ type RepoStore interface {
 
 // NewSycnRegistry creates a new sync registry which starts a syncer for each external service and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory, rateLimiterRegistry *repos.RateLimiterRegistry) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory, rateLimiterRegistry *ratelimit.Registry) *SyncRegistry {
 	r := &SyncRegistry{
 		Ctx:                 ctx,
 		SyncStore:           store,
@@ -240,7 +241,7 @@ type ChangesetSyncer struct {
 	cancel context.CancelFunc
 
 	// rateLimitRegistry should be used fetch the current rate limiter for an external service
-	rateLimitRegistry *repos.RateLimiterRegistry
+	rateLimitRegistry *ratelimit.Registry
 }
 
 var syncerMetrics = struct {
@@ -501,7 +502,7 @@ func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStor
 	return syncChangesets(ctx, repoStore, syncStore, cf, nil, cs...)
 }
 
-func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) (err error) {
+func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, rlr *ratelimit.Registry, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
@@ -587,7 +588,7 @@ func groupChangesetsBySource(
 	reposStore RepoStore,
 	cf *httpcli.Factory,
 	sourcer repos.Sourcer,
-	rlr *repos.RateLimiterRegistry,
+	rlr *ratelimit.Registry,
 	cs ...*campaigns.Changeset,
 ) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID

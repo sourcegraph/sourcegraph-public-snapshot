@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 // Monitor monitors an external service's rate limit based on the X-RateLimit-Remaining or RateLimit-Remaining
@@ -144,4 +146,34 @@ func (c *Monitor) now() time.Time {
 		return c.clock()
 	}
 	return time.Now()
+}
+
+var DefaultRegistry = NewRegistry()
+
+func NewRegistry() *Registry {
+	return &Registry{
+		rateLimiters: make(map[string]*rate.Limiter),
+	}
+}
+
+// Registry keeps a mapping of external service URL to *rate.Limiter.
+// By default an infinite limiter is returned.
+type Registry struct {
+	mu sync.Mutex
+	// Rate limiter per code host, keys are the normalized base URL for a
+	// code host.
+	rateLimiters map[string]*rate.Limiter
+}
+
+// GetRateLimiter fetches the rate limiter associated with the given code host. If none has been
+// configured an infinite limiter is returned.
+func (r *Registry) GetRateLimiter(baseURL string) *rate.Limiter {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l := r.rateLimiters[baseURL]
+	if l == nil {
+		l = rate.NewLimiter(rate.Inf, 100)
+		r.rateLimiters[baseURL] = l
+	}
+	return l
 }

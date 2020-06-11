@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"testing"
 	"time"
 
@@ -344,30 +345,26 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 	})
 
 	t.Run("enough quota available", func(t *testing.T) {
-		rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, &fakeExternalServiceLister{})
-		if err != nil {
-			t.Fatal(err)
-		}
+		rateLimiterRegistry := ratelimit.NewRegistry()
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err = s.waitForRateLimit(ctx, "https://github.com/", 1)
+		err := s.waitForRateLimit(ctx, "https://github.com/", 1)
 		if err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("not enough quota available", func(t *testing.T) {
-		rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, &fakeExternalServiceLister{})
-		if err != nil {
-			t.Fatal(err)
-		}
+		rateLimiterRegistry := ratelimit.NewRegistry()
+		l := rateLimiterRegistry.GetRateLimiter("https://github.com/")
+		l.SetLimit(1)
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err = s.waitForRateLimit(ctx, "https://github.com/", 10)
+		err := s.waitForRateLimit(ctx, "https://github.com/", 10)
 		if err == nil {
 			t.Fatalf("err: want %v but got nil", context.Canceled)
 		}
