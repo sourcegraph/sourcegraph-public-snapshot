@@ -4,7 +4,7 @@ package indexer
 
 import (
 	"context"
-	db "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"sync"
 )
 
@@ -23,7 +23,7 @@ type MockProcessor struct {
 func NewMockProcessor() *MockProcessor {
 	return &MockProcessor{
 		ProcessFunc: &ProcessorProcessFunc{
-			defaultHook: func(context.Context, db.Index) error {
+			defaultHook: func(context.Context, store.Index) error {
 				return nil
 			},
 		},
@@ -43,15 +43,15 @@ func NewMockProcessorFrom(i Processor) *MockProcessor {
 // ProcessorProcessFunc describes the behavior when the Process method of
 // the parent MockProcessor instance is invoked.
 type ProcessorProcessFunc struct {
-	defaultHook func(context.Context, db.Index) error
-	hooks       []func(context.Context, db.Index) error
+	defaultHook func(context.Context, store.Index) error
+	hooks       []func(context.Context, store.Index) error
 	history     []ProcessorProcessFuncCall
 	mutex       sync.Mutex
 }
 
 // Process delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockProcessor) Process(v0 context.Context, v1 db.Index) error {
+func (m *MockProcessor) Process(v0 context.Context, v1 store.Index) error {
 	r0 := m.ProcessFunc.nextHook()(v0, v1)
 	m.ProcessFunc.appendCall(ProcessorProcessFuncCall{v0, v1, r0})
 	return r0
@@ -59,7 +59,7 @@ func (m *MockProcessor) Process(v0 context.Context, v1 db.Index) error {
 
 // SetDefaultHook sets function that is called when the Process method of
 // the parent MockProcessor instance is invoked and the hook queue is empty.
-func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, db.Index) error) {
+func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, store.Index) error) {
 	f.defaultHook = hook
 }
 
@@ -67,7 +67,7 @@ func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, db.Inde
 // Process method of the parent MockProcessor instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, db.Index) error) {
+func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, store.Index) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -76,7 +76,7 @@ func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, db.Index) err
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ProcessorProcessFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, db.Index) error {
+	f.SetDefaultHook(func(context.Context, store.Index) error {
 		return r0
 	})
 }
@@ -84,12 +84,12 @@ func (f *ProcessorProcessFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ProcessorProcessFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, db.Index) error {
+	f.PushHook(func(context.Context, store.Index) error {
 		return r0
 	})
 }
 
-func (f *ProcessorProcessFunc) nextHook() func(context.Context, db.Index) error {
+func (f *ProcessorProcessFunc) nextHook() func(context.Context, store.Index) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -127,7 +127,7 @@ type ProcessorProcessFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 db.Index
+	Arg1 store.Index
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

@@ -39,7 +39,7 @@ var timestamp = devTimestamp
 
 // HowLongOutOfDate returns a time in months since this build of Sourcegraph was created. It is
 // based on a constant baked into the Go binary at build time.
-func HowLongOutOfDate(currentVersion string) (int, error) {
+func HowLongOutOfDate() (int, error) {
 	buildUnixTimestamp, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("unable to parse version build timestamp: %w", err)

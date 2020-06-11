@@ -5,14 +5,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // DirectoryChildren determines all children known to git for the given directory names via an invocation
 // of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 // that key are the files nested under that directory.
-func DirectoryChildren(ctx context.Context, db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
-	out, err := execGitCommand(ctx, db, repositoryID, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
+func DirectoryChildren(ctx context.Context, store store.Store, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
+	out, err := execGitCommand(ctx, store, repositoryID, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
 	if err != nil {
 		return nil, err
 	}

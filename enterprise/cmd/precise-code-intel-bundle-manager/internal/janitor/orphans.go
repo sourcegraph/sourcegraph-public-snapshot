@@ -61,9 +61,9 @@ func (j *Janitor) removeOrphans(pathsByID map[int]string, onRemove func(id int, 
 
 	states := map[int]string{}
 	for _, batch := range batchIntSlice(ids, GetStateBatchSize) {
-		batchStates, err := j.db.GetStates(context.Background(), batch)
+		batchStates, err := j.store.GetStates(context.Background(), batch)
 		if err != nil {
-			return errors.Wrap(err, "db.GetStates")
+			return errors.Wrap(err, "store.GetStates")
 		}
 
 		for k, v := range batchStates {

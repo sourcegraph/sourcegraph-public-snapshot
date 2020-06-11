@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/time/rate"
 )
@@ -508,7 +509,7 @@ func formatJSON(t testing.TB, s string) string {
 	return formatted
 }
 
-func TestRateLimiterRegistry(t *testing.T) {
+func TestSyncRateLimiters(t *testing.T) {
 	now := time.Now()
 	ctx := context.Background()
 
@@ -667,9 +668,10 @@ func TestRateLimiterRegistry(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := &RateLimiterRegistry{
+			reg := ratelimit.NewRegistry()
+			r := &RateLimitSyncer{
+				registry:      reg,
 				serviceLister: makeLister(tc.options...),
-				rateLimiters:  make(map[string]*rate.Limiter),
 			}
 
 			err := r.SyncRateLimiters(ctx)
@@ -678,7 +680,7 @@ func TestRateLimiterRegistry(t *testing.T) {
 			}
 
 			// We should have the lower limit
-			l := r.GetRateLimiter(baseURL)
+			l := reg.GetRateLimiter(baseURL)
 			if l == nil {
 				t.Fatalf("expected a limiter")
 			}

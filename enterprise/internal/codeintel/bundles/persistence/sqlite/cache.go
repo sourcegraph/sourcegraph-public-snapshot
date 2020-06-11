@@ -35,9 +35,9 @@ func NewReaderCache(dataCacheSize int) (cache.ReaderCache, error) {
 		}
 
 		// Check to see if the database exists after opening it. If it doesn't, then
-		// the DB file was deleted between the exists check and opening the database
-		// and SQLite has created a new, empty database that is not yet been written
-		// to disk.
+		// the database file was deleted between the exists check and opening the
+		// database and SQLite has created a new, empty database that is not yet been
+		// written to disk.
 		if exists, err := util.PathExists(filename); err != nil {
 			return nil, err
 		} else if !exists {

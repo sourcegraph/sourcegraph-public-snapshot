@@ -22,7 +22,7 @@ export interface ExtensionHostClient extends Unsubscribable {
 export function createExtensionHostClient(
     services: Services,
     extensionHostEndpoint: Observable<EndpointPair>,
-    initData: InitData,
+    initData: Omit<InitData, 'initialSettings'>,
     platformContext: PlatformContext
 ): ExtensionHostClient {
     const client = extensionHostEndpoint.pipe(

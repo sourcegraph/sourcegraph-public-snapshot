@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // TODO(efritz) - move this declaration (MaxCommitsPerUpdate = MaxTraversalLimit * 1.5)
 const MaxCommitsPerUpdate = 150
 
 // Head determines the tip commit of the default branch for the given repository.
-func Head(ctx context.Context, db db.DB, repositoryID int) (string, error) {
-	return execGitCommand(ctx, db, repositoryID, "rev-parse", "HEAD")
+func Head(ctx context.Context, store store.Store, repositoryID int) (string, error) {
+	return execGitCommand(ctx, store, repositoryID, "rev-parse", "HEAD")
 }
 
 // CommitsNear returns a map from a commit to parent commits. The commits populating the
 // map are the MaxCommitsPerUpdate closest ancestors from the given commit.
-func CommitsNear(ctx context.Context, db db.DB, repositoryID int, commit string) (map[string][]string, error) {
-	out, err := execGitCommand(ctx, db, repositoryID, "log", "--pretty=%H %P", commit, fmt.Sprintf("-%d", MaxCommitsPerUpdate))
+func CommitsNear(ctx context.Context, store store.Store, repositoryID int, commit string) (map[string][]string, error) {
+	out, err := execGitCommand(ctx, store, repositoryID, "log", "--pretty=%H %P", commit, fmt.Sprintf("-%d", MaxCommitsPerUpdate))
 	if err != nil {
 		return nil, err
 	}

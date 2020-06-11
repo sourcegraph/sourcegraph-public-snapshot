@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
-	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
 	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -25,8 +25,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestUpdate(t *testing.T) {
-	mockDB := dbmocks.NewMockDB()
-	mockDB.RepoUsageStatisticsFunc.SetDefaultReturn([]db.RepoUsageStatistics{
+	mockStore := storemocks.NewMockStore()
+	mockStore.RepoUsageStatisticsFunc.SetDefaultReturn([]store.RepoUsageStatistics{
 		{RepositoryID: 1, SearchCount: 200, PreciseCount: 50},
 		{RepositoryID: 2, SearchCount: 150, PreciseCount: 25},
 		{RepositoryID: 3, SearchCount: 100, PreciseCount: 35},
@@ -34,15 +34,15 @@ func TestUpdate(t *testing.T) {
 	}, nil)
 
 	mockGitserverClient := gitservermocks.NewMockClient()
-	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, db db.DB, repositoryID int, commit, file string) (bool, error) {
+	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int, commit, file string) (bool, error) {
 		return repositoryID%2 == 0, nil
 	})
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, db db.DB, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
 	updater := &Updater{
-		db:              mockDB,
+		store:           mockStore,
 		gitserverClient: mockGitserverClient,
 		metrics:         NewUpdaterMetrics(metrics.TestRegisterer),
 	}
@@ -73,11 +73,11 @@ func TestUpdate(t *testing.T) {
 		}
 	}
 
-	if len(mockDB.UpdateIndexableRepositoryFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to UpdateIndexableRepository. want=%d have=%d", 2, len(mockDB.UpdateIndexableRepositoryFunc.History()))
+	if len(mockStore.UpdateIndexableRepositoryFunc.History()) != 2 {
+		t.Errorf("unexpected number of calls to UpdateIndexableRepository. want=%d have=%d", 2, len(mockStore.UpdateIndexableRepositoryFunc.History()))
 	} else {
 		var repositoryIDs []int
-		for _, call := range mockDB.UpdateIndexableRepositoryFunc.History() {
+		for _, call := range mockStore.UpdateIndexableRepositoryFunc.History() {
 			repositoryIDs = append(repositoryIDs, call.Arg1.RepositoryID)
 		}
 		sort.Ints(repositoryIDs)

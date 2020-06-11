@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
@@ -35,9 +35,15 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
+import { ViewGrid } from '../../repo/tree/ViewGrid'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
+import { isErrorLike } from '../../../../shared/src/util/errors'
+import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
+import { EMPTY } from 'rxjs'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
@@ -77,9 +83,6 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
         cursorPosition: queryFromUrl.length,
     })
 
-    /** The query that results from combining all values in the query builder form. */
-    const builderQuery = useState('')
-
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
@@ -88,13 +91,29 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             // False positive
             // eslint-disable-next-line no-unused-expressions
             event?.preventDefault()
-            const query = [builderQuery, userQueryState.query].filter(query => !!query).join(' ')
-            submitSearch({ ...props, query, source: 'home' })
+            submitSearch({ ...props, query: userQueryState.query, source: 'home' })
         },
-        [builderQuery, props, userQueryState.query]
+        [props, userQueryState.query]
     )
 
     const pageTitle = queryFromUrl ? `${limitString(userQueryState.query, 25, true)}` : undefined
+
+    const codeInsightsEnabled =
+        !isErrorLike(props.settingsCascade.final) && !!props.settingsCascade.final?.experimentalFeatures?.codeInsights
+
+    const views = useObservable(
+        useMemo(
+            () =>
+                codeInsightsEnabled
+                    ? getViewsForContainer(
+                          ContributableViewContainer.Homepage,
+                          {},
+                          props.extensionsController.services.view
+                      )
+                    : EMPTY,
+            [codeInsightsEnabled, props.extensionsController.services.view]
+        )
+    )
 
     return (
         <div className="search-page">
@@ -179,6 +198,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         </>
                     )}
                 </div>
+                {views && <ViewGrid {...props} className="mt-5" views={views} />}
             </div>
         </div>
     )

@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type UploadResetter struct {
-	DB            db.DB
+	Store         store.Store
 	ResetInterval time.Duration
 	Metrics       ResetterMetrics
 }
@@ -20,7 +20,7 @@ type UploadResetter struct {
 // it has died.
 func (ur *UploadResetter) Run() {
 	for {
-		ids, err := ur.DB.ResetStalled(context.Background(), time.Now())
+		ids, err := ur.Store.ResetStalled(context.Background(), time.Now())
 		if err != nil {
 			ur.Metrics.Errors.Inc()
 			log15.Error("Failed to reset stalled uploads", "error", err)

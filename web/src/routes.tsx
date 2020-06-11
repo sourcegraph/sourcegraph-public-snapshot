@@ -3,6 +3,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
+import { isErrorLike } from '../../shared/src/util/errors'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -146,6 +147,14 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
+    },
+    {
+        path: '/insights',
+        exact: true,
+        render: lazyComponent(() => import('./insights/InsightsPage'), 'InsightsPage'),
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights,
     },
     {
         path: '/views',

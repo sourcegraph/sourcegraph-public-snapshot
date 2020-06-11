@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -23,11 +23,11 @@ func TestRemoveProcessedUploadsWithoutBundleFile(t *testing.T) {
 		}
 	}
 
-	mockDB := dbmocks.NewMockDB()
-	mockDB.GetDumpIDsFunc.SetDefaultReturn(ids, nil)
+	mockStore := storemocks.NewMockStore()
+	mockStore.GetDumpIDsFunc.SetDefaultReturn(ids, nil)
 
 	j := &Janitor{
-		db:        mockDB,
+		store:     mockStore,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
@@ -36,12 +36,12 @@ func TestRemoveProcessedUploadsWithoutBundleFile(t *testing.T) {
 		t.Fatalf("unexpected error removing processed uploads without bundle files: %s", err)
 	}
 
-	if len(mockDB.DeleteUploadByIDFunc.History()) != 2 {
-		t.Errorf("unexpected number of DeleteUploadByID calls. want=%d have=%d", 2, len(mockDB.DeleteUploadByIDFunc.History()))
+	if len(mockStore.DeleteUploadByIDFunc.History()) != 2 {
+		t.Errorf("unexpected number of DeleteUploadByID calls. want=%d have=%d", 2, len(mockStore.DeleteUploadByIDFunc.History()))
 	} else {
 		ids := []int{
-			mockDB.DeleteUploadByIDFunc.History()[0].Arg1,
-			mockDB.DeleteUploadByIDFunc.History()[1].Arg1,
+			mockStore.DeleteUploadByIDFunc.History()[0].Arg1,
+			mockStore.DeleteUploadByIDFunc.History()[1].Arg1,
 		}
 		sort.Ints(ids)
 

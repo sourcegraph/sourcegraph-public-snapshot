@@ -54,7 +54,7 @@ func SiteAdminInit(baseURL, email, username, password string) (*Client, error) {
 
 // SignIn performs the sign in with given user credentials.
 // It returns an authenticated client as the user for doing e2e testing.
-func SignIn(baseURL string, email, password string) (*Client, error) {
+func SignIn(baseURL, email, password string) (*Client, error) {
 	client, err := newClient(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "new client")
@@ -213,6 +213,11 @@ func (c *Client) CurrentUserID(token string) (string, error) {
 	}
 
 	return resp.Data.CurrentUser.ID, nil
+}
+
+// AuthenticatedUserID returns the GraphQL node ID of current authenticated user.
+func (c *Client) AuthenticatedUserID() string {
+	return c.userID
 }
 
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.

@@ -100,6 +100,26 @@ export class ExtensionViewsApi implements comlink.ProxyMarked {
                     )
                 )
             }
+            case ContributableViewContainer.Homepage: {
+                return syncSubscription(
+                    this.proxy.$registerHomepageViewProvider(
+                        id,
+                        comlink.proxy((context: ViewContexts[typeof ContributableViewContainer.Homepage]) =>
+                            toProxyableSubscribable(provider.provideView(context), result => result || null)
+                        )
+                    )
+                )
+            }
+            case ContributableViewContainer.InsightsPage: {
+                return syncSubscription(
+                    this.proxy.$registerInsightsPageViewProvider(
+                        id,
+                        comlink.proxy((context: ViewContexts[typeof ContributableViewContainer.InsightsPage]) =>
+                            toProxyableSubscribable(provider.provideView(context), result => result || null)
+                        )
+                    )
+                )
+            }
             case ContributableViewContainer.GlobalPage: {
                 return syncSubscription(
                     this.proxy.$registerGlobalPageViewProvider(

@@ -7,11 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 func lookupMoniker(
-	db db.DB,
+	store store.Store,
 	bundleManagerClient bundles.BundleManagerClient,
 	dumpID int,
 	path string,
@@ -33,9 +33,9 @@ func lookupMoniker(
 		return nil, 0, errors.Wrap(err, "bundleManagerClient.BundleClient")
 	}
 
-	dump, exists, err := db.GetPackage(context.Background(), moniker.Scheme, pid.Name, pid.Version)
+	dump, exists, err := store.GetPackage(context.Background(), moniker.Scheme, pid.Name, pid.Version)
 	if err != nil || !exists {
-		return nil, 0, errors.Wrap(err, "db.GetPackage")
+		return nil, 0, errors.Wrap(err, "store.GetPackage")
 	}
 
 	locations, count, err := bundleManagerClient.BundleClient(dump.ID).MonikerResults(context.Background(), modelType, moniker.Scheme, moniker.Identifier, skip, take)

@@ -132,8 +132,9 @@ trap 'kill $build_ts_pid; exit' EXIT
 (yarn run build-ts || true) &
 build_ts_pid="$!"
 
+export PROCFILE=${PROCFILE:-dev/Procfile}
 printf >&2 "\nStarting all binaries...\n\n"
-export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
+export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"
 
 if ! [ "$(id -u)" = 0 ] && command -v authbind; then
   # ignoring because $GOREMAN is used in other handle-change.sh

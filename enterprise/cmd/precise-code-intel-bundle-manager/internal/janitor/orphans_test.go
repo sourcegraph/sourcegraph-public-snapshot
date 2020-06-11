@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -30,8 +30,8 @@ func TestRemoveOrphanedUploadFile(t *testing.T) {
 		t.Fatalf("unexpected error creating file %s: %s", path, err)
 	}
 
-	mockDB := dbmocks.NewMockDB()
-	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+	mockStore := storemocks.NewMockStore()
+	mockStore.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
 		sort.Ints(ids)
 		return map[int]string{
 			1:  "completed",
@@ -45,7 +45,7 @@ func TestRemoveOrphanedUploadFile(t *testing.T) {
 	})
 
 	j := &Janitor{
-		db:        mockDB,
+		store:     mockStore,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
@@ -65,7 +65,7 @@ func TestRemoveOrphanedUploadFile(t *testing.T) {
 	}
 
 	var idArgs [][]int
-	for _, call := range mockDB.GetStatesFunc.History() {
+	for _, call := range mockStore.GetStatesFunc.History() {
 		idArgs = append(idArgs, call.Arg1)
 	}
 
@@ -86,8 +86,8 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		}
 	}
 
-	mockDB := dbmocks.NewMockDB()
-	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+	mockStore := storemocks.NewMockStore()
+	mockStore.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
 		sort.Ints(ids)
 		return map[int]string{
 			1:  "completed",
@@ -101,7 +101,7 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 	})
 
 	j := &Janitor{
-		db:        mockDB,
+		store:     mockStore,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
@@ -121,7 +121,7 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 	}
 
 	var idArgs [][]int
-	for _, call := range mockDB.GetStatesFunc.History() {
+	for _, call := range mockStore.GetStatesFunc.History() {
 		idArgs = append(idArgs, call.Arg1)
 	}
 
@@ -145,8 +145,8 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 		}
 	}
 
-	mockDB := dbmocks.NewMockDB()
-	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+	mockStore := storemocks.NewMockStore()
+	mockStore.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
 		states := map[int]string{}
 		for _, id := range ids {
 			if id%2 == 0 {
@@ -157,7 +157,7 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	})
 
 	j := &Janitor{
-		db:        mockDB,
+		store:     mockStore,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
@@ -176,7 +176,7 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	}
 
 	var allArgs []int
-	for _, call := range mockDB.GetStatesFunc.History() {
+	for _, call := range mockStore.GetStatesFunc.History() {
 		if len(call.Arg1) > GetStateBatchSize {
 			t.Errorf("unexpected large slice: want < %d have=%d", GetStateBatchSize, len(call.Arg1))
 		}
