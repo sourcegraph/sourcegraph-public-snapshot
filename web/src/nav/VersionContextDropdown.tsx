@@ -93,13 +93,13 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
         return null
     }
 
-    const onDismissInfo = (e: React.MouseEvent<HTMLButtonElement>): void => {
-        e.preventDefault()
+    const onDismissInfo = (event: React.MouseEvent<HTMLButtonElement>): void => {
+        event.preventDefault()
         setHasDismissedInfo(true)
     }
 
-    const showInfo = (e: React.MouseEvent<HTMLButtonElement>): void => {
-        e.preventDefault()
+    const showInfo = (event: React.MouseEvent<HTMLButtonElement>): void => {
+        event.preventDefault()
         setHasDismissedInfo(false)
     }
 
