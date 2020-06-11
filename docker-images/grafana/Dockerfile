@@ -13,19 +13,12 @@ WORKDIR /dashboards
 ENV PATH="/opt/jsonnet:${PATH}"
 RUN ./build.sh
 
-# set up sourcegraph/sourcegraph
-COPY sourcegraph /go/src/github.com/sourcegraph/sourcegraph
-
-# build everything set up in ./monitoring
-WORKDIR /go/src/github.com/sourcegraph/sourcegraph/monitoring
+# build dashboards from monitoring declarations
+COPY monitoring /go/src/monitoring-generator
+WORKDIR /go/src/monitoring-generator
 RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/grafana
 RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/monitoring-generator
-
-# build the grafana wrapper
-COPY cmd/grafana-wrapper /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
-WORKDIR /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
-RUN CGO_ENABLED=0 go build -o /go/bin/grafana-wrapper
 
 # when upgrading grafana versions, verify that no changes were made to the Grafana alerts format by comparing
 # our site.schema.json GrafanaNotifier* format with Grafana's alert provisioning docs:
@@ -47,13 +40,15 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
+# copy cross-compiled grafana-wrapper command
+COPY ./.bin/grafana-wrapper /bin/grafana-wrapper
+
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana config /sg_config_grafana
 COPY home.json /usr/share/grafana/public/dashboards/home.json
 
 COPY --from=builder /dashboards/*.json /sg_config_grafana/provisioning/dashboards/sourcegraph_internal/
 COPY --from=builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
-COPY --from=builder --chown=grafana:grafana /go/bin/grafana-wrapper /bin/grafana-wrapper
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana entry.sh /

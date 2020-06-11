@@ -3,15 +3,31 @@
 set -ex
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
+BINDIR=".bin"
 
-# Copy over everything needed to build the monitoring-generator and grafana-wrapper.
-# Since grafana-wrapper depends on internal/conf, which has a myriad of dependencies
-# (many of which are internal and hence not go-get-able), we just copy the (almost)
-# entire repository back into the build context. We use rsync to do this since it
-# supports excluding files better.
-rm -rf ./sourcegraph
-rsync -r --exclude={'.*','docker-images','node_modules','browser','web','ui','doc','packages','migrations','dev','enterprise'} ../../ sourcegraph
+# We copy just the monitoring directory and the root go.mod/go.sum so that we
+# do not need to send the entire repository as build context to Docker. Additionally,
+# we do not use a separate go.mod/go.sum in the monitoring/ directory because
+# editor tooling would occassionally include and not include it in the root
+# go.mod/go.sum.
+rm -rf monitoring
+cp -R ../../monitoring .
+cp ../../go.* ./monitoring
 
+# The grafana-wrapper has a dependency on internal/conf which makes its dependency
+# tree quite complicated. Cross-compile it separately before building the image.
+export GO111MODULE=on
+export GOARCH=amd64
+export GOOS=linux
+export CGO_ENABLED=0
+go build \
+  -trimpath \
+  -buildmode exe \
+  -installsuffix netgo \
+  -tags "dist netgo" \
+  -o $BINDIR/grafana-wrapper ./cmd/grafana-wrapper
+
+# Enable image build caching via CACHE=true (the jsonnet builds can take a long time)
 BUILD_CACHE="--no-cache"
 if [[ "$CACHE" == "true" ]]; then
   BUILD_CACHE=""
@@ -23,6 +39,3 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
-
-# Clean up for convenience
-rm -rf ./sourcegraph
