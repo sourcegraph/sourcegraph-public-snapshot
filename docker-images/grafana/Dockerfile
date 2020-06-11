@@ -28,9 +28,13 @@ WORKDIR /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
 RUN CGO_ENABLED=0 go build -o /go/bin/grafana-wrapper
 
 # when upgrading grafana versions, verify that no changes were made to the Grafana alerts format by comparing
-# our site.schema.json GrafanaNotifier* format with Grafana's alert provisioning docs
-# at https://grafana.com/docs/grafana/latest/administration/provisioning/#alert-notification-channels
-FROM grafana/grafana:6.7.1@sha256:1ff3999e0fc08a3909e9a3ecdf6e74b4789db9b67c8297c44fdee1e167b9375f as production
+# our site.schema.json GrafanaNotifier* format with Grafana's alert provisioning docs:
+#  * disk format for provisioning alerts: https://grafana.com/docs/grafana/v6.7/administration/provisioning/#alert-notification-channels
+#  * what each field accepts: https://grafana.com/docs/grafana/v6.7/alerting/notifications
+#
+# Also make sure to update all links to Grafana docs (ie https://grafana.com/docs/grafana/v6.7/...)
+FROM grafana/grafana:6.7.4@sha256:1ff3999e0fc08a3909e9a3ecdf6e74b4789db9b67c8297c44fdee1e167b9375f as production
+LABEL com.sourcegraph.grafana.version=6.7.4
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -42,7 +46,6 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
-LABEL com.sourcegraph.grafana.version=6.7.1
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana config /sg_config_grafana

@@ -1,7 +1,7 @@
 package main
 
-// exported from grafana@v6.7.1
-// https://sourcegraph.com/github.com/grafana/grafana@v6.7.1/-/blob/pkg/services/provisioning/notifiers/types.go
+// exported from grafana@v6.7.4
+// https://sourcegraph.com/github.com/grafana/grafana@v6.7.4/-/blob/pkg/services/provisioning/notifiers/types.go
 
 type notificationsAsConfig struct {
 	Notifications       []*notificationFromConfig   `json:"notifiers" yaml:"notifiers"`

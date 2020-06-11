@@ -43,8 +43,8 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 						Level: "warning",
 						Notifier: &schema.Notifier{
 							Email: &schema.GrafanaNotifierEmail{
-								Type:        "email",
-								SingleEmail: "robert@bobheadxi.dev",
+								Type:      "email",
+								Addresses: "robert@bobheadxi.dev",
 							},
 						},
 					},
@@ -57,7 +57,7 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 						Name: "test-alert",
 						Type: "email",
 						Settings: map[string]interface{}{
-							"singleEmail": "robert@bobheadxi.dev",
+							"addresses": "robert@bobheadxi.dev",
 						},
 					},
 				},

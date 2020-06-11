@@ -999,7 +999,23 @@ const SiteSchemaJSON = `{
         }
       }
     },
+    "GrafanaNotifierEmail": {
+      "description": "Email notifier - https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email",
+      "type": "object",
+      "required": ["type", "addresses"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "email"
+        },
+        "addresses": {
+          "type": "string",
+          "description": "Email addresses to recipients. You can enter multiple email addresses using a “;” separator."
+        }
+      }
+    },
     "GrafanaNotifierSlack": {
+      "description": "Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -1020,8 +1036,9 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierPagerduty": {
+      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty",
       "type": "object",
-      "required": ["type"],
+      "required": ["type", "integrationKey"],
       "properties": {
         "type": {
           "type": "string",
@@ -1031,21 +1048,10 @@ const SiteSchemaJSON = `{
         "autoResolve": { "type": "string" }
       }
     },
-    "GrafanaNotifierEmail": {
-      "type": "object",
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "email"
-        },
-        "singleEmail": { "type": "string" },
-        "addresses": { "type": "string" }
-      }
-    },
     "GrafanaNotifierWebhook": {
+      "description": "Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook",
       "type": "object",
-      "required": ["type"],
+      "required": ["type", "url"],
       "properties": {
         "type": {
           "type": "string",

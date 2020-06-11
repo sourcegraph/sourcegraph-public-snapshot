@@ -628,16 +628,22 @@ type GitoliteConnection struct {
 	// It is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	Prefix string `json:"prefix"`
 }
+
+// GrafanaNotifierEmail description: Email notifier - https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email
 type GrafanaNotifierEmail struct {
-	Addresses   string `json:"addresses,omitempty"`
-	SingleEmail string `json:"singleEmail,omitempty"`
-	Type        string `json:"type"`
+	// Addresses description: Email addresses to recipients. You can enter multiple email addresses using a “;” separator.
+	Addresses string `json:"addresses"`
+	Type      string `json:"type"`
 }
+
+// GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty
 type GrafanaNotifierPagerduty struct {
 	AutoResolve    string `json:"autoResolve,omitempty"`
-	IntegrationKey string `json:"integrationKey,omitempty"`
+	IntegrationKey string `json:"integrationKey"`
 	Type           string `json:"type"`
 }
+
+// GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack
 type GrafanaNotifierSlack struct {
 	Icon_emoji     string `json:"icon_emoji,omitempty"`
 	Icon_url       string `json:"icon_url,omitempty"`
@@ -651,10 +657,12 @@ type GrafanaNotifierSlack struct {
 	Url            string `json:"url,omitempty"`
 	Username       string `json:"username,omitempty"`
 }
+
+// GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook
 type GrafanaNotifierWebhook struct {
 	Password string `json:"password,omitempty"`
 	Type     string `json:"type"`
-	Url      string `json:"url,omitempty"`
+	Url      string `json:"url"`
 	Username string `json:"username,omitempty"`
 }
 

@@ -97,14 +97,14 @@ func (c *configSubscriber) updateGrafanaConfig(newAlerts []*schema.Observability
 	c.log.Debug("updating grafana configuration")
 
 	// generate new configuration
-	var current *notificationsAsConfig
+	var current notificationsAsConfig
 	b, err := ioutil.ReadFile(srcNotifiersPath)
 	if err == nil {
-		if err := yaml.Unmarshal(b, current); err != nil {
+		if err := yaml.Unmarshal(b, &current); err != nil {
 			return fmt.Errorf("failed to read existing configuration: %w", err)
 		}
 	}
-	notifiersConfig, err := generateNotifiersConfig(current, newAlerts)
+	notifiersConfig, err := generateNotifiersConfig(&current, newAlerts)
 	if err != nil {
 		return err
 	}
