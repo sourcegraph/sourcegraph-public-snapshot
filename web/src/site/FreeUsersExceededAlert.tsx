@@ -8,7 +8,7 @@ export const FreeUsersExceededAlert: React.FunctionComponent<{
     noLicenseWarningUserCount: number | null
     className?: string
 }> = ({ noLicenseWarningUserCount, className = '' }) => (
-    <div className={`alert alert-danger alert-animated-bg ${className}`}>
+    <div className={`alert alert-danger ${className}`}>
         <WarningIcon className="icon-inline mr-2" />
         This Sourcegraph instance has reached{' '}
         {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin must{' '}

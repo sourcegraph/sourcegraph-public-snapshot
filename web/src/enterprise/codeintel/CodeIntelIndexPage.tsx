@@ -123,7 +123,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
                             <span className="e2e-index-state">Index failed to complete:</span>{' '}
-                            <code>{indexOrError.failure && indexOrError.failure.summary}</code>
+                            <code>{indexOrError.failure}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">

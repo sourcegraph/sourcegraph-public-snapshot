@@ -34,12 +34,12 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	codeinteldb "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
 	codeintelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
-	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	codeinteldb "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -50,77 +50,31 @@ import (
 )
 
 func main() {
-	// Connect to the database.
-	if err := shared.InitDB(); err != nil {
-		log.Fatalf("FATAL: %v", err)
-	}
-
-	initLicensing()
-	initAuthz()
-	initCampaigns()
-	initCodeIntel()
-
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	eauthz.Init(dbconn.Global, clock)
-
-	ctx := context.Background()
-	go func() {
-		t := time.NewTicker(5 * time.Second)
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _ :=
-				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
+	shared.Main(func() enterprise.Services {
+		debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+		if debug {
+			log.Println("enterprise edition")
 		}
-	}()
 
-	goroutine.Go(func() {
-		licensing.StartMaxUserCount(&usersStore{})
+		ctx := context.Background()
+		enterpriseServices := enterprise.DefaultServices()
+
+		initLicensing()
+		initAuthz(ctx, &enterpriseServices)
+		initCampaigns(ctx, &enterpriseServices)
+		initCodeIntel(&enterpriseServices)
+
+		return enterpriseServices
 	})
-	if envvar.SourcegraphDotComMode() {
-		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
-	}
+}
 
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
-
-	globalState, err := globalstatedb.Get(ctx)
-	if err != nil {
-		log.Fatalf("FATAL: %v", err)
-	}
-
-	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
-
-	// Migrate all patches in the database to cache their diff stats.
-	// Since we validate each Patch's diff before we store it in the database,
-	// this migration should never fail, except in exceptional circumstances
-	// (database not reachable), in which case it's okay to exit.
-	//
-	// This can be removed in 3.19.
-	err = campaigns.MigratePatchesWithoutDiffStats(ctx, campaignsStore)
-	if err != nil {
-		log.Fatalf("FATAL: Migrating patches without diff stats: %v", err)
-	}
-
-	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-
-	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
-
-	bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
-	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
-		campaignsStore,
-		repositories,
-		clock,
-		bitbucketWebhookName,
-	)
-
-	shared.Main(githubWebhook, bitbucketServerWebhook)
+var msResolutionClock = func() time.Time {
+	return time.Now().UTC().Truncate(time.Microsecond)
 }
 
 func initLicensing() {
+	// TODO(efritz) - de-globalize assignments in this function
+
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
 	db.Users.PreCreateUser = licensing.NewPreCreateUserHook(&usersStore{})
@@ -153,24 +107,66 @@ func initLicensing() {
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
 	}
-}
 
-func initAuthz() {
-	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
-		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
-			return time.Now().UTC().Truncate(time.Microsecond)
-		})
+	goroutine.Go(func() {
+		licensing.StartMaxUserCount(&usersStore{})
+	})
+	if envvar.SourcegraphDotComMode() {
+		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
 	}
 }
 
-func initCampaigns() {
-	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
+func initAuthz(ctx context.Context, enterpriseServices *enterprise.Services) {
+	eauthz.Init(dbconn.Global, msResolutionClock)
 
+	go func() {
+		t := time.NewTicker(5 * time.Second)
+		for range t.C {
+			allowAccessByDefault, authzProviders, _, _ :=
+				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
+
+	enterpriseServices.AuthzResolver = authzResolvers.NewResolver(dbconn.Global, func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	})
+}
+
+func initCampaigns(ctx context.Context, enterpriseServices *enterprise.Services) {
+	globalState, err := globalstatedb.Get(ctx)
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
+	}
+
+	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, msResolutionClock)
+
+	// Migrate all patches in the database to cache their diff stats.
+	// Since we validate each Patch's diff before we store it in the database,
+	// this migration should never fail, except in exceptional circumstances
+	// (database not reachable), in which case it's okay to exit.
+	//
+	// This can be removed in 3.19.
+
+	if err := campaigns.MigratePatchesWithoutDiffStats(ctx, campaignsStore); err != nil {
+		log.Fatalf("FATAL: Migrating patches without diff stats: %v", err)
+	}
+
+	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	enterpriseServices.CampaignsResolver = campaignsResolvers.NewResolver(dbconn.Global)
+	enterpriseServices.GithubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, msResolutionClock)
+	enterpriseServices.BitbucketServerWebhook = campaigns.NewBitbucketServerWebhook(
+		campaignsStore,
+		repositories,
+		msResolutionClock,
+		"sourcegraph-"+globalState.SiteID,
+	)
 }
 
 var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
 
-func initCodeIntel() {
+func initCodeIntel(enterpriseServices *enterprise.Services) {
 	if bundleManagerURL == "" {
 		log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
 	}
@@ -185,15 +181,13 @@ func initCodeIntel() {
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	api := codeintelapi.NewObserved(codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
 
-	graphqlbackend.NewCodeIntelResolver = func() graphqlbackend.CodeIntelResolver {
-		return codeintelResolvers.NewResolver(
-			db,
-			bundleManagerClient,
-			api,
-		)
-	}
+	enterpriseServices.CodeIntelResolver = codeintelResolvers.NewResolver(
+		db,
+		bundleManagerClient,
+		api,
+	)
 
-	enterprise.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
+	enterpriseServices.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
 		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient, internal)
 	}
 }
