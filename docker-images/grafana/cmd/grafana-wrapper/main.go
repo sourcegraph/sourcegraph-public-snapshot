@@ -51,9 +51,12 @@ func main() {
 		log.Info("configuration sync disabled")
 	}
 
-	select {
-	case err := <-grafanaErrs:
+	err := <-grafanaErrs
+	if err != nil {
 		log.Crit("grafana stopped", "error", err)
 		os.Exit(1)
+	} else {
+		log.Info("grafana stopped")
+		os.Exit(0)
 	}
 }
