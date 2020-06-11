@@ -78,7 +78,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
     })
 
     /** The query that results from combining all values in the query builder form. */
-    const builderQuery = useState('')
+    const [builderQuery] = useState('')
 
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
