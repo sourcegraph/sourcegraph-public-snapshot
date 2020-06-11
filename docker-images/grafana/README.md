@@ -1,6 +1,6 @@
 # Grafana image
 
-Vanilla Grafana image with two additions: embedded Sourcegraph provisioning, and a wrapper program around to enable synchronization with Sourcegraph site configuration.
+Vanilla Grafana image with two additions: provisioned Sourcegraph dashboards and config, and a wrapper program that polls the frontend so alerts can be configured in Sourcegraph site configuration nicely.
 
 ## Image API
 
