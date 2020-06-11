@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -59,6 +60,18 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 	siteConfig := conf.Get().SiteConfiguration
 	sum := generateSiteConfigChecksum(&siteConfig)
 
+	// Set up overview dashboard if it does not exist. We attach alerts to a copy of the
+	// default home dashboard, because dashboards provisioned from disk cannot be edited.
+	if _, _, err := grafana.GetDashboardByUID(ctx, overviewDashboardUID); err != nil {
+		homeBoard, err := getOverviewDashboard()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate alerts overview dashboard: %w", err)
+		}
+		if _, err := grafana.SetDashboard(ctx, *homeBoard, sdk.SetDashboardParams{}); err != nil {
+			return nil, fmt.Errorf("failed to set up alerts overview dashboard: %w", err)
+		}
+	}
+
 	subscriber := &siteConfigSubscriber{log: log, grafana: grafana}
 	return subscriber, subscriber.updateGrafanaConfig(ctx, siteConfig.ObservabilityAlerts, sum)
 }
@@ -105,10 +118,32 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 	defer c.mux.Unlock()
 	c.log.Debug("updating grafana configuration")
 
-	// generate new configuration
+	// generate new notifiers configuration
 	created, err := generateNotifiersConfig(c.alerts, newAlerts)
 	if err != nil {
 		return err
+	}
+
+	// get the general alerts panels in the home dashboard
+	homeBoard, err := getOverviewDashboard()
+	if err != nil {
+		return fmt.Errorf("failed to generate alerts overview dashboard: %w", err)
+	}
+	var criticalPanel, warningPanel *sdk.Panel
+	for _, panel := range homeBoard.Panels {
+		var level string
+		switch panel.CommonPanel.Title {
+		case "Critical alerts by service":
+			level, criticalPanel = "critical", panel
+		case "Warning alerts by service":
+			level, warningPanel = "warning", panel
+		default:
+			continue
+		}
+		panel.Alert = newDefaultAlertsPanelAlert(level)
+	}
+	if criticalPanel == nil || warningPanel == nil {
+		return errors.New("failed to find alerts panels")
 	}
 
 	// TODO: error handling and rollback. how do we propagage warnings back to the frontend?
@@ -121,6 +156,20 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 		if err != nil {
 			return fmt.Errorf("failed to create alert %q: %w", alert.UID, err)
 		}
+		// register alert in corresponding panel
+		var panel *sdk.Panel
+		if strings.Contains(alert.UID, "critical") {
+			panel = criticalPanel
+		} else {
+			panel = warningPanel
+		}
+		panel.Alert.Notifications = append(panel.Alert.Notifications, alert)
+	}
+
+	// update board
+	_, err = c.grafana.SetDashboard(ctx, *homeBoard, sdk.SetDashboardParams{Overwrite: true})
+	if err != nil {
+		return fmt.Errorf("failed to update dashboard: %w", err)
 	}
 
 	// update state
