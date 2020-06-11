@@ -148,8 +148,11 @@ func (c *Monitor) now() time.Time {
 	return time.Now()
 }
 
+// DefaultRegistry is the default global rate limit registry. It will hold rate limit mappings
+// for each instance of our services.
 var DefaultRegistry = NewRegistry()
 
+// NewRegistry creates a new empty registry.
 func NewRegistry() *Registry {
 	return &Registry{
 		rateLimiters: make(map[string]*rate.Limiter),
