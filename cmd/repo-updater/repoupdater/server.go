@@ -53,7 +53,7 @@ type Server struct {
 	}
 	RateLimitSyncer interface {
 		// SyncRateLimiters should be called when an external service changes so that
-		// our internal rate limiter are kept in sync
+		// our internal rate limiters are kept in sync
 		SyncRateLimiters(ctx context.Context) error
 	}
 	PermsSyncer interface {
