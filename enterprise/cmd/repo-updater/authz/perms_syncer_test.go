@@ -318,19 +318,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 }
 
-type fakeExternalServiceLister struct{}
-
-func (*fakeExternalServiceLister) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
-	return []*repos.ExternalService{
-		{
-			ID:          1,
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "GitHub.com",
-			Config:      `{"url": "https://github.com"}`,
-		},
-	}, nil
-}
-
 func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 	ctx := context.Background()
 	t.Run("no rate limit registry", func(t *testing.T) {
