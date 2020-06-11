@@ -8,10 +8,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
 
 type Resolver struct {
@@ -156,8 +156,8 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*graphql
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path, args.Indexer)
+func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *graphqlbackend.GitBlobLSIFDataArgs) (graphqlbackend.GitBlobLSIFDataResolver, error) {
+	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
 	if err != nil {
 		return nil, err
 	}

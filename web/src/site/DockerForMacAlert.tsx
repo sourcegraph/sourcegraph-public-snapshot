@@ -9,7 +9,7 @@ import { DismissibleAlert } from '../components/DismissibleAlert'
 export const DockerForMacAlert: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <DismissibleAlert
         partialStorageKey="DockerForMac"
-        className={`alert-animated-bg alert-warning docker-for-mac-alert d-flex align-items-center ${className}`}
+        className={`alert-warning docker-for-mac-alert d-flex align-items-center ${className}`}
     >
         <span className="docker-for-mac-alert__left">
             It looks like you're using Docker for Mac. Due to known issues related to Docker for Mac's file system
