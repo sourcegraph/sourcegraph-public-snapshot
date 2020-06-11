@@ -1,9 +1,12 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject } from 'rxjs'
+import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from } from 'rxjs'
+
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
+import { switchMap, mergeMap } from 'rxjs/operators'
+import { proxySubscribable } from './api/common'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -56,6 +59,9 @@ export const initNewExtensionAPI = (
     // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
     const rootChanges = new Subject<void>()
+    const queryTransformersChanges = new ReplaySubject<sourcegraph.QueryTransformer[]>(1)
+    queryTransformersChanges.next([])
+
     const versionContextChanges = new Subject<string | undefined>()
 
     const exposedToMain: FlatExtHostAPI = {
@@ -77,15 +83,25 @@ export const initNewExtensionAPI = (
 
         // Search
         transformSearchQuery: query =>
-            // this is racy because a transformer can be executed after it unsubscribed
-            state.queryTransformers.reduce(
-                (queryPromise, transformer) =>
-                    // transformer can be unsubscribed in the middle of transformation chain
-                    // Note that we don't include new ones but exclude the ones that are unsubsribed
-                    state.queryTransformers.includes(transformer)
-                        ? queryPromise.then(q => transformer.transformQuery(q))
-                        : queryPromise,
-                Promise.resolve(query)
+            // TODO (simon) I don't enjoy the dark arts below
+            // we return observable because of potential deferred addition of transformers
+            // in this case we need to reissue the transformation and emit the resulting value
+            // we probably won't need an Observable if we somehow coordinate with extensions activation
+            proxySubscribable(
+                queryTransformersChanges.pipe(
+                    switchMap(transformers =>
+                        transformers.reduce(
+                            (currentQuery: Observable<string>, transformer) =>
+                                currentQuery.pipe(
+                                    mergeMap(query => {
+                                        const result = transformer.transformQuery(query)
+                                        return result instanceof Promise ? from(result) : of(result)
+                                    })
+                                ),
+                            of(query)
+                        )
+                    )
+                )
             ),
     }
 
@@ -116,20 +132,15 @@ export const initNewExtensionAPI = (
     }
 
     // Search
-    // this is basically an optimization to skip round trip to the worker
-    const notifyAboutQueryTransformerChanges = (): void => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        mainAPI.notifyIfThereAreQueryTransformers(state.queryTransformers.length > 0)
-    }
-
     const search: typeof sourcegraph['search'] = {
         registerQueryTransformer: transformer => {
-            state.queryTransformers.push(transformer)
-            notifyAboutQueryTransformerChanges()
+            state.queryTransformers = state.queryTransformers.concat(transformer)
+            queryTransformersChanges.next(state.queryTransformers)
             return {
                 unsubscribe: () => {
-                    notifyAboutQueryTransformerChanges()
+                    // eslint-disable-next-line id-length
                     state.queryTransformers = state.queryTransformers.filter(t => t !== transformer)
+                    queryTransformersChanges.next(state.queryTransformers)
                 },
             }
         },

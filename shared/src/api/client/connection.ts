@@ -26,6 +26,7 @@ import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
 import { initMainThreadAPI } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
+import { wrapRemoteObservable } from './api/common'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -141,15 +142,14 @@ export async function createExtensionHostClientConnection(
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const { api: newAPI, subscription: apiSubscriptions, transformQuery } = initMainThreadAPI(
-        proxy,
-        platformContext,
-        services
-    )
+    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
 
     subscription.add(apiSubscriptions)
 
-    services.queryTransformer.transformQuery = transformQuery
+    // TODO (simon) this is ugly mutation but not much can be done here
+    // until we untangle the bootstrap sequence of the extension host
+    services.queryTransformer.transformQuery = query => wrapRemoteObservable(proxy.transformSearchQuery(query))
+
     subscription.add(() => (services.queryTransformer.transformQuery = undefined))
 
     const clientAPI: ClientAPI = {

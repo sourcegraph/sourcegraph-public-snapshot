@@ -7,16 +7,15 @@ import { switchMap, concatMap } from 'rxjs/operators'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { ProxySubscription } from './api/common'
 import { Services } from './services'
-import { TransformQuerySignature } from './services/queryTransformer'
 
 // for now it will partially mimic Services object but hopefully will be incrementally reworked in the process
 export type MainThreadAPIDependencies = Pick<Services, 'commands' | 'workspace'>
 
 export const initMainThreadAPI = (
-    extentionHost: Remote<FlatExtHostAPI>,
+    extensionHost: Remote<FlatExtHostAPI>,
     platformContext: Pick<PlatformContext, 'updateSettings' | 'settings'>,
     dependencies: MainThreadAPIDependencies
-): { api: MainThreadAPI; subscription: Subscription; transformQuery: TransformQuerySignature } => {
+): { api: MainThreadAPI; subscription: Subscription } => {
     const {
         workspace: { roots, versionContext },
         commands,
@@ -29,7 +28,7 @@ export const initMainThreadAPI = (
             .pipe(
                 switchMap(settings => {
                     if (isSettingsValid(settings)) {
-                        return extentionHost.syncSettingsData(settings)
+                        return extensionHost.syncSettingsData(settings)
                     }
                     return []
                 })
@@ -40,21 +39,14 @@ export const initMainThreadAPI = (
     // Workspace
     subscription.add(
         from(roots)
-            .pipe(concatMap(roots => extentionHost.syncRoots(roots)))
+            .pipe(concatMap(roots => extensionHost.syncRoots(roots)))
             .subscribe()
     )
     subscription.add(
         from(versionContext)
-            .pipe(concatMap(context => extentionHost.syncVersionContext(context)))
+            .pipe(concatMap(context => extensionHost.syncVersionContext(context)))
             .subscribe()
     )
-
-    // Search
-    // this is basically an optimization to skip round trip to the worker if we don't have any transformers
-    // which is probably the norm
-    let hasRegisteredTransformers = false
-    const transformQuery: TransformQuerySignature = query =>
-        hasRegisteredTransformers ? extentionHost.transformSearchQuery(query) : Promise.resolve(query)
 
     // Commands
     const api: MainThreadAPI = {
@@ -66,8 +58,7 @@ export const initMainThreadAPI = (
             subscription.add(new ProxySubscription(run))
             return proxy(subscription)
         },
-        notifyIfThereAreQueryTransformers: yesThereIsSome => (hasRegisteredTransformers = yesThereIsSome),
     }
 
-    return { api, subscription, transformQuery }
+    return { api, subscription }
 }

@@ -41,9 +41,12 @@ export function search(
     patternType: GQL.SearchPatternType,
     versionContext: string | undefined,
     services: Services
-    // { extensionsController }: ExtensionsControllerProps<'services'>
 ): Observable<GQL.ISearchResults | ErrorLike> {
-    return of(services.queryTransformer.transformQuery?.(query) ?? query).pipe(
+    const transformedQuery = services.queryTransformer.transformQuery
+        ? services.queryTransformer.transformQuery(query)
+        : of(query)
+
+    return transformedQuery.pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`

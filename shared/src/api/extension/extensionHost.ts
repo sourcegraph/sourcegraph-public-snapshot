@@ -9,12 +9,11 @@ import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
-import { ExtensionDocuments, ExtDocuments } from './api/documents'
-import { Extensions, ExtExtensions } from './api/extensions'
-import { ExtensionLanguageFeatures, ExtLanguageFeatures } from './api/languageFeatures'
-import { ExtensionSearch } from './api/search'
-import { ExtensionViewsApi, ExtViews } from './api/views'
-import { ExtensionWindows, ExtWindows } from './api/windows'
+import { ExtensionDocuments } from './api/documents'
+import { Extensions } from './api/extensions'
+import { ExtensionLanguageFeatures } from './api/languageFeatures'
+import { ExtensionViewsApi } from './api/views'
+import { ExtensionWindows } from './api/windows'
 
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
@@ -139,7 +138,6 @@ function createExtensionAPI(
     const windows = new ExtensionWindows(proxy, documents)
     const views = new ExtensionViewsApi(proxy.views)
     const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
-    const search = new ExtensionSearch(proxy.search)
     const content = new ExtensionContent(proxy.content)
 
     const { configuration, exposedToMain, workspace, state, commands, search } = initNewExtensionAPI(

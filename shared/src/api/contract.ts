@@ -3,6 +3,7 @@ import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
 import { Unsubscribable } from 'sourcegraph'
+import { ProxySubscribable } from './extension/api/common'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -19,7 +20,7 @@ export interface FlatExtHostAPI {
     syncVersionContext: (versionContext: string | undefined) => void
 
     // Search
-    transformSearchQuery: (query: string) => Promise<string>
+    transformSearchQuery: (query: string) => ProxySubscribable<string>
 }
 
 /**
@@ -39,7 +40,4 @@ export interface MainThreadAPI {
         name: string,
         command: Remote<((...args: any) => any) & ProxyMarked>
     ) => Unsubscribable & ProxyMarked
-
-    // Search
-    notifyIfThereAreQueryTransformers: (yesThereIsSome: boolean) => void
 }
