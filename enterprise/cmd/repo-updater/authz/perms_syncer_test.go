@@ -3,7 +3,6 @@ package authz
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"testing"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
