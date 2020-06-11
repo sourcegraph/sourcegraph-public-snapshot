@@ -8,22 +8,22 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/codeintelutils"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type Processor interface {
-	Process(ctx context.Context, index db.Index) error
+	Process(ctx context.Context, index store.Index) error
 }
 
 type processor struct {
-	db              db.DB
+	store           store.Store
 	gitserverClient gitserver.Client
 	frontendURL     string
 }
 
-func (p *processor) Process(ctx context.Context, index db.Index) error {
-	repoDir, err := fetchRepository(ctx, p.db, p.gitserverClient, index.RepositoryID, index.Commit)
+func (p *processor) Process(ctx context.Context, index store.Index) error {
+	repoDir, err := fetchRepository(ctx, p.store, p.gitserverClient, index.RepositoryID, index.Commit)
 	if err != nil {
 		return err
 	}
@@ -42,8 +42,8 @@ func (p *processor) Process(ctx context.Context, index db.Index) error {
 	return nil
 }
 
-func (p *processor) index(ctx context.Context, repoDir string, index db.Index) error {
-	tag, exact, err := p.gitserverClient.Tags(ctx, p.db, index.RepositoryID, index.Commit)
+func (p *processor) index(ctx context.Context, repoDir string, index store.Index) error {
+	tag, exact, err := p.gitserverClient.Tags(ctx, p.store, index.RepositoryID, index.Commit)
 	if err != nil {
 		return err
 	}
@@ -59,10 +59,10 @@ func (p *processor) index(ctx context.Context, repoDir string, index db.Index) e
 	return command(repoDir, "lsif-go", args...)
 }
 
-func (p *processor) upload(ctx context.Context, repoDir string, index db.Index) error {
-	repoName, err := p.db.RepoName(ctx, index.RepositoryID)
+func (p *processor) upload(ctx context.Context, repoDir string, index store.Index) error {
+	repoName, err := p.store.RepoName(ctx, index.RepositoryID)
 	if err != nil {
-		return errors.Wrap(err, "db.RepoName")
+		return errors.Wrap(err, "store.RepoName")
 	}
 
 	opts := codeintelutils.UploadIndexOpts{

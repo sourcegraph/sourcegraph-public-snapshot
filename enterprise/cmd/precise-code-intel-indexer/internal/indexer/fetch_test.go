@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
 	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
 func TestFetchRepository(t *testing.T) {
@@ -17,11 +17,11 @@ func TestFetchRepository(t *testing.T) {
 	}
 	defer tarfile.Close()
 
-	mockDB := dbmocks.NewMockDB()
+	mockStore := storemocks.NewMockStore()
 	mockGitserverClient := gitservermocks.NewMockClient()
 	mockGitserverClient.ArchiveFunc.SetDefaultReturn(tarfile, nil)
 
-	tempDir, err := fetchRepository(context.Background(), mockDB, mockGitserverClient, 50, "deadbeef")
+	tempDir, err := fetchRepository(context.Background(), mockStore, mockGitserverClient, 50, "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error fetching repository: %s", err)
 	}

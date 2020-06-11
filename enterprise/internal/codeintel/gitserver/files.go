@@ -5,14 +5,14 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // FileExists determines whether a file exists in a particular commit of a repository.
-func FileExists(ctx context.Context, db db.DB, repositoryID int, commit, file string) (bool, error) {
-	repo, err := repositoryIDToRepo(ctx, db, repositoryID)
+func FileExists(ctx context.Context, store store.Store, repositoryID int, commit, file string) (bool, error) {
+	repo, err := repositoryIDToRepo(ctx, store, repositoryID)
 	if err != nil {
 		return false, err
 	}

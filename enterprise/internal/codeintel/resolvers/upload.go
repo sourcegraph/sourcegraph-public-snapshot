@@ -6,13 +6,13 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type lsifUploadResolver struct {
 	repositoryResolver *graphqlbackend.RepositoryResolver
-	lsifUpload         db.Upload
+	lsifUpload         store.Upload
 }
 
 var _ graphqlbackend.LSIFUploadResolver = &lsifUploadResolver{}

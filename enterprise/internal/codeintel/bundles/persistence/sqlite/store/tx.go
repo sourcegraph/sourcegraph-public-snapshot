@@ -10,7 +10,7 @@ import (
 
 // ErrNotTransactable occurs when Transact is called on a Store whose underlying
 // db handle does not support beginning a transaction.
-var ErrNotTransactable = errors.New("db: not transactable")
+var ErrNotTransactable = errors.New("store: not transactable")
 
 // Transact returns a Store whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
@@ -29,7 +29,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 	tx, err := tb.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "db: BeginTx")
+		return nil, errors.Wrap(err, "store: BeginTx")
 	}
 
 	return &Store{db: tx}, nil
@@ -37,7 +37,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 // Done commits underlying the transaction on a nil error value and performs a rollback
 // otherwise. If an error occurs during commit or rollback of the transaction, the error
-// is added to the resulting error value. If the Database does not wrap a transaction the
+// is added to the resulting error value. If the store does not wrap a transaction the
 // original error value is returned unchanged.
 func (s *Store) Done(err error) error {
 	if tx, ok := s.db.(dbutil.Tx); ok {

@@ -7,11 +7,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type Janitor struct {
-	db                 db.DB
+	store              store.Store
 	bundleDir          string
 	desiredPercentFree int
 	janitorInterval    time.Duration
@@ -24,7 +24,7 @@ type Janitor struct {
 }
 
 func New(
-	db db.DB,
+	store store.Store,
 	bundleDir string,
 	desiredPercentFree int,
 	janitorInterval time.Duration,
@@ -34,7 +34,7 @@ func New(
 	metrics JanitorMetrics,
 ) *Janitor {
 	return &Janitor{
-		db:                 db,
+		store:              store,
 		bundleDir:          bundleDir,
 		desiredPercentFree: desiredPercentFree,
 		janitorInterval:    janitorInterval,

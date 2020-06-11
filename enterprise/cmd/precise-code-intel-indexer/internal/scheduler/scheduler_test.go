@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
-	dbmocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db/mocks"
 	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -25,25 +25,25 @@ func TestMain(m *testing.M) {
 }
 
 func TestUpdate(t *testing.T) {
-	mockDB := dbmocks.NewMockDB()
-	mockDB.TransactFunc.SetDefaultReturn(mockDB, nil)
-	mockDB.IndexableRepositoriesFunc.SetDefaultReturn([]db.IndexableRepository{
+	mockStore := storemocks.NewMockStore()
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
 		{RepositoryID: 1},
 		{RepositoryID: 2},
 		{RepositoryID: 3},
 		{RepositoryID: 4},
 	}, nil)
-	mockDB.IsQueuedFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	mockStore.IsQueuedFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
 		return repositoryID%2 != 0, nil
 	})
 
 	mockGitserverClient := gitservermocks.NewMockClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, db db.DB, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
 	scheduler := &Scheduler{
-		db:              mockDB,
+		store:           mockStore,
 		gitserverClient: mockGitserverClient,
 		metrics:         NewSchedulerMetrics(metrics.TestRegisterer),
 	}
@@ -52,11 +52,11 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockDB.IsQueuedFunc.History()) != 4 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 4, len(mockDB.IsQueuedFunc.History()))
+	if len(mockStore.IsQueuedFunc.History()) != 4 {
+		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 4, len(mockStore.IsQueuedFunc.History()))
 	} else {
 		var commits []string
-		for _, call := range mockDB.IsQueuedFunc.History() {
+		for _, call := range mockStore.IsQueuedFunc.History() {
 			commits = append(commits, call.Arg2)
 		}
 		sort.Strings(commits)
@@ -66,11 +66,11 @@ func TestUpdate(t *testing.T) {
 		}
 	}
 
-	if len(mockDB.InsertIndexFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 2, len(mockDB.InsertIndexFunc.History()))
+	if len(mockStore.InsertIndexFunc.History()) != 2 {
+		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 2, len(mockStore.InsertIndexFunc.History()))
 	} else {
 		indexCommits := map[int]string{}
-		for _, call := range mockDB.InsertIndexFunc.History() {
+		for _, call := range mockStore.InsertIndexFunc.History() {
 			indexCommits[call.Arg1.RepositoryID] = call.Arg1.Commit
 		}
 
@@ -83,7 +83,7 @@ func TestUpdate(t *testing.T) {
 		}
 	}
 
-	if len(mockDB.UpdateIndexableRepositoryFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to UpdateIndexableRepository. want=%d have=%d", 2, len(mockDB.UpdateIndexableRepositoryFunc.History()))
+	if len(mockStore.UpdateIndexableRepositoryFunc.History()) != 2 {
+		t.Errorf("unexpected number of calls to UpdateIndexableRepository. want=%d have=%d", 2, len(mockStore.UpdateIndexableRepositoryFunc.History()))
 	}
 }

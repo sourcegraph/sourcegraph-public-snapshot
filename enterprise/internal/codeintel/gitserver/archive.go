@@ -5,14 +5,14 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // Archive retrieves a tar-formatted archive of the given commit.
-func Archive(ctx context.Context, db db.DB, repositoryID int, commit string) (io.Reader, error) {
-	repo, err := repositoryIDToRepo(ctx, db, repositoryID)
+func Archive(ctx context.Context, store store.Store, repositoryID int, commit string) (io.Reader, error) {
+	repo, err := repositoryIDToRepo(ctx, store, repositoryID)
 	if err != nil {
 		return nil, err
 	}

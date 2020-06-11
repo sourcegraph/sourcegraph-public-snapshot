@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 // Cursor holds the complete state necessary to page through a reference result set.
@@ -51,7 +51,7 @@ func decodeCursor(rawEncoded string) (Cursor, error) {
 
 // DecodeOrCreateCursor decodes and returns the raw cursor, or creates a new initial page cursor
 // if a raw cursor is not supplied.
-func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, db db.DB, bundleManagerClient bundles.BundleManagerClient) (Cursor, error) {
+func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, store store.Store, bundleManagerClient bundles.BundleManagerClient) (Cursor, error) {
 	if rawCursor != "" {
 		cursor, err := decodeCursor(rawCursor)
 		if err != nil {
@@ -61,9 +61,9 @@ func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor 
 		return cursor, nil
 	}
 
-	dump, exists, err := db.GetDumpByID(context.Background(), uploadID)
+	dump, exists, err := store.GetDumpByID(context.Background(), uploadID)
 	if err != nil {
-		return Cursor{}, errors.Wrap(err, "db.GetDumpByID")
+		return Cursor{}, errors.Wrap(err, "store.GetDumpByID")
 	}
 	if !exists {
 		return Cursor{}, ErrMissingDump

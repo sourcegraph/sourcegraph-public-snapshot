@@ -6,13 +6,13 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type lsifIndexResolver struct {
 	repositoryResolver *graphqlbackend.RepositoryResolver
-	lsifIndex          db.Index
+	lsifIndex          store.Index
 }
 
 var _ graphqlbackend.LSIFIndexResolver = &lsifIndexResolver{}
