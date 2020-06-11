@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"golang.org/x/time/rate"
 	"io"
 	"io/ioutil"
 	"log"
@@ -69,8 +71,11 @@ type Client struct {
 	// repoCache is the repository cache associated with the token.
 	repoCache *rcache.Cache
 
-	// RateLimit is the API rate limit monitor.
-	RateLimit *ratelimit.Monitor
+	// RateLimitMonitor is the API rate limit monitor.
+	RateLimitMonitor *ratelimit.Monitor
+
+	// rateLimit is our self imposed rate limiter
+	rateLimit *rate.Limiter
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -141,13 +146,17 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 		return category
 	})
 
+	normalized := extsvc.NormalizeBaseURL(apiURL)
+	rl := ratelimit.DefaultRegistry.GetRateLimiter(normalized.String())
+
 	return &Client{
-		apiURL:       apiURL,
-		githubDotCom: urlIsGitHubDotCom(apiURL),
-		token:        token,
-		httpClient:   cli,
-		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:    newRepoCache(apiURL, token),
+		apiURL:           apiURL,
+		githubDotCom:     urlIsGitHubDotCom(apiURL),
+		token:            token,
+		httpClient:       cli,
+		RateLimitMonitor: &ratelimit.Monitor{HeaderPrefix: "X-"},
+		repoCache:        newRepoCache(apiURL, token),
+		rateLimit:        rl,
 	}
 }
 
@@ -184,7 +193,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	defer resp.Body.Close()
-	c.RateLimit.Update(resp.Header)
+	c.RateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
@@ -253,6 +262,11 @@ func (c *Client) requestGet(ctx context.Context, requestURI string, result inter
 	// https://developer.github.com/v3/apps/installations/#list-repositories
 	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
 
+	err = c.rateLimit.Wait(ctx)
+	if err != nil {
+		return errors.Wrap(err, "rate limit")
+	}
+
 	return c.do(ctx, req, result)
 }
 
@@ -286,6 +300,16 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`
 	}
+
+	cost, err := estimateGraphQLCost(query)
+	if err != nil {
+		return errors.Wrap(err, "estimating graphql cost")
+	}
+
+	if err := c.rateLimit.WaitN(ctx, cost); err != nil {
+		return errors.Wrap(err, "rate limit")
+	}
+
 	if err := c.do(ctx, req, &respBody); err != nil {
 		return err
 	}

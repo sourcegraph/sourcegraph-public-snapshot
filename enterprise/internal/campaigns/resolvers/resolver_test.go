@@ -247,7 +247,7 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf, nil)
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -684,7 +684,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf, nil)
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
