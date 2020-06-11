@@ -13,6 +13,7 @@ else
   go build \
     -trimpath \
     -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" \
+    -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
     -buildmode exe \
     -installsuffix netgo \
     -tags "dist netgo" \
