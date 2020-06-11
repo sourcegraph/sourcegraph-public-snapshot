@@ -27,6 +27,7 @@ import (
 )
 
 func Init(d dbutil.DB, clock func() time.Time) {
+	// TODO(efritz) - de-globalize assignments in this function
 	db.ExternalServices = edb.NewExternalServicesStore()
 	db.Authz = edb.NewAuthzStore(d, clock)
 

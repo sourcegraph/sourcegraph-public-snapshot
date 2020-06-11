@@ -340,7 +340,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		case *RepositoryResolver:
 			k.repoName = s.repo.Name
 		case *GitTreeEntryResolver:
-			k.repoName = s.commit.repo.repo.Name
+			k.repoName = s.commit.repoResolver.repo.Name
 			// We explicitly do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as
 			// it doesn't specify the commit the default branch is on. This result would in
@@ -352,7 +352,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// equal.
 			k.file = s.Path()
 		case *searchSymbolResult:
-			k.repoName = s.commit.repo.repo.Name
+			k.repoName = s.commit.repoResolver.repo.Name
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name

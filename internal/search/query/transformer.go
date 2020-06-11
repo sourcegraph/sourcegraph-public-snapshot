@@ -143,10 +143,12 @@ func substituteOrForRegexp(nodes []Node) []Node {
 				for _, node := range patterns {
 					values = append(values, node.(Pattern).Value)
 				}
-				valueString := strings.Join(values, "|")
+				valueString := "(" + strings.Join(values, ")|(") + ")"
 				new = append(new, Pattern{Value: valueString})
-				rest = substituteOrForRegexp(rest)
-				new = newOperator(append(new, rest...), Or)
+				if len(rest) > 0 {
+					rest = substituteOrForRegexp(rest)
+					new = newOperator(append(new, rest...), Or)
+				}
 			} else {
 				new = append(new, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
 			}

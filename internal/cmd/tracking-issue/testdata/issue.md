@@ -39,7 +39,7 @@
 - [ ] Precise code intel mono repo support [#10087](https://github.com/sourcegraph/sourcegraph/issues/10087) 
 - [ ] Improve visual clarity and add CTAs re code intel [#10083](https://github.com/sourcegraph/sourcegraph/issues/10083) 
 - [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) 
-  - [ ] Update tracking issue tool to preserve issue order and display whitelisted labels [#10166](https://github.com/sourcegraph/sourcegraph/pull/10166) :shipit:
+  - [ ] Update tracking issue tool to preserve issue order and display allowed labels [#10166](https://github.com/sourcegraph/sourcegraph/pull/10166) :shipit:
 - [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) 
 - [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) `lsif-reliability` 
 - [ ] Prototype a new LSIF indexer for C++ based on clangd-indexer [#10175](https://github.com/sourcegraph/sourcegraph/issues/10175) 

@@ -139,7 +139,7 @@ workflows:
             - install-deps
 ```
 
-# Travis CI
+### Travis CI
 ```yaml
 services:
   - docker
