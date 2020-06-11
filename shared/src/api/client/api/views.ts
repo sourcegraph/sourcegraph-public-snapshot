@@ -40,6 +40,16 @@ export interface ClientViewsAPI extends comlink.ProxyMarked {
         >
     ): Unsubscribable & comlink.ProxyMarked
 
+    $registerInsightsPageViewProvider(
+        id: string,
+        provider: comlink.Remote<
+            ((
+                context: ViewContexts[typeof ContributableViewContainer.InsightsPage]
+            ) => ProxySubscribable<View | null>) &
+                comlink.ProxyMarked
+        >
+    ): Unsubscribable & comlink.ProxyMarked
+
     $registerGlobalPageViewProvider(
         id: string,
         provider: comlink.Remote<
@@ -146,6 +156,24 @@ export class ClientViews implements ClientViewsAPI {
         const subscription = new Subscription()
         subscription.add(
             this.viewService.register(id, ContributableViewContainer.Homepage, context =>
+                wrapRemoteObservable(provider(context), subscription)
+            )
+        )
+        subscription.add(new ProxySubscription(provider))
+        return comlink.proxy(subscription)
+    }
+
+    public $registerInsightsPageViewProvider(
+        id: string,
+        provider: comlink.Remote<
+            (
+                context: ViewContexts[typeof ContributableViewContainer.InsightsPage]
+            ) => ProxySubscribable<View | null> & comlink.ProxyMarked
+        >
+    ): Unsubscribable & comlink.ProxyMarked {
+        const subscription = new Subscription()
+        subscription.add(
+            this.viewService.register(id, ContributableViewContainer.InsightsPage, context =>
                 wrapRemoteObservable(provider(context), subscription)
             )
         )
