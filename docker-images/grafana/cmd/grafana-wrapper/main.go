@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
@@ -34,11 +35,17 @@ func main() {
 	if noConfig != "true" {
 		log.Info("initializing configuration")
 		grafanaClient := sdk.NewClient(fmt.Sprintf("http://localhost:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
-		config, err := newSiteConfigSubscriber(ctx, log, grafanaClient)
+
+		// limit the amount of time we spend spinning up the subscriber before erroring
+		newSubscriberCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		config, err := newSiteConfigSubscriber(newSubscriberCtx, log, grafanaClient)
 		if err != nil {
 			log.Crit("failed to initialize configuration", "error", err)
 			os.Exit(1)
 		}
+		cancel()
+
+		// watch for configuration updates in the background
 		config.Subscribe(ctx)
 	} else {
 		log.Info("configuration sync disabled")
