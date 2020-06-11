@@ -17,5 +17,6 @@ export GOOS=linux
 . ./dev/libsqlite3-pcre/go-build-args.sh
 
 echo "--- go build"
+set -ex
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager"
-go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)"-buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
