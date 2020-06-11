@@ -7,6 +7,7 @@ import (
 )
 
 func init() {
+	// TODO(efritz) - de-globalize assignments in this function
 	// Contribute the GraphQL types DotcomMutation and DotcomQuery.
 	graphqlbackend.Dotcom = dotcomResolver{}
 }

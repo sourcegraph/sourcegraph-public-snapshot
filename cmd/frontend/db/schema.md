@@ -362,17 +362,17 @@ Indexes:
 
 # Table "public.lsif_indexes"
 ```
-       Column       |           Type           |                         Modifiers                         
---------------------+--------------------------+-----------------------------------------------------------
- id                 | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
- commit             | text                     | not null
- queued_at          | timestamp with time zone | not null default now()
- state              | lsif_index_state         | not null default 'queued'::lsif_index_state
- failure_summary    | text                     | 
- failure_stacktrace | text                     | 
- started_at         | timestamp with time zone | 
- finished_at        | timestamp with time zone | 
- repository_id      | integer                  | not null
+     Column      |           Type           |                         Modifiers                         
+-----------------+--------------------------+-----------------------------------------------------------
+ id              | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
+ commit          | text                     | not null
+ queued_at       | timestamp with time zone | not null default now()
+ state           | lsif_index_state         | not null default 'queued'::lsif_index_state
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | not null
+ process_after   | timestamp with time zone | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -391,7 +391,7 @@ Check constraints:
  dump_id | integer | not null
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
-    "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
+    "lsif_packages_scheme_name_version" btree (scheme, name, version)
 Foreign-key constraints:
     "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -417,22 +417,22 @@ Foreign-key constraints:
 
 # Table "public.lsif_uploads"
 ```
-       Column       |           Type           |                        Modifiers                        
---------------------+--------------------------+---------------------------------------------------------
- id                 | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
- commit             | text                     | not null
- root               | text                     | not null default ''::text
- visible_at_tip     | boolean                  | not null default false
- uploaded_at        | timestamp with time zone | not null default now()
- state              | lsif_upload_state        | not null default 'queued'::lsif_upload_state
- failure_summary    | text                     | 
- failure_stacktrace | text                     | 
- started_at         | timestamp with time zone | 
- finished_at        | timestamp with time zone | 
- repository_id      | integer                  | not null
- indexer            | text                     | not null
- num_parts          | integer                  | not null
- uploaded_parts     | integer[]                | not null
+     Column      |           Type           |                        Modifiers                        
+-----------------+--------------------------+---------------------------------------------------------
+ id              | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
+ commit          | text                     | not null
+ root            | text                     | not null default ''::text
+ visible_at_tip  | boolean                  | not null default false
+ uploaded_at     | timestamp with time zone | not null default now()
+ state           | lsif_upload_state        | not null default 'queued'::lsif_upload_state
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ repository_id   | integer                  | not null
+ indexer         | text                     | not null
+ num_parts       | integer                  | not null
+ uploaded_parts  | integer[]                | not null
+ process_after   | timestamp with time zone | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state

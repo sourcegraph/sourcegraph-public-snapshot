@@ -77,9 +77,6 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
         cursorPosition: queryFromUrl.length,
     })
 
-    /** The query that results from combining all values in the query builder form. */
-    const builderQuery = useState('')
-
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
@@ -88,10 +85,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             // False positive
             // eslint-disable-next-line no-unused-expressions
             event?.preventDefault()
-            const query = [builderQuery, userQueryState.query].filter(query => !!query).join(' ')
-            submitSearch({ ...props, query, source: 'home' })
+            submitSearch({ ...props, query: userQueryState.query, source: 'home' })
         },
-        [builderQuery, props, userQueryState.query]
+        [props, userQueryState.query]
     )
 
     const pageTitle = queryFromUrl ? `${limitString(userQueryState.query, 25, true)}` : undefined

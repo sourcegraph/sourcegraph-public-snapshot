@@ -21,22 +21,23 @@ import (
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
 const FrontendInternalHost = "127.0.0.1:3090"
 
-// defaultEnv is environment variables that will be set if not already set.
-var defaultEnv = map[string]string{
+// DefaultEnv is environment variables that will be set if not already set.
+//
+// If it is modified by an external package, it must be modified immediately on startup,
+// before `shared.Main` is called.
+var DefaultEnv = map[string]string{
 	// Sourcegraph services running in this container
-	"SRC_GIT_SERVERS":                       "127.0.0.1:3178",
-	"SEARCHER_URL":                          "http://127.0.0.1:3181",
-	"REPO_UPDATER_URL":                      "http://127.0.0.1:3182",
-	"QUERY_RUNNER_URL":                      "http://127.0.0.1:3183",
-	"SRC_SYNTECT_SERVER":                    "http://127.0.0.1:9238",
-	"SYMBOLS_URL":                           "http://127.0.0.1:3184",
-	"REPLACER_URL":                          "http://127.0.0.1:3185",
-	"PRECISE_CODE_INTEL_API_SERVER_URL":     "http://127.0.0.1:3186",
-	"PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL": "http://127.0.0.1:3187",
-	"SRC_HTTP_ADDR":                         ":8080",
-	"SRC_HTTPS_ADDR":                        ":8443",
-	"SRC_FRONTEND_INTERNAL":                 FrontendInternalHost,
-	"GITHUB_BASE_URL":                       "http://127.0.0.1:3180", // points to github-proxy
+	"SRC_GIT_SERVERS":       "127.0.0.1:3178",
+	"SEARCHER_URL":          "http://127.0.0.1:3181",
+	"REPO_UPDATER_URL":      "http://127.0.0.1:3182",
+	"QUERY_RUNNER_URL":      "http://127.0.0.1:3183",
+	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
+	"SYMBOLS_URL":           "http://127.0.0.1:3184",
+	"REPLACER_URL":          "http://127.0.0.1:3185",
+	"SRC_HTTP_ADDR":         ":8080",
+	"SRC_HTTPS_ADDR":        ":8443",
+	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
+	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
 	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
 	"JAEGER_SERVER_URL":  "http://127.0.0.0.1:16686",
@@ -90,7 +91,6 @@ func Main() {
 	// Next persistence
 	{
 		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
-		SetDefaultEnv("PRECISE_CODE_INTEL_BUNDLE_DIR", filepath.Join(DataDir, "lsif-storage"))
 		SetDefaultEnv("CACHE_DIR", filepath.Join(DataDir, "cache"))
 	}
 
@@ -106,7 +106,7 @@ func Main() {
 		SetDefaultEnv("SRC_PROF_SERVICES", string(data))
 	}
 
-	for k, v := range defaultEnv {
+	for k, v := range DefaultEnv {
 		SetDefaultEnv(k, v)
 	}
 
@@ -137,8 +137,6 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`precise-code-intel-bundle-manager: precise-code-intel-bundle-manager`,
-		`precise-code-intel-worker: precise-code-intel-worker`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,

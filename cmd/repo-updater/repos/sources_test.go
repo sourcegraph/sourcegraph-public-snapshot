@@ -240,7 +240,7 @@ func TestSources_ListRepos(t *testing.T) {
 					case *schema.GitoliteConnection:
 						ex = append(ex, excluded{pattern: cfg.Blacklist})
 						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name})
+							ex = append(ex, excluded{name: e.Name, pattern: e.Pattern})
 						}
 					}
 
