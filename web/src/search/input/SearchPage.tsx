@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
@@ -35,9 +35,15 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
+import { ViewGrid } from '../../repo/tree/ViewGrid'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
+import { isErrorLike } from '../../../../shared/src/util/errors'
+import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
+import { EMPTY } from 'rxjs'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
@@ -91,6 +97,23 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
     )
 
     const pageTitle = queryFromUrl ? `${limitString(userQueryState.query, 25, true)}` : undefined
+
+    const codeInsightsEnabled =
+        !isErrorLike(props.settingsCascade.final) && !!props.settingsCascade.final?.experimentalFeatures?.codeInsights
+
+    const views = useObservable(
+        useMemo(
+            () =>
+                codeInsightsEnabled
+                    ? getViewsForContainer(
+                          ContributableViewContainer.Homepage,
+                          {},
+                          props.extensionsController.services.view
+                      )
+                    : EMPTY,
+            [codeInsightsEnabled, props.extensionsController.services.view]
+        )
+    )
 
     return (
         <div className="search-page">
@@ -175,6 +198,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         </>
                     )}
                 </div>
+                {views && <ViewGrid {...props} className="mt-5" views={views} />}
             </div>
         </div>
     )

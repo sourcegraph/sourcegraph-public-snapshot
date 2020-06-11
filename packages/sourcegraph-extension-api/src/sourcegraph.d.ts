@@ -841,7 +841,37 @@ declare module 'sourcegraph' {
     /**
      * A view provider registered with {@link sourcegraph.app.registerViewProvider}.
      */
-    export type ViewProvider = GlobalPageViewProvider | DirectoryViewProvider
+    export type ViewProvider =
+        | InsightsPageViewProvider
+        | HomepageViewProvider
+        | GlobalPageViewProvider
+        | DirectoryViewProvider
+
+    /**
+     * Experimental view provider shown on the dashboard on the insights page.
+     * This API is experimental and is subject to change or removal without notice.
+     */
+    export interface InsightsPageViewProvider {
+        readonly where: 'insightsPage'
+
+        /**
+         * Provide content for the view.
+         */
+        provideView(context: {}): ProviderResult<View>
+    }
+
+    /**
+     * Experimental view provider shown on the homepage (below the search box in the Sourcegraph web app).
+     * This API is experimental and is subject to change or removal without notice.
+     */
+    export interface HomepageViewProvider {
+        readonly where: 'homepage'
+
+        /**
+         * Provide content for the view.
+         */
+        provideView(context: {}): ProviderResult<View>
+    }
 
     /**
      * Experimental global view provider. Global view providers are shown on a dedicated page in the app.
