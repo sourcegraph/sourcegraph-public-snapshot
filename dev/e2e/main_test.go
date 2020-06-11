@@ -22,13 +22,16 @@ import (
 
 var client *e2eutil.Client
 
-func TestMain(m *testing.M) {
-	baseURL := flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
-	email := flag.String("email", "e2e@sourcegraph.com", "The email of the admin user")
-	username := flag.String("username", "e2e-admin", "The username of the admin user")
-	password := flag.String("password", "supersecurepassword", "The password of the admin user")
+var (
+	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
+	email    = flag.String("email", "e2e@sourcegraph.com", "The email of the admin user")
+	username = flag.String("username", "e2e-admin", "The username of the admin user")
+	password = flag.String("password", "supersecurepassword", "The password of the admin user")
 
-	githubToken := flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
+	githubToken = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
+)
+
+func TestMain(m *testing.M) {
 	flag.Parse()
 
 	if len(*githubToken) == 0 {
@@ -54,49 +57,6 @@ func TestMain(m *testing.M) {
 			log.Fatal("Failed to sign in:", err)
 		}
 		log.Println("Site admin authenticated:", *username)
-	}
-
-	// Set up external service
-	err = client.AddExternalService(e2eutil.AddExternalServiceInput{
-		Kind:        "GITHUB",
-		DisplayName: "e2e-test-github",
-		Config: mustMarshalJSONString(struct {
-			URL   string   `json:"url"`
-			Token string   `json:"token"`
-			Repos []string `json:"repos"`
-		}{
-			URL:   "http://github.com",
-			Token: *githubToken,
-			Repos: []string{
-				"sourcegraph/java-langserver",
-				"gorilla/mux",
-				"gorilla/securecookie",
-				"sourcegraph/jsonrpc2",
-				"sourcegraph/go-diff",
-				"sourcegraph/appdash",
-				"sourcegraph/sourcegraph-typescript",
-				"sourcegraph-testing/automation-e2e-test",
-				"sourcegraph/e2e-test-private-repository",
-			},
-		}),
-	})
-	if err != nil {
-		log.Fatal("Failed to add external service: ", err)
-	}
-
-	err = client.WaitForReposToBeCloned(
-		"github.com/sourcegraph/java-langserver",
-		"github.com/gorilla/mux",
-		"github.com/gorilla/securecookie",
-		"github.com/sourcegraph/jsonrpc2",
-		"github.com/sourcegraph/go-diff",
-		"github.com/sourcegraph/appdash",
-		"github.com/sourcegraph/sourcegraph-typescript",
-		"github.com/sourcegraph-testing/automation-e2e-test",
-		"github.com/sourcegraph/e2e-test-private-repository",
-	)
-	if err != nil {
-		log.Fatal("Failed to wait for repos to be cloned: ", err)
 	}
 
 	if !testing.Verbose() {
