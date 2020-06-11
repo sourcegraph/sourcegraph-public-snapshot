@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -39,7 +40,7 @@ type PermsSyncer struct {
 	// The mockable function to return the current time.
 	clock func() time.Time
 	// The rate limit registry for code hosts.
-	rateLimiterRegistry *repos.RateLimiterRegistry
+	rateLimiterRegistry *ratelimit.Registry
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
 	// The metrics that are exposed to Prometheus.
@@ -58,7 +59,7 @@ func NewPermsSyncer(
 	reposStore repos.Store,
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
-	rateLimiterRegistry *repos.RateLimiterRegistry,
+	rateLimiterRegistry *ratelimit.Registry,
 ) *PermsSyncer {
 	s := &PermsSyncer{
 		queue:               newRequestQueue(),

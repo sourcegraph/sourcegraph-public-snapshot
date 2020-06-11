@@ -16,6 +16,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
@@ -317,19 +318,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 }
 
-type fakeExternalServiceLister struct{}
-
-func (*fakeExternalServiceLister) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
-	return []*repos.ExternalService{
-		{
-			ID:          1,
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "GitHub.com",
-			Config:      `{"url": "https://github.com"}`,
-		},
-	}, nil
-}
-
 func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 	ctx := context.Background()
 	t.Run("no rate limit registry", func(t *testing.T) {
@@ -344,30 +332,26 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 	})
 
 	t.Run("enough quota available", func(t *testing.T) {
-		rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, &fakeExternalServiceLister{})
-		if err != nil {
-			t.Fatal(err)
-		}
+		rateLimiterRegistry := ratelimit.NewRegistry()
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err = s.waitForRateLimit(ctx, "https://github.com/", 1)
+		err := s.waitForRateLimit(ctx, "https://github.com/", 1)
 		if err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("not enough quota available", func(t *testing.T) {
-		rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, &fakeExternalServiceLister{})
-		if err != nil {
-			t.Fatal(err)
-		}
+		rateLimiterRegistry := ratelimit.NewRegistry()
+		l := rateLimiterRegistry.GetRateLimiter("https://github.com/")
+		l.SetLimit(1)
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err = s.waitForRateLimit(ctx, "https://github.com/", 10)
+		err := s.waitForRateLimit(ctx, "https://github.com/", 10)
 		if err == nil {
 			t.Fatalf("err: want %v but got nil", context.Canceled)
 		}
