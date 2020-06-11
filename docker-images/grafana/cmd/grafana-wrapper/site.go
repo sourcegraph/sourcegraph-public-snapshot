@@ -45,14 +45,14 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 	// Syncing relies on access to frontend, so wait until it is ready
 	log.Info("waiting for frontend", "url", api.InternalClient.URL)
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		return nil, fmt.Errorf("sourcegraph-frontend not reachable: %w", err)
+		return nil, err
 	}
 	log.Debug("detected frontend ready")
 
 	// Need grafana to be ready to intialize alerts
 	log.Info("waiting for grafana")
 	if err := waitForGrafana(ctx, grafana); err != nil {
-		return nil, fmt.Errorf("grafana not reachable: %w", err)
+		return nil, err
 	}
 	log.Debug("detected grafana ready")
 
