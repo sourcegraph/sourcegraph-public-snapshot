@@ -51,7 +51,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     alwaysExpanded,
     portal,
 }: VersionContextDropdownProps) => {
-    // Whether the user has dismissed the info blurb in the dropdown.
+    /** Whether the user has dismissed the info blurb in the dropdown. */
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, false)
 
     const submitOnToggle = useCallback(
