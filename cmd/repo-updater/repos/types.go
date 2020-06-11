@@ -968,7 +968,7 @@ type RateLimiterRegistry struct {
 }
 
 // NewRateLimitRegistry returns a new registry and attempts to populate it. On error, an
-// empty registry is returned which can still to handle syncs.
+// empty registry is returned which can still handle syncs.
 func NewRateLimiterRegistry(ctx context.Context, serviceLister externalServiceLister) (*RateLimiterRegistry, error) {
 	r := &RateLimiterRegistry{
 		serviceLister: serviceLister,

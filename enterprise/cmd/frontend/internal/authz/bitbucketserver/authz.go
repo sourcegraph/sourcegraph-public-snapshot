@@ -66,7 +66,7 @@ func newAuthzProvider(
 		errs = multierror.Append(errs, errors.Errorf("authorization.hardTTL: must be larger than ttl"))
 	}
 
-	cli, err := bitbucketserver.NewClient(c, nil)
+	cli, err := bitbucketserver.NewClient(c, nil, nil)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 		return nil, errs.ErrorOrNil()

@@ -77,7 +77,7 @@ func newTestClientWithToken(t *testing.T, token string, cli httpcli.Doer) *Clien
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewClient(apiURL, token, cli)
+	return NewClient(apiURL, token, cli, nil)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.

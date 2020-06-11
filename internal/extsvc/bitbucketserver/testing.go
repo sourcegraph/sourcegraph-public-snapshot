@@ -41,7 +41,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		Url:   instanceURL,
 	}
 
-	cli, err := NewClient(c, hc)
+	cli, err := NewClient(c, hc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

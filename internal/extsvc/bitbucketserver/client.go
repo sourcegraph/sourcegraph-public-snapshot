@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -82,7 +83,7 @@ type Client struct {
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
-	RateLimit *rate.Limiter
+	RateLimit ratelimit.Limiter
 
 	// OAuth client used to authenticate requests, if set via SetOAuth.
 	// Takes precedence over Token and Username / Password authentication.
@@ -92,7 +93,8 @@ type Client struct {
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+// An optional rate limiter can be provided, if nil a default will be used
+func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer, rl ratelimit.Limiter) (*Client, error) {
 	u, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -104,13 +106,18 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 	httpClient = requestCounter.Doer(httpClient, categorize)
 	u = extsvc.NormalizeBaseURL(u)
 
-	limiterMu.Lock()
-	defer limiterMu.Unlock()
+	// We enforce our own rate limiter for Bitbucket Server so we need to either use the one provided
+	// or fall back to a default
+	if rl == nil {
+		limiterMu.Lock()
+		defer limiterMu.Unlock()
 
-	l, ok := limiterCache[u.String()]
-	if !ok {
-		l = rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-		limiterCache[u.String()] = l
+		r, ok := limiterCache[u.String()]
+		if !ok {
+			r = rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
+			limiterCache[u.String()] = r
+		}
+		rl = ratelimit.NewBlockingLimiter(r)
 	}
 
 	client := &Client{
@@ -119,7 +126,7 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 		Username:   c.Username,
 		Password:   c.Password,
 		Token:      c.Token,
-		RateLimit:  l,
+		RateLimit:  rl,
 	}
 
 	if c.Authorization != nil {
@@ -791,7 +798,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	startWait := time.Now()
-	if err := c.RateLimit.Wait(ctx); err != nil {
+	if err := c.RateLimit.Limit(ctx, 1); err != nil {
 		return err
 	}
 

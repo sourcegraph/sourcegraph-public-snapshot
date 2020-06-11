@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"strings"
 	"sync"
 
@@ -59,7 +60,11 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 // NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
 // rate limiter
 func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (ChangesetSource, error) {
-	source, err := newSource(svc, cf, rl)
+	var l ratelimit.Limiter
+	if rl != nil {
+		l = ratelimit.NewBlockingLimiter(rl)
+	}
+	source, err := newSource(svc, cf, l)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +75,7 @@ func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limi
 	return css, nil
 }
 
-func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
+func newSource(svc *ExternalService, cf *httpcli.Factory, rl ratelimit.Limiter) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
 		return NewGithubSource(svc, cf, rl)

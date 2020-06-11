@@ -27,7 +27,7 @@ func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		return http.StatusUnauthorized, errors.New("must provide github_token")
 	}
 
-	client := github.NewClient(&githubURL, githubToken, nil)
+	client := github.NewClient(&githubURL, githubToken, nil, nil)
 
 	// There are 2 supported ways to authenticate the upload:
 	//

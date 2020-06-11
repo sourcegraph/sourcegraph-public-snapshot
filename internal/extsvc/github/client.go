@@ -71,6 +71,9 @@ type Client struct {
 
 	// RateLimitMonitor is the API rate limit monitor.
 	RateLimitMonitor *ratelimit.Monitor
+
+	// RateLimiter is an optional internal rate limiter
+	RateLimiter ratelimit.Limiter
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -121,7 +124,7 @@ func newRepoCache(apiURL *url.URL, token string) *rcache.Cache {
 // NewClient creates a new GitHub API client with an optional default personal access token.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
-func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
+func NewClient(apiURL *url.URL, token string, cli httpcli.Doer, rl ratelimit.Limiter) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -147,13 +150,14 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 		token:            token,
 		httpClient:       cli,
 		RateLimitMonitor: &ratelimit.Monitor{HeaderPrefix: "X-"},
+		RateLimiter:      rl,
 		repoCache:        newRepoCache(apiURL, token),
 	}
 }
 
 // WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
 func (c *Client) WithToken(token string) *Client {
-	return NewClient(c.apiURL, token, c.httpClient)
+	return NewClient(c.apiURL, token, c.httpClient, c.RateLimiter)
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
@@ -253,6 +257,13 @@ func (c *Client) requestGet(ctx context.Context, requestURI string, result inter
 	// https://developer.github.com/v3/apps/installations/#list-repositories
 	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
 
+	if c.RateLimiter != nil {
+		err = c.RateLimiter.Limit(ctx, 1)
+		if err != nil {
+			return errors.Wrap(err, "rate limit")
+		}
+	}
+
 	return c.do(ctx, req, result)
 }
 
@@ -286,6 +297,18 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`
 	}
+
+	if c.RateLimiter != nil {
+		cost, err := estimateGraphQLCost(query)
+		if err != nil {
+			return errors.Wrap(err, "estimating graphql cost")
+		}
+		err = c.RateLimiter.Limit(ctx, cost)
+		if err != nil {
+			return errors.Wrap(err, "rate limit")
+		}
+	}
+
 	if err := c.do(ctx, req, &respBody); err != nil {
 		return err
 	}

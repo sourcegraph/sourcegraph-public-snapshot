@@ -451,7 +451,7 @@ func newClient(t testing.TB, name string) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(uri, os.Getenv("GITHUB_TOKEN"), doer)
+	cli := NewClient(uri, os.Getenv("GITHUB_TOKEN"), doer, nil)
 
 	return cli, save
 }
