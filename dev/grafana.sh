@@ -35,7 +35,6 @@ docker run --rm \
   --name=grafana \
   --cpus=1 \
   --memory=1g \
-  --user=$UID \
   -p 0.0.0.0:3370:3370 \
   -v "${GRAFANA_DISK}":/var/lib/grafana \
   -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
