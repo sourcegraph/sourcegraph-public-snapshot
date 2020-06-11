@@ -16,6 +16,8 @@ type Limiter interface {
 	Limit(ctx context.Context, n int) error
 }
 
+// NewBlockingLimiter returns a rate limiter that will block when
+// the rate limit has been exceeded
 func NewBlockingLimiter(r *rate.Limiter) *BlockingLimiter {
 	return &BlockingLimiter{
 		r: r,
@@ -34,6 +36,8 @@ func (bl *BlockingLimiter) Limit(ctx context.Context, n int) error {
 	return bl.r.WaitN(ctx, n)
 }
 
+// NewNonBlockingLimiter returns a rate limiter that will not block when
+// the rate limit has been exceeded and will instead return an error.
 func NewNonBlockingLimiter(r *rate.Limiter) *NonBlockingLimiter {
 	return &NonBlockingLimiter{
 		r: r,
