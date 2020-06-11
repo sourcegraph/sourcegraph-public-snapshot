@@ -10,7 +10,7 @@ import { syncSubscription } from '../util'
  * as a single plain object
  */
 export interface ExtState {
-    settings?: Readonly<SettingsCascade<object>>
+    settings: Readonly<SettingsCascade<object>>
 
     // Workspace
     roots: readonly sourcegraph.WorkspaceRoot[]
@@ -40,10 +40,19 @@ export type PartialWorkspaceNamespace = Omit<
  *
  * @param mainAPI
  */
-export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult => {
-    const state: ExtState = { roots: [], versionContext: undefined }
+export const initNewExtensionAPI = (
+    mainAPI: Remote<MainThreadAPI>,
+    initialSettings: Readonly<SettingsCascade<object>>
+): InitResult => {
+    const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings }
 
     const configChanges = new ReplaySubject<void>(1)
+    // TODO (simon) why it is needed?
+    // the idea here is to emit immediately after listening to changes
+    // because initial settings were not passed in as a parameter but via syncSettingsData
+    // but we ALREADY have settings available? I think it will result in unneeded update
+    // for original version see https://github.com/sourcegraph/sourcegraph/pull/10874/files
+    configChanges.next()
 
     const rootChanges = new Subject<void>()
     const versionContextChanges = new Subject<string | undefined>()
@@ -68,10 +77,6 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
 
     // Configuration
     const getConfiguration = <C extends object>(): sourcegraph.Configuration<C> => {
-        if (!state.settings) {
-            throw new Error('unexpected internal error: settings data is not yet available')
-        }
-
         const snapshot = state.settings.final as Readonly<C>
 
         const configuration: sourcegraph.Configuration<C> & { toJSON: any } = {

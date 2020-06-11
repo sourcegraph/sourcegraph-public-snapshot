@@ -1,6 +1,6 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
+import { BehaviorSubject, from, NEVER, throwError, of } from 'rxjs'
 import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
@@ -50,7 +50,7 @@ interface Mocks
     > {}
 
 const NOOP_MOCKS: Mocks = {
-    settings: NEVER,
+    settings: of({ final: {}, subjects: [] }),
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
     requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
     getScriptURLForExtension: scriptURL => scriptURL,
@@ -87,7 +87,7 @@ export async function integrationTestContext(
     const extensionHost = startExtensionHost(extensionHostEndpoints)
 
     const services = new Services(mocks)
-    const initData: InitData = {
+    const initData: Omit<InitData, 'initialSettings'> = {
         sourcegraphURL: 'https://example.com/',
         clientApplication: 'sourcegraph',
     }
