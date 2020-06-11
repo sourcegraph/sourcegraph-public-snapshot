@@ -65,6 +65,8 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 1. In your terminal, run this command (replacing <code><em>CAMPAIGN-ID</em></code> with the ID of the campaign you created):
 
     <pre><code>src campaign apply -template=hello-world.campaign.yml -preview -campaign=<em>CAMPAIGN-ID</em></code></pre>
+    
+    > You can also see this command by clicking the **Update template** button when viewing your campaign's page.
 1. Wait for it to run and capture the changes in each repository.
 1. When it's done, click the displayed link to see all of the changes that will be made.
 1. Make sure the changes look right.

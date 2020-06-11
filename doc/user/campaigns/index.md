@@ -16,7 +16,7 @@ People usually use campaigns to make the following kinds of changes:
 - Patching critical security issues
 - Standardizing build, configuration, and deployment files
 
-For step-by-step instructions to create your first campaign, see [Hello World Campaign](hello_universe_campaign.md) in Sourcegraph Guides.
+For step-by-step instructions to create your first campaign, see [Hello World Campaign](hello_world_campaign.md) in Sourcegraph Guides.
 
 <!-- TODO(sqs): link to about site for "why use campaigns?"
 
