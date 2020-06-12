@@ -113,9 +113,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         inputRoot
                         inputIndexer
                         state
-                        failure {
-                            summary
-                        }
+                        failure
                         uploadedAt
                         startedAt
                         finishedAt
@@ -251,9 +249,7 @@ export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFInde
                         }
                         inputCommit
                         state
-                        failure {
-                            summary
-                        }
+                        failure
                         queuedAt
                         startedAt
                         finishedAt

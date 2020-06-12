@@ -11,14 +11,16 @@ We'll walk you through installing and generating LSIF data locally on your machi
 ## 1. Set up your environment
 
 1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) - used for uploading LSIF data to your Sourcegraph instance. This will work in a jiffy (replace `linux` with `darwin` for macOS):
-    ```console
-    curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-    chmod +x /usr/local/bin/src
-    ```
+
+  ```
+  curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+  chmod +x /usr/local/bin/src
+  ```
+
 1. Install the LSIF indexer for your repository's language:
-     1. Go to https://lsif.dev
-     1. Find the LSIF indexer for your language
-     1. Install the indexer as a command-line tool using the installation instructions in the indexer's README
+  1. Go to https://lsif.dev
+  1. Find the LSIF indexer for your language
+  1. Install the indexer as a command-line tool using the installation instructions in the indexer's README
 
 ### What is an LSIF indexer?
 

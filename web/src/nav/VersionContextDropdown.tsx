@@ -51,7 +51,8 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     alwaysExpanded,
     portal,
 }: VersionContextDropdownProps) => {
-    const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, 'false')
+    /** Whether the user has dismissed the info blurb in the dropdown. */
+    const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, false)
 
     const submitOnToggle = useCallback(
         (versionContext: string): void => {
@@ -94,12 +95,12 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
 
     const onDismissInfo = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()
-        setHasDismissedInfo('true')
+        setHasDismissedInfo(true)
     }
 
     const showInfo = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()
-        setHasDismissedInfo('false')
+        setHasDismissedInfo(false)
     }
 
     return (
@@ -111,11 +112,23 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                             <>
                                 <ListboxButton className="version-context-dropdown__button btn btn-secondary">
                                     <FlagVariantIcon className="icon-inline small" />
-                                    <span className="version-context-dropdown__button-text ml-2 mr-1">
-                                        {!currentVersionContext || currentVersionContext === 'default'
-                                            ? 'Select context'
-                                            : `${currentVersionContext} (Active)`}
-                                    </span>
+                                    {!currentVersionContext || currentVersionContext === 'default' ? (
+                                        <span
+                                            className={classNames(
+                                                'version-context-dropdown__button-text ml-2 mr-1',
+                                                // If the info blurb hasn't been dismissed, still show the label on non-small screens.
+                                                { 'd-sm-none d-md-block': !hasDismissedInfo },
+                                                // If the info blurb has been dismissed, never show this label.
+                                                { 'd-none': hasDismissedInfo }
+                                            )}
+                                        >
+                                            Select context
+                                        </span>
+                                    ) : (
+                                        <span className="version-context-dropdown__button-text ml-2 mr-1">
+                                            {currentVersionContext} (Active)
+                                        </span>
+                                    )}
                                     <MenuDownIcon className="icon-inline" />
                                 </ListboxButton>
                                 <ListboxPopover
@@ -124,7 +137,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                     })}
                                     portal={portal}
                                 >
-                                    {hasDismissedInfo === 'true' && (
+                                    {hasDismissedInfo && (
                                         <div className="version-context-dropdown__title pl-2 mb-1">
                                             <span className="text-nowrap">Select version context</span>
                                             <button type="button" className="btn btn-icon" onClick={showInfo}>
@@ -132,7 +145,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                             </button>
                                         </div>
                                     )}
-                                    {hasDismissedInfo !== 'true' && (
+                                    {!hasDismissedInfo && (
                                         <div className="version-context-dropdown__info card">
                                             <span className="font-weight-bold">About version contexts</span>
                                             <p className="mb-2">

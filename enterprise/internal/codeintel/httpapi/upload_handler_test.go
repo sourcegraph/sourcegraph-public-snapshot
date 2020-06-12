@@ -18,10 +18,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client/mocks"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 func TestMain(m *testing.M) {
@@ -35,11 +35,11 @@ func TestMain(m *testing.M) {
 func TestHandleEnqueueSinglePayload(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDB := dbmocks.NewMockDB()
+	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
-	mockDB.TransactFunc.SetDefaultReturn(mockDB, nil)
-	mockDB.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -64,7 +64,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		db:                  mockDB,
+		store:               mockStore,
 		bundleManagerClient: mockBundleManagerClient,
 	}
 	h.handleEnqueue(w, r)
@@ -76,10 +76,10 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Errorf("unexpected response payload (-want +got):\n%s", diff)
 	}
 
-	if len(mockDB.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUploadFunc calls. want=%d have=%d", 1, len(mockDB.InsertUploadFunc.History()))
+	if len(mockStore.InsertUploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertUploadFunc calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
 	} else {
-		call := mockDB.InsertUploadFunc.History()[0]
+		call := mockStore.InsertUploadFunc.History()[0]
 		if call.Arg1.Commit != "deadbeef" {
 			t.Errorf("unexpected commit. want=%q have=%q", "deadbeef", call.Arg1.Commit)
 		}
@@ -116,11 +116,11 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDB := dbmocks.NewMockDB()
+	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
-	mockDB.TransactFunc.SetDefaultReturn(mockDB, nil)
-	mockDB.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -151,7 +151,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		db:                  mockDB,
+		store:               mockStore,
 		bundleManagerClient: mockBundleManagerClient,
 	}
 	h.handleEnqueue(w, r)
@@ -182,11 +182,11 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDB := dbmocks.NewMockDB()
+	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
-	mockDB.TransactFunc.SetDefaultReturn(mockDB, nil)
-	mockDB.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -208,7 +208,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		db:                  mockDB,
+		store:               mockStore,
 		bundleManagerClient: mockBundleManagerClient,
 	}
 	h.handleEnqueue(w, r)
@@ -220,10 +220,10 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Errorf("unexpected response payload (-want +got):\n%s", diff)
 	}
 
-	if len(mockDB.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUploadFunc calls. want=%d have=%d", 1, len(mockDB.InsertUploadFunc.History()))
+	if len(mockStore.InsertUploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertUploadFunc calls. want=%d have=%d", 1, len(mockStore.InsertUploadFunc.History()))
 	} else {
-		call := mockDB.InsertUploadFunc.History()[0]
+		call := mockStore.InsertUploadFunc.History()[0]
 		if call.Arg1.Commit != "deadbeef" {
 			t.Errorf("unexpected commit. want=%q have=%q", "deadbeef", call.Arg1.Commit)
 		}
@@ -240,17 +240,17 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartUpload(t *testing.T) {
-	mockDB := dbmocks.NewMockDB()
+	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
-	upload := db.Upload{
+	upload := store.Upload{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
 	}
 
-	mockDB.TransactFunc.SetDefaultReturn(mockDB, nil)
-	mockDB.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -273,7 +273,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		db:                  mockDB,
+		store:               mockStore,
 		bundleManagerClient: mockBundleManagerClient,
 	}
 	h.handleEnqueue(w, r)
@@ -282,10 +282,10 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
 	}
 
-	if len(mockDB.AddUploadPartFunc.History()) != 1 {
-		t.Errorf("unexpected number of AddUploadPartFunc calls. want=%d have=%d", 1, len(mockDB.AddUploadPartFunc.History()))
+	if len(mockStore.AddUploadPartFunc.History()) != 1 {
+		t.Errorf("unexpected number of AddUploadPartFunc calls. want=%d have=%d", 1, len(mockStore.AddUploadPartFunc.History()))
 	} else {
-		call := mockDB.AddUploadPartFunc.History()[0]
+		call := mockStore.AddUploadPartFunc.History()[0]
 		if call.Arg1 != 42 {
 			t.Errorf("unexpected commit. want=%q have=%q", 42, call.Arg1)
 		}
@@ -317,16 +317,16 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalize(t *testing.T) {
-	mockDB := dbmocks.NewMockDB()
+	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
-	upload := db.Upload{
+	upload := store.Upload{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 2, 3, 4},
 	}
-	mockDB.TransactFunc.SetDefaultReturn(mockDB, nil)
-	mockDB.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -344,7 +344,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		db:                  mockDB,
+		store:               mockStore,
 		bundleManagerClient: mockBundleManagerClient,
 	}
 	h.handleEnqueue(w, r)
@@ -353,10 +353,10 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
 	}
 
-	if len(mockDB.MarkQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkQueuedFunc calls. want=%d have=%d", 1, len(mockDB.MarkQueuedFunc.History()))
+	if len(mockStore.MarkQueuedFunc.History()) != 1 {
+		t.Errorf("unexpected number of MarkQueuedFunc calls. want=%d have=%d", 1, len(mockStore.MarkQueuedFunc.History()))
 	} else {
-		if call := mockDB.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
+		if call := mockStore.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
 			t.Errorf("unexpected upload id. want=%d have=%d", 42, call.Arg1)
 		}
 	}
@@ -371,15 +371,15 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
-	mockDB := dbmocks.NewMockDB()
+	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
-	upload := db.Upload{
+	upload := store.Upload{
 		ID:            42,
 		NumParts:      5,
 		UploadedParts: []int{0, 1, 3, 4},
 	}
-	mockDB.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
 	if err != nil {
@@ -397,7 +397,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 
 	h := &UploadHandler{
-		db:                  mockDB,
+		store:               mockStore,
 		bundleManagerClient: mockBundleManagerClient,
 	}
 	h.handleEnqueue(w, r)

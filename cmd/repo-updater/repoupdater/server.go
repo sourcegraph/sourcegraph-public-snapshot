@@ -51,9 +51,9 @@ type Server struct {
 		// the registry can start or stop the syncer associated with the service
 		HandleExternalServiceSync(es api.ExternalService)
 	}
-	RateLimiterRegistry interface {
+	RateLimitSyncer interface {
 		// SyncRateLimiters should be called when an external service changes so that
-		// our internal rate limiter are kept in sync
+		// our internal rate limiters are kept in sync
 		SyncRateLimiters(ctx context.Context) error
 	}
 	PermsSyncer interface {
@@ -347,8 +347,8 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if s.RateLimiterRegistry != nil {
-		err = s.RateLimiterRegistry.SyncRateLimiters(ctx)
+	if s.RateLimitSyncer != nil {
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx)
 		if err != nil {
 			log15.Warn("Handling rate limiter sync", "err", err)
 		}

@@ -1196,6 +1196,7 @@ func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.Account,
 
 func (m *MockAuthzProvider) ServiceID() string   { return m.serviceID }
 func (m *MockAuthzProvider) ServiceType() string { return m.serviceType }
+func (m *MockAuthzProvider) URN() string         { return extsvc.URN(m.serviceType, 0) }
 func (m *MockAuthzProvider) Validate() []string  { return nil }
 
 func (m *MockAuthzProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {

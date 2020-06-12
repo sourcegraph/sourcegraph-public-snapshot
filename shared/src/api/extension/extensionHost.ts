@@ -17,6 +17,7 @@ import { ExtensionViewsApi } from './api/views'
 import { ExtensionWindows } from './api/windows'
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
+import { SettingsCascade } from '../../settings/settings'
 
 /**
  * Required information when initializing an extension host.
@@ -27,6 +28,9 @@ export interface InitData {
 
     /** @see {@link module:sourcegraph.internal.clientApplication} */
     clientApplication: 'sourcegraph' | 'other'
+
+    /** fetched initial settings object */
+    initialSettings: Readonly<SettingsCascade<object>>
 }
 
 /**
@@ -137,7 +141,10 @@ function createExtensionAPI(
     const search = new ExtensionSearch(proxy.search)
     const content = new ExtensionContent(proxy.content)
 
-    const { configuration, exposedToMain, workspace, state, commands } = initNewExtensionAPI(proxy)
+    const { configuration, exposedToMain, workspace, state, commands } = initNewExtensionAPI(
+        proxy,
+        initData.initialSettings
+    )
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {

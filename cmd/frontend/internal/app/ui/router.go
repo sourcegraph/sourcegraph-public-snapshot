@@ -39,6 +39,7 @@ const (
 	routeRepoTags       = "repo-tags"
 	routeRepoCompare    = "repo-compare"
 	routeRepoStats      = "repo-stats"
+	routeInsights       = "insights"
 	routeCampaigns      = "campaigns"
 	routeThreads        = "threads"
 	routeTree           = "tree"
@@ -110,6 +111,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
@@ -185,6 +187,7 @@ func initRouter() {
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads")))
+	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights")))
 	router.Get(routeCampaigns).Handler(handler(serveBrandedPageString("Campaigns")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up")))

@@ -17,11 +17,13 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -67,7 +69,7 @@ type ClientProvider struct {
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
 
-	RateLimit *ratelimit.Monitor // the API rate limit monitor
+	rateLimitMonitor *ratelimit.Monitor // the API rate limit monitor
 }
 
 type CommonOp struct {
@@ -90,10 +92,10 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	})
 
 	return &ClientProvider{
-		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:    cli,
-		gitlabClients: make(map[string]*Client),
-		RateLimit:     &ratelimit.Monitor{},
+		baseURL:          baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient:       cli,
+		gitlabClients:    make(map[string]*Client),
+		rateLimitMonitor: &ratelimit.Monitor{},
 	}
 }
 
@@ -141,7 +143,7 @@ func (p *ClientProvider) getClient(op getClientOp) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, op, p.httpClient, p.RateLimit)
+	c := p.newClient(p.baseURL, op, p.httpClient, p.rateLimitMonitor)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -164,7 +166,8 @@ type Client struct {
 	PersonalAccessToken string // a personal access token to authenticate requests, if set
 	OAuthToken          string // an OAuth bearer token, if set
 	Sudo                string // Sudo user value, if set
-	RateLimit           *ratelimit.Monitor
+	RateLimitMonitor    *ratelimit.Monitor
+	RateLimiter         *rate.Limiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -184,6 +187,8 @@ func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient 
 	key := sha256.Sum256([]byte(op.personalAccessToken + ":" + op.oauthToken + ":" + baseURL.String()))
 	projCache := rcache.NewWithTTL("gl_proj:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
+	rl := ratelimit.DefaultRegistry.GetRateLimiter(extsvc.NormalizeBaseURL(baseURL).String())
+
 	return &Client{
 		baseURL:             baseURL,
 		httpClient:          httpClient,
@@ -191,7 +196,8 @@ func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient 
 		PersonalAccessToken: op.personalAccessToken,
 		OAuthToken:          op.oauthToken,
 		Sudo:                op.sudo,
-		RateLimit:           rateLimit,
+		RateLimitMonitor:    rateLimit,
+		RateLimiter:         rl,
 	}
 }
 
@@ -227,6 +233,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		span.Finish()
 	}()
 
+	if c.RateLimiter != nil {
+		err = c.RateLimiter.Wait(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "rate limit")
+		}
+	}
+
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
@@ -235,7 +248,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer resp.Body.Close()
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
-	c.RateLimit.Update(resp.Header)
+	c.RateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}

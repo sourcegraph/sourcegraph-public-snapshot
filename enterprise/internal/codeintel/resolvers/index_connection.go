@@ -11,17 +11,17 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type lsifIndexConnectionResolver struct {
-	db db.DB
+	store store.Store
 
 	opt LSIFIndexesListOptions
 
 	// cache results because they are used by multiple fields
 	once               sync.Once
-	indexes            []db.Index
+	indexes            []store.Index
 	repositoryResolver *graphqlbackend.RepositoryResolver
 	totalCount         *int
 	nextURL            string
@@ -77,7 +77,7 @@ func (r *lsifIndexConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *lsifIndexConnectionResolver) compute(ctx context.Context) ([]db.Index, *graphqlbackend.RepositoryResolver, *int, string, error) {
+func (r *lsifIndexConnectionResolver) compute(ctx context.Context) ([]store.Index, *graphqlbackend.RepositoryResolver, *int, string, error) {
 	r.once.Do(func() {
 		var id int
 		if r.opt.RepositoryID != "" {
@@ -109,7 +109,7 @@ func (r *lsifIndexConnectionResolver) compute(ctx context.Context) ([]db.Index, 
 			offset, _ = strconv.Atoi(*r.opt.NextURL)
 		}
 
-		indexes, totalCount, err := r.db.GetIndexes(ctx, db.GetIndexesOptions{
+		indexes, totalCount, err := r.store.GetIndexes(ctx, store.GetIndexesOptions{
 			RepositoryID: id,
 			State:        state,
 			Term:         query,

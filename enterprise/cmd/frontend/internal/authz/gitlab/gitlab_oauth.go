@@ -28,6 +28,7 @@ type OAuthProvider struct {
 	// but it may or may not be a sudo-scoped.
 	token string
 
+	urn               string
 	clientProvider    *gitlab.ClientProvider
 	clientURL         *url.URL
 	codeHost          *extsvc.CodeHost
@@ -38,6 +39,9 @@ type OAuthProvider struct {
 }
 
 type OAuthProviderOp struct {
+	// The unique resource identifier of the external service where the provider is defined.
+	URN string
+
 	// BaseURL is the URL of the GitLab instance.
 	BaseURL *url.URL
 
@@ -69,6 +73,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	p := &OAuthProvider{
 		token: op.Token,
 
+		urn:               op.URN,
 		clientProvider:    gitlab.NewClientProvider(op.BaseURL, cli),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
@@ -85,6 +90,10 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 
 func (p *OAuthProvider) Validate() (problems []string) {
 	return nil
+}
+
+func (p *OAuthProvider) URN() string {
+	return p.urn
 }
 
 func (p *OAuthProvider) ServiceID() string {

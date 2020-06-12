@@ -381,6 +381,8 @@ type ExcludedGitLabProject struct {
 type ExcludedGitoliteRepo struct {
 	// Name description: The name of a Gitolite repo ("my-repo") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of a Gitolite repo to exclude from mirroring.
+	Pattern string `json:"pattern,omitempty"`
 }
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
@@ -613,7 +615,7 @@ type GitLabRateLimit struct {
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
-	// Blacklist description: Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.
+	// Blacklist description: DEPRECATED. Will be removed in 3.19. Use 'exclude' patterns instead. Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.
 	Blacklist string `json:"blacklist,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({"name": "foo"}).
 	Exclude []*ExcludedGitoliteRepo `json:"exclude,omitempty"`

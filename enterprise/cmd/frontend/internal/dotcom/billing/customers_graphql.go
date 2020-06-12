@@ -10,6 +10,7 @@ import (
 )
 
 func init() {
+	// TODO(efritz) - de-globalize assignments in this function
 	graphqlbackend.UserURLForSiteAdminBilling = func(ctx context.Context, userID int32) (*string, error) {
 		// 🚨 SECURITY: Only site admins may view the billing URL, because it may contain sensitive
 		// data or identifiers.

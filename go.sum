@@ -514,6 +514,8 @@ github.com/goware/urlx v0.3.1 h1:BbvKl8oiXtJAzOzMqAQ0GfIhf96fKeNEZfm9ocNSUBI=
 github.com/goware/urlx v0.3.1/go.mod h1:h8uwbJy68o+tQXCGZNa9D73WN8n0r9OBae5bUnLcgjw=
 github.com/graph-gophers/graphql-go v0.0.0-20200309224638-dae41bde9ef9 h1:kLnsdud6Fl1/7ZX/5oD23cqYAzBfuZBhNkGr2NvuEsU=
 github.com/graph-gophers/graphql-go v0.0.0-20200309224638-dae41bde9ef9/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
+github.com/graphql-go/graphql v0.7.9 h1:5Va/Rt4l5g3YjwDnid3vFfn43faaQBq7rMcIZ0VnV34=
+github.com/graphql-go/graphql v0.7.9/go.mod h1:k6yrAYQaSP59DC5UVxbgxESlmVyojThKdORUqGDGmrI=
 github.com/gregjones/httpcache v0.0.0-20170920190843-316c5e0ff04e/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 h1:+ngKgrYPPJrOjhax5N+uePQ0Fh1Z7PheYoUI/0nzkPA=
 github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
@@ -972,6 +974,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20200607063352-a20174182c81 h1:b4Nf9A2HDuqP4Oizdj8eGgPzsJi6Ptlto2IP7Jxah8Y=
 github.com/sourcegraph/zoekt v0.0.0-20200607063352-a20174182c81/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
+github.com/sourcegraph/zoekt v0.0.0-20200611095618-60ff282a43e8 h1:NbOfrykIogWTuU5mv9hul6H4uHuaaaF+0mYcwB5mSNE=
+github.com/sourcegraph/zoekt v0.0.0-20200611095618-60ff282a43e8/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72 h1:qLC7fQah7D6K1B0ujays3HV9gkFtllcxhzImRR7ArPQ=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=

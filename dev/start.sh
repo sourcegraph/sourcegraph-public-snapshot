@@ -39,7 +39,6 @@ export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
-export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
 export INSECURE_DEV=1
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
@@ -49,8 +48,6 @@ export REPO_UPDATER_URL=http://127.0.0.1:3182
 export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
-export PRECISE_CODE_INTEL_API_SERVER_URL=http://localhost:3186
-export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
@@ -135,8 +132,9 @@ trap 'kill $build_ts_pid; exit' EXIT
 (yarn run build-ts || true) &
 build_ts_pid="$!"
 
+export PROCFILE=${PROCFILE:-dev/Procfile}
 printf >&2 "\nStarting all binaries...\n\n"
-export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
+export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"
 
 if ! [ "$(id -u)" = 0 ] && command -v authbind; then
   # ignoring because $GOREMAN is used in other handle-change.sh

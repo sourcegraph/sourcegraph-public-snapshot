@@ -112,14 +112,12 @@ func InitDB() error {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
+func Main(enterpriseSetupHook func() enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	if dbconn.Global == nil {
-		if err := InitDB(); err != nil {
-			log.Fatalf("ERROR: %v", err)
-		}
+	if err := InitDB(); err != nil {
+		log.Fatalf("ERROR: %v", err)
 	}
 
 	if err := handleConfigOverrides(); err != nil {
@@ -132,6 +130,9 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+
+	// Run enterprise setup hook
+	enterprise := enterpriseSetupHook()
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -201,31 +202,13 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	// graphqlbackend.CampaignsResolver is set by enterprise frontend
-	var campaignsResolver graphqlbackend.CampaignsResolver
-	if graphqlbackend.NewCampaignsResolver != nil {
-		campaignsResolver = graphqlbackend.NewCampaignsResolver(dbconn.Global)
-	}
-
-	// graphqlbackend.CodeIntelResolver is set by enterprise frontend
-	var codeIntelResolver graphqlbackend.CodeIntelResolver
-	if graphqlbackend.NewCodeIntelResolver != nil {
-		codeIntelResolver = graphqlbackend.NewCodeIntelResolver()
-	}
-
-	// graphqlbackend.AuthzResolver is set by enterprise frontend
-	var authzResolver graphqlbackend.AuthzResolver
-	if graphqlbackend.NewAuthzResolver != nil {
-		authzResolver = graphqlbackend.NewAuthzResolver()
-	}
-
-	schema, err := graphqlbackend.NewSchema(campaignsResolver, codeIntelResolver, authzResolver)
+	schema, err := graphqlbackend.NewSchema(enterprise.CampaignsResolver, enterprise.CodeIntelResolver, enterprise.AuthzResolver)
 	if err != nil {
 		return err
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler)
+	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GithubWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler)
 	if err != nil {
 		return err
 	}

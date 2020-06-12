@@ -105,16 +105,10 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 		}
 	}
 
-	// (and (repo NAME) (branch BRANCH) (symbol QUERY))
 	ands := []zoektquery.Q{
-		&zoektquery.RepoSet{Set: map[string]bool{
-			string(commit.repo.repo.Name): true,
+		&zoektquery.RepoBranches{Set: map[string][]string{
+			string(commit.repoResolver.repo.Name): {branch},
 		}},
-		// TODO(keegancsmith) We could match multiple branches since this is a
-		// pattern. We need to introduce to zoekt either an exact branch or
-		// version (commit)
-		// search. https://github.com/sourcegraph/sourcegraph/issues/10593
-		&zoektquery.Branch{Pattern: branch},
 		&zoektquery.Symbol{Expr: query},
 	}
 	for _, p := range *includePatterns {
@@ -139,7 +133,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 		return nil, err
 	}
 
-	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
 	for _, file := range resp.Files {
 		for _, l := range file.LineMatches {
 			if l.FileName {
@@ -171,7 +165,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 }
 
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
-	if branch := indexedSymbolsBranch(string(commit.repo.repo.Name), string(commit.oid)); branch != "" {
+	if branch := indexedSymbolsBranch(string(commit.repoResolver.repo.Name), string(commit.oid)); branch != "" {
 		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
 	}
 
@@ -190,13 +184,13 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:            commit.repo.repo.Name,
+		Repo:            commit.repoResolver.repo.Name,
 		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
 		searchArgs.Query = *query
 	}
-	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
 	if err != nil {
 		return nil, err
 	}

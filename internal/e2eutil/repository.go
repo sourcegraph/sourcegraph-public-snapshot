@@ -1,7 +1,6 @@
 package e2eutil
 
 import (
-	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,7 +11,7 @@ import (
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
-	return retry(30*time.Second, func() error {
+	return Retry(30*time.Second, func() error {
 		const query = `
 query Repositories($first: Int) {
 	repositories(first: $first, cloned: true) {
@@ -40,7 +39,7 @@ query Repositories($first: Int) {
 		}
 
 		if len(resp.Data.Repositories.Nodes) != len(repos) {
-			return errContinueRetry
+			return ErrContinueRetry
 		}
 
 		repoSet := make(map[string]struct{}, len(repos))
@@ -51,35 +50,9 @@ query Repositories($first: Int) {
 			delete(repoSet, node.Name)
 		}
 		if len(repoSet) > 0 {
-			return errContinueRetry
+			return ErrContinueRetry
 		}
 
 		return nil
 	})
-}
-
-var errContinueRetry = errors.New("continue retry")
-
-// retry retries the given function until reached timeout. The function should
-// return errContinueRetry to indicate another retry.
-func retry(timeout time.Duration, fn func() error) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			if ctx.Err() == context.DeadlineExceeded {
-				return errors.Errorf("retry timed out in %s", timeout)
-			}
-			return ctx.Err()
-		default:
-			err := fn()
-			if err != errContinueRetry {
-				return err
-			}
-		}
-
-		time.Sleep(100 * time.Millisecond)
-	}
 }

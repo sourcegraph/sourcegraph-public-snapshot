@@ -9,14 +9,15 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/time/rate"
 )
@@ -37,13 +38,6 @@ const (
 	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
 	RateLimitMaxBurstRequests  = 500
 )
-
-// Global limiter cache so that we reuse the same rate limiter for
-// the same code host, even between config changes.
-// This is a failsafe to protect bitbucket as they do not impose their own
-// rate limiting.
-var limiterMu sync.Mutex
-var limiterCache = make(map[string]*rate.Limiter)
 
 // Client access a Bitbucket Cloud via the REST API 2.0.
 type Client struct {
@@ -79,14 +73,12 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 		return category
 	})
 
-	limiterMu.Lock()
-	defer limiterMu.Unlock()
-
-	l, ok := limiterCache[apiURL.String()]
-	if !ok {
-		l = rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
-		limiterCache[apiURL.String()] = l
-	}
+	normalisedURL := extsvc.NormalizeBaseURL(apiURL)
+	// Normally our registry will return a default infinite limiter when nothing has been
+	// synced from config. However, we always want to ensure there is at least some form of rate
+	// limiting for Bitbucket.
+	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
+	l := ratelimit.DefaultRegistry.GetOrSet(normalisedURL.String(), defaultLimiter)
 
 	return &Client{
 		httpClient: httpClient,

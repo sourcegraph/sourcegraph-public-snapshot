@@ -156,7 +156,7 @@ func configureRepos(logger *log.Logger, root string) []string {
 
 	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
-			logger.Printf("error encountered on %s: %v", path, fileErr)
+			logger.Printf("WARN: ignoring error searching %s: %v", path, fileErr)
 			return nil
 		}
 		if !fi.IsDir() {

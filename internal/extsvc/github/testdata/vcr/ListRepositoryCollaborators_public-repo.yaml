@@ -18,9 +18,7 @@ interactions:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type, Deprecation, Sunset
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -28,7 +26,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 08 Jun 2020 02:39:07 GMT
+      - Tue, 09 Jun 2020 06:49:46 GMT
       Etag:
       - W/"1875c98197830a53e3c5425d7920d302"
       Referrer-Policy:
@@ -49,20 +47,17 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json,
-        github.machine-man-preview; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json, github.machine-man-preview; format=json
       X-Github-Request-Id:
-      - B80B:3850:3A1F8F:9BDCF0:5EDDA4CB
+      - 88DF:243E:2A8F600:489B567:5EDF3109
       X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, read:packages,
-        repo, user, workflow, write:discussion, write:packages
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key, admin:repo_hook, delete:packages, delete_repo, gist, notifications, read:packages, repo, user, workflow, write:discussion, write:packages
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
       - "4999"
       X-Ratelimit-Reset:
-      - "1591587547"
+      - "1591688986"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

@@ -8,14 +8,14 @@ import (
 
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 type lsifQueryResolver struct {
-	db                  db.DB
+	store               store.Store
 	bundleManagerClient bundles.BundleManagerClient
 	codeIntelAPI        codeintelapi.CodeIntelAPI
 
@@ -24,10 +24,18 @@ type lsifQueryResolver struct {
 	commit api.CommitID
 	path   string
 	// uploads are ordered by their commit distance from the target commit
-	uploads []db.Dump
+	uploads []store.Dump
 }
 
-var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
+var _ graphqlbackend.GitBlobLSIFDataResolver = &lsifQueryResolver{}
+
+func (r *lsifQueryResolver) ToGitTreeLSIFData() (graphqlbackend.GitTreeLSIFDataResolver, bool) {
+	return r, true
+}
+
+func (r *lsifQueryResolver) ToGitBlobLSIFData() (graphqlbackend.GitBlobLSIFDataResolver, bool) {
+	return r, true
+}
 
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	for _, upload := range r.uploads {
@@ -101,7 +109,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 			continue
 		}
 
-		cursor, err := codeintelapi.DecodeOrCreateCursor(r.path, adjustedPosition.Line, adjustedPosition.Character, upload.ID, rawCursor, r.db, r.bundleManagerClient)
+		cursor, err := codeintelapi.DecodeOrCreateCursor(r.path, adjustedPosition.Line, adjustedPosition.Character, upload.ID, rawCursor, r.store, r.bundleManagerClient)
 		if err != nil {
 			return nil, err
 		}
@@ -179,6 +187,40 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 	}
 
 	return nil, nil
+}
+
+func (r *lsifQueryResolver) Diagnostics(ctx context.Context, args *graphqlbackend.LSIFDiagnosticsArgs) (graphqlbackend.DiagnosticConnectionResolver, error) {
+	limit := DefaultDiagnosticsPageSize
+	if args.First != nil {
+		limit = int(*args.First)
+	}
+	if limit <= 0 {
+		return nil, errors.New("illegal limit")
+	}
+
+	totalCount := 0
+	var allDiagnostics []codeintelapi.ResolvedDiagnostic
+	for _, upload := range r.uploads {
+		l := limit - len(allDiagnostics)
+		if l < 0 {
+			l = 0
+		}
+
+		diagnostics, count, err := r.codeIntelAPI.Diagnostics(ctx, r.path, upload.ID, l, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		totalCount += count
+		allDiagnostics = append(allDiagnostics, diagnostics...)
+	}
+
+	return &diagnosticConnectionResolver{
+		repo:        r.repositoryResolver.Type(),
+		commit:      r.commit,
+		totalCount:  totalCount,
+		diagnostics: allDiagnostics,
+	}, nil
 }
 
 // adjustPosition adjusts the position denoted by `line` and `character` in the requested commit into an

@@ -11,7 +11,8 @@ import schema from '../src/browser-extension/schema.json'
 
 /**
  * If true, add <all_urls> to the permissions in the manifest.
- * This is needed for e2e tests because it is not possible to accept the permission prompt with puppeteer.
+ * This is needed for e2e tests because it is not possible to accept the
+ * permission prompt with puppeteer.
  */
 const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
     process.env.EXTENSION_PERMISSIONS_ALL_URLS && JSON.parse(process.env.EXTENSION_PERMISSIONS_ALL_URLS)
@@ -69,7 +70,8 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
-    // Copy to the ui/assets directory so that these files can be served by the webapp.
+    // Copy to the ui/assets directory so that these files can be served by
+    // the webapp.
     shelljs.mkdir('-p', '../ui/assets/extension')
     shelljs.cp('-r', 'build/integration/*', '../ui/assets/extension')
 }
@@ -84,7 +86,7 @@ const BROWSER_BUNDLE_ZIPS = {
     chrome: 'chrome-bundle.zip',
 }
 
-const BROWSER_BLACKLIST = {
+const BROWSER_BLOCKLIST = {
     chrome: ['applications'] as const,
     firefox: ['key'] as const,
 }
@@ -97,8 +99,8 @@ const version = utcVersion()
 
 function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
     const manifest = {
-        ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLACKLIST[browser]]),
-        ...omit(extensionInfo[environment], BROWSER_BLACKLIST[browser]),
+        ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLOCKLIST[browser]]),
+        ...omit(extensionInfo[environment], BROWSER_BLOCKLIST[browser]),
     }
 
     if (EXTENSION_PERMISSIONS_ALL_URLS) {

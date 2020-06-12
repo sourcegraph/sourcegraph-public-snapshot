@@ -6,13 +6,13 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 type lsifUploadResolver struct {
 	repositoryResolver *graphqlbackend.RepositoryResolver
-	lsifUpload         db.Upload
+	lsifUpload         store.Upload
 }
 
 var _ graphqlbackend.LSIFUploadResolver = &lsifUploadResolver{}
@@ -49,10 +49,6 @@ func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.G
 	return resolvePath(ctx, api.RepoID(r.lsifUpload.RepositoryID), r.lsifUpload.Commit, r.lsifUpload.Root)
 }
 
-func (r *lsifUploadResolver) Failure() graphqlbackend.LSIFUploadFailureReasonResolver {
-	if r.lsifUpload.FailureSummary == nil {
-		return nil
-	}
-
-	return &lsifUploadFailureReasonResolver{r.lsifUpload}
+func (r *lsifUploadResolver) Failure() *string {
+	return r.lsifUpload.FailureMessage
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"golang.org/x/time/rate"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -53,31 +52,13 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
-	return newSource(svc, cf, nil)
-}
-
-// NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
-// rate limiter
-func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (ChangesetSource, error) {
-	source, err := newSource(svc, cf, rl)
-	if err != nil {
-		return nil, err
-	}
-	css, ok := source.(ChangesetSource)
-	if !ok {
-		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", svc.Kind)
-	}
-	return css, nil
-}
-
-func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(svc, cf, rl)
+		return NewGithubSource(svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(svc, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(svc, cf, rl)
+		return NewBitbucketServerSource(svc, cf)
 	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(svc, cf)
 	case extsvc.KindGitolite:
@@ -91,6 +72,20 @@ func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Sou
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
+}
+
+// NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
+// rate limiter
+func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory) (ChangesetSource, error) {
+	source, err := NewSource(svc, cf)
+	if err != nil {
+		return nil, err
+	}
+	css, ok := source.(ChangesetSource)
+	if !ok {
+		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", svc.Kind)
+	}
+	return css, nil
 }
 
 // A Source yields repositories to be stored and analysed by Sourcegraph.

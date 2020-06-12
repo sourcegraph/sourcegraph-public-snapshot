@@ -56,10 +56,11 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { VersionContextProps } from '../../shared/src/search/util'
 import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
+import { Settings } from './schema/settings.schema'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
-        SettingsCascadeProps,
+        SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,

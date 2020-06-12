@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -17,11 +18,11 @@ import (
 // to false. "Warnings" are all other validation problems.
 func NewAuthzProviders(
 	cfg *conf.Unified,
-	conns []*schema.GitLabConnection,
+	conns []*types.GitLabConnection,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.Authorization, c.Url, c.Token, cfg.AuthProviders)
+		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token, cfg.AuthProviders)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {
@@ -37,7 +38,7 @@ func NewAuthzProviders(
 	return ps, problems, warnings
 }
 
-func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, ps []schema.AuthProviders) (authz.Provider, error) {
+func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, token string, ps []schema.AuthProviders) (authz.Provider, error) {
 	if a == nil {
 		return nil, nil
 	}
@@ -87,6 +88,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 			maxBatchRequests = idp.Oauth.MaxBatchRequests
 		}
 		return NewOAuthProvider(OAuthProviderOp{
+			URN:               urn,
 			BaseURL:           glURL,
 			Token:             token,
 			CacheTTL:          ttl,
@@ -95,6 +97,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
+			URN:               urn,
 			BaseURL:           glURL,
 			SudoToken:         token,
 			CacheTTL:          ttl,
@@ -109,6 +112,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 			foundMatchingOIDC := oidc != nil && oidc.ConfigID == ext.AuthProviderID && ext.AuthProviderType == oidc.Type
 			if foundMatchingSAML || foundMatchingOIDC {
 				return NewSudoProvider(SudoProviderOp{
+					URN:     urn,
 					BaseURL: glURL,
 					AuthnConfigID: providers.ConfigID{
 						Type: ext.AuthProviderType,
@@ -140,6 +144,6 @@ var NewSudoProvider = func(op SudoProviderOp) authz.Provider {
 // ValidateAuthz validates the authorization fields of the given GitLab external
 // service config.
 func ValidateAuthz(cfg *schema.GitLabConnection, ps []schema.AuthProviders) error {
-	_, err := newAuthzProvider(cfg.Authorization, cfg.Url, cfg.Token, ps)
+	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token, ps)
 	return err
 }
