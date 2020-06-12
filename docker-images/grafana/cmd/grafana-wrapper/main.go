@@ -4,11 +4,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
 
@@ -16,7 +19,8 @@ import (
 )
 
 var noConfig = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
-var grafanaPort = env.Get("GRAFANA_PORT", "3370", "grafana port")
+var exportPort = env.Get("EXPORT_PORT", "3370", "port that should be used to access grafana externally")
+var grafanaPort = env.Get("GRAFANA_PORT", "3371", "internal grafana port")
 var grafanaCredentials = env.Get("GRAFANA_CREDENTIALS", "admin:admin", "credentials for accessing the grafana server")
 
 func main() {
@@ -28,6 +32,9 @@ func main() {
 	go func() {
 		grafanaErrs <- newGrafanaRunCmd().Run()
 	}()
+
+	// reverse proxy to handle requests to grafana and config subscriber
+	router := mux.NewRouter()
 
 	// subscribe to configuration
 	if noConfig == "true" {
@@ -47,8 +54,27 @@ func main() {
 
 		// watch for configuration updates in the background
 		config.Subscribe(ctx)
+
+		// serve subscriber status
+		router.PathPrefix("/grafana-wrapper/config-subscriber").Handler(config.Handler())
 	}
 
+	// serve grafana via reverse proxy
+	router.PathPrefix("/").Handler(&httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = "http"
+			req.URL.Host = fmt.Sprintf(":%s", grafanaPort)
+		},
+	})
+	go func() {
+		log.Debug("serving reverse proxy")
+		if err := http.ListenAndServe(fmt.Sprintf(":%s", exportPort), router); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Crit("error serving reverse proxy", "error", err)
+		}
+		os.Exit(1)
+	}()
+
+	// wait for grafana to exit
 	err := <-grafanaErrs
 	if err != nil {
 		log.Crit("grafana exited", "error", err)

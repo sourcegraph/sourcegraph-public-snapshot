@@ -1,12 +1,15 @@
 package app
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -18,6 +21,39 @@ import (
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+
+func init() {
+	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
+		if len(grafanaURLFromEnv) == 0 {
+			return nil
+		}
+
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s/grafana-wrapper/config-subscriber", grafanaURLFromEnv), nil)
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Grafana configuration is invalid: %v", err)))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Grafana is unreachable: %v", err)))
+			return
+		}
+
+		var grafanaStatus struct {
+			Problems conf.Problems `json:"problems"`
+		}
+		defer resp.Body.Close()
+		if err := json.NewDecoder(resp.Body).Decode(&grafanaStatus); err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Unable to read Grafana status: %v", err)))
+			return
+		}
+
+		return grafanaStatus.Problems
+	})
+}
 
 func addNoK8sClientHandler(r *mux.Router) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

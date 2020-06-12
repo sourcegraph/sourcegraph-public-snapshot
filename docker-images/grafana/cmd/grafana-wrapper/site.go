@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -35,8 +36,9 @@ type siteConfigSubscriber struct {
 	grafana *sdk.Client
 
 	mux       sync.RWMutex
-	alerts    []*schema.ObservabilityAlerts // can be any conf.GrafanaNotifierX
+	alerts    []*schema.ObservabilityAlerts
 	alertsSum []byte
+	problems  conf.Problems // exported by handler
 }
 
 func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *sdk.Client) (*siteConfigSubscriber, error) {
@@ -73,7 +75,28 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 	}
 
 	subscriber := &siteConfigSubscriber{log: log, grafana: grafana}
-	return subscriber, subscriber.updateGrafanaConfig(ctx, siteConfig.ObservabilityAlerts, sum)
+	subscriber.updateGrafanaConfig(ctx, siteConfig.ObservabilityAlerts, sum)
+	return subscriber, nil
+}
+
+func (c *siteConfigSubscriber) Handler() http.Handler {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		c.mux.RLock()
+		defer c.mux.RUnlock()
+
+		b, err := json.Marshal(map[string]interface{}{
+			"problems": c.problems,
+		})
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		w.WriteHeader(200)
+		w.Write(b)
+	})
+	return handler
 }
 
 func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
@@ -91,13 +114,11 @@ func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
 		}
 
 		// update configuration
-		if err := c.updateGrafanaConfig(ctx, newSiteConfig.ObservabilityAlerts, newSum); err != nil {
-			c.log.Error("failed to apply config changes - ignoring update", "error", err)
-		}
+		c.updateGrafanaConfig(ctx, newSiteConfig.ObservabilityAlerts, newSum)
 	})
 }
 
-func (c *siteConfigSubscriber) resetSrcAlerts(ctx context.Context) error {
+func (c *siteConfigSubscriber) resetSrcNotifiers(ctx context.Context) error {
 	alerts, err := c.grafana.GetAllAlertNotifications(ctx)
 	if err != nil {
 		return err
@@ -112,22 +133,27 @@ func (c *siteConfigSubscriber) resetSrcAlerts(ctx context.Context) error {
 	return nil
 }
 
-// updateGrafanaConfig updates grafanaAlertsSubscriber state and writes it to disk
-func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlerts []*schema.ObservabilityAlerts, newSum []byte) error {
+// updateGrafanaConfig updates grafanaAlertsSubscriber state and writes it to disk. It never returns an error,
+// instead all errors are reported as problems
+func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlerts []*schema.ObservabilityAlerts, newSum []byte) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	c.log.Debug("updating grafana configuration")
 
+	var problems conf.Problems
+
 	// generate new notifiers configuration
 	created, err := generateNotifiersConfig(c.alerts, newAlerts)
 	if err != nil {
-		return err
+		problems = append(problems, newObservabilityAlertsProblem(err))
+		return
 	}
 
 	// get the general alerts panels in the home dashboard
 	homeBoard, err := getOverviewDashboard()
 	if err != nil {
-		return fmt.Errorf("failed to generate alerts overview dashboard: %w", err)
+		problems = append(problems, newObservabilityAlertsProblem(fmt.Errorf("failed to generate alerts overview dashboard: %w", err)))
+		return
 	}
 	var criticalPanel, warningPanel *sdk.Panel
 	for _, panel := range homeBoard.Panels {
@@ -143,18 +169,26 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 		panel.Alert = newDefaultAlertsPanelAlert(level)
 	}
 	if criticalPanel == nil || warningPanel == nil {
-		return errors.New("failed to find alerts panels")
+		problems = append(problems, newObservabilityAlertsProblem(errors.New("failed to find alerts panels")))
+		return
 	}
 
-	// TODO: error handling and rollback. how do we propagage warnings back to the frontend?
-	// could maybe revert back to c.alerts
-	if err := c.resetSrcAlerts(ctx); err != nil {
-		return err
+	if err := c.resetSrcNotifiers(ctx); err != nil {
+		problems = append(problems, newObservabilityAlertsProblem(err))
+		// silently try to recreate alerts, in case any were deleted
+		c.log.Warn("failed to reset notifiers - attempting to recreate")
+		for _, alert := range created {
+			if _, err := c.grafana.CreateAlertNotification(ctx, alert); err != nil {
+				c.log.Warn(fmt.Sprintf("failed to recreate notifier %q", alert.UID), "error", err)
+			}
+		}
+		return
 	}
 	for _, alert := range created {
 		_, err = c.grafana.CreateAlertNotification(ctx, alert)
 		if err != nil {
-			return fmt.Errorf("failed to create alert %q: %w", alert.UID, err)
+			problems = append(problems, newObservabilityAlertsProblem(fmt.Errorf("failed to create alert %q: %w", alert.UID, err)))
+			continue
 		}
 		// register alert in corresponding panel
 		var panel *sdk.Panel
@@ -169,12 +203,17 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 	// update board
 	_, err = c.grafana.SetDashboard(ctx, *homeBoard, sdk.SetDashboardParams{Overwrite: true})
 	if err != nil {
-		return fmt.Errorf("failed to update dashboard: %w", err)
+		problems = append(problems, newObservabilityAlertsProblem(fmt.Errorf("failed to update dashboard: %w", err)))
+		return
 	}
 
 	// update state
 	c.alerts = newAlerts
 	c.alertsSum = newSum
+	c.problems = problems
 	c.log.Debug("updated grafana configuration")
-	return nil
+}
+
+func newObservabilityAlertsProblem(err error) *conf.Problem {
+	return conf.NewSiteProblem(fmt.Sprintf("observability.alerts: %v", err))
 }
