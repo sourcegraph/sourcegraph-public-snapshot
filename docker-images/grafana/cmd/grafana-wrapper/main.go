@@ -1,7 +1,5 @@
-/**
- * Command grafana-wrapper provides a wrapper command for Grafana that
- * also handles Sourcegraph configuration changes.
- */
+// Command grafana-wrapper provides a wrapper command for Grafana that
+// also handles Sourcegraph configuration changes and making changes to Grafana.
 package main
 
 import (
