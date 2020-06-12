@@ -1135,7 +1135,6 @@ func computeCampaignUpdateDiff(
 		// repo).
 		if _, ok := accessibleRepoIDs[j.RepoID]; !ok {
 			return nil, &db.RepoNotFoundErr{ID: j.RepoID}
-
 		}
 
 		if group, ok := byRepoID[j.RepoID]; ok {
