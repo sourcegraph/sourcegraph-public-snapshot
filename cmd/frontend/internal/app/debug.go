@@ -23,6 +23,8 @@ var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana 
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 
 func init() {
+	// if Grafana is enabled, this warning renders problems with the Grafana deployment and configuration
+	// as reported by `grafana-wrapper`.
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
 		if len(grafanaURLFromEnv) == 0 {
 			return nil
