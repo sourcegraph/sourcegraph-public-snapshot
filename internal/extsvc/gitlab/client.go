@@ -69,7 +69,7 @@ type ClientProvider struct {
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
 
-	RateLimitMonitor *ratelimit.Monitor // the API rate limit monitor
+	rateLimitMonitor *ratelimit.Monitor // the API rate limit monitor
 }
 
 type CommonOp struct {
@@ -95,7 +95,7 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 		baseURL:          baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
 		httpClient:       cli,
 		gitlabClients:    make(map[string]*Client),
-		RateLimitMonitor: &ratelimit.Monitor{},
+		rateLimitMonitor: &ratelimit.Monitor{},
 	}
 }
 
@@ -143,7 +143,7 @@ func (p *ClientProvider) getClient(op getClientOp) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, op, p.httpClient, p.RateLimitMonitor)
+	c := p.newClient(p.baseURL, op, p.httpClient, p.rateLimitMonitor)
 	p.gitlabClients[key] = c
 	return c
 }
