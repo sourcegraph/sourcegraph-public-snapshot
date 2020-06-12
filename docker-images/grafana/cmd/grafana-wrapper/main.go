@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -70,14 +71,19 @@ func main() {
 		log.Debug("serving reverse proxy")
 		if err := http.ListenAndServe(fmt.Sprintf(":%s", exportPort), router); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("error serving reverse proxy", "error", err)
+			os.Exit(1)
 		}
-		os.Exit(1)
+		os.Exit(0)
 	}()
 
 	// wait for grafana to exit
 	err := <-grafanaErrs
 	if err != nil {
 		log.Crit("grafana exited", "error", err)
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			os.Exit(exitErr.ProcessState.ExitCode())
+		}
 		os.Exit(1)
 	} else {
 		log.Info("grafana exited")
