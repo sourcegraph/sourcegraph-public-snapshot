@@ -20,12 +20,7 @@ RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/grafana
 RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/monitoring-generator
 
-# when upgrading grafana versions, verify that no changes were made to the Grafana alerts format by comparing
-# our site.schema.json GrafanaNotifier* format with Grafana's alert provisioning docs:
-#  * disk format for provisioning alerts: https://grafana.com/docs/grafana/v6.7/administration/provisioning/#alert-notification-channels
-#  * what each field accepts: https://grafana.com/docs/grafana/v6.7/alerting/notifications
-#
-# Also make sure to update all links to Grafana docs (ie https://grafana.com/docs/grafana/v6.7/...)
+# when upgrading the Grafana version, please refer to https://about.sourcegraph.com/handbook/engineering/distribution/observability/monitoring#upgrading-grafana
 FROM grafana/grafana:6.7.4@sha256:1ff3999e0fc08a3909e9a3ecdf6e74b4789db9b67c8297c44fdee1e167b9375f as production
 LABEL com.sourcegraph.grafana.version=6.7.4
 
