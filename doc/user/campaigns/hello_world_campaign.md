@@ -22,69 +22,67 @@ To use campaigns, you need to:
 - [Set up a Sourcegraph instance](../../index.md#quickstart) and add some repositories to it.
 - [Install Sourcegraph CLI](https://github.com/sourcegraph/src-cli) (`src`).
 
-## Step 1. Create a new campaign
+## Step 1. Write a campaign spec
 
-<!-- TODO(sqs): keep these steps in sync with index.md#creating-a-new-campaign -->
+A **campaign spec** is a YAML file that defines a campaign, including:
 
-1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar on Sourcegraph.
-1. Click the **＋ New campaign** button.
-1. Name your campaign `Hello World`.
-1. In the description, write `My first campaign!`.
-1. Click the **Create campaign** button.
-
-Now you have a campaign, but it's empty. We'll create a campaign template to say what changes to make (and to which repositories).
-
-## Step 2. Make a campaign template
-
-A **campaign template** defines:
-
+- The name and description of the campaign
 - The set of repositories to change
 - Commands to run in each repository to make the changes
+- The commit message and branch name
 
-Save the following campaign template as `hello-world.campaign.yaml`:
+Save the following campaign spec as `hello-world.campaign.yaml`:
 
-``` yaml
+```yaml
+name: hello-world
+description: Add Hello World to READMEs
+
 # Find all repositories that contain a README.md file.
 roots:
   - query: file:README.md
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
-  - name: Append "Hello World" to all README.md files
-    run: echo Hello World | tee -a $(find -name README.md)
+  - run: echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
+
+# The commit message for the commit with the changes.
+commit:
+  message: Append Hello World to all README.md files
 
 # The name of the branch where the commit will be pushed.
 branch: hello-world
 ```
 
-## Step 3. Generate and apply the changes
+## Step 2. Create the campaign
 
 Let's see the changes that will be made. Don't worry---no commits, branches, or changesets will be published yet (the repositories on your code host will be untouched).
 
-1. In your terminal, run this command (replacing <code><em>CAMPAIGN-ID</em></code> with the ID of the campaign you created):
+1. In your terminal, run this command:
 
-    <pre><code>src campaign apply -template=hello-world.campaign.yml -preview -campaign=<em>CAMPAIGN-ID</em></code></pre>
-    
-    > You can also see this command by clicking the **Update template** button when viewing your campaign's page.
-1. Wait for it to run and capture the changes in each repository.
+    <pre><code>src campaign apply -f hello-world.campaign.yaml -preview</code></pre>
+1. Wait for it to run and compute the changes for each repository.
 1. When it's done, click the displayed link to see all of the changes that will be made.
 1. Make sure the changes look right.
 
-    > If you want to run the campaign on fewer repositories, change the roots query in `hello-world.campaign.yml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
-1. Click the **Update campaign** button.
+    > If you want to run the campaign on fewer repositories, change the roots query in `hello-world.campaign.yaml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
+1. Click the **Create campaign** button.
 
-Your campaign now has changesets! They are still unpublished, which means they exist only on Sourcegraph and haven't been pushed to your code host yet.
+You created your first campaign! The campaign's changesets are still unpublished, which means they exist only on Sourcegraph and haven't been pushed to your code host yet.
 
-## Step 4. Publish the changes (optional)
+## Step 3. Publish the changes (optional)
 
-In a real campaign, the next step is publishing, which causes commits, branches, and changesets to be created on your code host. You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?").
+Publishing causes commits, branches, and changesets to be created on your code host.
+
+You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?"). On a real campaign, you would click the **Publish** button next to a changeset to publish it (or the **Publish all** button to publish all changesets).
 
 ## Congratulations!
 
 You've created your first campaign! 🎉🎉
 
-Now, you can customize your campaign template and experiment with making other types of changes. Here are some [example campaigns](examples/index.md) to help:
+You can customize your campaign spec and experiment with making other types of changes. To update your campaign, edit `hello-world.campaign.yaml` and run `src campaign apply -f hello-world.campaign.yaml -preview` again. (As before, you'll see a preview before any changes are applied.)
+
+Here are some [example campaigns](examples/index.md) for inspiratiopn:
 
 - [Using ESLint to automatically migrate to a new TypeScript version](examples/eslint_typescript_version.md)
 - [Adding a GitHub action to upload LSIF data to Sourcegraph](examples/lsif_action.md)

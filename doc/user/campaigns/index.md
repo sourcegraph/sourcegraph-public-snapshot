@@ -54,32 +54,59 @@ Use the filters to switch between showing all campaigns, open campaigns, or clos
 
 If you lack read access to a repository in a campaign, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
 
-## Creating a new campaign
+### Campaign specs
 
-> **Creating your first campaign?** See [Hello World Campaign](TODO) in Sourcegraph Guides for step-by-step instructions.
+You can create or update a campaign from a [**campaign spec**](spec_reference.md), which is a YAML file that defines a campaign.
 
-1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
-1. Click the **＋ New campaign** button.
-1. Type a name for your campaign. The name will be the title of each changeset (e.g., the pull request title).
-1. Type an optional description, which will be the description or body of each changeset.
-1. Click the **Create campaign** button.
+See the "[Creating a campaign](#creating-a-campaign)" section for an example campaign spec YAML file.
 
-You've created a new campaign, but it doesn't have any changes yet. Next, you can [apply a campaign template to specify what changes to make](#using-a-campaign-template-to-generate-changes).
+For more information, see:
 
-If the changesets were already created (outside of campaigns), you can [track existing changesets](#tracking-existing-changesets) in your campaign.
+- [Creating a campaign](#creating-a-campaign) from a campaign spec
+- [Updating a campaign](#updating-a-campaign) from a campaign spec
+- [Campaign spec YAML reference](spec_reference.md)
+- [Example campaign specs](examples/index.md)
 
-## Using a campaign template to generate changes
+## Creating a campaign
 
-After you've [created a campaign](#creating-a-new-campaign), you need to tell it what changes to make by writing a [**campaign template**](template.md), which defines
+> **Creating your first campaign?** See [Hello World Campaign](hello_world_campaign.md) in Sourcegraph Guides for step-by-step instructions.
 
-- The set of repositories to change
-- Commands to run in each repository to make the changes
+You can create a campaign from a [campaign spec](#campaign-specs), which is a YAML file that describes your campaign.
 
-When a campaign template is executed, it produces a **campaign spec**, which is the full list of changesets, branches, and commits that you want to exist.
+The following example campaign spec adds "Hello World" to all `README.md` files:
 
-> **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before it's published.
+```yaml
+# File: hello-world.campaign.yaml
+name: hello-world
+description: Add Hello World to READMEs
 
-1. In your editor, create a [campaign template](template.md) (`*.campaign.yml` file) for the change you'd like to make. (See [examples](examples/index.md).)
+# Find all repositories that contain a README.md file.
+roots:
+  - query: file:README.md
+
+# In each repository, run this command. Each repository's resulting diff is captured.
+steps:
+  - run: echo Hello World | tee -a $(find -name README.md)
+    container: alpine:3
+
+# The commit message for the commit with the changes.
+commit:
+  message: Append Hello World to all README.md files
+
+# The name of the branch where the commit will be pushed.
+branch: hello-world
+```
+
+1. Create a campaign from the campaign spec:
+
+    <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -preview</code></pre>
+
+    > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before it's published.
+1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the campaign spec).
+1. Open the preview URL that the command printed out.
+1. Examine the preview. Confirm that the changes are what you intended. (If not, edit the campaign spec and then rerun the command above.)
+1. Click the **Create campaign** button. TODO(sqs)
+
 1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
 1. In the list of campaigns, click the campaign where you'd like to apply the template.
 1. In the campaign, click the **Update template** button.
@@ -106,6 +133,19 @@ The [example campaigns](examples/index.md) show how to use campaigns to make use
 - [Using ESLint to automatically migrate to a new TypeScript version](examples/eslint_typescript_version.md)
 - [Adding a GitHub action to upload LSIF data to Sourcegraph](examples/lsif_action.md)
 - [Refactoring Go code using Comby](examples/refactor_go_comby.md)
+
+## Creating an empty campaign on the web
+
+1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
+1. Click the **＋ New campaign** button.
+1. Type a name for your campaign.
+1. Type an optional description.
+1. Click the **Create campaign** button.
+
+You've created a new campaign, but it's empty (it has no changesets). Next, you can:
+
+- [Update the campaign's spec to create new changesets](#creating-and-updating-a-campaign)
+- [Track existing changesets](#tracking-existing-changesets)
 
 ## Publishing changesets to the code host
 
