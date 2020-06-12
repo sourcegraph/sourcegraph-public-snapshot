@@ -34,7 +34,8 @@ func main() {
 		grafanaErrs <- newGrafanaRunCmd().Run()
 	}()
 
-	// reverse proxy to handle requests to grafana and config subscriber
+	// router serves endpoints accessible from outside the container (defined by `exportPort`)
+	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying Grafana, etc.
 	router := mux.NewRouter()
 
 	// subscribe to configuration
@@ -60,7 +61,7 @@ func main() {
 		router.PathPrefix("/grafana-wrapper/config-subscriber").Handler(config.Handler())
 	}
 
-	// serve grafana via reverse proxy
+	// serve grafana via reverse proxy - place last so other prefixes get served first
 	router.PathPrefix("/").Handler(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
@@ -68,7 +69,7 @@ func main() {
 		},
 	})
 	go func() {
-		log.Debug("serving reverse proxy")
+		log.Debug("serving endpoints and reverse proxy")
 		if err := http.ListenAndServe(fmt.Sprintf(":%s", exportPort), router); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Crit("error serving reverse proxy", "error", err)
 			os.Exit(1)
