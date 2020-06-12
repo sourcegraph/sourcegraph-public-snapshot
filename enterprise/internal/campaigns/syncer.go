@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"golang.org/x/time/rate"
 )
 
 // SyncRegistry manages a ChangesetSyncer per external service.
@@ -111,7 +110,6 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		externalServiceID: extServiceID,
 		cancel:            cancel,
 		priorityNotify:    make(chan []int64, 500),
-		rateLimitRegistry: s.RateLimiterRegistry,
 	}
 
 	s.syncers[extServiceID] = syncer
@@ -239,9 +237,6 @@ type ChangesetSyncer struct {
 
 	// cancel should be called to stop this syncer
 	cancel context.CancelFunc
-
-	// rateLimitRegistry should be used fetch the current rate limiter for an external service
-	rateLimitRegistry *ratelimit.Registry
 }
 
 var syncerMetrics = struct {
@@ -493,21 +488,21 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, s.rateLimitRegistry, cs)
+	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
 func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
-	return syncChangesets(ctx, repoStore, syncStore, cf, nil, cs...)
+	return syncChangesets(ctx, repoStore, syncStore, cf, cs...)
 }
 
-func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, rlr *ratelimit.Registry, cs ...*campaigns.Changeset) (err error) {
+func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
 
-	bySource, err := groupChangesetsBySource(ctx, repoStore, cf, nil, rlr, cs...)
+	bySource, err := groupChangesetsBySource(ctx, repoStore, cf, nil, cs...)
 	if err != nil {
 		return err
 	}
@@ -588,7 +583,6 @@ func groupChangesetsBySource(
 	reposStore RepoStore,
 	cf *httpcli.Factory,
 	sourcer repos.Sourcer,
-	rlr *ratelimit.Registry,
 	cs ...*campaigns.Changeset,
 ) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
@@ -636,15 +630,6 @@ func groupChangesetsBySource(
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		var rl *rate.Limiter
-		if rlr != nil {
-			u, err := e.BaseURL()
-			if err != nil {
-				return nil, errors.Wrap(err, "getting base URL")
-			}
-			rl = rlr.GetRateLimiter(u.String())
-		}
-
 		var css repos.ChangesetSource
 		if sourcer != nil {
 			sources, err := sourcer(e)
@@ -658,7 +643,7 @@ func groupChangesetsBySource(
 				return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", e.Kind)
 			}
 		} else {
-			css, err = repos.NewChangesetSource(e, cf, rl)
+			css, err = repos.NewChangesetSource(e, cf)
 			if err != nil {
 				return nil, err
 			}

@@ -8,13 +8,13 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -55,13 +55,6 @@ const (
 	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
 	defaultRateLimitBurst = 500
 )
-
-// Global limiter cache so that we reuse the same rate limiter for
-// the same code host, even between config changes.
-// This is a failsafe to protect bitbucket as they do not impose their own
-// rate limiting.
-var limiterMu sync.Mutex
-var limiterCache = make(map[string]*rate.Limiter)
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
@@ -104,14 +97,11 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 	httpClient = requestCounter.Doer(httpClient, categorize)
 	u = extsvc.NormalizeBaseURL(u)
 
-	limiterMu.Lock()
-	defer limiterMu.Unlock()
-
-	l, ok := limiterCache[u.String()]
-	if !ok {
-		l = rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
-		limiterCache[u.String()] = l
-	}
+	// Normally our registry will return a default infinite limiter when nothing has been
+	// synced from config. However, we always want to ensure there is at least some form of rate
+	// limiting for Bitbucket.
+	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
+	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
 
 	client := &Client{
 		httpClient: httpClient,

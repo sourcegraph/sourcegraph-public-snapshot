@@ -342,7 +342,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	}
 
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	bySource, err := groupChangesetsBySource(ctx, reposStore, s.cf, s.sourcer, nil, cs...)
+	bySource, err := groupChangesetsBySource(ctx, reposStore, s.cf, s.sourcer, cs...)
 	if err != nil {
 		return err
 	}

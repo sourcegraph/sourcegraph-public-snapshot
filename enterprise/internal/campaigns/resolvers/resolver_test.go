@@ -257,7 +257,7 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	bbsSrc, err := repos.NewBitbucketServerSource(bbsExtSvc, cf, nil)
+	bbsSrc, err := repos.NewBitbucketServerSource(bbsExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}

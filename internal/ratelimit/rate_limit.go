@@ -171,11 +171,20 @@ type Registry struct {
 // GetRateLimiter fetches the rate limiter associated with the given code host. If none has been
 // configured an infinite limiter is returned.
 func (r *Registry) GetRateLimiter(baseURL string) *rate.Limiter {
+	return r.GetOrSet(baseURL, nil)
+}
+
+// GetOrSet fetches the rate limiter associated with the given code host. If none has been configured
+// yet, the provided limiter will be set. A nil limiter will fall back to an infinite limiter.
+func (r *Registry) GetOrSet(baseURL string, fallback *rate.Limiter) *rate.Limiter {
+	if fallback == nil {
+		fallback = rate.NewLimiter(rate.Inf, 100)
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	l := r.rateLimiters[baseURL]
 	if l == nil {
-		l = rate.NewLimiter(rate.Inf, 100)
+		l = fallback
 		r.rateLimiters[baseURL] = l
 	}
 	return l
