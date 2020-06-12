@@ -11,6 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -210,14 +211,14 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 	// Ideally these could be done in parallel, but the table is small
 	// and I don't think real world perf is going to be bad.
 	// It is also unclear to me if deterministic order is important here (it seems like it might be),
-	// so if this is parallalized in the future, consider whether order is important.
+	// so if this is parallelized in the future, consider whether order is important.
 
 	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
 	if err != nil {
 		return "", err
 	}
 	for _, c := range githubs {
-		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c})
+		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c.GitHubConnection})
 	}
 
 	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
@@ -225,7 +226,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitlabs {
-		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c})
+		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c.GitLabConnection})
 	}
 
 	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
@@ -233,7 +234,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range bitbuckets {
-		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c})
+		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c.BitbucketServerConnection})
 	}
 
 	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
@@ -241,7 +242,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range awscodecommits {
-		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c})
+		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c.AWSCodeCommitConnection})
 	}
 
 	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
@@ -249,7 +250,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitolites {
-		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c})
+		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c.GitoliteConnection})
 	}
 
 	// Fallback for github.com

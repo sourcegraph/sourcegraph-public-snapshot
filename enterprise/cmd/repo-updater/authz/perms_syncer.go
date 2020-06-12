@@ -148,13 +148,24 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 	}
 }
 
-// providers returns a list of authz.Provider configured in the external services.
-// Keys are ServiceID, e.g. "https://gitlab.com/".
-func (s *PermsSyncer) providers() map[string]authz.Provider {
+// providersByServiceID returns a list of authz.Provider configured in the external services.
+// Keys are ServiceID, e.g. "https://github.com/".
+func (s *PermsSyncer) providersByServiceID() map[string]authz.Provider {
 	_, ps := authz.GetProviders()
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.ServiceID()] = p
+	}
+	return providers
+}
+
+// providersByURNs returns a list of authz.Provider configured in the external services.
+// Keys are URN, e.g. "extsvc:github:1".
+func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
+	_, ps := authz.GetProviders()
+	providers := make(map[string]authz.Provider, len(ps))
+	for _, p := range ps {
+		providers[p.URN()] = p
 	}
 	return providers
 }
@@ -170,9 +181,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external accounts")
 	}
 
+	providers := s.providersByServiceID()
+
 	var repoSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
-		provider := s.providers()[acct.ServiceID]
+		provider := providers[acct.ServiceID]
 		if provider == nil {
 			// We have no authz provider configured for this external account.
 			continue
@@ -254,8 +267,20 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return nil
 	}
 
-	provider := s.providers()[repo.ExternalRepo.ServiceID]
+	// Loop over repository's sources and see if matching any authz provider's URN.
+	var provider authz.Provider
+	providers := s.providersByURNs()
+	for urn := range repo.Sources {
+		p, ok := providers[urn]
+		if ok {
+			provider = p
+			break
+		}
+	}
+
 	if provider == nil {
+		log15.Debug("PermsSyncer.syncRepoPerms.noProvider", "repoID", repo.ID)
+
 		// We have no authz provider configured for this private repository.
 		// However, we need to upsert the dummy record in order to prevent
 		// scheduler keep scheduling this repository.
@@ -606,7 +631,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 
 		// Skip if not enabled or no authz provider is configured
 		if !globals.PermissionsBackgroundSync().Enabled ||
-			len(s.providers()) == 0 {
+			len(s.providersByServiceID()) == 0 {
 			continue
 		}
 

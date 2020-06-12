@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -291,4 +292,9 @@ type ErrRateLimitUnsupported struct {
 
 func (e ErrRateLimitUnsupported) Error() string {
 	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
+}
+
+// URN returns a unique resource identifier of an external service by given kind and ID.
+func URN(kind string, id int64) string {
+	return "extsvc:" + strings.ToLower(kind) + ":" + strconv.FormatInt(id, 10)
 }

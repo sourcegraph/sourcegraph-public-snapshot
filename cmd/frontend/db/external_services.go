@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 
@@ -408,7 +409,9 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-// listConfigs decodes the list configs into result.
+// listConfigs decodes the list of configs into result. In addition to populating
+// loaded configs into the given result, it also calls the "SetURN(string)" method
+// of elements in result when the method exists.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
@@ -418,13 +421,15 @@ func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 	}
 
 	// Decode the jsonc configs into Go objects.
-	var cfgs []interface{}
+	cfgs := make([]interface{}, 0, len(services))
+	urns := make([]string, 0, len(services))
 	for _, service := range services {
 		var cfg interface{}
 		if err := jsonc.Unmarshal(service.Config, &cfg); err != nil {
 			return err
 		}
 		cfgs = append(cfgs, cfg)
+		urns = append(urns, service.URN())
 	}
 
 	// Now move our untyped config list into the typed list (result). We could
@@ -435,14 +440,28 @@ func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(buf, result)
+
+	err = json.Unmarshal(buf, result)
+	if err != nil {
+		return err
+	}
+
+	conns := reflect.ValueOf(result).Elem()
+	for i := 0; i < conns.Len(); i++ {
+		field, ok := conns.Index(i).Interface().(interface{ SetURN(string) })
+		if ok {
+			field.SetURN(urns[i])
+		}
+	}
+
+	return nil
 }
 
 // ListAWSCodeCommitConnections returns a list of AWSCodeCommit configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	var connections []*schema.AWSCodeCommitConnection
+func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*types.AWSCodeCommitConnection, error) {
+	var connections []*types.AWSCodeCommitConnection
 	if err := e.listConfigs(ctx, extsvc.KindAWSCodeCommit, &connections); err != nil {
 		return nil, err
 	}
@@ -452,8 +471,8 @@ func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context
 // ListBitbucketCloudConnections returns a list of BitbucketCloud configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*schema.BitbucketCloudConnection, error) {
-	var connections []*schema.BitbucketCloudConnection
+func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*types.BitbucketCloudConnection, error) {
+	var connections []*types.BitbucketCloudConnection
 	if err := e.listConfigs(ctx, extsvc.KindBitbucketCloud, &connections); err != nil {
 		return nil, err
 	}
@@ -463,8 +482,8 @@ func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Contex
 // ListBitbucketServerConnections returns a list of BitbucketServer configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	var connections []*schema.BitbucketServerConnection
+func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*types.BitbucketServerConnection, error) {
+	var connections []*types.BitbucketServerConnection
 	if err := e.listConfigs(ctx, extsvc.KindBitbucketServer, &connections); err != nil {
 		return nil, err
 	}
@@ -474,8 +493,8 @@ func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Conte
 // ListGitHubConnections returns a list of GitHubConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	var connections []*schema.GitHubConnection
+func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*types.GitHubConnection, error) {
+	var connections []*types.GitHubConnection
 	if err := e.listConfigs(ctx, extsvc.KindGitHub, &connections); err != nil {
 		return nil, err
 	}
@@ -485,8 +504,8 @@ func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*s
 // ListGitLabConnections returns a list of GitLabConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	var connections []*schema.GitLabConnection
+func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*types.GitLabConnection, error) {
+	var connections []*types.GitLabConnection
 	if err := e.listConfigs(ctx, extsvc.KindGitLab, &connections); err != nil {
 		return nil, err
 	}
@@ -496,8 +515,8 @@ func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*s
 // ListGitoliteConnections returns a list of GitoliteConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	var connections []*schema.GitoliteConnection
+func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]*types.GitoliteConnection, error) {
+	var connections []*types.GitoliteConnection
 	if err := e.listConfigs(ctx, extsvc.KindGitolite, &connections); err != nil {
 		return nil, err
 	}
@@ -507,8 +526,8 @@ func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]
 // ListPhabricatorConnections returns a list of PhabricatorConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	var connections []*schema.PhabricatorConnection
+func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*types.PhabricatorConnection, error) {
+	var connections []*types.PhabricatorConnection
 	if err := e.listConfigs(ctx, extsvc.KindPhabricator, &connections); err != nil {
 		return nil, err
 	}
@@ -518,8 +537,8 @@ func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) 
 // ListOtherExternalServicesConnections returns a list of OtherExternalServiceConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context.Context) ([]*schema.OtherExternalServiceConnection, error) {
-	var connections []*schema.OtherExternalServiceConnection
+func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context.Context) ([]*types.OtherExternalServiceConnection, error) {
+	var connections []*types.OtherExternalServiceConnection
 	if err := e.listConfigs(ctx, extsvc.KindOther, &connections); err != nil {
 		return nil, err
 	}

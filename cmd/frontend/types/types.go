@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // RepoFields are lazy loaded data fields on a Repo (from the DB).
@@ -67,6 +68,11 @@ type ExternalService struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time
+}
+
+// URN returns a unique resource identifier of this external service.
+func (e *ExternalService) URN() string {
+	return extsvc.URN(e.Kind, e.ID)
 }
 
 type GlobalState struct {

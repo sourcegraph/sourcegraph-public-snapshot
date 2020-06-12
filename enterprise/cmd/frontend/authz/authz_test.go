@@ -42,6 +42,10 @@ func (m gitlabAuthzProviderParams) ServiceType() string {
 	return extsvc.TypeGitLab
 }
 
+func (m gitlabAuthzProviderParams) URN() string {
+	panic("should never be called")
+}
+
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
 func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
@@ -564,14 +568,26 @@ type fakeStore struct {
 	bitbucketServers []*schema.BitbucketServerConnection
 }
 
-func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error) {
-	return s.githubs, nil
+func (s fakeStore) ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error) {
+	conns := make([]*types.GitHubConnection, 0, len(s.githubs))
+	for _, github := range s.githubs {
+		conns = append(conns, &types.GitHubConnection{GitHubConnection: github})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error) {
-	return s.gitlabs, nil
+func (s fakeStore) ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error) {
+	conns := make([]*types.GitLabConnection, 0, len(s.gitlabs))
+	for _, gitlab := range s.gitlabs {
+		conns = append(conns, &types.GitLabConnection{GitLabConnection: gitlab})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error) {
-	return s.bitbucketServers, nil
+func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error) {
+	conns := make([]*types.BitbucketServerConnection, 0, len(s.bitbucketServers))
+	for _, bbs := range s.bitbucketServers {
+		conns = append(conns, &types.BitbucketServerConnection{BitbucketServerConnection: bbs})
+	}
+	return conns, nil
 }
