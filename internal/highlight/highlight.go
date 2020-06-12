@@ -29,6 +29,8 @@ var (
 
 func init() {
 	client = gosyntect.New(syntectServer)
+	prometheus.MustRegister(requestCounter)
+	prometheus.MustRegister(requestHistogram)
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
@@ -245,11 +247,6 @@ var requestHistogram = prometheus.NewHistogram(
 		Name: "src_syntax_highlighting_duration",
 		Help: "time for a request to have syntax highlight",
 	})
-
-func init() {
-	prometheus.MustRegister(requestCounter)
-	prometheus.MustRegister(requestHistogram)
-}
 
 func firstCharacters(s string, n int) string {
 	v := []rune(s)
