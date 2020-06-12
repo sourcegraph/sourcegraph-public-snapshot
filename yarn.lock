@@ -2195,7 +2195,8 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.1.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -8702,6 +8703,16 @@ eslint-etc@^0.0.8:
   dependencies:
     esquery "^1.0.1"
 
+eslint-formatter-lsif@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/eslint-formatter-lsif/-/eslint-formatter-lsif-1.0.2.tgz#4715ace6072bfcff861498bfc0ec206bc5796f9a"
+  integrity sha512-QtUOcYwDuKxY9IOu5cuMPePD38kUMtGPIj0cWIEQ1jMMOnNpVOkgm/e039krQupRfcZ69Jw6n7AJNpVqryR6Jw==
+  dependencies:
+    iterare "^1.2.0"
+    lsif-protocol "^0.4.3"
+    uuid "^7.0.3"
+    vscode-languageserver-textdocument "^1.0.1"
+
 eslint-import-resolver-node@^0.3.2:
   version "0.3.2"
   resolved "https://registry.npmjs.org/eslint-import-resolver-node/-/eslint-import-resolver-node-0.3.2.tgz#58f15fb839b8d0576ca980413476aab2472db66a"
@@ -12354,6 +12365,11 @@ iterall@^1.2.2:
   resolved "https://registry.npmjs.org/iterall/-/iterall-1.2.2.tgz#92d70deb8028e0c39ff3164fdbf4d8b088130cd7"
   integrity sha512-yynBb1g+RFUPY64fTrFv7nsjRrENBQJaX2UL+2Szc9REFrSNm1rpSXHGzhmAy7a9uv3vlvgBlXnf9RqmPH1/DA==
 
+iterare@^1.2.0:
+  version "1.2.1"
+  resolved "https://registry.npmjs.org/iterare/-/iterare-1.2.1.tgz#139c400ff7363690e33abffa33cbba8920f00042"
+  integrity sha512-RKYVTCjAnRthyJes037NX/IiqeidgN1xc3j1RjFfECFp28A1GVwK9nA+i0rJPaHqSZwygLzRnFlzUuHFoWWy+Q==
+
 iterate-iterator@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/iterate-iterator/-/iterate-iterator-1.0.1.tgz#1693a768c1ddd79c969051459453f082fe82e9f6"
@@ -14000,6 +14016,13 @@ lru-queue@0.1:
   integrity sha1-Jzi9nw089PhEkMVzbEhpmsYyzaM=
   dependencies:
     es5-ext "~0.10.2"
+
+lsif-protocol@^0.4.3:
+  version "0.4.3"
+  resolved "https://registry.npmjs.org/lsif-protocol/-/lsif-protocol-0.4.3.tgz#e528acc5d056b86b071dc242047a27182f7ddddf"
+  integrity sha512-VePb+EbdturiWmGw1dh7G7z7OmhT6aBzqU42cqJLEk2QTMTbnN6ySIp1IiffNmD9jLX3NAtNSz1c85zpcZN6pw==
+  dependencies:
+    vscode-languageserver-protocol "^3.14.1"
 
 macos-release@^2.2.0:
   version "2.3.0"
@@ -19581,7 +19604,8 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "24.5.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -21517,6 +21541,11 @@ uuid@^3.0.0, uuid@^3.3.2, uuid@^3.3.3, uuid@^3.4.0:
   resolved "https://registry.npmjs.org/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
 
+uuid@^7.0.3:
+  version "7.0.3"
+  resolved "https://registry.npmjs.org/uuid/-/uuid-7.0.3.tgz#c5c9f2c8cf25dc0a372c4df1441c41f5bd0c680b"
+  integrity sha512-DPSke0pXhTZgoF/d+WSt2QaKMCFSfx7QegxEWT+JOuHF5aWrKEn0G+ztjuJg/gG8/ItK+rbPCD/yNv8yyih6Cg==
+
 uuid@^8.1.0:
   version "8.1.0"
   resolved "https://registry.npmjs.org/uuid/-/uuid-8.1.0.tgz#6f1536eb43249f473abc6bd58ff983da1ca30d8d"
@@ -21680,6 +21709,29 @@ vm-browserify@^1.0.1:
   version "1.1.0"
   resolved "https://registry.npmjs.org/vm-browserify/-/vm-browserify-1.1.0.tgz#bd76d6a23323e2ca8ffa12028dc04559c75f9019"
   integrity sha512-iq+S7vZJE60yejDYM0ek6zg308+UZsdtPExWP9VZoCFCz1zkJoXFnAX7aZfd/ZwrkidzdUZL0C/ryW+JwAiIGw==
+
+vscode-jsonrpc@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.npmjs.org/vscode-jsonrpc/-/vscode-jsonrpc-5.0.1.tgz#9bab9c330d89f43fc8c1e8702b5c36e058a01794"
+  integrity sha512-JvONPptw3GAQGXlVV2utDcHx0BiY34FupW/kI6mZ5x06ER5DdPG/tXWMVHjTNULF5uKPOUUD0SaXg5QaubJL0A==
+
+vscode-languageserver-protocol@^3.14.1:
+  version "3.15.3"
+  resolved "https://registry.npmjs.org/vscode-languageserver-protocol/-/vscode-languageserver-protocol-3.15.3.tgz#3fa9a0702d742cf7883cb6182a6212fcd0a1d8bb"
+  integrity sha512-zrMuwHOAQRhjDSnflWdJG+O2ztMWss8GqUUB8dXLR/FPenwkiBNkMIJJYfSN6sgskvsF0rHAoBowNQfbyZnnvw==
+  dependencies:
+    vscode-jsonrpc "^5.0.1"
+    vscode-languageserver-types "3.15.1"
+
+vscode-languageserver-textdocument@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/vscode-languageserver-textdocument/-/vscode-languageserver-textdocument-1.0.1.tgz#178168e87efad6171b372add1dea34f53e5d330f"
+  integrity sha512-UIcJDjX7IFkck7cSkNNyzIz5FyvpQfY7sdzVy+wkKN/BLaD4DQ0ppXQrKePomCxTS7RrolK1I0pey0bG9eh8dA==
+
+vscode-languageserver-types@3.15.1:
+  version "3.15.1"
+  resolved "https://registry.npmjs.org/vscode-languageserver-types/-/vscode-languageserver-types-3.15.1.tgz#17be71d78d2f6236d414f0001ce1ef4d23e6b6de"
+  integrity sha512-+a9MPUQrNGRrGU630OGbYVQ+11iOIovjCkqxajPa9w57Sd5ruK8WQNsslzpa0x/QJqC8kRc2DUxWjIFwoNm4ZQ==
 
 w3c-hr-time@^1.0.1:
   version "1.0.1"
