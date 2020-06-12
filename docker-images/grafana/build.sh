@@ -21,7 +21,6 @@ export GOOS=linux
 export CGO_ENABLED=0
 go build \
   -trimpath \
-  -buildmode exe \
   -installsuffix netgo \
   -tags "dist netgo" \
   -o $BINDIR/grafana-wrapper ./cmd/grafana-wrapper
