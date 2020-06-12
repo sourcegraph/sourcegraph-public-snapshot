@@ -9,7 +9,7 @@ import (
 
 var ErrContinueRetry = errors.New("continue Retry")
 
-// Retry retries the given function until reached timeout. The function should
+// Retry retries the given function until the timeout is reached. The function should
 // return ErrContinueRetry to indicate another retry.
 func Retry(timeout time.Duration, fn func() error) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

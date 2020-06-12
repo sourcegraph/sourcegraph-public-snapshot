@@ -4,8 +4,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// CreateUser creates a new user with given username and email.
-// It returns GraphQL node ID of newly created user.
+// CreateUser creates a new user with the given username and email.
+// It returns the GraphQL node ID of newly created user.
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) CreateUser(username, email string) (string, error) {

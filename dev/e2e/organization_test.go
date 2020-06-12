@@ -115,7 +115,7 @@ func TestOrganization(t *testing.T) {
 			t.Fatalf("Organizations mismatch (-want +got):\n%s", diff)
 		}
 
-		// Update site configuration to set "auth.userOrgMap" which makes new user join
+		// Update site configuration to set "auth.userOrgMap" which makes the new user join
 		// the organization (e2e-test-org) automatically.
 		siteConfig, err := client.SiteConfiguration()
 		if err != nil {
