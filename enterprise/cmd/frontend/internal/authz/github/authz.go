@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -14,11 +15,11 @@ import (
 // "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
 func NewAuthzProviders(
-	conns []*schema.GitHubConnection,
+	conns []*types.GitHubConnection,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.Authorization, c.Url, c.Token)
+		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {
@@ -35,7 +36,7 @@ func NewAuthzProviders(
 	return ps, problems, warnings
 }
 
-func newAuthzProvider(a *schema.GitHubAuthorization, instanceURL, token string) (authz.Provider, error) {
+func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, token string) (authz.Provider, error) {
 	if a == nil {
 		return nil, nil
 	}
@@ -50,12 +51,12 @@ func newAuthzProvider(a *schema.GitHubAuthorization, instanceURL, token string) 
 		return nil, err
 	}
 
-	return NewProvider(ghURL, token, ttl, nil), nil
+	return NewProvider(urn, ghURL, token, ttl, nil), nil
 }
 
 // ValidateGitHubAuthz validates the authorization fields of the given GitHub external
 // service config.
 func ValidateAuthz(cfg *schema.GitHubConnection) error {
-	_, err := newAuthzProvider(cfg.Authorization, cfg.Url, cfg.Token)
+	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token)
 	return err
 }
