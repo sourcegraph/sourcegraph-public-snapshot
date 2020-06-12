@@ -1351,6 +1351,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
 	}
 
+	// Fallback to git's default branch name if git remote show fails.
 	headBranch := "master"
 
 	// try to fetch HEAD from origin

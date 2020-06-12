@@ -267,7 +267,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 			pipeline.AddWait()
-		case c.branch == "master":
+		case c.branch == "master" || c.branch == "main":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
