@@ -40,4 +40,4 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --build-arg VERSION
 
 # clean up for convenience
-rm -rf monitoring
+rm -rf monitoring .bin
