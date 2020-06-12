@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var noConfig = os.Getenv("GRAFANA_WRAPPER_NO_CONFIG")
+var noConfig = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
 var grafanaPort = env.Get("GRAFANA_PORT", "3370", "grafana port")
 var grafanaCredentials = env.Get("GRAFANA_CREDENTIALS", "admin:admin", "credentials for accessing the grafana server")
 
