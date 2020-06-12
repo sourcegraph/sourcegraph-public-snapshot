@@ -879,6 +879,9 @@ export function handleCodeHost({
                     return initializeModelAndViewerForFileInfo(diffOrFileInfo.blob)
                 }
                 if (diffOrFileInfo.head && diffOrFileInfo.base) {
+                    // For diffs, both editors are created (for head and base)
+                    // but only one of them is returned and later passed into
+                    // the `scope` of the CodeViewToolbar component.
                     const editor = initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
                     initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
                     return editor
