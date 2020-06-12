@@ -410,8 +410,8 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 }
 
 // listConfigs decodes the list of configs into result. In addition to populating
-// loaded configs into the given result, it also populates the "URN" field of elements
-// in result when the field exists.
+// loaded configs into the given result, it also calls the "SetURN(string)" method
+// of elements in result when the method exists.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
@@ -448,14 +448,10 @@ func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 
 	conns := reflect.ValueOf(result).Elem()
 	for i := 0; i < conns.Len(); i++ {
-		field := conns.Index(i).Elem().FieldByName("URN")
-
-		// Skip if (1) no such field (2) not addressable or unexported (3) not a string
-		if !field.IsValid() || !field.CanSet() || field.Kind() != reflect.String {
-			continue
+		field, ok := conns.Index(i).Interface().(interface{ SetURN(string) })
+		if ok {
+			field.SetURN(urns[i])
 		}
-
-		field.SetString(urns[i])
 	}
 
 	return nil

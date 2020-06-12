@@ -352,7 +352,7 @@ func TestExternalServicesStore_Count(t *testing.T) {
 }
 
 func TestListConfigs(t *testing.T) {
-	t.Run("populate URN field", func(t *testing.T) {
+	t.Run("call SetURN method", func(t *testing.T) {
 		Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 			return []*types.ExternalService{
 				{
@@ -382,7 +382,7 @@ func TestListConfigs(t *testing.T) {
 		}
 	})
 
-	t.Run("should not fail when no URN field", func(t *testing.T) {
+	t.Run("should not fail when no SetURN method", func(t *testing.T) {
 		Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 			return []*types.ExternalService{
 				{
