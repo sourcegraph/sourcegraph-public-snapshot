@@ -52,7 +52,7 @@ func enterpriseInit(
 		server.RateLimitSyncer = rateLimitSyncer
 	}
 
-	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf, ratelimit.DefaultRegistry)
+	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
