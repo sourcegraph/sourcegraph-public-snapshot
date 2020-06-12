@@ -83,7 +83,7 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Build TypeScript
-        run: yarn build-ts
+        run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
         working-directory: web/
         run: yarn eslint -f lsif -o dump.lsif
@@ -104,7 +104,7 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Build TypeScript
-        run: yarn build-ts
+        run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
         working-directory: shared/
         run: yarn eslint -f lsif -o dump.lsif
@@ -125,7 +125,7 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Build TypeScript
-        run: yarn build-ts
+        run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
         working-directory: browser/
         run: yarn eslint -f lsif -o dump.lsif
