@@ -73,7 +73,7 @@ func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limi
 func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(svc, cf, rl)
+		return NewGithubSource(svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(svc, cf)
 	case extsvc.KindBitbucketServer:
