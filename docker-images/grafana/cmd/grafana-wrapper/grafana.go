@@ -60,7 +60,7 @@ func waitForGrafana(ctx context.Context, grafana *sdk.Client) error {
 
 			// Keep trying.
 			lastErr = err
-			time.Sleep(time.Second)
+			time.Sleep(250 * time.Millisecond)
 			continue
 		}
 		break
