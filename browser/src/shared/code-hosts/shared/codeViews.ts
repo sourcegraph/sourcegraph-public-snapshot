@@ -143,8 +143,5 @@ export const fetchFileContentForDiffOrFileInfo = (
             map((head): DiffOrBlobInfo<FileInfoWithContent> => ({ head }))
         )
     }
-    if (diffOrBlobInfo.base) {
-        return fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL).pipe(map(base => ({ base })))
-    }
-    throw new Error('fetchFileContentForDiffOrFileInfo failed: must contain a blob, base, or head.')
+    return fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL).pipe(map(base => ({ base })))
 }

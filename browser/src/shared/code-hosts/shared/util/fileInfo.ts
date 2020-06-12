@@ -79,8 +79,5 @@ export const resolveRepoNamesForDiffOrFileInfo = (
     if (diffOrFileInfo.head) {
         return resolveRepoNameForFileInfo(diffOrFileInfo.head, requestGraphQL).pipe(map(head => ({ head })))
     }
-    if (diffOrFileInfo.base) {
-        return resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL).pipe(map(base => ({ base })))
-    }
-    throw new Error('resolveRepoNamesForDiffOrFileInfo cannot resolve file info: must contain a blob, base, or head.')
+    return resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL).pipe(map(base => ({ base })))
 }
