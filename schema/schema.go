@@ -631,33 +631,45 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
-// GrafanaNotifierEmail description: Email notifier - https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email
+// GrafanaNotifierEmail description: Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email
 type GrafanaNotifierEmail struct {
 	// Addresses description: Email addresses to recipients. You can enter multiple email addresses using a “;” separator.
 	Addresses string `json:"addresses"`
-	Type      string `json:"type"`
+	// SingleEmail description: Send a single email to all recipients.
+	SingleEmail bool   `json:"singleEmail,omitempty"`
+	Type        string `json:"type"`
 }
 
 // GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty
 type GrafanaNotifierPagerduty struct {
-	AutoResolve    string `json:"autoResolve,omitempty"`
+	// AutoResolve description: Resolve incidents in PagerDuty once the alert goes back to ok
+	AutoResolve bool `json:"autoResolve,omitempty"`
+	// IntegrationKey description: Integration key for PagerDuty.
 	IntegrationKey string `json:"integrationKey"`
 	Type           string `json:"type"`
 }
 
 // GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack
 type GrafanaNotifierSlack struct {
-	Icon_emoji     string `json:"icon_emoji,omitempty"`
-	Icon_url       string `json:"icon_url,omitempty"`
+	// Icon_emoji description: Provide an emoji to use as the icon for the bot’s message. Ex :smile:
+	Icon_emoji string `json:"icon_emoji,omitempty"`
+	// Icon_url description: Provide a URL to an image to use as the icon for the bot’s message.
+	Icon_url string `json:"icon_url,omitempty"`
+	// MentionChannel description: Optionally mention either all channel members or just active ones.
 	MentionChannel string `json:"mentionChannel,omitempty"`
-	MentionGroups  string `json:"mentionGroups,omitempty"`
-	MentionUsers   string `json:"mentionUsers,omitempty"`
-	Recipient      string `json:"recipient,omitempty"`
-	Token          string `json:"token,omitempty"`
-	Type           string `json:"type"`
-	UploadImage    string `json:"uploadImage,omitempty"`
-	Url            string `json:"url,omitempty"`
-	Username       string `json:"username,omitempty"`
+	// MentionGroups description: Optionally mention one or more groups in the Slack notification sent by Grafana. You have to refer to groups, comma-separated, via their corresponding Slack IDs (which you can get from each group’s Slack profile URL).
+	MentionGroups string `json:"mentionGroups,omitempty"`
+	// MentionUsers description: Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).
+	MentionUsers string `json:"mentionUsers,omitempty"`
+	// Recipient description: Allows you to override the Slack recipient. You must either provide a channel Slack ID, a user Slack ID, a username reference (@<user>, all lowercase, no whitespace), or a channel reference (#<channel>, all lowercase, no whitespace).
+	Recipient string `json:"recipient,omitempty"`
+	// Token description: If provided, Grafana will upload the generated image via Slack’s file.upload API method, not the external image destination.
+	Token string `json:"token,omitempty"`
+	Type  string `json:"type"`
+	// Url description: Slack incoming webhook URL.
+	Url string `json:"url,omitempty"`
+	// Username description: Set the username for the bot’s message.
+	Username string `json:"username,omitempty"`
 }
 
 // GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook

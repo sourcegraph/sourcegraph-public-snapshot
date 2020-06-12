@@ -629,7 +629,7 @@ const SiteSchemaJSON = `{
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["slack", "pagerduty", "email", "webook"]
+                "enum": ["slack", "pagerduty", "email", "webhook"]
               }
             },
             "oneOf": [
@@ -1000,7 +1000,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierEmail": {
-      "description": "Email notifier - https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email",
+      "description": "Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email",
       "type": "object",
       "required": ["type", "addresses"],
       "properties": {
@@ -1009,8 +1009,12 @@ const SiteSchemaJSON = `{
           "const": "email"
         },
         "addresses": {
-          "type": "string",
-          "description": "Email addresses to recipients. You can enter multiple email addresses using a “;” separator."
+          "description": "Email addresses to recipients. You can enter multiple email addresses using a “;” separator.",
+          "type": "string"
+        },
+        "singleEmail": {
+          "description": "Send a single email to all recipients.",
+          "type": "boolean"
         }
       }
     },
@@ -1023,16 +1027,42 @@ const SiteSchemaJSON = `{
           "type": "string",
           "const": "slack"
         },
-        "url": { "type": "string" },
-        "recipient": { "type": "string" },
-        "username": { "type": "string" },
-        "icon_emoji": { "type": "string" },
-        "icon_url": { "type": "string" },
-        "uploadImage": { "type": "string" },
-        "mentionUsers": { "type": "string" },
-        "mentionGroups": { "type": "string" },
-        "mentionChannel": { "type": "string" },
-        "token": { "type": "string" }
+        "url": {
+          "description": "Slack incoming webhook URL.",
+          "type": "string"
+        },
+        "username": {
+          "description": "Set the username for the bot’s message.",
+          "type": "string"
+        },
+        "recipient": {
+          "description": "Allows you to override the Slack recipient. You must either provide a channel Slack ID, a user Slack ID, a username reference (@<user>, all lowercase, no whitespace), or a channel reference (#<channel>, all lowercase, no whitespace).",
+          "type": "string"
+        },
+        "icon_emoji": {
+          "description": "Provide an emoji to use as the icon for the bot’s message. Ex :smile:",
+          "type": "string"
+        },
+        "icon_url": {
+          "description": "Provide a URL to an image to use as the icon for the bot’s message.",
+          "type": "string"
+        },
+        "mentionUsers": {
+          "description": "Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).",
+          "type": "string"
+        },
+        "mentionGroups": {
+          "description": "Optionally mention one or more groups in the Slack notification sent by Grafana. You have to refer to groups, comma-separated, via their corresponding Slack IDs (which you can get from each group’s Slack profile URL).",
+          "type": "string"
+        },
+        "mentionChannel": {
+          "description": "Optionally mention either all channel members or just active ones.",
+          "type": "string"
+        },
+        "token": {
+          "description": "If provided, Grafana will upload the generated image via Slack’s file.upload API method, not the external image destination.",
+          "type": "string"
+        }
       }
     },
     "GrafanaNotifierPagerduty": {
@@ -1044,8 +1074,14 @@ const SiteSchemaJSON = `{
           "type": "string",
           "const": "pagerduty"
         },
-        "integrationKey": { "type": "string" },
-        "autoResolve": { "type": "string" }
+        "integrationKey": {
+          "description": "Integration key for PagerDuty.",
+          "type": "string"
+        },
+        "autoResolve": {
+          "description": "Resolve incidents in PagerDuty once the alert goes back to ok",
+          "type": "boolean"
+        }
       }
     },
     "GrafanaNotifierWebhook": {
