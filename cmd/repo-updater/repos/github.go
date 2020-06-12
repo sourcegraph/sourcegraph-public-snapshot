@@ -365,7 +365,7 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 		}
 
 		if hasNext && cost > 0 {
-			time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
+			time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 }
@@ -387,7 +387,7 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 				}
 			}
 
-			remaining, reset, retry, _ := s.client.RateLimitMonitor.Get()
+			remaining, reset, retry, _ := s.client.RateLimitMonitor().Get()
 			log15.Debug(
 				"github sync: ListOrgRepositories",
 				"repos", len(repos),
@@ -419,7 +419,7 @@ func (s *GithubSource) listUser(ctx context.Context, user string, results chan *
 				fail, err = err, nil
 			}
 
-			remaining, reset, retry, _ := s.client.RateLimitMonitor.Get()
+			remaining, reset, retry, _ := s.client.RateLimitMonitor().Get()
 			log15.Debug(
 				"github sync: ListUserRepositories",
 				"repos", len(repos),
@@ -481,7 +481,7 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string, results ch
 
 		results <- &githubResult{repo: repo}
 
-		time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+		time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 }
 
@@ -526,7 +526,7 @@ func (s *GithubSource) listPublic(ctx context.Context, results chan *githubResul
 func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
-			remaining, reset, retry, _ := s.client.RateLimitMonitor.Get()
+			remaining, reset, retry, _ := s.client.RateLimitMonitor().Get()
 			log15.Debug(
 				"github sync: ListAffiliated",
 				"repos", len(repos),
@@ -559,7 +559,7 @@ func (s *GithubSource) listSearch(ctx context.Context, query string, results cha
 		}
 
 		repos, hasNext := reposPage.Repos, reposPage.HasNextPage
-		remaining, reset, retry, ok := s.searchClient.RateLimitMonitor.Get()
+		remaining, reset, retry, ok := s.searchClient.RateLimitMonitor().Get()
 		log15.Debug(
 			"github sync: ListRepositoriesForSearch",
 			"searchString", query,
@@ -697,7 +697,7 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 			results <- &githubResult{repo: r}
 		}
 
-		time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+		time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 
 	return nil
