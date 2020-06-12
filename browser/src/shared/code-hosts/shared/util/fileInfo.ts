@@ -9,7 +9,7 @@ import { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
 /**
  * Use `rawRepoName` for the value of `repoName`, as a fallback if `repoName`
  * was not available.
- * */
+ */
 const useRawRepoNameAsFallback = (fileInfo: FileInfo): FileInfoWithRepoName => ({
     ...fileInfo,
     repoName: fileInfo.rawRepoName,
