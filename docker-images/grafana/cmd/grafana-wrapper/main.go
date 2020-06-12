@@ -42,7 +42,7 @@ func main() {
 		log.Info("configuration sync disabled")
 	} else {
 		log.Info("initializing configuration")
-		grafanaClient := sdk.NewClient(fmt.Sprintf("http://localhost:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
+		grafanaClient := sdk.NewClient(fmt.Sprintf("http://127.0.0.1:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
 
 		// limit the amount of time we spend spinning up the subscriber before erroring
 		newSubscriberCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
