@@ -53,10 +53,10 @@ func main() {
 
 	err := <-grafanaErrs
 	if err != nil {
-		log.Crit("grafana stopped", "error", err)
+		log.Crit("grafana exited", "error", err)
 		os.Exit(1)
 	} else {
-		log.Info("grafana stopped")
+		log.Info("grafana exited")
 		os.Exit(0)
 	}
 }
