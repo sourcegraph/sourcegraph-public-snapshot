@@ -118,6 +118,7 @@ func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
 	})
 }
 
+// resetSrcNotifiers deletes all alert notifiers in Grafana's DB starting with the UID `"src-"`
 func (c *siteConfigSubscriber) resetSrcNotifiers(ctx context.Context) error {
 	alerts, err := c.grafana.GetAllAlertNotifications(ctx)
 	if err != nil {

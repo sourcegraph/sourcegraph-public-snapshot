@@ -40,7 +40,7 @@ func main() {
 
 	// subscribe to configuration
 	if noConfig == "true" {
-		log.Info("configuration sync disabled")
+		log.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
 	} else {
 		log.Info("initializing configuration")
 		grafanaClient := sdk.NewClient(fmt.Sprintf("http://127.0.0.1:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
