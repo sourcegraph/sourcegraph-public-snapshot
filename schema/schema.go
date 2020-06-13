@@ -631,6 +631,46 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
+// GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty
+type GrafanaNotifierPagerduty struct {
+	// AutoResolve description: Resolve incidents in PagerDuty once the alert goes back to ok
+	AutoResolve bool `json:"autoResolve,omitempty"`
+	// IntegrationKey description: Integration key for PagerDuty.
+	IntegrationKey string `json:"integrationKey"`
+	Type           string `json:"type"`
+}
+
+// GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack
+type GrafanaNotifierSlack struct {
+	// Icon_emoji description: Provide an emoji to use as the icon for the bot’s message. Ex :smile:
+	Icon_emoji string `json:"icon_emoji,omitempty"`
+	// Icon_url description: Provide a URL to an image to use as the icon for the bot’s message.
+	Icon_url string `json:"icon_url,omitempty"`
+	// MentionChannel description: Optionally mention either all channel members or just active ones.
+	MentionChannel string `json:"mentionChannel,omitempty"`
+	// MentionGroups description: Optionally mention one or more groups in the Slack notification sent by Grafana. You have to refer to groups, comma-separated, via their corresponding Slack IDs (which you can get from each group’s Slack profile URL).
+	MentionGroups string `json:"mentionGroups,omitempty"`
+	// MentionUsers description: Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).
+	MentionUsers string `json:"mentionUsers,omitempty"`
+	// Recipient description: Allows you to override the Slack recipient. You must either provide a channel Slack ID, a user Slack ID, a username reference (@<user>, all lowercase, no whitespace), or a channel reference (#<channel>, all lowercase, no whitespace).
+	Recipient string `json:"recipient,omitempty"`
+	// Token description: If provided, Grafana will upload the generated image via Slack’s file.upload API method, not the external image destination.
+	Token string `json:"token,omitempty"`
+	Type  string `json:"type"`
+	// Url description: Slack incoming webhook URL.
+	Url string `json:"url,omitempty"`
+	// Username description: Set the username for the bot’s message.
+	Username string `json:"username,omitempty"`
+}
+
+// GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook
+type GrafanaNotifierWebhook struct {
+	Password string `json:"password,omitempty"`
+	Type     string `json:"type"`
+	Url      string `json:"url"`
+	Username string `json:"username,omitempty"`
+}
+
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
 type HTTPHeaderAuthProvider struct {
 	// StripUsernameHeaderPrefix description: The prefix that precedes the username portion of the HTTP header specified in `usernameHeader`. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to `accounts.google.com:`.
@@ -690,12 +730,55 @@ type Notice struct {
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
 }
+type Notifier struct {
+	Slack     *GrafanaNotifierSlack
+	Pagerduty *GrafanaNotifierPagerduty
+	Webhook   *GrafanaNotifierWebhook
+}
+
+func (v Notifier) MarshalJSON() ([]byte, error) {
+	if v.Slack != nil {
+		return json.Marshal(v.Slack)
+	}
+	if v.Pagerduty != nil {
+		return json.Marshal(v.Pagerduty)
+	}
+	if v.Webhook != nil {
+		return json.Marshal(v.Webhook)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *Notifier) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "pagerduty":
+		return json.Unmarshal(data, &v.Pagerduty)
+	case "slack":
+		return json.Unmarshal(data, &v.Slack)
+	case "webhook":
+		return json.Unmarshal(data, &v.Webhook)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook"})
+}
+
 type OAuthIdentity struct {
 	// MaxBatchRequests description: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
 	// MinBatchingThreshold description: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
 	Type                 string `json:"type"`
+}
+type ObservabilityAlerts struct {
+	// Id description: Unique identifier for this alert.
+	Id string `json:"id"`
+	// Level description: Sourcegraph alert level to subscribe to notifications for.
+	Level    string    `json:"level"`
+	Notifier *Notifier `json:"notifier,omitempty"`
 }
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.
@@ -1015,6 +1098,8 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
+	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.

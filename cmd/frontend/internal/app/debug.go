@@ -1,12 +1,15 @@
 package app
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -18,6 +21,52 @@ import (
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+
+func init() {
+	// if Grafana is enabled, this warning renders problems with the Grafana deployment and configuration
+	// as reported by `grafana-wrapper` inside the sourcegraph/grafana container.
+	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
+		if len(grafanaURLFromEnv) == 0 {
+			return nil
+		}
+
+		// set up request to fetch status from grafana-wrapper
+		grafanaURL, err := url.Parse(grafanaURLFromEnv)
+		if err != nil {
+			// only return an error is alerts are configured
+			if len(c.ObservabilityAlerts) > 0 {
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts are configured, but Grafana configuration is invalid: %v", err)))
+			}
+			return
+		}
+		grafanaURL.Path = "/grafana-wrapper/config-subscriber"
+		req, err := http.NewRequest("GET", grafanaURL.String(), nil)
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: failed to fetch Grafana status: %v", err)))
+			return
+		}
+
+		// use a short timeout to avoid having this block problems from loading
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: Grafana is unreachable: %v", err)))
+			return
+		}
+
+		var grafanaStatus struct {
+			Problems conf.Problems `json:"problems"`
+		}
+		defer resp.Body.Close()
+		if err := json.NewDecoder(resp.Body).Decode(&grafanaStatus); err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: unable to read Grafana status: %v", err)))
+			return
+		}
+
+		return grafanaStatus.Problems
+	})
+}
 
 func addNoK8sClientHandler(r *mux.Router) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
