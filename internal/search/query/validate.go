@@ -9,14 +9,6 @@ import (
 	"github.com/src-d/enry/v2"
 )
 
-type UnsupportedError struct {
-	Msg string
-}
-
-func (e *UnsupportedError) Error() string {
-	return e.Msg
-}
-
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false
