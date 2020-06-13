@@ -492,6 +492,7 @@
   },
   "timezone": "utc",
   "title": "Overview",
+  "uid": "overview",
   "variables": {
     "list": []
   },
