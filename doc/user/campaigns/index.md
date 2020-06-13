@@ -76,25 +76,26 @@ You can create a campaign from a [campaign spec](#campaign-specs), which is a YA
 The following example campaign spec adds "Hello World" to all `README.md` files:
 
 ```yaml
-# File: hello-world.campaign.yaml
 name: hello-world
 description: Add Hello World to READMEs
 
 # Find all repositories that contain a README.md file.
-roots:
-  - query: file:README.md
+on:
+  - repositoriesMatchingQuery: file:README.md
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
   - run: echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
 
-# The commit message for the commit with the changes.
-commit:
-  message: Append Hello World to all README.md files
-
-# The name of the branch where the commit will be pushed.
-branch: hello-world
+# Describe the changeset (e.g., GitHub pull request) you want for each repository.
+changesetTemplate:
+  title: Hello World
+  body: My first campaign!
+  branch: hello-world # Push the commit to this branch.
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
 ```
 
 1. Create a campaign from the campaign spec:
