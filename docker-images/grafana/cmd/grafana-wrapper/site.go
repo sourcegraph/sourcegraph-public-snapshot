@@ -90,10 +90,10 @@ func (c *siteConfigSubscriber) Handler() http.Handler {
 		})
 		if err != nil {
 			w.WriteHeader(500)
-			_ = w.Write([]byte(err.Error()))
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		_ = w.Write(b)
+		_, _ = w.Write(b)
 	})
 	return handler
 }
