@@ -140,19 +140,19 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 	defer c.mux.Unlock()
 	c.log.Debug("updating grafana configuration")
 
-	var problems conf.Problems
+	c.problems = conf.Problems{}
 
 	// generate new notifiers configuration
 	created, err := generateNotifiersConfig(c.alerts, newAlerts)
 	if err != nil {
-		problems = append(problems, newObservabilityAlertsProblem(err))
+		c.problems = append(c.problems, newObservabilityAlertsProblem(err))
 		return
 	}
 
 	// get the general alerts panels in the home dashboard
 	homeBoard, err := getOverviewDashboard()
 	if err != nil {
-		problems = append(problems, newObservabilityAlertsProblem(fmt.Errorf("failed to generate alerts overview dashboard: %w", err)))
+		c.problems = append(c.problems, newObservabilityAlertsProblem(fmt.Errorf("failed to generate alerts overview dashboard: %w", err)))
 		return
 	}
 	var criticalPanel, warningPanel *sdk.Panel
@@ -169,12 +169,12 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 		panel.Alert = newDefaultAlertsPanelAlert(level)
 	}
 	if criticalPanel == nil || warningPanel == nil {
-		problems = append(problems, newObservabilityAlertsProblem(errors.New("failed to find alerts panels")))
+		c.problems = append(c.problems, newObservabilityAlertsProblem(errors.New("failed to find alerts panels")))
 		return
 	}
 
 	if err := c.resetSrcNotifiers(ctx); err != nil {
-		problems = append(problems, newObservabilityAlertsProblem(err))
+		c.problems = append(c.problems, newObservabilityAlertsProblem(err))
 		// silently try to recreate alerts, in case any were deleted
 		c.log.Warn("failed to reset notifiers - attempting to recreate")
 		for _, alert := range created {
@@ -188,8 +188,9 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 		_, err = c.grafana.CreateAlertNotification(ctx, alert)
 		if err != nil {
 			c.log.Error(fmt.Sprintf("failed to create notifier %q", alert.UID), "error", err)
-			problems = append(problems, newObservabilityAlertsProblem(fmt.Errorf("failed to create alert %q: please refer to the Grafana logs for more details", alert.UID)))
-			problems = append(problems, newObservabilityAlertsProblem(fmt.Errorf("grafana error:", err)))
+			c.problems = append(c.problems,
+				newObservabilityAlertsProblem(fmt.Errorf("failed to create alert %q: please refer to the Grafana logs for more details", alert.UID)),
+				newObservabilityAlertsProblem(fmt.Errorf("grafana error:", err)))
 			continue
 		}
 		// register alert in corresponding panel
@@ -205,14 +206,13 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 	// update board
 	_, err = c.grafana.SetDashboard(ctx, *homeBoard, sdk.SetDashboardParams{Overwrite: true})
 	if err != nil {
-		problems = append(problems, newObservabilityAlertsProblem(fmt.Errorf("failed to update dashboard: %w", err)))
+		c.problems = append(c.problems, newObservabilityAlertsProblem(fmt.Errorf("failed to update dashboard: %w", err)))
 		return
 	}
 
 	// update state
 	c.alerts = newAlerts
 	c.alertsSum = newSum
-	c.problems = problems
 	c.log.Debug("updated grafana configuration")
 }
 
