@@ -8,7 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
 )
 
-func TestSearch_VisibilityFilter(t *testing.T) {
+func TestSearch(t *testing.T) {
+	if len(*githubToken) == 0 {
+		t.Fatal("Environment variable GITHUB_TOKEN is not set")
+	}
+
 	// Set up external service
 	esID, err := client.AddExternalService(e2eutil.AddExternalServiceInput{
 		Kind:        "GITHUB",

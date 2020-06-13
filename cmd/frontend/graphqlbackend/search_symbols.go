@@ -278,6 +278,14 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 
+	repoResolver := NewRepositoryResolver(repoRevs.Repo)
+	commitResolver := &GitCommitResolver{
+		repoResolver: repoResolver,
+		oid:          GitObjectID(commitID),
+		inputRev:     &inputRev,
+		// NOTE: Not all fields are set, for performance.
+	}
+
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
@@ -291,35 +299,23 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 	fileMatchesByURI := make(map[string]*FileMatchResolver)
 	fileMatches := make([]*FileMatchResolver, 0)
-	repoResolvers := make(RepositoryResolverCache)
+
 	for _, symbol := range symbols {
-		if repoResolvers[repoRevs.Repo.Name] == nil {
-			repoResolvers[repoRevs.Repo.Name] = &RepositoryResolver{repo: repoRevs.Repo}
-		}
-		commit := &GitCommitResolver{
-			repoResolver: repoResolvers[repoRevs.Repo.Name],
-			oid:          GitObjectID(commitID),
-			inputRev:     &inputRev,
-			// NOTE: Not all fields are set, for performance.
-		}
 		symbolRes := &searchSymbolResult{
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
-			commit:  commit,
+			commit:  commitResolver,
 		}
 		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
-			if repoResolvers[symbolRes.commit.repoResolver.repo.Name] == nil {
-				repoResolvers[symbolRes.commit.repoResolver.repo.Name] = &RepositoryResolver{repo: symbolRes.commit.repoResolver.repo}
-			}
 			fileMatch := &FileMatchResolver{
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
-				Repo:    repoResolvers[symbolRes.commit.repoResolver.repo.Name],
+				Repo:    repoResolver,
 				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
 				CommitID: api.CommitID(symbolRes.commit.oid),

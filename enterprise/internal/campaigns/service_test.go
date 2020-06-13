@@ -1330,7 +1330,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		// Repositories for which we want to create a new ChangesetJob (and thus a Changeset)
 		wantCreated repoNames
 		// An error to be thrown when attempting to do the update
-		wantErr error
+		wantErr string
 	}{
 		{
 			name:             "manual campaign, no new patch set, name update",
@@ -1453,7 +1453,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: ErrManualCampaignUpdatePatchIllegal,
+			wantErr: ErrManualCampaignUpdatePatchIllegal.Error(),
 		},
 		{
 			name:             "update plan on closed campaign",
@@ -1464,7 +1464,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: ErrUpdateClosedCampaign,
+			wantErr: ErrUpdateClosedCampaign.Error(),
 		},
 		{
 			name:            "1 unmodified merged, 1 new changeset",
@@ -1495,35 +1495,30 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
+
+			missingRepoPerms: repoNames{"repo-0"},
+			wantErr:          (&db.RepoNotFoundErr{ID: rs[0].ID}).Error(),
+		},
+		{
+			name:           "1 unmodified, 1 created but missing permissions for created",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0", "repo-1"},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1"},
+			},
+			missingRepoPerms: repoNames{"repo-1"},
+			wantErr:          (&db.RepoNotFoundErr{ID: rs[1].ID}).Error(),
+		},
+		{
+			name:           "1 detached, 1 created, missing repo permissions for deatched",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0"},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1", modifiedDiff: true},
+			},
 			missingRepoPerms: repoNames{"repo-0"},
 			wantUnmodified:   repoNames{"repo-0"},
-		},
-		{
-			name:           "1 detached, 1 unmodified, 1 modified, 1 new changeset, all missing repo permissions",
-			updatePatchSet: true,
-			oldPatches:     repoNames{"repo-0", "repo-1", "repo-2"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-				{repo: "repo-1", modifiedDiff: true},
-				{repo: "repo-3"},
-			},
-			missingRepoPerms: repoNames{"repo-0", "repo-1", "repo-2", "repo-3"},
-			wantUnmodified:   repoNames{"repo-0", "repo-1", "repo-2"},
-			// For repo-3 no ChangesetJob should be created
-		},
-		{
-			name:           "1 detached, 1 unmodified, 1 modified, 1 new changeset, subset missing repo permissions",
-			updatePatchSet: true,
-			oldPatches:     repoNames{"repo-0", "repo-1", "repo-2"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-				{repo: "repo-1", modifiedDiff: true},
-				{repo: "repo-3"},
-			},
-			missingRepoPerms: repoNames{"repo-0", "repo-1"},
-			wantUnmodified:   repoNames{"repo-0", "repo-1"},
-			wantDetached:     repoNames{"repo-2"},
-			wantCreated:      repoNames{"repo-3"},
+			wantCreated:      repoNames{"repo-1"},
 		},
 	}
 
@@ -1684,8 +1679,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			// database again to make sure the changes are persisted
 			_, detachedChangesets, err := svc.UpdateCampaign(ctx, args)
 
-			if tt.wantErr != nil {
-				if have, want := fmt.Sprint(err), tt.wantErr.Error(); have != want {
+			if tt.wantErr != "" {
+				if have, want := fmt.Sprint(err), tt.wantErr; have != want {
 					t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
 				}
 				return

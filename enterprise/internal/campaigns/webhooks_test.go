@@ -64,7 +64,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubSrc, err := repos.NewGithubSource(extSvc, cf, nil)
+		githubSrc, err := repos.NewGithubSource(extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -216,7 +216,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		bitbucketSource, err := repos.NewBitbucketServerSource(extSvc, cf, nil)
+		bitbucketSource, err := repos.NewBitbucketServerSource(extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}

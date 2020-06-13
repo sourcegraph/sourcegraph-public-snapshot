@@ -34,10 +34,6 @@ var (
 func TestMain(m *testing.M) {
 	flag.Parse()
 
-	if len(*githubToken) == 0 {
-		log.Fatal("Environment variable GITHUB_TOKEN is not set")
-	}
-
 	*baseURL = strings.TrimSuffix(*baseURL, "/")
 
 	needsSiteInit, err := e2eutil.NeedsSiteInit(*baseURL)

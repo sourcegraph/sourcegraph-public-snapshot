@@ -13,7 +13,7 @@ jobs:
       - name: Upload LSIF data
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
-  lsif-web:
+  lsif-tsc-web:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
@@ -32,7 +32,7 @@ jobs:
         working-directory: web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
-  lsif-shared:
+  lsif-tsc-shared:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
@@ -51,7 +51,7 @@ jobs:
         working-directory: shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
-  lsif-browser:
+  lsif-tsc-browser:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
@@ -66,6 +66,69 @@ jobs:
       - name: Generate LSIF data
         working-directory: browser/
         run: lsif-tsc -p .
+      - name: Upload LSIF data
+        working-directory: browser/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+
+  lsif-eslint-web:
+    if: github.repository == 'sourcegraph/sourcegraph'
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Build TypeScript
+        run: yarn run --ignore-engines build-ts
+      - name: Generate LSIF data
+        working-directory: web/
+        run: yarn eslint -f lsif -o dump.lsif
+      - name: Upload LSIF data
+        working-directory: web/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+
+  lsif-eslint-shared:
+    if: github.repository == 'sourcegraph/sourcegraph'
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Build TypeScript
+        run: yarn run --ignore-engines build-ts
+      - name: Generate LSIF data
+        working-directory: shared/
+        run: yarn eslint -f lsif -o dump.lsif
+      - name: Upload LSIF data
+        working-directory: shared/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+
+  lsif-eslint-browser:
+    if: github.repository == 'sourcegraph/sourcegraph'
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Build TypeScript
+        run: yarn run --ignore-engines build-ts
+      - name: Generate LSIF data
+        working-directory: browser/
+        run: yarn eslint -f lsif -o dump.lsif
       - name: Upload LSIF data
         working-directory: browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
