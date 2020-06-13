@@ -901,17 +901,20 @@ func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
 
 	switch searchType {
 	case SearchTypeLiteral:
-		// SearchTypeLiteral is not supported yet.
+		query, err = ParseAndOrLiteral(in)
+		if err != nil {
+			return nil, err
+		}
 	case SearchTypeRegex, SearchTypeStructural:
 		query, err = ParseAndOr(in)
 		if err != nil {
 			return nil, err
 		}
-		query = Map(query, LowercaseFieldNames, SubstituteAliases)
-		err = validate(query)
-		if err != nil {
-			return nil, err
-		}
+	}
+	query = Map(query, LowercaseFieldNames, SubstituteAliases)
+	err = validate(query)
+	if err != nil {
+		return nil, err
 	}
 	return &AndOrQuery{Query: query}, nil
 }
