@@ -44,6 +44,7 @@ COPY home.json /usr/share/grafana/public/dashboards/home.json
 
 COPY --from=builder /dashboards/*.json /sg_config_grafana/provisioning/dashboards/sourcegraph_internal/
 COPY --from=builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
+RUN mkdir /sg_grafana_additional_dashboards
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana entry.sh /
