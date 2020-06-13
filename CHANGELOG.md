@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Prometheus metric `src_gitserver_repos_removed_disk_pressure` which is incremented everytime we remove a repository due to disk pressure. [#10900](https://github.com/sourcegraph/sourcegraph/pull/10900)
 - `gitolite.exclude` setting in [Gitolite external service config](https://docs.sourcegraph.com/admin/external_service/gitolite#configuration) now supports a regular expression via the `pattern` field. This is consistent with how we exclude in other external services. Additionally this is a replacement for the deprecated `blacklist` configuration. [#11403](https://github.com/sourcegraph/sourcegraph/pull/11403)
 - Notifications about Sourcegraph being out of date will now be shown to site admins and users (depending on how out-of-date it is).
-- Site administrators can now configure Grafana alerts directly using `observability.alerts` to provide notifications when Sourcegraph alerts are firing :
+- Alerts are now configured using `observability.alerts` in the site configuration, instead of via the Grafana web UI. For example:
 
   ```
   "observability.alerts": {
