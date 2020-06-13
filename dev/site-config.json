@@ -10,15 +10,5 @@
   "update.channel": "release",
   "experimentalFeatures": {},
   "disablePublicRepoRedirects": true,
-  "repoListUpdateInterval": 1,
-  "observability.alerts": [
-    {
-      "id": "email-notifier",
-      "level": "warning",
-      "notifier": {
-        "type": "email",
-        "addresses": "robert@sourcegraph.com"
-      }
-    }
-  ]
+  "repoListUpdateInterval": 1
 }
