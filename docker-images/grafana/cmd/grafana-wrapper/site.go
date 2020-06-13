@@ -190,7 +190,7 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newAlert
 			c.log.Error(fmt.Sprintf("failed to create notifier %q", alert.UID), "error", err)
 			c.problems = append(c.problems,
 				newObservabilityAlertsProblem(fmt.Errorf("failed to create alert %q: please refer to the Grafana logs for more details", alert.UID)),
-				newObservabilityAlertsProblem(fmt.Errorf("grafana error:", err)))
+				newObservabilityAlertsProblem(fmt.Errorf("grafana error: %w", err)))
 			continue
 		}
 		// register alert in corresponding panel

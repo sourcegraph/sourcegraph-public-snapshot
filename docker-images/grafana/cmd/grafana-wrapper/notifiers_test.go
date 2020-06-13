@@ -28,20 +28,20 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 						Id:    "test-alert",
 						Level: "warning",
 						Notifier: &schema.Notifier{
-							Email: &schema.GrafanaNotifierEmail{
-								Type:      "email",
-								Addresses: "robert@bobheadxi.dev",
+							Slack: &schema.GrafanaNotifierSlack{
+								Type: "slack",
+								Url:  "https://soucegraph.com",
 							},
 						},
 					},
 				},
 			},
 			wantCreated: []sdk.AlertNotification{{
-				UID:  "src-warning-email-test-alert",
+				UID:  "src-warning-slack-test-alert",
 				Name: "test-alert",
-				Type: "email",
+				Type: "slack",
 				Settings: map[string]interface{}{
-					"addresses": "robert@bobheadxi.dev",
+					"url": "https://soucegraph.com",
 				},
 			}},
 		},
