@@ -603,42 +603,6 @@
         }
       }
     },
-    "observability.alerts": {
-      "description": "Configure notifications for Sourcegraph's built-in alerts.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["level", "id"],
-        "properties": {
-          "level": {
-            "description": "Sourcegraph alert level to subscribe to notifications for.",
-            "type": "string",
-            "enum": ["warning", "critical"]
-          },
-          "id": {
-            "description": "Unique identifier for this alert.",
-            "type": "string"
-          },
-          "notifier": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": ["slack", "pagerduty", "email", "webhook"]
-              }
-            },
-            "oneOf": [
-              { "$ref": "#/definitions/GrafanaNotifierSlack" },
-              { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierWebhook" }
-            ],
-            "!go": {
-              "taggedUnionType": true
-            }
-          }
-        }
-      }
-    },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
@@ -991,86 +955,6 @@
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
         }
-      }
-    },
-    "GrafanaNotifierSlack": {
-      "description": "Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack",
-      "type": "object",
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "slack"
-        },
-        "url": {
-          "description": "Slack incoming webhook URL.",
-          "type": "string"
-        },
-        "username": {
-          "description": "Set the username for the bot’s message.",
-          "type": "string"
-        },
-        "recipient": {
-          "description": "Allows you to override the Slack recipient. You must either provide a channel Slack ID, a user Slack ID, a username reference (@<user>, all lowercase, no whitespace), or a channel reference (#<channel>, all lowercase, no whitespace).",
-          "type": "string"
-        },
-        "icon_emoji": {
-          "description": "Provide an emoji to use as the icon for the bot’s message. Ex :smile:",
-          "type": "string"
-        },
-        "icon_url": {
-          "description": "Provide a URL to an image to use as the icon for the bot’s message.",
-          "type": "string"
-        },
-        "mentionUsers": {
-          "description": "Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).",
-          "type": "string"
-        },
-        "mentionGroups": {
-          "description": "Optionally mention one or more groups in the Slack notification sent by Grafana. You have to refer to groups, comma-separated, via their corresponding Slack IDs (which you can get from each group’s Slack profile URL).",
-          "type": "string"
-        },
-        "mentionChannel": {
-          "description": "Optionally mention either all channel members or just active ones.",
-          "type": "string"
-        },
-        "token": {
-          "description": "If provided, Grafana will upload the generated image via Slack’s file.upload API method, not the external image destination.",
-          "type": "string"
-        }
-      }
-    },
-    "GrafanaNotifierPagerduty": {
-      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty",
-      "type": "object",
-      "required": ["type", "integrationKey"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "pagerduty"
-        },
-        "integrationKey": {
-          "description": "Integration key for PagerDuty.",
-          "type": "string"
-        },
-        "autoResolve": {
-          "description": "Resolve incidents in PagerDuty once the alert goes back to ok",
-          "type": "boolean"
-        }
-      }
-    },
-    "GrafanaNotifierWebhook": {
-      "description": "Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook",
-      "type": "object",
-      "required": ["type", "url"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "webhook"
-        },
-        "url": { "type": "string" },
-        "username": { "type": "string" },
-        "password": { "type": "string" }
       }
     }
   }
