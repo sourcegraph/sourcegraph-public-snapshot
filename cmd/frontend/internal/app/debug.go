@@ -30,17 +30,28 @@ func init() {
 			return nil
 		}
 
-		req, err := http.NewRequest("GET", fmt.Sprintf("%s/grafana-wrapper/config-subscriber", grafanaURLFromEnv), nil)
+		// set up request to fetch status from grafana-wrapper
+		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Grafana configuration is invalid: %v", err)))
+			// only return an error is alerts are configured
+			if len(c.ObservabilityAlerts) > 0 {
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts are configured, but Grafana configuration is invalid: %v", err)))
+			}
+			return
+		}
+		grafanaURL.Path = "/grafana-wrapper/config-subscriber"
+		req, err := http.NewRequest("GET", grafanaURL.String(), nil)
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: failed to fetch Grafana status: %v", err)))
 			return
 		}
 
+		// use a short timeout to avoid having this block problems from loading
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
 		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Grafana is unreachable: %v", err)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: Grafana is unreachable: %v", err)))
 			return
 		}
 
@@ -49,7 +60,7 @@ func init() {
 		}
 		defer resp.Body.Close()
 		if err := json.NewDecoder(resp.Body).Decode(&grafanaStatus); err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Unable to read Grafana status: %v", err)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: unable to read Grafana status: %v", err)))
 			return
 		}
 
