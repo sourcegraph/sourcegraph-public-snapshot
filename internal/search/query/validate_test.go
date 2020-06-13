@@ -48,7 +48,7 @@ func TestAndOrQuery_Validation(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
-			_, err := ProcessAndOr(c.input)
+			_, err := ProcessAndOr(c.input, SearchTypeRegex)
 			if err == nil {
 				t.Fatal("expected test to fail")
 			}
@@ -85,7 +85,7 @@ func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			query, err := ProcessAndOr(c.input)
+			query, err := ProcessAndOr(c.input, SearchTypeRegex)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -115,7 +115,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		},
 	}
 	t.Run("for regexp field", func(t *testing.T) {
-		query, err := ProcessAndOr(c.query)
+		query, err := ProcessAndOr(c.query, SearchTypeRegex)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,7 +130,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 }
 
 func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
-	query, err := ProcessAndOr("repoHasFile:foo")
+	query, err := ProcessAndOr("repoHasFile:foo", SearchTypeRegex)
 	if err != nil {
 		t.Fatal(err)
 	}
