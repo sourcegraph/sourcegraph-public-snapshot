@@ -635,7 +635,6 @@ const SiteSchemaJSON = `{
             "oneOf": [
               { "$ref": "#/definitions/GrafanaNotifierSlack" },
               { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierEmail" },
               { "$ref": "#/definitions/GrafanaNotifierWebhook" }
             ],
             "!go": {
@@ -996,25 +995,6 @@ const SiteSchemaJSON = `{
         "displayName": {
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
-        }
-      }
-    },
-    "GrafanaNotifierEmail": {
-      "description": "Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email",
-      "type": "object",
-      "required": ["type", "addresses"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "email"
-        },
-        "addresses": {
-          "description": "Email addresses to recipients. You can enter multiple email addresses using a “;” separator.",
-          "type": "string"
-        },
-        "singleEmail": {
-          "description": "Send a single email to all recipients.",
-          "type": "boolean"
         }
       }
     },
