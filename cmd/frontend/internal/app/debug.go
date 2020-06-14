@@ -51,6 +51,10 @@ func init() {
 			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: Grafana is unreachable: %v", err)))
 			return
 		}
+		if resp.StatusCode != 200 {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: Grafana is unreachable: status code %d", resp.StatusCode)))
+			return
+		}
 
 		var grafanaStatus struct {
 			Problems conf.Problems `json:"problems"`
