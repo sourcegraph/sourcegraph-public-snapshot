@@ -26,23 +26,20 @@ func init() {
 	// if Grafana is enabled, this warning renders problems with the Grafana deployment and configuration
 	// as reported by `grafana-wrapper` inside the sourcegraph/grafana container.
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if len(grafanaURLFromEnv) == 0 {
+		if len(grafanaURLFromEnv) == 0 || len(c.ObservabilityAlerts) == 0 {
 			return nil
 		}
 
 		// set up request to fetch status from grafana-wrapper
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
-			// only return an error is alerts are configured
-			if len(c.ObservabilityAlerts) > 0 {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts are configured, but Grafana configuration is invalid: %v", err)))
-			}
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts are configured, but Grafana configuration is invalid: %v", err)))
 			return
 		}
 		grafanaURL.Path = "/grafana-wrapper/config-subscriber"
 		req, err := http.NewRequest("GET", grafanaURL.String(), nil)
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: failed to fetch Grafana status: %v", err)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: unable to fetch Grafana status: %v", err)))
 			return
 		}
 
