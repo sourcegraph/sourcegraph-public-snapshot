@@ -30,6 +30,12 @@ func init() {
 			return nil
 		}
 
+		// see https://github.com/sourcegraph/sourcegraph/issues/11473
+		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts are not currently supported by your deployment type: %s", conf.DeployType())))
+			return nil
+		}
+
 		// set up request to fetch status from grafana-wrapper
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
