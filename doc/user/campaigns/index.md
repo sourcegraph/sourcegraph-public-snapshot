@@ -270,11 +270,10 @@ Site admins can also:
 ## Concepts
 
 - A **campaign** is group of related changes to code, along with a title and description.
-- A **campaign spec** is a "record of intent". The campaign will constantly work to ensure that changesets exist as described in the campaign spec. By setting a campaign's spec, you're declaring your desired state of the world.
-- You could write campaign specs manually, writing out all of the unified diffs you'd like to apply. But that's tedious. Your intent is higher-level, such as "lint files in all repositories with a `package.json` file". A **campaign template** lets you describe how to generate a campaign spec (by selecting repositories and running commands in each one).
 - The campaign has associated **changesets**, which is a generic term for pull requests, merge requests, or any other reviewable chunk of code. (Code hosts use different terms for this, which is why we chose a generic term.)
-- Initially a changeset is **unpublished** and is not actually pushed to or created on the code host.
-- You **publish** a changeset when you're ready to push the branch and create the changeset on the code host.
+- A **published changeset** means the commit, branch, and changeset have been created on the code host. An **unpublished changeset** is just a preview that you can view in the campaign but does not exist on the code host yet.
+- A [**campaign spec**](campaign_spec.md) is a YAML file describing the campaign: repositories to change, commands to run, and a template for changesets and commits. You describe your high-level intent in the campaign spec, such as "lint files in all repositories with a `package.json` file".
+- A campaign has many **changeset specs**, which are produced by executing the campaign spec (i.e., running the commands on each selected repository) and then using its changeset template to produce a list of changesets, including the diffs, commit messages, changeset title, and changeset body. You don't need to view or edit the raw changeset specs; you will edit the campaign spec and view the changesets in the UI.
 
 ## Roadmap
 
