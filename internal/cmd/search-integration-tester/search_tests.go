@@ -105,6 +105,10 @@ var tests = []test{
 		Name:  `Global search, structural, index only, nonzero result`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ make(:[1]) index:only patterntype:structural count:3`,
 	},
+	{
+		Name:  `Structural search quotes are interpreted literally`,
+		Query: `repo:^github\.com/rvantonderp/auth0-go-jwt-middleware$ file:^README\.md "This :[_] authenticated :[_]" patterntype:structural`,
+	},
 	// Repo search (part 2).
 	{
 		Name:  `Global search, archived excluded, zero results`,
@@ -202,6 +206,10 @@ var tests = []test{
 	{
 		Name:  `Concat converted to .* for regexp search`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go ca Pool or x509 Pool stable:yes type:file`,
+	},
+	{
+		Name:  `Structural search uses literal search parser`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go :[[v]] := x509 and AppendCertsFromPEM(:[_]) patterntype:structural`,
 	},
 }
 
