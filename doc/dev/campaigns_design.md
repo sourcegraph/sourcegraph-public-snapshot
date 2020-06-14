@@ -2,10 +2,10 @@
 
 Why are [campaigns](../user/campaigns/index.md) designed the way they are?
 
-Goals:
+Principles:
 
-- Declarative (not imperative) API
-- 
+- **Declarative API** (not imperative). You declare your intent, such as "lint files in all repositories with a `package.json` file". The campaign figures out how to achieve your desired state. The external state (of repositories, changesets, code hosts, access tokens, etc.) can change at any time, and temporary errors frequently occur when reading and writing to code hosts. These factors would make an imperative API very cumbersome because each API client would need to handle the complexity of the distributed system.
+- **Define a campaign in a file** (not some online API). The source of truth of a campaign's definition should be a file that can be stored in version control, reviewed in code review, and re-applied by CI. This is in the same spirit as IaaC (infrastructure as code; e.g., storing your Terraform/Kubernetes/etc. files in Git). We prefer this approach over a (worse) alternative where you define a campaign in a UI with a bunch of text fields, checkboxes, buttons, etc.
 
 ## Inspired by Kubernetes
 
@@ -113,11 +113,11 @@ changesetTemplate:
   </tr>
 </table>
 
-asdf
+These docs explain more about Kubernetes' design:
 
-
-- [Object Management](https://kubernetes.io/docs/concepts/overview/working-with-objects/object-management/)
-- [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/)
-
-- [Architecture](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/architecture.md)
+- [Kubernetes Object Management](https://kubernetes.io/docs/concepts/overview/working-with-objects/object-management/)
+- [Kubernetes Controllers](https://kubernetes.io/docs/concepts/architecture/controller/)
+  - [Desired versus current state](https://kubernetes.io/docs/concepts/architecture/controller/#desired-vs-current)
+- [Kubernetes Architecture](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/architecture.md)
+- [Kubernetes General Configuration Tips](https://kubernetes.io/docs/concepts/configuration/overview/#general-configuration-tips)
 - [Kubernetes Design and Development Explained](https://thenewstack.io/kubernetes-design-and-development-explained/)
