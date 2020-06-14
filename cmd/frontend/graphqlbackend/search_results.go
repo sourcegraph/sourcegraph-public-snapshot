@@ -669,6 +669,25 @@ func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 		return right
 	}
 	if left.SearchResults != nil && right.SearchResults != nil {
+		rightFileMatches := make(map[string]*FileMatchResolver)
+		for _, r := range right.SearchResults {
+			if fileMatch, ok := r.ToFileMatch(); ok {
+				rightFileMatches[fileMatch.uri] = fileMatch
+			}
+		}
+
+		for _, leftMatch := range left.SearchResults {
+			leftFileMatch, ok := leftMatch.ToFileMatch()
+			if !ok {
+				continue
+			}
+
+			if rightFileMatch := rightFileMatches[leftFileMatch.uri]; rightFileMatch != nil {
+				// Merge line matches for the same file.
+				leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
+			}
+		}
+
 		left.SearchResults = append(left.SearchResults, right.SearchResults...)
 		// merge common search data.
 		left.searchResultsCommon.update(right.searchResultsCommon)

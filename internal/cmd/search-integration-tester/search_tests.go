@@ -205,7 +205,7 @@ var tests = []test{
 	},
 	{
 		Name:  `Concat converted to .* for regexp search`,
-		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go ca Pool or x509 Pool stable:yes type:file`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go ca Pool or x509 Pool patterntype:regexp stable:yes type:file`,
 	},
 	{
 		Name:  `Structural search uses literal search parser`,
