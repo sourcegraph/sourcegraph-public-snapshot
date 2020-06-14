@@ -5,11 +5,22 @@ Why are [campaigns](../user/campaigns/index.md) designed the way they are?
 Principles:
 
 - **Declarative API** (not imperative). You declare your intent, such as "lint files in all repositories with a `package.json` file". The campaign figures out how to achieve your desired state. The external state (of repositories, changesets, code hosts, access tokens, etc.) can change at any time, and temporary errors frequently occur when reading and writing to code hosts. These factors would make an imperative API very cumbersome because each API client would need to handle the complexity of the distributed system.
-- **Define a campaign in a file** (not some online API). The source of truth of a campaign's definition should be a file that can be stored in version control, reviewed in code review, and re-applied by CI. This is in the same spirit as IaaC (infrastructure as code; e.g., storing your Terraform/Kubernetes/etc. files in Git). We prefer this approach over a (worse) alternative where you define a campaign in a UI with a bunch of text fields, checkboxes, buttons, etc.
+- **Define a campaign in a file** (not some online API). The source of truth of a campaign's definition is a file that can be stored in version control, reviewed in code review, and re-applied by CI. This is in the same spirit as IaaC (infrastructure as code; e.g., storing your Terraform/Kubernetes/etc. files in Git). We prefer this approach over a (worse) alternative where you define a campaign in a UI with a bunch of text fields, checkboxes, buttons, etc., and need to write a custom API client to import/export the campaign definition.
+- **Shareable and portable.** You can share your campaign specs, and it's easy for other people to use them. A campaign spec expresses an intent that's high-level enough to (usually) not be specific to your own particular repositories. You declare and inject configuration and secrets to customize it instead of hard-coding those values.
+- **Large-scale.** You can run campaigns across 10,000s of repositories. It might take a while to compute and push everything, and the current implementation might cap out lower than that, but the fundamental design scales well.
+- **Accommodates a variety of code hosts and review/merge processes.** Specifically, we don't to limit campaigns to only working for GitHub pull requests. (See [current support list](../user/campaigns/index.md#supported-code-hosts-and-changeset-types).)
 
 ## Inspired by Kubernetes
 
-We've found Kubernetes to be a good source of inspiration for the campaigns API design, because both Kubernetes and campaigns help you manage a distributed system. Here's how Kubernetes concepts (for a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)) map to Sourcegraph campaigns concepts:
+We've found Kubernetes to be a good source of inspiration for the campaigns API design, because both Kubernetes and campaigns help you manage a distributed system. Here's an analogy between a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a Sourcegraph campaign.
+
+<!--
+
+Do we need to say this?
+
+Resembling Kubernetes is *not* an explicit goal. Drawing the analogy helps explain to people why we incorporated aspects of robustness and error-tolerance into campaigns (because they intuitively know why they're necessary for Kubernetes).
+
+-->
 
 <table>
   <tr>
