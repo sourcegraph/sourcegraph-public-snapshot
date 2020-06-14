@@ -277,6 +277,8 @@ Site admins can also:
 - A campaign has many **changeset specs**, which are produced by executing the campaign spec (i.e., running the commands on each selected repository) and then using its changeset template to produce a list of changesets, including the diffs, commit messages, changeset title, and changeset body. You don't need to view or edit the raw changeset specs; you will edit the campaign spec and view the changesets in the UI.
 - The **campaign controller** reconciles the actual state of the campaign's changesets on the code host so that they match your desired intent (as described in the changeset specs).
 
+To learn about the internals of campaigns, see "[Campaigns](../../dev/campaigns_development.md)" in the developer documentation.
+
 ## Roadmap
 
 <!-- TODO(sqs): This section is rough/incomplete/outline-only. -->
