@@ -20,9 +20,9 @@ import (
 )
 
 var noConfig = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
-var exportPort = env.Get("EXPORT_PORT", "3370", "port that should be used to access grafana externally")
-var grafanaPort = env.Get("GRAFANA_PORT", "3371", "internal grafana port")
-var grafanaCredentials = env.Get("GRAFANA_CREDENTIALS", "admin:admin", "credentials for accessing the grafana server")
+var exportPort = env.Get("EXPORT_PORT", "3370", "port that should be used to access grafana and custom endpoints externally")
+var grafanaPort = env.Get("GRAFANA_INTERNAL_PORT", "3371", "internal grafana port")
+var grafanaCredentials = env.Get("GRAFANA_INTERNAL_CREDENTIALS", "admin:admin", "credentials for accessing the grafana server")
 
 func main() {
 	log := log15.New("cmd", "grafana-wrapper")
