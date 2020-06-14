@@ -905,6 +905,7 @@ func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
 		if err != nil {
 			return nil, err
 		}
+		query = substituteConcat(query, " ")
 	case SearchTypeRegex, SearchTypeStructural:
 		query, err = ParseAndOr(in)
 		if err != nil {
