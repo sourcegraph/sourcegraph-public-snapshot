@@ -36,7 +36,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                 <Link to="/user/settings" className="btn btn-secondary mr-1">
                     <GearIcon className="icon-inline" /> Configure insights
                 </Link>
-                <Link to="/extensions?query=insights" className="btn btn-secondary">
+                <Link to="/extensions?query=category:Insights" className="btn btn-secondary">
                     <PlusIcon className="icon-inline" /> Add more insights
                 </Link>
             </div>
