@@ -613,7 +613,7 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["level", "id"],
+        "required": ["level", "id", "notifier"],
         "properties": {
           "level": {
             "description": "Sourcegraph alert level to subscribe to notifications for.",
@@ -629,7 +629,7 @@ const SiteSchemaJSON = `{
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["slack", "pagerduty", "email", "webhook"]
+                "enum": ["slack", "pagerduty", "webhook"]
               }
             },
             "oneOf": [

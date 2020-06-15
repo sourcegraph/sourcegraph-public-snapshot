@@ -777,8 +777,8 @@ type ObservabilityAlerts struct {
 	// Id description: Unique identifier for this alert.
 	Id string `json:"id"`
 	// Level description: Sourcegraph alert level to subscribe to notifications for.
-	Level    string    `json:"level"`
-	Notifier *Notifier `json:"notifier,omitempty"`
+	Level    string   `json:"level"`
+	Notifier Notifier `json:"notifier"`
 }
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.
