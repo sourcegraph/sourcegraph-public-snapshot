@@ -174,12 +174,12 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 
 	totalUsers, err := getTotalUsersCount(ctx)
 	if err != nil {
-		logFunc("db.Users.Count failed", "error", err)
+		logFunc("telemetry: db.Users.Count failed", "error", err)
 	}
 	r.TotalUsers = int32(totalUsers)
 	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx)
 	if err != nil {
-		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("telemetry: db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 
 	if !conf.Get().DisableNonCriticalTelemetry {
@@ -190,30 +190,30 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		// transition.
 		count, err := getUsersActiveTodayCount(ctx)
 		if err != nil {
-			logFunc("updatecheck.getUsersActiveToday failed", "error", err)
+			logFunc("telemetry: updatecheck.getUsersActiveToday failed", "error", err)
 		}
 		r.UniqueUsers = int32(count)
 		totalRepos, err := getTotalReposCount(ctx)
 		if err != nil {
-			logFunc("updatecheck.getTotalReposCount failed", "error", err)
+			logFunc("telemetry: updatecheck.getTotalReposCount failed", "error", err)
 		}
 		r.HasRepos = totalRepos > 0
 
 		r.EverSearched, err = hasSearchOccurred(ctx)
 		if err != nil {
-			logFunc("updatecheck.hasSearchOccurred failed", "error", err)
+			logFunc("telemetry: updatecheck.hasSearchOccurred failed", "error", err)
 		}
 		r.EverFindRefs, err = hasFindRefsOccurred(ctx)
 		if err != nil {
-			logFunc("updatecheck.hasFindRefsOccurred failed", "error", err)
+			logFunc("telemetry: updatecheck.hasFindRefsOccurred failed", "error", err)
 		}
 		r.CampaignsUsage, err = getAndMarshalCampaignsUsageJSON(ctx)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
+			logFunc("telemetry: updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
 		}
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
-			logFunc("externalServicesKinds failed", "error", err)
+			logFunc("telemetry: externalServicesKinds failed", "error", err)
 		}
 
 		r.HasExtURL = conf.UsingExternalURL()
@@ -230,7 +230,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			defer wg.Done()
 			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
 			if err != nil {
-				logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+				logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
 			}
 		}()
 
@@ -239,14 +239,14 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			defer wg.Done()
 			r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
 			if err != nil {
-				logFunc("updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
+				logFunc("telemetry: updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
 			}
 		}()
 		wg.Wait()
 	} else {
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+			logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
 		}
 	}
 
