@@ -10,7 +10,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
-import { deleteLsifIndex, fetchLsifIndexes } from './backend'
+import { fetchLsifIndexes as defaultFetchLsifIndexes, deleteLsifIndex, Index } from './backend'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
@@ -30,7 +30,7 @@ const Header: FunctionComponent<{}> = () => (
 )
 
 export interface IndexNodeProps {
-    node: GQL.ILSIFIndex
+    node: Index
     onDelete: () => void
     history: H.History
 }
@@ -122,12 +122,17 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history 
 
 interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
+    fetchLsifIndexes?: typeof defaultFetchLsifIndexes
 }
 
 /**
  * The repository settings code intelligence page.
  */
-export const CodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props }) => {
+export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
+    repo,
+    fetchLsifIndexes = defaultFetchLsifIndexes,
+    ...props
+}) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelIndexes'), [])
 
     const filters: FilteredConnectionFilter[] = [
@@ -152,7 +157,7 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props 
 
     const queryIndexes = useCallback(
         (args: FilteredConnectionQueryArgs) => fetchLsifIndexes({ repository: repo?.id, ...args }),
-        [repo?.id]
+        [repo?.id, fetchLsifIndexes]
     )
 
     return (
@@ -179,7 +184,7 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props 
                 .
             </p>
 
-            <FilteredConnection<GQL.ILSIFIndex, Omit<IndexNodeProps, 'node'>>
+            <FilteredConnection<Index, Omit<IndexNodeProps, 'node'>>
                 className="mt-3"
                 listComponent="table"
                 listClassName="table"

@@ -10,7 +10,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
-import { deleteLsifUpload, fetchLsifUploads } from './backend'
+import { fetchLsifUploads as defaultFetchLsifUploads, deleteLsifUpload, Upload } from './backend'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
@@ -32,7 +32,7 @@ const Header: FunctionComponent<{}> = () => (
 )
 
 export interface UploadNodeProps {
-    node: GQL.ILSIFUpload
+    node: Upload
     onDelete: () => void
     history: H.History
 }
@@ -136,12 +136,17 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
 
 interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
+    fetchLsifUploads?: typeof defaultFetchLsifUploads
 }
 
 /**
  * The repository settings code intel uploads page.
  */
-export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props }) => {
+export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
+    repo,
+    fetchLsifUploads = defaultFetchLsifUploads,
+    ...props
+}) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelUploads'), [])
 
     const filters: FilteredConnectionFilter[] = [
@@ -172,7 +177,7 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props 
 
     const queryUploads = useCallback(
         (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo?.id, ...args }),
-        [repo?.id]
+        [repo?.id, fetchLsifUploads]
     )
 
     return (
@@ -197,7 +202,7 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props 
                 intelligence for historic and branch commits.
             </p>
 
-            <FilteredConnection<GQL.ILSIFUpload, Omit<UploadNodeProps, 'node'>>
+            <FilteredConnection<Upload, Omit<UploadNodeProps, 'node'>>
                 className="mt-3"
                 listComponent="table"
                 listClassName="table"

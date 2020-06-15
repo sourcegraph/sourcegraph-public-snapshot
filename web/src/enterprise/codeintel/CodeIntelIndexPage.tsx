@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchLsifIndex as defaultFetchLsifIndex, deleteLsifIndex } from './backend'
+import { fetchLsifIndex as defaultFetchLsifIndex, deleteLsifIndex, Index } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
@@ -15,31 +15,14 @@ import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { SchedulerLike, timer, Observable } from 'rxjs'
+import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
 
 const REFRESH_INTERVAL_MS = 5000
 
-// Create an expected subtype including only the fields that we use in this component so
-// that storybook tests do not need to define a full IGitTree type (which is very large).
-export type Index = Omit<GQL.ILSIFIndex, '__typename' | 'projectRoot'> & {
-    projectRoot: {
-        path: string
-        commit: {
-            url: string
-            oid: string
-            abbreviatedOID: string
-            repository: {
-                url: string
-                name: string
-            }
-        }
-    } | null
-}
-
 interface Props extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
-    fetchLsifIndex: ({ id }: { id: string }) => Observable<Index | null>
+    fetchLsifIndex?: typeof defaultFetchLsifIndex
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -80,7 +63,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                     ),
                     takeWhile(shouldReload, true)
                 ),
-            [id, scheduler]
+            [id, scheduler, fetchLsifIndex]
         )
     )
 
@@ -157,8 +140,8 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                 <td>Repository</td>
                                 <td>
                                     {indexOrError.projectRoot ? (
-                                        <Link to={indexOrError.projectRoot.commit.repository.url}>
-                                            {indexOrError.projectRoot.commit.repository.name}
+                                        <Link to={indexOrError.projectRoot.repository.url}>
+                                            {indexOrError.projectRoot.repository.name}
                                         </Link>
                                     ) : (
                                         repo?.name || 'unknown'

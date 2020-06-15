@@ -1,12 +1,14 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
-import * as H from 'history'
-import { CodeIntelIndexPage, Index } from './CodeIntelIndexPage'
-import webStyles from '../../SourcegraphWebApp.scss'
+import { CodeIntelIndexPage } from './CodeIntelIndexPage'
+import { Index } from './backend'
 import { of } from 'rxjs'
+import { storiesOf } from '@storybook/react'
+import { SuiteFunction } from 'mocha'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import * as H from 'history'
+import React from 'react'
+import webStyles from '../../SourcegraphWebApp.scss'
 
-window.context = {}
+window.context = {} as SourcegraphContext & SuiteFunction
 
 const { add } = storiesOf('web/CodeIntelIndex', module).addDecorator(story => (
     <>
@@ -31,15 +33,16 @@ const commonProps = {
 const index: Pick<Index, 'id' | 'projectRoot' | 'inputCommit'> = {
     id: '1234',
     projectRoot: {
+        url: '',
         path: 'web/',
+        repository: {
+            url: '',
+            name: 'github.com/sourcegraph/sourcegraph',
+        },
         commit: {
             url: '',
             oid: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
             abbreviatedOID: '9ea5e9f',
-            repository: {
-                url: '',
-                name: 'github.com/sourcegraph/sourcegraph',
-            },
         },
     },
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',

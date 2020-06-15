@@ -1,12 +1,14 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
-import * as H from 'history'
-import { CodeIntelUploadPage, Upload } from './CodeIntelUploadPage'
-import webStyles from '../../SourcegraphWebApp.scss'
+import { CodeIntelUploadPage } from './CodeIntelUploadPage'
 import { of } from 'rxjs'
+import { storiesOf } from '@storybook/react'
+import { SuiteFunction } from 'mocha'
+import { Upload } from './backend'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import * as H from 'history'
+import React from 'react'
+import webStyles from '../../SourcegraphWebApp.scss'
 
-window.context = {}
+window.context = {} as SourcegraphContext & SuiteFunction
 
 const { add } = storiesOf('web/CodeIntelUpload', module).addDecorator(story => (
     <>
@@ -31,15 +33,16 @@ const commonProps = {
 const upload: Pick<Upload, 'id' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
     id: '1234',
     projectRoot: {
+        url: '',
         path: 'web/',
+        repository: {
+            url: '',
+            name: 'github.com/sourcegraph/sourcegraph',
+        },
         commit: {
             url: '',
             oid: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
             abbreviatedOID: '9ea5e9f',
-            repository: {
-                url: '',
-                name: 'github.com/sourcegraph/sourcegraph',
-            },
         },
     },
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
