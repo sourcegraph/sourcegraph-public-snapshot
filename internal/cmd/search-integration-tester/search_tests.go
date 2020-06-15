@@ -195,6 +195,14 @@ var tests = []test{
 		Name:  `Escaped whitespace sequences with 'and'`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \ and /`,
 	},
+	{
+		Name:  `Concat converted to spaces for literal search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go caCertPool := or x509 Pool patterntype:literal`,
+	},
+	{
+		Name:  `Concat converted to .* for regexp search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go ca Pool or x509 Pool stable:yes type:file`,
+	},
 }
 
 func sanitizeFilename(s string) string {
