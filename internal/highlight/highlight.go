@@ -14,6 +14,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -29,8 +30,6 @@ var (
 
 func init() {
 	client = gosyntect.New(syntectServer)
-	prometheus.MustRegister(requestCounter)
-	prometheus.MustRegister(requestHistogram)
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
@@ -103,7 +102,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		return Mocks.Code(p)
 	}
 	var prometheusStatus string
-	requestTime := prometheus.NewTimer(requestHistogram)
+	requestTime := prometheus.NewTimer(metricRequestHistogram)
 	tr, ctx := trace.New(ctx, "highlight.Code", "")
 	defer func() {
 		if prometheusStatus != "" {
@@ -237,12 +236,12 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	return template.HTML(table), false, nil
 }
 
-var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+var requestCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_syntax_highlighting_requests",
 	Help: "Counts syntax highlighting requests and their success vs. failure rate.",
 }, []string{"status"})
 
-var requestHistogram = prometheus.NewHistogram(
+var metricRequestHistogram = promauto.NewHistogram(
 	prometheus.HistogramOpts{
 		Name: "src_syntax_highlighting_duration_seconds",
 		Help: "time for a request to have syntax highlight",
