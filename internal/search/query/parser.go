@@ -58,8 +58,9 @@ const (
 
 // Operator is a nonterminal node of kind Kind with child nodes Operands.
 type Operator struct {
-	Kind     operatorKind
-	Operands []Node
+	Kind       operatorKind
+	Operands   []Node
+	Annotation Annotation
 }
 
 func (node Pattern) String() string {
@@ -247,32 +248,6 @@ func (p *parser) skipSpaces() error {
 		return io.ErrShortBuffer
 	}
 	return nil
-}
-
-// ScanLiteral consumes all characters up to a whitespace character and returns
-// the string and how much it consumed.
-func ScanSearchPatternLiteral(buf []byte) (scanned string, count int) {
-	var advance int
-	var r rune
-	var result []rune
-
-	next := func() rune {
-		r, advance = utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
-		return r
-	}
-	for len(buf) > 0 {
-		start := count
-		r = next()
-		if unicode.IsSpace(r) {
-			count = start // Backtrack.
-			break
-		}
-		result = append(result, r)
-	}
-	scanned = string(result)
-	return scanned, count
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -621,15 +596,6 @@ func (p *parser) ParseFieldValue() (string, error) {
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern() Pattern {
-	if isSet(p.heuristics, literalSearchPatterns) {
-		// Accept unconditionally as pattern, even if the pattern
-		// contains dangling quotes like " or ', and do not interpret
-		// quoted strings as quoted, but interpret them literally.
-		value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
-		p.pos += advance
-		return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: Literal}}
-	}
-
 	// If we can parse a well-delimited value, that takes precedence, and we
 	// denote it with Quoted set to true.
 	if value, ok := p.TryParseDelimiter(); ok {
@@ -924,26 +890,6 @@ func ParseAndOr(in string) ([]Node, error) {
 		if hoistedNodes, err := Hoist(nodes); err == nil {
 			nodes = hoistedNodes
 		}
-	}
-	return newOperator(nodes, And), nil
-}
-
-func ParseLiteralSearch(in string) ([]Node, error) {
-	if strings.TrimSpace(in) == "" {
-		return nil, nil
-	}
-	parser := &parser{
-		buf:        []byte(in),
-		heuristics: allowDanglingParens | literalSearchPatterns,
-	}
-	nodes, err := parser.parseOr()
-	if err != nil {
-		return nil, err
-	}
-	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
-	err = validate(nodes)
-	if err != nil {
-		return nil, err
 	}
 	return newOperator(nodes, And), nil
 }
