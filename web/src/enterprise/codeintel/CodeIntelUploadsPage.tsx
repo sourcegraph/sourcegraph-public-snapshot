@@ -96,7 +96,7 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
                     ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
                         <span>Processing</span>
                     ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
-                        <span className="text-success">Processed</span>
+                        <span className="text-success">Completed</span>
                     ) : node.state === GQL.LSIFUploadState.ERRORED ? (
                         <span className="text-danger">Failed to process</span>
                     ) : (
@@ -107,7 +107,7 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
             <td>
                 {node.finishedAt ? (
                     <span>
-                        Processed <Timestamp noAbout={true} date={node.finishedAt} />
+                        Completed <Timestamp noAbout={true} date={node.finishedAt} />
                     </span>
                 ) : node.startedAt ? (
                     <span>
@@ -151,22 +151,34 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
 
     const filters: FilteredConnectionFilter[] = [
         {
-            label: 'Only current',
+            label: 'All',
+            id: 'all',
+            tooltip: 'Show all uploads',
+            args: {},
+        },
+        {
+            label: 'Current',
             id: 'current',
             tooltip: 'Show current uploads only',
             args: { isLatestForRepo: true },
         },
         {
-            label: 'Only processed',
-            id: 'processed',
-            tooltip: 'Show processed uploads only',
+            label: 'Completed',
+            id: 'completed',
+            tooltip: 'Show completed uploads only',
             args: { state: GQL.LSIFUploadState.COMPLETED },
         },
         {
-            label: 'All',
-            id: 'all',
-            tooltip: 'Show all uploads',
-            args: {},
+            label: 'Errored',
+            id: 'errored',
+            tooltip: 'Show errored uploads only',
+            args: { state: GQL.LSIFUploadState.ERRORED },
+        },
+        {
+            label: 'Queued',
+            id: 'queued',
+            tooltip: 'Show queued uploads only',
+            args: { state: GQL.LSIFUploadState.QUEUED },
         },
     ]
 
@@ -217,6 +229,7 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
                 location={props.location}
                 cursorPaging={true}
                 filters={filters}
+                defaultFilter="current"
             />
         </div>
     )

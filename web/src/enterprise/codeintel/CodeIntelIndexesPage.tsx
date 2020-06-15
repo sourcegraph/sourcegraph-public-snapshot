@@ -82,7 +82,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history 
                     {node.state === GQL.LSIFIndexState.PROCESSING ? (
                         <span>Processing</span>
                     ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
-                        <span className="text-success">Processed</span>
+                        <span className="text-success">Completed</span>
                     ) : node.state === GQL.LSIFIndexState.ERRORED ? (
                         <span className="text-danger">Failed to process</span>
                     ) : (
@@ -93,7 +93,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history 
             <td>
                 {node.finishedAt ? (
                     <span>
-                        Processed <Timestamp noAbout={true} date={node.finishedAt} />
+                        Completed <Timestamp noAbout={true} date={node.finishedAt} />
                     </span>
                 ) : node.startedAt ? (
                     <span>
@@ -137,16 +137,28 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
 
     const filters: FilteredConnectionFilter[] = [
         {
-            label: 'Only processed',
-            id: 'processed',
-            tooltip: 'Show processed index records only',
+            label: 'All',
+            id: 'all',
+            tooltip: 'Show all uploads',
+            args: {},
+        },
+        {
+            label: 'Completed',
+            id: 'completed',
+            tooltip: 'Show completed indexes only',
             args: { state: GQL.LSIFIndexState.COMPLETED },
         },
         {
-            label: 'All',
-            id: 'all',
-            tooltip: 'Show all index records',
-            args: {},
+            label: 'Errored',
+            id: 'errored',
+            tooltip: 'Show errored indexes only',
+            args: { state: GQL.LSIFIndexState.ERRORED },
+        },
+        {
+            label: 'Queued',
+            id: 'queued',
+            tooltip: 'Show queued indexes only',
+            args: { state: GQL.LSIFIndexState.QUEUED },
         },
     ]
 
