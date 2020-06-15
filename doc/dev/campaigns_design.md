@@ -12,7 +12,7 @@ Principles:
 
 ## Comparison to Kubernetes
 
-We've found Kubernetes to be a good source of inspiration for the campaigns API design, because both Kubernetes and campaigns help you manage a distributed system. Here's an analogy between a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a Sourcegraph campaign. (Resembling Kubernetes is **not** an explicit goal.)
+Both Kubernetes and campaigns help you manage a distributed system. Here's a comparison between a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a Sourcegraph campaign. In some cases, we've found Kubernetes to be a good source of inspiration, but resembling Kubernetes is **not** an explicit goal.
 
 <table>
   <tr>
