@@ -253,7 +253,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                             <DeleteIcon className="icon-inline" /> Delete upload
                         </button>
                         <small id="upload-delete-button-help" className="form-text text-muted">
-                            Deleting this upload make it immediately unavailable to answer code intelligence queries.
+                            Deleting this upload makes it immediately unavailable to answer code intelligence queries.
                         </small>
                     </div>
                 </>
