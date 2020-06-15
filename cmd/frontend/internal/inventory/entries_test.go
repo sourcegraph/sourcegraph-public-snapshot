@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -92,11 +93,11 @@ func TestContext_Entries(t *testing.T) {
 	if want := []string{"d", "d/a", "f.go"}; !reflect.DeepEqual(cacheGetCalls, want) {
 		t.Errorf("CacheGet calls: got %q, want %q", cacheGetCalls, want)
 	}
-	if want := map[string]Inventory{
+	want := map[string]Inventory{
 		"d": {
 			Languages: []Lang{
-				{Name: "Go", TotalBytes: 12, TotalLines: 1},
 				{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
+				{Name: "Go", TotalBytes: 12, TotalLines: 1},
 			},
 		},
 		"d/a": {
@@ -109,7 +110,8 @@ func TestContext_Entries(t *testing.T) {
 				{Name: "Go", TotalBytes: 9, TotalLines: 1},
 			},
 		},
-	}; !reflect.DeepEqual(cacheSetCalls, want) {
-		t.Errorf("CacheGet calls: got %+v, want %+v", cacheSetCalls, want)
+	}
+	if diff := cmp.Diff(want, cacheSetCalls); diff != "" {
+		t.Error(diff)
 	}
 }

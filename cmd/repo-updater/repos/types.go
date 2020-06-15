@@ -1011,7 +1011,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 	}
 
 	for u, rl := range byURL {
-		l := r.registry.GetRateLimiter(u)
+		l := r.registry.Get(u)
 		l.SetLimit(rl.Limit)
 	}
 

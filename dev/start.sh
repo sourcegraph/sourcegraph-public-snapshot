@@ -133,7 +133,52 @@ trap 'kill $build_ts_pid; exit' EXIT
 build_ts_pid="$!"
 
 export PROCFILE=${PROCFILE:-dev/Procfile}
-printf >&2 "\nStarting all binaries...\n\n"
+
+only=""
+except=""
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    -e | --except)
+      except="$2"
+      shift
+      ;;
+    -o | --only)
+      only="$2"
+      shift
+      ;;
+    *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if [ -n "${only}" ] || [ -n "${except}" ]; then
+  services=${only:-$except}
+
+  # "frontend,grafana,gitserver" -> "^(frontend|grafana|gitserver):"
+  services_pattern="^(${services//,/|}):"
+
+  if [ -n "${except}" ]; then
+    grep_args="-vE"
+  else
+    grep_args="-E"
+  fi
+
+  tmp_procfile=$(mktemp -t procfile_XXXXXXX)
+  grep ${grep_args} "${services_pattern}" "${PROCFILE}" >"${tmp_procfile}"
+  export PROCFILE=${tmp_procfile}
+fi
+
+if [ -n "${only}" ]; then
+  printf >&2 "\nStarting binaries %s...\n\n" "${only}"
+elif [ -n "${except}" ]; then
+  printf >&2 "\nStarting all binaries, except %s...\n\n" "${except}"
+else
+  printf >&2 "\nStarting all binaries...\n\n"
+fi
+
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"
 
 if ! [ "$(id -u)" = 0 ] && command -v authbind; then

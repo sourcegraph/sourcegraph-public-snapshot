@@ -10,14 +10,6 @@ import (
 	"unicode/utf8"
 )
 
-type ExpectedOperand struct {
-	Msg string
-}
-
-func (e *ExpectedOperand) Error() string {
-	return e.Msg
-}
-
 /*
 Parser implements a parser for the following grammar:
 
@@ -36,17 +28,6 @@ type Node interface {
 func (Pattern) node()   {}
 func (Parameter) node() {}
 func (Operator) node()  {}
-
-// Labels are general-purpose annotations that store information about a node.
-type labels uint8
-
-const (
-	None    labels = 0
-	Literal        = 1 << iota
-	Quoted
-	HeuristicParensAsPatterns
-	HeuristicDanglingParens
-)
 
 // An annotation stores information associated with a node.
 type Annotation struct {
@@ -77,8 +58,9 @@ const (
 
 // Operator is a nonterminal node of kind Kind with child nodes Operands.
 type Operator struct {
-	Kind     operatorKind
-	Operands []Node
+	Kind       operatorKind
+	Operands   []Node
+	Annotation Annotation
 }
 
 func (node Pattern) String() string {
@@ -266,32 +248,6 @@ func (p *parser) skipSpaces() error {
 		return io.ErrShortBuffer
 	}
 	return nil
-}
-
-// ScanLiteral consumes all characters up to a whitespace character and returns
-// the string and how much it consumed.
-func ScanSearchPatternLiteral(buf []byte) (scanned string, count int) {
-	var advance int
-	var r rune
-	var result []rune
-
-	next := func() rune {
-		r, advance = utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
-		return r
-	}
-	for len(buf) > 0 {
-		start := count
-		r = next()
-		if unicode.IsSpace(r) {
-			count = start // Backtrack.
-			break
-		}
-		result = append(result, r)
-	}
-	scanned = string(result)
-	return scanned, count
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -640,15 +596,6 @@ func (p *parser) ParseFieldValue() (string, error) {
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern() Pattern {
-	if isSet(p.heuristics, literalSearchPatterns) {
-		// Accept unconditionally as pattern, even if the pattern
-		// contains dangling quotes like " or ', and do not interpret
-		// quoted strings as quoted, but interpret them literally.
-		value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
-		p.pos += advance
-		return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: Literal}}
-	}
-
 	// If we can parse a well-delimited value, that takes precedence, and we
 	// denote it with Quoted set to true.
 	if value, ok := p.TryParseDelimiter(); ok {
@@ -868,7 +815,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 		return nil, err
 	}
 	if left == nil {
-		return nil, &UnsupportedError{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
+		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
 	if !p.expect(AND) {
 		return left, nil
@@ -888,7 +835,7 @@ func (p *parser) parseOr() ([]Node, error) {
 		return nil, err
 	}
 	if left == nil {
-		return nil, &UnsupportedError{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
+		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
 	if !p.expect(OR) {
 		return left, nil
@@ -947,37 +894,28 @@ func ParseAndOr(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-func ParseLiteralSearch(in string) ([]Node, error) {
-	if strings.TrimSpace(in) == "" {
-		return nil, nil
-	}
-	parser := &parser{
-		buf:        []byte(in),
-		heuristics: allowDanglingParens | literalSearchPatterns,
-	}
-	nodes, err := parser.parseOr()
-	if err != nil {
-		return nil, err
-	}
-	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
-	err = validate(nodes)
-	if err != nil {
-		return nil, err
-	}
-	return newOperator(nodes, And), nil
-}
-
 // ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string) (QueryInfo, error) {
-	query, err := ParseAndOr(in)
-	if err != nil {
-		return nil, err
+func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
+	var query []Node
+	var err error
+
+	switch searchType {
+	case SearchTypeLiteral, SearchTypeStructural:
+		query, err = ParseAndOrLiteral(in)
+		if err != nil {
+			return nil, err
+		}
+		query = substituteConcat(query, " ")
+	case SearchTypeRegex:
+		query, err = ParseAndOr(in)
+		if err != nil {
+			return nil, err
+		}
 	}
 	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {
 		return nil, err
 	}
-
 	return &AndOrQuery{Query: query}, nil
 }

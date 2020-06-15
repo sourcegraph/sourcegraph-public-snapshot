@@ -178,7 +178,7 @@ type Store interface {
 }
 
 // GetTipCommitFn returns the head commit for the given repository.
-type GetTipCommitFn func(repositoryID int) (string, error)
+type GetTipCommitFn func(ctx context.Context, repositoryID int) (string, error)
 
 type store struct {
 	db           dbutil.DB

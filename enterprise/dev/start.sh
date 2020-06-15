@@ -43,4 +43,4 @@ export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code
 export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
 export PROCFILE=enterprise/dev/Procfile
-../dev/start.sh
+../dev/start.sh "$@"

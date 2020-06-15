@@ -15,14 +15,6 @@ import (
 func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	ctx := context.Background()
 
-	getTipCommit := func(repositoryID int) (string, error) {
-		tipCommit, err := gitserver.Head(ctx, j.store, repositoryID)
-		if err != nil && !isRepoNotExist(err) {
-			return "", errors.Wrap(err, "gitserver.Head")
-		}
-		return tipCommit, nil
-	}
-
 	// TODO(efritz) - request in batches
 	ids, err := j.store.GetDumpIDs(ctx)
 	if err != nil {
@@ -38,7 +30,7 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 			continue
 		}
 
-		deleted, err := j.store.DeleteUploadByID(ctx, id, getTipCommit)
+		deleted, err := j.store.DeleteUploadByID(ctx, id, j.getTipCommit)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
@@ -50,6 +42,17 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	}
 
 	return nil
+}
+
+// getTipCommit returns the head of the default branch for the given repository. This
+// is used to recalculate the set of visible dumps for a repository on dump deletion.
+func (j *Janitor) getTipCommit(ctx context.Context, repositoryID int) (string, error) {
+	tipCommit, err := gitserver.Head(ctx, j.store, repositoryID)
+	if err != nil && !isRepoNotExist(err) {
+		return "", errors.Wrap(err, "gitserver.Head")
+	}
+
+	return tipCommit, nil
 }
 
 func isRepoNotExist(err error) bool {

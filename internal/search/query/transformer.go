@@ -85,6 +85,10 @@ func Hoist(nodes []Node) ([]Node, error) {
 		}
 		pattern = append(pattern, node)
 	}
+	pattern = MapPattern(pattern, func(value string, negated bool, annotation Annotation) Node {
+		annotation.Labels |= HeuristicHoisted
+		return Pattern{Value: value, Negated: negated, Annotation: annotation}
+	})
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
 }
 
@@ -155,6 +159,62 @@ func substituteOrForRegexp(nodes []Node) []Node {
 		case Parameter, Pattern:
 			new = append(new, node)
 		}
+	}
+	return new
+}
+
+// substituteConcat reduces a concatenation of patterns to a separator-separated string.
+func substituteConcat(nodes []Node, separator string) []Node {
+	isPattern := func(node Node) bool {
+		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
+			return true
+		}
+		return false
+	}
+	new := []Node{}
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Parameter, Pattern:
+			new = append(new, node)
+		case Operator:
+			if v.Kind == Concat {
+				// Merge consecutive patterns.
+				previous := v.Operands[0]
+				merged := Pattern{}
+				if p, ok := previous.(Pattern); ok {
+					merged = p
+				}
+				for _, node := range v.Operands[1:] {
+					if isPattern(node) && isPattern(previous) {
+						p := node.(Pattern)
+						if merged.Value != "" {
+							merged.Annotation.Labels |= p.Annotation.Labels
+							merged = Pattern{
+								Value:      merged.Value + separator + p.Value,
+								Annotation: merged.Annotation,
+							}
+						} else {
+							// Base case.
+							merged = Pattern{Value: p.Value}
+						}
+						previous = node
+						continue
+					}
+					if merged.Value != "" {
+						new = append(new, merged)
+						merged = Pattern{}
+					}
+					new = append(new, substituteConcat([]Node{node}, separator)...)
+				}
+				if merged.Value != "" {
+					new = append(new, merged)
+					merged = Pattern{}
+				}
+			} else {
+				new = append(new, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
+			}
+		}
+
 	}
 	return new
 }

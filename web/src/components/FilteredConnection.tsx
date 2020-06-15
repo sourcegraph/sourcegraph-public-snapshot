@@ -316,6 +316,12 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
      */
     filters?: FilteredConnectionFilter[]
 
+    /**
+     * The filter to select by default. If not supplied, this defaults to the first
+     * filter defined in the list.
+     */
+    defaultFilter?: string
+
     /** Called when a filter is selected and on initial render. */
     onFilterSelect?: (filterID: string | undefined) => void
 }
@@ -458,7 +464,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             loading: true,
             query: (!this.props.hideSearch && this.props.useURLQuery && searchParameters.get(QUERY_KEY)) || '',
             activeFilter:
-                (this.props.useURLQuery && getFilterFromURL(searchParameters, this.props.filters)) || undefined,
+                (this.props.useURLQuery &&
+                    getFilterFromURL(searchParameters, this.props.filters, this.props.defaultFilter)) ||
+                undefined,
             first: (this.props.useURLQuery && parseQueryInt(searchParameters, 'first')) || this.props.defaultFirst!,
             visible: (this.props.useURLQuery && parseQueryInt(searchParameters, 'visible')) || 0,
         }
@@ -859,12 +867,13 @@ function parseQueryInt(searchParameters: URLSearchParams, name: string): number 
 
 function getFilterFromURL(
     searchParameters: URLSearchParams,
-    filters: FilteredConnectionFilter[] | undefined
+    filters: FilteredConnectionFilter[] | undefined,
+    defaultFilterId: string | undefined
 ): FilteredConnectionFilter | undefined {
     if (filters === undefined || filters.length === 0) {
         return undefined
     }
-    const id = searchParameters.get('filter')
+    const id = searchParameters.get('filter') || defaultFilterId
     if (id !== null) {
         const filter = filters.find(filter => filter.id === id)
         if (filter) {

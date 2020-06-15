@@ -12,6 +12,7 @@ const codeIntelSettingsGroup = {
         {
             to: '/code-intelligence/indexes',
             label: 'Auto indexing',
+            condition: () => Boolean(window.context?.sourcegraphDotComMode),
         },
     ],
 }
