@@ -392,7 +392,7 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, serviceID string, n 
 		return nil
 	}
 
-	rl := s.rateLimiterRegistry.GetRateLimiter(serviceID)
+	rl := s.rateLimiterRegistry.Get(serviceID)
 	if err := rl.WaitN(ctx, n); err != nil {
 		return err
 	}

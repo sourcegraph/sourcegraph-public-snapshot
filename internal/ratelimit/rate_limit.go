@@ -184,9 +184,9 @@ func normaliseURL(rawURL string) string {
 	return parsed.String()
 }
 
-// GetRateLimiter fetches the rate limiter associated with the given code host. If none has been
+// Get fetches the rate limiter associated with the given code host. If none has been
 // configured an infinite limiter is returned.
-func (r *Registry) GetRateLimiter(baseURL string) *rate.Limiter {
+func (r *Registry) Get(baseURL string) *rate.Limiter {
 	return r.GetOrSet(baseURL, nil)
 }
 
