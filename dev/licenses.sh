@@ -10,5 +10,4 @@ if [[ "${LICENSE_CHECK:-''}" == "true" ]]; then
 fi
 
 # based on https://github.com/pivotal/LicenseFinder/blob/master/dlf
-docker run -v "$(pwd)":/scan -it licensefinder/license_finder \
-  /bin/bash -lc "cd /scan && license_finder ${COMMAND} --prepare --columns=package_manager name version licenses homepage approved"
+license_finder ${COMMAND} --prepare --columns=package_manager name version licenses homepage approved
