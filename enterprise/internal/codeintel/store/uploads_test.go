@@ -725,7 +725,7 @@ func TestDeleteUploadByID(t *testing.T) {
 	)
 
 	var called bool
-	getTipCommit := func(repositoryID int) (string, error) {
+	getTipCommit := func(ctx context.Context, repositoryID int) (string, error) {
 		called = true
 		return "", nil
 	}
@@ -753,7 +753,7 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
-	getTipCommit := func(repositoryID int) (string, error) {
+	getTipCommit := func(ctx context.Context, repositoryID int) (string, error) {
 		return "", nil
 	}
 
@@ -788,7 +788,7 @@ func TestDeleteUploadByIDUpdatesVisibility(t *testing.T) {
 	}
 
 	var called bool
-	getTipCommit := func(repositoryID int) (string, error) {
+	getTipCommit := func(ctx context.Context, repositoryID int) (string, error) {
 		called = true
 		return makeCommit(4), nil
 	}
