@@ -85,6 +85,10 @@ func Hoist(nodes []Node) ([]Node, error) {
 		}
 		pattern = append(pattern, node)
 	}
+	pattern = MapPattern(pattern, func(value string, negated bool, annotation Annotation) Node {
+		annotation.Labels |= HeuristicHoisted
+		return Pattern{Value: value, Negated: negated, Annotation: annotation}
+	})
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
 }
 
