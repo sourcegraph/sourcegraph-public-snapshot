@@ -317,32 +317,45 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 // for distinguishing which errors are retryable. Similarly, if a database part fails to make it to the
 // bundle manager from the worker, then the worker needs to distinguish the same errors.
 func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) error {
-	file, err := ioutil.TempFile("", "")
+	tempFilePath, err := writeToTempFile(r)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	defer os.Remove(file.Name())
-
-	if _, err := io.Copy(file, r); err != nil {
-		return err
-	}
-
-	if err := file.Sync(); err != nil {
-		return err
-	}
+	defer os.Remove(tempFilePath)
 
 	return retry(ctx, c.clock, func(ctx context.Context) error {
-		// Reset file to beginning after writing or previous read
-		if _, err := file.Seek(0, io.SeekStart); err != nil {
+		file, err := os.Open(tempFilePath)
+		if err != nil {
 			return err
 		}
 
-		// The http client will attempt to close the body after use.
-		// Prevent this by wrapping the file ina  NopCloser so that
-		// the file remains open for a second attempt, if necessary.
-		return c.doAndDrop(ctx, "POST", url, ioutil.NopCloser(file))
+		return c.doAndDrop(ctx, "POST", url, file)
 	})
+}
+
+// writeToTempFile writes the content of the given reader to a temporary file. This function returns the
+// path to the file and any write error that occurred. If any error occurs during write, the temporary
+// file is removed.
+func writeToTempFile(r io.Reader) (_ string, err error) {
+	file, err := ioutil.TempFile("", "")
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+
+		if err != nil {
+			_ = os.Remove(file.Name())
+		}
+	}()
+
+	if _, err := io.Copy(file, r); err != nil {
+		return "", err
+	}
+
+	return file.Name(), nil
 }
 
 // doAndDrop performs an HTTP request to the bundle manager and ignores the body contents.
