@@ -49,9 +49,9 @@ type Mutation {
     ): PatchSet!
     # Updates a campaign. Updating is not allowed when any of the following are true:
     #
-    # - The campaign has already been closed.
-    # - A plan is added to a manual campaign.
-    # - A non-manual campaign has a changeset that is not published (or is being published).
+    # - The campaign has been closed.
+    # - A campaign has one or more patches that are being published.
+    # - The new patch set contains no patches.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retry publishing all changesets in the campaign that could not be
     # successfully created on the code host. Retrying will clear the errors
@@ -471,11 +471,12 @@ input CreateCampaignInput {
     # attribute is specified.
     branch: String
 
-    # An optional reference to a patchset that was created before this mutation. If null, existing
-    # changesets can be added manually. If set, no changesets can be added manually; they will be
-    # created. based on the patches belonging to the patchset. An error will be returned if the
-    # patchset has expired. Using a patchset to create or update a campaign will retain it for the
-    # lifetime of the campaign and prevent it from expiring.
+    # An optional reference to a patchset that was created before this
+    # mutation. If null, existing changesets can be added manually. If set,
+    # they will be created based on the patches belonging to the patchset. An
+    # error will be returned if the patchset has expired. Using a patchset to
+    # create or update a campaign will retain it for the lifetime of the
+    # campaign and prevent it from expiring.
     patchSet: ID
 }
 
