@@ -145,21 +145,29 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-parsed_except=$(echo ${except} | sed 's/,/|/g')
-parsed_only=$(echo ${only} | sed 's/,/|/g')
+if [ ! -z ${only} ] || [ ! -z ${except} ]; then
+  services=${only:-$except}
+  services_pattern=$(echo ${services} | sed 's/,/|/g')
 
-if [ ! -z ${parsed_except} ]; then
+  if [ ! -z ${except} ]; then
+    grep_args="-vE"
+  else
+    grep_args="-E"
+  fi;
+
   tmp_procfile=$(mktemp -t procfile_XXXXXXX)
-  cat ${PROCFILE} | grep -vE "^(${parsed_except}):" > ${tmp_procfile}
+  cat ${PROCFILE} | grep ${grep_args} "^(${services_pattern}):" > ${tmp_procfile}
   export PROCFILE=${tmp_procfile}
 fi
-if [ ! -z ${parsed_only} ]; then
-  tmp_procfile=$(mktemp -t procfile_XXXXXXX)
-  cat ${PROCFILE} | grep -E "^(${parsed_only}):" > ${tmp_procfile}
-  export PROCFILE=${tmp_procfile}
+
+if [ ! -z ${only} ]; then
+  printf >&2 "\nStarting binaries ${only}...\n\n"
+elif [ ! -z ${except} ]; then
+  printf >&2 "\nStarting all binaries, except ${except}...\n\n"
+else
+  printf >&2 "\nStarting all binaries...\n\n"
 fi
 
-printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"
 
 if ! [ "$(id -u)" = 0 ] && command -v authbind; then
