@@ -90,6 +90,23 @@ func (p Problem) String() string {
 	return p.description
 }
 
+func (p *Problem) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]string{
+		"kind":        string(p.kind),
+		"description": p.description,
+	})
+}
+
+func (p *Problem) UnmarshalJSON(b []byte) error {
+	var m map[string]string
+	if err := json.Unmarshal(b, &m); err != nil {
+		return err
+	}
+	p.kind = problemKind(m["kind"])
+	p.description = m["description"]
+	return nil
+}
+
 // Problems is a list of problems.
 type Problems []*Problem
 
