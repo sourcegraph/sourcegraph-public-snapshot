@@ -60,7 +60,6 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 	if rc == nil {
 		lang.Name = matchedLang
 		lang.TotalBytes = uint64(file.Size())
-		lang.TotalLines = uint64(file.Size())
 		return lang, nil
 	}
 

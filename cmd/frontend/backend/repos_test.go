@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"io"
 	"io/ioutil"
 	"os"
@@ -163,8 +164,8 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection: false,
 			want: &inventory.Inventory{
 				Languages: []inventory.Lang{
-					{Name: "Go", TotalBytes: 0, TotalLines: 0},
-					{Name: "Limbo", TotalBytes: 0, TotalLines: 0}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
+					{Name: "Limbo", TotalBytes: 24, TotalLines: 0}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
+					{Name: "Go", TotalBytes: 12, TotalLines: 0},
 				},
 			},
 		},
@@ -172,8 +173,8 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection: true,
 			want: &inventory.Inventory{
 				Languages: []inventory.Lang{
-					{Name: "Go", TotalBytes: 12, TotalLines: 1},
 					{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
+					{Name: "Go", TotalBytes: 12, TotalLines: 1},
 				},
 			},
 		},
@@ -189,8 +190,8 @@ func TestReposGetInventory(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(inv, test.want) {
-				t.Errorf("got  %#v\nwant %#v", inv, test.want)
+			if diff := cmp.Diff(test.want, inv); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}
