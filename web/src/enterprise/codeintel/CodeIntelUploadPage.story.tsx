@@ -1,0 +1,134 @@
+import { storiesOf } from '@storybook/react'
+import React from 'react'
+import * as H from 'history'
+import { CodeIntelUploadPage, Upload } from './CodeIntelUploadPage'
+import webStyles from '../../SourcegraphWebApp.scss'
+import { of } from 'rxjs'
+import * as GQL from '../../../../shared/src/graphql/schema'
+
+window.context = {}
+
+const { add } = storiesOf('web/CodeIntelUpload', module).addDecorator(story => (
+    <>
+        <style>{webStyles}</style>
+        <div className="theme-light container">{story()}</div>
+    </>
+))
+
+const history = H.createMemoryHistory()
+
+const commonProps = {
+    history,
+    location: history.location,
+    match: {
+        params: { id: '' },
+        isExact: true,
+        path: '',
+        url: '',
+    },
+}
+
+const upload: Pick<Upload, 'id' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
+    id: '1234',
+    projectRoot: {
+        path: 'web/',
+        commit: {
+            url: '',
+            oid: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+            abbreviatedOID: '9ea5e9f',
+            repository: {
+                url: '',
+                name: 'github.com/sourcegraph/sourcegraph',
+            },
+        },
+    },
+    inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+    inputRoot: 'web/',
+    inputIndexer: 'lsif-tsc',
+    isLatestForRepo: false,
+}
+
+add('Completed', () => (
+    <CodeIntelUploadPage
+        {...commonProps}
+        fetchLsifUpload={() =>
+            of({
+                ...upload,
+                state: GQL.LSIFUploadState.COMPLETED,
+                uploadedAt: '2020-06-15T12:20:30+00:00',
+                startedAt: '2020-06-15T12:25:30+00:00',
+                finishedAt: '2020-06-15T12:30:30+00:00',
+                failure: null,
+                placeInQueue: null,
+            })
+        }
+    />
+))
+
+add('Errored', () => (
+    <CodeIntelUploadPage
+        {...commonProps}
+        fetchLsifUpload={() =>
+            of({
+                ...upload,
+                state: GQL.LSIFUploadState.ERRORED,
+                uploadedAt: '2020-06-15T12:20:30+00:00',
+                startedAt: '2020-06-15T12:25:30+00:00',
+                finishedAt: '2020-06-15T12:30:30+00:00',
+                failure: 'Whoops! The server encountered a booo-boo handling this input.',
+                placeInQueue: null,
+            })
+        }
+    />
+))
+
+add('Processing', () => (
+    <CodeIntelUploadPage
+        {...commonProps}
+        fetchLsifUpload={() =>
+            of({
+                ...upload,
+                state: GQL.LSIFUploadState.PROCESSING,
+                uploadedAt: '2020-06-15T12:20:30+00:00',
+                startedAt: '2020-06-15T12:25:30+00:00',
+                finishedAt: null,
+                failure: null,
+                placeInQueue: null,
+            })
+        }
+    />
+))
+
+add('Queued', () => (
+    <CodeIntelUploadPage
+        {...commonProps}
+        fetchLsifUpload={() =>
+            of({
+                ...upload,
+                state: GQL.LSIFUploadState.QUEUED,
+                uploadedAt: '2020-06-15T12:20:30+00:00',
+                startedAt: null,
+                finishedAt: null,
+                placeInQueue: 3,
+                failure: null,
+            })
+        }
+    />
+))
+
+add('Uploading', () => (
+    <CodeIntelUploadPage
+        {...commonProps}
+        fetchLsifUpload={() =>
+            of({
+                ...upload,
+                state: GQL.LSIFUploadState.UPLOADING,
+                uploadedAt: '2020-06-15T12:20:30+00:00',
+                startedAt: null,
+                finishedAt: null,
+                failure: null,
+                placeInQueue: null,
+            })
+        }
+    />
+))
