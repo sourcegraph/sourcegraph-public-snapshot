@@ -31,8 +31,8 @@ func (r *DiagnosticResolver) Location(ctx context.Context) (gql.LocationResolver
 		r.locationResolver,
 		resolvers.AdjustedLocation{
 			Dump:           r.diagnostic.Dump,
-			Path:           r.diagnostic.AdjustedCommit,
-			AdjustedCommit: r.diagnostic.Path,
+			Path:           r.diagnostic.Path,
+			AdjustedCommit: r.diagnostic.AdjustedCommit,
 			AdjustedRange:  r.diagnostic.AdjustedRange,
 		},
 	)
