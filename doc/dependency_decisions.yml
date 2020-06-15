@@ -92,7 +92,10 @@
   - "(BSD-2-Clause OR MIT)"
   - *2
 - - :permit
-  - "Apache*"
+  - WTFPL
+  - *2
+- - :permit
+  - Apache*
   - *2
 - - :ignore_group
   - devDependencies
@@ -132,3 +135,691 @@
   - "@sourcegraph/extension-api-types"
   - https://github.com/sourcegraph/sourcegraph
   - *4
+- - :add_package
+  - github.com/beevik/etree
+  - v1.1.0
+  - &5
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 06:55:02.884143000 Z
+- - :license
+  - github.com/beevik/etree
+  - BSD-3-Clause
+  - *5
+- - :homepage
+  - github.com/beevik/etree
+  - https://github.com/beevik/etree
+  - *5
+- - :add_package
+  - github.com/bkaradzic/go-lz4
+  - v1.0.0
+  - &6
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:01:29.502442000 Z
+- - :license
+  - github.com/bkaradzic/go-lz4
+  - BSD-2-Clause
+  - *6
+- - :homepage
+  - github.com/bkaradzic/go-lz4
+  - https://github.com/bkaradzic/go-lz4
+  - *6
+- - :add_package
+  - github.com/bmizerany/assert
+  - v0.0.0-20160611221934-b7ed37b82869
+  - &7
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:03:44.573039000 Z
+- - :license
+  - github.com/bmizerany/assert
+  - MIT
+  - *7
+- - :homepage
+  - github.com/bmizerany/assert
+  - https://github.com/bmizerany/assert
+  - *7
+- - :add_package
+  - github.com/chzyer/logex
+  - v1.1.10
+  - &8
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:07:18.539177000 Z
+- - :license
+  - github.com/chzyer/logex
+  - MIT
+  - *8
+- - :homepage
+  - github.com/chzyer/logex
+  - https://github.com/chzyer/logex
+  - *8
+- - :add_package
+  - github.com/crewjam/httperr
+  - v0.0.0-20190612203328-a946449404da
+  - &9
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:07:54.082981000 Z
+- - :license
+  - github.com/crewjam/httperr
+  - BSD-2-Clause
+  - *9
+- - :homepage
+  - github.com/crewjam/httperr
+  - https://github.com/crewjam/httperr
+  - *9
+- - :add_package
+  - github.com/cznic/mathutil
+  - v0.0.0-20180504122225-ca4c9f2c1369
+  - &10
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:09:28.187883000 Z
+- - :license
+  - github.com/cznic/mathutil
+  - MIT
+  - *10
+- - :homepage
+  - github.com/cznic/mathutil
+  - https://github.com/cznic/mathutil
+  - *10
+- - :add_package
+  - github.com/dchest/uniuri
+  - v0.0.0-20160212164326-8902c56451e9
+  - &11
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:10:52.461928000 Z
+- - :license
+  - github.com/dchest/uniuri
+  - CC0-1.0
+  - *11
+- - :homepage
+  - github.com/dchest/uniuri
+  - https://github.com/dchest/uniuri
+  - *11
+- - :add_package
+  - github.com/dnaeon/go-vcr
+  - v1.0.1
+  - &12
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:11:25.443573000 Z
+- - :license
+  - github.com/dnaeon/go-vcr
+  - MIT
+  - *12
+- - :homepage
+  - github.com/dnaeon/go-vcr
+  - https://github.com/dnaeon/go-vcr
+  - *12
+- - :add_package
+  - github.com/facebookgo/ensure
+  - v0.0.0-20200202191622-63f1cf65ac4c
+  - &13
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:13:15.814166000 Z
+- - :license
+  - github.com/facebookgo/ensure
+  - BSD
+  - *13
+- - :homepage
+  - github.com/facebookgo/ensure
+  - https://github.com/facebookgo/ensure
+  - *13
+- - :add_package
+  - github.com/facebookgo/limitgroup
+  - v0.0.0-20150612190941-6abd8d71ec01
+  - &14
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:13:39.295251000 Z
+- - :license
+  - github.com/facebookgo/limitgroup
+  - BSD
+  - *14
+- - :homepage
+  - github.com/facebookgo/limitgroup
+  - https://github.com/facebookgo/limitgroup
+  - *14
+- - :add_package
+  - github.com/facebookgo/muster
+  - v0.0.0-20150708232844-fd3d7953fd52
+  - &15
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:14:01.793899000 Z
+- - :license
+  - github.com/facebookgo/muster
+  - BSD
+  - *15
+- - :homepage
+  - github.com/facebookgo/muster
+  - https://github.com/facebookgo/muster
+  - *15
+- - :add_package
+  - github.com/facebookgo/stack
+  - v0.0.0-20160209184415-751773369052
+  - &16
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:14:34.912371000 Z
+- - :license
+  - github.com/facebookgo/stack
+  - BSD
+  - *16
+- - :homepage
+  - github.com/facebookgo/stack
+  - https://github.com/facebookgo/stack
+  - *16
+- - :add_package
+  - github.com/facebookgo/subset
+  - v0.0.0-20200203212716-c811ad88dec4
+  - &17
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:14:58.099242000 Z
+- - :license
+  - github.com/facebookgo/subset
+  - BSD
+  - *17
+- - :homepage
+  - github.com/facebookgo/subset
+  - https://github.com/facebookgo/subset
+  - *17
+- - :add_package
+  - github.com/garyburd/redigo
+  - v1.1.1-0.20170914051019-70e1b1943d4f
+  - &18
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:16:01.967550000 Z
+- - :license
+  - github.com/garyburd/redigo
+  - Apache-2.0
+  - *18
+- - :homepage
+  - github.com/garyburd/redigo
+  - https://github.com/garyburd/redigo
+  - *18
+- - :add_package
+  - github.com/golangci/go-misc
+  - v0.0.0-20180628070357-927a3d87b613
+  - &19
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:16:22.691014000 Z
+- - :license
+  - github.com/golangci/go-misc
+  - MIT
+  - *19
+- - :homepage
+  - github.com/golangci/go-misc
+  - https://github.com/golangci/go-misc
+  - *19
+- - :add_package
+  - github.com/gomodule/oauth1
+  - v0.0.0-20181215000758-9a59ed3b0a84
+  - &20
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:16:44.548101000 Z
+- - :license
+  - github.com/gomodule/oauth1
+  - Apache-2.0
+  - *20
+- - :homepage
+  - github.com/gomodule/oauth1
+  - https://github.com/gomodule/oauth1
+  - *20
+- - :add_package
+  - github.com/gomodule/redigo
+  - v2.0.0
+  - &21
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:17:12.633449000 Z
+- - :license
+  - github.com/gomodule/redigo
+  - Apache-2.0
+  - *21
+- - :homepage
+  - github.com/gomodule/redigo
+  - https://github.com/gomodule/redigo
+  - *21
+- - :add_package
+  - github.com/jackc/pgtype
+  - v0.0.0-20190828014616-a8802b16cc59
+  - &22
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:21:21.173421000 Z
+- - :license
+  - github.com/jackc/pgtype
+  - MIT
+  - *22
+- - :homepage
+  - github.com/jackc/pgtype
+  - https://github.com/jackc/pgtype
+  - *22
+- - :add_package
+  - github.com/inconshreveable/mousetrap
+  - v1.0.0
+  - &23
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:21:23.669458000 Z
+- - :license
+  - github.com/inconshreveable/mousetrap
+  - Apache-2.0
+  - *23
+- - :homepage
+  - github.com/inconshreveable/mousetrap
+  - https://github.com/inconshreveable/mousetrap
+  - *23
+- - :add_package
+  - github.com/jmespath/go-jmespath
+  - v0.3.0
+  - &24
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:22:00.517196000 Z
+- - :license
+  - github.com/jmespath/go-jmespath
+  - Apache-2.0
+  - *24
+- - :homepage
+  - github.com/jmespath/go-jmespath
+  - https://github.com/jmespath/go-jmespath
+  - *24
+- - :add_package
+  - github.com/julienschmidt/httprouter
+  - v1.2.0
+  - &25
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:25:42.405116000 Z
+- - :license
+  - github.com/julienschmidt/httprouter
+  - BSD-3-Clause
+  - *25
+- - :homepage
+  - github.com/julienschmidt/httprouter
+  - https://github.com/julienschmidt/httprouter
+  - *25
+- - :add_package
+  - github.com/karlseguin/typed
+  - v1.1.7
+  - &26
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:25:57.612106000 Z
+- - :license
+  - github.com/karlseguin/typed
+  - MIT
+  - *26
+- - :homepage
+  - github.com/karlseguin/typed
+  - https://github.com/karlseguin/typed
+  - *26
+- - :add_package
+  - github.com/mattn/goveralls
+  - v0.0.2
+  - &27
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:26:33.698858000 Z
+- - :license
+  - github.com/mattn/goveralls
+  - MIT
+  - *27
+- - :homepage
+  - github.com/mattn/goveralls
+  - https://github.com/mattn/goveralls
+  - *27
+- - :add_package
+  - github.com/rcrowley/go-metrics
+  - v0.0.0-20181016184325-3113b8401b8a
+  - &28
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:26:56.528696000 Z
+- - :license
+  - github.com/rcrowley/go-metrics
+  - MIT
+  - *28
+- - :homepage
+  - github.com/rcrowley/go-metrics
+  - https://github.com/rcrowley/go-metrics
+  - *28
+- - :add_package
+  - github.com/russellhaering/gosaml2
+  - v0.4.0
+  - &29
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:27:41.284099000 Z
+- - :license
+  - github.com/russellhaering/gosaml2
+  - Apache-2.0
+  - *29
+- - :homepage
+  - github.com/russellhaering/gosaml2
+  - https://github.com/russellhaering/gosaml2
+  - *29
+- - :add_package
+  - github.com/russellhaering/goxmldsig
+  - v0.0.0-20180430223755-7acd5e4a6ef7
+  - &30
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:28:11.857402000 Z
+- - :license
+  - github.com/russellhaering/goxmldsig
+  - Apache-2.0
+  - *30
+- - :homepage
+  - github.com/russellhaering/goxmldsig
+  - https://github.com/russellhaering/goxmldsig
+  - *30
+- - :add_package
+  - github.com/shirou/w32
+  - v0.0.0-20160930032740-bb4de0191aa4
+  - &31
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:28:28.391206000 Z
+- - :license
+  - github.com/shirou/w32
+  - MIT
+  - *31
+- - :homepage
+  - github.com/shirou/w32
+  - https://github.com/shirou/w32
+  - *31
+- - :add_package
+  - github.com/shurcooL/github_flavored_markdown
+  - v0.0.0-20181002035957-2122de532470
+  - &32
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:29:03.455483000 Z
+- - :license
+  - github.com/shurcooL/github_flavored_markdown
+  - MIT
+  - *32
+- - :homepage
+  - github.com/shurcooL/github_flavored_markdown
+  - https://github.com/shurcooL/github_flavored_markdown
+  - *32
+- - :add_package
+  - github.com/shurcooL/go-goon
+  - v0.0.0-20170922171312-37c2f522c041
+  - &33
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:29:17.812764000 Z
+- - :license
+  - github.com/shurcooL/go-goon
+  - MIT
+  - *33
+- - :homepage
+  - github.com/shurcooL/go-goon
+  - https://github.com/shurcooL/go-goon
+  - *33
+- - :add_package
+  - github.com/shurcooL/highlight_go
+  - v0.0.0-20191220051317-782971ddf21b
+  - &34
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:29:29.533109000 Z
+- - :license
+  - github.com/shurcooL/highlight_go
+  - MIT
+  - *34
+- - :homepage
+  - github.com/shurcooL/highlight_go
+  - https://github.com/shurcooL/highlight_go
+  - *34
+- - :add_package
+  - github.com/sloonz/go-qprintable
+  - v0.0.0-20160203160305-775b3a4592d5
+  - &35
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:30:06.251860000 Z
+- - :license
+  - github.com/sloonz/go-qprintable
+  - ISC
+  - *35
+- - :homepage
+  - github.com/sloonz/go-qprintable
+  - https://github.com/sloonz/go-qprintable
+  - *35
+- - :add_package
+  - github.com/spf13/afero
+  - v1.2.2
+  - &36
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:32:37.259939000 Z
+- - :license
+  - github.com/spf13/afero
+  - Apache-2.0
+  - *36
+- - :homepage
+  - github.com/spf13/afero
+  - https://github.com/spf13/afero
+  - *36
+- - :add_package
+  - github.com/xdg/scram
+  - v0.0.0-20180814205039-7eeb5667e42c
+  - &37
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:34:16.600228000 Z
+- - :license
+  - github.com/xdg/scram
+  - Apache-2.0
+  - *37
+- - :homepage
+  - github.com/xdg/scram
+  - https://github.com/xdg/scram
+  - *37
+- - :add_package
+  - github.com/xdg/stringprep
+  - v1.0.0
+  - &38
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:34:43.053921000 Z
+- - :license
+  - github.com/xdg/stringprep
+  - Apache-2.0
+  - *38
+- - :homepage
+  - github.com/xdg/stringprep
+  - https://github.com/xdg/stringprep
+  - *38
+- - :add_package
+  - modernc.org/b
+  - v1.0.0
+  - &39
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:36:10.715670000 Z
+- - :license
+  - modernc.org/b
+  - BSD-3-Clause
+  - *39
+- - :homepage
+  - modernc.org/b
+  - https://modernc.org/b
+  - *39
+- - :add_package
+  - modernc.org/db
+  - v1.0.0
+  - &40
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:36:32.993547000 Z
+- - :license
+  - modernc.org/db
+  - BSD-3-Clause
+  - *40
+- - :homepage
+  - modernc.org/db
+  - https://modernc.org/db
+  - *40
+- - :add_package
+  - modernc.org/file
+  - v1.0.0
+  - &41
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:36:52.421839000 Z
+- - :license
+  - modernc.org/file
+  - BSD-3-Clause
+  - *41
+- - :homepage
+  - modernc.org/file
+  - https://modernc.org/file
+  - *41
+- - :add_package
+  - modernc.org/golex
+  - v1.0.0
+  - &42
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:37:10.093509000 Z
+- - :license
+  - modernc.org/golex
+  - BSD-3-Clause
+  - *42
+- - :homepage
+  - modernc.org/golex
+  - https://modernc.org/golex
+  - *42
+- - :add_package
+  - modernc.org/internal
+  - v1.0.0
+  - &43
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:37:41.354648000 Z
+- - :license
+  - modernc.org/internal
+  - BSD-3-Clause
+  - *43
+- - :homepage
+  - modernc.org/internal
+  - https://modernc.org/internal
+  - *43
+- - :add_package
+  - modernc.org/lldb
+  - v1.0.0
+  - &44
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:38:06.700487000 Z
+- - :license
+  - modernc.org/lldb
+  - BSD-3-Clause
+  - *44
+- - :homepage
+  - modernc.org/lldb
+  - https://modernc.org/lldb
+  - *44
+- - :add_package
+  - modernc.org/mathutil
+  - v1.0.0
+  - &45
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:38:39.067328000 Z
+- - :license
+  - modernc.org/mathutil
+  - BSD-3-Clause
+  - *45
+- - :homepage
+  - modernc.org/mathutil
+  - https://modernc.org/mathutil
+  - *45
+- - :add_package
+  - modernc.org/sortutil
+  - v1.1.0
+  - &46
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:39:03.302730000 Z
+- - :license
+  - modernc.org/sortutil
+  - BSD-3-Clause
+  - *46
+- - :homepage
+  - modernc.org/sortutil
+  - https://modernc.org/sortutil
+  - *46
+- - :add_package
+  - modernc.org/strutil
+  - v1.1.0
+  - &47
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 07:39:22.621996000 Z
+- - :license
+  - modernc.org/strutil
+  - BSD-3-Clause
+  - *47
+- - :homepage
+  - modernc.org/strutil
+  - https://modernc.org/strutil
+  - *47
