@@ -22,7 +22,6 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -95,7 +94,6 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 		httpClient = http.DefaultClient
 	}
 	httpClient = requestCounter.Doer(httpClient, categorize)
-	u = extsvc.NormalizeBaseURL(u)
 
 	// Normally our registry will return a default infinite limiter when nothing has been
 	// synced from config. However, we always want to ensure there is at least some form of rate

@@ -14,7 +14,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -73,12 +72,11 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 		return category
 	})
 
-	normalisedURL := extsvc.NormalizeBaseURL(apiURL)
 	// Normally our registry will return a default infinite limiter when nothing has been
 	// synced from config. However, we always want to ensure there is at least some form of rate
 	// limiting for Bitbucket.
 	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
-	l := ratelimit.DefaultRegistry.GetOrSet(normalisedURL.String(), defaultLimiter)
+	l := ratelimit.DefaultRegistry.GetOrSet(apiURL.String(), defaultLimiter)
 
 	return &Client{
 		httpClient: httpClient,
