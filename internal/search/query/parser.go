@@ -10,14 +10,6 @@ import (
 	"unicode/utf8"
 )
 
-type ExpectedOperand struct {
-	Msg string
-}
-
-func (e *ExpectedOperand) Error() string {
-	return e.Msg
-}
-
 /*
 Parser implements a parser for the following grammar:
 
@@ -868,7 +860,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 		return nil, err
 	}
 	if left == nil {
-		return nil, &UnsupportedError{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
+		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
 	if !p.expect(AND) {
 		return left, nil
@@ -888,7 +880,7 @@ func (p *parser) parseOr() ([]Node, error) {
 		return nil, err
 	}
 	if left == nil {
-		return nil, &UnsupportedError{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
+		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
 	if !p.expect(OR) {
 		return left, nil
