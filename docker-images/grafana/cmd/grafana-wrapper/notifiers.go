@@ -16,7 +16,7 @@ func generateNotifiersConfig(current []*schema.ObservabilityAlerts, newAlerts []
 	// generate grafana notifiers
 	var newGrafanaAlerts []sdk.AlertNotification
 	for _, alert := range newAlerts {
-		alertType, fields, err := structToNotifierSettings(alert.Notifier)
+		alertType, fields, err := structToNotifierSettings(&alert.Notifier)
 		if err != nil {
 			return nil, fmt.Errorf("new notifier '%s' is invalid: %w", alert.Id, err)
 		}

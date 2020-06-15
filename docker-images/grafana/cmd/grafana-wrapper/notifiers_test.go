@@ -27,7 +27,7 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 					{
 						Id:    "test-alert",
 						Level: "warning",
-						Notifier: &schema.Notifier{
+						Notifier: schema.Notifier{
 							Slack: &schema.GrafanaNotifierSlack{
 								Type: "slack",
 								Url:  "https://soucegraph.com",
