@@ -197,7 +197,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <div className="mt-4 p-2 pt-2">
+                    <div className="mt-4 p-2">
                         <button
                             type="button"
                             className="btn btn-danger"
