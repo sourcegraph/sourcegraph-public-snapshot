@@ -15,10 +15,6 @@ jobs:
 
     - name: Install license_finder
       run: gem install license_finder
-    - name: Prepare dependencies
-      run: |
-        yarn --mutex network --frozen-lockfile
-        go mod vendor
 
     - name: Check dependencies
       run: LICENSE_CHECK=true ./dev/licenses.sh
