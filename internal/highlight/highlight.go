@@ -244,7 +244,7 @@ var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 
 var requestHistogram = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
-		Name: "src_syntax_highlighting_duration",
+		Name: "src_syntax_highlighting_duration_seconds",
 		Help: "time for a request to have syntax highlight",
 	})
 
