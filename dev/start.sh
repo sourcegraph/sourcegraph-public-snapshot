@@ -145,25 +145,27 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [ ! -z ${only} ] || [ ! -z ${except} ]; then
+if [ -n "${only}" ] || [ -n "${except}" ]; then
   services=${only:-$except}
-  services_pattern=$(echo ${services} | sed 's/,/|/g')
 
-  if [ ! -z ${except} ]; then
+  # "frontend,grafana,gitserver" -> "^(frontend|grafana|gitserver):"
+  services_pattern="^(${services//,/|}):"
+
+  if [ -n "${except}" ]; then
     grep_args="-vE"
   else
     grep_args="-E"
   fi;
 
   tmp_procfile=$(mktemp -t procfile_XXXXXXX)
-  cat ${PROCFILE} | grep ${grep_args} "^(${services_pattern}):" > ${tmp_procfile}
+  grep ${grep_args} "${services_pattern}" "${PROCFILE}" > "${tmp_procfile}"
   export PROCFILE=${tmp_procfile}
 fi
 
-if [ ! -z ${only} ]; then
-  printf >&2 "\nStarting binaries ${only}...\n\n"
-elif [ ! -z ${except} ]; then
-  printf >&2 "\nStarting all binaries, except ${except}...\n\n"
+if [ -n "${only}" ]; then
+  printf >&2 "\nStarting binaries %s...\n\n" "${only}"
+elif [ -n "${except}" ]; then
+  printf >&2 "\nStarting all binaries, except %s...\n\n" "${except}"
 else
   printf >&2 "\nStarting all binaries...\n\n"
 fi
