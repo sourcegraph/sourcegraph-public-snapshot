@@ -30,35 +30,51 @@ scalar JSONValue
 # A string that contains valid JSON, with additional support for //-style comments and trailing commas.
 scalar JSONCString
 
-# A mutation.
+# A string that contains valid YAML
+scalar YAMLString
+
+input CommitInput {
+    message: String!
+}
+
+input ChangesetSpec {
+    repository: ID!
+
+    # If this is set...
+    externalID: String
+
+    # ... these fields are ignored
+    baseRevision: String!
+    baseRef: String!
+    patch: String!
+    commit: CommitInput!
+
+    title: String!
+    body: String!
+
+    published: Boolean!
+}
+
+type CampaignSpec {
+    id: ID!
+
+    changesetSpecs: [ChangesetSpec!]!
+}
+
+type CampaignPreview {
+    unmodified: Changeset
+    modified: Changeset
+    deleted: Changeset
+    created: Changeset
+}
+
 type Mutation {
-    # Create a list of changesets in a specific repository on a code host (e.g.,
-    # pull requests on GitHub). If a changeset with the given input already
-    # exists, it is returned instead of a new entry being added to the database.
-    createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
-    # Add a list of changesets to a campaign. The campaign must not have a patchset.
-    addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
-    # Create a campaign in a namespace. The newly created campaign is returned.
-    createCampaign(input: CreateCampaignInput!): Campaign!
-    # Create a patchset from patches (in unified diff format) that are computed by the caller.
-    #
-    # To create the campaign, call createCampaign with the returned PatchSet.id in the
-    # CreateCampaignInput.patchSet field.
-    createPatchSetFromPatches(
-        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
-        # created from this PatchSet.
-        patches: [PatchInput!]!
-    ): PatchSet!
-    # Updates a campaign. Updating is not allowed when any of the following are true:
-    #
-    # - The campaign has already been closed.
-    # - A plan is added to a manual campaign.
-    # - A non-manual campaign has a changeset that is not published (or is being published).
-    updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Retry publishing all changesets in the campaign that could not be
-    # successfully created on the code host. Retrying will clear the errors
-    # list of a campaign.
-    retryCampaignChangesets(campaign: ID!): Campaign!
+    storeCampaignSpec(yaml: YAMLString, changesets: [ChangesetSpec]): CampaignSpec
+    addChangesetSpec(spec: ID, changesets: [ChangesetSpec]): CampaignSpec
+    applyCampaignSpec(spec: ID): Campaign
+    previewApplyCampaignSpec(spec: ID): CampaignPreview
+    publishChangeset(changeset: ID!): EmptyResponse!
+
     # Delete a campaign.
     deleteCampaign(
         campaign: ID!
@@ -75,20 +91,7 @@ type Mutation {
         # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
-    # Create an ExternalChangeset on the code host asynchronously for each
-    # patch belonging to the patchset that has been attached to a campaign;
-    # otherwise, an error is returned and no ExternalChangesets are created.
-    # Callers can query the campaign's status to track the progress of this async operation.
-    # If one of the patches has previously been published but the publication failed,
-    # publication is NOT retried.
-    publishCampaignChangesets(campaign: ID!): Campaign!
-    # Create an ExternalChangeset on the code host asynchronously. The patch
-    # must belong to a patchset that has been attached to a campaign;
-    # otherwise, an error is returned and no ExternalChangeset is created.
-    # Callers can query the campaign's status to track the progress of this async operation.
-    # If the patch has previously been published but the publication failed,
-    # the patch is reset and publication will be retried.
-    publishChangeset(patch: ID!): EmptyResponse!
+
     # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
 
