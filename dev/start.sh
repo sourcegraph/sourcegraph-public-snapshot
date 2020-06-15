@@ -137,12 +137,21 @@ export PROCFILE=${PROCFILE:-dev/Procfile}
 only=""
 except=""
 while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -e|--except) except="$2"; shift ;;
-        -o|--only) only="$2"; shift ;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
-    esac
-    shift
+  case $1 in
+    -e | --except)
+      except="$2"
+      shift
+      ;;
+    -o | --only)
+      only="$2"
+      shift
+      ;;
+    *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+  shift
 done
 
 if [ -n "${only}" ] || [ -n "${except}" ]; then
@@ -155,10 +164,10 @@ if [ -n "${only}" ] || [ -n "${except}" ]; then
     grep_args="-vE"
   else
     grep_args="-E"
-  fi;
+  fi
 
   tmp_procfile=$(mktemp -t procfile_XXXXXXX)
-  grep ${grep_args} "${services_pattern}" "${PROCFILE}" > "${tmp_procfile}"
+  grep ${grep_args} "${services_pattern}" "${PROCFILE}" >"${tmp_procfile}"
   export PROCFILE=${tmp_procfile}
 fi
 
