@@ -10,17 +10,9 @@ Principles:
 - **Large-scale.** You can run campaigns across 10,000s of repositories. It might take a while to compute and push everything, and the current implementation might cap out lower than that, but the fundamental design scales well.
 - **Accommodates a variety of code hosts and review/merge processes.** Specifically, we don't to limit campaigns to only working for GitHub pull requests. (See [current support list](../user/campaigns/index.md#supported-code-hosts-and-changeset-types).)
 
-## Inspired by Kubernetes
+## Comparison to Kubernetes
 
-We've found Kubernetes to be a good source of inspiration for the campaigns API design, because both Kubernetes and campaigns help you manage a distributed system. Here's an analogy between a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a Sourcegraph campaign.
-
-<!--
-
-Do we need to say this?
-
-Resembling Kubernetes is *not* an explicit goal. Drawing the analogy helps explain to people why we incorporated aspects of robustness and error-tolerance into campaigns (because they intuitively know why they're necessary for Kubernetes).
-
--->
+We've found Kubernetes to be a good source of inspiration for the campaigns API design, because both Kubernetes and campaigns help you manage a distributed system. Here's an analogy between a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a Sourcegraph campaign. (Resembling Kubernetes is **not** an explicit goal.)
 
 <table>
   <tr>
