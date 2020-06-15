@@ -75,7 +75,7 @@ add('Errored', () => (
                 queuedAt: '2020-06-15T12:20:30+00:00',
                 startedAt: '2020-06-15T12:25:30+00:00',
                 finishedAt: '2020-06-15T12:30:30+00:00',
-                failure: 'Whoops! The server encountered a booo-boo handling this input.',
+                failure: 'Whoops! The server encountered a boo-boo handling this input.',
                 placeInQueue: null,
             })
         }

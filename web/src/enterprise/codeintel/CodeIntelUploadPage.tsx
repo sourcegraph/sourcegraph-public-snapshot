@@ -242,27 +242,19 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <div className="delete-container">
-                        <div className="delete-container__row">
-                            <div className="delete-container__description">
-                                <h4 className="delete-container__title">Delete this upload</h4>
-                                <div>
-                                    Deleting this upload make it immediately unavailable to answer code intelligence
-                                    queries.
-                                </div>
-                            </div>
-                            <div className="delete-container__btn-container">
-                                <button
-                                    type="button"
-                                    className="btn btn-danger delete-container__btn"
-                                    onClick={deleteUpload}
-                                    disabled={deletionOrError === 'loading'}
-                                    data-tooltip="Delete upload"
-                                >
-                                    <DeleteIcon className="icon-inline" />
-                                </button>
-                            </div>
-                        </div>
+                    <div className="mt-4 p-2 pt-2">
+                        <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={deleteUpload}
+                            disabled={deletionOrError === 'loading'}
+                            aria-describedby="upload-delete-button-help"
+                        >
+                            <DeleteIcon className="icon-inline" /> Delete upload
+                        </button>
+                        <small id="upload-delete-button-help" className="form-text text-muted">
+                            Deleting this upload make it immediately unavailable to answer code intelligence queries.
+                        </small>
                     </div>
                 </>
             )}

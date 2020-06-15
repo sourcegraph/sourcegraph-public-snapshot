@@ -104,8 +104,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                             Auto-index record for commit{' '}
                             {indexOrError.projectRoot
                                 ? indexOrError.projectRoot.commit.abbreviatedOID
-                                : indexOrError.inputCommit.slice(0, 7)}{' '}
-                            rooted at {indexOrError.projectRoot ? indexOrError.projectRoot.path : '/'}
+                                : indexOrError.inputCommit.slice(0, 7)}
                         </h2>
                     </div>
 
@@ -198,24 +197,19 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <div className="delete-container">
-                        <div className="delete-container__row">
-                            <div className="delete-container__description">
-                                <h4 className="delete-container__title">Delete this index</h4>
-                                <div>Deleting this index will remove it from the index queue.</div>
-                            </div>
-                            <div className="delete-container__btn-container">
-                                <button
-                                    type="button"
-                                    className="btn btn-danger delete-container__btn"
-                                    onClick={deleteIndex}
-                                    disabled={deletionOrError === 'loading'}
-                                    data-tooltip="Delete index"
-                                >
-                                    <DeleteIcon className="icon-inline" />
-                                </button>
-                            </div>
-                        </div>
+                    <div className="mt-4 p-2 pt-2">
+                        <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={deleteIndex}
+                            disabled={deletionOrError === 'loading'}
+                            aria-describedby="upload-delete-button-help"
+                        >
+                            <DeleteIcon className="icon-inline" /> Delete index
+                        </button>
+                        <small id="upload-delete-button-help" className="form-text text-muted">
+                            Deleting this index will remove it from the index queue.
+                        </small>
                     </div>
                 </>
             )}
