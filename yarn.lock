@@ -2195,8 +2195,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -8703,10 +8702,10 @@ eslint-etc@^0.0.8:
   dependencies:
     esquery "^1.0.1"
 
-eslint-formatter-lsif@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.npmjs.org/eslint-formatter-lsif/-/eslint-formatter-lsif-1.0.2.tgz#4715ace6072bfcff861498bfc0ec206bc5796f9a"
-  integrity sha512-QtUOcYwDuKxY9IOu5cuMPePD38kUMtGPIj0cWIEQ1jMMOnNpVOkgm/e039krQupRfcZ69Jw6n7AJNpVqryR6Jw==
+eslint-formatter-lsif@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/eslint-formatter-lsif/-/eslint-formatter-lsif-1.0.3.tgz#7ec89cb1c880e166204f8bff98daaeb854ed0b09"
+  integrity sha512-HDfkUuzWab2bEOp+phr4OWPMLDe9IcuG20No6YWieDidCyeCZYEucZd82X84N0qdknyMZahOo2iHoxASG7XX5A==
   dependencies:
     iterare "^1.2.0"
     lsif-protocol "^0.4.3"
@@ -19604,8 +19603,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.5.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
