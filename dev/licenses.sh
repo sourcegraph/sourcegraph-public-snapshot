@@ -3,6 +3,8 @@
 set -euf -o pipefail
 
 COMMAND="report --format=csv --save=ThirdPartyLicenses.csv --write-headers"
+
+# if LICENSE_CHECK=true, report unapproved dependencies and error if there are any
 if [[ "${LICENSE_CHECK:-''}" == "true" ]]; then
   COMMAND="action_items"
 fi
