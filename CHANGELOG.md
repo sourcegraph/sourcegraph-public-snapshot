@@ -22,7 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
   ```
   "observability.alerts": {
     "id": "my-alert",
-    "level": "warning",
+    "level": "critical",
     "notifier": { "type": "slack", /* ... */ }
   }
   ```
