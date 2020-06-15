@@ -134,14 +134,15 @@ func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
 ) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	opts, err := listChangesetOptsFromArgs(args)
+	opts, safe, err := listChangesetOptsFromArgs(args)
 	if err != nil {
 		return nil, err
 	}
 	opts.CampaignID = r.Campaign.ID
 	return &changesetsConnectionResolver{
-		store: r.store,
-		opts:  opts,
+		store:    r.store,
+		opts:     opts,
+		optsSafe: safe,
 	}, nil
 }
 
@@ -154,6 +155,7 @@ func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.C
 			ExternalState: &state,
 			Limit:         -1,
 		},
+		optsSafe: true,
 	}, nil
 }
 
@@ -273,6 +275,7 @@ func (r *campaignResolver) RepositoryDiffs(
 			CampaignID: r.Campaign.ID,
 			Limit:      int(args.GetFirst()),
 		},
+		optsSafe: true,
 	}
 	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
 }
@@ -284,6 +287,7 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 			CampaignID: r.Campaign.ID,
 			Limit:      -1, // Get all changesets
 		},
+		optsSafe: true,
 	}
 
 	changesetDiffs := &changesetDiffsConnectionResolver{changesetsConnection}

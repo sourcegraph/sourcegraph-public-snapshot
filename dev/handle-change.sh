@@ -40,6 +40,17 @@ for i; do
           ;;
       esac
       ;;
+    enterprise/cmd/*)
+      cmd=${i#enterprise/cmd/}
+      cmd=${cmd%%/*}
+      case " ${cmdlist[*]} " in
+        " $cmd ") ;;
+
+        *)
+          cmdlist+=("$cmd")
+          ;;
+      esac
+      ;;
     *)
       all_cmds=true
       ;;

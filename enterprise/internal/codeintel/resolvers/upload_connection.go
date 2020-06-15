@@ -11,17 +11,17 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
 type lsifUploadConnectionResolver struct {
-	db db.DB
+	store store.Store
 
 	opt LSIFUploadsListOptions
 
 	// cache results because they are used by multiple fields
 	once               sync.Once
-	uploads            []db.Upload
+	uploads            []store.Upload
 	repositoryResolver *graphqlbackend.RepositoryResolver
 	totalCount         *int
 	nextURL            string
@@ -78,19 +78,22 @@ func (r *lsifUploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload, *graphqlbackend.RepositoryResolver, *int, string, error) {
+func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]store.Upload, *graphqlbackend.RepositoryResolver, *int, string, error) {
 	r.once.Do(func() {
-		r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
-		if r.err != nil {
-			return
-		}
+		var id int
+		if r.opt.RepositoryID != "" {
+			r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
+			if r.err != nil {
+				return
+			}
 
-		id := int(r.repositoryResolver.Type().ID)
+			id = int(r.repositoryResolver.Type().ID)
+		}
 		query := ""
+
 		if r.opt.Query != nil {
 			query = *r.opt.Query
 		}
-		visibileAtTip := r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo
 
 		state := ""
 		if r.opt.State != nil {
@@ -107,15 +110,14 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload
 			offset, _ = strconv.Atoi(*r.opt.NextURL)
 		}
 
-		uploads, totalCount, err := r.db.GetUploadsByRepo(
-			ctx,
-			id,
-			state,
-			query,
-			visibileAtTip,
-			limit,
-			offset,
-		)
+		uploads, totalCount, err := r.store.GetUploads(ctx, store.GetUploadsOptions{
+			RepositoryID: id,
+			State:        state,
+			Term:         query,
+			VisibleAtTip: r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo,
+			Limit:        limit,
+			Offset:       offset,
+		})
 		if err != nil {
 			r.err = err
 			return

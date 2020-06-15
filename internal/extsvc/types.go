@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,6 +70,9 @@ func (s *Accounts) TracingFields() []otlog.Field {
 }
 
 const (
+	// The constants below represent the different kinds of external service we support and should be used
+	// in preference to the Type values below.
+
 	KindAWSCodeCommit   = "AWSCODECOMMIT"
 	KindBitbucketServer = "BITBUCKETSERVER"
 	KindBitbucketCloud  = "BITBUCKETCLOUD"
@@ -78,6 +82,71 @@ const (
 	KindPhabricator     = "PHABRICATOR"
 	KindOther           = "OTHER"
 )
+
+const (
+	// The constants below represent the values used for the external_service_type column of the repo table.
+
+	// TypeAWSCodeCommit is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
+	// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
+	// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
+	TypeAWSCodeCommit = "awscodecommit"
+
+	// TypeBitbucketServer is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Server projects. The
+	// ServiceID value is the base URL to the Bitbucket Server instance.
+	TypeBitbucketServer = "bitbucketServer"
+
+	// TypeBitbucketCloud is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
+	// ServiceID value is the base URL to the Bitbucket Cloud.
+	TypeBitbucketCloud = "bitbucketCloud"
+
+	// TypeGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
+	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
+	TypeGitHub = "github"
+
+	// TypeGitLab is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
+	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
+	TypeGitLab = "gitlab"
+
+	// TypeGitolite is the (api.ExternalRepoSpec).ServiceType value for Gitolite projects.
+	TypeGitolite = "gitolite"
+
+	// TypePhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
+	TypePhabricator = "phabricator"
+
+	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
+	TypeOther = "other"
+)
+
+var (
+	// Precompute these for use in ParseServiceType below since the constants are mixed case
+	bbsLower = strings.ToLower(TypeBitbucketServer)
+	bbcLower = strings.ToLower(TypeBitbucketCloud)
+)
+
+// ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
+// It returns ("", false) if no match was found.
+func ParseServiceType(s string) (string, bool) {
+	switch strings.ToLower(s) {
+	case TypeAWSCodeCommit:
+		return TypeAWSCodeCommit, true
+	case bbsLower:
+		return TypeBitbucketServer, true
+	case bbcLower:
+		return TypeBitbucketCloud, true
+	case TypeGitHub:
+		return TypeGitHub, true
+	case TypeGitLab:
+		return TypeGitLab, true
+	case TypeGitolite:
+		return TypeGitolite, true
+	case TypePhabricator:
+		return TypePhabricator, true
+	case TypeOther:
+		return TypeOther, true
+	default:
+		return "", false
+	}
+}
 
 // AccountID is a descriptive type for the external identifier of an external account on the
 // code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL ID
@@ -223,4 +292,9 @@ type ErrRateLimitUnsupported struct {
 
 func (e ErrRateLimitUnsupported) Error() string {
 	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
+}
+
+// URN returns a unique resource identifier of an external service by given kind and ID.
+func URN(kind string, id int64) string {
+	return "extsvc:" + strings.ToLower(kind) + ":" + strconv.FormatInt(id, 10)
 }

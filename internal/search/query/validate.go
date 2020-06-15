@@ -79,6 +79,19 @@ func ContainsAndOrKeyword(input string) bool {
 	return strings.Contains(lower, " and ") || strings.Contains(lower, " or ")
 }
 
+// ContainsRegexpMetasyntax returns true if a string is a valid regular
+// expression and contains regex metasyntax (i.e., it is not a literal).
+func ContainsRegexpMetasyntax(input string) bool {
+	_, err := regexp.Compile(input)
+	if err == nil {
+		// It is a regexp. But does it contain metasyntax, or is it literal?
+		if len(regexp.QuoteMeta(input)) != len(input) {
+			return true
+		}
+	}
+	return false
+}
+
 // processTopLevel processes the top level of a query. It validates that we can
 // process the query with respect to and/or expressions on file content, but not
 // otherwise for nested parameters.

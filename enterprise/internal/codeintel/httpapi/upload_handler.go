@@ -13,23 +13,23 @@ import (
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type UploadHandler struct {
-	db                  db.DB
+	store               store.Store
 	bundleManagerClient bundles.BundleManagerClient
 	internal            bool
 }
 
-func NewUploadHandler(db db.DB, bundleManagerClient bundles.BundleManagerClient, internal bool) http.Handler {
+func NewUploadHandler(store store.Store, bundleManagerClient bundles.BundleManagerClient, internal bool) http.Handler {
 	handler := &UploadHandler{
-		db:                  db,
+		store:               store,
 		bundleManagerClient: bundleManagerClient,
 		internal:            internal,
 	}
@@ -141,7 +141,7 @@ func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request,
 		return nil, clientError("no uploadId supplied")
 	}
 
-	upload, exists, err := h.db.GetUploadByID(r.Context(), getQueryInt(r, "uploadId"))
+	upload, exists, err := h.store.GetUploadByID(r.Context(), getQueryInt(r, "uploadId"))
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
 	}
 
-	tx, err := h.db.Transact(r.Context())
+	tx, err := h.store.Transact(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		err = tx.Done(err)
 	}()
 
-	id, err := tx.InsertUpload(r.Context(), db.Upload{
+	id, err := tx.InsertUpload(r.Context(), store.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,
@@ -234,7 +234,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 // new upload record with state 'uploading' and returns the generated ID to be used in subsequent
 // requests for the same upload.
 func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
-	id, err := h.db.InsertUpload(r.Context(), db.Upload{
+	id, err := h.store.InsertUpload(r.Context(), store.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,
@@ -260,8 +260,8 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the
 // data to the bundle manager and marks the part index in the upload record.
-func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload db.Upload, partIndex int) (_ interface{}, err error) {
-	tx, err := h.db.Transact(r.Context())
+func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (_ interface{}, err error) {
+	tx, err := h.store.Transact(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -282,12 +282,12 @@ func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload db.
 // handleEnqueueMultipartFinalize handles the final request of a multipart upload. This transitions the
 // upload from 'uploading' to 'queued', then instructs the bundle manager to concatenate all of the part
 // files together.
-func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload db.Upload) (_ interface{}, err error) {
+func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload store.Upload) (_ interface{}, err error) {
 	if len(upload.UploadedParts) != upload.NumParts {
 		return nil, clientError("upload is missing %d parts", upload.NumParts-len(upload.UploadedParts))
 	}
 
-	tx, err := h.db.Transact(r.Context())
+	tx, err := h.store.Transact(r.Context())
 	if err != nil {
 		return nil, err
 	}

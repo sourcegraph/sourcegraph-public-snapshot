@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,18 +20,20 @@ import (
 
 // Provider implements authz.Provider for GitHub repository permissions.
 type Provider struct {
+	urn      string
 	client   client
 	codeHost *extsvc.CodeHost
 	cacheTTL time.Duration
 	cache    cache
 }
 
-func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, mockCache cache) *Provider {
+func NewProvider(urn string, githubURL *url.URL, baseToken string, cacheTTL time.Duration, mockCache cache) *Provider {
 	apiURL, _ := github.APIRoot(githubURL)
 	client := &clientAdapter{Client: github.NewClient(apiURL, baseToken, nil)}
 
 	p := &Provider{
-		codeHost: extsvc.NewCodeHost(githubURL, github.ServiceType),
+		urn:      urn,
+		codeHost: extsvc.NewCodeHost(githubURL, extsvc.TypeGitHub),
 		client:   client,
 		cache:    mockCache,
 		cacheTTL: cacheTTL,
@@ -364,6 +367,10 @@ func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Accou
 // API doesn't currently provide a way to fetch user by external SSO account.
 func (p *Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
 	return nil, nil
+}
+
+func (p *Provider) URN() string {
+	return p.urn
 }
 
 func (p *Provider) ServiceID() string {

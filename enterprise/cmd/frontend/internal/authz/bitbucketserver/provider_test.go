@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -297,7 +298,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 				name: "not a code host of the account",
 				acct: &extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "github",
+						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com",
 						AccountID:   "john",
 					},
@@ -387,7 +388,7 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 				repo: &extsvc.Repository{
 					URI: "github.com/user/repo",
 					ExternalRepoSpec: api.ExternalRepoSpec{
-						ServiceType: "github",
+						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com",
 					},
 				},
@@ -650,7 +651,7 @@ func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 }
 
 func newProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Provider {
-	p := NewProvider(cli, db, ttl, DefaultHardTTL, false)
+	p := NewProvider(cli, db, "", ttl, DefaultHardTTL, false)
 	p.pageSize = 1       // Exercise pagination
 	p.store.block = true // Wait for first update to complete.
 	return p

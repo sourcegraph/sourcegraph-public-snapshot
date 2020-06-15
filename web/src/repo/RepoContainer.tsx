@@ -35,7 +35,7 @@ import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisio
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { ThemeProps } from '../../../shared/src/theme'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
-import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
+import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
@@ -60,7 +60,7 @@ export interface RepoContainerContext
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
 
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
@@ -93,7 +93,7 @@ interface RepoContainerProps
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
@@ -321,7 +321,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             caseSensitive: this.props.caseSensitive,
             setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
-            repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            repoSettingsSidebarGroups: this.props.repoSettingsSidebarGroups,
             copyQueryButton: this.props.copyQueryButton,
             versionContext: this.props.versionContext,
         }

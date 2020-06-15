@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -11,9 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
-
-// NewCampaignsResolver will be set by enterprise
-var NewCampaignsResolver func(*sql.DB) CampaignsResolver
 
 type AddChangesetsToCampaignArgs struct {
 	Campaign   graphql.ID
@@ -122,6 +118,8 @@ type CampaignsResolver interface {
 var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
 
 type defaultCampaignsResolver struct{}
+
+var DefaultCampaignsResolver CampaignsResolver = defaultCampaignsResolver{}
 
 func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
@@ -247,7 +245,7 @@ type ChangesetResolver interface {
 
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	NextSyncAt() *DateTime
+	NextSyncAt(ctx context.Context) (*DateTime, error)
 	State() campaigns.ChangesetState
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 

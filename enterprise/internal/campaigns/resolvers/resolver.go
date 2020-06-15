@@ -506,36 +506,53 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	return csr, nil
 }
 
-func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, error) {
-	var opts ee.ListChangesetsOpts
+// listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into
+// ListChangesetsOpts.
+// If the args do not include a filter that would reveal sensitive information
+// about a changeset the user doesn't have access to, the second return value
+// is false.
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee.ListChangesetsOpts, optsSafe bool, err error) {
 	if args == nil {
-		return opts, nil
+		return opts, true, nil
 	}
+
+	safe := true
+
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
+
 	if args.State != nil {
 		state := campaigns.ChangesetState(*args.State)
 		if !state.Valid() {
-			return opts, errors.New("changeset state not valid")
+			return opts, false, errors.New("changeset state not valid")
 		}
 		opts.ExternalState = &state
+		// hiddenChangesetResolver has a State property so filtering based on
+		// that is safe.
 	}
 	if args.ReviewState != nil {
 		state := campaigns.ChangesetReviewState(*args.ReviewState)
 		if !state.Valid() {
-			return opts, errors.New("changeset review state not valid")
+			return opts, false, errors.New("changeset review state not valid")
 		}
 		opts.ExternalReviewState = &state
+		// If the user filters by ReviewState we cannot include hidden
+		// changesets, since that would leak information.
+		safe = false
 	}
 	if args.CheckState != nil {
 		state := campaigns.ChangesetCheckState(*args.CheckState)
 		if !state.Valid() {
-			return opts, errors.New("changeset check state not valid")
+			return opts, false, errors.New("changeset check state not valid")
 		}
 		opts.ExternalCheckState = &state
+		// If the user filters by CheckState we cannot include hidden
+		// changesets, since that would leak information.
+		safe = false
 	}
-	return opts, nil
+
+	return opts, safe, nil
 }
 
 func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlbackend.CreatePatchSetFromPatchesArgs) (graphqlbackend.PatchSetResolver, error) {

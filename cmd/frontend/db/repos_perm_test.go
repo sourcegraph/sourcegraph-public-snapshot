@@ -45,7 +45,7 @@ func Benchmark_authzFilter(b *testing.B) {
 		}(),
 		func() authz.Provider {
 			baseURL, _ := url.Parse("https://github.com")
-			codeHost := extsvc.NewCodeHost(baseURL, "github")
+			codeHost := extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub)
 			return &fakeProvider{
 				codeHost: codeHost,
 				extAcct: &extsvc.Account{
@@ -146,6 +146,7 @@ func (f fakeProvider) FetchAccount(
 
 func (f fakeProvider) ServiceType() string           { return f.codeHost.ServiceType }
 func (f fakeProvider) ServiceID() string             { return f.codeHost.ServiceID }
+func (m *fakeProvider) URN() string                  { return extsvc.URN(m.codeHost.ServiceType, 0) }
 func (f fakeProvider) Validate() (problems []string) { return nil }
 
 func (f fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {

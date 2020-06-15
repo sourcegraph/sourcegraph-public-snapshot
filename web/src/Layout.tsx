@@ -53,13 +53,14 @@ import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { VersionContextProps } from '../../shared/src/search/util'
 import { VersionContext } from './schema/site.schema'
+import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
+import { Settings } from './schema/settings.schema'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
-        SettingsCascadeProps,
+        SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
@@ -91,7 +92,7 @@ export interface LayoutProps
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: GQL.IUser | null

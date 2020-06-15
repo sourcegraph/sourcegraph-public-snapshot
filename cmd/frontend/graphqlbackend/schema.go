@@ -396,6 +396,12 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Deletes an LSIF index.
+    deleteLSIFIndex(id: ID!): EmptyResponse
+
     # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
@@ -1286,6 +1292,58 @@ type Query {
     # Returns a list of usernames or emails that have associated pending permissions.
     # The returned list can be used to query authorizedUserRepositories for pending permissions.
     usersWithPendingPermissions: [String!]!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifUploads(
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFUploadState
+
+        # When specified, shows only uploads that are latest for the given repository.
+        isLatestForRepo: Boolean
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFUploadConnection!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifIndexes(
+        # TODO(efritz) - update
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFIndexState
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFIndexConnection!
 }
 
 # The version of the search syntax.
@@ -1835,6 +1893,31 @@ type Repository implements Node & GenericSearchResultInterface {
         after: String
     ): LSIFUploadConnection!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifIndexes(
+        # TODO(efritz) - update
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFIndexState
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFIndexConnection!
+
     # A list of authorized users to access this repository with the given permission.
     # This API currently only returns permissions from the Sourcegraph provider, i.e.
     # "permissions.userMapping" in site configuration.
@@ -2241,6 +2324,45 @@ type Position {
     character: Int!
 }
 
+# A list of diagnostics.
+type DiagnosticConnection {
+    # A list of diagnostics.
+    nodes: [Diagnostic!]!
+
+    # The total count of diagnostics (which may be larger than nodes.length if the connection is paginated).
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Represents a diagnostic, such as a compiler error or warning.
+type Diagnostic {
+    # The location at which the message applies.
+    location: Location!
+
+    # The diagnostic's severity.
+    severity: DiagnosticSeverity
+
+    # The diagnostic's code as provided by the tool.
+    code: String
+
+    # A human-readable string describing the source of this
+    # diagnostic, e.g. "typescript" or "super lint".
+    source: String
+
+    # The diagnostic's message.
+    message: String
+}
+
+# Represents the severity level of a diagnostic.
+enum DiagnosticSeverity {
+    ERROR
+    WARNING
+    INFORMATION
+    HINT
+}
+
 # All possible kinds of symbols. This set matches that of the Language Server Protocol
 # (https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
 enum SymbolKind {
@@ -2572,6 +2694,15 @@ interface TreeEntry {
         # Recurse into sub-trees of single-child directories
         recursiveSingleChild: Boolean = false
     ): Boolean!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # LSIF data for this tree entry.
+    lsif(
+        # An optional filter for the name of the tool that produced the upload data.
+        toolName: String
+    ): TreeEntryLSIFData
 }
 
 # A Git tree in a repository.
@@ -2640,6 +2771,15 @@ type GitTree implements TreeEntry {
         # Recurse into sub-trees of single-child directories
         recursiveSingleChild: Boolean = false
     ): Boolean!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # LSIF data for this tree entry.
+    lsif(
+        # An optional filter for the name of the tool that produced the upload data.
+        toolName: String
+    ): TreeEntryLSIFData
 }
 
 # A file.
@@ -2795,12 +2935,21 @@ type GitBlob implements TreeEntry & File2 {
     # CHANGELOG during this time.
     # A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
     # intelligence queries for this path-at-revision, this resolves to null.
-    lsif: LSIFQueryResolver
+    lsif(
+        # An optional filter for the name of the tool that produced the upload data.
+        toolName: String
+    ): GitBlobLSIFData
+}
+
+# LSIF data available for a tree entry.
+interface TreeEntryLSIFData {
+    # Code diagnostics provided through LSIF.
+    diagnostics(first: Int): DiagnosticConnection!
 }
 
 # A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
 # null, no LSIF data is available for containing git blob.
-type LSIFQueryResolver {
+type GitBlobLSIFData implements TreeEntryLSIFData {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
@@ -2848,6 +2997,12 @@ type LSIFQueryResolver {
         # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
         character: Int!
     ): Hover
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Code diagnostics provided through LSIF.
+    diagnostics(first: Int): DiagnosticConnection!
 }
 
 # A highlighted file.
@@ -4022,8 +4177,8 @@ type LSIFUpload implements Node {
     # The time the upload compelted or errored.
     finishedAt: DateTime
 
-    # Metadata about an upload's failure (not set if state is not ERRORED).
-    failure: LSIFUploadFailureReason
+    # The processing error message (not set if state is not ERRORED).
+    failure: String
 
     # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
     # queries will return symbols from remote repositories only when this property is true. This property
@@ -4035,21 +4190,69 @@ type LSIFUpload implements Node {
     placeInQueue: Int
 }
 
-# Metadata about a LSIF upload failure.
-type LSIFUploadFailureReason {
-    # A summary of the failure.
-    summary: String!
-
-    # The stacktrace of the failure.
-    stacktrace: String!
-}
-
 # A list of LSIF uploads.
 type LSIFUploadConnection {
     # A list of LSIF uploads.
     nodes: [LSIFUpload!]!
 
     # The total number of uploads in this result set.
+    totalCount: Int
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The state an LSIF index can be in.
+enum LSIFIndexState {
+    # This index is being processed.
+    PROCESSING
+
+    # This index failed to be processed.
+    ERRORED
+
+    # This index was processed successfully.
+    COMPLETED
+
+    # This index is queued to be processed later.
+    QUEUED
+}
+
+# Metadata and status about an LSIF index.
+type LSIFIndex implements Node {
+    # The ID.
+    id: ID!
+
+    # The project for which this upload provides code intelligence.
+    projectRoot: GitTree
+
+    # The original 40-character commit commit supplied at index time.
+    inputCommit: String!
+
+    # The index's current state.
+    state: LSIFIndexState!
+
+    # The time the index was queued.
+    queuedAt: DateTime!
+
+    # The time the index was processed.
+    startedAt: DateTime
+
+    # The time the index compelted or errored.
+    finishedAt: DateTime
+
+    # The processing error message (not set if state is not ERRORED).
+    failure: String
+
+    # The rank of this index in the queue. The value of this field is null if the index has been processed.
+    placeInQueue: Int
+}
+
+# A list of LSIF indexes.
+type LSIFIndexConnection {
+    # A list of LSIF indexes.
+    nodes: [LSIFIndex!]!
+
+    # The total number of indexes in this result set.
     totalCount: Int
 
     # Pagination information.

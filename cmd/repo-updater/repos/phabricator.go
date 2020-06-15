@@ -141,7 +141,7 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 		URI:  name,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          repo.PHID,
-			ServiceType: "phabricator",
+			ServiceType: extsvc.TypePhabricator,
 			ServiceID:   serviceID,
 		},
 		Sources: map[string]*SourceInfo{

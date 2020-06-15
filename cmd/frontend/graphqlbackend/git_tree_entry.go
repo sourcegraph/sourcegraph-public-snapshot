@@ -11,6 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -75,7 +76,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
 		if err != nil {
 			r.contentErr = err
 		}
@@ -108,14 +109,14 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
-		RepoName: string(r.commit.repo.repo.Name),
+		RepoName: string(r.commit.repoResolver.repo.Name),
 		Revision: string(r.commit.oid),
 	})
 }
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
 
-func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repo }
+func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repoResolver }
 
 func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
@@ -165,7 +166,7 @@ func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.commit.repoResolver.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -210,14 +211,14 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 	// Ideally these could be done in parallel, but the table is small
 	// and I don't think real world perf is going to be bad.
 	// It is also unclear to me if deterministic order is important here (it seems like it might be),
-	// so if this is parallalized in the future, consider whether order is important.
+	// so if this is parallelized in the future, consider whether order is important.
 
 	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
 	if err != nil {
 		return "", err
 	}
 	for _, c := range githubs {
-		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c})
+		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c.GitHubConnection})
 	}
 
 	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
@@ -225,7 +226,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitlabs {
-		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c})
+		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c.GitLabConnection})
 	}
 
 	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
@@ -233,7 +234,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range bitbuckets {
-		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c})
+		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c.BitbucketServerConnection})
 	}
 
 	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
@@ -241,7 +242,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range awscodecommits {
-		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c})
+		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c.AWSCodeCommitConnection})
 	}
 
 	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
@@ -249,7 +250,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitolites {
-		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c})
+		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c.GitoliteConnection})
 	}
 
 	// Fallback for github.com
@@ -280,7 +281,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
 	if err != nil {
 		return false, err
 	}
@@ -291,12 +292,20 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) LSIF(ctx context.Context) (LSIFQueryResolver, error) {
+func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (GitBlobLSIFDataResolver, error) {
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
-	return EnterpriseResolvers.codeIntelResolver.LSIF(ctx, &LSIFQueryArgs{
+
+	var toolName string
+	if args.ToolName != nil {
+		toolName = *args.ToolName
+	}
+
+	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
 		Repository: r.Repository(),
 		Commit:     api.CommitID(r.Commit().OID()),
 		Path:       r.Path(),
+		ExactPath:  !r.stat.IsDir(),
+		ToolName:   toolName,
 	})
 }
 

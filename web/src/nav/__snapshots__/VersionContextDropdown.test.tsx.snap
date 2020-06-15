@@ -189,7 +189,8 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
               <span
                 className="version-context-dropdown__button-text ml-2 mr-1"
               >
-                3.15 (Active)
+                3.15
+                 (Active)
               </span>
               <Memo(MenuDownIcon)
                 className="icon-inline"
@@ -571,7 +572,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                 </svg>
               </Memo(FlagVariantIcon)>
               <span
-                className="version-context-dropdown__button-text ml-2 mr-1"
+                className="version-context-dropdown__button-text ml-2 mr-1 d-sm-none d-md-block"
               >
                 Select context
               </span>
@@ -626,7 +627,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                       />
                     </svg>
                     <span
-                      class="version-context-dropdown__button-text ml-2 mr-1"
+                      class="version-context-dropdown__button-text ml-2 mr-1 d-sm-none d-md-block"
                     >
                       Select context
                     </span>
@@ -788,7 +789,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                             />
                           </svg>
                           <span
-                            class="version-context-dropdown__button-text ml-2 mr-1"
+                            class="version-context-dropdown__button-text ml-2 mr-1 d-sm-none d-md-block"
                           >
                             Select context
                           </span>

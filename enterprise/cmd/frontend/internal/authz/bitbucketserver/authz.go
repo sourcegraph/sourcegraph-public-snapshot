@@ -5,7 +5,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -18,7 +20,7 @@ import (
 // "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
 func NewAuthzProviders(
-	conns []*schema.BitbucketServerConnection,
+	conns []*types.BitbucketServerConnection,
 	db dbutil.DB,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
@@ -43,7 +45,7 @@ func NewAuthzProviders(
 
 func newAuthzProvider(
 	db dbutil.DB,
-	c *schema.BitbucketServerConnection,
+	c *types.BitbucketServerConnection,
 	pluginPerm bool,
 ) (authz.Provider, error) {
 	if c.Authorization == nil {
@@ -66,7 +68,7 @@ func newAuthzProvider(
 		errs = multierror.Append(errs, errors.Errorf("authorization.hardTTL: must be larger than ttl"))
 	}
 
-	cli, err := bitbucketserver.NewClient(c, nil)
+	cli, err := bitbucketserver.NewClient(c.BitbucketServerConnection, nil)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 		return nil, errs.ErrorOrNil()
@@ -75,7 +77,7 @@ func newAuthzProvider(
 	var p authz.Provider
 	switch idp := c.Authorization.IdentityProvider; {
 	case idp.Username != nil:
-		p = NewProvider(cli, db, ttl, hardTTL, pluginPerm)
+		p = NewProvider(cli, db, c.URN, ttl, hardTTL, pluginPerm)
 	default:
 		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
@@ -86,6 +88,6 @@ func newAuthzProvider(
 // ValidateAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
 func ValidateAuthz(c *schema.BitbucketServerConnection) error {
-	_, err := newAuthzProvider(nil, c, false)
+	_, err := newAuthzProvider(nil, &types.BitbucketServerConnection{BitbucketServerConnection: c}, false)
 	return err
 }

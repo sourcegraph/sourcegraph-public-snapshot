@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -450,8 +451,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(1, "github")
-	deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(1, extsvc.TypeGitHub)
+	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
 	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
 		t.Fatal(err)
@@ -462,7 +463,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	deletedRepoChangeset := &cmpgn.Changeset{
 		RepoID:              deletedRepo.ID,
 		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 	}
 
 	t.Run("Create", func(t *testing.T) {
@@ -475,7 +476,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				Metadata:            githubPR,
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
-				ExternalServiceType: "github",
+				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      "campaigns/test",
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetStateOpen,
@@ -531,7 +532,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "external-id",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"foo"})
@@ -547,7 +548,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "invalid",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
@@ -563,7 +564,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "external-id",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "invalid",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
@@ -860,7 +861,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{1},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
-			ExternalServiceType: "github",
+			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       "",
@@ -975,7 +976,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		clock.add(1 * time.Second)
 		for _, c := range changesets {
 			c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
-			c.ExternalServiceType = bitbucketserver.ServiceType
+			c.ExternalServiceType = extsvc.TypeBitbucketServer
 
 			have = append(have, c.Clone())
 
@@ -1312,7 +1313,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	}
 
 	var extSvcID int64 = 1
-	repo := testRepo(int(extSvcID), "github")
+	repo := testRepo(int(extSvcID), extsvc.TypeGitHub)
 	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -1328,7 +1329,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{int64(i) + 1},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
-			ExternalServiceType: "github",
+			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       cmpgn.ChangesetStateOpen,
@@ -1682,8 +1683,8 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
 	patches := make([]*cmpgn.Patch, 0, 3)
 
-	repo := testRepo(1, "github")
-	deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(1, extsvc.TypeGitHub)
+	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -2230,7 +2231,7 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 		},
 		{
 			hasCampaign: false,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 			wantDeleted: true,
 		},
 		{
@@ -2240,12 +2241,12 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 		},
 		{
 			hasCampaign: true,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 			wantDeleted: false,
 		},
 		{
 			hasCampaign: false,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 
 			patchesAttachedToOtherCampaign: true,
 			patches: []*cmpgn.Patch{
@@ -2311,7 +2312,7 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 					Metadata:            &github.PullRequest{},
 					CampaignIDs:         []int64{otherCampaign.ID},
 					ExternalID:          fmt.Sprintf("foobar-%d", i),
-					ExternalServiceType: "github",
+					ExternalServiceType: extsvc.TypeGitHub,
 					ExternalBranch:      "campaigns/test",
 					ExternalUpdatedAt:   clock.now(),
 					ExternalState:       cmpgn.ChangesetStateOpen,
@@ -2946,112 +2947,90 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 	})
 
-	t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
-		campaignID := 9999
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
-			// completed, error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
-			// completed, another error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
-		}
-
-		for i, j := range jobs {
-			j.CampaignID = int64(campaignID)
-			j.PatchID = int64(i)
-
-			err := s.CreateChangesetJob(ctx, j)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-		}
-
-		mustReset := map[int64]bool{
-			jobs[1].ID: true,
-			jobs[2].ID: true,
-		}
-
-		err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(have) != len(jobs) {
-			t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
-		}
-
-		for _, job := range have {
-			if _, ok := mustReset[job.ID]; ok {
-				if job.Error != "" {
-					t.Errorf("job should be reset but has error: %+v", job.Error)
-				}
-				if !job.FinishedAt.IsZero() {
-					t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
-				}
-				if !job.StartedAt.IsZero() {
-					t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
-				}
-			} else {
-				if job.StartedAt.IsZero() {
-					t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
-				}
-				if job.FinishedAt.IsZero() {
-					t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
-				}
-			}
-		}
-	})
-
 	t.Run("ResetChangesetJobs", func(t *testing.T) {
-		campaignID := 12345
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 12345},
-			// completed, error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+		tests := []struct {
+			jobs              []*cmpgn.ChangesetJob
+			opts              ResetChangesetJobsOpts
+			wantResetPatchIDs []int64
+		}{
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+					// completed, another error
+					{PatchID: 3, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
+				},
+				opts:              ResetChangesetJobsOpts{OnlyFailed: true},
+				wantResetPatchIDs: []int64{2, 3},
+			},
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				opts:              ResetChangesetJobsOpts{},
+				wantResetPatchIDs: []int64{1, 2},
+			},
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				opts:              ResetChangesetJobsOpts{PatchIDs: []int64{2}},
+				wantResetPatchIDs: []int64{2},
+			},
 		}
 
-		for i, j := range jobs {
-			j.CampaignID = int64(campaignID)
-			j.PatchID = int64(i)
+		for i, tc := range tests {
+			var campaignID int64 = int64(9999 + i)
 
-			err := s.CreateChangesetJob(ctx, j)
+			for _, j := range tc.jobs {
+				j.CampaignID = campaignID
+
+				if err := s.CreateChangesetJob(ctx, j); err != nil {
+					t.Fatal(err)
+				}
+
+			}
+
+			tc.opts.CampaignID = campaignID
+			if err := s.ResetChangesetJobs(ctx, tc.opts); err != nil {
+				t.Fatal(err)
+			}
+
+			have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: campaignID})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-		}
-
-		err := s.ResetChangesetJobs(ctx, int64(campaignID))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(have) != len(jobs) {
-			t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
-		}
-
-		for _, job := range have {
-			if job.Error != "" {
-				t.Errorf("job should be reset but has error: %+v", job.Error)
+			if len(have) != len(tc.jobs) {
+				t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(tc.jobs))
 			}
-			if !job.FinishedAt.IsZero() {
-				t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
+
+			mustReset := map[int64]bool{}
+			for _, patchID := range tc.wantResetPatchIDs {
+				mustReset[patchID] = true
 			}
-			if !job.StartedAt.IsZero() {
-				t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+
+			for _, job := range have {
+				if _, ok := mustReset[job.PatchID]; ok {
+					if job.UnsuccessfullyCompleted() {
+						t.Errorf("job should be reset but is not: %+v", job)
+					}
+				} else {
+					if job.StartedAt.IsZero() {
+						t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
+					}
+					if job.FinishedAt.IsZero() {
+						t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
+					}
+				}
 			}
 		}
 	})
@@ -3131,7 +3110,7 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			Name: "github.com/sourcegraph/changeset-job-test",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
-				ServiceType: "github",
+				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
 			Sources: map[string]*repos.SourceInfo{

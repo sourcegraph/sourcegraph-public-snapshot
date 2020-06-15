@@ -26,5 +26,14 @@ func unmarshalLSIFUploadGQLID(id graphql.ID) (lsifUploadID int64, err error) {
 
 	// If it wasn't unmarshal-able as a string, it's a new-style int identifier
 	err = relay.UnmarshalSpec(id, &lsifUploadID)
-	return
+	return lsifUploadID, err
+}
+
+func marshalLSIFIndexGQLID(lsifIndexID int64) graphql.ID {
+	return relay.MarshalID("LSIFIndex", lsifIndexID)
+}
+
+func unmarshalLSIFIndexGQLID(id graphql.ID) (lsifIndexID int64, err error) {
+	err = relay.UnmarshalSpec(id, &lsifIndexID)
+	return lsifIndexID, err
 }

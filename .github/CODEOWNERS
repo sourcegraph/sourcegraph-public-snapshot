@@ -113,7 +113,7 @@
 /cmd/frontend/graphqlbackend/access_token.go @beyang @unknwon
 /internal/actor/ @beyang @unknwon
 
-# Core Services
+# Cloud
 /cmd/frontend/authz/ @sourcegraph/cloud
 /cmd/frontend/db/ @sourcegraph/cloud
 /cmd/frontend/globals/ @sourcegraph/cloud @slimsag
@@ -137,6 +137,10 @@
 /internal/vcs/ @sourcegraph/cloud
 /migrations/ @sourcegraph/cloud
 /schema/ @sourcegraph/cloud
+
+# Backend e2e tests
+/dev/e2e/ @unknwon
+/internal/e2eutil/ @unknwon
 
 # Campaigns
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
@@ -230,13 +234,12 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/db/discussion* @slimsag
 
 # Precise code intel
-/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
-/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
-/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
-/internal/cmd/precise-code-intel-test @sourcegraph/code-intel
-/internal/codeintel @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
+/internal/cmd/precise-code-intel-test @sourcegraph/code-intel
 
 # Development
 /dev/repogen @sourcegraph/cloud

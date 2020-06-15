@@ -82,6 +82,10 @@ type Provider interface {
 	// provider.
 	ServiceID() string
 
+	// URN returns the unique resource identifier of external service where the authz provider
+	// is defined.
+	URN() string
+
 	// Validate checks the configuration and credentials of the authz provider and returns any
 	// problems.
 	Validate() (problems []string)
