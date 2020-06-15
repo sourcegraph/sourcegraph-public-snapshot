@@ -7,6 +7,9 @@
     :versions: []
     :when: 2020-06-05 18:25:53.630259000 Z
 - - :restrict
+  - UNKNOWN
+  - *1
+- - :restrict
   - GPL-1.0-only
   - *1
 - - :restrict
@@ -64,9 +67,68 @@
 - - :permit
   - MPL-2.0
   - *2
+- - :permit
+  - "(MIT OR Apache-2.0)"
+  - *2
+- - :permit
+  - Artistic-2.0
+  - *2
+- - :permit
+  - MIT*
+  - *2
+- - :permit
+  - BSD*
+  - *2
+- - :permit
+  - "(MIT AND OFL-1.1)"
+  - *2
+- - :permit
+  - "(WTFPL OR MIT)"
+  - *2
+- - :permit
+  - "(BSD-2-Clause OR MIT OR Apache-2.0)"
+  - *2
+- - :permit
+  - "(BSD-2-Clause OR MIT)"
+  - *2
+- - :permit
+  - "Apache*"
+  - *2
 - - :ignore_group
   - devDependencies
   - :who:
     :why: Exclude development dependencies that are not included in bundles
     :versions: []
     :when: 2020-06-05 21:28:58.197862000 Z
+- - :add_package
+  - sourcegraph
+  - 0.0.0
+  - &3
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 06:45:58.540797000 Z
+- - :license
+  - sourcegraph
+  - Apache-2.0
+  - *3
+- - :homepage
+  - sourcegraph
+  - https://github.com/sourcegraph/sourcegraph
+  - *3
+- - :add_package
+  - "@sourcegraph/extension-api-types"
+  - 0.0.0
+  - &4
+    :who:
+    :why:
+    :versions: []
+    :when: 2020-06-15 06:47:53.545529000 Z
+- - :license
+  - "@sourcegraph/extension-api-types"
+  - Apache-2.0
+  - *4
+- - :homepage
+  - "@sourcegraph/extension-api-types"
+  - https://github.com/sourcegraph/sourcegraph
+  - *4
