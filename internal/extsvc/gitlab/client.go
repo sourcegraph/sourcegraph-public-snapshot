@@ -17,7 +17,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -187,7 +186,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient 
 	key := sha256.Sum256([]byte(op.personalAccessToken + ":" + op.oauthToken + ":" + baseURL.String()))
 	projCache := rcache.NewWithTTL("gl_proj:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
-	rl := ratelimit.DefaultRegistry.GetRateLimiter(extsvc.NormalizeBaseURL(baseURL).String())
+	rl := ratelimit.DefaultRegistry.GetRateLimiter(baseURL.String())
 
 	return &Client{
 		baseURL:             baseURL,

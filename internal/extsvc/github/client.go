@@ -22,7 +22,6 @@ import (
 	"github.com/graphql-go/graphql/language/visitor"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -146,8 +145,7 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 		return category
 	})
 
-	normalized := extsvc.NormalizeBaseURL(apiURL)
-	rl := ratelimit.DefaultRegistry.GetRateLimiter(normalized.String())
+	rl := ratelimit.DefaultRegistry.GetRateLimiter(apiURL.String())
 
 	return &Client{
 		apiURL:           apiURL,

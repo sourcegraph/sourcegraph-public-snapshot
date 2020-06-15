@@ -2,7 +2,9 @@ package ratelimit
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -168,6 +170,20 @@ type Registry struct {
 	rateLimiters map[string]*rate.Limiter
 }
 
+// normaliseURL will attempt to normalise rawURL.
+// If there is an error parsing it, we'll just return rawURL lower cased.
+func normaliseURL(rawURL string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return strings.ToLower(rawURL)
+	}
+	parsed.Host = strings.ToLower(parsed.Host)
+	if !strings.HasSuffix(parsed.Path, "/") {
+		parsed.Path += "/"
+	}
+	return parsed.String()
+}
+
 // GetRateLimiter fetches the rate limiter associated with the given code host. If none has been
 // configured an infinite limiter is returned.
 func (r *Registry) GetRateLimiter(baseURL string) *rate.Limiter {
@@ -177,6 +193,7 @@ func (r *Registry) GetRateLimiter(baseURL string) *rate.Limiter {
 // GetOrSet fetches the rate limiter associated with the given code host. If none has been configured
 // yet, the provided limiter will be set. A nil limiter will fall back to an infinite limiter.
 func (r *Registry) GetOrSet(baseURL string, fallback *rate.Limiter) *rate.Limiter {
+	baseURL = normaliseURL(baseURL)
 	if fallback == nil {
 		fallback = rate.NewLimiter(rate.Inf, 100)
 	}
