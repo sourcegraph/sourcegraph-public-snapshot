@@ -27,13 +27,13 @@ func init() {
 	// as reported by `grafana-wrapper` inside the sourcegraph/grafana container.
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
 		if len(grafanaURLFromEnv) == 0 || len(c.ObservabilityAlerts) == 0 {
-			return nil
+			return
 		}
 
 		// see https://github.com/sourcegraph/sourcegraph/issues/11473
 		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
 			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts are not currently supported by your deployment type: %s", conf.DeployType())))
-			return nil
+			return
 		}
 
 		// set up request to fetch status from grafana-wrapper
