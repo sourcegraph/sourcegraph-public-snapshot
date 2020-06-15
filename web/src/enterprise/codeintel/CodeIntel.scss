@@ -1,0 +1,39 @@
+.delete-container {
+    margin: 1.5rem 0;
+    padding: 1rem;
+
+    border: 1px solid #2b3750;
+    border-radius: 0.125rem;
+
+    &__row {
+        display: flex;
+        align-items: top;
+        justify-content: space-between;
+    }
+
+    &__title {
+        margin-bottom: 0;
+    }
+
+    &__btn {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+
+        &-container {
+            margin-left: 1.5rem;
+            flex: 0 0 auto;
+            align-self: flex-start;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+}
+
+.theme-light {
+    .delete-container {
+        border-color: $color-light-border;
+    }
+}

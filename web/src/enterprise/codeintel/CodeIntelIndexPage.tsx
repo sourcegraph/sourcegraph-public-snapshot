@@ -198,16 +198,16 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <div className="action-container">
-                        <div className="action-container__row">
-                            <div className="action-container__description">
-                                <h4 className="action-container__title">Delete this index</h4>
+                    <div className="delete-container">
+                        <div className="delete-container__row">
+                            <div className="delete-container__description">
+                                <h4 className="delete-container__title">Delete this index</h4>
                                 <div>Deleting this index will remove it from the index queue.</div>
                             </div>
-                            <div className="action-container__btn-container">
+                            <div className="delete-container__btn-container">
                                 <button
                                     type="button"
-                                    className="btn btn-danger action-container__btn"
+                                    className="btn btn-danger delete-container__btn"
                                     onClick={deleteIndex}
                                     disabled={deletionOrError === 'loading'}
                                     data-tooltip="Delete index"

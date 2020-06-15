@@ -71,6 +71,7 @@ export function fetchLsifUploads({
                                 }
                                 commit {
                                     url
+                                    oid
                                     abbreviatedOID
                                 }
                             }
@@ -124,8 +125,13 @@ export function fetchLsifUploads({
                                 projectRoot {
                                     url
                                     path
+                                    repository {
+                                        url
+                                        name
+                                    }
                                     commit {
                                         url
+                                        oid
                                         abbreviatedOID
                                     }
                                 }
@@ -285,6 +291,7 @@ export function fetchLsifIndexes({
                                 }
                                 commit {
                                     url
+                                    oid
                                     abbreviatedOID
                                 }
                             }
@@ -323,8 +330,13 @@ export function fetchLsifIndexes({
                                 projectRoot {
                                     url
                                     path
+                                    repository {
+                                        url
+                                        name
+                                    }
                                     commit {
                                         url
+                                        oid
                                         abbreviatedOID
                                     }
                                 }
