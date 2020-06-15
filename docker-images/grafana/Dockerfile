@@ -52,5 +52,6 @@ USER root
 # hadolint ignore=DL3018
 RUN apk add --no-cache curl
 
+EXPOSE 3370
 USER grafana
 ENTRYPOINT ["/entry.sh"]
