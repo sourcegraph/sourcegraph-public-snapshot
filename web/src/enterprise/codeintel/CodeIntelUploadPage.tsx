@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchLsifUpload, deleteLsifUpload } from './backend'
+import { fetchLsifUpload as defaultFetchUpload, deleteLsifUpload, Upload } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
@@ -22,6 +22,7 @@ const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
+    fetchLsifUpload?: typeof defaultFetchUpload
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -30,7 +31,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
 
 const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
 
-function shouldReload(upload: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
+function shouldReload(upload: Upload | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
 
@@ -44,6 +45,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
         params: { id },
     },
     history,
+    fetchLsifUpload = defaultFetchUpload,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
 
@@ -61,7 +63,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                     ),
                     takeWhile(shouldReload, true)
                 ),
-            [id, scheduler]
+            [id, scheduler, fetchLsifUpload]
         )
     )
 
@@ -70,7 +72,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
             return
         }
 
-        let description = `commit ${uploadOrError.inputCommit.slice(0, 7)}`
+        let description = `${uploadOrError.inputCommit.slice(0, 7)}`
         if (uploadOrError.inputRoot) {
             description += ` rooted at ${uploadOrError.inputRoot}`
         }
@@ -109,7 +111,9 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 ? uploadOrError.projectRoot.commit.abbreviatedOID
                                 : uploadOrError.inputCommit.slice(0, 7)}{' '}
                             indexed by {uploadOrError.inputIndexer} rooted at{' '}
-                            {uploadOrError.projectRoot?.path || uploadOrError.inputRoot || '/'}
+                            {uploadOrError.projectRoot
+                                ? uploadOrError.projectRoot.path
+                                : uploadOrError.inputRoot || '/'}
                         </h2>
                     </div>
 
@@ -149,8 +153,8 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 <td>Repository</td>
                                 <td>
                                     {uploadOrError.projectRoot ? (
-                                        <Link to={uploadOrError.projectRoot.commit.repository.url}>
-                                            {uploadOrError.projectRoot.commit.repository.name}
+                                        <Link to={uploadOrError.projectRoot.repository.url}>
+                                            {uploadOrError.projectRoot.repository.name}
                                         </Link>
                                     ) : (
                                         repo?.name || 'unknown'
@@ -238,27 +242,19 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                         </tbody>
                     </table>
 
-                    <div className="action-container">
-                        <div className="action-container__row">
-                            <div className="action-container__description">
-                                <h4 className="action-container__title">Delete this upload</h4>
-                                <div>
-                                    Deleting this upload make it immediately unavailable to answer code intelligence
-                                    queries.
-                                </div>
-                            </div>
-                            <div className="action-container__btn-container">
-                                <button
-                                    type="button"
-                                    className="btn btn-danger action-container__btn"
-                                    onClick={deleteUpload}
-                                    disabled={deletionOrError === 'loading'}
-                                    data-tooltip="Delete upload"
-                                >
-                                    <DeleteIcon className="icon-inline" />
-                                </button>
-                            </div>
-                        </div>
+                    <div className="mt-4 p-2 pt-2">
+                        <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={deleteUpload}
+                            disabled={deletionOrError === 'loading'}
+                            aria-describedby="upload-delete-button-help"
+                        >
+                            <DeleteIcon className="icon-inline" /> Delete upload
+                        </button>
+                        <small id="upload-delete-button-help" className="form-text text-muted">
+                            Deleting this upload makes it immediately unavailable to answer code intelligence queries.
+                        </small>
                     </div>
                 </>
             )}
