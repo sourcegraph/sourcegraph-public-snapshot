@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchLsifIndex, deleteLsifIndex } from './backend'
+import { fetchLsifIndex as defaultFetchLsifIndex, deleteLsifIndex } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
@@ -15,13 +15,31 @@ import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { SchedulerLike, timer } from 'rxjs'
+import { SchedulerLike, timer, Observable } from 'rxjs'
 import * as H from 'history'
 
 const REFRESH_INTERVAL_MS = 5000
 
+// Create an expected subtype including only the fields that we use in this component so
+// that storybook tests do not need to define a full IGitTree type (which is very large).
+export type Index = Omit<GQL.ILSIFIndex, '__typename' | 'projectRoot'> & {
+    projectRoot: {
+        path: string
+        commit: {
+            url: string
+            oid: string
+            abbreviatedOID: string
+            repository: {
+                url: string
+                name: string
+            }
+        }
+    } | null
+}
+
 interface Props extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
+    fetchLsifIndex: ({ id }: { id: string }) => Observable<Index | null>
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -30,7 +48,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
 
 const terminalStates = new Set([GQL.LSIFIndexState.COMPLETED, GQL.LSIFIndexState.ERRORED])
 
-function shouldReload(index: GQL.ILSIFIndex | ErrorLike | null | undefined): boolean {
+function shouldReload(index: Index | ErrorLike | null | undefined): boolean {
     return !isErrorLike(index) && !(index && terminalStates.has(index.state))
 }
 
@@ -44,6 +62,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
         params: { id },
     },
     history,
+    fetchLsifIndex = defaultFetchLsifIndex,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelIndex'))
 
@@ -70,9 +89,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
             return
         }
 
-        const description = `commit ${indexOrError.inputCommit.slice(0, 7)}`
-
-        if (!window.confirm(`Delete auto-index record for commit ${description}?`)) {
+        if (!window.confirm(`Delete auto-index record for commit ${indexOrError.inputCommit.slice(0, 7)}?`)) {
             return
         }
 
@@ -105,7 +122,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                             {indexOrError.projectRoot
                                 ? indexOrError.projectRoot.commit.abbreviatedOID
                                 : indexOrError.inputCommit.slice(0, 7)}{' '}
-                            rooted at {indexOrError.projectRoot?.path || '/'}
+                            rooted at {indexOrError.projectRoot ? indexOrError.projectRoot.path : '/'}
                         </h2>
                     </div>
 

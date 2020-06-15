@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../components/alerts'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchLsifUpload, deleteLsifUpload } from './backend'
+import { fetchLsifUpload as defaultFetchUpload, deleteLsifUpload } from './backend'
 import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
@@ -15,13 +15,31 @@ import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { SchedulerLike, timer } from 'rxjs'
+import { SchedulerLike, timer, Observable } from 'rxjs'
 import * as H from 'history'
 
 const REFRESH_INTERVAL_MS = 5000
 
+// Create an expected subtype including only the fields that we use in this component so
+// that storybook tests do not need to define a full IGitTree type (which is very large).
+export type Upload = Omit<GQL.ILSIFUpload, '__typename' | 'projectRoot'> & {
+    projectRoot: {
+        path: string
+        commit: {
+            url: string
+            oid: string
+            abbreviatedOID: string
+            repository: {
+                url: string
+                name: string
+            }
+        }
+    } | null
+}
+
 interface Props extends RouteComponentProps<{ id: string }> {
     repo?: GQL.IRepository
+    fetchLsifUpload: ({ id }: { id: string }) => Observable<Upload | null>
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -30,7 +48,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
 
 const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
 
-function shouldReload(upload: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
+function shouldReload(upload: Upload | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
 
@@ -44,6 +62,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
         params: { id },
     },
     history,
+    fetchLsifUpload = defaultFetchUpload,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
 
@@ -70,7 +89,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
             return
         }
 
-        let description = `commit ${uploadOrError.inputCommit.slice(0, 7)}`
+        let description = `${uploadOrError.inputCommit.slice(0, 7)}`
         if (uploadOrError.inputRoot) {
             description += ` rooted at ${uploadOrError.inputRoot}`
         }
@@ -109,7 +128,9 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 ? uploadOrError.projectRoot.commit.abbreviatedOID
                                 : uploadOrError.inputCommit.slice(0, 7)}{' '}
                             indexed by {uploadOrError.inputIndexer} rooted at{' '}
-                            {uploadOrError.projectRoot?.path || uploadOrError.inputRoot || '/'}
+                            {uploadOrError.projectRoot
+                                ? uploadOrError.projectRoot.path
+                                : uploadOrError.inputRoot || '/'}
                         </h2>
                     </div>
 

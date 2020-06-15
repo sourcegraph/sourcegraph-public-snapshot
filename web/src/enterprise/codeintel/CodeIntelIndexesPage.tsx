@@ -58,7 +58,6 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history 
     ) : (
         <tr>
             <td>
-                {' '}
                 {node.projectRoot ? (
                     <Link to={node.projectRoot.repository.url}>
                         <code>{node.projectRoot.repository.name}</code>
