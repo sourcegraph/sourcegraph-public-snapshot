@@ -3,13 +3,13 @@ package inventory
 import (
 	"bytes"
 	"context"
-	"github.com/google/go-cmp/cmp"
 	"io"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
