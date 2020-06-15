@@ -32,7 +32,7 @@ func init() {
 
 		// see https://github.com/sourcegraph/sourcegraph/issues/11473
 		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts is not currently supported in sourcegraph/server deployments. Follow [this issue](https://github.com/sourcegraph/sourcegraph/issues/11473) for updates.")))
+			problems = append(problems, conf.NewSiteProblem("observability.alerts is not currently supported in sourcegraph/server deployments. Follow [this issue](https://github.com/sourcegraph/sourcegraph/issues/11473) for updates."))
 			return
 		}
 
