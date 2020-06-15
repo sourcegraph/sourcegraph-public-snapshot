@@ -301,11 +301,11 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	}
 
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
-		Repository: r.Repository(),
-		Commit:     api.CommitID(r.Commit().OID()),
-		Path:       r.Path(),
-		ExactPath:  !r.stat.IsDir(),
-		ToolName:   toolName,
+		Repo:      r.Repository().Type(),
+		Commit:    api.CommitID(r.Commit().OID()),
+		Path:      r.Path(),
+		ExactPath: !r.stat.IsDir(),
+		ToolName:  toolName,
 	})
 }
 
