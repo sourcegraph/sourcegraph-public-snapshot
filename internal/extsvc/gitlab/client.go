@@ -186,7 +186,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient 
 	key := sha256.Sum256([]byte(op.personalAccessToken + ":" + op.oauthToken + ":" + baseURL.String()))
 	projCache := rcache.NewWithTTL("gl_proj:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
-	rl := ratelimit.DefaultRegistry.GetRateLimiter(baseURL.String())
+	rl := ratelimit.DefaultRegistry.Get(baseURL.String())
 
 	return &Client{
 		baseURL:             baseURL,

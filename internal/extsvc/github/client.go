@@ -145,7 +145,7 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 		return category
 	})
 
-	rl := ratelimit.DefaultRegistry.GetRateLimiter(apiURL.String())
+	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
 
 	return &Client{
 		apiURL:           apiURL,
