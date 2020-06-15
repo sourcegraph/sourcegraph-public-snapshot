@@ -133,6 +133,32 @@ trap 'kill $build_ts_pid; exit' EXIT
 build_ts_pid="$!"
 
 export PROCFILE=${PROCFILE:-dev/Procfile}
+
+only=""
+except=""
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -e|--except) except="$2"; shift ;;
+        -o|--only) only="$2"; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+parsed_except=$(echo ${except} | sed 's/,/|/g')
+parsed_only=$(echo ${only} | sed 's/,/|/g')
+
+if [ ! -z ${parsed_except} ]; then
+  tmp_procfile=$(mktemp -t procfile_XXXXXXX)
+  cat ${PROCFILE} | grep -vE "^(${parsed_except}):" > ${tmp_procfile}
+  export PROCFILE=${tmp_procfile}
+fi
+if [ ! -z ${parsed_only} ]; then
+  tmp_procfile=$(mktemp -t procfile_XXXXXXX)
+  cat ${PROCFILE} | grep -E "^(${parsed_only}):" > ${tmp_procfile}
+  export PROCFILE=${tmp_procfile}
+fi
+
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"
 
