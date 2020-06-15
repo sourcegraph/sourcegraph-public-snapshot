@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -40,7 +39,11 @@ func (m gitlabAuthzProviderParams) ServiceID() string {
 }
 
 func (m gitlabAuthzProviderParams) ServiceType() string {
-	return "gitlab"
+	return extsvc.TypeGitLab
+}
+
+func (m gitlabAuthzProviderParams) URN() string {
+	panic("should never be called")
 }
 
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
@@ -91,7 +94,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -129,7 +132,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.com",
 						},
 					}},
@@ -180,7 +183,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.com",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.com",
 							},
 						}, {
@@ -188,7 +191,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.mine",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.mine",
 							},
 						},
@@ -242,7 +245,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -267,7 +270,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -448,7 +451,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					t.Fatalf("no providers")
 				}
 
-				if have[0].ServiceType() != bitbucketserver.ServiceType {
+				if have[0].ServiceType() != extsvc.TypeBitbucketServer {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
@@ -468,7 +471,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -565,14 +568,26 @@ type fakeStore struct {
 	bitbucketServers []*schema.BitbucketServerConnection
 }
 
-func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error) {
-	return s.githubs, nil
+func (s fakeStore) ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error) {
+	conns := make([]*types.GitHubConnection, 0, len(s.githubs))
+	for _, github := range s.githubs {
+		conns = append(conns, &types.GitHubConnection{GitHubConnection: github})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error) {
-	return s.gitlabs, nil
+func (s fakeStore) ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error) {
+	conns := make([]*types.GitLabConnection, 0, len(s.gitlabs))
+	for _, gitlab := range s.gitlabs {
+		conns = append(conns, &types.GitLabConnection{GitLabConnection: gitlab})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error) {
-	return s.bitbucketServers, nil
+func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error) {
+	conns := make([]*types.BitbucketServerConnection, 0, len(s.bitbucketServers))
+	for _, bbs := range s.bitbucketServers {
+		conns = append(conns, &types.BitbucketServerConnection{BitbucketServerConnection: bbs})
+	}
+	return conns, nil
 }

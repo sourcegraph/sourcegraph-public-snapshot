@@ -29,7 +29,12 @@ import (
 type changesetsConnectionResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
-	opts        ee.ListChangesetsOpts
+
+	opts ee.ListChangesetsOpts
+	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
+	// changeset by including the changeset in the result set, this should be
+	// set to true.
+	optsSafe bool
 
 	// cache results because they are used by multiple fields
 	once           sync.Once
@@ -48,26 +53,38 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesets))
 	for _, c := range changesets {
+		nextSyncAt, ok := r.scheduledSyncs[c.ID]
+		var preloadedNextSyncAt *time.Time
+		if ok {
+			preloadedNextSyncAt = &nextSyncAt
+		}
+
 		repo, ok := reposByID[c.RepoID]
 		if !ok {
 			// If it's not in reposByID the repository was either deleted or
 			// filtered out by the authz-filter.
 			// In both cases: use hiddenChangesetResolver.
+
+			// But if the filter opts would leak information about the hidden
+			// changesets, we skip the hidden changeset
+			if !r.optsSafe {
+				continue
+			}
 			resolvers = append(resolvers, &hiddenChangesetResolver{
-				store:       r.store,
-				httpFactory: r.httpFactory,
-				Changeset:   c,
-				nextSyncAt:  r.scheduledSyncs[c.ID],
+				store:               r.store,
+				httpFactory:         r.httpFactory,
+				Changeset:           c,
+				preloadedNextSyncAt: preloadedNextSyncAt,
 			})
 			continue
 		}
 
 		resolvers = append(resolvers, &changesetResolver{
-			store:         r.store,
-			httpFactory:   r.httpFactory,
-			Changeset:     c,
-			preloadedRepo: repo,
-			nextSyncAt:    r.scheduledSyncs[c.ID],
+			store:               r.store,
+			httpFactory:         r.httpFactory,
+			Changeset:           c,
+			preloadedRepo:       repo,
+			preloadedNextSyncAt: &nextSyncAt,
 		})
 	}
 
@@ -75,14 +92,34 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetsOpts{
-		CampaignID:          r.opts.CampaignID,
-		ExternalState:       r.opts.ExternalState,
-		ExternalCheckState:  r.opts.ExternalCheckState,
-		ExternalReviewState: r.opts.ExternalReviewState,
+	opts := r.opts
+	opts.Limit = -1
+
+	cs, _, err := r.store.ListChangesets(ctx, opts)
+	if err != nil {
+		return 0, err
 	}
-	count, err := r.store.CountChangesets(ctx, opts)
-	return int32(count), err
+
+	// 🚨 SECURITY: If the opts do not leak information, we can return the
+	// number of changesets. Otherwise we have to filter the changesets by
+	// accessible repos.
+	if r.optsSafe {
+		return int32(len(cs)), nil
+	}
+
+	repoIDs := make([]api.RepoID, len(cs))
+	for i, c := range cs {
+		repoIDs[i] = c.RepoID
+	}
+
+	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(len(rs)), err
 }
 
 func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
@@ -156,7 +193,10 @@ type changesetResolver struct {
 	eventsErr  error
 
 	// When the next sync is scheduled
-	nextSyncAt time.Time
+	preloadedNextSyncAt *time.Time
+	nextSyncAtOnce      sync.Once
+	nextSyncAt          time.Time
+	nextSyncAtErr       error
 }
 
 const externalChangesetIDKind = "ExternalChangeset"
@@ -211,6 +251,17 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 	return r.events, r.eventsErr
 }
 
+func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
+	r.nextSyncAtOnce.Do(func() {
+		if r.preloadedNextSyncAt != nil {
+			r.nextSyncAt = *r.preloadedNextSyncAt
+		} else {
+			r.nextSyncAt, r.nextSyncAtErr = computeNextSyncForChangeset(ctx, r.store, r.Changeset.ID)
+		}
+	})
+	return r.nextSyncAt, r.nextSyncAtErr
+}
+
 func (r *changesetResolver) ID() graphql.ID {
 	return marshalExternalChangesetID(r.Changeset.ID)
 }
@@ -235,11 +286,15 @@ func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
 }
 
-func (r *changesetResolver) NextSyncAt() *graphqlbackend.DateTime {
-	if r.nextSyncAt.IsZero() {
-		return nil
+func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	nextSyncAt, err := r.computeNextSyncAt(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return &graphqlbackend.DateTime{Time: r.nextSyncAt}
+	if nextSyncAt.IsZero() {
+		return nil, nil
+	}
+	return &graphqlbackend.DateTime{Time: nextSyncAt}, nil
 }
 
 func (r *changesetResolver) Title() (string, error) {
@@ -468,7 +523,10 @@ type hiddenChangesetResolver struct {
 	*campaigns.Changeset
 
 	// When the next sync is scheduled
-	nextSyncAt time.Time
+	preloadedNextSyncAt *time.Time
+	nextSyncAtOnce      sync.Once
+	nextSyncAt          time.Time
+	nextSyncAtErr       error
 }
 
 const hiddenChangesetIDKind = "HiddenExternalChangeset"
@@ -490,6 +548,17 @@ func (r *hiddenChangesetResolver) ToHiddenExternalChangeset() (graphqlbackend.Hi
 	return r, true
 }
 
+func (r *hiddenChangesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
+	r.nextSyncAtOnce.Do(func() {
+		if r.preloadedNextSyncAt != nil {
+			r.nextSyncAt = *r.preloadedNextSyncAt
+		} else {
+			r.nextSyncAt, r.nextSyncAtErr = computeNextSyncForChangeset(ctx, r.store, r.Changeset.ID)
+		}
+	})
+	return r.nextSyncAt, r.nextSyncAtErr
+}
+
 func (r *hiddenChangesetResolver) ID() graphql.ID { return marshalHiddenChangesetID(r.Changeset.ID) }
 
 func (r *hiddenChangesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
@@ -504,11 +573,15 @@ func (r *hiddenChangesetResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
 }
 
-func (r *hiddenChangesetResolver) NextSyncAt() *graphqlbackend.DateTime {
-	if r.nextSyncAt.IsZero() {
-		return nil
+func (r *hiddenChangesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	nextSyncAt, err := r.computeNextSyncAt(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return &graphqlbackend.DateTime{Time: r.nextSyncAt}
+	if nextSyncAt.IsZero() {
+		return nil, nil
+	}
+	return &graphqlbackend.DateTime{Time: nextSyncAt}, nil
 }
 
 func (r *hiddenChangesetResolver) State() campaigns.ChangesetState {
@@ -549,4 +622,18 @@ func newChangesetCampaignsConnectionsResolver(
 	}
 
 	return &campaignsConnectionResolver{store: s, httpFactory: cf, opts: opts}, nil
+}
+
+func computeNextSyncForChangeset(ctx context.Context, store *ee.Store, changesetID int64) (time.Time, error) {
+	syncData, err := store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{changesetID}})
+	if err != nil {
+		return time.Time{}, err
+	}
+	for _, d := range syncData {
+		if d.ChangesetID == changesetID {
+			return ee.NextSync(time.Now, d), nil
+		}
+	}
+	// Return zero time if not found in the sync data.
+	return time.Time{}, nil
 }

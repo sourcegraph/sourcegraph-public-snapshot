@@ -30,11 +30,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -292,7 +292,7 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			if fm.InputRev != nil {
 				rev = *fm.InputRev
 			}
-			addRepoFilter(string(fm.Repo.Name), rev, len(fm.LineMatches()))
+			addRepoFilter(fm.Repo.Name(), rev, len(fm.LineMatches()))
 			addLangFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
@@ -403,7 +403,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.Name}, fm.JPath, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.repo.Name}, fm.JPath, &git.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),

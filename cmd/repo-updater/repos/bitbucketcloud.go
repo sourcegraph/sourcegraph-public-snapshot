@@ -110,7 +110,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 		)),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          r.UUID,
-			ServiceType: bitbucketcloud.ServiceType,
+			ServiceType: extsvc.TypeBitbucketCloud,
 			ServiceID:   host.String(),
 		},
 		Description: r.Description,

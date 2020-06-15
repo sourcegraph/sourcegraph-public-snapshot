@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -57,6 +59,7 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 	var eb excludeBuilder
 	for _, r := range c.Exclude {
 		eb.Exact(r.Name)
+		eb.Pattern(r.Pattern)
 	}
 	exclude, err := eb.Build()
 	if err != nil {
@@ -164,7 +167,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 	var ids []int64
 	grouped := make(map[int64]Repos)
 	for _, r := range repos {
-		if r.ExternalRepo.ServiceType != gitolite.ServiceType || r.IsDeleted() {
+		if r.ExternalRepo.ServiceType != extsvc.TypeGitolite || r.IsDeleted() {
 			continue
 		}
 

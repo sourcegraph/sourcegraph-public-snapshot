@@ -15,14 +15,14 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	lsp "github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
@@ -278,6 +278,14 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 
+	repoResolver := NewRepositoryResolver(repoRevs.Repo)
+	commitResolver := &GitCommitResolver{
+		repoResolver: repoResolver,
+		oid:          GitObjectID(commitID),
+		inputRev:     &inputRev,
+		// NOTE: Not all fields are set, for performance.
+	}
+
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
@@ -291,18 +299,13 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 	fileMatchesByURI := make(map[string]*FileMatchResolver)
 	fileMatches := make([]*FileMatchResolver, 0)
+
 	for _, symbol := range symbols {
-		commit := &GitCommitResolver{
-			repo:     &RepositoryResolver{repo: repoRevs.Repo},
-			oid:      GitObjectID(commitID),
-			inputRev: &inputRev,
-			// NOTE: Not all fields are set, for performance.
-		}
 		symbolRes := &searchSymbolResult{
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
-			commit:  commit,
+			commit:  commitResolver,
 		}
 		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
@@ -312,7 +315,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
-				Repo:    symbolRes.commit.repo.repo,
+				Repo:    repoResolver,
 				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
 				CommitID: api.CommitID(symbolRes.commit.oid),
@@ -327,7 +330,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 // makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
 func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + string(symbolResult.commit.repo.URL())
+	uri := "git:/" + string(symbolResult.commit.repoResolver.URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}

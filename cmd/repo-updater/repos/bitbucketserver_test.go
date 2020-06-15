@@ -12,6 +12,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -51,11 +52,11 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETSERVER"}
+	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(&svc, config, nil, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -124,11 +125,11 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETSERVER"}
+	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(&svc, config, nil, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -205,14 +206,14 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "BITBUCKETSERVER",
+				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -315,14 +316,14 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "BITBUCKETSERVER",
+				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -388,14 +389,14 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "BITBUCKETSERVER",
+				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -462,14 +463,14 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "BITBUCKETSERVER",
+				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}

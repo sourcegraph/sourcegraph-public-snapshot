@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -93,14 +94,14 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITHUB",
+				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -168,14 +169,14 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITHUB",
+				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -238,14 +239,14 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITHUB",
+				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -312,14 +313,14 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITHUB",
+				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_TOKEN"),
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -420,13 +421,13 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITHUB",
+				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -453,7 +454,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := ExternalService{ID: 1, Kind: "GITHUB"}
+	svc := ExternalService{ID: 1, Kind: extsvc.KindGitHub}
 
 	tests := []struct {
 		name   string
@@ -484,7 +485,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(&svc, test.schmea, nil, nil)
+			s, err := newGithubSource(&svc, test.schmea, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -680,11 +681,11 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind:   "GITHUB",
+				Kind:   extsvc.KindGitHub,
 				Config: marshalJSON(t, tc.conf),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf, nil)
+			githubSrc, err := NewGithubSource(svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -51,9 +51,9 @@ type Server struct {
 		// the registry can start or stop the syncer associated with the service
 		HandleExternalServiceSync(es api.ExternalService)
 	}
-	RateLimiterRegistry interface {
+	RateLimitSyncer interface {
 		// SyncRateLimiters should be called when an external service changes so that
-		// our internal rate limiter are kept in sync
+		// our internal rate limiters are kept in sync
 		SyncRateLimiters(ctx context.Context) error
 	}
 	PermsSyncer interface {
@@ -347,8 +347,8 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if s.RateLimiterRegistry != nil {
-		err = s.RateLimiterRegistry.SyncRateLimiters(ctx)
+	if s.RateLimitSyncer != nil {
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx)
 		if err != nil {
 			log15.Warn("Handling rate limiter sync", "err", err)
 		}
@@ -670,8 +670,9 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		ExternalRepo: r.ExternalRepo,
 	}
 
-	switch strings.ToLower(r.ExternalRepo.ServiceType) {
-	case "github":
+	typ, _ := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	switch typ {
+	case extsvc.TypeGitHub:
 		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
 			Root:   ghrepo.URL,
@@ -679,7 +680,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
 		}
-	case "gitlab":
+	case extsvc.TypeGitLab:
 		proj := r.Metadata.(*gitlab.Project)
 		info.Links = &protocol.RepoLinks{
 			Root:   proj.WebURL,
@@ -687,7 +688,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
 		}
-	case "bitbucketserver":
+	case extsvc.TypeBitbucketServer:
 		repo := r.Metadata.(*bitbucketserver.Repo)
 		if len(repo.Links.Self) == 0 {
 			break
@@ -701,7 +702,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
 		}
-	case "awscodecommit":
+	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)
 		if repo.ARN == "" {
 			break

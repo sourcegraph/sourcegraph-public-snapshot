@@ -509,11 +509,9 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "openChangesets": Object {
-          "totalCount": 0,
-        },
         "patchSet": Object {
           "id": "p",
         },
@@ -617,11 +615,9 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "openChangesets": Object {
-          "totalCount": 0,
-        },
         "patchSet": Object {
           "id": "p",
         },
@@ -888,11 +884,9 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "openChangesets": Object {
-          "totalCount": 0,
-        },
         "patchSet": Object {
           "id": "p",
         },
@@ -996,11 +990,9 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "openChangesets": Object {
-          "totalCount": 0,
-        },
         "patchSet": Object {
           "id": "p",
         },
@@ -1168,6 +1160,19 @@ Array [
                 </strong>
                 ?
               </p>
+              <div
+                className="form-group"
+              >
+                <label>
+                  <input
+                    checked={false}
+                    onChange={[Function]}
+                    type="checkbox"
+                  />
+                   
+                  Close open changesets on code hosts
+                </label>
+              </div>
               <button
                 className="btn mr-1 btn-secondary mr-1"
                 disabled={true}
@@ -1208,6 +1213,19 @@ Array [
                 </strong>
                 ?
               </p>
+              <div
+                className="form-group"
+              >
+                <label>
+                  <input
+                    checked={false}
+                    onChange={[Function]}
+                    type="checkbox"
+                  />
+                   
+                  Close open changesets on code hosts
+                </label>
+              </div>
               <button
                 className="btn mr-1 btn-danger"
                 disabled={true}
@@ -1357,11 +1375,9 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "openChangesets": Object {
-          "totalCount": 0,
-        },
         "patchSet": Object {
           "id": "p",
         },
@@ -1465,11 +1481,9 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "openChangesets": Object {
-          "totalCount": 0,
-        },
         "patchSet": Object {
           "id": "p",
         },

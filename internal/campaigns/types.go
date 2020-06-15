@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -24,8 +25,8 @@ import (
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]struct{}{
-	github.ServiceType:          {},
-	bitbucketserver.ServiceType: {},
+	extsvc.TypeGitHub:          {},
+	extsvc.TypeBitbucketServer: {},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -373,13 +374,13 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 	case *github.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
-		c.ExternalServiceType = github.ServiceType
+		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = pr.HeadRefName
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-		c.ExternalServiceType = bitbucketserver.ServiceType
+		c.ExternalServiceType = extsvc.TypeBitbucketServer
 		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 	default:

@@ -140,7 +140,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
+var allowedPrometheusFieldNames = map[[2]string]struct{}{
 	{"AccessTokenConnection", "nodes"}:          {},
 	{"File", "isDirectory"}:                     {},
 	{"File", "name"}:                            {},
@@ -281,13 +281,13 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 //
 // See https://github.com/sourcegraph/sourcegraph/issues/9895
 func prometheusFieldName(typeName, fieldName string) string {
-	if _, ok := whitelistedPrometheusFieldNames[[2]string{typeName, fieldName}]; ok {
+	if _, ok := allowedPrometheusFieldNames[[2]string{typeName, fieldName}]; ok {
 		return fieldName
 	}
 	return "other"
 }
 
-var blacklistedPrometheusTypeNames = map[string]struct{}{
+var blocklistedPrometheusTypeNames = map[string]struct{}{
 	"__Type":                                 {},
 	"__Schema":                               {},
 	"__InputValue":                           {},
@@ -306,7 +306,7 @@ var blacklistedPrometheusTypeNames = map[string]struct{}{
 }
 
 // prometheusTypeName reduces the cardinality of GraphQL type names to make it
-// suitable for use in a Prometheus metric. This is a blacklist of type names
+// suitable for use in a Prometheus metric. This is a blocklist of type names
 // which involve non-complex calculations in the GraphQL backend and thus are
 // not worth tracking. You can find a complete list of the ones Prometheus is
 // currently tracking via:
@@ -314,13 +314,13 @@ var blacklistedPrometheusTypeNames = map[string]struct{}{
 // 	sum by (type)(src_graphql_field_seconds_count)
 //
 func prometheusTypeName(typeName string) string {
-	if _, ok := blacklistedPrometheusTypeNames[typeName]; ok {
+	if _, ok := blocklistedPrometheusTypeNames[typeName]; ok {
 		return "other"
 	}
 	return typeName
 }
 
-// prometheusGraphQLRequestName is a whitelist of GraphQL request names (e.g. /.api/graphql?Foobar)
+// prometheusGraphQLRequestName is a allowlist of GraphQL request names (e.g. /.api/graphql?Foobar)
 // to include in a Prometheus metric. Be extremely careful
 func prometheusGraphQLRequestName(requestName string) string {
 	if requestName == "CodeIntelSearch" {
@@ -496,6 +496,11 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
+	n, ok := r.Node.(LSIFIndexResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
 	n, ok := r.Node.(*versionContextResolver)
 	return n, ok
@@ -586,6 +591,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return siteByGQLID(ctx, id)
 	case "LSIFUpload":
 		return r.LSIFUploadByID(ctx, id)
+	case "LSIFIndex":
+		return r.LSIFIndexByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

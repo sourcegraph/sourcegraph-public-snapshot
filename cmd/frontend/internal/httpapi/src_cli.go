@@ -12,7 +12,7 @@ import (
 
 var srcCliDownloadsURL = "https://github.com/sourcegraph/src-cli/releases/download"
 
-var whitelistedFilenames = []string{
+var allowedFilenames = []string{
 	"src_darwin_amd64",
 	"src_linux_amd64",
 	"src_windows_amd64.exe",
@@ -59,7 +59,7 @@ func srcCliVersion() string {
 }
 
 func isExpectedRelease(filename string) bool {
-	for _, v := range whitelistedFilenames {
+	for _, v := range allowedFilenames {
 		if filename == v {
 			return true
 		}

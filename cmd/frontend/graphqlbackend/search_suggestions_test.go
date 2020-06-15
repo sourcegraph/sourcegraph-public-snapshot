@@ -105,7 +105,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://repo?rev#dir/file", JPath: "dir/file", Repo: &types.Repo{Name: "repo"}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/file", JPath: "dir/file", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo"}}, CommitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -178,9 +178,9 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", Repo: &types.Repo{Name: "repo3"}, CommitID: "rev"},
-				{uri: "git://repo?rev#dir/foo-repo1-file-name-match", JPath: "dir/foo-repo1-file-name-match", Repo: &types.Repo{Name: "repo1"}, CommitID: "rev"},
-				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", Repo: &types.Repo{Name: "repo"}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo3"}}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/foo-repo1-file-name-match", JPath: "dir/foo-repo1-file-name-match", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo1"}}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo"}}, CommitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -253,7 +253,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://foo-repo?rev#dir/file", JPath: "dir/file", Repo: &types.Repo{Name: "foo-repo"}, CommitID: ""},
+				{uri: "git://foo-repo?rev#dir/file", JPath: "dir/file", Repo: &RepositoryResolver{repo: &types.Repo{Name: "foo-repo"}}, CommitID: ""},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -355,7 +355,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://foo-repo?rev#dir/bar-file", JPath: "dir/bar-file", Repo: &types.Repo{Name: "foo-repo"}, CommitID: ""},
+				{uri: "git://foo-repo?rev#dir/bar-file", JPath: "dir/bar-file", Repo: &RepositoryResolver{repo: &types.Repo{Name: "foo-repo"}}, CommitID: ""},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()

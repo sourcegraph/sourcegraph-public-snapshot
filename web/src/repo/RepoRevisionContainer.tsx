@@ -35,11 +35,11 @@ import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './Reposito
 import { RevisionsPopover } from './RevisionsPopover'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
-import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
+import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -85,7 +85,7 @@ interface RepoRevisionContainerProps
         RevisionSpec {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     routePrefix: string
@@ -237,7 +237,7 @@ export class RepoRevisionContainer extends React.PureComponent<RepoRevisionConta
             caseSensitive: this.props.caseSensitive,
             setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
-            repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            repoSettingsSidebarGroups: this.props.repoSettingsSidebarGroups,
             copyQueryButton: this.props.copyQueryButton,
             versionContext: this.props.versionContext,
         }

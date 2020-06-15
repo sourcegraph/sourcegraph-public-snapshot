@@ -3,6 +3,7 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -14,17 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"golang.org/x/time/rate"
 )
 
 // SyncRegistry manages a ChangesetSyncer per external service.
 type SyncRegistry struct {
-	Ctx                 context.Context
-	SyncStore           SyncStore
-	RepoStore           RepoStore
-	HTTPFactory         *httpcli.Factory
-	RateLimiterRegistry *repos.RateLimiterRegistry
+	Ctx         context.Context
+	SyncStore   SyncStore
+	RepoStore   RepoStore
+	HTTPFactory *httpcli.Factory
 
 	priorityNotify chan []int64
 
@@ -39,15 +39,14 @@ type RepoStore interface {
 
 // NewSycnRegistry creates a new sync registry which starts a syncer for each external service and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory, rateLimiterRegistry *repos.RateLimiterRegistry) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory) *SyncRegistry {
 	r := &SyncRegistry{
-		Ctx:                 ctx,
-		SyncStore:           store,
-		RepoStore:           repoStore,
-		HTTPFactory:         cf,
-		RateLimiterRegistry: rateLimiterRegistry,
-		priorityNotify:      make(chan []int64, 500),
-		syncers:             make(map[int64]*ChangesetSyncer),
+		Ctx:            ctx,
+		SyncStore:      store,
+		RepoStore:      repoStore,
+		HTTPFactory:    cf,
+		priorityNotify: make(chan []int64, 500),
+		syncers:        make(map[int64]*ChangesetSyncer),
 	}
 
 	services, err := repoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
@@ -83,7 +82,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	service := services[0]
 
 	switch service.Kind {
-	case "GITHUB", "BITBUCKETSERVER":
+	case extsvc.KindGitHub, extsvc.KindBitbucketServer:
 	// Supported by campaigns
 	default:
 		log15.Debug("Campaigns syncer not started for unsupported code host", "kind", service.Kind)
@@ -108,7 +107,6 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		externalServiceID: extServiceID,
 		cancel:            cancel,
 		priorityNotify:    make(chan []int64, 500),
-		rateLimitRegistry: s.RateLimiterRegistry,
 	}
 
 	s.syncers[extServiceID] = syncer
@@ -236,9 +234,6 @@ type ChangesetSyncer struct {
 
 	// cancel should be called to stop this syncer
 	cancel context.CancelFunc
-
-	// rateLimitRegistry should be used fetch the current rate limiter for an external service
-	rateLimitRegistry *repos.RateLimiterRegistry
 }
 
 var syncerMetrics = struct {
@@ -490,31 +485,31 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, s.rateLimitRegistry, cs)
+	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
 func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
-	return syncChangesets(ctx, repoStore, syncStore, cf, nil, cs...)
+	return syncChangesets(ctx, repoStore, syncStore, cf, cs...)
 }
 
-func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) (err error) {
+func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
 
-	bySource, err := GroupChangesetsBySource(ctx, repoStore, cf, rlr, cs...)
+	bySource, err := groupChangesetsBySource(ctx, repoStore, cf, nil, cs...)
 	if err != nil {
 		return err
 	}
 
-	return SyncChangesetsWithSources(ctx, syncStore, bySource)
+	return syncChangesetsWithSources(ctx, syncStore, bySource)
 }
 
-// SyncChangesetsWithSources refreshes the metadata of the given changesets
+// syncChangesetsWithSources refreshes the metadata of the given changesets
 // with the given ChangesetSources and updates them in the database.
-func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
+func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
 	var (
 		events []*campaigns.ChangesetEvent
 		cs     []*campaigns.Changeset
@@ -576,11 +571,17 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-// GroupChangesetsBySource returns a slice of SourceChangesets in which the
+// groupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
 // rlr is optional
-func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
+func groupChangesetsBySource(
+	ctx context.Context,
+	reposStore RepoStore,
+	cf *httpcli.Factory,
+	sourcer repos.Sourcer,
+	cs ...*campaigns.Changeset,
+) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 
@@ -626,17 +627,23 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		var rl *rate.Limiter
-		if rlr != nil {
-			u, err := e.BaseURL()
+		var css repos.ChangesetSource
+		if sourcer != nil {
+			sources, err := sourcer(e)
 			if err != nil {
-				return nil, errors.Wrap(err, "getting base URL")
+				return nil, err
 			}
-			rl = rlr.GetRateLimiter(u.String())
-		}
-		css, err := repos.NewChangesetSource(e, cf, rl)
-		if err != nil {
-			return nil, err
+
+			var ok bool
+			css, ok = sources[0].(repos.ChangesetSource)
+			if !ok {
+				return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", e.Kind)
+			}
+		} else {
+			css, err = repos.NewChangesetSource(e, cf)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}

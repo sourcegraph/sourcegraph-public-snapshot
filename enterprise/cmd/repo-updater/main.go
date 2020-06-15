@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 func main() {
@@ -44,14 +45,14 @@ func enterpriseInit(
 	ctx := context.Background()
 	campaignsStore := campaigns.NewStore(db)
 
-	rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, repoStore)
+	rateLimitSyncer, err := repos.NewRateLimitSyncer(ctx, ratelimit.DefaultRegistry, repoStore)
 	if err != nil {
 		log15.Error("Creating rate limit registry", "err", err)
 	} else if server != nil {
-		server.RateLimiterRegistry = rateLimiterRegistry
+		server.RateLimitSyncer = rateLimitSyncer
 	}
 
-	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf, rateLimiterRegistry)
+	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
@@ -77,7 +78,7 @@ func enterpriseInit(
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
 	permsStore := frontendDB.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, rateLimiterRegistry)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {

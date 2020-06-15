@@ -43,10 +43,10 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 func newTestClient(t *testing.T) *Client {
 	rcache.SetupForTest(t)
 	return &Client{
-		baseURL:    &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		httpClient: &http.Client{},
-		RateLimit:  &ratelimit.Monitor{},
-		projCache:  rcache.NewWithTTL("__test__gl_proj", 1000),
+		baseURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
+		httpClient:       &http.Client{},
+		RateLimitMonitor: &ratelimit.Monitor{},
+		projCache:        rcache.NewWithTTL("__test__gl_proj", 1000),
 	}
 }
 

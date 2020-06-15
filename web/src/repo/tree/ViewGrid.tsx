@@ -12,7 +12,7 @@ import { ViewProviderResult } from '../../../../shared/src/api/client/services/v
 // (WidthProvider only listens to window resize events)
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
-interface ViewGridProps extends Omit<ViewContentProps, 'viewContent'> {
+export interface ViewGridProps extends Omit<ViewContentProps, 'viewContent'> {
     views: ViewProviderResult[]
     className?: string
     history: H.History

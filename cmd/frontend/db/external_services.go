@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 
@@ -35,14 +36,14 @@ type ExternalServicesStore struct {
 // ExternalServiceKinds contains a map of all supported kinds of
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
-	"AWSCODECOMMIT":   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
-	"BITBUCKETCLOUD":  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
-	"BITBUCKETSERVER": {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
-	"GITHUB":          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
-	"GITLAB":          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
-	"GITOLITE":        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	"PHABRICATOR":     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
-	"OTHER":           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
+	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
+	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
+	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
+	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
+	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
+	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
+	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -110,35 +111,35 @@ func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, id int64, ki
 
 	// Extra validation not based on JSON Schema.
 	switch kind {
-	case "GITHUB":
+	case extsvc.KindGitHub:
 		var c schema.GitHubConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
 		err = e.validateGitHubConnection(ctx, id, &c)
 
-	case "GITLAB":
+	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
 		err = e.validateGitLabConnection(ctx, id, &c, ps)
 
-	case "BITBUCKETSERVER":
+	case extsvc.KindBitbucketServer:
 		var c schema.BitbucketServerConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
 		err = e.validateBitbucketServerConnection(ctx, id, &c)
 
-	case "BITBUCKETCLOUD":
+	case extsvc.KindBitbucketCloud:
 		var c schema.BitbucketCloudConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
 		err = e.validateBitbucketCloudConnection(ctx, id, &c)
 
-	case "OTHER":
+	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
@@ -188,7 +189,7 @@ func (e *ExternalServicesStore) validateGitHubConnection(ctx context.Context, id
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 
-	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITHUB", c))
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitHub, c))
 
 	return err.ErrorOrNil()
 }
@@ -199,7 +200,7 @@ func (e *ExternalServicesStore) validateGitLabConnection(ctx context.Context, id
 		err = multierror.Append(err, validate(c, ps))
 	}
 
-	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITLAB", c))
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitLab, c))
 
 	return err.ErrorOrNil()
 }
@@ -214,13 +215,13 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(ctx context.Co
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
 	}
 
-	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "BITBUCKETSERVER", c))
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketServer, c))
 
 	return err.ErrorOrNil()
 }
 
 func (e *ExternalServicesStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
-	return e.validateDuplicateRateLimits(ctx, id, "BITBUCKETCLOUD", c)
+	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
 }
 
 func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context, id int64, kind string, parsedConfig interface{}) error {
@@ -408,7 +409,9 @@ func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesLi
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-// listConfigs decodes the list configs into result.
+// listConfigs decodes the list of configs into result. In addition to populating
+// loaded configs into the given result, it also calls the "SetURN(string)" method
+// of elements in result when the method exists.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
@@ -418,13 +421,15 @@ func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 	}
 
 	// Decode the jsonc configs into Go objects.
-	var cfgs []interface{}
+	cfgs := make([]interface{}, 0, len(services))
+	urns := make([]string, 0, len(services))
 	for _, service := range services {
 		var cfg interface{}
 		if err := jsonc.Unmarshal(service.Config, &cfg); err != nil {
 			return err
 		}
 		cfgs = append(cfgs, cfg)
+		urns = append(urns, service.URN())
 	}
 
 	// Now move our untyped config list into the typed list (result). We could
@@ -435,15 +440,29 @@ func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(buf, result)
+
+	err = json.Unmarshal(buf, result)
+	if err != nil {
+		return err
+	}
+
+	conns := reflect.ValueOf(result).Elem()
+	for i := 0; i < conns.Len(); i++ {
+		field, ok := conns.Index(i).Interface().(interface{ SetURN(string) })
+		if ok {
+			field.SetURN(urns[i])
+		}
+	}
+
+	return nil
 }
 
 // ListAWSCodeCommitConnections returns a list of AWSCodeCommit configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	var connections []*schema.AWSCodeCommitConnection
-	if err := e.listConfigs(ctx, "AWSCODECOMMIT", &connections); err != nil {
+func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*types.AWSCodeCommitConnection, error) {
+	var connections []*types.AWSCodeCommitConnection
+	if err := e.listConfigs(ctx, extsvc.KindAWSCodeCommit, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -452,9 +471,9 @@ func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context
 // ListBitbucketCloudConnections returns a list of BitbucketCloud configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*schema.BitbucketCloudConnection, error) {
-	var connections []*schema.BitbucketCloudConnection
-	if err := e.listConfigs(ctx, "BITBUCKETCLOUD", &connections); err != nil {
+func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*types.BitbucketCloudConnection, error) {
+	var connections []*types.BitbucketCloudConnection
+	if err := e.listConfigs(ctx, extsvc.KindBitbucketCloud, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -463,9 +482,9 @@ func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Contex
 // ListBitbucketServerConnections returns a list of BitbucketServer configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	var connections []*schema.BitbucketServerConnection
-	if err := e.listConfigs(ctx, "BITBUCKETSERVER", &connections); err != nil {
+func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*types.BitbucketServerConnection, error) {
+	var connections []*types.BitbucketServerConnection
+	if err := e.listConfigs(ctx, extsvc.KindBitbucketServer, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -474,9 +493,9 @@ func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Conte
 // ListGitHubConnections returns a list of GitHubConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	var connections []*schema.GitHubConnection
-	if err := e.listConfigs(ctx, "GITHUB", &connections); err != nil {
+func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*types.GitHubConnection, error) {
+	var connections []*types.GitHubConnection
+	if err := e.listConfigs(ctx, extsvc.KindGitHub, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -485,9 +504,9 @@ func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*s
 // ListGitLabConnections returns a list of GitLabConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	var connections []*schema.GitLabConnection
-	if err := e.listConfigs(ctx, "GITLAB", &connections); err != nil {
+func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*types.GitLabConnection, error) {
+	var connections []*types.GitLabConnection
+	if err := e.listConfigs(ctx, extsvc.KindGitLab, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -496,9 +515,9 @@ func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*s
 // ListGitoliteConnections returns a list of GitoliteConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	var connections []*schema.GitoliteConnection
-	if err := e.listConfigs(ctx, "GITOLITE", &connections); err != nil {
+func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]*types.GitoliteConnection, error) {
+	var connections []*types.GitoliteConnection
+	if err := e.listConfigs(ctx, extsvc.KindGitolite, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -507,9 +526,9 @@ func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]
 // ListPhabricatorConnections returns a list of PhabricatorConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	var connections []*schema.PhabricatorConnection
-	if err := e.listConfigs(ctx, "PHABRICATOR", &connections); err != nil {
+func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*types.PhabricatorConnection, error) {
+	var connections []*types.PhabricatorConnection
+	if err := e.listConfigs(ctx, extsvc.KindPhabricator, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -518,9 +537,9 @@ func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) 
 // ListOtherExternalServicesConnections returns a list of OtherExternalServiceConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context.Context) ([]*schema.OtherExternalServiceConnection, error) {
-	var connections []*schema.OtherExternalServiceConnection
-	if err := e.listConfigs(ctx, "OTHER", &connections); err != nil {
+func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context.Context) ([]*types.OtherExternalServiceConnection, error) {
+	var connections []*types.OtherExternalServiceConnection
+	if err := e.listConfigs(ctx, extsvc.KindOther, &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil

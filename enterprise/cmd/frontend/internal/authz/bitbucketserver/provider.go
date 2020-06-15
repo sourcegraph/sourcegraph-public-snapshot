@@ -10,6 +10,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -21,6 +22,7 @@ import (
 // Provider is an implementation of AuthzProvider that provides repository permissions as
 // determined from a Bitbucket Server instance API.
 type Provider struct {
+	urn      string
 	client   *bitbucketserver.Client
 	codeHost *extsvc.CodeHost
 	pageSize int // Page size to use in paginated requests.
@@ -40,10 +42,11 @@ var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond
 // the given bitbucketserver.Client to talk to a Bitbucket Server API that is
 // the source of truth for permissions. It assumes usernames of Sourcegraph accounts
 // match 1-1 with usernames of Bitbucket Server API users.
-func NewProvider(cli *bitbucketserver.Client, db dbutil.DB, ttl, hardTTL time.Duration, pluginPerm bool) *Provider {
+func NewProvider(cli *bitbucketserver.Client, db dbutil.DB, urn string, ttl, hardTTL time.Duration, pluginPerm bool) *Provider {
 	return &Provider{
+		urn:        urn,
 		client:     cli,
-		codeHost:   extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
+		codeHost:   extsvc.NewCodeHost(cli.URL, extsvc.TypeBitbucketServer),
 		pageSize:   1000,
 		store:      newStore(db, ttl, hardTTL, clock),
 		pluginPerm: pluginPerm,
@@ -62,6 +65,10 @@ func (p *Provider) Validate() []string {
 	}
 
 	return nil
+}
+
+func (p *Provider) URN() string {
+	return p.urn
 }
 
 // ServiceID returns the absolute URL that identifies the Bitbucket Server instance

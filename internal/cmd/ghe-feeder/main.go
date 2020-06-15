@@ -136,7 +136,7 @@ func main() {
 	work := make(chan string)
 
 	prdc := &producer{
-		remaining:    *limitPump,
+		remaining:    numLines,
 		pipe:         work,
 		fdr:          fdr,
 		logger:       log15.New("source", "producer"),

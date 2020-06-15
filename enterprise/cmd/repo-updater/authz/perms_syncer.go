@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -13,12 +14,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -36,7 +40,7 @@ type PermsSyncer struct {
 	// The mockable function to return the current time.
 	clock func() time.Time
 	// The rate limit registry for code hosts.
-	rateLimiterRegistry *repos.RateLimiterRegistry
+	rateLimiterRegistry *ratelimit.Registry
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
 	// The metrics that are exposed to Prometheus.
@@ -55,7 +59,7 @@ func NewPermsSyncer(
 	reposStore repos.Store,
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
-	rateLimiterRegistry *repos.RateLimiterRegistry,
+	rateLimiterRegistry *ratelimit.Registry,
 ) *PermsSyncer {
 	s := &PermsSyncer{
 		queue:               newRequestQueue(),
@@ -144,13 +148,24 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 	}
 }
 
-// providers returns a list of authz.Provider configured in the external services.
-// Keys are ServiceID, e.g. "https://gitlab.com/".
-func (s *PermsSyncer) providers() map[string]authz.Provider {
+// providersByServiceID returns a list of authz.Provider configured in the external services.
+// Keys are ServiceID, e.g. "https://github.com/".
+func (s *PermsSyncer) providersByServiceID() map[string]authz.Provider {
 	_, ps := authz.GetProviders()
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.ServiceID()] = p
+	}
+	return providers
+}
+
+// providersByURNs returns a list of authz.Provider configured in the external services.
+// Keys are URN, e.g. "extsvc:github:1".
+func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
+	_, ps := authz.GetProviders()
+	providers := make(map[string]authz.Provider, len(ps))
+	for _, p := range ps {
+		providers[p.URN()] = p
 	}
 	return providers
 }
@@ -166,9 +181,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external accounts")
 	}
 
+	providers := s.providersByServiceID()
+
 	var repoSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
-		provider := s.providers()[acct.ServiceID]
+		provider := providers[acct.ServiceID]
 		if provider == nil {
 			// We have no authz provider configured for this external account.
 			continue
@@ -250,10 +267,28 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return nil
 	}
 
-	provider := s.providers()[repo.ExternalRepo.ServiceID]
+	// Loop over repository's sources and see if matching any authz provider's URN.
+	var provider authz.Provider
+	providers := s.providersByURNs()
+	for urn := range repo.Sources {
+		p, ok := providers[urn]
+		if ok {
+			provider = p
+			break
+		}
+	}
+
 	if provider == nil {
-		// We have no authz provider configured for this repository.
-		return nil
+		log15.Debug("PermsSyncer.syncRepoPerms.noProvider", "repoID", repo.ID)
+
+		// We have no authz provider configured for this private repository.
+		// However, we need to upsert the dummy record in order to prevent
+		// scheduler keep scheduling this repository.
+		return errors.Wrap(s.permsStore.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  int32(repoID),
+			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
+			UserIDs: roaring.NewBitmap(),
+		}), "set repository permissions")
 	}
 
 	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
@@ -264,6 +299,15 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	})
+
+	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
+	// when the owner of the token only has READ access. However, we don't want to fail entirely
+	// so the scheduler won't keep trying to fetch permissions of this same repository.
+	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
+		log15.Debug("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err)
+		err = nil
+	}
+
 	if err != nil {
 		// Process partial results if this is an initial fetch.
 		if !noPerms {
@@ -335,7 +379,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return errors.Wrap(err, "set repository pending permissions")
 	}
 
-	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name)
+	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name, "count", len(extAccountIDs))
 	return nil
 }
 
@@ -587,7 +631,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 
 		// Skip if not enabled or no authz provider is configured
 		if !globals.PermissionsBackgroundSync().Enabled ||
-			len(s.providers()) == 0 {
+			len(s.providersByServiceID()) == 0 {
 			continue
 		}
 

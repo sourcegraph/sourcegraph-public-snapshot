@@ -7,9 +7,8 @@ coverage:
       codeintel:
         informational: true
         paths:
-          - cmd/precise-code-intel-*
           - cmd/symbols
-          - internal/codeintel
+          - enterprise/cmd/precise-code-intel-*
           - enterprise/internal/codeintel
       typescript:
         informational: true
@@ -21,6 +20,7 @@ coverage:
           - go
     patch:
       default:
+        only_pulls: true
         target: 5%
 comment:
   require_changes: yes
