@@ -667,7 +667,7 @@ type ListChangesetsOpts struct {
 }
 
 // ListChangesets lists Changesets with the given filters.
-func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs []*campaigns.Changeset, next int64, err error) {
+func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs campaigns.Changesets, next int64, err error) {
 	q := listChangesetsQuery(&opts)
 
 	cs = make([]*campaigns.Changeset, 0, opts.Limit)

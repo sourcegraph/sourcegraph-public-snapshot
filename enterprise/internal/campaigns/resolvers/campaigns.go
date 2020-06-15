@@ -226,15 +226,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
-	changesetIDs := make([]int64, len(cs))
-	for i, c := range cs {
-		changesetIDs[i] = c.ID
-	}
-
-	eventsOpts := ee.ListChangesetEventsOpts{
-		ChangesetIDs: changesetIDs,
-		Limit:        -1,
-	}
+	eventsOpts := ee.ListChangesetEventsOpts{ChangesetIDs: cs.IDs(), Limit: -1}
 	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
 	if err != nil {
 		return resolvers, err

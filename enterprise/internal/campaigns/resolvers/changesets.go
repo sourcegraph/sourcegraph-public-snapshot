@@ -107,14 +107,9 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		return int32(len(cs)), nil
 	}
 
-	repoIDs := make([]api.RepoID, len(cs))
-	for i, c := range cs {
-		repoIDs[i] = c.RepoID
-	}
-
 	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	rs, err := db.Repos.GetByIDs(ctx, cs.RepoIDs()...)
 	if err != nil {
 		return 0, err
 	}

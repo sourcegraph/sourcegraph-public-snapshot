@@ -94,7 +94,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		// NOTE: Your sample payload should apply to a PR with the number matching below
-		changesets := []*campaigns.Changeset{
+		changesets := campaigns.Changesets{
 			{
 				RepoID:              githubRepo.ID,
 				ExternalID:          "10156",
