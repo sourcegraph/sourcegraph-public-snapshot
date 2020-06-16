@@ -67,7 +67,7 @@ describe('QueryTransformers', () => {
         expect(results).toEqual(['a!'])
     })
 
-    it('stops execution of the prev transformer chain', async () => {
+    it('cancels previous transformer chains', async () => {
         const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings)
 
         // collect all pending promises and their triggers from the first transformer

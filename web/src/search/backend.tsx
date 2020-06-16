@@ -1,6 +1,5 @@
 import { Observable, of, combineLatest, defer } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
-// import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
