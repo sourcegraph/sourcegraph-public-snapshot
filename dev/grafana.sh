@@ -38,7 +38,8 @@ docker run --rm \
   -p 0.0.0.0:3370:3370 \
   -v "${GRAFANA_DISK}":/var/lib/grafana \
   -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
-  -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
+  -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
+  -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards/legacy \
   -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
   -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-'false'}" \
   ${IMAGE} >>"${GRAFANA_DISK}"/logs/grafana.log 2>&1 &

@@ -45,6 +45,20 @@ func Symbols() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("symbols"),
+						sharedProvisioningMemoryUsage1d("symbols"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("symbols"),
+						sharedProvisioningMemoryUsage5m("symbols"),
+					},
+				},
+			},
 		},
 	}
 }

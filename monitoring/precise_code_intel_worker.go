@@ -151,6 +151,20 @@ func PreciseCodeIntelWorker() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsage1d("precise-code-intel-worker"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-worker"),
+					},
+				},
+			},
 		},
 	}
 }

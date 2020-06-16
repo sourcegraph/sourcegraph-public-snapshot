@@ -17,6 +17,20 @@ func GitHubProxy() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("github-proxy"),
+						sharedProvisioningMemoryUsage1d("github-proxy"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("github-proxy"),
+						sharedProvisioningMemoryUsage5m("github-proxy"),
+					},
+				},
+			},
 		},
 	}
 }

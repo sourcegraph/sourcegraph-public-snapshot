@@ -25,6 +25,20 @@ func QueryRunner() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("query-runner"),
+						sharedProvisioningMemoryUsage1d("query-runner"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("query-runner"),
+						sharedProvisioningMemoryUsage5m("query-runner"),
+					},
+				},
+			},
 		},
 	}
 }

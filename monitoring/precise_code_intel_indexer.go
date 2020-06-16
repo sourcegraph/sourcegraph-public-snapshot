@@ -120,13 +120,27 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("precise-code-intel-indexer"),
 						sharedContainerMemoryUsage("precise-code-intel-indexer"),
 						sharedContainerCPUUsage("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage1d("precise-code-intel-indexer"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-indexer"),
 					},
 				},
 			},
