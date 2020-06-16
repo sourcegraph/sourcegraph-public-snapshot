@@ -22,11 +22,7 @@ func collectLabels(nodes []Node) (result labels) {
 
 func heuristicLabels(nodes []Node) string {
 	labels := Strings(collectLabels(nodes))
-	var keep []string
-	for _, s := range labels {
-		keep = append(keep, s)
-	}
-	return strings.Join(keep, ",")
+	return strings.Join(labels, ",")
 }
 
 func TestParseAndOrLiteral(t *testing.T) {

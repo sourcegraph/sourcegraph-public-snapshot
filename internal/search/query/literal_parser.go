@@ -157,7 +157,7 @@ loop:
 					if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
 						if len(nodes) > 0 {
 							if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-								previous.Value = previous.Value + pattern.Value
+								previous.Value += pattern.Value
 								previous.Annotation.Labels |= pattern.Annotation.Labels
 								nodes[len(nodes)-1] = previous
 								continue
