@@ -225,7 +225,7 @@ Go,github.com/Masterminds/semver,v1.5.0,MIT,"",Approved
 Go,github.com/Microsoft/go-winio,v0.4.14,"MIT,New BSD","",Approved
 Go,github.com/NYTimes/gziphandler,v1.1.1,Apache 2.0,"",Approved
 Go,github.com/OneOfOne/xxhash,v1.2.8,Apache 2.0,"",Approved
-Go,github.com/OpenPeeDeeP/depguard,v1.0.1,GPLv3,"",Not approved
+Go,github.com/OpenPeeDeeP/depguard,v1.0.1,GPLv3,"",Approved
 Go,github.com/PuerkitoBio/purell,v1.1.1,New BSD,"",Approved
 Go,github.com/PuerkitoBio/urlesc,v0.0.0-20170810143723-de5bf2ad4578,New BSD,"",Approved
 Go,github.com/RoaringBitmap/roaring,v0.4.23,Apache 2.0,"",Approved
@@ -374,7 +374,7 @@ Go,github.com/golang/lint,v0.0.0-20170918230701-e5d664eb928e,New BSD,"",Approved
 Go,github.com/golang/mock,v1.4.3,Apache 2.0,"",Approved
 Go,github.com/golang/protobuf,v1.3.5,New BSD,"",Approved
 Go,github.com/golang/snappy,v0.0.1,New BSD,"",Approved
-Go,github.com/golangci/check,v0.0.0-20180506172741-cfe4005ccda2,GPLv3,"",Not approved
+Go,github.com/golangci/check,v0.0.0-20180506172741-cfe4005ccda2,GPLv3,"",Approved
 Go,github.com/golangci/dupl,v0.0.0-20180902072040-3e9179ac440a,MIT,"",Approved
 Go,github.com/golangci/errcheck,v0.0.0-20181223084120-ef45e06d44b6,MIT,"",Approved
 Go,github.com/golangci/go-misc,v0.0.0-20180628070357-927a3d87b613,MIT,https://github.com/golangci/go-misc,Approved
