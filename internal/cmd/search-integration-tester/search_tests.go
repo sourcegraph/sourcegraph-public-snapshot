@@ -105,6 +105,10 @@ var tests = []test{
 		Name:  `Global search, structural, index only, nonzero result`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ make(:[1]) index:only patterntype:structural count:3`,
 	},
+	{
+		Name:  `Structural search quotes are interpreted literally`,
+		Query: `repo:^github\.com/rvantonderp/auth0-go-jwt-middleware$ file:^README\.md "This :[_] authenticated :[_]" patterntype:structural`,
+	},
 	// Repo search (part 2).
 	{
 		Name:  `Global search, archived excluded, zero results`,
@@ -194,6 +198,26 @@ var tests = []test{
 	{
 		Name:  `Escaped whitespace sequences with 'and'`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \ and /`,
+	},
+	{
+		Name:  `Concat converted to spaces for literal search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go caCertPool := or x509 Pool patterntype:literal`,
+	},
+	{
+		Name:  `Concat converted to .* for regexp search`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go ca Pool or x509 Pool patterntype:regexp stable:yes type:file`,
+	},
+	{
+		Name:  `Structural search uses literal search parser`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go :[[v]] := x509 and AppendCertsFromPEM(:[_]) patterntype:structural`,
+	},
+	{
+		Name:  `Union file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func or main`,
+	},
+	{
+		Name:  `Intersect file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and main`,
 	},
 }
 

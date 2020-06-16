@@ -6,6 +6,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -94,17 +95,17 @@ type LSIFRepositoryUploadsQueryArgs struct {
 
 type LSIFUploadResolver interface {
 	ID() graphql.ID
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	InputCommit() string
 	InputRoot() string
-	InputIndexer() string
-	State() string
+	IsLatestForRepo() bool
 	UploadedAt() DateTime
+	State() string
+	Failure() *string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	Failure() *string
-	IsLatestForRepo() bool
+	InputIndexer() string
 	PlaceInQueue() *int32
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -127,14 +128,14 @@ type LSIFRepositoryIndexesQueryArgs struct {
 
 type LSIFIndexResolver interface {
 	ID() graphql.ID
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	InputCommit() string
-	State() string
 	QueuedAt() DateTime
+	State() string
+	Failure() *string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	Failure() *string
 	PlaceInQueue() *int32
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
 type LSIFIndexConnectionResolver interface {
@@ -158,12 +159,11 @@ type GitBlobLSIFDataResolver interface {
 }
 
 type GitBlobLSIFDataArgs struct {
-	Repository *RepositoryResolver
-	Commit     api.CommitID
-	Path       string
-	ExactPath  bool
-	ToolName   string
-	UploadID   int64
+	Repo      *types.Repo
+	Commit    api.CommitID
+	Path      string
+	ExactPath bool
+	ToolName  string
 }
 
 type LSIFQueryPositionArgs struct {
@@ -198,9 +198,9 @@ type DiagnosticConnectionResolver interface {
 }
 
 type DiagnosticResolver interface {
+	Severity() (*string, error)
+	Code() (*string, error)
+	Source() (*string, error)
+	Message() (*string, error)
 	Location(ctx context.Context) (LocationResolver, error)
-	Severity(ctx context.Context) (*string, error)
-	Code(ctx context.Context) (*string, error)
-	Source(ctx context.Context) (*string, error)
-	Message(ctx context.Context) (*string, error)
 }

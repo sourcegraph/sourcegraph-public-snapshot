@@ -140,8 +140,8 @@ var (
 func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
-	for _, whiteListedArg := range allowedArgs {
-		if splitArg == whiteListedArg {
+	for _, allowedArg := range allowedArgs {
+		if splitArg == allowedArg {
 			return true
 		}
 	}
@@ -155,7 +155,7 @@ func isAllowedGitCmd(args []string) bool {
 		return false
 	}
 	cmd := args[0]
-	whiteListedArgs, ok := gitCmdAllowlist[cmd]
+	allowedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
 		// Command not allowed
 		return false
@@ -171,7 +171,7 @@ func isAllowedGitCmd(args []string) bool {
 				continue // this arg is OK
 			}
 
-			if !isAllowedGitArg(whiteListedArgs, arg) {
+			if !isAllowedGitArg(allowedArgs, arg) {
 				return false
 			}
 		}

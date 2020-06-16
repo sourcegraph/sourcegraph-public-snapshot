@@ -416,7 +416,7 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 
 	t.Run("not enough quota available", func(t *testing.T) {
 		rateLimiterRegistry := ratelimit.NewRegistry()
-		l := rateLimiterRegistry.GetRateLimiter("https://github.com/")
+		l := rateLimiterRegistry.Get("https://github.com/")
 		l.SetLimit(1)
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 

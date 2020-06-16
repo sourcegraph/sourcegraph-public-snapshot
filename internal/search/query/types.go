@@ -8,6 +8,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
+type ExpectedOperand struct {
+	Msg string
+}
+
+func (e *ExpectedOperand) Error() string {
+	return e.Msg
+}
+
+type UnsupportedError struct {
+	Msg string
+}
+
+func (e *UnsupportedError) Error() string {
+	return e.Msg
+}
+
 type SearchType int
 
 const (

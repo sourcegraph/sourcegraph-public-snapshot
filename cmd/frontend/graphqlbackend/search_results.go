@@ -660,6 +660,37 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 	return rr, err
 }
 
+// unionMerge performs a merge of file match results, merging line matches when
+// they occur in the same file, and taking care to update match counts.
+func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
+	for _, leftMatch := range left.SearchResults {
+		for _, rightMatch := range right.SearchResults {
+			rightFileMatch, ok := rightMatch.ToFileMatch()
+			if !ok {
+				left.SearchResults = append(left.SearchResults, rightMatch)
+				continue
+			}
+
+			leftFileMatch, ok := leftMatch.ToFileMatch()
+			if !ok {
+				left.SearchResults = append(left.SearchResults, rightMatch)
+			}
+
+			if leftFileMatch.uri == rightFileMatch.uri {
+				leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
+				leftFileMatch.MatchCount += rightFileMatch.MatchCount
+				leftFileMatch.JLimitHit = leftFileMatch.JLimitHit || rightFileMatch.JLimitHit
+			} else {
+				left.SearchResults = append(left.SearchResults, rightMatch)
+			}
+
+		}
+	}
+	// merge common search data.
+	left.searchResultsCommon.update(right.searchResultsCommon)
+	return left
+}
+
 // union returns the union of two sets of search results and merges common search data.
 func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 	if right == nil {
@@ -668,53 +699,54 @@ func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 	if left == nil {
 		return right
 	}
+
 	if left.SearchResults != nil && right.SearchResults != nil {
-		left.SearchResults = append(left.SearchResults, right.SearchResults...)
-		// merge common search data.
-		left.searchResultsCommon.update(right.searchResultsCommon)
-		return left
+		return unionMerge(left, right)
 	} else if right.SearchResults != nil {
 		return right
 	}
 	return left
 }
 
-// intersect returns the intersection of two sets of search result content
-// matches, based on whether a single file path contains content matches in both
-// sets.
-func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, error) {
-	if left == nil || right == nil {
-		return nil, nil
-	}
-
-	rFileMatches := make(map[string]*FileMatchResolver)
-
+// intersectMerge performs a merge of file match results, merging line matches
+// for files contained in both result sets, and updating counts.
+func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
+	rightFileMatches := make(map[string]*FileMatchResolver)
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rFileMatches[fileMatch.uri] = fileMatch
+			rightFileMatches[fileMatch.uri] = fileMatch
 		}
 	}
 
 	var merged []SearchResultResolver
-	for _, ltmp := range left.SearchResults {
-		ltmpFileMatch, ok := ltmp.ToFileMatch()
+	for _, leftMatch := range left.SearchResults {
+		leftFileMatch, ok := leftMatch.ToFileMatch()
 		if !ok {
 			continue
 		}
 
-		rtmpFileMatch := rFileMatches[ltmpFileMatch.uri]
-		if rtmpFileMatch == nil {
+		rightFileMatch := rightFileMatches[leftFileMatch.uri]
+		if rightFileMatch == nil {
 			continue
 		}
 
-		ltmpFileMatch.JLineMatches = append(ltmpFileMatch.JLineMatches, rtmpFileMatch.JLineMatches...)
-		merged = append(merged, ltmp)
+		leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
+		leftFileMatch.MatchCount += rightFileMatch.MatchCount
+		leftFileMatch.JLimitHit = leftFileMatch.JLimitHit || rightFileMatch.JLimitHit
+		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
 	left.searchResultsCommon.update(right.searchResultsCommon)
-	// for intersect we want the newly computed intersection size.
-	left.searchResultsCommon.resultCount = int32(len(merged))
-	return left, nil
+	return left
+}
+
+// intersect returns the intersection of two sets of search result content
+// matches, based on whether a single file path contains content matches in both sets.
+func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
+	if left == nil || right == nil {
+		return nil
+	}
+	return intersectMerge(left, right)
 }
 
 // evaluateAnd performs set intersection on result sets. It collects results for
@@ -777,10 +809,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			}
 			if new != nil {
 				exhausted = exhausted && !new.limitHit
-				result, err = intersect(result, new)
-				if err != nil {
-					return nil, err
-				}
+				result = intersect(result, new)
 			}
 		}
 		if exhausted {

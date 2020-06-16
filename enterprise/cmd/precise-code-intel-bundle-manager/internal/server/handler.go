@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/opentracing/opentracing-go/ext"
@@ -283,21 +284,31 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
-	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		log15.Error("Failed to open target file", "err", err)
-		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
-		return false
-	}
-	defer targetFile.Close()
-
-	if _, err := io.Copy(targetFile, r.Body); err != nil {
+	if err := writeToFile(makeFilename(s.bundleDir, idFromRequest(r)), r.Body); err != nil {
 		log15.Error("Failed to write payload", "err", err)
 		http.Error(w, fmt.Sprintf("failed to write payload: %s", err.Error()), http.StatusInternalServerError)
 		return false
 	}
 
 	return true
+}
+
+func writeToFile(filename string, r io.Reader) (err error) {
+	targetFile, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := targetFile.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
+
+	if _, err := io.Copy(targetFile, r); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {

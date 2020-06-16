@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { DiffResolvedRevSpec } from '../../repo'
-import { FileInfo } from '../shared/codeHost'
+import { FileInfo, DiffInfo } from '../shared/codeHost'
 
 export interface BitbucketRepoInfo {
     repoSlug: string
@@ -105,9 +105,7 @@ const getCommitIDFromRevisionSelector = (): string => {
 /**
  * Gets the file info on a single-file source code view
  */
-export const getFileInfoFromSingleFileSourceCodeView = (
-    codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'filePath' | 'revision' | 'commitID'> => {
+export const getFileInfoFromSingleFileSourceCodeView = (codeViewElement: HTMLElement): BitbucketRepoInfo & FileInfo => {
     const { rawRepoName, filePath, revision, project, repoSlug } = getFileInfoFromLinkInSingleFileView(codeViewElement)
     const commitID = getCommitIDFromRevisionSelector()
     return {
@@ -234,16 +232,16 @@ const getBaseFilePathForDiffCodeView = ({
  */
 export const getFileInfoFromSingleFileDiffCodeView = (
     codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'commitID'> => {
+): BitbucketRepoInfo & FileInfo & { baseFilePath: string; changeType: ChangeType } => {
     const { rawRepoName, project, repoSlug, filePath } = getFileInfoFromLinkInSingleFileView(codeViewElement)
     const commitID = getCommitIDFromLink()
     const changeTypeElement = getChangeTypeElement({ codeViewElement })
     const changeType = getChangeType({ changeTypeElement })
-    const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath })
-    const baseRawRepoName = changeType !== 'ADD' ? rawRepoName : undefined
+
+    const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath }) || filePath
     return {
+        changeType,
         rawRepoName,
-        baseRawRepoName,
         filePath,
         baseFilePath,
         commitID,
@@ -261,7 +259,12 @@ export const getFileInfoFromSingleFileDiffCodeView = (
  */
 export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'revision'> => {
+): BitbucketRepoInfo & {
+    changeType: ChangeType
+    rawRepoName: string
+    filePath: string
+    baseFilePath: string
+} => {
     // Get the file path from the breadcrumbs
     const breadcrumbsElement = codeViewElement.querySelector('.breadcrumbs')
     if (!breadcrumbsElement) {
@@ -283,12 +286,11 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     // Get base file path from the change type indicator
     const changeTypeElement = getChangeTypeElement({ codeViewElement })
     const changeType = getChangeType({ changeTypeElement })
-    const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath })
-    const baseRawRepoName = changeType !== 'ADD' ? rawRepoName : undefined // if the file was added, there is no base
+    const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath }) || filePath
 
     return {
+        changeType,
         rawRepoName,
-        baseRawRepoName,
         filePath,
         baseFilePath,
         project,
@@ -296,20 +298,19 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     }
 }
 
-export const getFileInfoFromCommitDiffCodeView = (
-    codeViewElement: HTMLElement
-): BitbucketRepoInfo &
-    Pick<
-        FileInfo,
-        'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'revision' | 'commitID' | 'baseCommitID'
-    > => {
+export const getFileInfoFromCommitDiffCodeView = (codeViewElement: HTMLElement): DiffInfo => {
     const commitID = getCommitIDFromLink('.commit-badge-oneline .commitid')
     const baseCommitID = getCommitIDFromLink('.commit-parents .commitid')
-
+    const { rawRepoName, filePath, baseFilePath } = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(
+        codeViewElement
+    )
     return {
-        ...getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeViewElement),
-        commitID,
-        baseCommitID,
+        head: { rawRepoName, filePath, commitID },
+        base: {
+            rawRepoName,
+            filePath: baseFilePath,
+            commitID: baseCommitID,
+        },
     }
 }
 

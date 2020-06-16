@@ -400,7 +400,7 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTi
 
 	for repositoryID, visibleAtTip := range visibilities {
 		if visibleAtTip {
-			tipCommit, err := getTipCommit(repositoryID)
+			tipCommit, err := getTipCommit(ctx, repositoryID)
 			if err != nil {
 				return false, err
 			}

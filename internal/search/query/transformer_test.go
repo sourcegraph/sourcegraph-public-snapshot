@@ -228,6 +228,39 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}
 }
 
+func TestSubstituteConcat(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "a b c d e f",
+			want:  `"a b c d e f"`,
+		},
+		{
+			input: "a (b and c) d",
+			want:  `"a" (and "b" "c") "d"`,
+		},
+		{
+			input: "a b (c and d) e f (g or h) (i j k)",
+			want:  `"a b" (and "c" "d") "e f" (or "g" "h") "(i j k)"`,
+		},
+		{
+			input: "(((a b c))) and d",
+			want:  `(and "(((a b c)))" "d")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run("Map query", func(t *testing.T) {
+			query, _ := ParseAndOr(c.input)
+			got := prettyPrint(substituteConcat(query, " "))
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestMap(t *testing.T) {
 	cases := []struct {
 		input string

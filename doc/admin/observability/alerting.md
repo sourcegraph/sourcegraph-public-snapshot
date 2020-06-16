@@ -5,9 +5,69 @@ Alerts can be configured to notify site admins when there is something wrong or 
 Alerts are configured in Grafana. (Prometheus Alertmanager may also be used, but this documentation
 prefers Grafana.)
 
-## Set up alerts in Grafana
+## Setting up alerting
 
-### Configure alert channels
+### Sourcegraph 3.17+
+
+Visit your site configuration (e.g. https://sourcegraph.example.com/site-admin/configuration) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
+
+Configured alerts will automatically create notifiers in Grafana and attach them to relevant alerts.
+
+#### Examples
+
+##### Slack
+
+```json
+"observability.alerts": [
+  {
+    "id": "my-unique-alert",
+    "level": "critical",
+    "notifier": {
+      "type": "slack",
+      // Slack incoming webhook URL.
+      "url": "https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx",
+      // Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer
+      // to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the
+      // overflow button on each user’s Slack profile).
+      "mentionUsers": "U0XXXXX,U0XXXXXX"
+    }
+  }
+]
+```
+
+#### PagerDuty
+
+```json
+"observability.alerts": [
+  {
+    "id": "my-unique-alert",
+    "level": "critical",
+    "notifier": {
+      "type": "pagerduty",
+      // Integration key for PagerDuty.
+      "integrationKey": "XXXXXXXX"
+    }
+  }
+]
+```
+
+#### Webhook
+
+```json
+"observability.alerts": [
+  {
+    "id": "my-unique-alert",
+    "level": "critical",
+    "notifier": {
+      "type": "webhook",
+      // Webhook URL.
+      "url": "https://my.webhook.url"
+    }
+  }
+]
+```
+
+### Before 3.17: Configure alert channels in Grafana
 
 Before configuring specific alerts in Grafana, you must set up alert channels. Each channel
 corresponds to an external service to which Grafana will push alerts.
@@ -40,7 +100,7 @@ corresponds to an external service to which Grafana will push alerts.
 > earlier). Set the environment variable `GF_SERVER_ROOT_URL` to your Sourcegraph instance external URL followed
 > by the path `/-/debug/grafana`.
 
-### Set up an individual alert
+### Before 3.17: Set up an individual alert
 
 After adding the appropriate notification channels, configure individual alerts to notify those channels.
 

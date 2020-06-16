@@ -157,8 +157,8 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         if (currentPage.rawRepoName === target.rawRepoName && context.part !== undefined) {
             const codeViews = document.querySelectorAll<HTMLElement>(codeViewResolver.selector)
             for (const codeView of codeViews) {
-                const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
-                if (filePath !== target.filePath && baseFilePath !== target.filePath) {
+                const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
+                if (headFilePath !== target.filePath && baseFilePath !== target.filePath) {
                     continue
                 }
                 if (!target.position) {
