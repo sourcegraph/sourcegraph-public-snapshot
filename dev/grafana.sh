@@ -55,7 +55,7 @@ mkdir -p "${GRAFANA_LOGS}"
 # display it in the normal case.
 GRAFANA_LOG_FILE="${GRAFANA_LOGS}/grafana.log"
 
-dump_log() {
+function finish() {
   GRAFANA_EXIT_CODE=$?
 
   # Exit code 2 indicates a normal Ctrl-C termination via goreman, so we'll
@@ -70,12 +70,10 @@ dump_log() {
   return $GRAFANA_EXIT_CODE
 }
 
-docker run --rm \
-  --name=grafana \
+docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
+  --name=${CONTAINER} \
   --cpus=1 \
   --memory=1g \
-  "$DOCKER_USER" \
-  "$DOCKER_NET" \
   -p 0.0.0.0:3370:3370 \
   -v "${GRAFANA_DISK}":/var/lib/grafana \
   -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
@@ -83,7 +81,7 @@ docker run --rm \
   -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards/legacy \
   -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
   -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-'false'}" \
-  ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1 || dump_log
+  ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1 || finish
 
 # Add the following lines above if you wish to use an auth proxy with Grafana:
 #
