@@ -31,6 +31,16 @@ import (
 // recorder records operational metrics for methods.
 var recorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck", metrics.WithLabels("method"))
 
+//
+var updateCheckHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	Name: "update_check_req",
+	Help: "metrics for update_check",
+})
+
+func init() {
+	prometheus.MustRegister(updateCheckHistogram)
+}
+
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
 	Date          time.Time // the time that the last check completed
