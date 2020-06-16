@@ -618,17 +618,31 @@ func (c *Container) promAlertsFile() *promRulesFile {
 
 					hasUpperAndLowerBounds := (alert.GreaterOrEqual != 0) && (alert.LessOrEqual != 0)
 					makeLabels := func(bound string) map[string]string {
-						var name string
+						var name, description string
 						if hasUpperAndLowerBounds {
+							// if both bounds are present, since we generate an alert for each bound
+							// make sure the prometheus alert description only describes one bound
 							name = fmt.Sprintf("%s_%s", o.Name, bound)
+							if bound == "high" {
+								description = c.alertDescription(o, Alert{
+									GreaterOrEqual: alert.GreaterOrEqual,
+								})
+							} else if bound == "low" {
+								description = c.alertDescription(o, Alert{
+									LessOrEqual: alert.LessOrEqual,
+								})
+							} else {
+								panic(fmt.Sprintf("never here, bad alert bound: %s", bound))
+							}
 						} else {
 							name = o.Name
+							description = c.alertDescription(o, alert)
 						}
 						return map[string]string{
 							"name":         name,
 							"level":        level,
 							"service_name": c.Name,
-							"description":  c.alertDescription(o, alert),
+							"description":  description,
 						}
 					}
 
