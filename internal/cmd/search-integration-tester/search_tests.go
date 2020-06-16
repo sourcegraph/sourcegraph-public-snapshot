@@ -215,7 +215,6 @@ var tests = []test{
 		Name:  `Union file matches per file and accurate counts`,
 		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func or main`,
 	},
-	// FIXME: intersect needs the same update
 	{
 		Name:  `Intersect file matches per file and accurate counts`,
 		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and main`,
