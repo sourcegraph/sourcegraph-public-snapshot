@@ -8,7 +8,7 @@
 set -euf -o pipefail
 
 # by default, generate a report. this does not care if there are pending action items
-COMMAND="report --format=csv --save=ThirdPartyLicenses.csv --write-headers"
+COMMAND="report --format=csv --save=./third-party-licenses/ThirdPartyLicenses.csv --write-headers"
 
 # if LICENSE_CHECK=true, report unapproved dependencies and error if there are any ('action items')
 if [[ "${LICENSE_CHECK:-''}" == "true" ]]; then

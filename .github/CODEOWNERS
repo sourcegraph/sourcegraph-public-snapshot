@@ -255,7 +255,7 @@ Dockerfile @sourcegraph/distribution
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license list
-/ThirdPartyLicenses.csv @sourcegraph/cloud @sourcegraph/web @sourcegraph/distribution
+/third-party-licenses/ThirdPartyLicenses.csv @sourcegraph/cloud @sourcegraph/web @sourcegraph/distribution
 /.github/workflows/licenses* @sourcegraph/distribution
 /dev/licenses.sh @sourcegraph/distribution
 
