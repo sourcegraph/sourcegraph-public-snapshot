@@ -26,7 +26,9 @@ Configured alerts will automatically create notifiers in Grafana and attach them
       "type": "slack",
       // Slack incoming webhook URL.
       "url": "https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx",
-      // Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).
+      // Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer
+      // to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the
+      // overflow button on each user’s Slack profile).
       "mentionUsers": "U0XXXXX,U0XXXXXX"
     }
   }
