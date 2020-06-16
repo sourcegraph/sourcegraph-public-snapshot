@@ -323,7 +323,7 @@ func StructuralSearchEnabled() bool {
 func AndOrQueryEnabled() bool {
 	e := Get().ExperimentalFeatures
 	if e == nil || e.AndOrQuery == "" {
-		return false
+		return true
 	}
 	return e.AndOrQuery == "enabled"
 }
