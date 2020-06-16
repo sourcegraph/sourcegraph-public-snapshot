@@ -150,7 +150,7 @@ loop:
 				pattern.Annotation.Labels |= HeuristicDanglingParens
 
 				// Heuristic: This right paren may be one we should associate with a previous pattern, and not
-				// just a dangling one. Check if a pattern occured before it and append it if so.
+				// just a dangling one. Check if a pattern occurred before it and append it if so.
 				if p.pos > 0 {
 					// Heuristic is imprecise and that's OK: It will only look for a 1-byte whitespace
 					// character (not any unicode whitespace) before this paren.
@@ -266,7 +266,6 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 			for _, node := range operator.Operands {
 				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
 					return true
-
 				}
 			}
 		}
@@ -276,7 +275,7 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 		if !balanced {
 			return errors.New("this literal search query contains unbalanced parentheses. I tried to guess what you meant, but wasn't able to. Maybe you missed a parenthesis? Otherwise, try using the content: filter if the pattern is unbalanced")
 		}
-		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses.")
+		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
 	}
 	return nil
 }
