@@ -17,7 +17,7 @@ Configured alerts will automatically create notifiers in Grafana and attach them
 
 ##### Slack
 
-```json
+```jsonc
 "observability.alerts": [
   {
     "id": "my-unique-alert",
@@ -37,7 +37,7 @@ Configured alerts will automatically create notifiers in Grafana and attach them
 
 #### PagerDuty
 
-```json
+```jsonc
 "observability.alerts": [
   {
     "id": "my-unique-alert",
@@ -53,7 +53,7 @@ Configured alerts will automatically create notifiers in Grafana and attach them
 
 #### Webhook
 
-```json
+```jsonc
 "observability.alerts": [
   {
     "id": "my-unique-alert",
