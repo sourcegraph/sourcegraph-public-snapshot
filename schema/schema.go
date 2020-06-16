@@ -631,6 +631,15 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
+// GrafanaNotifierEmail description: Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email
+type GrafanaNotifierEmail struct {
+	// Addresses description: Email addresses to recipients. You can enter multiple email addresses using a “;” separator.
+	Addresses string `json:"addresses"`
+	// SingleEmail description: Send a single email to all recipients.
+	SingleEmail bool   `json:"singleEmail,omitempty"`
+	Type        string `json:"type"`
+}
+
 // GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty
 type GrafanaNotifierPagerduty struct {
 	// AutoResolve description: Resolve incidents in PagerDuty once the alert goes back to ok
@@ -734,6 +743,7 @@ type Notifier struct {
 	Slack     *GrafanaNotifierSlack
 	Pagerduty *GrafanaNotifierPagerduty
 	Webhook   *GrafanaNotifierWebhook
+	Email     *GrafanaNotifierEmail
 }
 
 func (v Notifier) MarshalJSON() ([]byte, error) {
@@ -746,6 +756,9 @@ func (v Notifier) MarshalJSON() ([]byte, error) {
 	if v.Webhook != nil {
 		return json.Marshal(v.Webhook)
 	}
+	if v.Email != nil {
+		return json.Marshal(v.Email)
+	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
 func (v *Notifier) UnmarshalJSON(data []byte) error {
@@ -756,6 +769,8 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "email":
+		return json.Unmarshal(data, &v.Email)
 	case "pagerduty":
 		return json.Unmarshal(data, &v.Pagerduty)
 	case "slack":
@@ -763,7 +778,7 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 	case "webhook":
 		return json.Unmarshal(data, &v.Webhook)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "email"})
 }
 
 type OAuthIdentity struct {
