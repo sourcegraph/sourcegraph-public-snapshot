@@ -20,16 +20,21 @@ type IndexResetter struct {
 // it has died.
 func (ur *IndexResetter) Run() {
 	for {
-		ids, err := ur.Store.ResetStalledIndexes(context.Background(), time.Now())
+		resetIDs, erroredIDs, err := ur.Store.ResetStalledIndexes(context.Background(), time.Now())
 		if err != nil {
 			ur.Metrics.Errors.Inc()
 			log15.Error("Failed to reset stalled indexes", "error", err)
 		}
-		for _, id := range ids {
+		for _, id := range resetIDs {
 			log15.Debug("Reset stalled index", "indexID", id)
 		}
 
-		ur.Metrics.Count.Add(float64(len(ids)))
+		for _, id := range erroredIDs {
+			log15.Debug("Failed stalled index", "indexID", id)
+		}
+
+		ur.Metrics.IndexResets.Add(float64(len(resetIDs)))
+		ur.Metrics.IndexResetFailures.Add(float64(len(erroredIDs)))
 		time.Sleep(ur.ResetInterval)
 	}
 }

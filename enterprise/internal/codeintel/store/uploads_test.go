@@ -823,11 +823,13 @@ func TestResetStalled(t *testing.T) {
 	t5 := now.Add(-time.Second * 8) // old
 
 	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, State: "processing", StartedAt: &t1},
+		Upload{ID: 1, State: "processing", StartedAt: &t1, NumResets: 1},
 		Upload{ID: 2, State: "processing", StartedAt: &t2},
 		Upload{ID: 3, State: "processing", StartedAt: &t3},
 		Upload{ID: 4, State: "processing", StartedAt: &t4},
 		Upload{ID: 5, State: "processing", StartedAt: &t5},
+		Upload{ID: 6, State: "processing", StartedAt: &t1, NumResets: UploadMaxNumResets},
+		Upload{ID: 7, State: "processing", StartedAt: &t4, NumResets: UploadMaxNumResets},
 	)
 
 	tx, err := dbconn.Global.BeginTx(context.Background(), nil)
@@ -841,11 +843,29 @@ func TestResetStalled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := []int{1, 4}
-
-	if ids, err := store.ResetStalled(context.Background(), now); err != nil {
+	resetIDs, erroredIDs, err := store.ResetStalled(context.Background(), now)
+	if err != nil {
 		t.Fatalf("unexpected error resetting stalled uploads: %s", err)
-	} else if diff := cmp.Diff(expected, ids); diff != "" {
-		t.Errorf("unexpected ids (-want +got):\n%s", diff)
 	}
+	sort.Ints(resetIDs)
+	sort.Ints(erroredIDs)
+
+	expectedReset := []int{1, 4}
+	if diff := cmp.Diff(expectedReset, resetIDs); diff != "" {
+		t.Errorf("unexpected reset ids (-want +got):\n%s", diff)
+	}
+
+	expectedErrored := []int{6, 7}
+	if diff := cmp.Diff(expectedErrored, erroredIDs); diff != "" {
+		t.Errorf("unexpected errored ids (-want +got):\n%s", diff)
+	}
+
+	upload, _, err := store.GetUploadByID(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	}
+	if upload.NumResets != 2 {
+		t.Errorf("unexpected num resets. want=%d have=%d", 2, upload.NumResets)
+	}
+
 }
