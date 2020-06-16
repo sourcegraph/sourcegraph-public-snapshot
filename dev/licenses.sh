@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# This script either generates a report of third-party dependencies, or runs a check that fails
+# if there are any unapproved dependencies ('action items').
+#
+# Please refer to the handbook entry for more details: https://about.sourcegraph.com/handbook/engineering/code_reviews#third-party-licenses
+
 set -euf -o pipefail
 
 # by default, generate a report. this does not care if there are pending action items
