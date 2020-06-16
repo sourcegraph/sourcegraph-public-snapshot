@@ -18,7 +18,7 @@ export interface ProxySubscribable<T> extends ProxyMarked {
  *
  * @param subscribable A normal Subscribable (from this thread)
  */
-const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
+export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
     [proxyMarker]: true,
     subscribe(observer): Unsubscribable & ProxyMarked {
         return proxy(

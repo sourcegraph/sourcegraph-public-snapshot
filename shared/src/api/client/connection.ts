@@ -11,7 +11,6 @@ import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
-import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { Services } from './services'
@@ -26,6 +25,7 @@ import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
 import { initMainThreadAPI } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
+import { wrapRemoteObservable } from './api/common'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -137,7 +137,6 @@ export async function createExtensionHostClientConnection(
         services.textDocumentLocations,
         services.completionItems
     )
-    const clientSearch = new ClientSearch(services.queryTransformer)
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
@@ -146,10 +145,15 @@ export async function createExtensionHostClientConnection(
 
     subscription.add(apiSubscriptions)
 
+    // TODO (simon) this is ugly mutation but not much can be done here
+    // until we untangle the bootstrap sequence of the extension host
+    services.queryTransformer.transformQuery = query => wrapRemoteObservable(proxy.transformSearchQuery(query))
+
+    subscription.add(() => (services.queryTransformer.transformQuery = undefined))
+
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
         context: clientContext,
-        search: clientSearch,
         languageFeatures: clientLanguageFeatures,
         windows: clientWindows,
         codeEditor: clientCodeEditor,
@@ -157,6 +161,7 @@ export async function createExtensionHostClientConnection(
         content: clientContent,
         ...newAPI,
     }
+
     comlink.expose(clientAPI, endpoints.expose)
 
     return subscription
