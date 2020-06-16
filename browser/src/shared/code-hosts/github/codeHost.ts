@@ -294,7 +294,9 @@ export const githubCodeHost: CodeHost = {
         return {
             ...parsedURL,
             revision:
-                parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().revision : undefined,
+                parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree'
+                    ? resolveFileInfo().blob.revision
+                    : undefined,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },

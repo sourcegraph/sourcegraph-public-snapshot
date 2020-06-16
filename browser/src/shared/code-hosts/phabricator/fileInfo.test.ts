@@ -7,7 +7,7 @@ import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../../../shared/src/util/memoizeObservable'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { FileInfo } from '../shared/codeHost'
+import { DiffOrBlobInfo } from '../shared/codeHost'
 
 interface ConduitResponseMap {
     [endpoint: string]: (params: any) => Observable<any>
@@ -122,7 +122,7 @@ type Resolver = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit: QueryConduitHelper<any>
-) => Observable<FileInfo>
+) => Observable<DiffOrBlobInfo>
 
 interface Fixture {
     htmlFixture: string
@@ -135,7 +135,7 @@ interface Fixture {
 const resolveFileInfoFromFixture = async (
     { url, htmlFixture, codeViewSelector, graphQLResponseMap, conduitResponseMap }: Fixture,
     resolver: Resolver
-): Promise<FileInfo> => {
+): Promise<DiffOrBlobInfo> => {
     const fixtureContent = await readFile(`${__dirname}/__fixtures__/pages/${htmlFixture}`, 'utf-8')
     document.body.innerHTML = fixtureContent
     jsdom.reconfigure({ url })
@@ -170,10 +170,16 @@ describe('Phabricator file info', () => {
                     resolveRevisionFileInfo
                 )
             ).toEqual({
-                baseCommitID: '50fbc3e7fbfcdb4fb850686588071e5f0bdd4a0a',
-                commitID: 'eab9c4f3d22d907d728aa0f5918934357866249e',
-                filePath: 'mux.go',
-                rawRepoName: 'github.com/gorilla/mux',
+                base: {
+                    rawRepoName: 'github.com/gorilla/mux',
+                    filePath: 'mux.go',
+                    commitID: '50fbc3e7fbfcdb4fb850686588071e5f0bdd4a0a',
+                },
+                head: {
+                    rawRepoName: 'github.com/gorilla/mux',
+                    filePath: 'mux.go',
+                    commitID: 'eab9c4f3d22d907d728aa0f5918934357866249e',
+                },
             })
         })
     })
@@ -190,9 +196,11 @@ describe('Phabricator file info', () => {
                     resolveDiffusionFileInfo
                 )
             ).toEqual({
-                commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
-                filePath: 'mux.go',
-                rawRepoName: 'github.com/gorilla/mux',
+                blob: {
+                    commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
+                    filePath: 'mux.go',
+                    rawRepoName: 'github.com/gorilla/mux',
+                },
             })
         })
 
@@ -243,9 +251,11 @@ describe('Phabricator file info', () => {
                     resolveDiffusionFileInfo
                 )
             ).toEqual({
-                commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
-                filePath: 'mux.go',
-                rawRepoName: 'c.d/gorilla/mux',
+                blob: {
+                    commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
+                    filePath: 'mux.go',
+                    rawRepoName: 'c.d/gorilla/mux',
+                },
             })
         })
 
@@ -287,9 +297,11 @@ describe('Phabricator file info', () => {
                     resolveDiffusionFileInfo
                 )
             ).toEqual({
-                commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
-                filePath: 'mux.go',
-                rawRepoName: 'phabricator.sgdev.org/gorilla/mux',
+                blob: {
+                    commitID: 'e67b3c02c7195c052acff13261f0c9fd1ba53011',
+                    filePath: 'mux.go',
+                    rawRepoName: 'phabricator.sgdev.org/gorilla/mux',
+                },
             })
         })
     })
@@ -325,12 +337,12 @@ describe('Phabricator file info', () => {
                     resolveDiffFileInfo
                 )
             ).toEqual({
-                baseCommitID: 'base-revision',
-                baseFilePath: 'helpers/add.go',
-                baseRawRepoName: 'github.com/gorilla/mux',
-                commitID: 'staging-revision',
-                filePath: 'helpers/add.go',
-                rawRepoName: 'github.com/gorilla/mux',
+                base: { rawRepoName: 'github.com/gorilla/mux', filePath: 'helpers/add.go', commitID: 'base-revision' },
+                head: {
+                    rawRepoName: 'github.com/gorilla/mux',
+                    filePath: 'helpers/add.go',
+                    commitID: 'staging-revision',
+                },
             })
         })
         test('Differential revision - staging repo not synced', async () => {
@@ -344,12 +356,12 @@ describe('Phabricator file info', () => {
                     resolveDiffFileInfo
                 )
             ).toEqual({
-                baseCommitID: 'base-revision',
-                baseFilePath: 'helpers/add.go',
-                baseRawRepoName: 'github.com/gorilla/mux',
-                commitID: 'staging-revision',
-                filePath: 'helpers/add.go',
-                rawRepoName: 'github.com/gorilla/mux',
+                base: { rawRepoName: 'github.com/gorilla/mux', filePath: 'helpers/add.go', commitID: 'base-revision' },
+                head: {
+                    rawRepoName: 'github.com/gorilla/mux',
+                    filePath: 'helpers/add.go',
+                    commitID: 'staging-revision',
+                },
             })
         })
         test('Differential revision - staging repo synced', async () => {
@@ -376,12 +388,8 @@ describe('Phabricator file info', () => {
                     resolveDiffFileInfo
                 )
             ).toEqual({
-                baseCommitID: 'base-revision',
-                baseFilePath: 'helpers/add.go',
-                baseRawRepoName: 'github.com/gorilla/mux',
-                commitID: 'diff-13',
-                filePath: 'helpers/add.go',
-                rawRepoName: 'github.com/lguychard/testing',
+                base: { rawRepoName: 'github.com/gorilla/mux', filePath: 'helpers/add.go', commitID: 'base-revision' },
+                head: { rawRepoName: 'github.com/lguychard/testing', filePath: 'helpers/add.go', commitID: 'diff-13' },
             })
         })
         test('Differential revision - comparing diffs - staging repo not synced', async () => {
@@ -410,12 +418,16 @@ describe('Phabricator file info', () => {
                     resolveDiffFileInfo
                 )
             ).toEqual({
-                baseCommitID: 'staging-revision-raw-diff-for-diffid-2',
-                baseFilePath: '.arcconfig',
-                baseRawRepoName: 'github.com/gorilla/mux',
-                commitID: 'staging-revision-raw-diff-for-diffid-3',
-                filePath: '.arcconfig',
-                rawRepoName: 'github.com/gorilla/mux',
+                base: {
+                    rawRepoName: 'github.com/gorilla/mux',
+                    filePath: '.arcconfig',
+                    commitID: 'staging-revision-raw-diff-for-diffid-2',
+                },
+                head: {
+                    rawRepoName: 'github.com/gorilla/mux',
+                    filePath: '.arcconfig',
+                    commitID: 'staging-revision-raw-diff-for-diffid-3',
+                },
             })
         })
         test('Differential revision - comparing diffs - staging repo synced', async () => {
@@ -442,12 +454,8 @@ describe('Phabricator file info', () => {
                     resolveDiffFileInfo
                 )
             ).toEqual({
-                baseCommitID: 'diff-2',
-                baseFilePath: '.arcconfig',
-                baseRawRepoName: 'github.com/lguychard/testing',
-                commitID: 'diff-3',
-                filePath: '.arcconfig',
-                rawRepoName: 'github.com/lguychard/testing',
+                base: { rawRepoName: 'github.com/lguychard/testing', filePath: '.arcconfig', commitID: 'diff-2' },
+                head: { rawRepoName: 'github.com/lguychard/testing', filePath: '.arcconfig', commitID: 'diff-3' },
             })
         })
     })

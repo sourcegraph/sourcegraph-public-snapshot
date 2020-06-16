@@ -5,8 +5,6 @@ import { map, switchMap } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { GitLabInfo } from './scrape'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
-import { FileInfo } from '../shared/codeHost'
-import { Omit } from 'utility-types'
 import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
 
 /**
@@ -86,21 +84,19 @@ export const getMergeRequestDetailsFromAPI = memoizeObservable(
     }: Pick<GitLabInfo, 'owner' | 'projectName' | 'rawRepoName'> & {
         mergeRequestID: string
         diffID?: string
-    }): Observable<Omit<FileInfo, 'filePath' | 'baseFilePath'>> =>
+    }): Observable<{ baseCommitID: string; commitID: string; rawRepoName: string; baseRawRepoName: string }> =>
         zip(
             get<MergeRequestResponse>(buildURL(owner, projectName, `/merge_requests/${mergeRequestID}`)),
             getBaseCommitIDFromDiffID({ owner, projectName, mergeRequestID, diffID })
         ).pipe(
             switchMap(([{ diff_refs, source_project_id }, baseCommitIDFromDiffID]) =>
                 getRepoNameFromProjectID(source_project_id).pipe(
-                    map(
-                        (baseRawRepoName): Omit<FileInfo, 'filePath' | 'baseFilePath'> => ({
-                            baseCommitID: baseCommitIDFromDiffID || diff_refs.base_sha,
-                            commitID: diff_refs.head_sha,
-                            rawRepoName,
-                            baseRawRepoName,
-                        })
-                    )
+                    map(baseRawRepoName => ({
+                        baseCommitID: baseCommitIDFromDiffID || diff_refs.base_sha,
+                        commitID: diff_refs.head_sha,
+                        rawRepoName,
+                        baseRawRepoName,
+                    }))
                 )
             )
         ),

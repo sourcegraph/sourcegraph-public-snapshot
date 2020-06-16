@@ -1,8 +1,8 @@
-import { FileInfo } from '../shared/codeHost'
+import { BlobInfo, DiffInfo } from '../shared/codeHost'
 import { getCommitIDFromPermalink } from './scrape'
 import { getDiffFileName, getDiffResolvedRevision, getFilePath, parseURL } from './util'
 
-export const resolveDiffFileInfo = (codeView: HTMLElement): FileInfo => {
+export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
     const { rawRepoName } = parseURL()
     const { headFilePath, baseFilePath } = getDiffFileName(codeView)
     if (!headFilePath) {
@@ -13,19 +13,27 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): FileInfo => {
         throw new Error('cannot determine delta info')
     }
     const { headCommitID, baseCommitID } = diffResolvedRevision
+
     return {
-        rawRepoName,
-        filePath: headFilePath,
-        commitID: headCommitID,
-        revision: headCommitID,
-        baseRawRepoName: rawRepoName,
-        baseFilePath,
-        baseCommitID,
-        baseRevision: baseCommitID,
+        head: {
+            rawRepoName,
+            filePath: headFilePath,
+            commitID: headCommitID,
+            revision: headCommitID,
+        },
+        base: {
+            rawRepoName,
+            filePath: baseFilePath || headFilePath,
+            commitID: baseCommitID,
+            revision: baseCommitID,
+        },
     }
 }
 
-export const resolveFileInfo = (): FileInfo => {
+/**
+ * Resolve file info entirely from the parsed URL, not relying on the DOM.
+ */
+export const resolveFileInfo = (): BlobInfo => {
     const parsedURL = parseURL()
     if (parsedURL.pageType !== 'blob' && parsedURL.pageType !== 'tree') {
         throw new Error(`Current URL does not match a blob or tree url: ${window.location.href}`)
@@ -40,16 +48,18 @@ export const resolveFileInfo = (): FileInfo => {
         )
     }
     return {
-        rawRepoName,
-        filePath,
-        commitID: getCommitIDFromPermalink(),
-        revision: revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length),
+        blob: {
+            rawRepoName,
+            filePath,
+            commitID: getCommitIDFromPermalink(),
+            revision: revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length),
+        },
     }
 }
 
 const COMMIT_HASH_REGEX = /\/([\da-f]{40})$/i
 
-export const resolveSnippetFileInfo = (codeView: HTMLElement): FileInfo => {
+export const resolveSnippetFileInfo = (codeView: HTMLElement): BlobInfo => {
     // A snippet code view contains a link to the snippet's commit.
     // We use it to find the 40-character commit id.
     const commitLinkElement = codeView.querySelector('a.commit-tease-sha') as HTMLAnchorElement
@@ -77,10 +87,5 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): FileInfo => {
         )
     }
     const filePath = revisionAndFilePath.slice(commitID.length + 1)
-    return {
-        rawRepoName,
-        filePath,
-        commitID,
-        revision: commitID,
-    }
+    return { blob: { rawRepoName, filePath, commitID, revision: commitID } }
 }
