@@ -2,7 +2,7 @@
 - - :restrict
   - unknown
   - &1
-    :who:
+    :who: 
     :why: Import licenses-npm.sh FAIL_ON
     :versions: []
     :when: 2020-06-05 18:25:53.630259000 Z
@@ -30,7 +30,7 @@
 - - :permit
   - 0BSD
   - &2
-    :who:
+    :who: 
     :why: Import approved licenses from ThirdPartyLicensesNpm.csv
     :versions: []
     :when: 2020-06-05 19:02:14.987331000 Z
@@ -99,7 +99,7 @@
   - *2
 - - :ignore_group
   - devDependencies
-  - :who:
+  - :who: 
     :why: Exclude development dependencies that are not included in bundles
     :versions: []
     :when: 2020-06-05 21:28:58.197862000 Z
@@ -107,8 +107,8 @@
   - sourcegraph
   - 0.0.0
   - &3
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 06:45:58.540797000 Z
 - - :license
@@ -123,8 +123,8 @@
   - "@sourcegraph/extension-api-types"
   - 0.0.0
   - &4
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 06:47:53.545529000 Z
 - - :license
@@ -139,8 +139,8 @@
   - github.com/beevik/etree
   - v1.1.0
   - &5
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 06:55:02.884143000 Z
 - - :license
@@ -155,8 +155,8 @@
   - github.com/bkaradzic/go-lz4
   - v1.0.0
   - &6
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:01:29.502442000 Z
 - - :license
@@ -171,8 +171,8 @@
   - github.com/bmizerany/assert
   - v0.0.0-20160611221934-b7ed37b82869
   - &7
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:03:44.573039000 Z
 - - :license
@@ -187,8 +187,8 @@
   - github.com/chzyer/logex
   - v1.1.10
   - &8
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:07:18.539177000 Z
 - - :license
@@ -203,8 +203,8 @@
   - github.com/crewjam/httperr
   - v0.0.0-20190612203328-a946449404da
   - &9
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:07:54.082981000 Z
 - - :license
@@ -219,8 +219,8 @@
   - github.com/cznic/mathutil
   - v0.0.0-20180504122225-ca4c9f2c1369
   - &10
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:09:28.187883000 Z
 - - :license
@@ -235,8 +235,8 @@
   - github.com/dchest/uniuri
   - v0.0.0-20160212164326-8902c56451e9
   - &11
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:10:52.461928000 Z
 - - :license
@@ -251,8 +251,8 @@
   - github.com/dnaeon/go-vcr
   - v1.0.1
   - &12
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:11:25.443573000 Z
 - - :license
@@ -267,8 +267,8 @@
   - github.com/facebookgo/ensure
   - v0.0.0-20200202191622-63f1cf65ac4c
   - &13
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:13:15.814166000 Z
 - - :license
@@ -283,8 +283,8 @@
   - github.com/facebookgo/limitgroup
   - v0.0.0-20150612190941-6abd8d71ec01
   - &14
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:13:39.295251000 Z
 - - :license
@@ -299,8 +299,8 @@
   - github.com/facebookgo/muster
   - v0.0.0-20150708232844-fd3d7953fd52
   - &15
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:14:01.793899000 Z
 - - :license
@@ -315,8 +315,8 @@
   - github.com/facebookgo/stack
   - v0.0.0-20160209184415-751773369052
   - &16
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:14:34.912371000 Z
 - - :license
@@ -331,8 +331,8 @@
   - github.com/facebookgo/subset
   - v0.0.0-20200203212716-c811ad88dec4
   - &17
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:14:58.099242000 Z
 - - :license
@@ -347,8 +347,8 @@
   - github.com/garyburd/redigo
   - v1.1.1-0.20170914051019-70e1b1943d4f
   - &18
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:16:01.967550000 Z
 - - :license
@@ -363,8 +363,8 @@
   - github.com/golangci/go-misc
   - v0.0.0-20180628070357-927a3d87b613
   - &19
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:16:22.691014000 Z
 - - :license
@@ -379,8 +379,8 @@
   - github.com/gomodule/oauth1
   - v0.0.0-20181215000758-9a59ed3b0a84
   - &20
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:16:44.548101000 Z
 - - :license
@@ -395,8 +395,8 @@
   - github.com/gomodule/redigo
   - v2.0.0
   - &21
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:17:12.633449000 Z
 - - :license
@@ -411,8 +411,8 @@
   - github.com/jackc/pgtype
   - v0.0.0-20190828014616-a8802b16cc59
   - &22
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:21:21.173421000 Z
 - - :license
@@ -427,8 +427,8 @@
   - github.com/inconshreveable/mousetrap
   - v1.0.0
   - &23
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:21:23.669458000 Z
 - - :license
@@ -443,8 +443,8 @@
   - github.com/jmespath/go-jmespath
   - v0.3.0
   - &24
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:22:00.517196000 Z
 - - :license
@@ -459,8 +459,8 @@
   - github.com/julienschmidt/httprouter
   - v1.2.0
   - &25
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:25:42.405116000 Z
 - - :license
@@ -475,8 +475,8 @@
   - github.com/karlseguin/typed
   - v1.1.7
   - &26
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:25:57.612106000 Z
 - - :license
@@ -491,8 +491,8 @@
   - github.com/mattn/goveralls
   - v0.0.2
   - &27
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:26:33.698858000 Z
 - - :license
@@ -507,8 +507,8 @@
   - github.com/rcrowley/go-metrics
   - v0.0.0-20181016184325-3113b8401b8a
   - &28
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:26:56.528696000 Z
 - - :license
@@ -523,8 +523,8 @@
   - github.com/russellhaering/gosaml2
   - v0.4.0
   - &29
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:27:41.284099000 Z
 - - :license
@@ -539,8 +539,8 @@
   - github.com/russellhaering/goxmldsig
   - v0.0.0-20180430223755-7acd5e4a6ef7
   - &30
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:28:11.857402000 Z
 - - :license
@@ -555,8 +555,8 @@
   - github.com/shirou/w32
   - v0.0.0-20160930032740-bb4de0191aa4
   - &31
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:28:28.391206000 Z
 - - :license
@@ -571,8 +571,8 @@
   - github.com/shurcooL/github_flavored_markdown
   - v0.0.0-20181002035957-2122de532470
   - &32
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:29:03.455483000 Z
 - - :license
@@ -587,8 +587,8 @@
   - github.com/shurcooL/go-goon
   - v0.0.0-20170922171312-37c2f522c041
   - &33
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:29:17.812764000 Z
 - - :license
@@ -603,8 +603,8 @@
   - github.com/shurcooL/highlight_go
   - v0.0.0-20191220051317-782971ddf21b
   - &34
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:29:29.533109000 Z
 - - :license
@@ -619,8 +619,8 @@
   - github.com/sloonz/go-qprintable
   - v0.0.0-20160203160305-775b3a4592d5
   - &35
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:30:06.251860000 Z
 - - :license
@@ -635,8 +635,8 @@
   - github.com/spf13/afero
   - v1.2.2
   - &36
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:32:37.259939000 Z
 - - :license
@@ -651,8 +651,8 @@
   - github.com/xdg/scram
   - v0.0.0-20180814205039-7eeb5667e42c
   - &37
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:34:16.600228000 Z
 - - :license
@@ -667,8 +667,8 @@
   - github.com/xdg/stringprep
   - v1.0.0
   - &38
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:34:43.053921000 Z
 - - :license
@@ -683,8 +683,8 @@
   - modernc.org/b
   - v1.0.0
   - &39
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:36:10.715670000 Z
 - - :license
@@ -699,8 +699,8 @@
   - modernc.org/db
   - v1.0.0
   - &40
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:36:32.993547000 Z
 - - :license
@@ -715,8 +715,8 @@
   - modernc.org/file
   - v1.0.0
   - &41
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:36:52.421839000 Z
 - - :license
@@ -731,8 +731,8 @@
   - modernc.org/golex
   - v1.0.0
   - &42
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:37:10.093509000 Z
 - - :license
@@ -747,8 +747,8 @@
   - modernc.org/internal
   - v1.0.0
   - &43
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:37:41.354648000 Z
 - - :license
@@ -763,8 +763,8 @@
   - modernc.org/lldb
   - v1.0.0
   - &44
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:38:06.700487000 Z
 - - :license
@@ -779,8 +779,8 @@
   - modernc.org/mathutil
   - v1.0.0
   - &45
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:38:39.067328000 Z
 - - :license
@@ -795,8 +795,8 @@
   - modernc.org/sortutil
   - v1.1.0
   - &46
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:39:03.302730000 Z
 - - :license
@@ -811,8 +811,8 @@
   - modernc.org/strutil
   - v1.1.0
   - &47
-    :who:
-    :why:
+    :who: 
+    :why: 
     :versions: []
     :when: 2020-06-15 07:39:22.621996000 Z
 - - :license
@@ -823,3 +823,21 @@
   - modernc.org/strutil
   - https://modernc.org/strutil
   - *47
+- - :approve
+  - github.com/OpenPeeDeeP/depguard
+  - :who: 
+    :why: Development dependency
+    :versions: []
+    :when: 2020-06-16 02:19:49.896604000 Z
+- - :approve
+  - github.com/golangci/check
+  - :who: 
+    :why: Development dependency
+    :versions: []
+    :when: 2020-06-16 02:20:06.274998000 Z
+- - :name_project
+  - sourcegraph/sourcegraph
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2020-06-16 02:20:33.870044000 Z
