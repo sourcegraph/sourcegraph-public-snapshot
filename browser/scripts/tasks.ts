@@ -62,6 +62,29 @@ function copyExtensionAssets(toDirectory: string): void {
     shelljs.cp('build/dist/options.html', toDirectory)
 }
 
+function copyInlineExtensions(toDirectory: string): void {
+    const extensionName = 'template'
+
+    // Clean
+    shelljs.rm('-rf', 'code-intel-extensions')
+
+    // Clone and build
+    shelljs.exec('git clone git@github.com:sourcegraph/code-intel-extensions')
+    shelljs.exec('yarn --cwd code-intel-extensions install')
+    shelljs.exec(`yarn --cwd code-intel-extensions/extensions/${extensionName} run build`)
+
+    // Copy extension manifest (package.json) and bundle (extension.js)
+    shelljs.mkdir('-p', `${toDirectory}/extensions/${extensionName}`)
+    shelljs.cp(
+        `code-intel-extensions/extensions/${extensionName}/dist/extension.js`,
+        `${toDirectory}/extensions/${extensionName}`
+    )
+    shelljs.cp(
+        `code-intel-extensions/extensions/${extensionName}/package.json`,
+        `${toDirectory}/extensions/${extensionName}`
+    )
+}
+
 export function copyIntegrationAssets(): void {
     shelljs.mkdir('-p', 'build/integration/scripts')
     shelljs.mkdir('-p', 'build/integration/css')
@@ -142,6 +165,7 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
             signale.await(`Building the ${title} ${environment} bundle`)
 
             copyExtensionAssets(buildDirectory)
+            copyInlineExtensions(buildDirectory)
 
             const zipDestination = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${BROWSER_BUNDLE_ZIPS[browser]}`)
             if (zipDestination) {
