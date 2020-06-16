@@ -8,6 +8,9 @@ interface Props {
 
     /** Omit the "about". */
     noAbout?: boolean
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 /**
@@ -32,7 +35,7 @@ export class Timestamp extends React.PureComponent<Props> {
     public render(): JSX.Element {
         let label = formatDistance(
             typeof this.props.date === 'string' ? parseISO(this.props.date) : this.props.date,
-            new Date(),
+            this.props.now ? this.props.now() : new Date(),
             { addSuffix: true, includeSeconds: true }
         )
         if (this.props.noAbout) {

@@ -33,9 +33,12 @@ export interface IndexNodeProps {
     node: Index
     onDelete: () => void
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
-const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history }) => {
+const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history, now }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteIndex = async (): Promise<void> => {
@@ -93,15 +96,15 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history 
             <td>
                 {node.finishedAt ? (
                     <span>
-                        Completed <Timestamp noAbout={true} date={node.finishedAt} />
+                        Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
                     </span>
                 ) : node.startedAt ? (
                     <span>
-                        Started <Timestamp noAbout={true} date={node.startedAt} />
+                        Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
                     </span>
                 ) : (
                     <span>
-                        Queued <Timestamp noAbout={true} date={node.queuedAt} />
+                        Queued <Timestamp date={node.queuedAt} now={now} noAbout={true} />
                     </span>
                 )}
             </td>
@@ -123,6 +126,9 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history 
 interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
     fetchLsifIndexes?: typeof defaultFetchLsifIndexes
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 /**
@@ -131,6 +137,7 @@ interface Props extends RouteComponentProps<{}> {
 export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
     repo,
     fetchLsifIndexes = defaultFetchLsifIndexes,
+    now,
     ...props
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelIndexes'), [])
@@ -204,7 +211,7 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({
                 pluralNoun="indexes"
                 headComponent={Header}
                 nodeComponent={IndexNode}
-                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history }}
+                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history, now }}
                 queryConnection={queryIndexes}
                 updates={onDeleteSubject}
                 history={props.history}

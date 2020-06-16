@@ -27,6 +27,9 @@ interface Props extends RouteComponentProps<{ id: string }> {
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 const terminalStates = new Set([GQL.LSIFIndexState.COMPLETED, GQL.LSIFIndexState.ERRORED])
@@ -46,6 +49,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
     },
     history,
     fetchLsifIndex = defaultFetchLsifIndex,
+    now,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelIndex'))
 
@@ -164,7 +168,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                             <tr>
                                 <td>Queued</td>
                                 <td>
-                                    <Timestamp date={indexOrError.queuedAt} noAbout={true} />
+                                    <Timestamp date={indexOrError.queuedAt} now={now} noAbout={true} />
                                 </td>
                             </tr>
 
@@ -172,7 +176,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                 <td>Began processing</td>
                                 <td>
                                     {indexOrError.startedAt ? (
-                                        <Timestamp date={indexOrError.startedAt} noAbout={true} />
+                                        <Timestamp date={indexOrError.startedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Index has not yet started.</span>
                                     )}
@@ -188,7 +192,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                 </td>
                                 <td>
                                     {indexOrError.finishedAt ? (
-                                        <Timestamp date={indexOrError.finishedAt} noAbout={true} />
+                                        <Timestamp date={indexOrError.finishedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Index has not yet completed.</span>
                                     )}
