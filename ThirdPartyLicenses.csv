@@ -304,7 +304,7 @@ Go,github.com/eapache/go-xerial-snappy,v0.0.0-20180814174437-776d5712da21,MIT,""
 Go,github.com/eapache/queue,v1.1.0,MIT,"",Approved
 Go,github.com/edsrzf/mmap-go,v0.0.0-20170320065105-0bce6a688712,New BSD,"",Approved
 Go,github.com/efritz/glock,v0.0.0-20181228234553-f184d69dff2c,MIT,"",Approved
-Go,github.com/efritz/go-genlib,v0.0.0-20200420163202-9c3914df9594,unknown,"",Not approved
+Go,github.com/efritz/go-genlib,v0.0.0-20200616012750-c21aae2e13ac,MIT,"",Approved
 Go,github.com/efritz/go-mockgen,v0.0.0-20200524175724-37e2c732ee40,MIT,"",Approved
 Go,github.com/efritz/pentimento,v0.0.0-20190429011147-ade47d831101,MIT,"",Approved
 Go,github.com/emirpasic/gods,v1.12.0,Simplified BSD,"",Approved
