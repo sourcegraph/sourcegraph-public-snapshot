@@ -90,6 +90,41 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
+				Title:  "Index resetter - re-queues indexes that did not complete processing",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:              "processing_indexes_reset",
+							Description:       "indexes reset to queued state every 5m",
+							Query:             `sum(increase(src_index_queue_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "processing_indexes_reset_failures",
+							Description:       "indexes errored after repeated resets every 5m",
+							Query:             `sum(increase(src_index_queue_max_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "index_resetter_errors",
+							Description:       "index resetter errors every 5m",
+							Query:             `sum(increase(src_index_queue_reset_errors_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{

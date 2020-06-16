@@ -76,8 +76,10 @@ type Store interface {
 	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
-	// This method returns a list of updated upload identifiers.
-	ResetStalled(ctx context.Context, now time.Time) ([]int, error)
+	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
+	// UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
+	// identifiers.
+	ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error)
 
 	// GetDumpIDs returns all dump ids in chronological order.
 	GetDumpIDs(ctx context.Context) ([]int, error)
@@ -164,9 +166,11 @@ type Store interface {
 	// DeleteIndexByID deletes an index by its identifier.
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 
-	// ResetStalledIndexes moves all unlocked indexes processing for more than `StalledIndexMaxAge` back to the
-	// queued state. This method returns a list of updated index identifiers.
-	ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error)
+	// ResetStalledIndexes moves all unlocked index processing for more than `StalledIndexMaxAge` back to the
+	// queued state. In order to prevent input that continually crashes indexer instances, indexes that have
+	// been reset more than IndexMaxNumResets times will be marked as errored. This method returns a list of
+	// updated and errored index identifiers.
+	ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, []int, error)
 
 	// RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
 	// code intelligence activity within the last week grouped by repository. The resulting slice is ordered

@@ -474,9 +474,9 @@ func (s *ObservedStore) DeleteUploadByID(ctx context.Context, id int, getTipComm
 }
 
 // ResetStalled calls into the inner store and registers the observed results.
-func (s *ObservedStore) ResetStalled(ctx context.Context, now time.Time) (ids []int, err error) {
+func (s *ObservedStore) ResetStalled(ctx context.Context, now time.Time) (resetIDs, erroredIDs []int, err error) {
 	ctx, endObservation := s.resetStalledOperation.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
+	defer func() { endObservation(float64(len(resetIDs)+len(erroredIDs)), observation.Args{}) }()
 	return s.store.ResetStalled(ctx, now)
 }
 
@@ -656,9 +656,9 @@ func (s *ObservedStore) DeleteIndexByID(ctx context.Context, id int) (_ bool, er
 }
 
 // ResetStalledIndexes calls into the inner store and registers the observed results.
-func (s *ObservedStore) ResetStalledIndexes(ctx context.Context, now time.Time) (ids []int, err error) {
+func (s *ObservedStore) ResetStalledIndexes(ctx context.Context, now time.Time) (resetIDs, erroredIDs []int, err error) {
 	ctx, endObservation := s.resetStalledIndexesOperation.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
+	defer func() { endObservation(float64(len(resetIDs)+len(erroredIDs)), observation.Args{}) }()
 	return s.store.ResetStalledIndexes(ctx, now)
 }
 

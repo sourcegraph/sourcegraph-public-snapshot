@@ -21,6 +21,7 @@ func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (D
 			d.started_at,
 			d.finished_at,
 			d.process_after,
+			d.num_resets,
 			d.repository_id,
 			d.indexer
 		FROM lsif_packages p
