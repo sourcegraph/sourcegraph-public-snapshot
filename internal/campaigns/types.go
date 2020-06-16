@@ -492,6 +492,39 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
+// Changesets is a slice of *Changesets.
+type Changesets []*Changeset
+
+// IDs returns the IDs of all changesets in the slice.
+func (cs Changesets) IDs() []int64 {
+	ids := make([]int64, len(cs))
+	for i, c := range cs {
+		ids[i] = c.ID
+	}
+	return ids
+}
+
+// IDs returns the RepoIDs of all changesets in the slice.
+func (cs Changesets) RepoIDs() []api.RepoID {
+	repoIDs := make([]api.RepoID, len(cs))
+	for i, c := range cs {
+		repoIDs[i] = c.RepoID
+	}
+	return repoIDs
+}
+
+// Filter returns a new Changesets slice in which changesets have been filtered
+// out for which the predicate didn't return true.
+func (cs Changesets) Filter(predicate func(*Changeset) bool) (filtered Changesets) {
+	for _, c := range cs {
+		if predicate(c) {
+			filtered = append(filtered, c)
+		}
+	}
+
+	return filtered
+}
+
 // Keyer represents items that return a unique key
 type Keyer interface {
 	Key() string

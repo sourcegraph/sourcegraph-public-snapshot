@@ -277,7 +277,7 @@ func init() {
 type SyncStore interface {
 	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
-	ListChangesets(context.Context, ListChangesetsOpts) ([]*campaigns.Changeset, int64, error)
+	ListChangesets(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
 	Transact(context.Context) (*Store, error)
