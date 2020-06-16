@@ -282,7 +282,7 @@ func TestParseAndOrLiteral(t *testing.T) {
 		// For better or worse, escaping parentheses is not supported until we decide to do so.
 		{
 			Input:      `bar and (foo or x\) ()`,
-			WantError:  `i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses.`,
+			WantError:  `i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses`,
 			WantLabels: "None",
 		},
 		// For implementation simplicity, behavior preserves whitespace
@@ -345,12 +345,12 @@ func TestParseAndOrLiteral(t *testing.T) {
 		},
 		{
 			Input:      `repo:foo (bar and baz))`,
-			WantError:  `i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses.`,
+			WantError:  `i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses`,
 			WantLabels: "None",
 		},
 		{
 			Input:      `repo:foo (bar and (baz)))`,
-			WantError:  `i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses.`,
+			WantError:  `i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses`,
 			WantLabels: "None",
 		},
 		// This test input should error because the single quote in 'after' is unclosed.
