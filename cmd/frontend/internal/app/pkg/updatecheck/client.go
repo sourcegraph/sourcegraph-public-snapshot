@@ -29,7 +29,7 @@ import (
 )
 
 // recorder records operational metrics for methods.
-var recorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck", metrics.WithLabels("method"))
+var recorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
