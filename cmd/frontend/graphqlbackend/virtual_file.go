@@ -85,7 +85,7 @@ func (r *virtualFileResolver) Binary(ctx context.Context) (bool, error) {
 
 var highlightHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 	Name: "virtual_fileserver_highlight_req",
-	Help: "This measures the time for  ",
+	Help: "This measures the time for highlighting requests",
 })
 
 func (r *virtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
