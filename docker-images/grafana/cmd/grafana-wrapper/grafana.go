@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/inconshreveable/log15"
 )
 
 const overviewDashboardUID = "overview"
@@ -23,24 +26,64 @@ func newGrafanaRunCmd() *exec.Cmd {
 	return cmd
 }
 
-// getOverviewDashboard parses the default home.json and returns it.
-func getOverviewDashboard() (*sdk.Board, error) {
-	data, err := ioutil.ReadFile("/usr/share/grafana/public/dashboards/home.json")
-	if err != nil {
-		return nil, err
-	}
-	var board sdk.Board
-	if err := json.Unmarshal(data, &board); err != nil {
-		return nil, err
-	}
-	board.ID = 0
-	board.UID = overviewDashboardUID
-	return &board, nil
+type grafanaController struct {
+	log log15.Logger
+	*sdk.Client
+
+	mux  sync.Mutex
+	proc *os.Process
 }
 
-func waitForGrafana(ctx context.Context, grafana *sdk.Client) error {
+func newGrafanaController(log log15.Logger, grafanaPort, grafanaCredentials string) *grafanaController {
+	return &grafanaController{
+		Client: sdk.NewClient(fmt.Sprintf("http://127.0.0.1:%s", grafanaPort), grafanaCredentials, http.DefaultClient),
+		log:    log.New("logger", "grafana-ctrl"),
+	}
+}
+
+func (c *grafanaController) RunServer() error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	// stop existing process if there is one
+	if c.proc != nil {
+		if err := c.proc.Kill(); err != nil {
+			return err
+		}
+		_, err := c.proc.Wait()
+		if err != nil {
+			return err
+		}
+		if err := c.proc.Release(); err != nil {
+			c.log.Warn("failed to release proccess", "error", err)
+		}
+		c.proc = nil
+	}
+
+	// spin up grafana and track process
+	cmd := newGrafanaRunCmd()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	c.proc = cmd.Process
+
+	// capture errors from grafana starting
+	go func() {
+		if err := cmd.Wait(); err != nil {
+			// TODO what do
+			c.log.Crit("grafana exited unexpectedly", "error", err)
+		}
+	}()
+
+	return nil
+}
+
+func (c *grafanaController) WaitForServer(ctx context.Context) error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	ping := func(ctx context.Context) error {
-		resp, err := grafana.GetHealth(ctx)
+		resp, err := c.Client.GetHealth(ctx)
 		if err != nil {
 			return err
 		}
@@ -66,4 +109,19 @@ func waitForGrafana(ctx context.Context, grafana *sdk.Client) error {
 		break
 	}
 	return nil
+}
+
+// getOverviewDashboard parses the default home.json and returns it.
+func getOverviewDashboard() (*sdk.Board, error) {
+	data, err := ioutil.ReadFile("/usr/share/grafana/public/dashboards/home.json")
+	if err != nil {
+		return nil, err
+	}
+	var board sdk.Board
+	if err := json.Unmarshal(data, &board); err != nil {
+		return nil, err
+	}
+	board.ID = 0
+	board.UID = overviewDashboardUID
+	return &board, nil
 }

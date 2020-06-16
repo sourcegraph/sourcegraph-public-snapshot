@@ -12,7 +12,7 @@ func newAlertUID(alertType string, alert *schema.ObservabilityAlerts) string {
 	return fmt.Sprintf("src-%s-%v-%s", alert.Level, alertType, alert.Id)
 }
 
-func generateNotifiersConfig(current []*schema.ObservabilityAlerts, newAlerts []*schema.ObservabilityAlerts) ([]sdk.AlertNotification, error) {
+func generateNotifiersConfig(newAlerts []*schema.ObservabilityAlerts) ([]sdk.AlertNotification, error) {
 	// generate grafana notifiers
 	var newGrafanaAlerts []sdk.AlertNotification
 	for _, alert := range newAlerts {

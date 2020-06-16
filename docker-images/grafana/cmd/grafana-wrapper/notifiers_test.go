@@ -22,7 +22,6 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 		{
 			name: "should convert Sourcegraph observability alert to Grafana notifier",
 			args: args{
-				current: nil,
 				newAlerts: []*schema.ObservabilityAlerts{
 					{
 						Id:    "test-alert",
@@ -48,7 +47,7 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			created, err := generateNotifiersConfig(tt.args.current, tt.args.newAlerts)
+			created, err := generateNotifiersConfig(tt.args.newAlerts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateNotifiersConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
