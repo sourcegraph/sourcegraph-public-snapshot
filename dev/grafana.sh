@@ -52,19 +52,10 @@ mkdir -p "${GRAFANA_LOGS}"
 
 # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
 # We want to capture that output, but because it's fairly noisy, don't want to
-# display it in the normal case. Therefore we'll dump it to a per-process log
-# file, and then use an exit trap to append it to the main grafana.log file
-# once this script is complete.
-GRAFANA_LOG_FILE="${GRAFANA_LOGS}/$(date +%s)-$$.log"
-cleanup_logs () {
-  if [ -f "${GRAFANA_LOG_FILE}" ]; then
-    cat "${GRAFANA_LOG_FILE}" >> "${GRAFANA_LOGS}"/grafana.log
-    rm "${GRAFANA_LOG_FILE}"
-  fi
-}
-trap cleanup_logs EXIT
+# display it in the normal case.
+GRAFANA_LOG_FILE="${GRAFANA_LOGS}/grafana.log"
 
-dump_log () {
+dump_log() {
   GRAFANA_EXIT_CODE=$?
 
   # Exit code 2 indicates a normal Ctrl-C termination via goreman, so we'll
@@ -92,7 +83,7 @@ docker run --rm \
   -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards/legacy \
   -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
   -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-'false'}" \
-  ${IMAGE} >>"${GRAFANA_LOG_FILE}" 2>&1 || dump_log
+  ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1 || dump_log
 
 # Add the following lines above if you wish to use an auth proxy with Grafana:
 #
