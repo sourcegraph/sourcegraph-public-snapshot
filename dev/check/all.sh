@@ -25,7 +25,6 @@ CHECKS=(
   ./check-owners.sh
   ./shfmt.sh
   ./shellcheck.sh
-  ./licenses.sh
 )
 
 echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"

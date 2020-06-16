@@ -222,6 +222,8 @@ github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c h1:Q3HKbZogL9GGZVdO3P
 github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c/go.mod h1:4behwg5YZ7amYrI5VDO/1s68YXZQHklcyFQpVDDgB2w=
 github.com/efritz/go-genlib v0.0.0-20200420163202-9c3914df9594 h1:wAEx9E0qHx43LRLQqP5VFTijgLnvvNM53FqLu7G+VQI=
 github.com/efritz/go-genlib v0.0.0-20200420163202-9c3914df9594/go.mod h1:aMnaM7yzn10TOdj5sGpElY90l/XT3eL+Sj7z7D1V8q8=
+github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac h1:ljlPUOusK67MXhpecRpvFmvjtEHZycGmCJlWhApBTXg=
+github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac/go.mod h1:aMnaM7yzn10TOdj5sGpElY90l/XT3eL+Sj7z7D1V8q8=
 github.com/efritz/go-mockgen v0.0.0-20200524175724-37e2c732ee40 h1:O0VASQ25LL5HIRAbfY3E/brj2dow6JZDohML161YVYc=
 github.com/efritz/go-mockgen v0.0.0-20200524175724-37e2c732ee40/go.mod h1:K2AZyo7TmaAzRhr4EvUaEHcpumiT0UEAARFnSBid7yE=
 github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101 h1:RylpU+KNJJNEJIk3o8gZ70uPTlutxaYnikKNPko39LA=
@@ -972,8 +974,6 @@ github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614 h1:MrlKMpoGse4bC
 github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
-github.com/sourcegraph/zoekt v0.0.0-20200607063352-a20174182c81 h1:b4Nf9A2HDuqP4Oizdj8eGgPzsJi6Ptlto2IP7Jxah8Y=
-github.com/sourcegraph/zoekt v0.0.0-20200607063352-a20174182c81/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/sourcegraph/zoekt v0.0.0-20200611095618-60ff282a43e8 h1:NbOfrykIogWTuU5mv9hul6H4uHuaaaF+0mYcwB5mSNE=
 github.com/sourcegraph/zoekt v0.0.0-20200611095618-60ff282a43e8/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72 h1:qLC7fQah7D6K1B0ujays3HV9gkFtllcxhzImRR7ArPQ=
