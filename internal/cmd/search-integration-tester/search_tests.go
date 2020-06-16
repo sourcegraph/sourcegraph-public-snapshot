@@ -211,6 +211,15 @@ var tests = []test{
 		Name:  `Structural search uses literal search parser`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ file:^client\.go :[[v]] := x509 and AppendCertsFromPEM(:[_]) patterntype:structural`,
 	},
+	{
+		Name:  `Union file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func or main`,
+	},
+	// FIXME: intersect needs the same update
+	{
+		Name:  `Intersect file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and main`,
+	},
 }
 
 func sanitizeFilename(s string) string {
