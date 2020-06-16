@@ -1,5 +1,6 @@
 /* eslint no-sync: warn */
 import fs from 'fs'
+import os from 'os'
 import { omit } from 'lodash'
 import path from 'path'
 import shelljs from 'shelljs'
@@ -65,22 +66,25 @@ function copyExtensionAssets(toDirectory: string): void {
 function copyInlineExtensions(toDirectory: string): void {
     const extensionName = 'template'
 
-    // Clean
-    shelljs.rm('-rf', 'code-intel-extensions')
+    const temporaryCloneDirectory = path.join(os.tmpdir(), 'code-intel-extensions')
+    shelljs.mkdir('-p', temporaryCloneDirectory)
 
     // Clone and build
-    shelljs.exec('git clone git@github.com:sourcegraph/code-intel-extensions')
+    shelljs.pushd(temporaryCloneDirectory)
+    shelljs.exec('git clone git@github.com:sourcegraph/code-intel-extensions || (cd code-intel-extensions; git pull)')
     shelljs.exec('yarn --cwd code-intel-extensions install')
     shelljs.exec(`yarn --cwd code-intel-extensions/extensions/${extensionName} run build`)
+    shelljs.popd()
 
     // Copy extension manifest (package.json) and bundle (extension.js)
     shelljs.mkdir('-p', `${toDirectory}/extensions/${extensionName}`)
+
     shelljs.cp(
-        `code-intel-extensions/extensions/${extensionName}/dist/extension.js`,
+        `${temporaryCloneDirectory}/code-intel-extensions/extensions/${extensionName}/dist/extension.js`,
         `${toDirectory}/extensions/${extensionName}`
     )
     shelljs.cp(
-        `code-intel-extensions/extensions/${extensionName}/package.json`,
+        `${temporaryCloneDirectory}/code-intel-extensions/extensions/${extensionName}/package.json`,
         `${toDirectory}/extensions/${extensionName}`
     )
 }
