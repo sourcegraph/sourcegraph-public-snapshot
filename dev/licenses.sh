@@ -3,7 +3,7 @@
 # This script either generates a report of third-party dependencies, or runs a check that fails
 # if there are any unapproved dependencies ('action items').
 #
-# Please refer to the handbook entry for more details: https://about.sourcegraph.com/handbook/engineering/code_reviews#third-party-licenses
+# Please refer to the handbook entry for more details: https://about.sourcegraph.com/handbook/engineering/continuous_integration#third-party-licenses
 
 set -euf -o pipefail
 
