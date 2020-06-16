@@ -9,18 +9,62 @@ prefers Grafana.)
 
 ### Sourcegraph 3.17+
 
-Visit your site configuration at e.g. https://sourcegraph.example.com/site-admin/configuration
+Visit your site configuration (e.g. https://sourcegraph.example.com/site-admin/configuration) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
 
-#### Slack
+Configured alerts will automatically create notifiers in Grafana and attach them to relevant alerts.
 
+#### Examples
+
+##### Slack
+
+```json
+"observability.alerts": [
+  {
+    "id": "my-unique-alert",
+    "level": "critical",
+    "notifier": {
+      "type": "slack",
+      // Slack incoming webhook URL.
+      "url": "https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx",
+      // Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).
+      "mentionUsers": "U0XXXXX,U0XXXXXX"
+    }
+  }
+]
 ```
-"observability.alerts": {
-    "id": "my-alert",
+
+#### PagerDuty
+
+```json
+"observability.alerts": [
+  {
+    "id": "my-unique-alert",
+    "level": "critical",
+    "notifier": {
+      "type": "pagerduty",
+      // Integration key for PagerDuty.
+      "integrationKey": "XXXXXXXX"
+    }
+  }
+]
+```
+
+#### Webhook
+
+```json
+"observability.alerts": [
+  {
+    "id": "my-unique-alert",
     "level": "warning",
     "level": "critical",
-    "notifier": { "type": "slack", /* ... */ }
+    "notifier": {
+      "type": "webhook",
+      // Webhook URL.
+      "url": "https://my.webhook.url"
+    }
   }
-  ```
+]
+```
 
 ### Before 3.17: Configure alert channels in Grafana
 
