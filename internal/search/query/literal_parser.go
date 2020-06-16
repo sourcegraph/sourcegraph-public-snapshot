@@ -144,11 +144,28 @@ loop:
 			nodes = append(nodes, result...)
 		case p.match(RPAREN):
 			if p.balanced <= 0 {
-				// This is a dangling right paren. It can't
-				// possibly help us parse a well-formed query,
-				// so try treat it as a pattern.
+				// This is a dangling right paren. It can't possibly help
+				// us parse a well-formed query, so try treat it as a pattern.
 				pattern := p.ParsePatternLiteral()
 				pattern.Annotation.Labels |= HeuristicDanglingParens
+
+				// Heuristic: This right paren may be one we should associate with a previous pattern, and not
+				// just a dangling one. Check if a pattern occured before it and append it if so.
+				if p.pos > 0 {
+					// Heuristic is imprecise and that's OK: It will only look for a 1-byte whitespace
+					// character (not any unicode whitespace) before this paren.
+					if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
+						if len(nodes) > 0 {
+							if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
+								previous.Value = previous.Value + pattern.Value
+								previous.Annotation.Labels |= pattern.Annotation.Labels
+								nodes[len(nodes)-1] = previous
+								continue
+							}
+						}
+					}
+				}
+
 				nodes = append(nodes, pattern)
 				continue
 			}
@@ -240,6 +257,30 @@ func literalFallbackParser(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
+// validatePureLiteralPattern checks that no pattern expression contains and/or
+// operators nested inside concat. It may happen that we interpret a query this
+// way due to ambiguity. If this happens, return an error message.
+func validatePureLiteralPattern(nodes []Node, balanced bool) error {
+	impure := exists(nodes, func(node Node) bool {
+		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
+			for _, node := range operator.Operands {
+				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
+					return true
+
+				}
+			}
+		}
+		return false
+	})
+	if impure {
+		if !balanced {
+			return errors.New("this literal search query contains unbalanced parentheses. I tried to guess what you meant, but wasn't able to. Maybe you missed a parenthesis? Otherwise, try using the content: filter if the pattern is unbalanced")
+		}
+		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses.")
+	}
+	return nil
+}
+
 func ParseAndOrLiteral(in string) ([]Node, error) {
 	if strings.TrimSpace(in) == "" {
 		return nil, nil
@@ -275,6 +316,10 @@ func ParseAndOrLiteral(in string) ([]Node, error) {
 	}
 	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
 	err = validate(nodes)
+	if err != nil {
+		return nil, err
+	}
+	err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 	if err != nil {
 		return nil, err
 	}

@@ -200,7 +200,7 @@ func (q AndOrQuery) valueToTypedValue(field, value string, label labels) []*type
 		// If a pattern is quoted, or we applied heuristics to interpret
 		// valid regexp metasyntax literally instead, this pattern is a
 		// string.
-		if isSet(label, Quoted) || isSet(label, HeuristicParensAsPatterns) {
+		if isSet(label, Quoted) || isSet(label, HeuristicParensAsPatterns) || isSet(label, Literal) {
 			return []*types.Value{{String: &value}}
 		}
 		if regexp, err := regexp.Compile(value); err == nil {
