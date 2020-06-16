@@ -28,7 +28,6 @@ func (ur *IndexResetter) Run() {
 		for _, id := range resetIDs {
 			log15.Debug("Reset stalled index", "indexID", id)
 		}
-
 		for _, id := range erroredIDs {
 			log15.Debug("Failed stalled index", "indexID", id)
 		}
