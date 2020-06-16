@@ -57,7 +57,6 @@ Configured alerts will automatically create notifiers in Grafana and attach them
 "observability.alerts": [
   {
     "id": "my-unique-alert",
-    "level": "warning",
     "level": "critical",
     "notifier": {
       "type": "webhook",
