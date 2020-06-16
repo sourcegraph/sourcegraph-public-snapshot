@@ -236,6 +236,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	return template.HTML(table), false, nil
 }
 
+// TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
 var requestCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_syntax_highlighting_requests",
 	Help: "Counts syntax highlighting requests and their success vs. failure rate.",
