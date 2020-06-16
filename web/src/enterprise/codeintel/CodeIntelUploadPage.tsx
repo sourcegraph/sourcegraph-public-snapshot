@@ -27,6 +27,9 @@ interface Props extends RouteComponentProps<{ id: string }> {
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
@@ -46,6 +49,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
     },
     history,
     fetchLsifUpload = defaultFetchUpload,
+    now,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
 
@@ -209,7 +213,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                             <tr>
                                 <td>Uploaded</td>
                                 <td>
-                                    <Timestamp date={uploadOrError.uploadedAt} noAbout={true} />
+                                    <Timestamp date={uploadOrError.uploadedAt} now={now} noAbout={true} />
                                 </td>
                             </tr>
 
@@ -217,7 +221,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 <td>Began processing</td>
                                 <td>
                                     {uploadOrError.startedAt ? (
-                                        <Timestamp date={uploadOrError.startedAt} noAbout={true} />
+                                        <Timestamp date={uploadOrError.startedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Upload has not yet started.</span>
                                     )}
@@ -233,7 +237,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 </td>
                                 <td>
                                     {uploadOrError.finishedAt ? (
-                                        <Timestamp date={uploadOrError.finishedAt} noAbout={true} />
+                                        <Timestamp date={uploadOrError.finishedAt} now={now} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Upload has not yet completed.</span>
                                     )}

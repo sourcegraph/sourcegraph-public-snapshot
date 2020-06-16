@@ -35,9 +35,12 @@ export interface UploadNodeProps {
     node: Upload
     onDelete: () => void
     history: H.History
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
-const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, history }) => {
+const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, history, now }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteUpload = async (): Promise<void> => {
@@ -107,15 +110,15 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
             <td>
                 {node.finishedAt ? (
                     <span>
-                        Completed <Timestamp noAbout={true} date={node.finishedAt} />
+                        Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />
                     </span>
                 ) : node.startedAt ? (
                     <span>
-                        Started <Timestamp noAbout={true} date={node.startedAt} />
+                        Started <Timestamp date={node.startedAt} now={now} noAbout={true} />
                     </span>
                 ) : (
                     <span>
-                        Uploaded <Timestamp noAbout={true} date={node.uploadedAt} />
+                        Uploaded <Timestamp date={node.uploadedAt} now={now} noAbout={true} />
                     </span>
                 )}
             </td>
@@ -137,6 +140,9 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
 interface Props extends RouteComponentProps<{}> {
     repo?: GQL.IRepository
     fetchLsifUploads?: typeof defaultFetchLsifUploads
+
+    /** Function that returns the current time (for stability in visual tests). */
+    now?: () => Date
 }
 
 /**
@@ -145,6 +151,7 @@ interface Props extends RouteComponentProps<{}> {
 export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
     repo,
     fetchLsifUploads = defaultFetchLsifUploads,
+    now,
     ...props
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeIntelUploads'), [])
@@ -222,7 +229,7 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
                 pluralNoun="uploads"
                 headComponent={Header}
                 nodeComponent={UploadNode}
-                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history }}
+                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history, now }}
                 queryConnection={queryUploads}
                 updates={onDeleteSubject}
                 history={props.history}
