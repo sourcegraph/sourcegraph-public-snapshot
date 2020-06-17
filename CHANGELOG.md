@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- Backwards compatibility for "critical configuration" (a type of configuration that was deprecated in December 2019) was removed. All critical configuration now belongs in site configuration.
+
 ## 3.17.0
 
 ### Added

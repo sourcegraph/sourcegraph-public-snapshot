@@ -269,13 +269,13 @@ The ADFS SAML service should now be accessible from your computer. Confirm that,
     curl https://adfstest.sgdev.org/federationmetadata/2007-06/federationmetadata.xml
     ```
 
-## Add ADFS as a SAML auth provider to Sourcegraph critical config
+## Add ADFS as a SAML auth provider to Sourcegraph site config
 
 1.  Make your Sourcegraph instance externally accessible over HTTPS (e.g., using [ngrok](https://ngrok.com)).
 
     🎗️ From here on, substitute `https://sourcegraph.example.com` with your instance's actual URL.
 
-1.  Add the following to your Sourcegraph critical configuration:
+1.  Add the following to your Sourcegraph site configuration:
 
     ```json
     {

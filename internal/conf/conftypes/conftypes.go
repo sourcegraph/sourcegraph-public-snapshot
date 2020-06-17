@@ -18,11 +18,11 @@ type ServiceConnections struct {
 
 // RawUnified is the unparsed variant of conf.Unified.
 type RawUnified struct {
-	Site, Critical     string
+	Site               string
 	ServiceConnections ServiceConnections
 }
 
 // Equal tells if the two configurations are equal or not.
 func (r RawUnified) Equal(other RawUnified) bool {
-	return r.Site == other.Site && r.Critical == other.Critical && reflect.DeepEqual(r.ServiceConnections, other.ServiceConnections)
+	return r.Site == other.Site && reflect.DeepEqual(r.ServiceConnections, other.ServiceConnections)
 }
