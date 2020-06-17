@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,9 +14,12 @@ import (
 
 	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
+	"gopkg.in/ini.v1"
 )
 
 const overviewDashboardUID = "overview"
+
+var grafanaConfigPath = os.Getenv("GF_PATHS_CONFIG")
 
 // newGrafanaRunCmd instantiates a new command to run grafana.
 func newGrafanaRunCmd() *exec.Cmd {
@@ -45,34 +49,35 @@ func (c *grafanaController) RunServer() error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	// stop existing process if there is one
-	if c.proc != nil {
-		if err := c.proc.Kill(); err != nil {
-			return err
-		}
-		_, err := c.proc.Wait()
-		if err != nil {
-			return err
-		}
-		if err := c.proc.Release(); err != nil {
-			c.log.Warn("failed to release proccess", "error", err)
-		}
-		c.proc = nil
-	}
-
 	// spin up grafana and track process
+	c.log.Debug("starting Grafana server")
 	cmd := newGrafanaRunCmd()
 	if err := cmd.Start(); err != nil {
-		return err
+		return fmt.Errorf("failed to start Grafana: %w", err)
 	}
 	c.proc = cmd.Process
 
-	// capture errors from grafana starting
+	// capture results from grafana process
 	go func() {
+		// cmd.Wait output:
+		// * exits with status 0 => nil
+		// * command fails to run or stopped => *ExitErr
+		// * other IO error => error
 		if err := cmd.Wait(); err != nil {
-			// TODO what do
-			c.log.Crit("grafana exited unexpectedly", "error", err)
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				exitCode := exitErr.ProcessState.ExitCode()
+				// unfortunately grafana exits with code 1 on sigint
+				if exitCode > 1 {
+					c.log.Crit("grafana exited with unexpected code", "exitcode", exitCode)
+					os.Exit(exitCode)
+				}
+				c.log.Info("grafana has stopped", "exitcode", exitCode)
+				return
+			}
+			c.log.Warn("error waiting for grafana to stop", "error", err)
 		}
+		c.log.Debug("grafana has stopped")
 	}()
 
 	return nil
@@ -111,6 +116,26 @@ func (c *grafanaController) WaitForServer(ctx context.Context) error {
 	return nil
 }
 
+func (c *grafanaController) Stop() error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	if c.proc != nil {
+		c.log.Debug("stopping current Grafana instance", "pid", c.proc.Pid)
+		if err := c.proc.Signal(os.Interrupt); err != nil {
+			return fmt.Errorf("failed to stop Grafana instance: %w", err)
+		}
+		c.proc.Wait()
+		if err := c.proc.Release(); err != nil {
+			c.log.Warn("failed to release proccess", "error", err)
+		}
+		c.proc = nil
+	} else {
+		c.log.Debug("already stopped")
+	}
+	return nil
+}
+
 // getOverviewDashboard parses the default home.json and returns it.
 func getOverviewDashboard() (*sdk.Board, error) {
 	data, err := ioutil.ReadFile("/usr/share/grafana/public/dashboards/home.json")
@@ -124,4 +149,13 @@ func getOverviewDashboard() (*sdk.Board, error) {
 	board.ID = 0
 	board.UID = overviewDashboardUID
 	return &board, nil
+}
+
+func getGrafanaConfig() (*ini.File, error) {
+	grafanaConfig, err := ini.Load(grafanaConfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Grafana config: %w", err)
+	}
+	grafanaConfig.NameMapper = ini.TitleUnderscore
+	return grafanaConfig, nil
 }

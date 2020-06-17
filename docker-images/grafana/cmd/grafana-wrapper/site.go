@@ -17,13 +17,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type siteEmailConfig struct {
+	SMTP    *schema.SMTPServerConfig
+	Address string
+}
+
 // subscribedSiteConfig contains fields from SiteConfiguration relevant to the siteConfigSubscriber.
 type subscribedSiteConfig struct {
 	Alerts    []*schema.ObservabilityAlerts
 	alertsSum [32]byte
 
-	SMTP    *schema.SMTPServerConfig
-	smtpSum [32]byte
+	Email    *siteEmailConfig
+	emailSum [32]byte
 }
 
 // newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
@@ -32,7 +37,8 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 	if err != nil {
 		return nil
 	}
-	smtpBytes, err := json.Marshal(config.EmailSmtp)
+	email := &siteEmailConfig{config.EmailSmtp, config.EmailAddress}
+	emailBytes, err := json.Marshal(email)
 	if err != nil {
 		return nil
 	}
@@ -40,24 +46,24 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 		Alerts:    config.ObservabilityAlerts,
 		alertsSum: sha256.Sum256(alertsBytes),
 
-		SMTP:    config.EmailSmtp,
-		smtpSum: sha256.Sum256(smtpBytes),
+		Email:    email,
+		emailSum: sha256.Sum256(emailBytes),
 	}
 }
 
-// Sum returns a combined sha256 sum of its components, useful for diffing.
-func (c *subscribedSiteConfig) Sum() []byte {
-	return append(c.alertsSum[:], c.smtpSum[:]...)
+type siteConfigDiff struct {
+	Type   string
+	change GrafanaChange
 }
 
 // Diff returns a set of changes to apply to Grafana.
-func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []GrafanaChange {
-	var changes []GrafanaChange
+func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDiff {
+	var changes []siteConfigDiff
 	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
-		changes = append(changes, grafanaChangeNotifiers)
+		changes = append(changes, siteConfigDiff{Type: "alerts", change: grafanaChangeNotifiers})
 	}
-	if !bytes.Equal(c.smtpSum[:], other.smtpSum[:]) {
-		changes = append(changes, grafanaChangeSMTP)
+	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
+		changes = append(changes, siteConfigDiff{Type: "email", change: grafanaChangeSMTP})
 	}
 	return changes
 }
@@ -91,7 +97,6 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 
 	// Load initial alerts configuration
 	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
-	sum := siteConfig.Sum()
 
 	// Set up overview dashboard if it does not exist. We attach alerts to a copy of the
 	// default home dashboard, because dashboards provisioned from disk cannot be edited.
@@ -105,8 +110,12 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 		}
 	}
 
-	subscriber := &siteConfigSubscriber{log: log, grafana: grafana}
-	subscriber.updateGrafanaConfig(ctx, siteConfig, sum) // set initial grafana state
+	subscriber := &siteConfigSubscriber{
+		log:     log,
+		grafana: grafana,
+	}
+	// set initial grafana state
+	subscriber.updateGrafanaConfig(ctx, siteConfig, siteConfig.Diff(newSubscribedSiteConfig(schema.SiteConfiguration{})))
 	return subscriber, nil
 }
 
@@ -133,12 +142,11 @@ func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
 	conf.Watch(func() {
 		c.mux.RLock()
 		newSiteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
-		newSum := newSiteConfig.Sum()
-		isUnchanged := bytes.Equal(c.configSum, newSum)
+		diffs := newSiteConfig.Diff(c.config)
 		c.mux.RUnlock()
 
 		// ignore irrelevant changes
-		if isUnchanged {
+		if len(diffs) == 0 {
 			c.log.Debug("config updated contained no relevant changes - ignoring")
 			return
 		}
@@ -146,7 +154,7 @@ func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
 		// update configuration
 		c.mux.Lock()
 		configUpdateCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		c.updateGrafanaConfig(configUpdateCtx, newSiteConfig, newSum)
+		c.updateGrafanaConfig(configUpdateCtx, newSiteConfig, diffs)
 		cancel()
 		c.mux.Unlock()
 	})
@@ -154,15 +162,15 @@ func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
 
 // updateGrafanaConfig updates grafanaAlertsSubscriber state and writes it to disk. It never returns an error,
 // instead all errors are reported as problems
-func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfig *subscribedSiteConfig, newSum []byte) {
-	c.log.Debug("updating grafana configuration")
+func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfig *subscribedSiteConfig, diffs []siteConfigDiff) {
+	c.log.Debug("updating grafana configuration", "diffs", diffs)
 	c.problems = nil
 
 	// run changeset and aggregate results
 	aggregated := GrafanaChangeResult{}
-	grafanaChanges := c.config.Diff(newConfig)
-	for _, change := range grafanaChanges {
-		result := change(ctx, c.log, c.grafana.Client, c.config, newConfig)
+	for _, diff := range diffs {
+		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
+		result := diff.change(ctx, c.log, c.grafana.Client, newConfig)
 		aggregated.Problems = append(aggregated.Problems, result.Problems...)
 		if result.ShouldRestartGrafana {
 			aggregated.ShouldRestartGrafana = true
@@ -171,9 +179,12 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfi
 
 	// restart if needed
 	if aggregated.ShouldRestartGrafana {
-		// TODO what do if fail
 		newFailedToRestartProblem := func(e error) *conf.Problem {
 			return conf.NewSiteProblem(fmt.Sprintf("observability: Grafana failed to restart for configuration changes: %v", e))
+		}
+		// TODO what do if fail
+		if err := c.grafana.Stop(); err != nil {
+			aggregated.Problems = append(aggregated.Problems, newFailedToRestartProblem(err))
 		}
 		if err := c.grafana.RunServer(); err != nil {
 			aggregated.Problems = append(aggregated.Problems, newFailedToRestartProblem(err))
@@ -184,7 +195,6 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfi
 
 	// update state
 	c.config = newConfig
-	c.configSum = newSum
 	c.problems = aggregated.Problems
-	c.log.Debug("updated grafana configuration")
+	c.log.Debug("updated grafana configuration", "diffs", diffs)
 }

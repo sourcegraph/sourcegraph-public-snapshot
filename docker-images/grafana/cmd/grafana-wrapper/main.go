@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -76,6 +77,11 @@ func main() {
 	}()
 
 	// block
-	select {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+	log.Info("received sigint - stopping")
+	if err := grafana.Stop(); err != nil {
+		log.Warn("failed to stop Grafana server", "error", err)
 	}
 }
