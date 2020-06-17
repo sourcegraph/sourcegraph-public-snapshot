@@ -152,49 +152,65 @@ func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
 		}
 
 		// update configuration
-		c.mux.Lock()
 		configUpdateCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		c.updateGrafanaConfig(configUpdateCtx, newSiteConfig, diffs)
 		cancel()
-		c.mux.Unlock()
 	})
 }
 
 // updateGrafanaConfig updates grafanaAlertsSubscriber state and writes it to disk. It never returns an error,
 // instead all errors are reported as problems
 func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfig *subscribedSiteConfig, diffs []siteConfigDiff) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	c.log.Debug("updating grafana configuration", "diffs", diffs)
 	c.problems = nil
 
+	// load grafana config
+	grafanaConfig, err := getGrafanaConfig()
+	if err != nil {
+		c.problems = append(c.problems,
+			conf.NewSiteProblem(fmt.Sprintf("observability: failed to load Grafana configuration: %v", err)))
+		return
+	}
+
 	// run changeset and aggregate results
-	aggregated := GrafanaChangeResult{}
+	configChange := false
 	for _, diff := range diffs {
 		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.change(ctx, c.log, c.grafana.Client, newConfig)
-		aggregated.Problems = append(aggregated.Problems, result.Problems...)
-		if result.ShouldRestartGrafana {
-			aggregated.ShouldRestartGrafana = true
+		result := diff.change(ctx, c.log, GrafanaContext{
+			Client: c.grafana.Client,
+			Config: grafanaConfig,
+		}, newConfig)
+		c.problems = append(c.problems, result.Problems...)
+		if result.ConfigChange {
+			configChange = true
 		}
 	}
 
 	// restart if needed
-	if aggregated.ShouldRestartGrafana {
+	if configChange {
+		// TODO what do if fail
+		if err := grafanaConfig.SaveTo(grafanaConfigPath); err != nil {
+			c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("failed to save Grafana config: %v", err)))
+			return
+		}
+
 		newFailedToRestartProblem := func(e error) *conf.Problem {
 			return conf.NewSiteProblem(fmt.Sprintf("observability: Grafana failed to restart for configuration changes: %v", e))
 		}
-		// TODO what do if fail
 		if err := c.grafana.Stop(); err != nil {
-			aggregated.Problems = append(aggregated.Problems, newFailedToRestartProblem(err))
+			c.problems = append(c.problems, newFailedToRestartProblem(err))
 		}
 		if err := c.grafana.RunServer(); err != nil {
-			aggregated.Problems = append(aggregated.Problems, newFailedToRestartProblem(err))
+			c.problems = append(c.problems, newFailedToRestartProblem(err))
 		} else if err := c.grafana.WaitForServer(ctx); err != nil {
-			aggregated.Problems = append(aggregated.Problems, newFailedToRestartProblem(err))
+			c.problems = append(c.problems, newFailedToRestartProblem(err))
 		}
 	}
 
 	// update state
 	c.config = newConfig
-	c.problems = aggregated.Problems
 	c.log.Debug("updated grafana configuration", "diffs", diffs)
 }

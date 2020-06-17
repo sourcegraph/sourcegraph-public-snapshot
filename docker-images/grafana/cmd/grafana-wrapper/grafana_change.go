@@ -9,19 +9,25 @@ import (
 	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"gopkg.in/ini.v1"
 )
+
+type GrafanaContext struct {
+	Client *sdk.Client
+	Config *ini.File
+}
 
 // GrafanaChangeResult indicates output from a GrafanaChange as well as follow-up items (ie whether or not the change will require a Grafana restart)
 type GrafanaChangeResult struct {
-	Problems             conf.Problems
-	ShouldRestartGrafana bool
+	Problems     conf.Problems
+	ConfigChange bool
 }
 
 // GrafanaChange implements a change to Grafana configuration
-type GrafanaChange func(ctx context.Context, log log15.Logger, grafana *sdk.Client, newConfig *subscribedSiteConfig) (result GrafanaChangeResult)
+type GrafanaChange func(ctx context.Context, log log15.Logger, grafana GrafanaContext, newConfig *subscribedSiteConfig) (result GrafanaChangeResult)
 
 // grafanaChangeNotifiers appliies `observability.alerts` as Grafana notifiers and attaches them to relevant alerts
-func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana *sdk.Client, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
+func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana GrafanaContext, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
 	// convenience function for creating a prefixed problem
 	newProblem := func(err error) *conf.Problem {
 		return conf.NewSiteProblem(fmt.Sprintf("observability.alerts: %v", err))
@@ -58,19 +64,19 @@ func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana *sdk.
 		return
 	}
 
-	if err := resetSrcNotifiers(ctx, grafana); err != nil {
+	if err := resetSrcNotifiers(ctx, grafana.Client); err != nil {
 		result.Problems = append(result.Problems, newProblem(err))
 		// silently try to recreate alerts, in case any were deleted
 		log.Warn("failed to reset notifiers - attempting to recreate")
 		for _, alert := range created {
-			if _, err := grafana.CreateAlertNotification(ctx, alert); err != nil {
+			if _, err := grafana.Client.CreateAlertNotification(ctx, alert); err != nil {
 				log.Warn(fmt.Sprintf("failed to recreate notifier %q", alert.UID), "error", err)
 			}
 		}
 		return
 	}
 	for _, alert := range created {
-		_, err = grafana.CreateAlertNotification(ctx, alert)
+		_, err = grafana.Client.CreateAlertNotification(ctx, alert)
 		if err != nil {
 			log.Error(fmt.Sprintf("failed to create notifier %q", alert.UID), "error", err)
 			result.Problems = append(result.Problems,
@@ -89,7 +95,7 @@ func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana *sdk.
 	}
 
 	// update board
-	_, err = grafana.SetDashboard(ctx, *homeBoard, sdk.SetDashboardParams{Overwrite: true})
+	_, err = grafana.Client.SetDashboard(ctx, *homeBoard, sdk.SetDashboardParams{Overwrite: true})
 	if err != nil {
 		result.Problems = append(result.Problems, newProblem(fmt.Errorf("failed to update dashboard: %w", err)))
 		return
@@ -99,21 +105,15 @@ func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana *sdk.
 }
 
 // grafanaChangeSMTP applies SMTP server configurations to Grafana.
-func grafanaChangeSMTP(ctx context.Context, log log15.Logger, grafana *sdk.Client, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
+func grafanaChangeSMTP(ctx context.Context, log log15.Logger, grafana GrafanaContext, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
 	// convenience function for creating a prefixed problem
 	newProblem := func(err error) *conf.Problem {
 		return conf.NewSiteProblem(fmt.Sprintf("observability (email.smtp): %v", err))
 	}
 
-	grafanaConfig, err := getGrafanaConfig()
-	if err != nil {
-		result.Problems = append(result.Problems, newProblem(err))
-		return
-	}
-
-	grafanaConfig.DeleteSection("smtp")
+	grafana.Config.DeleteSection("smtp")
 	if newConfig.Email != nil && newConfig.Email.SMTP != nil {
-		smtpSection, err := grafanaConfig.NewSection("smtp")
+		smtpSection, err := grafana.Config.NewSection("smtp")
 		if err != nil {
 			result.Problems = append(result.Problems, newProblem(fmt.Errorf("failed to update Grafana config: %w", err)))
 			return
@@ -124,10 +124,6 @@ func grafanaChangeSMTP(ctx context.Context, log log15.Logger, grafana *sdk.Clien
 		}
 	}
 
-	if err := grafanaConfig.SaveTo(grafanaConfigPath); err != nil {
-		result.Problems = append(result.Problems, newProblem(fmt.Errorf("failed to save Grafana config: %w", err)))
-		return
-	}
-	result.ShouldRestartGrafana = true
+	result.ConfigChange = true
 	return
 }
