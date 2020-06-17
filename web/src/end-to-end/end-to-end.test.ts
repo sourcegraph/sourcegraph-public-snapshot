@@ -131,7 +131,7 @@ describe('e2e test suite', () => {
                 })
             ).jsonValue()
 
-            const resp = await got.post('/.api/graphql', {
+            const resp = await got.post('.api/graphql', {
                 prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
