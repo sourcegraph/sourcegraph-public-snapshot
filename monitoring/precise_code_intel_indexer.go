@@ -90,6 +90,41 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
+				Title:  "Index resetter - re-queues indexes that did not complete processing",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:              "processing_indexes_reset",
+							Description:       "indexes reset to queued state every 5m",
+							Query:             `sum(increase(src_index_queue_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "processing_indexes_reset_failures",
+							Description:       "indexes errored after repeated resets every 5m",
+							Query:             `sum(increase(src_index_queue_max_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("indexes"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "index_resetter_errors",
+							Description:       "index resetter errors every 5m",
+							Query:             `sum(increase(src_index_queue_reset_errors_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{
@@ -120,13 +155,27 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("precise-code-intel-indexer"),
 						sharedContainerMemoryUsage("precise-code-intel-indexer"),
 						sharedContainerCPUUsage("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage1d("precise-code-intel-indexer"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-indexer"),
 					},
 				},
 			},

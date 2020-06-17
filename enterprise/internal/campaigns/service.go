@@ -322,8 +322,8 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 }
 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
-func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Changeset) (err error) {
-	cs = selectChangesets(cs, func(c *campaigns.Changeset) bool {
+func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changesets) (err error) {
+	cs = cs.Filter(func(c *campaigns.Changeset) bool {
 		return c.ExternalState == campaigns.ChangesetStateOpen
 	})
 
@@ -331,12 +331,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 		return nil
 	}
 
-	repoIDs := make([]api.RepoID, 0, len(cs))
-	for _, c := range cs {
-		repoIDs = append(repoIDs, c.RepoID)
-	}
-
-	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	accessibleReposByID, err := accessibleRepos(ctx, cs.RepoIDs())
 	if err != nil {
 		return err
 	}
@@ -414,12 +409,7 @@ func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64,
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, 0, len(changesets))
-	for _, c := range changesets {
-		repoIDs = append(repoIDs, c.RepoID)
-	}
-
-	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	accessibleRepoIDs, err := accessibleRepos(ctx, changesets.RepoIDs())
 	if err != nil {
 		return nil, err
 	}
@@ -1207,18 +1197,6 @@ func patchesDiffer(a, b *campaigns.Patch) bool {
 	return a.Diff != b.Diff ||
 		a.Rev != b.Rev ||
 		a.BaseRef != b.BaseRef
-}
-
-func selectChangesets(cs []*campaigns.Changeset, predicate func(*campaigns.Changeset) bool) []*campaigns.Changeset {
-	i := 0
-	for _, c := range cs {
-		if predicate(c) {
-			cs[i] = c
-			i++
-		}
-	}
-
-	return cs[:i]
 }
 
 func isOutdated(c *repos.Changeset) (bool, error) {

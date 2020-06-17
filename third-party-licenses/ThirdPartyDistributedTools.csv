@@ -1,0 +1,12 @@
+Project,License,Repository
+Prometheus,Apache License 2.0,https://github.com/prometheus/prometheus
+Grafana,Apache License 2.0,https://github.com/grafana/grafana
+Jaeger,Apache License 2.0,https://github.com/jaegertracing/jaeger
+PostgreSQL,PostgreSQL License,https://postgresql.org/
+SQLite,SQLite Blessing,https://sqlite.org/
+Redis,3-Clause BSD License,https://redis.io/
+universal-ctags,GNU General Public License v2.0,https://github.com/universal-ctags/ctags
+Zoekt,Apache License 2.0,https://github.com/sourcegraph/zoekt
+Comby,Apache License 2.0,https://github.com/comby-tools/comby/
+Alpine Linux,GNU General Public License,https://alpinelinux.org/
+Tini,MIT License,https://github.com/krallin/tini

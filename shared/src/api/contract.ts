@@ -3,6 +3,7 @@ import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
 import { Unsubscribable } from 'sourcegraph'
+import { ProxySubscribable } from './extension/api/common'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -15,8 +16,11 @@ export interface FlatExtHostAPI {
      */
     syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
 
-    syncRoots(roots: readonly clientType.WorkspaceRoot[]): void
-    syncVersionContext(versionContext: string | undefined): void
+    syncRoots: (roots: readonly clientType.WorkspaceRoot[]) => void
+    syncVersionContext: (versionContext: string | undefined) => void
+
+    // Search
+    transformSearchQuery: (query: string) => ProxySubscribable<string>
 }
 
 /**

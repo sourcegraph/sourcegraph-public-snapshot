@@ -93,13 +93,13 @@ Multiple or combined **repo:** and **file:** keywords are intersected. For examp
 
 Use operators to create more expressive searches.
 
-> NOTE: Operators are available as of 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in the site configuration. Built-in operator support is planned for an upcoming release.
+> NOTE: Operators are enabled by default as of 3.17 for searching file contents. This feature may be disabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in the site configuration.
 
 | Operator | Example |
 | --- | --- |
 | `and`, `AND` | [`conf.Get( and log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28&patternType=regexp), [`conf.Get( and log15.Error( and after`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28+and+after&patternType=regexp) |
 
-Returns results for files containing matches on the left _and_ right side of the `and` (set intersection). The number of results reports the number of files containing both strings.
+Returns results for files containing matches on the left _and_ right side of the `and` (set intersection).
 
 | Operator | Example |
 | --- | --- |

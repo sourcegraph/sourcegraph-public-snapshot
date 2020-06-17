@@ -453,7 +453,7 @@ func TestSyncRegistry(t *testing.T) {
 type MockSyncStore struct {
 	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
-	listChangesets        func(context.Context, ListChangesetsOpts) ([]*campaigns.Changeset, int64, error)
+	listChangesets        func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	updateChangesets      func(context.Context, ...*campaigns.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
 	transact              func(context.Context) (*Store, error)
@@ -467,7 +467,7 @@ func (m MockSyncStore) GetChangeset(ctx context.Context, opts GetChangesetOpts) 
 	return m.getChangeset(ctx, opts)
 }
 
-func (m MockSyncStore) ListChangesets(ctx context.Context, opts ListChangesetsOpts) ([]*campaigns.Changeset, int64, error) {
+func (m MockSyncStore) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 	return m.listChangesets(ctx, opts)
 }
 

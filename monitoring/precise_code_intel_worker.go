@@ -78,6 +78,15 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 						{
+							Name:              "processing_uploads_reset_failures",
+							Description:       "uploads errored after repeated resets every 5m",
+							Query:             `sum(increase(src_upload_queue_max_resets_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							PossibleSolutions: "none",
+						},
+						{
 							Name:              "upload_resetter_errors",
 							Description:       "upload resetter errors every 5m",
 							Query:             `sum(increase(src_upload_queue_reset_errors_total[5m]))`,
@@ -148,6 +157,20 @@ func PreciseCodeIntelWorker() *Container {
 						sharedContainerRestarts("precise-code-intel-worker"),
 						sharedContainerMemoryUsage("precise-code-intel-worker"),
 						sharedContainerCPUUsage("precise-code-intel-worker"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsage1d("precise-code-intel-worker"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-worker"),
 					},
 				},
 			},

@@ -1,8 +1,6 @@
 // @ts-check
 
 const { spawn } = require('child_process')
-const gulp = require('gulp')
-const path = require('path')
 
 function build() {
   return spawn('yarn', ['-s', 'run', 'build'], {

@@ -92,6 +92,20 @@ func GitServer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("gitserver"),
+						sharedProvisioningMemoryUsage1d("gitserver"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("gitserver"),
+						sharedProvisioningMemoryUsage5m("gitserver"),
+					},
+				},
+			},
 		},
 	}
 }

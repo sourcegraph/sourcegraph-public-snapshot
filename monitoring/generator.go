@@ -242,9 +242,6 @@ func (a Alert) validate() error {
 	if a.isEmpty() {
 		return errors.New("empty")
 	}
-	if a.GreaterOrEqual != 0 && a.LessOrEqual != 0 {
-		return errors.New("only one of GreaterOrEqual,LessOrEqual may be specified")
-	}
 	return nil
 }
 
@@ -586,12 +583,15 @@ func (c *Container) alertDescription(o Observable, alert Alert) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
-	if alert.GreaterOrEqual != 0 {
+	units := o.PanelOptions.unitType.short()
+	if alert.GreaterOrEqual != 0 && alert.LessOrEqual != 0 {
+		return fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
+	} else if alert.GreaterOrEqual != 0 {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		return fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, o.PanelOptions.unitType.short(), o.Description)
+		return fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
 	} else if alert.LessOrEqual != 0 {
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		return fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, o.PanelOptions.unitType.short(), o.Description)
+		return fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, units, o.Description)
 	}
 	panic("never here")
 }
@@ -615,11 +615,22 @@ func (c *Container) promAlertsFile() *promRulesFile {
 					if alert.isEmpty() {
 						continue
 					}
-					labels := map[string]string{}
-					labels["service_name"] = c.Name
-					labels["level"] = level
-					labels["name"] = o.Name
-					labels["description"] = c.alertDescription(o, alert)
+
+					hasUpperAndLowerBounds := (alert.GreaterOrEqual != 0) && (alert.LessOrEqual != 0)
+					makeLabels := func(bound string) map[string]string {
+						var name string
+						if hasUpperAndLowerBounds {
+							name = fmt.Sprintf("%s_%s", o.Name, bound)
+						} else {
+							name = o.Name
+						}
+						return map[string]string{
+							"name":         name,
+							"level":        level,
+							"service_name": c.Name,
+							"description":  c.alertDescription(o, alert),
+						}
+					}
 
 					// The alertQuery must contribute a query that returns a value < 1 when it is not
 					// firing, or a value of >= 1 when it is firing.
@@ -646,7 +657,9 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-					} else if alert.LessOrEqual != 0 {
+						group.AppendRow(alertQuery, makeLabels("high"))
+					}
+					if alert.LessOrEqual != 0 {
 						//
 						// 	lessOrEqual=50 / query_value=100 == 0.5
 						// 	lessOrEqual=50 / query_value=50 == 1.0
@@ -667,25 +680,8 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+						group.AppendRow(alertQuery, makeLabels("low"))
 					}
-
-					// This wrapper clamp/floor/default vector should be present on ALL alert_count rule
-					// definitions because:
-					//
-					// 1. Clamping and flooring ensures that a single alert definition can only ever
-					//    contribute a single 0 OR 1 value, and as such cannot artificially inflate
-					//    alert_count or cause it to become a non-whole number.
-					//
-					// 3. "OR on() vector(1)" ensures that the alert is always firing if the inner
-					//    alertQuery does not return values for any reason (e.g. the query is for a
-					//    metric that does not exist.)
-					//
-					expr := "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)"
-					group.Rules = append(group.Rules, promRule{
-						Record: "alert_count",
-						Labels: labels,
-						Expr:   expr,
-					})
 				}
 			}
 		}
@@ -912,6 +908,26 @@ type promRulesFile struct {
 type promGroup struct {
 	Name  string
 	Rules []promRule
+}
+
+func (g *promGroup) AppendRow(alertQuery string, labels map[string]string) {
+	// This wrapper clamp/floor/default vector should be present on ALL alert_count rule
+	// definitions because:
+	//
+	// 1. Clamping and flooring ensures that a single alert definition can only ever
+	//    contribute a single 0 OR 1 value, and as such cannot artificially inflate
+	//    alert_count or cause it to become a non-whole number.
+	//
+	// 3. "OR on() vector(1)" ensures that the alert is always firing if the inner
+	//    alertQuery does not return values for any reason (e.g. the query is for a
+	//    metric that does not exist.)
+	//
+	expr := "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)"
+	g.Rules = append(g.Rules, promRule{
+		Record: "alert_count",
+		Labels: labels,
+		Expr:   expr,
+	})
 }
 
 type promRule struct {

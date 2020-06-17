@@ -24,7 +24,7 @@
     "watch-webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watchWebpack",
     "webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp webpack",
     "lint": "yarn run eslint && gulp unusedExports && yarn run stylelint",
-    "eslint": "eslint --cache 'src/**/*.ts?(x)'",
+    "eslint": "eslint --cache '**/*.[tj]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "bundlesize": "GITHUB_TOKEN= bundlesize",
     "browserslist": "browserslist"

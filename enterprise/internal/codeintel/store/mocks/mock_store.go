@@ -329,13 +329,13 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ResetStalledFunc: &StoreResetStalledFunc{
-			defaultHook: func(context.Context, time.Time) ([]int, error) {
-				return nil, nil
+			defaultHook: func(context.Context, time.Time) ([]int, []int, error) {
+				return nil, nil, nil
 			},
 		},
 		ResetStalledIndexesFunc: &StoreResetStalledIndexesFunc{
-			defaultHook: func(context.Context, time.Time) ([]int, error) {
-				return nil, nil
+			defaultHook: func(context.Context, time.Time) ([]int, []int, error) {
+				return nil, nil, nil
 			},
 		},
 		RollbackToSavepointFunc: &StoreRollbackToSavepointFunc{
@@ -4257,23 +4257,23 @@ func (c StoreRequeueIndexFuncCall) Results() []interface{} {
 // StoreResetStalledFunc describes the behavior when the ResetStalled method
 // of the parent MockStore instance is invoked.
 type StoreResetStalledFunc struct {
-	defaultHook func(context.Context, time.Time) ([]int, error)
-	hooks       []func(context.Context, time.Time) ([]int, error)
+	defaultHook func(context.Context, time.Time) ([]int, []int, error)
+	hooks       []func(context.Context, time.Time) ([]int, []int, error)
 	history     []StoreResetStalledFuncCall
 	mutex       sync.Mutex
 }
 
 // ResetStalled delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) ResetStalled(v0 context.Context, v1 time.Time) ([]int, error) {
-	r0, r1 := m.ResetStalledFunc.nextHook()(v0, v1)
-	m.ResetStalledFunc.appendCall(StoreResetStalledFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) ResetStalled(v0 context.Context, v1 time.Time) ([]int, []int, error) {
+	r0, r1, r2 := m.ResetStalledFunc.nextHook()(v0, v1)
+	m.ResetStalledFunc.appendCall(StoreResetStalledFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ResetStalled method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreResetStalledFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]int, error)) {
+func (f *StoreResetStalledFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]int, []int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4281,7 +4281,7 @@ func (f *StoreResetStalledFunc) SetDefaultHook(hook func(context.Context, time.T
 // ResetStalled method of the parent MockStore instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreResetStalledFunc) PushHook(hook func(context.Context, time.Time) ([]int, error)) {
+func (f *StoreResetStalledFunc) PushHook(hook func(context.Context, time.Time) ([]int, []int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4289,21 +4289,21 @@ func (f *StoreResetStalledFunc) PushHook(hook func(context.Context, time.Time) (
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *StoreResetStalledFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) ([]int, error) {
-		return r0, r1
+func (f *StoreResetStalledFunc) SetDefaultReturn(r0 []int, r1 []int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) ([]int, []int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *StoreResetStalledFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) ([]int, error) {
-		return r0, r1
+func (f *StoreResetStalledFunc) PushReturn(r0 []int, r1 []int, r2 error) {
+	f.PushHook(func(context.Context, time.Time) ([]int, []int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreResetStalledFunc) nextHook() func(context.Context, time.Time) ([]int, error) {
+func (f *StoreResetStalledFunc) nextHook() func(context.Context, time.Time) ([]int, []int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4347,7 +4347,10 @@ type StoreResetStalledFuncCall struct {
 	Result0 []int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 []int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -4359,30 +4362,30 @@ func (c StoreResetStalledFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreResetStalledFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreResetStalledIndexesFunc describes the behavior when the
 // ResetStalledIndexes method of the parent MockStore instance is invoked.
 type StoreResetStalledIndexesFunc struct {
-	defaultHook func(context.Context, time.Time) ([]int, error)
-	hooks       []func(context.Context, time.Time) ([]int, error)
+	defaultHook func(context.Context, time.Time) ([]int, []int, error)
+	hooks       []func(context.Context, time.Time) ([]int, []int, error)
 	history     []StoreResetStalledIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // ResetStalledIndexes delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) ResetStalledIndexes(v0 context.Context, v1 time.Time) ([]int, error) {
-	r0, r1 := m.ResetStalledIndexesFunc.nextHook()(v0, v1)
-	m.ResetStalledIndexesFunc.appendCall(StoreResetStalledIndexesFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) ResetStalledIndexes(v0 context.Context, v1 time.Time) ([]int, []int, error) {
+	r0, r1, r2 := m.ResetStalledIndexesFunc.nextHook()(v0, v1)
+	m.ResetStalledIndexesFunc.appendCall(StoreResetStalledIndexesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ResetStalledIndexes
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreResetStalledIndexesFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]int, error)) {
+func (f *StoreResetStalledIndexesFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]int, []int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4390,7 +4393,7 @@ func (f *StoreResetStalledIndexesFunc) SetDefaultHook(hook func(context.Context,
 // ResetStalledIndexes method of the parent MockStore instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreResetStalledIndexesFunc) PushHook(hook func(context.Context, time.Time) ([]int, error)) {
+func (f *StoreResetStalledIndexesFunc) PushHook(hook func(context.Context, time.Time) ([]int, []int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4398,21 +4401,21 @@ func (f *StoreResetStalledIndexesFunc) PushHook(hook func(context.Context, time.
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *StoreResetStalledIndexesFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) ([]int, error) {
-		return r0, r1
+func (f *StoreResetStalledIndexesFunc) SetDefaultReturn(r0 []int, r1 []int, r2 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) ([]int, []int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *StoreResetStalledIndexesFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, time.Time) ([]int, error) {
-		return r0, r1
+func (f *StoreResetStalledIndexesFunc) PushReturn(r0 []int, r1 []int, r2 error) {
+	f.PushHook(func(context.Context, time.Time) ([]int, []int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreResetStalledIndexesFunc) nextHook() func(context.Context, time.Time) ([]int, error) {
+func (f *StoreResetStalledIndexesFunc) nextHook() func(context.Context, time.Time) ([]int, []int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4456,7 +4459,10 @@ type StoreResetStalledIndexesFuncCall struct {
 	Result0 []int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 []int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -4468,7 +4474,7 @@ func (c StoreResetStalledIndexesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreResetStalledIndexesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreRollbackToSavepointFunc describes the behavior when the

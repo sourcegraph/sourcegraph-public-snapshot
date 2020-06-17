@@ -458,7 +458,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		t.Fatal(err)
 	}
 
-	changesets := make([]*cmpgn.Changeset, 0, 3)
+	changesets := make(cmpgn.Changesets, 0, 3)
 
 	deletedRepoChangeset := &cmpgn.Changeset{
 		RepoID:              deletedRepo.ID,
@@ -578,12 +578,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
-		ids := make([]int64, len(changesets))
-		for i, c := range changesets {
-			ids[i] = c.ID
-		}
-
-		clones := make([]*cmpgn.Changeset, len(changesets))
+		ids := changesets.IDs()
+		clones := make(cmpgn.Changesets, len(changesets))
 
 		for i, c := range changesets {
 			// Set only the fields on which we have a unique constraint
@@ -704,12 +700,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 
 		{
-			ids := make([]int64, len(changesets))
-			for i := range changesets {
-				ids[i] = changesets[i].ID
-			}
-
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: changesets.IDs()})
 			if err != nil {
 				t.Fatal(err)
 			}

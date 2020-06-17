@@ -53,6 +53,7 @@ func TestGetPackage(t *testing.T) {
 		StartedAt:      expected.StartedAt,
 		FinishedAt:     expected.FinishedAt,
 		ProcessAfter:   expected.ProcessAfter,
+		NumResets:      expected.NumResets,
 		RepositoryID:   expected.RepositoryID,
 		Indexer:        expected.Indexer,
 	})

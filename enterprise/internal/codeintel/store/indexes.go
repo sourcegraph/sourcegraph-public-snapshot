@@ -19,6 +19,7 @@ type Index struct {
 	StartedAt      *time.Time `json:"startedAt"`
 	FinishedAt     *time.Time `json:"finishedAt"`
 	ProcessAfter   *time.Time `json:"processAfter"`
+	NumResets      int        `json:"numResets"`
 	RepositoryID   int        `json:"repositoryId"`
 	Rank           *int       `json:"placeInQueue"`
 }
@@ -42,6 +43,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.StartedAt,
 			&index.FinishedAt,
 			&index.ProcessAfter,
+			&index.NumResets,
 			&index.RepositoryID,
 			&index.Rank,
 		); err != nil {
@@ -80,6 +82,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.started_at,
 			u.finished_at,
 			u.process_after,
+			u.num_resets,
 			u.repository_id,
 			s.rank
 		FROM lsif_indexes u
@@ -147,6 +150,7 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.started_at,
 				u.finished_at,
 				u.process_after,
+				u.num_resets,
 				u.repository_id,
 				s.rank
 			FROM lsif_indexes u
@@ -248,6 +252,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("started_at"),
 	sqlf.Sprintf("finished_at"),
 	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("repository_id"),
 	sqlf.Sprintf("NULL"),
 }
@@ -297,23 +302,55 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 // died. There should be a nearly-zero delay between these states during normal operation.
 const StalledIndexMaxAge = time.Second * 5
 
+// IndexMaxNumResets is the maximum number of times an index can be reset. If an index's
+// failed attempts counter reaches this threshold, it will be moved into "errored" rather than
+// "queued" on its next reset.
+const IndexMaxNumResets = 3
+
 // ResetStalledIndexes moves all unlocked index processing for more than `StalledIndexMaxAge` back to the
-// queued state. This method returns a list of updated index identifiers.
-func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error) {
-	ids, err := scanInts(s.query(
+// queued state. In order to prevent input that continually crashes indexer instances, indexes that have
+// been reset more than IndexMaxNumResets times will be marked as errored. This method returns a list of
+// updated and errored index identifiers.
+func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, []int, error) {
+	resetIDs, err := scanInts(s.query(
 		ctx,
 		sqlf.Sprintf(`
-			UPDATE lsif_indexes u SET state = 'queued', started_at = null WHERE id = ANY(
+			UPDATE lsif_indexes u
+			SET state = 'queued', started_at = null, num_resets = num_resets + 1
+			WHERE id = ANY(
 				SELECT id FROM lsif_indexes
-				WHERE state = 'processing' AND %s - started_at > (%s * interval '1 second')
+				WHERE
+					state = 'processing' AND
+					%s - started_at > (%s * interval '1 second') AND
+					num_resets < %s
 				FOR UPDATE SKIP LOCKED
 			)
 			RETURNING u.id
-		`, now.UTC(), StalledIndexMaxAge/time.Second),
+		`, now.UTC(), StalledIndexMaxAge/time.Second, IndexMaxNumResets),
 	))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return ids, nil
+	erroredIDs, err := scanInts(s.query(
+		ctx,
+		sqlf.Sprintf(`
+			UPDATE lsif_indexes u
+			SET state = 'errored', finished_at = clock_timestamp(), failure_message = 'failed to process'
+			WHERE id = ANY(
+				SELECT id FROM lsif_indexes
+				WHERE
+					state = 'processing' AND
+					%s - started_at > (%s * interval '1 second') AND
+					num_resets >= %s
+				FOR UPDATE SKIP LOCKED
+			)
+			RETURNING u.id
+		`, now.UTC(), StalledIndexMaxAge/time.Second, IndexMaxNumResets),
+	))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return resetIDs, erroredIDs, nil
 }

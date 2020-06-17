@@ -20,16 +20,20 @@ type UploadResetter struct {
 // it has died.
 func (ur *UploadResetter) Run() {
 	for {
-		ids, err := ur.Store.ResetStalled(context.Background(), time.Now())
+		resetIDs, erroredIDs, err := ur.Store.ResetStalled(context.Background(), time.Now())
 		if err != nil {
 			ur.Metrics.Errors.Inc()
 			log15.Error("Failed to reset stalled uploads", "error", err)
 		}
-		for _, id := range ids {
+		for _, id := range resetIDs {
 			log15.Debug("Reset stalled upload", "uploadID", id)
 		}
+		for _, id := range erroredIDs {
+			log15.Debug("Failed stalled upload", "uploadID", id)
+		}
 
-		ur.Metrics.Count.Add(float64(len(ids)))
+		ur.Metrics.UploadResets.Add(float64(len(resetIDs)))
+		ur.Metrics.UploadResetFailures.Add(float64(len(erroredIDs)))
 		time.Sleep(ur.ResetInterval)
 	}
 }

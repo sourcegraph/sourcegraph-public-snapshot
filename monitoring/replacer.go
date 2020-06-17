@@ -25,6 +25,20 @@ func Replacer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("replacer"),
+						sharedProvisioningMemoryUsage1d("replacer"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("replacer"),
+						sharedProvisioningMemoryUsage5m("replacer"),
+					},
+				},
+			},
 		},
 	}
 }
