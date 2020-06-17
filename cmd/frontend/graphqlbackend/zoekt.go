@@ -209,6 +209,11 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
 		var matchCount int
+		commit := &GitCommitResolver{
+			repoResolver: repoResolvers[repoRev.Repo.Name],
+			oid:          GitObjectID(file.Version),
+			inputRev:     &inputRev,
+		}
 		for _, l := range file.LineMatches {
 			if !l.FileName {
 				if len(l.LineFragments) > maxLineFragmentMatches {
@@ -220,12 +225,6 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
-						commit := &GitCommitResolver{
-							repoResolver: repoResolvers[repoRev.Repo.Name],
-							oid:          GitObjectID(file.Version),
-							inputRev:     &inputRev,
-						}
-
 						symbols = append(symbols, &searchSymbolResult{
 							symbol: protocol.Symbol{
 								Name:       m.SymbolInfo.Sym,
