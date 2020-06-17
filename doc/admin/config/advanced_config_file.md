@@ -54,7 +54,7 @@ EXTSVC_CONFIG_FILE=extsvc.json
       ...
     },
   ],
-  "GIT": [
+  "OTHER": [
     {
       // First "Generic Git host" code host configuration.
       "url": "https://mycodehost.example.com/repos",
