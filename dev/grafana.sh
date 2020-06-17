@@ -9,10 +9,6 @@ GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 IMAGE=sourcegraph/grafana:dev
 CONTAINER=grafana
 
-# quickly build image - should do this because the image has a Sourcegraph wrapper program
-# see /docker-images/grafana/cmd/grafana-wrapper for more details
-IMAGE=${IMAGE} CACHE=true ./docker-images/grafana/build.sh >/dev/null 2>&1
-
 # docker containers must access things via docker host on non-linux platforms
 CONFIG_SUB_DIR="all"
 SRC_FRONTEND_INTERNAL="host.docker.internal:3090"
@@ -54,6 +50,11 @@ mkdir -p "${GRAFANA_LOGS}"
 # We want to capture that output, but because it's fairly noisy, don't want to
 # display it in the normal case.
 GRAFANA_LOG_FILE="${GRAFANA_LOGS}/grafana.log"
+
+# Quickly build image - should do this because the image has a Sourcegraph wrapper program
+# see /docker-images/grafana/cmd/grafana-wrapper for more details
+IMAGE=${IMAGE} CACHE=true ./docker-images/grafana/build.sh >"${GRAFANA_LOG_FILE}" 2>&1 ||
+  (BUILD_EXIT_CODE=$? && echo "build failed; dumping log:" && cat "${GRAFANA_LOG_FILE}" && exit $BUILD_EXIT_CODE)
 
 function finish() {
   GRAFANA_EXIT_CODE=$?
