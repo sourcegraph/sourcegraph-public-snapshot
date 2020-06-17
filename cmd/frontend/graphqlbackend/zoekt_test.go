@@ -38,9 +38,15 @@ type fakeSearcher struct {
 
 	// Default all unimplemented zoekt.Searcher methods to panic.
 	zoekt.Searcher
+
+	searchFn func(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error)
 }
 
 func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	if ss.searchFn != nil {
+		return ss.searchFn(ctx, q, opts)
+	}
+
 	return ss.result, nil
 }
 
@@ -660,6 +666,19 @@ func TestQueryToZoektQuery(t *testing.T) {
 				PathPatternsAreCaseSensitive: false,
 			},
 			Query: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+		},
+		{
+			Name: "file_regex",
+			Pattern: &search.TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              []string{`^foo\.go|bar\.go$`},
+				ExcludePattern:               `\bvendor\b`,
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: `foo case:no f:^foo\.go|bar\.go$ -f:\bvendor\b`,
 		},
 		{
 			Name: "case",

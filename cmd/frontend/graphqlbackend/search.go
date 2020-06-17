@@ -251,6 +251,10 @@ type searchResolver struct {
 
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
+
+	// If not empty, the files contained in this subset
+	// will be passed to search engines to limit the results.
+	searchResultSubset []SearchResultResolver
 }
 
 // rawQuery returns the original query string input.

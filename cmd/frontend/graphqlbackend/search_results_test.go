@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -433,6 +434,40 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("with result subset", func(t *testing.T) {
+		query, err := query.ParseAndCheck("p")
+		if err != nil {
+			t.Fatal(err)
+		}
+		sr := searchResolver{
+			query: query,
+			searchResultSubset: []SearchResultResolver{
+				&FileMatchResolver{JPath: "foo.go"},
+				&FileMatchResolver{JPath: "bar.yml"},
+				&commitSearchResultResolver{},
+			},
+		}
+
+		p, err := sr.getPatternInfo(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := search.TextPatternInfo{
+			Pattern:                "p",
+			IncludePatterns:        []string{`^foo\.go$|^bar\.yml$`},
+			IsRegExp:               true,
+			PathPatternsAreRegExps: true,
+		}
+
+		normalize(p)
+		normalize(&want)
+
+		if !reflect.DeepEqual(*p, want) {
+			t.Errorf("\ngot  %+v\nwant %+v", *p, want)
+		}
+	})
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
@@ -1126,4 +1161,71 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
 		}
 	})
+}
+
+func TestEvaluateAnd(t *testing.T) {
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
+	db.Mocks.Repos.Count = func(ctx context.Context, opt db.ReposListOptions) (int, error) {
+		return 2, nil
+	}
+	db.Mocks.Repos.List = func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
+		return []*types.Repo{
+			{ID: 1, Name: "github.com/sourcegraph/fooer"},
+			{ID: 2, Name: "github.com/sourcegraph/barer"},
+		}, nil
+	}
+
+	q, _ := query.ProcessAndOr("foo and bar and baz", query.SearchTypeRegex)
+	scopeParameters, pattern, err := query.PartitionSearchPattern(q.(*query.AndOrQuery).Query)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zoektFileMatches := []zoekt.FileMatch{
+		{
+			FileName:   "foo.md",
+			Repository: "github.com/sourcegraph/fooer",
+			LineMatches: []zoekt.LineMatch{
+				{
+					LineStart: 0,
+					LineEnd:   10,
+				},
+			},
+		},
+		{
+			FileName:   "bar.md",
+			Repository: "github.com/sourcegraph/barer",
+			LineMatches: []zoekt.LineMatch{
+				{
+					LineStart: 20,
+					LineEnd:   30,
+				},
+			},
+		},
+	}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			searchFn: func(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+				t.Log(q)
+				t.Log(opts)
+				return &zoekt.SearchResult{Files: zoektFileMatches}, nil
+			},
+		},
+		DisableCache: true,
+	}
+
+	sr := searchResolver{
+		query: q,
+		zoekt: z,
+	}
+
+	res, err := sr.evaluateAnd(context.TODO(), scopeParameters, pattern.(query.Operator).Operands)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertEqual(t, res, 1)
 }

@@ -759,10 +759,14 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
-// evaluateAnd performs set intersection on result sets. It collects results for
-// all expressions that are ANDed together by searching for each subexpression
-// and then intersects those results that are in the same repo/file path. To
-// collect N results for count:N, we need to opportunistically ask for more than
+// evaluateAnd collects results for each expression and uses the previous result
+// to limit the search scope of subsequent searches. Each subexpression is then
+// only limited to the files already found for previous operands. Because the
+// repository information of such files cannot be passed to search engines,
+// results may include files whose name is the same as one on the previous result set
+// but not of the same repository. It is important to intersect new results with
+// old ones based on repo+path, to ensure no new file has slipped through the results.
+// To collect N results for count:N, we need to opportunistically ask for more than
 // N results for each subexpression (since intersect can never yield more than N,
 // and likely yields fewer than N results). Thus, we perform a search of 2*N for
 // each expression, and if the intersection does not yield N results, and is not
@@ -814,6 +818,10 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		if result == nil {
 			return nil, nil
 		}
+		// store the results to limit the scope of subsequent searches to
+		// the matched files
+		r.searchResultSubset = result.SearchResults
+
 		exhausted = !result.limitHit
 		for _, term := range operands[1:] {
 			new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
@@ -822,9 +830,22 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			}
 			if new != nil {
 				exhausted = exhausted && !new.limitHit
+				if len(new.SearchResults) == 0 {
+					result = nil
+					break
+				}
+				// because evaluation looks into files returned by previous
+				// searches instead of repo+file combination, new results
+				// may include false positives.
+				// to avoid that, intersect the new results with the previous ones to be
+				// certain no new files are added to the set.
 				result = intersect(result, new)
+				// store the new subset
+				r.searchResultSubset = result.SearchResults
 			}
 		}
+
+		r.searchResultSubset = nil
 		if exhausted {
 			break
 		}
@@ -1163,7 +1184,32 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 		opts.fileMatchLimit = r.maxResults()
 	}
 
-	return getPatternInfo(r.query, opts)
+	p, err := getPatternInfo(r.query, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(r.searchResultSubset) == 0 {
+		return p, nil
+	}
+
+	// if the searchResultSubset is not empty
+	// we need to limit the query to a subset of files
+	// TODO(asdine): find a way to limit to a repo+file instead
+	var fileSet strings.Builder
+	for _, r := range r.searchResultSubset {
+		if fileMatch, ok := r.ToFileMatch(); ok {
+			if fileSet.Len() != 0 {
+				fileSet.WriteByte('|')
+			}
+
+			fileSet.WriteString(fmt.Sprintf("^%s$", regexp.QuoteMeta(fileMatch.JPath)))
+		}
+	}
+
+	p.IncludePatterns = append(p.IncludePatterns, fileSet.String())
+
+	return p, nil
 }
 
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
