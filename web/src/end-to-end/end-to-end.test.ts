@@ -131,7 +131,7 @@ describe('e2e test suite', () => {
                 })
             ).jsonValue()
 
-            const resp = await got.post('/.api/graphql', {
+            const resp = await got.post('.api/graphql', {
                 prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
@@ -454,7 +454,7 @@ describe('e2e test suite', () => {
         const getHoverContents = async (expectedCount = 1): Promise<string[]> => {
             const selector =
                 expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : '.e2e-tooltip-content'
-            await driver.page.waitForSelector(selector, { visible: true })
+            await driver.page.waitForSelector(selector)
             return driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
                 [...document.querySelectorAll('.e2e-tooltip-content')].map(content => content.textContent || '')
