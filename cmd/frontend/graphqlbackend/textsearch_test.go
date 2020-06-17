@@ -289,6 +289,13 @@ func TestLimitSearcherRepos(t *testing.T) {
 			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
 			wantLimited: repos("f", "g"),
 		},
+		{
+			name:        "rev_limited_duplication",
+			limit:       6,
+			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "f@2", "g@1"),
+			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
+			wantLimited: repos("f", "g"),
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
