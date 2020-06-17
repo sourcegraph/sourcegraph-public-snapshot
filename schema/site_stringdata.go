@@ -629,7 +629,7 @@ const SiteSchemaJSON = `{
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["slack", "pagerduty", "webhook"]
+                "enum": ["slack", "pagerduty", "webhook", "email"]
               }
             },
             "oneOf": [
