@@ -814,7 +814,6 @@ func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (sea
 		if totalRepoRevs > limit {
 			limitedSearcherRepos = append(limitedSearcherRepos, repoRevs.Repo)
 			limitedRepos++
-			continue
 		}
 	}
 	searcherRepos = unindexed[:len(unindexed)-limitedRepos]
