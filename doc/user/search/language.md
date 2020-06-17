@@ -340,22 +340,14 @@ example, `testroute repo:gorilla/mux`.
   <table class="r">
     <tbody>
       <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c"><a href="#string">string</a></code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
+        <td class="ts"></td>
+        <td class="d"><code class="c"><a href="#string">string</a></code></td>
+        <td class="te"></td>
+      </tr>
+      <tr class="r">
+        <td class="ls"></td>
+        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
+        <td class="le"></td>
       </tr>
     </tbody>
   </table>
@@ -373,106 +365,81 @@ A pattern to search. By default the pattern is searched literally. The kind of s
 <div name="r">
   <table class="r">
     <tbody>
-      <tr class="r"></tr>
       <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d">
-                          <table class="r">
-                            <tbody>
-                              <tr class="r">
-                                <td class="ts"></td>
-                                <td class="d"><code class="c"><a href="#repo">repo</a></code></td>
-                                <td class="te"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#file">file</a></code></td>
-                                <td class="ke"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#content">content</a></code></td>
-                                <td class="ke"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#language">language</a></code></td>
-                                <td class="ke"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#type">type</a></code></td>
-                                <td class="ke"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#case">case</a></code></td>
-                                <td class="ke"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#fork">fork<a/></code></td>
-                                <td class="ke"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#archived">archived</a></code></td>
-                                <td class="ke"></td>
-                              </tr>
-                              <tr class="r">
-                                <td class="ks"></td>
-                                <td class="d"><code class="c"><a href="#repogroup">repogroup</a></code></td>
-                                <td class="ke">
-                                </td>
-                                <tr class="r">
-                                  <td class="ks"></td>
-                                  <td class="d"><code class="c"><a href="#repo-has-file">repo has file</a></code></td>
-                                  <td class="ke"></td>
-                                </tr>
-                                <tr class="r">
-                                  <td class="ks"></td>
-                                  <td class="d"><code class="c"><a href="#repo-has-commit-after">repo has commit after</a></code></td>
-                                  <td class="ke"></td>
-                                </tr>
-                                <tr class="r">
-                                  <td class="ks"></td>
-                                  <td class="d"><code class="c"><a href="#count">count</a></code></td>
-                                  <td class="ke"></td>
-                                </tr>
-                                <tr class="r">
-                                  <td class="ks"></td>
-                                  <td class="d"><code class="c"><a href="#timeout">timeout</a></code></td>
-                                  <td class="ke"></td>
-                                </tr>
-                                <tr class="r">
-                                  <td class="ks"></td>
-                                  <td class="d"><code class="c"><a href="#visibility">visibility</a></code></td>
-                                  <td class="ke"></td>
-                                </tr>
-                                <tr class="r">
-                                  <td class="ls"></td>
-                                  <td class="d"><code class="c"><a href="#pattern-type">pattern type</a></code></td>
-                                  <td class="le"></td>
-                                </tr>
-                            </tbody>
-                          </table>
-                        </td>
-                        </tr>
-                    </tbody>
-                  </table>
-                </td>
-                </tr>
-            </tbody>
-          </table>
-        </td>
+        <td class="ts"></td>
+        <td class="d"><code class="c"><a href="#repo">repo</a></code></td>
+        <td class="te"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#file">file</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#content">content</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#language">language</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#type">type</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#case">case</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#fork">fork<a/></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#archived">archived</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#repogroup">repogroup</a></code></td>
+        <td class="ke"></td>
+        <tr class="r">
+          <td class="ks"></td>
+          <td class="d"><code class="c"><a href="#repo-has-file">repo has file</a></code></td>
+          <td class="ke"></td>
         </tr>
+        <tr class="r">
+          <td class="ks"></td>
+          <td class="d"><code class="c"><a href="#repo-has-commit-after">repo has commit after</a></code></td>
+          <td class="ke"></td>
+        </tr>
+        <tr class="r">
+          <td class="ks"></td>
+          <td class="d"><code class="c"><a href="#count">count</a></code></td>
+          <td class="ke"></td>
+        </tr>
+        <tr class="r">
+          <td class="ks"></td>
+          <td class="d"><code class="c"><a href="#timeout">timeout</a></code></td>
+          <td class="ke"></td>
+        </tr>
+        <tr class="r">
+          <td class="ks"></td>
+          <td class="d"><code class="c"><a href="#visibility">visibility</a></code></td>
+          <td class="ke"></td>
+        </tr>
+        <tr class="r">
+          <td class="ls"></td>
+          <td class="d"><code class="c"><a href="#pattern-type">pattern type</a></code></td>
+          <td class="le"></td>
+        </tr>
+      </tr>
     </tbody>
   </table>
 </div>
@@ -659,8 +626,7 @@ Search a repository at a given revision. For example, a branch name, commit hash
               <tr class="r">
                 <td class="ts"></td>
                 <td class="d"><code class="c">file:</code></td>
-                <td class="te">
-                </td>
+                <td class="te"></td>
               </tr>
               <tr class="r">
                 <td class="ls"></td>
@@ -675,14 +641,13 @@ Search a repository at a given revision. For example, a branch name, commit hash
                     </tbody>
                   </table>
                 </td>
-                <td class="le">
-                </td>
+                <td class="le"></td>
               </tr>
             </tbody>
           </table>
         </td>
         <td class="d"><code class="c"><a href="#regular-expression">regular expression</a></code></td>
-        <td class="d">
+        <td class="d"></td>
       </tr>
     </tbody>
   </table>
@@ -705,14 +670,12 @@ excludes the file from being searched.
       <tr class="r">
         <td class="ks"></td>
         <td class="d"><code class="c">lang:</code></td>
-        <td class="ke">
-        </td>
+        <td class="ke"></td>
       </tr>
       <tr class="r">
         <td class="ls"></td>
         <td class="d"><code class="c">l:</code></td>
-        <td class="le">
-        </td>
+        <td class="le"></td>
       </tr>
     </tbody>
   </table>
@@ -831,18 +794,18 @@ Set whether the search pattern should only conduct a search of a certain type (e
           <table class="r">
             <tbody>
               <tr class="r">
-                <td class="ts">
-                  <td class="d"><code class="c">yes</code></td>
-                  <td class="te">
+                <td class="ts"></td>
+                <td class="d"><code class="c">yes</code></td>
+                <td class="te"></td>
               </tr>
               <tr class="r">
-                <td class="ls">
-                  <td class="d"><code class="c">no</code></td>
-                  <td class="le">
+                <td class="ls"></td>
+                <td class="d"><code class="c">no</code></td>
+                <td class="le"></td>
               </tr>
             </tbody>
           </table>
-          </td>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -1337,8 +1300,7 @@ Include commits or diffs that are authored by the user.
               <tr class="r">
                 <td class="ts"></td>
                 <td class="d"><code class="c">before:</code></td>
-                <td class="te">
-                </td>
+                <td class="te"></td>
               </tr>
               <tr class="r">
                 <td class="ls"></td>
@@ -1352,8 +1314,7 @@ Include commits or diffs that are authored by the user.
                     </tbody>
                   </table>
                 </td>
-                <td class="le">
-                </td>
+                <td class="le"></td>
               </tr>
             </tbody>
           </table>
@@ -1375,41 +1336,31 @@ Example time values are `last thursday` or `november 1 2019`.
   <table class="r">
     <tbody>
       <tr class="r">
-        <td class="d">
-          <table class="r">
+        <td class="d"><table class="r">
             <tbody>
               <tr class="r">
-                <td class="d"><table class="r">
+                <td class="ts"></td>
+                <td class="d"><code class="c">after:</code></td>
+                <td class="te"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d">
+                  <table class="r">
                     <tbody>
                       <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"><code class="c">after:</code></td>
-                        <td class="te">
-                        </td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ls"></td>
-                        <td class="d">
-                          <table class="r">
-                            <tbody>
-                              <tr class="r">
-                                <td class="d"><code class="c">since:</code></td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </td>
-                        <td class="le">
-                        </td>
+                        <td class="d"><code class="c">since:</code></td>
                       </tr>
                     </tbody>
                   </table>
                 </td>
-                <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-                <td class="d"></td>
+                <td class="le"></td>
               </tr>
             </tbody>
           </table>
         </td>
+        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
+        <td class="d"></td>
       </tr>
     </tbody>
   </table>
@@ -1425,37 +1376,28 @@ Example time values are `last thursday` or `november 1 2019`.
   <table class="r">
     <tbody>
       <tr class="r">
-        <td class="d">
-          <table class="r">
+        <td class="d"><table class="r">
             <tbody>
               <tr class="r">
-                <td class="d"><table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"><code class="c">message:</code></td>
-                        <td class="te">
-                        </td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">msg:</code></td>
-                        <td class="ke"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ls"></td>
-                        <td class="d"><code class="c">m:</code></td>
-                        <td class="le">
-                      </tr>
-                    </tbody>
-                  </table>
-                  </td>
-                  <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-                  <td class="d"></td>
+                <td class="ts"></td>
+                <td class="d"><code class="c">message:</code></td>
+                <td class="te"></td>
+              </tr>
+              <tr class="r">
+                <td class="ks"></td>
+                <td class="d"><code class="c">msg:</code></td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">m:</code></td>
+                <td class="le"></td>
               </tr>
             </tbody>
           </table>
-          </td>
+          <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
+          <td class="d"></td>
+        </td>
       </tr>
     </tbody>
   </table>
