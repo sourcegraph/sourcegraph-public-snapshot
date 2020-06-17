@@ -2,7 +2,7 @@
 
 Some teams require Sourcegraph configuration to be stored in version control as opposed to editing via the Site admin UI.
 
-As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [critical configuration](critical_config.md), [code host configuration](../external_service/index.md), and global settings.
+As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [code host configuration](../external_service/index.md), and global settings.
 
 ## Benefits
 
@@ -15,10 +15,6 @@ Loading configuration in this manner has two significant drawbacks:
 
 1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as scratch space, though).
 1. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now be more manual for you (see below).
-
-## Critical configuration (management console)
-
-> NOTE: Sourcegraph 3.11 removed the management console, so all critical configuration settings are now located in the site configuration. See the [migration Sourcegraph v3.11+ migration notes](../migration/3_11.md) for more information.
 
 ## Site configuration
 

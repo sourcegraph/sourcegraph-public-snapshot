@@ -68,15 +68,6 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 	return &siteConfigurationResolver{}, nil
 }
 
-func (r *siteResolver) CriticalConfiguration(ctx context.Context) (*criticalConfigurationResolver, error) {
-	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	return &criticalConfigurationResolver{}, nil
-}
-
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
 		return false, nil
@@ -187,25 +178,4 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
-}
-
-type criticalConfigurationResolver struct{}
-
-func (r *criticalConfigurationResolver) ID(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return 0, err
-	}
-	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
-}
-
-func (r *criticalConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
-	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return "", err
-	}
-	criticalConf := globals.ConfigurationServerFrontendOnly.Raw().Critical
-	return JSONCString(criticalConf), nil
 }
