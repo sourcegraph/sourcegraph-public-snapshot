@@ -36,6 +36,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+const maxUnindexedRepoRevSearchesPerQuery = 200
+
 var (
 	// A global limiter on number of concurrent searcher searches.
 	textSearchLimiter = mutablelimiter.New(32)
@@ -794,8 +796,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	return flattened, common, nil
 }
-
-const maxUnindexedRepoRevSearchesPerQuery = 200
 
 // limitSearcherRepos imposes a limit on the number of repo@revs that would go
 // to the unindexed searcher codepath, because sending this many requests to
