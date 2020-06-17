@@ -52,7 +52,6 @@ interface Props
     authenticatedUser: GQL.IUser | null
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
-    isSourcegraphDotCom: boolean
     isSearchRelatedPage: boolean
     showCampaigns: boolean
 

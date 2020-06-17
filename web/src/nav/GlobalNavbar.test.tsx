@@ -14,7 +14,6 @@ const PROPS: GlobalNavbar['props'] = {
     history: createMemoryHistory(),
     hideGlobalSearchInput: false,
     keyboardShortcuts: [],
-    isSourcegraphDotCom: false,
     navbarSearchQueryState: { query: 'q', cursorPosition: 0 },
     onNavbarQueryChange: () => undefined,
     lowProfile: false,
