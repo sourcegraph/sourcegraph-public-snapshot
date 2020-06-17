@@ -748,47 +748,86 @@ parameters in this Sourcegraph language.
         <td class="d">
           <table class="r">
             <tbody>
+
               <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">literal</code></td>
-                <td class="te"></td>
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="ts"></td>
+                        <td class="d"><code class="c">literal</code></td>
+                        <td class="te"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">regexp</code></td>
+                        <td class="le"></td>
+                      </tr>
+                    </tbody>
+                  </table>
               </tr>
+
               <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">regexp</code></td>
-                <td class="le"></td>
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="ts"></td>
+                        <td class="d"><code class="c">literal</code></td>
+                        <td class="te"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">regexp</code></td>
+                        <td class="le"></td>
+                      </tr>
+                    </tbody>
+                  </table>
               </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">commit</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">diff</code></td>
-                <td class="le"></td>
-              </tr>
+
             </tbody>
           </table>
         </td>
+
         <td class="d">
           <table class="r">
             <tbody>
-              <tr class="r"><td class="d"></td></tr>
-              <tr class="r"><td class="e"></td></tr>
-              <tr class="r"><td class="d"><code class="c">commit parameter</code></tr>
+
+              <tr class="r">
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="d"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="e"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+              </tr>
+
+              <tr class="r">
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="d"><code class="c">commit parameter</code></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="e"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+              </tr>
+
             </tbody>
           </table>
         </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r"><td class="te"></td></tr>
-              <tr class="r"><td class="e"></td></tr>
-              <tr class="r"><td class="le"></td></tr>
-            </tbody>
-          </table>
-        </td>
+
+        <td class="te"></td>
+
+
       </tr>
     </tbody>
   </table>
