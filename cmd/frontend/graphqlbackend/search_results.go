@@ -813,9 +813,6 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			if new != nil {
 				exhausted = exhausted && !new.limitHit
 				result = intersect(result, new)
-				if result == nil {
-					return nil, nil
-				}
 			}
 		}
 		if exhausted {
