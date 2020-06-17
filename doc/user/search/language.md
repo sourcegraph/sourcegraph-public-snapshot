@@ -11,13 +11,21 @@ li.r {
 }
 
 .r {
-    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
     border-collapse: collapse !important;
     vertical-align: top !important;
 }
+
+.railroad {
+    border: 0px !important;
+    padding: 0px !important;
+    margin: 0px !important;
+    border-collapse: collapse !important;
+    vertical-align: top !important;
+}
+
 
 th.r {
     text-align: left !important;
@@ -48,6 +56,7 @@ img.r {
 }
 
 .ts {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -60,6 +69,7 @@ img.r {
 }
 
 .te {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -72,6 +82,7 @@ img.r {
 }
 
 .le {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -84,6 +95,7 @@ img.r {
 }
 
 .ke {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -97,6 +109,7 @@ img.r {
 
 
 .ls {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -109,6 +122,7 @@ img.r {
 }
 
 .ks {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -122,6 +136,7 @@ img.r {
 
 
 .d {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -134,6 +149,7 @@ img.r {
 }
 
 .e {
+    background-color: #ffffff !important;
     border: 0px !important;
     padding: 0px !important;
     margin: 0px !important;
@@ -146,6 +162,7 @@ img.r {
 }
 
 .c {
+    background-color: #ffffff !important;
     padding: 1px 3px !important;
     margin: 0px 0px !important;
     border: 2px solid !important;
@@ -740,97 +757,13 @@ parameters in this Sourcegraph language.
 ### Type
 
 <div name="r">
+
   <table class="r">
     <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">type:</code></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
+<tr class="railroad"><td class="d"><code class="c">type:</code></td><td class="d"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="ts"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="ts"></td><td class="d"><code class="c">=</code></td><td class="te"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><code class="c">&lt;</code></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><code class="c">&gt;</code></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">&lt; =</code></td></tr></tbody></table></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">&gt; =</code></td></tr></tbody></table></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">&lt; &gt;</code></td></tr></tbody></table></td><td class="ke"></td></tr><tr class="railroad"><td class="ls"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">! =</code></td></tr></tbody></table></td><td class="le"></td></tr></tbody></table></td><td class="d"></td></tr></tbody></table></td><td class="te"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="ts"></td><td class="d"><code class="c">LIKE</code></td><td class="te"></td></tr><tr class="railroad"><td class="ls"></td><td class="d"><code class="c">ILIKE</code></td><td class="le"></td></tr></tbody></table></td><td class="d"><code class="c"><a href="index.html#operand">commit parameter</a></code></td></tr></tbody></table></td><td class="ke"></td></tr></tbody></table></td><td class="le"></td></tr>
+</tbody>
+</table>
 
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"><code class="c">literal</code></td>
-                        <td class="te"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">regexp</code></td>
-                        <td class="le"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-              </tr>
-
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"><code class="c">literal</code></td>
-                        <td class="te"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">regexp</code></td>
-                        <td class="le"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-              </tr>
-
-            </tbody>
-          </table>
-        </td>
-
-        <td class="d">
-          <table class="r">
-            <tbody>
-
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="e"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-              </tr>
-
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d"><code class="c">commit parameter</code></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="e"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-              </tr>
-
-            </tbody>
-          </table>
-        </td>
-
-        <td class="te"></td>
-
-
-      </tr>
-    </tbody>
-  </table>
 </div>
 
 <div name="r">
