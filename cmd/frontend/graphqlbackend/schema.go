@@ -3480,8 +3480,6 @@ type Site implements SettingsSubject {
     siteID: String!
     # The site's configuration. Only visible to site admins.
     configuration: SiteConfiguration!
-    # The site's critical configuration. Only visible to site admins.
-    criticalConfiguration: CriticalConfiguration!
     # The site's latest site-wide settings (which are the second-lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
@@ -3586,14 +3584,6 @@ type SiteConfiguration {
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
-}
-
-# The critical configuration for a site.
-type CriticalConfiguration {
-    # The unique identifier of this site configuration version.
-    id: Int!
-    # The effective configuration JSON.
-    effectiveContents: JSONCString!
 }
 
 # Information about software updates for Sourcegraph.
