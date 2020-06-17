@@ -107,6 +107,13 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			// default
 			if args.Zoekt.Enabled() {
 				tr.LogFields(otlog.Int("indexed-repos", len(zoektRepos)), otlog.Int("unindexed-repos", len(searcherRepos)))
+
+				// Limit the number of unindexed repositories searched for a single query. Searching
+				// more than this will merely flood the system and network with requests that will timeout.
+				searcherRepos, common.missing = limitSearcherRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery)
+				if len(common.missing) > 0 {
+					tr.LazyPrintf("index:yes, limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+				}
 			}
 		case Only:
 			if !args.Zoekt.Enabled() {

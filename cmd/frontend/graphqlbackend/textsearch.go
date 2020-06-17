@@ -521,6 +521,13 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			// default
 			if args.Zoekt.Enabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+
+				// Limit the number of unindexed repositories searched for a single query. Searching
+				// more than this will merely flood the system and network with requests that will timeout.
+				searcherRepos, common.missing = limitSearcherRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery)
+				if len(common.missing) > 0 {
+					tr.LazyPrintf("index:yes, limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+				}
 			}
 		case Only:
 			if !args.Zoekt.Enabled() {
@@ -786,6 +793,32 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	return flattened, common, nil
+}
+
+const maxUnindexedRepoRevSearchesPerQuery = 200
+
+// limitSearcherRepos imposes a limit on the number of repo@revs that would go
+// to the unindexed searcher codepath, because sending this many requests to
+// searcher would otherwise result in the system and network being flooded with
+// requests that merely result in timeouts and take a long time to complete.
+//
+// It returns the new repositories destined for the unindexed searcher code
+// path, and the repositories that are limited / excluded.
+//
+// The input list is not copied (a slice to it is returned).
+func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (searcherRepos []*search.RepositoryRevisions, limitedSearcherRepos []*types.Repo) {
+	totalRepoRevs := 0
+	limitedRepos := 0
+	for _, repoRevs := range unindexed {
+		totalRepoRevs += len(repoRevs.Revs)
+		if totalRepoRevs > limit {
+			limitedSearcherRepos = append(limitedSearcherRepos, repoRevs.Repo)
+			limitedRepos++
+			continue
+		}
+	}
+	searcherRepos = unindexed[:len(unindexed)-limitedRepos]
+	return
 }
 
 func flattenFileMatches(unflattened [][]*FileMatchResolver, fileMatchLimit int) []*FileMatchResolver {
