@@ -18,15 +18,6 @@ li.r {
     vertical-align: top !important;
 }
 
-.railroad {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-}
-
-
 th.r {
     text-align: left !important;
     background-color: #ece9d8 !important;
@@ -757,19 +748,11 @@ parameters in this Sourcegraph language.
 ### Type
 
 <div name="r">
-
-  <table class="r">
-    <tbody>
-<tr class="railroad"><td class="d"><code class="c">type:</code></td><td class="d"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="ts"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="ts"></td><td class="d"><code class="c">=</code></td><td class="te"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><code class="c">&lt;</code></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><code class="c">&gt;</code></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">&lt; =</code></td></tr></tbody></table></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">&gt; =</code></td></tr></tbody></table></td><td class="ke"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">&lt; &gt;</code></td></tr></tbody></table></td><td class="ke"></td></tr><tr class="railroad"><td class="ls"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><code class="c">! =</code></td></tr></tbody></table></td><td class="le"></td></tr></tbody></table></td><td class="d"></td></tr></tbody></table></td><td class="te"></td></tr><tr class="railroad"><td class="ks"></td><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="d"><table class="railroad"><tbody><tr class="railroad"><td class="ts"></td><td class="d"><code class="c">LIKE</code></td><td class="te"></td></tr><tr class="railroad"><td class="ls"></td><td class="d"><code class="c">ILIKE</code></td><td class="le"></td></tr></tbody></table></td><td class="d"><code class="c"><a href="index.html#operand">commit parameter</a></code></td></tr></tbody></table></td><td class="ke"></td></tr></tbody></table></td><td class="le"></td></tr>
-</tbody>
-</table>
-
-</div>
-
-<div name="r">
   <table class="r">
     <tbody>
       <tr class="r">
+        <td class="d"></td>
+        <td class="d"><code class="c">type:</code></td>
         <td class="d">
           <table class="r">
             <tbody>
@@ -778,105 +761,59 @@ parameters in this Sourcegraph language.
                   <table class="r">
                     <tbody>
                       <tr class="r">
-                        <td class="d"></td>
-                        <td class="d"><code class="c">type:</code></td>
-                        <td class="d">
-                          <table class="r">
-                            <tbody>
-                              <tr class="r">
-                                <td class="d">
-                                  <table class="r">
-                                    <tbody>
-                                      <tr class="r">
-                                        <td class="ts"></td>
-                                        <td class="d"><code class="c">symbol</code></td>
-                                        <td class="te"></td>
-                                      </tr>
-                                      <tr class="r">
-                                        <td class="ks"></td>
-                                        <td class="d"><code class="c">repo</code></td>
-                                        <td class="ke"></td>
-                                      </tr>
-                                      <tr class="r">
-                                        <td class="ks"></td>
-                                        <td class="d"><code class="c">path</code></td>
-                                        <td class="ke"></td>
-                                      </tr>
-                                      <tr class="r">
-                                        <td class="ks"></td>
-                                        <td class="d">
-                                          <table class="r">
-                                            <tbody>
-                                              <tr class="r">
-                                                <td class="d"><code class="c">file</code></td>
-                                                <td class="d"></td>
-                                                <td class="d"></td>
-                                              </tr>
-                                            </tbody>
-                                          </table>
-                                        </td>
-                                </td>
-                                <td class="le"></td>
-                                </tr>
-                                </tbody>
-                                </table>
+                        <td class="ts"></td>
+                        <td class="d"><code class="c">symbol</code></td>
+                        <td class="te">
                         </td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        </tr>
-                        </tbody>
-                        </table>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">repo</code></td>
+                        <td class="ke"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">path</code></td>
+                        <td class="ke"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">file</code></td>
+                        <td class="le"></td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </td>
+                <td class="d"></td>
                 <td class="te"></td>
-                </tr>
-                <tr class="r">
-                  <td class="e"></td>
-                  <td class="e"></td>
-                  <td class="d">
-                    <table class="r">
-                      <tbody>
-                        <tr class="r">
-                          <td class="d">
-                            <table class="r">
-                              <tbody>
-                                <tr class="r">
-                                  <td class="ks"></td>
-                                  <td class="d"><code class="c">commit</code></td>
-                                  <td class="te"></td>
-                                </tr>
-                                <tr class="r">
-                                  <td class="ls"></td>
-                                  <td class="d"><code class="c">diff</code></td>
-                                  <td class="le"></td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </td>
-                          <td class="d"><code class="c"><a href="#commit-parameter"> commit parameter </a></code></td>
-                          <td class="d"></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </td>
-                  <td class="le"></td>
-                </tr>
-                </tbody>
-                </table>
+              </tr>
+              <tr class="r">
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">commit</code></td>
+                        <td class="te"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ls"></td>
+                        <td class="d"><code class="c">diff</code></td>
+                        <td class="le">
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td class="d"><code class="c"><a href="#commit-parameter">commit parameter</a></code></td>
+                <td class="le"></td>
+              </tr>
+            </tbody>
+          </table>
         </td>
-        </tr>
-        </tbody>
-        </table>
-</td>
-</tr>
-</tbody>
-</table>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
 Set whether the search pattern should only conduct a search of a certain type (e.g., only files or repos), or to perform special commit or diff searches.
@@ -1271,9 +1208,15 @@ A string that is interpreted as a <a href="https://golang.org/s/re2syntax">RE2</
 ## String
 
 <div name="r">
+  <table>
+  <tbody>
   <tr class="r">
+    <td class="d"></td>
     <td class="d"><code class="c">string</code></td>
+    <td class="d"></td>
   </tr>
+    </tbody>
+  </table>
 </div>
 
 An unquoted string is any contiguous sequence of characters not containing whitespace.
