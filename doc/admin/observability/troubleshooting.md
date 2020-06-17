@@ -181,7 +181,15 @@ If your users are experiencing search timeouts or search performance issues, ple
 #### Scenario: zoekt-webserver is in a `CrashloopBackOff` and `err cannot allocate memory`
 
 Sourcegraph uses a mmap to store its indices. The default operating system limits on mmap counts may to be too low, which may result in out of memory exceptions.
-If you are seeing this error on large scale deployments with a lot repos to be indexed, please verify the following:
+If you are seeing this error on large scale deployments with a lot repos to be indexed, please use the following steps to verify the source of the errors:
+
+1. Ensure pods are not out running out of allocated memory and being OOMKilled by running:
+
+        
+        kubectl top pod indexed-search-<pod_number>
+        
+        kubectl describe nodes 
+
 
 1. On the host operating system execute `sudo sysctl -n vm.max_map_count`.
 
