@@ -81,7 +81,12 @@ cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
 echo "--- monitoring generation"
-pushd monitoring && go generate && popd
+# For code generation we need to match the local machine so we can run the generator
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  pushd monitoring && GOOS=darwin go generate && popd
+else
+  pushd monitoring && go generate && popd
+fi
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
