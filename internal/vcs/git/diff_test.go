@@ -9,71 +9,6 @@ import (
 	"testing"
 )
 
-const testDiffFiles = 3
-const testDiff = `diff --git INSTALL.md INSTALL.md
-index e5af166..d44c3fc 100644
---- INSTALL.md
-+++ INSTALL.md
-@@ -3,10 +3,10 @@
- Line 1
- Line 2
- Line 3
--Line 4
-+This is cool: Line 4
- Line 5
- Line 6
--Line 7
--Line 8
-+Another Line 7
-+Foobar Line 8
- Line 9
- Line 10
-diff --git JOKES.md JOKES.md
-index ea80abf..1b86505 100644
---- JOKES.md
-+++ JOKES.md
-@@ -4,10 +4,10 @@ Joke #1
- Joke #2
- Joke #3
- Joke #4
--Joke #5
-+This is not funny: Joke #5
- Joke #6
--Joke #7
-+This one is good: Joke #7
- Joke #8
--Joke #9
-+Waffle: Joke #9
- Joke #10
- Joke #11
-diff --git README.md README.md
-index 9bd8209..d2acfa9 100644
---- README.md
-+++ README.md
-@@ -1,12 +1,13 @@
- # README
-
--Line 1
-+Foobar Line 1
- Line 2
- Line 3
- Line 4
- Line 5
--Line 6
-+Barfoo Line 6
- Line 7
- Line 8
- Line 9
- Line 10
-+Another line
-`
-
-var testDiffFileNames = []string{
-	"INSTALL.md",
-	"JOKES.md",
-	"README.md",
-}
-
 func TestDiff(t *testing.T) {
 	ctx := context.Background()
 
@@ -131,6 +66,71 @@ func TestDiff(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
+		const testDiffFiles = 3
+		const testDiff = `diff --git INSTALL.md INSTALL.md
+index e5af166..d44c3fc 100644
+--- INSTALL.md
++++ INSTALL.md
+@@ -3,10 +3,10 @@
+ Line 1
+ Line 2
+ Line 3
+-Line 4
++This is cool: Line 4
+ Line 5
+ Line 6
+-Line 7
+-Line 8
++Another Line 7
++Foobar Line 8
+ Line 9
+ Line 10
+diff --git JOKES.md JOKES.md
+index ea80abf..1b86505 100644
+--- JOKES.md
++++ JOKES.md
+@@ -4,10 +4,10 @@ Joke #1
+ Joke #2
+ Joke #3
+ Joke #4
+-Joke #5
++This is not funny: Joke #5
+ Joke #6
+-Joke #7
++This one is good: Joke #7
+ Joke #8
+-Joke #9
++Waffle: Joke #9
+ Joke #10
+ Joke #11
+diff --git README.md README.md
+index 9bd8209..d2acfa9 100644
+--- README.md
++++ README.md
+@@ -1,12 +1,13 @@
+ # README
+
+-Line 1
++Foobar Line 1
+ Line 2
+ Line 3
+ Line 4
+ Line 5
+-Line 6
++Barfoo Line 6
+ Line 7
+ Line 8
+ Line 9
+ Line 10
++Another line
+`
+
+		var testDiffFileNames = []string{
+			"INSTALL.md",
+			"JOKES.md",
+			"README.md",
+		}
+
 		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 			return ioutil.NopCloser(strings.NewReader(testDiff)), nil
 		}
