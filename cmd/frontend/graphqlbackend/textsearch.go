@@ -797,15 +797,14 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	return flattened, common, nil
 }
 
-// limitSearcherRepos imposes a limit on the number of repo@revs that would go
-// to the unindexed searcher codepath, because sending this many requests to
-// searcher would otherwise result in the system and network being flooded with
-// requests that merely result in timeouts and take a long time to complete.
+// limitSearcherRepos limits the number of repo@revs searched by the unindexed searcher codepath.
+// Sending many requests to searcher would otherwise cause a flood of system and network requests
+// that result in timeouts or long delays.
 //
-// It returns the new repositories destined for the unindexed searcher code
-// path, and the repositories that are limited / excluded.
+// It returns the new repositories destined for the unindexed searcher code path, and the
+// repositories that are limited / excluded.
 //
-// The input list is not copied (a slice to it is returned).
+// A slice to the input list is returned, it is not copied.
 func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (searcherRepos []*search.RepositoryRevisions, limitedSearcherRepos []*types.Repo) {
 	totalRepoRevs := 0
 	limitedRepos := 0
