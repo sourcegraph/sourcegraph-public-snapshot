@@ -11,13 +11,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
+// GrafanaChangeResult indicates output from a GrafanaChange as well as follow-up items (ie whether or not the change will require a Grafana restart)
 type GrafanaChangeResult struct {
 	Problems             conf.Problems
 	ShouldRestartGrafana bool
 }
 
+// GrafanaChange implements a change to Grafana configuration
 type GrafanaChange func(ctx context.Context, log log15.Logger, grafana *sdk.Client, oldConfig, newConfig *subscribedSiteConfig) (result GrafanaChangeResult)
 
+// grafanaChangeNotifiers appliies `observability.alerts` as Grafana notifiers and attaches them to relevant alerts
 func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana *sdk.Client, oldConfig, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
 	// resetSrcNotifiers deletes all alert notifiers in Grafana's DB starting with the UID `"src-"`
 	resetSrcNotifiers := func(ctx context.Context, grafana *sdk.Client) error {
@@ -110,6 +113,7 @@ func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana *sdk.
 	return
 }
 
+// grafanaChangeSMTP applies SMTP server configurations to Grafana.
 func grafanaChangeSMTP(ctx context.Context, log log15.Logger, grafana *sdk.Client, oldConfig, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
 	// TODO update SMTP from config
 	return

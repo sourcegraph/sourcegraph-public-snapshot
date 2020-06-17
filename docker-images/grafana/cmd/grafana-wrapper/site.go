@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// subscribedSiteConfig contains fields from SiteConfiguration relevant to the siteConfigSubscriber.
 type subscribedSiteConfig struct {
 	Alerts    []*schema.ObservabilityAlerts
 	alertsSum [32]byte
@@ -25,6 +26,7 @@ type subscribedSiteConfig struct {
 	smtpSum [32]byte
 }
 
+// newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
 func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteConfig {
 	alertsBytes, err := json.Marshal(config.ObservabilityAlerts)
 	if err != nil {
@@ -43,10 +45,12 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 	}
 }
 
+// Sum returns a combined sha256 sum of its components, useful for diffing.
 func (c *subscribedSiteConfig) Sum() []byte {
 	return append(c.alertsSum[:], c.smtpSum[:]...)
 }
 
+// Diff returns a set of changes to apply to Grafana.
 func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []GrafanaChange {
 	var changes []GrafanaChange
 	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
@@ -102,7 +106,7 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 	}
 
 	subscriber := &siteConfigSubscriber{log: log, grafana: grafana}
-	subscriber.updateGrafanaConfig(ctx, siteConfig, sum)
+	subscriber.updateGrafanaConfig(ctx, siteConfig, sum) // set initial grafana state
 	return subscriber, nil
 }
 
@@ -173,11 +177,8 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfi
 		}
 		if err := c.grafana.RunServer(); err != nil {
 			aggregated.Problems = append(aggregated.Problems, newFailedToRestartProblem(err))
-			return
-		}
-		if err := c.grafana.WaitForServer(ctx); err != nil {
+		} else if err := c.grafana.WaitForServer(ctx); err != nil {
 			aggregated.Problems = append(aggregated.Problems, newFailedToRestartProblem(err))
-			return
 		}
 	}
 
