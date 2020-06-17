@@ -169,12 +169,15 @@ img.r {
 
 # Sourcegraph Search Query Language
 
-This page provides a complete visual breakdown of the Sourcegraph Search Query
-Language and some helpful examples to get you started. The railroad diagrams
-show how to combine pieces of syntax. Read them from left-to-right by following
-the lines. When a line splits it means there are multiple options available.
-When it is possible to repeat a previous syntax, you'll see a line lead into
-a box that looks like this:
+This page provides a visual breakdown of our Search Query Language and a handful
+of examples to get you started. It is complementary to our [syntax
+reference](queries.md) and illustrates syntax using railroad diagrams instead of
+tables.
+
+**Reading railroad diagrams.** Follow the lines in these railroad diagrams from left
+to right to see how pieces of syntax combine. When a line splits it means there
+are multiple options available. When it is possible to repeat a previous syntax,
+you'll see a line lead into a box that looks like this:
 
 <table class="r">
   <tbody>
@@ -239,6 +242,8 @@ a box that looks like this:
     </tbody>
   </table>
 </div>
+
+At a basic level, a search query consists of [search patterns](#search-pattern) and [parameters](#parameter).
 
 ## Expression
 
