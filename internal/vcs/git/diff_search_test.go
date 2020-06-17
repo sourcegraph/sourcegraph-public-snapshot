@@ -49,7 +49,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			},
 			Refs:       []string{"refs/heads/branch1"},
 			SourceRefs: []string{"refs/heads/branch2"},
-			Diff:       &Diff{Raw: "diff --git a/f b/f\nindex d8649da..1193ff4 100644\n--- a/f\n+++ b/f\n@@ -1,1 +1,1 @@\n-root\n+branch1\n"},
+			Diff:       &RawDiff{Raw: "diff --git a/f b/f\nindex d8649da..1193ff4 100644\n--- a/f\n+++ b/f\n@@ -1,1 +1,1 @@\n-root\n+branch1\n"},
 		}, {
 			Commit: Commit{
 				ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
@@ -59,7 +59,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			},
 			Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
 			SourceRefs: []string{"refs/heads/branch2"},
-			Diff:       &Diff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
+			Diff:       &RawDiff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
 		}},
 	}, {
 		name: "empty-query",
