@@ -160,12 +160,12 @@ var tests = []test{
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
 	},
 	{
-		Name:  `Literals, escaped and unescaped parens`,
-		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
+		Name:  `Literals, escaped and unescaped parens, no group`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ () or \(\) stable:yes type:file count:1 patterntype:regexp`,
 	},
 	{
-		Name:  `Literals, escaped and unescaped parens, no group`,
-		Query: `repo:^github\.com/sourcegraph/sourcegraph$ () or \(\)`,
+		Name:  `Literals, escaped and unescaped parens, grouped`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
 	},
 	{
 		Name:  `Literals, double paren`,
@@ -250,6 +250,10 @@ var tests = []test{
 	{
 		Name:  `Intersect file matches per file and accurate counts`,
 		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and main`,
+	},
+	{
+		Name:  `Intersect file matches per file against an empty result set`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and doesnotexist838338`,
 	},
 }
 
