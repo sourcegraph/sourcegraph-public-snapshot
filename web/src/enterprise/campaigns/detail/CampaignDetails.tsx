@@ -80,7 +80,7 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
      * If not given, will display a creation form.
      */
     campaignID?: GQL.ID
-    authenticatedUser: Pick<GQL.IUser, 'id' | 'username' | 'avatarURL'>
+    authenticatedUser: Pick<GQL.IUser, 'id' | 'username' | 'avatarURL'> | null
     history: H.History
     location: H.Location
 
@@ -224,6 +224,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             event.preventDefault()
             setMode('saving')
             try {
+                if (!authenticatedUser) {
+                    throw new Error('must sign in')
+                }
+
                 if (campaignID) {
                     const newCampaign = await updateCampaign({
                         id: campaignID,
@@ -259,7 +263,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             }
         },
         [
-            authenticatedUser.id,
+            authenticatedUser,
             branch,
             campaignID,
             campaignUpdates,
@@ -368,8 +372,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
         }
     }
-
-    const author = campaign ? campaign.author : authenticatedUser
 
     const totalChangesetCount = campaign?.changesets.totalCount ?? 0
 
@@ -518,7 +520,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             <div className="card mt-2">
                                 <div className="card-header">
                                     <strong>
-                                        <UserAvatar user={author} className="icon-inline" /> {author.username}
+                                        <UserAvatar user={campaign.author} className="icon-inline" />{' '}
+                                        {campaign.author.username}
                                     </strong>{' '}
                                     started <Timestamp date={campaign.createdAt} />
                                 </div>
