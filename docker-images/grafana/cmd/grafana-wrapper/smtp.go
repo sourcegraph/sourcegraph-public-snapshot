@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// grafanaConfigSMTP describes Grafana's SMTP configuration - https://grafana.com/docs/grafana/latest/installation/configuration/#smtp
 type grafanaConfigSMTP struct {
 	Enabled      bool
 	Host         string

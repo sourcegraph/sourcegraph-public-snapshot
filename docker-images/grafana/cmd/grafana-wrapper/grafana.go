@@ -156,6 +156,8 @@ func getGrafanaConfig() (*ini.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Grafana config: %w", err)
 	}
+	// set pattern to automatically convert struct fields to Grafana's INI casing
+	// see https://grafana.com/docs/grafana/latest/installation/configuration
 	grafanaConfig.NameMapper = ini.TitleUnderscore
 	return grafanaConfig, nil
 }
