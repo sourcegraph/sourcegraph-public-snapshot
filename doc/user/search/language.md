@@ -1,10 +1,5 @@
 <style>
 
-td, input, select, textarea, body, code, pre, td, th {
-    font: 500 14px/25px Roboto,Noto Sans,Noto Sans JP,Noto Sans KR,Noto Naskh Arabic,Noto Sans Thai,Noto Sans Hebrew,Noto Sans Bengali,sans-serif !important;
-    font-weight: normal !important;
-}
-
 ul.r {
     list-style-position: outside !important;
     padding-left: 20px !important;
@@ -39,14 +34,8 @@ td.r {
     padding: 3px !important;
 }
 
-code.r {
-    background-color: #ece9d8 !important;
-    padding: 0px 4px !important;
-
-    -moz-border-radius: 4px !important;
-    -webkit-border-radius: 4px !important;
-    -khtml-border-radius: 4px !important;
-    border-radius: 4px !important;
+.markdown-body code {
+    background-color: #ece9d8;
     color: black;
 }
 
@@ -171,7 +160,14 @@ img.r {
 </style>
 
 # Sourcegraph Search Query Language
-This page provides a complete visual breakdown of the Sourcegraph Search Query Language and some helpful examples to get you started. The railroad diagrams show how to combine pieces of syntax. Read them from left-to-right by following the lines. When a line splits it means there are multiple options available. When it is possible to repeat a previous syntax, you'll see a line lead into a <code class="r">...</code> box that looks like this:
+
+This page provides a complete visual breakdown of the Sourcegraph Search Query
+Language and some helpful examples to get you started. The railroad diagrams
+show how to combine pieces of syntax. Read them from left-to-right by following
+the lines. When a line splits it means there are multiple options available.
+When it is possible to repeat a previous syntax, you'll see a line lead into
+a box that looks like this:
+
 <table class="r">
   <tbody>
     <tr class="r">
@@ -324,11 +320,11 @@ This page provides a complete visual breakdown of the Sourcegraph Search Query L
   </table>
 </div>
 
-For example, <code class="r">foo or bar and baz</code> means <code class="r">foo or (bar and baz)</code>.
+For example, `foo or bar and bar` means `foo or (bar and baz)`.
 
 Expressions are the basic building blocks for search queries. Typical queries
 contain a search pattern and some parameters to narrow search. For
-example, <code class="r">testroute repo:gorilla/mux</code>.
+example, `testroute repo:gorilla/mux`.
 
 ## Search pattern
 
@@ -359,8 +355,8 @@ example, <code class="r">testroute repo:gorilla/mux</code>.
 
 A pattern to search. By default the pattern is searched literally. The kind of search may be toggled, in which case the pattern matches differently:
 <ul class="r">
-    <li class="r"><img class="r" src="../img/regex.png">Interpret the pattern as a regular expression. We support <a href="https://golang.org/s/re2syntax">RE2</a> syntax. If the pattern is a <a href="#quoted-string">quoted string</a> we search for it literally.</li>
-    <li class="r"><img class="r" src="../img/structural.png">Interpret the pattern as a <a href="https://docs.sourcegraph.com/user/search/structural">structural search</a> pattern.</li>
+    <li class="r"><img class="r" src="../img/regex.png">Interpret the pattern as a regular expression. We support [RE2 syntax](https://golang.org/s/re2syntax). If the pattern is a [quoted string](#quoted-string) we search for it literally.</li>
+    <li class="r"><img class="r" src="../img/structural.png">Interpret the pattern as a [structural search](https://docs.sourcegraph.com/user/search/structural) pattern.</li>
 </ul>
 
 
@@ -549,9 +545,9 @@ Search parameters allow you to narrow search queries and modify search behavior.
 
 Search repositories that match the regular expression.
 
-A <code class="r">-</code> before <code class="r">repo</code> excludes the repository. By default
-the repository will be searched at the <codeclass="r">HEAD</code> commit of the default
-branch. You can optionally change the <a href="#revision">revision</a>.
+A `-` before `repo` excludes the repository. By default
+the repository will be searched at the `HEAD` commit of the default
+branch. You can optionally change the [revision](#revision).
 
 ### Revision
 
@@ -560,68 +556,67 @@ branch. You can optionally change the <a href="#revision">revision</a>.
     <tbody>
       <tr class="r">
         <td class="d">
+          <table class="r">
+            <tbody>
+              <tr class="r">
+                <td class="ts"></td>
+                <td class="d"><code class="c">branch name</code></td>
+                <td class="te"></td>
+              </tr>
+              <tr class="r">
+                <td class="ks"></td>
+                <td class="d"><code class="c">commit hash</code></td>
+                <td class="ke"></td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d"><code class="c">git tag</code></td>
+                <td class="le"></td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+        <td class="d">
           <td class="d">
             <table class="r">
               <tbody>
                 <tr class="r">
                   <td class="ts"></td>
-                  <td class="d"><code class="c">branch name</code></td>
+                  <td class="d">&nbsp;</td>
                   <td class="te"></td>
                 </tr>
                 <tr class="r">
-                  <td class="ks"></td>
-                  <td class="d"><code class="c">commit hash</code></td>
-                  <td class="ke"></td>
-                </tr>
-                <tr class="r">
                   <td class="ls"></td>
-                  <td class="d"><code class="c">git tag</code></td>
+                  <td class="d">
+                    <table class="r">
+                      <tbody>
+                        <tr class="r">
+                          <td class="d"><code class="c">:<a href="#revision">revision</a></code></td>
+                          <td class="d">
+                            <table class="r">
+                              <tbody>
+                                <tr class="r">
+                                  <td class="ts"></td>
+                                  <td class="d">&nbsp;</td>
+                                  <td class="te"></td>
+                                </tr>
+                                <tr class="r">
+                                  <td class="ls"></td>
+                                  <td class="d"><code class="c">...</code></td>
+                                  <td class="le"></td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
                   <td class="le"></td>
                 </tr>
               </tbody>
             </table>
           </td>
-          <td class="d">
-            <td class="d">
-              <table class="r">
-                <tbody>
-                  <tr class="r">
-                    <td class="ts"></td>
-                    <td class="d">&nbsp;</td>
-                    <td class="te"></td>
-                  </tr>
-                  <tr class="r">
-                    <td class="ls"></td>
-                    <td class="d">
-                      <table class="r">
-                        <tbody>
-                          <tr class="r">
-                            <td class="d"><code class="c">:<a href="#revision">revision</a></code></td>
-                            <td class="d">
-                              <table class="r">
-                                <tbody>
-                                  <tr class="r">
-                                    <td class="ts"></td>
-                                    <td class="d">&nbsp;</td>
-                                    <td class="te"></td>
-                                  </tr>
-                                  <tr class="r">
-                                    <td class="ls"></td>
-                                    <td class="d"><code class="c">...</code></td>
-                                    <td class="le"></td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                    <td class="le"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </td>
       </tr>
     </tbody>
   </table>
@@ -685,7 +680,8 @@ Search a repository at a given revision. For example, a branch name, commit hash
   </table>
 </div>
 
-Search files whose full path matches the regular expression. A <code class="r">-</code> before <code class="r">file</code> excludes the file from being searched.
+Search files whose full path matches the regular expression. A `-` before `file`
+excludes the file from being searched.
 
 ### Language
 
@@ -693,39 +689,31 @@ Search files whose full path matches the regular expression. A <code class="r">-
   <table class="r">
     <tbody>
       <tr class="r">
-        <td class="d"></td>
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">language:</code></td>
-                <td class="te">
-                </td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">lang:</code></td>
-                <td class="ke">
-                </td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">l:</code></td>
-                <td class="le">
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <td class="ts"></td>
+        <td class="d"><code class="c">language:</code></td>
+        <td class="te">
         </td>
-        <td class="d"><code class="c">string</code></td>
-        <td class="d">
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c">lang:</code></td>
+        <td class="ke">
+        </td>
+      </tr>
+      <tr class="r">
+        <td class="ls"></td>
+        <td class="d"><code class="c">l:</code></td>
+        <td class="le">
+        </td>
       </tr>
     </tbody>
   </table>
+</tbody>
+</table>
 </div>
 
-Only search files in the specified programming language,
-like <code class="r">typescript</code> or <code class="r">python</code>.
+Only search files in the specified programming language, like `typescript` or
+`python`.
 
 ### Content
 
@@ -746,7 +734,7 @@ like <code class="r">typescript</code> or <code class="r">python</code>.
 Set the search pattern to search using a dedicated parameter.
 
 Useful, for example, when searching a string
-like <code class="r">content:"repo:foo"</code> that may conflict with the syntax of
+like `content:"repo:foo"` that may conflict with the syntax of
 parameters in this Sourcegraph language.
 
 ### Type
@@ -891,7 +879,6 @@ Set whether the search pattern should only conduct a search of a certain type (e
             </tbody>
           </table>
           </td>
-          <td class="d">
       </tr>
     </tbody>
   </table>
@@ -930,13 +917,13 @@ Set whether the search pattern should be treated case-sensitively.
             </tbody>
           </table>
           </td>
-          <td class="d">
       </tr>
     </tbody>
   </table>
 </div>
 
-Set whether repository forks should be included (<code class="r">yes</code>) or exclusively searched (<code class="r">only</code>). Respository forks are excluded by default.
+Set to `yes` if repository forks should be included or `only` if only forks
+should be searched. Respository forks are excluded by default.
 
 ### Archived
 
@@ -968,15 +955,13 @@ Set whether repository forks should be included (<code class="r">yes</code>) or 
             </tbody>
           </table>
           </td>
-          <td class="d">
       </tr>
     </tbody>
   </table>
 </div>
 
-Set whether archived repositories should be included (<code class="r">yes</code>) or
-exclusively searched (<code class="r">only</code>). Archived repositories are excluded by
-default.
+Set to `yes` if archived repositories should be included or `only` if only
+archives should be searched. Archived repositories are excluded by default.
 
 ### Repo group
 
@@ -984,46 +969,36 @@ default.
   <table class="r">
     <tbody>
       <tr class="r">
-        <td class="d"></td>
-        <td class="d"><table class="r">
+        <td class="ts"></td>
+        <td class="d"><code class="c">repogroup:</code></td>
+        <td class="te">
+        </td>
+      </tr>
+      <tr class="r">
+        <td class="ls"></td>
+        <td class="d">
+          <table class="r">
             <tbody>
               <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">repogroup:</code></td>
-                <td class="te">
-                </td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d"><code class="c">g:</code></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="le">
-                </td>
+                <td class="d"><code class="c">g:</code></td>
+                <td class="d"></td>
+                <td class="d"></td>
+                <td class="d"></td>
+                <td class="d"></td>
               </tr>
             </tbody>
           </table>
         </td>
-        <td class="d"><code class="c">string</code></td>
-        <td class="d">
+        <td class="le">
+        </td>
       </tr>
     </tbody>
   </table>
 </div>
 
 Only include results from the named group of repositories (defined by the server
-admin). Same as using <a href="#repo">repo</a> that matches all of the group’s
-repositories. Use <a href="#repo">repo</a> unless you know that the group
+admin). Same as using [repo](#repo) that matches all of the group’s
+repositories. Use [repo](#repo) unless you know that the group
 exists.
 
 
@@ -1154,7 +1129,7 @@ first page, use the count: keyword with a larger N.
 
 Set a search timeout. The time value is a string like 10s or 100ms, which is
 parsed by the Go time
-package's <a href="https://golang.org/pkg/time/#ParseDuration">ParseDuration</a>.
+package's [ParseDuration](https://golang.org/pkg/time/#ParseDuration).
 By default the timeout is set to 10 seconds, and the search will optimize for
 returning results as soon as possible. The timeout value cannot be set longer
 than 1 minute.
@@ -1189,7 +1164,6 @@ than 1 minute.
             </tbody>
           </table>
           </td>
-          <td class="d">
       </tr>
     </tbody>
   </table>
@@ -1228,7 +1202,6 @@ both private and public repositories.
             </tbody>
           </table>
           </td>
-          <td class="d">
       </tr>
     </tbody>
   </table>
@@ -1237,7 +1210,7 @@ both private and public repositories.
 Set whether the pattern should run a literal search, regular expression search,
 or a structural search pattern. This keyword is available as a commannd-line and
 accessibility option, and equivalent to the visual toggles
-in <a href="#search-pattern">search pattern</a>.
+in [search pattern](#search-pattern).
 
 ## Regular expression
 
@@ -1298,8 +1271,8 @@ An unquoted string is any contiguous sequence of characters not containing white
   </table>
 </div>
 
-Any string, including whitespace, may be quoted with single <code class="r">'</code> or double <code class="r">"</code>
-quotes. Quotes can be escaped with <code class="r">\\</code>.
+Any string, including whitespace, may be quoted with single `'` or double `"`
+quotes. Quotes can be escaped with `\`.
 
 ## Commit parameter
 
@@ -1349,7 +1322,6 @@ quotes. Quotes can be escaped with <code class="r">\\</code>.
             </tbody>
           </table>
         </td>
-        <td class="d"></td>
       </tr>
     </tbody>
   </table>
@@ -1393,39 +1365,31 @@ Include commits or diffs that are authored by the user.
           <table class="r">
             <tbody>
               <tr class="r">
-                <td class="d"></td>
-                <td class="d"><table class="r">
+                <td class="ts"></td>
+                <td class="d"><code class="c">before:</code></td>
+                <td class="te">
+                </td>
+              </tr>
+              <tr class="r">
+                <td class="ls"></td>
+                <td class="d">
+                  <table class="r">
                     <tbody>
                       <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"><code class="c">before:</code></td>
-                        <td class="te">
-                        </td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ls"></td>
-                        <td class="d">
-                          <table class="r">
-                            <tbody>
-                              <tr class="r">
-                                <td class="d"><code class="c">until:</code></td>
-                                <td class="d"></td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </td>
-                        <td class="le">
-                        </td>
+                        <td class="d"><code class="c">until:</code></td>
+                        <td class="d"></td>
                       </tr>
                     </tbody>
                   </table>
                 </td>
-                <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-                <td class="d"></td>
+                <td class="le">
+                </td>
               </tr>
             </tbody>
           </table>
         </td>
+        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
+        <td class="d"></td>
       </tr>
     </tbody>
   </table>
@@ -1433,7 +1397,7 @@ Include commits or diffs that are authored by the user.
 
 Include results which have a commit date before the specified time frame.
 
-Example time values are <code class="r">last thursday</code> or <code class="r">november 1 2019</code>.
+Example time values are `last thursday` or `november 1 2019`.
 
 ### After
 
@@ -1483,7 +1447,7 @@ Example time values are <code class="r">last thursday</code> or <code class="r">
 
 Include results which have a commit date before the specified time frame.
 
-Example time values are <code class="r">last thursday</code> or <code class="r">november 1 2019</code>.
+Example time values are `last thursday` or `november 1 2019`.
 
 ### Message
 
