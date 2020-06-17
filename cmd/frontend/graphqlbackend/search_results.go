@@ -801,6 +801,9 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		if err != nil {
 			return nil, err
 		}
+		if result == nil {
+			return nil, nil
+		}
 		exhausted = !result.limitHit
 		for _, term := range operands[1:] {
 			new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
