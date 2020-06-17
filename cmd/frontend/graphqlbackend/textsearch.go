@@ -805,7 +805,7 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 // It returns the new repositories destined for the unindexed searcher code
 // path, and the repositories that are limited / excluded.
 //
-// The input list is not copied (a slice to it is returned).
+// A slice to the input list is returned, it is not copied.
 func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (searcherRepos []*search.RepositoryRevisions, limitedSearcherRepos []*types.Repo) {
 	totalRepoRevs := 0
 	limitedRepos := 0
