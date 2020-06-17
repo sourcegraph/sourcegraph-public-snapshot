@@ -160,6 +160,27 @@ If your users are experiencing search timeouts or search performance issues, ple
 1. Once the dashboard appears, include screenshots of **the entire** dashboard in the issue report.
 1. Include the logs of `zoekt-webserver` container in the `indexed-search` pods. If you are using single Docker container enable [debug logs](index.md#Logs) first.
 
+#### Scenario: zoekt-webserver is in a `CrashloopBackOff` and `err cannot allocate memory`
+
+Elasticsearch uses a mmapfs directory by default to store its indices. The default operating system limits on mmap counts may to be too low, which may result in out of memory exceptions.
+If you are seeing this error on large scale deployments with a lot repos to be indexed, please verify the following:
+
+1. On the host operating system execute `sudo sysctl -n vm.max_map_count`.
+
+        $ sysctl -n vm.max_map_count
+        65530
+1. Calculate the number of repos in your deployment divided by the number of `indexed-search` replicas. For example:
+    
+    * 250,000 repositories / 2 indexed-search repliacas = 125,000 repos to index per replica. 
+1. If the `vm.max_map_count` is lower than the result of the above calculation. Adjust the `vm.max_map_count` by executing:
+
+        sudo sysctl -w vm.max_map_count=262144
+1. Verify the change.
+
+        $ sudo sysctl -n vm.max_map_count
+        262144
+1. Ensure the change will persist a system reboot by updating the `vm.max_map_count` setting in `/etc/sysctl.conf`.
+
 
 ## Actions
 
