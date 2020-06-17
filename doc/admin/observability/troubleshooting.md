@@ -183,7 +183,7 @@ If your users are experiencing search timeouts or search performance issues, ple
 Sourcegraph uses a mmap to store its indices. The default operating system limits on mmap counts may to be too low, which may result in out of memory exceptions.
 If you are seeing this error on large scale deployments with a lot repos to be indexed, please use the following steps to verify the source of the errors:
 
-1. Ensure pods are not out running out of allocated memory and being OOMKilled by running:
+1. Ensure pods are not actually running out of allocated memory and being OOMKilled by running (if they are, then you should give them more memory and the below will not help you):
 
         
         kubectl top pod indexed-search-<pod_number>
