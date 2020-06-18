@@ -273,8 +273,8 @@ WITH batch AS (
       added_to_campaign     boolean,
       diff_stat_added       integer,
       diff_stat_changed     integer,
-	  diff_stat_deleted     integer,
-	  sync_state            jsonb
+      diff_stat_deleted     integer,
+      sync_state            jsonb
     )
   )
   WITH ORDINALITY
@@ -299,11 +299,11 @@ changed AS (
     external_review_state,
     external_check_state,
     created_by_campaign,
-	added_to_campaign,
-	diff_stat_added,
-	diff_stat_changed,
-	diff_stat_deleted,
-	sync_state
+    added_to_campaign,
+    diff_stat_added,
+    diff_stat_changed,
+    diff_stat_deleted,
+    sync_state
   )
   SELECT
     repo_id,
@@ -320,11 +320,11 @@ changed AS (
     external_review_state,
     external_check_state,
     created_by_campaign,
-	added_to_campaign,
-	diff_stat_added,
-	diff_stat_changed,
-	diff_stat_deleted,
-	sync_state
+    added_to_campaign,
+    diff_stat_added,
+    diff_stat_changed,
+    diff_stat_deleted,
+    sync_state
   FROM batch
   ON CONFLICT ON CONSTRAINT
     changesets_repo_external_id_unique
@@ -835,17 +835,17 @@ changed AS (
     external_id           = batch.external_id,
     external_service_type = batch.external_service_type,
     external_branch       = batch.external_branch,
-	external_deleted_at   = batch.external_deleted_at,
-	external_updated_at   = batch.external_updated_at,
+    external_deleted_at   = batch.external_deleted_at,
+    external_updated_at   = batch.external_updated_at,
     external_state        = batch.external_state,
     external_review_state = batch.external_review_state,
     external_check_state  = batch.external_check_state,
     created_by_campaign   = batch.created_by_campaign,
-	added_to_campaign     = batch.added_to_campaign,
-	diff_stat_added       = batch.diff_stat_added,
-	diff_stat_changed     = batch.diff_stat_changed,
-	diff_stat_deleted     = batch.diff_stat_deleted,
-	sync_state            = batch.sync_state
+    added_to_campaign     = batch.added_to_campaign,
+    diff_stat_added       = batch.diff_stat_added,
+    diff_stat_changed     = batch.diff_stat_changed,
+    diff_stat_deleted     = batch.diff_stat_deleted,
+    sync_state            = batch.sync_state
   FROM batch
   WHERE changesets.id = batch.id
   RETURNING changesets.*
