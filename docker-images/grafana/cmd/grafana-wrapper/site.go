@@ -168,7 +168,7 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfi
 	c.problems = nil
 
 	// load grafana config
-	grafanaConfig, err := getGrafanaConfig()
+	grafanaConfig, err := getGrafanaConfig(grafanaConfigPath)
 	if err != nil {
 		c.problems = append(c.problems,
 			conf.NewSiteProblem(fmt.Sprintf("observability: failed to load Grafana configuration: %v", err)))

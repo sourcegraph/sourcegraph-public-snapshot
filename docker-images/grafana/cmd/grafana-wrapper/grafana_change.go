@@ -112,16 +112,14 @@ func grafanaChangeSMTP(ctx context.Context, log log15.Logger, grafana GrafanaCon
 	}
 
 	grafana.Config.DeleteSection("smtp")
-	if newConfig.Email != nil && newConfig.Email.SMTP != nil {
-		smtpSection, err := grafana.Config.NewSection("smtp")
-		if err != nil {
-			result.Problems = append(result.Problems, newProblem(fmt.Errorf("failed to update Grafana config: %w", err)))
-			return
-		}
-		if err := smtpSection.ReflectFrom(newGrafanaSMTPConfig(newConfig.Email)); err != nil {
-			result.Problems = append(result.Problems, newProblem(fmt.Errorf("failed to set Grafana config: %w", err)))
-			return
-		}
+	smtpSection, err := grafana.Config.NewSection("smtp")
+	if err != nil {
+		result.Problems = append(result.Problems, newProblem(fmt.Errorf("failed to update Grafana config: %w", err)))
+		return
+	}
+	if err := smtpSection.ReflectFrom(newGrafanaSMTPConfig(newConfig.Email)); err != nil {
+		result.Problems = append(result.Problems, newProblem(fmt.Errorf("failed to set Grafana config: %w", err)))
+		return
 	}
 
 	result.ConfigChange = true

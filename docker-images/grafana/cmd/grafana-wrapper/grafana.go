@@ -151,8 +151,8 @@ func getOverviewDashboard() (*sdk.Board, error) {
 	return &board, nil
 }
 
-func getGrafanaConfig() (*ini.File, error) {
-	grafanaConfig, err := ini.Load(grafanaConfigPath)
+func getGrafanaConfig(source interface{}) (*ini.File, error) {
+	grafanaConfig, err := ini.Load(source)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Grafana config: %w", err)
 	}
