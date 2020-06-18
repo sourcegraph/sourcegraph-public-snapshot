@@ -833,6 +833,7 @@ func main() {
 		Searcher(),
 		Symbols(),
 		SyntectServer(),
+		UpdateCheck(),
 		ZoektIndexServer(),
 		ZoektWebServer(),
 	}
