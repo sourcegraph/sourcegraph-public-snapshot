@@ -75,7 +75,7 @@ describe('Core functionality regression test suite', () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
             return driver.page.evaluate(() => {
-                const editor = document.querySelector('.e2e-settings-file .monaco-editor') as HTMLElement
+                const editor = document.querySelector<HTMLElement>('.e2e-settings-file .monaco-editor .view-lines')
                 return editor ? editor.innerText : null
             })
         }
