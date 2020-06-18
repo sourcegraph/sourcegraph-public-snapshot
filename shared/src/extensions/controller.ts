@@ -12,8 +12,10 @@ import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
+import { FlatExtHostAPI } from '../api/contract'
+import { Remote } from 'comlink'
 
-export interface Controller extends Unsubscribable {
+export interface Controller extends Unsubscribable, Remote<FlatExtHostAPI> {
     /**
      * Global notification messages that should be displayed to the user, from the following sources:
      *
@@ -21,8 +23,6 @@ export interface Controller extends Unsubscribable {
      * - Errors thrown or returned in command invocation
      */
     readonly notifications: Observable<Notification>
-
-    services: Services
 
     /**
      * Executes the command (registered in the CommandRegistry) specified in params. If an error is thrown, the

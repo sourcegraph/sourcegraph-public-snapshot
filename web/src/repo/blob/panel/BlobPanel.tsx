@@ -1,10 +1,9 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { from, Subject, Subscription } from 'rxjs'
+import { from, Subject, Subscription, Observable } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/viewerService'
-import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
     ProvidePanelViewSignature,
@@ -20,6 +19,7 @@ import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -89,7 +89,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             id: string,
             title: string,
             priority: number,
-            registry: TextDocumentLocationProviderRegistry<P>,
+            provideLocations: (params: P) => Observable<Location[]>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
@@ -104,56 +104,42 @@ export class BlobPanel extends React.PureComponent<Props> {
                           }
                         : undefined
                 ),
-                switchMap(activeEditor =>
-                    registry.hasProvidersForActiveTextDocument(activeEditor).pipe(
-                        map(hasProviders => {
-                            if (!hasProviders) {
-                                return null
-                            }
-                            const parameters: TextDocumentPositionParams | null = getActiveCodeEditorPosition(
-                                activeEditor
-                            )
-                            if (!parameters) {
-                                return null
-                            }
-                            return {
-                                title,
-                                content: '',
-                                priority,
+                switchMap(activeEditor => {
+                    const parameters: TextDocumentPositionParams | null = getActiveCodeEditorPosition(activeEditor)
+                    if (!parameters) {
+                        return null
+                    }
+                    return {
+                        title,
+                        content: '',
+                        priority,
 
-                                // This disable directive is necessary because TypeScript is not yet smart
-                                // enough to know that (typeof params & typeof extraParams) is P.
-                                //
-                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                                locationProvider: registry
-                                    .getLocations({ ...parameters, ...extraParameters } as P)
-                                    .pipe(
-                                        tap(({ result: locations }) => {
-                                            if (this.props.activation && id === 'references' && locations.length > 0) {
-                                                this.props.activation.update({ FoundReferences: true })
-                                            }
-                                        })
-                                    ),
-                            }
-                        })
-                    )
-                )
+                        // This disable directive is necessary because TypeScript is not yet smart
+                        // enough to know that (typeof params & typeof extraParams) is P.
+                        //
+                        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                        locationProvider: provideLocations({ ...parameters, ...extraParameters } as P).pipe(
+                            tap(({ result: locations }) => {
+                                if (this.props.activation && id === 'references' && locations.length > 0) {
+                                    this.props.activation.update({ FoundReferences: true })
+                                }
+                            })
+                        ),
+                    }
+                })
             ),
         })
 
         this.subscriptions.add(
             this.props.extensionsController.services.panelViews.registerProviders([
-                entryForViewProviderRegistration(
-                    'def',
-                    'Definition',
-                    190,
-                    this.props.extensionsController.services.textDocumentDefinition
+                entryForViewProviderRegistration('def', 'Definition', 190, parameters =>
+                    wrapRemoteObservable(this.props.extensionsController.getDefinitions(parameters))
                 ),
                 entryForViewProviderRegistration(
                     'references',
                     'References',
                     180,
-                    this.props.extensionsController.services.textDocumentReferences,
+                    parameters => wrapRemoteObservable(this.props.extensionsController.getReferences(parameters)),
                     {
                         context: { includeDeclaration: false },
                     }
