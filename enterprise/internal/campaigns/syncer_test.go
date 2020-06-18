@@ -287,9 +287,7 @@ func TestSyncerRun(t *testing.T) {
 		defer cancel()
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return nil, 0, nil
-			},
+			listChangesets: mockListChangesets,
 			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{
 					{
@@ -321,9 +319,7 @@ func TestSyncerRun(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return nil, 0, nil
-			},
+			listChangesets: mockListChangesets,
 			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{}, nil
 			},
@@ -450,9 +446,7 @@ func TestSyncRegistry(t *testing.T) {
 	}
 
 	syncStore := MockSyncStore{
-		listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-			return nil, 0, nil
-		},
+		listChangesets: mockListChangesets,
 		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
 			return []campaigns.ChangesetSyncData{
 				{
@@ -590,4 +584,8 @@ func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.Stor
 
 func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
 	return m.listRepos(ctx, args)
+}
+
+func mockListChangesets(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+	return nil, 0, nil
 }
