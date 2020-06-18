@@ -183,8 +183,8 @@ describe('Onboarding', () => {
         )
 
         // Do a search
-        await driver.page.waitForSelector('.e2e-query-input')
-        await driver.page.type('.e2e-query-input', 'asdf')
+        await driver.page.waitForSelector('#monaco-query-input')
+        await driver.page.type('#monaco-query-input', 'asdf')
         await driver.page.keyboard.press(Key.Enter)
         await delay(500) // allow some time for confetti to play
         await screenshots.verifyScreenshot({
@@ -199,13 +199,14 @@ describe('Onboarding', () => {
 
         // Do a find references
         await driver.page.goto(
-            config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go'
+            config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L22:6'
         )
         // await driver.page.mouse.move(100, 100)
         const defTokenXPath = '//*[contains(@class, "blob-page__blob")]//span[starts-with(text(), "TokenExtractor")]'
         await driver.page.waitForXPath(defTokenXPath)
         const elements = await driver.page.$x(defTokenXPath)
-        await Promise.all(elements.map(element => element.click()))
+        //await Promise.all(elements.map(element => element.click()))
+        await elements[1].click()
         await Promise.all(elements.map(element => element.dispose()))
         const findReferencesSelector = '.e2e-tooltip-find-references'
         await driver.page.waitForSelector(findReferencesSelector)
@@ -226,17 +227,17 @@ describe('Onboarding', () => {
         await driver.page.reload()
 
         // Wait for status bar to appear but it should be invisible
-        await driver.page.waitForFunction(
-            statusBarSelector => {
-                const element = document.querySelector<Element>(statusBarSelector)
-                if (!element) {
-                    return false
-                }
-                const { width, height } = element.getBoundingClientRect()
-                return width === 0 && height === 0
-            },
-            { timeout: 100000 },
-            statusBarSelector
-        )
+        // await driver.page.waitForFunction(
+        //     statusBarSelector => {
+        //         const element = document.querySelector<Element>(statusBarSelector)
+        //         if (!element) {
+        //             return false
+        //         }
+        //         const { width, height } = element.getBoundingClientRect()
+        //         return width === 0 && height === 0
+        //     },
+        //     { timeout: 100000 },
+        //     statusBarSelector
+        // )
     })
 })

@@ -115,29 +115,45 @@ describe('Sourcegraph extensions regression test suite', () => {
         expect(await driver.page.$$('tr[style]')).toHaveLength(0)
         expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
 
+        console.log("0")
+
         // Wait for the "Coverage: X%" button to appear and click it
-        await driver.findElementWithText('Coverage: 80%', { action: 'click', wait: true })
+        await driver.findElementWithText('Coverage: 80%', { fuzziness: "contains", action: 'click', wait: true })
+
+        console.log("1")
 
         // Lines should get decorated, but without line/hit branch counts
         await retry(async () => expect(await driver.page.$$('tr[style]')).toHaveLength(264))
         expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
 
+        console.log("2")
+
         // Open the command palette and click "Show line/hit branch counts"
         await driver.page.click('.command-list-popover-button')
         await driver.findElementWithText('Codecov: Show line hit/branch counts', { action: 'click' })
 
+        console.log("3")
+
         // Line/hit branch counts should now show up
         await retry(async () => expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(264))
 
+        console.log("4")
+
         // Check that the the "View commit report" button links to the correct location
         await driver.page.click('.command-list-popover-button')
-        await Promise.all([
-            driver.page.waitForNavigation(),
-            driver.findElementWithText('Codecov: View commit report', { action: 'click' }),
-        ])
-        expect(driver.page.url()).toEqual(
-            'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
-        )
+        await driver.findElementWithText('Codecov: View commit report', { action: 'click' })
+
+        console.log("5")
+
+        let found = false
+        const pages = await driver.browser.pages()
+        for (let p of pages) {
+            if (p.url() == 'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b') {
+                found = true
+                break
+            }
+        }
+        expect(found)
     })
 
     test('Datadog extension', async function () {

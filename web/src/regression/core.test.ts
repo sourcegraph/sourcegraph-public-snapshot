@@ -76,7 +76,7 @@ describe('Core functionality regression test suite', () => {
             await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
             return driver.page.evaluate(() => {
                 const editor = document.querySelector('.e2e-settings-file .monaco-editor') as HTMLElement
-                return editor ? editor.textContent : null
+                return editor ? editor.innerText : null
             })
         }
 
@@ -97,7 +97,7 @@ describe('Core functionality regression test suite', () => {
         const currentSettings = await getSettings()
         if (currentSettings !== previousSettings) {
             throw new Error(
-                `Settings ${JSON.stringify(currentSettings)} did not match (old) saved settings ${JSON.stringify(
+                `1 Settings ${JSON.stringify(currentSettings)} did not match (old) saved settings ${JSON.stringify(
                     previousSettings
                 )}`
             )
@@ -116,9 +116,12 @@ describe('Core functionality regression test suite', () => {
         await driver.page.reload()
 
         const currentSettings2 = await getSettings()
+
+        console.log(currentSettings2)
+
         if (JSON.stringify(currentSettings2) !== JSON.stringify(newSettings)) {
             throw new Error(
-                `Settings ${JSON.stringify(currentSettings2)} did not match (new) saved settings ${JSON.stringify(
+                `2 Settings ${JSON.stringify(currentSettings2)} did not match (new) saved settings ${JSON.stringify(
                     newSettings
                 )}`
             )
@@ -144,7 +147,7 @@ describe('Core functionality regression test suite', () => {
         const currentSettings3 = await getSettings()
         if (currentSettings3 !== previousSettings2) {
             throw new Error(
-                `Settings ${JSON.stringify(currentSettings3)} did not match (old) saved settings ${JSON.stringify(
+                `3 Settings ${JSON.stringify(currentSettings3)} did not match (old) saved settings ${JSON.stringify(
                     previousSettings2
                 )}`
             )
