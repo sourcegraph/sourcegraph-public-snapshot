@@ -242,7 +242,7 @@ function addElementWithRollback<T>(
         unsubscribe: () => {
             // eslint-disable-next-line id-length
             const filtered = get().filter(t => t !== value)
-            notify.next(modifiedArray)
+            set(modifiedArray)
             notify.next(filtered)
         },
     }
