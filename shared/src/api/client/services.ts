@@ -8,6 +8,7 @@ import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { createViewerService } from './services/viewerService'
 import { IExtensionsService, ExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
+import { ExtensionsService } from './services/extensionsService'
 import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
 import { createModelService } from './services/modelService'
@@ -56,7 +57,7 @@ export class Services {
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
-    public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
+    public readonly textDocumentHover = {}
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()

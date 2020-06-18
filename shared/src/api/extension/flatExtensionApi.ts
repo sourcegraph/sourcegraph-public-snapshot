@@ -5,8 +5,14 @@ import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from } from 'r
 
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
-import { switchMap, mergeMap } from 'rxjs/operators'
-import { proxySubscribable } from './api/common'
+import { switchMap, mergeMap, map } from 'rxjs/operators'
+import { proxySubscribable, providerResultToObservable } from './api/common'
+import { getHover, ProvideTextDocumentHoverSignature } from '../client/services/hover'
+import { TextDocumentIdentifier, match } from '../client/types/textDocument'
+import { getModeFromPath } from '../../languages'
+import { parseRepoURI } from '../../util/url'
+import { ExtensionDocuments } from './api/documents'
+import { toPosition } from './api/types'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -21,6 +27,14 @@ export interface ExtState {
 
     // Search
     queryTransformers: sourcegraph.QueryTransformer[]
+
+    // Lang
+    hoverProviders: RegisteredHoverProvider[]
+}
+
+interface RegisteredHoverProvider {
+    selector: sourcegraph.DocumentSelector
+    provider: sourcegraph.HoverProvider
 }
 
 export interface InitResult {
@@ -31,6 +45,7 @@ export interface InitResult {
     state: Readonly<ExtState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
+    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider'>
 }
 
 /**
@@ -49,14 +64,23 @@ export type PartialWorkspaceNamespace = Omit<
  */
 export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
-    initialSettings: Readonly<SettingsCascade<object>>
+    initialSettings: Readonly<SettingsCascade<object>>,
+    textDcuments: ExtensionDocuments
 ): InitResult => {
-    const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings, queryTransformers: [] }
+    const state: ExtState = {
+        roots: [],
+        versionContext: undefined,
+        settings: initialSettings,
+        queryTransformers: [],
+        hoverProviders: [],
+    }
 
     const configChanges = new BehaviorSubject<void>(undefined)
     // Most extensions never call `configuration.get()` synchronously in `activate()` to get
     // the initial settings data, and instead only subscribe to configuration changes.
     // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
+
+    const hoverProvidersChanges = new BehaviorSubject<RegisteredHoverProvider[]>([])
 
     const rootChanges = new Subject<void>()
     const queryTransformersChanges = new ReplaySubject<sourcegraph.QueryTransformer[]>(1)
@@ -103,6 +127,21 @@ export const initNewExtensionAPI = (
                     )
                 )
             ),
+
+        // Language
+        getHover: textParameters => {
+            const document = textDcuments.get(textParameters.textDocument.uri)
+
+            const matchedProviders = hoverProvidersChanges.pipe(
+                map(providers =>
+                    providersForDocument(textParameters.textDocument, providers, ({ selector }) => selector).map(
+                        ({ provider }): ProvideTextDocumentHoverSignature => parameters =>
+                            providerResultToObservable(provider.provideHover(document, toPosition(parameters.position)))
+                    )
+                )
+            )
+            return proxySubscribable(getHover(matchedProviders, textParameters))
+        },
     }
 
     // Configuration
@@ -133,18 +172,27 @@ export const initNewExtensionAPI = (
 
     // Search
     const search: typeof sourcegraph['search'] = {
-        registerQueryTransformer: transformer => {
-            state.queryTransformers = state.queryTransformers.concat(transformer)
-            queryTransformersChanges.next(state.queryTransformers)
-            return {
-                unsubscribe: () => {
-                    // eslint-disable-next-line id-length
-                    state.queryTransformers = state.queryTransformers.filter(t => t !== transformer)
-                    queryTransformersChanges.next(state.queryTransformers)
-                },
-            }
-        },
+        registerQueryTransformer: transformer =>
+            addElementWithRollback(transformer, {
+                get: () => state.queryTransformers,
+                set: values => (state.queryTransformers = values),
+                notifyWith: queryTransformersChanges,
+            }),
     }
+
+    // Languages
+    const registerHoverProvider = (
+        selector: sourcegraph.DocumentSelector,
+        provider: sourcegraph.HoverProvider
+    ): sourcegraph.Unsubscribable =>
+        addElementWithRollback(
+            { provider, selector },
+            {
+                get: () => state.hoverProviders,
+                set: values => (state.hoverProviders = values),
+                notifyWith: hoverProvidersChanges,
+            }
+        )
 
     return {
         configuration: Object.assign(configChanges.asObservable(), {
@@ -155,5 +203,47 @@ export const initNewExtensionAPI = (
         state,
         commands,
         search,
+        languages: {
+            registerHoverProvider,
+        },
+    }
+}
+
+function providersForDocument<P>(
+    document: TextDocumentIdentifier,
+    entries: P[],
+    selector: (p: P) => sourcegraph.DocumentSelector
+): P[] {
+    return entries.filter(provider =>
+        match(selector(provider), {
+            uri: document.uri,
+            languageId: getModeFromPath(parseRepoURI(document.uri).filePath || ''),
+        })
+    )
+}
+
+// TODO nice name here. ha-ha
+function addElementWithRollback<T>(
+    value: T,
+    {
+        get,
+        set,
+        notifyWith: notify,
+    }: {
+        get: () => T[]
+        set: (val: T[]) => void
+        notifyWith: Subject<T[]>
+    }
+): sourcegraph.Unsubscribable {
+    const modifiedArray = get().concat(value)
+    set(modifiedArray)
+    notify.next(modifiedArray)
+    return {
+        unsubscribe: () => {
+            // eslint-disable-next-line id-length
+            const filtered = get().filter(t => t !== value)
+            notify.next(modifiedArray)
+            notify.next(filtered)
+        },
     }
 }

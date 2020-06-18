@@ -384,6 +384,7 @@ function initCodeIntelligence({
         ),
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
+                // TODO what to if a webworker has not been instantiated yet
                 extensionsController.services.textDocumentHover.getHover(
                     toTextDocumentPositionParameters({ ...rest, position: { line, character } })
                 ),

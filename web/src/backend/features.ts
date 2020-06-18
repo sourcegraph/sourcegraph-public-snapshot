@@ -14,8 +14,13 @@ export function getHover(
     context: RepoSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<MaybeLoadingResult<HoverMerged | null>> {
+    // extensionsController.services.textDocumentHover.
+    // TODO no longer exists
+    // what to do when there worker has not been created yet?
     return extensionsController.services.textDocumentHover.getHover({
-        textDocument: { uri: `git://${context.repoName}?${context.commitID}#${context.filePath}` },
+        textDocument: {
+            uri: `git://${context.repoName}?${context.commitID}#${context.filePath}`,
+        },
         position: {
             character: context.position.character - 1,
             line: context.position.line - 1,
