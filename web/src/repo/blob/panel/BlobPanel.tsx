@@ -11,7 +11,6 @@ import {
 } from '../../../../../shared/src/api/client/services/panelViews'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
@@ -20,6 +19,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { Controller } from '../../../../../shared/src/extensions/controller'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -28,7 +28,6 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps,
         ThemeProps,
         ActivationProps {
     location: H.Location
@@ -37,6 +36,7 @@ interface Props
     repoName: string
     commitID: string
     authenticatedUser: GQL.IUser | null
+    extensionsController: Promise<Controller>
 }
 
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
@@ -133,13 +133,18 @@ export class BlobPanel extends React.PureComponent<Props> {
         this.subscriptions.add(
             this.props.extensionsController.services.panelViews.registerProviders([
                 entryForViewProviderRegistration('def', 'Definition', 190, parameters =>
-                    wrapRemoteObservable(this.props.extensionsController.getDefinitions(parameters))
+                    from(this.props.extensionsController).pipe(
+                        switchMap(controller => wrapRemoteObservable(controller.getDefinitions(parameters)))
+                    )
                 ),
                 entryForViewProviderRegistration(
                     'references',
                     'References',
                     180,
-                    parameters => wrapRemoteObservable(this.props.extensionsController.getReferences(parameters)),
+                    parameters =>
+                        from(this.props.extensionsController).pipe(
+                            switchMap(controller => wrapRemoteObservable(controller.getReferences(parameters)))
+                        ),
                     {
                         context: { includeDeclaration: false },
                     }
