@@ -201,7 +201,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, args.Query, limit)
+			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			if repoErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
@@ -258,7 +258,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query query.QueryInfo, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*FileMatchResolver, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
