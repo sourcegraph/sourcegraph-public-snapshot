@@ -11,13 +11,13 @@ func UpdateCheck() *Container {
 			Rows: []Row{
 				{
 					{
-						Name:              "99th_percentile_updatecheck_requests",
-						Description:       "99th percentile successful database query duration over 5m",
-						Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_updatecheck_client_request_duration_seconds[5m])))`,
+						Name:              "90th_percentile_updatecheck_requests",
+						Description:       "90th percentile successful update requests",
+						Query:             `histogram_quantile(0.9, sum by (method,le) (rate(src_updatecheck_client_duration_seconds_bucket[5m])))`,
 						DataMayNotExist:   true,
 						DataMayBeNaN:      true,
-						Warning:           Alert{GreaterOrEqual: 100}, // based on ctx to complete updateBody
-						PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+						Warning:           Alert{GreaterOrEqual: 0.10},
+						PanelOptions:      PanelOptions().LegendFormat("{{method}}").Max(0.10).Unit(Seconds),
 						PossibleSolutions: "none",
 					},
 				},
