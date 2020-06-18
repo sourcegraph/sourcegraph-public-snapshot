@@ -38,6 +38,9 @@ const (
 	// The user of pkg/conf only reads the configuration file.
 	modeClient
 
+	// The sole user of pkg/conf is the current process.
+	modeSingleProcess
+
 	// The user of pkg/conf is a test case or explicitly opted to have no
 	// configuration.
 	modeEmpty
@@ -51,6 +54,8 @@ func getMode() configurationMode {
 		return modeServer
 	case "client":
 		return modeClient
+	case "single-process":
+		return modeSingleProcess
 	case "empty":
 		return modeEmpty
 	default:
@@ -143,6 +148,8 @@ func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.R
 // server. This should only be invoked by the frontend, or else a panic will
 // occur. This function should only ever be called once.
 func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
+	log.Println("XXXXX")
+
 	mode := getMode()
 
 	if mode == modeEmpty {
