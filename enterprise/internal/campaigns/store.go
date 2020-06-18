@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -2190,6 +2191,12 @@ type ListPatchesOpts struct {
 	// If this is set only the Patches where diff_stat_added OR
 	// diff_stat_changed OR diff_stat_deleted are NULL.
 	OnlyWithoutDiffStats bool
+
+	// If this is set, the patches.diff column is not loaded. The idea is to
+	// speed up the query, since diffs can become quite large and require
+	// memory allocations that can be unnecessary if only the other columns are
+	// used.
+	NoDiff bool
 }
 
 // ListPatches lists Patches with the given filters.
@@ -2270,8 +2277,13 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
 	}
 
+	fmtstr := listPatchesQueryFmtstr
+	if opts.NoDiff {
+		fmtstr = strings.Replace(fmtstr, "patches.diff", `'' AS diff`, 1)
+	}
+
 	return sqlf.Sprintf(
-		listPatchesQueryFmtstr+limitClause,
+		fmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
