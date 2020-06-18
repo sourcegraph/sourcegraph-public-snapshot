@@ -45,6 +45,21 @@ curl -sK -v http://localhost:6060/debug/pprof/heap > heap.out
 
 Once the `heap.out` file has been generated, share it with Sourcegraph support or your account manager for analysis.
 
+## Downloading the binary to use with `go tool pprof`
+
+If you want to use the downloaded profile with `go tool pprof` you need the binary that produced the profile data.
+
+You can use `kubectl` to download it:
+
+```bash script
+kubectl cp sourcegraph-frontend-xxxx:/usr/local/bin/frontend frontend-bin
+```
+
+Then you can use `go tool pprof`:
+
+```bash script
+go tool pprof frontend-bin heap.out
+```
 
 ## Debug ports
 
