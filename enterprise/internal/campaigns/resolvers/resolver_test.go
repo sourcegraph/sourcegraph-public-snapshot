@@ -600,9 +600,7 @@ func TestCampaigns(t *testing.T) {
 
 	{
 		have := addChangesetsResult.Campaign.DiffStat
-		// Expected DiffStat is zeros, because we don't return diffstats for
-		// closed changesets
-		want := apitest.DiffStat{Added: 0, Changed: 0, Deleted: 0}
+		want := apitest.DiffStat{Added: 2, Changed: 2, Deleted: 6}
 		if have != want {
 			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 		}
