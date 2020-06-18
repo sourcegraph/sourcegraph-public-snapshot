@@ -21,6 +21,9 @@ export class ClientExtensions {
                 .pipe(startWith([] as ExecutableExtension[]), bufferCount(2, 1))
                 .subscribe(([oldExtensions, newExtensions]) => {
                     // Diff next state's activated extensions vs. current state's.
+                    if (!newExtensions) {
+                        newExtensions = oldExtensions
+                    }
                     const toActivate = [...newExtensions] // clone to avoid mutating state stored by bufferCount
                     const toDeactivate: ExecutableExtension[] = []
                     const next: ExecutableExtension[] = []
@@ -51,6 +54,7 @@ export class ClientExtensions {
 
                     // Activate extensions that haven't yet been activated.
                     for (const extension of toActivate) {
+                        console.log('Activating Sourcegraph extension:', extension.id)
                         this.proxy.$activateExtension(extension.id, extension.scriptURL).catch(error => {
                             console.error(`Error activating extension ${JSON.stringify(extension.id)}:`, error)
                         })

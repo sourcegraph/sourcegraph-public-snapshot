@@ -16,6 +16,7 @@ import { ModelService } from './modelService'
 import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
 import { fromFetch } from '../../../graphql/fromFetch'
+import { getInlineExtensions } from './get-inline-extensions'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -122,6 +123,12 @@ export class ExtensionsService {
      * plus a certain period of inactivity).
      */
     public get activeExtensions(): Subscribable<ExecutableExtension[]> {
+        // TODO: Selectively enable whether to use inline extensions
+        const useInlineExtensions = true
+        if (useInlineExtensions) {
+            return getInlineExtensions()
+        }
+
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()

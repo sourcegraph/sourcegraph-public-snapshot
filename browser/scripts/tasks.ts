@@ -91,6 +91,8 @@ const BROWSER_BLOCKLIST = {
     firefox: ['key'] as const,
 }
 
+const USE_INLINE_EXTENSIONS = true
+
 function writeSchema(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
     fs.writeFileSync(`${writeDirectory}/schema.json`, JSON.stringify(schema, null, 4))
 }
@@ -110,9 +112,12 @@ function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: 
 
     if (browser === 'firefox') {
         manifest.permissions!.push('<all_urls>')
+        delete manifest.storage
+    }
+
+    if (USE_INLINE_EXTENSIONS) {
         manifest.web_accessible_resources = manifest.web_accessible_resources || []
         manifest.web_accessible_resources.push('extensions/*')
-        delete manifest.storage
     }
 
     delete manifest.$schema
