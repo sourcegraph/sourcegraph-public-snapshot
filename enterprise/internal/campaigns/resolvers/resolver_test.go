@@ -4,12 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -32,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -291,11 +288,11 @@ func TestCampaigns(t *testing.T) {
 		graphqlBBSRepoID, "2",
 	)
 
-	state := mockGitHubChangesetSync(&protocol.RepoInfo{
+	state := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
 		Name: api.RepoName(githubRepo.Name),
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
-	defer unmockGitHubChangesetSync(state)
+	defer state.Unmock()
 
 	apitest.MustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment gitRef on GitRef {
@@ -730,11 +727,11 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockState := mockGitHubChangesetSync(&protocol.RepoInfo{
+	mockState := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
 		Name: api.RepoName(githubRepo.Name),
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
-	defer unmockGitHubChangesetSync(mockState)
+	defer mockState.Unmock()
 
 	err = ee.SyncChangesets(ctx, repoStore, store, cf, changesets...)
 	if err != nil {
@@ -1201,20 +1198,20 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitClient := &ee.FakeGitserverClient{Response: headRef, ResponseErr: nil}
+	gitClient := &ct.FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
-	sourcer := repos.NewFakeSourcer(nil, &ee.FakeChangesetSource{
+	sourcer := repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{
 		Svc:          ext,
 		WantHeadRef:  headRef,
 		WantBaseRef:  testBaseRef,
 		FakeMetadata: fakePR,
 	})
 
-	state := mockGitHubChangesetSync(&protocol.RepoInfo{
+	state := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
 		Name: api.RepoName(repo.Name),
 		VCS:  protocol.VCSInfo{URL: repo.URI},
 	})
-	defer unmockGitHubChangesetSync(state)
+	defer state.Unmock()
 
 	job := changesetJobs[0]
 
@@ -1347,71 +1344,4 @@ func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.Bitbu
 	}
 
 	return repos
-}
-
-type mockedGitHubChangesetSyncState struct {
-	execReader      func([]string) (io.ReadCloser, error)
-	mockRepoLookup  func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
-	resolveRevision func(string, *git.ResolveRevisionOptions) (api.CommitID, error)
-}
-
-// mockGitHubChangesetSync sets up mocks such that invoking LoadChangesets() on
-// one or more GitHub changesets will always return succeed, and return the same
-// diff (+1, ~1, -3).
-//
-// UnmockGitHubChangesetSync() must called to clean up, usually via defer.
-func mockGitHubChangesetSync(repo *protocol.RepoInfo) *mockedGitHubChangesetSyncState {
-	state := &mockedGitHubChangesetSyncState{
-		execReader:      git.Mocks.ExecReader,
-		mockRepoLookup:  repoupdater.MockRepoLookup,
-		resolveRevision: git.Mocks.ResolveRevision,
-	}
-
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		return &protocol.RepoLookupResult{
-			Repo: repo,
-		}, nil
-	}
-
-	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
-		// This provides a diff that will resolve to 1 added line, 1 changed
-		// line, and 3 deleted lines.
-		const testGitHubDiff = `
-diff --git a/test.py b/test.py
-index 884601b..c4886d5 100644
---- a/test.py
-+++ b/test.py
-@@ -1,6 +1,4 @@
-+# square makes a value squarer.
- def square(a):
--    """
--    square makes a value squarer.
--    """
-
--    return a * a
-+    return pow(a, 2)
-
-`
-
-		if len(args) < 1 && args[0] != "diff" {
-			if state.execReader != nil {
-				return state.execReader(args)
-			}
-			return nil, errors.New("cannot handle non-diff command in mock ExecReader")
-		}
-		return ioutil.NopCloser(strings.NewReader(testGitHubDiff)), nil
-	}
-
-	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID("mockcommitid"), nil
-	}
-
-	return state
-}
-
-// unmockGitHubChangesetSync resets the mocks set up by mockGitHubChangesetSync.
-func unmockGitHubChangesetSync(state *mockedGitHubChangesetSyncState) {
-	git.Mocks.ExecReader = state.execReader
-	git.Mocks.ResolveRevision = state.resolveRevision
-	repoupdater.MockRepoLookup = state.mockRepoLookup
 }
