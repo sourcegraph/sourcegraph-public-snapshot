@@ -1087,10 +1087,6 @@ type PullRequest struct {
 	Commits      []*Commit       `json:"commits,omitempty"`
 	CommitStatus []*CommitStatus `json:"commit_status,omitempty"`
 
-	// Computed fields.
-	FromRefRev string `json:"fromRefRev,omitempty"`
-	ToRefRev   string `json:"toRefRev,omitempty"`
-
 	// Deprecated, use CommitStatus instead. BuildStatus was not tied to individual commits
 	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
 }

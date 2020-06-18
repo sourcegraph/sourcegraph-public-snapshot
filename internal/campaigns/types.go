@@ -632,7 +632,7 @@ func (c *Changeset) HeadRefOid() (string, error) {
 	case *github.PullRequest:
 		return m.HeadRefOid, nil
 	case *bitbucketserver.PullRequest:
-		return m.FromRefRev, nil
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -659,7 +659,7 @@ func (c *Changeset) BaseRefOid() (string, error) {
 	case *github.PullRequest:
 		return m.BaseRefOid, nil
 	case *bitbucketserver.PullRequest:
-		return m.ToRefRev, nil
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
