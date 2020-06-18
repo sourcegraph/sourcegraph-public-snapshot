@@ -20,10 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
-// when computing the `git diff` of the root commit.
-const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-
 type RepositoryComparisonConnectionResolver interface {
 	Nodes(ctx context.Context) ([]*RepositoryComparisonResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
@@ -68,7 +64,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	}
 
 	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*GitCommitResolver, error) {
-		if revspec == devNullSHA {
+		if revspec == git.DevNullSHA {
 			return nil, nil
 		}
 
@@ -218,52 +214,36 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				afterIdx = int32(parsedIdx)
 			}
 
-			var rangeSpec string
-			hOid := cmp.head.OID()
+			var base string
 			if cmp.base == nil {
-				// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
-				rangeSpec = string(cmp.baseRevspec) + ".." + string(hOid)
+				base = cmp.baseRevspec
 			} else {
-				rangeSpec = string(cmp.base.OID()) + "..." + string(hOid)
+				base = string(cmp.base.OID())
 			}
-			if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
-				// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
-				// extra careful to avoid letting user input add additional `git diff` command-line
-				// flags or refer to a file.
-				err = fmt.Errorf("invalid diff range argument: %q", rangeSpec)
-				return
-			}
+
 			var cachedRepo *gitserver.Repo
 			cachedRepo, err = backend.CachedGitRepo(ctx, cmp.repo.repo)
 			if err != nil {
 				return
 			}
-			var rdr io.ReadCloser
-			rdr, err = git.ExecReader(ctx, *cachedRepo, []string{
-				"diff",
-				"--find-renames",
-				// TODO(eseliger): Enable once we have support for copy detection in go-diff
-				// and actually expose a `isCopy` field in the api, otherwise this
-				// information is thrown away anyways.
-				// "--find-copies",
-				"--full-index",
-				"--inter-hunk-context=3",
-				"--no-prefix",
-				rangeSpec,
-				"--",
+
+			var iter *git.DiffFileIterator
+			iter, err = git.Diff(ctx, git.DiffOptions{
+				Repo: *cachedRepo,
+				Base: base,
+				Head: string(cmp.head.OID()),
 			})
 			if err != nil {
 				return
 			}
-			defer rdr.Close()
+			defer iter.Close()
 
 			if args.First != nil {
 				fileDiffs = make([]*diff.FileDiff, 0, int(*args.First)) // preallocate
 			}
-			dr := diff.NewMultiFileDiffReader(rdr)
 			for {
 				var fileDiff *diff.FileDiff
-				fileDiff, err = dr.ReadFile()
+				fileDiff, err = iter.Next()
 				if err == io.EOF {
 					err = nil
 					break
@@ -274,7 +254,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				fileDiffs = append(fileDiffs, fileDiff)
 				if args.First != nil && len(fileDiffs) == int(*args.First+afterIdx) {
 					// Check for hasNextPage.
-					_, err = dr.ReadFile()
+					_, err = iter.Next()
 					if err != nil && err != io.EOF {
 						return
 					}

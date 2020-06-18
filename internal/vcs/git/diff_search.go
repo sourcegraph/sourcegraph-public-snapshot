@@ -79,7 +79,7 @@ type RawLogDiffSearchOptions struct {
 // LogCommitSearchResult describes a matching diff from (Repository).RawLogDiffSearch.
 type LogCommitSearchResult struct {
 	Commit         Commit      // the commit whose diff was matched
-	Diff           *Diff       // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
+	Diff           *RawDiff    // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
 	DiffHighlights []Highlight // highlighted query matches in the diff
 
 	// Refs is the list of ref names of this commit (from `git log --decorate`).
@@ -95,8 +95,8 @@ type LogCommitSearchResult struct {
 	Incomplete bool
 }
 
-// A Diff represents changes between two commits.
-type Diff struct {
+// A RawDiff represents changes between two commits.
+type RawDiff struct {
 	Raw string // the raw diff output
 }
 
@@ -417,7 +417,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 			if rawDiff == nil {
 				hasMatch = false // patch was empty (after applying filters), don't add to results
 			} else {
-				result.Diff = &Diff{Raw: string(rawDiff)}
+				result.Diff = &RawDiff{Raw: string(rawDiff)}
 			}
 		}
 

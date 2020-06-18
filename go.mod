@@ -58,7 +58,7 @@ require (
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
-	github.com/google/zoekt v0.0.0-20200602095749-1ba953d33f4f
+	github.com/google/zoekt v0.0.0-20200616181411-e6113752c10c
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.0
