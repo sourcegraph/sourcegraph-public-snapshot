@@ -308,9 +308,9 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 		s.queue.Upsert(sched...)
 	}
 
-	// Prioritise changesets without diffstats on startup.
-	if err := s.prioritiseChangesetsWithoutDiffStats(ctx); err != nil {
-		log15.Error("Prioritising changesets", "err", err)
+	// Prioritize changesets without diffstats on startup.
+	if err := s.prioritizeChangesetsWithoutDiffStats(ctx); err != nil {
+		log15.Error("Prioritizing changesets", "err", err)
 	}
 
 	var next scheduledSync
@@ -481,7 +481,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	return ss, nil
 }
 
-func (s *ChangesetSyncer) prioritiseChangesetsWithoutDiffStats(ctx context.Context) error {
+func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Context) error {
 	changesets, _, err := s.SyncStore.ListChangesets(ctx, ListChangesetsOpts{OnlyWithoutDiffStats: true, Limit: -1})
 	if err != nil {
 		return err

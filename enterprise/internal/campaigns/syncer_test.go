@@ -176,7 +176,7 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	}
 }
 
-func TestPrioritiseChangesetsWithoutDiffStats(t *testing.T) {
+func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
 	for name, tc := range map[string]struct {
 		listChangesets func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 		wantError      bool
@@ -231,7 +231,7 @@ func TestPrioritiseChangesetsWithoutDiffStats(t *testing.T) {
 				}
 			}()
 
-			err := syncer.prioritiseChangesetsWithoutDiffStats(context.Background())
+			err := syncer.prioritizeChangesetsWithoutDiffStats(context.Background())
 			if tc.wantError && err == nil {
 				t.Error("expected an error; got nil")
 			} else if !tc.wantError && err != nil {
