@@ -174,7 +174,7 @@ of examples to get you started. It is complementary to our [syntax
 reference](queries.md) and illustrates syntax using railroad diagrams instead of
 tables.
 
-**Reading railroad diagrams.** Follow the lines in these railroad diagrams from left
+**How to read railroad diagrams.** Follow the lines in these railroad diagrams from left
 to right to see how pieces of syntax combine. When a line splits it means there
 are multiple options available. When it is possible to repeat a previous syntax,
 you'll see a line lead into a box that looks like this:
@@ -243,7 +243,9 @@ you'll see a line lead into a box that looks like this:
   </table>
 </div>
 
-At a basic level, a search query consists of [search patterns](#search-pattern) and [parameters](#parameter).
+At a basic level, a query consists of [search patterns](#search-pattern) and [parameters](#parameter). Typical queries contain one or more space-separated search patterns that describe what to search, and parameters refine searches by filtering results or changing search behavior.
+
+**Example:** `repo:github.com/sourcegraph/sourcegraph file:schema.graphql The result` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:schema.graphql+The+result&patternType=literal)
 
 ## Expression
 
@@ -333,11 +335,11 @@ At a basic level, a search query consists of [search patterns](#search-pattern) 
   </table>
 </div>
 
-For example, `foo or bar and bar` means `foo or (bar and baz)`.
+Build query expressions by combining [basic queries](#basic-query) and operators like `AND` or `OR`.
 
-Expressions are the basic building blocks for search queries. Typical queries
-contain a search pattern and some parameters to narrow search. For
-example, `testroute repo:gorilla/mux`.
+**Example** `repo:github.com/sourcegraph/sourcegraph rtr AND newRouter` [↗](repo:^github\.com/sourcegraph/sourcegraph$ rtr AND newRouter)
+
+Group expressions with parentheses to build more complex expressions. If there are no balanced parentheses, `AND` operators bind tighter, so `foo or bar and baz` means `foo or (bar and baz)`. You may also use lowercase `and` or `or`.
 
 ## Search pattern
 
