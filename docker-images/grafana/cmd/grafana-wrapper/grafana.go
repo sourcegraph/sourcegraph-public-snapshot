@@ -125,9 +125,9 @@ func (c *grafanaController) Stop() error {
 		if err := c.proc.Signal(os.Interrupt); err != nil {
 			return fmt.Errorf("failed to stop Grafana instance: %w", err)
 		}
-		c.proc.Wait()
+		_ = c.proc.Wait() // this can error for a variety of irrelvant reasons
 		if err := c.proc.Release(); err != nil {
-			c.log.Warn("failed to release proccess", "error", err)
+			c.log.Warn("failed to release process", "error", err)
 		}
 		c.proc = nil
 	} else {

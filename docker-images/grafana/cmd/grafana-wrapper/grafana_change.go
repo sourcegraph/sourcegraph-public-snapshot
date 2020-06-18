@@ -101,7 +101,7 @@ func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana Grafa
 		return
 	}
 
-	return
+	return result
 }
 
 // grafanaChangeSMTP applies SMTP server configurations to Grafana.

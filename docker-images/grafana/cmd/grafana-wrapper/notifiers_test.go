@@ -10,7 +10,6 @@ import (
 
 func TestNewGrafanaNotifiersConfig(t *testing.T) {
 	type args struct {
-		current   []*schema.ObservabilityAlerts
 		newAlerts []*schema.ObservabilityAlerts
 	}
 	tests := []struct {

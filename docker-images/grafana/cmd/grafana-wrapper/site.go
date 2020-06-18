@@ -88,7 +88,7 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 	}
 	log.Debug("detected frontend ready")
 
-	// Need grafana to be ready to intialize alerts
+	// Need grafana to be ready to initialize alerts
 	log.Info("waiting for grafana")
 	if err := grafana.WaitForServer(ctx); err != nil {
 		return nil, err
