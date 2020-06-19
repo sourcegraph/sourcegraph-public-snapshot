@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -29,10 +26,6 @@ import (
 )
 
 func main() {
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
 	shared.Main(enterpriseInit)
 }
 

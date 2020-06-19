@@ -10,8 +10,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -52,11 +50,6 @@ import (
 
 func main() {
 	shared.Main(func() enterprise.Services {
-		debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-		if debug {
-			log.Println("enterprise edition")
-		}
-
 		ctx := context.Background()
 		enterpriseServices := enterprise.DefaultServices()
 
