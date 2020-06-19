@@ -5,6 +5,8 @@ package main
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -63,14 +65,35 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("type:repo visibility:private", func(t *testing.T) {
-		results, err := client.SearchRepositories("type:repo visibility:private")
-		if err != nil {
-			t.Fatal(err)
+	t.Run("visibility", func(t *testing.T) {
+		tests := []struct {
+			query       string
+			wantMissing []string
+		}{
+			{
+				query:       "type:repo visibility:private",
+				wantMissing: []string{},
+			},
+			{
+				query:       "type:repo visibility:public",
+				wantMissing: []string{"github.com/sourcegraph/e2e-test-private-repository"},
+			},
+			{
+				query:       "type:repo visibility:any",
+				wantMissing: []string{},
+			},
 		}
-		missing := results.Exists("github.com/sourcegraph/e2e-test-private-repository")
-		if len(missing) > 0 {
-			t.Fatalf("private repository not found: %v", missing)
+		for _, test := range tests {
+			t.Run(test.query, func(t *testing.T) {
+				results, err := client.SearchRepositories(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+				missing := results.Exists("github.com/sourcegraph/e2e-test-private-repository")
+				if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
+					t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+				}
+			})
 		}
 	})
 }
