@@ -67,14 +67,9 @@ func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana Grafa
 	if err := resetSrcNotifiers(ctx, grafana.Client); err != nil {
 		result.Problems = append(result.Problems, newProblem(err))
 		// silently try to recreate alerts, in case any were deleted
-		log.Warn("failed to reset notifiers - attempting to recreate")
-		for _, alert := range created {
-			if _, err := grafana.Client.CreateAlertNotification(ctx, alert); err != nil {
-				log.Warn(fmt.Sprintf("failed to recreate notifier %q", alert.UID), "error", err)
-			}
-		}
-		return
+		log.Error("error occured while removing current notifiers", "error", err)
 	}
+
 	for _, alert := range created {
 		_, err = grafana.Client.CreateAlertNotification(ctx, alert)
 		if err != nil {

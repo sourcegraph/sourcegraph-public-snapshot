@@ -29,6 +29,9 @@ type subscribedSiteConfig struct {
 
 	Email    *siteEmailConfig
 	emailSum [32]byte
+
+	// flag to indicate this config is for container startup
+	isStartup bool
 }
 
 // newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
@@ -56,15 +59,20 @@ type siteConfigDiff struct {
 	change GrafanaChange
 }
 
-// Diff returns a set of changes to apply to Grafana.
+// Diff returns a set of changes to apply to Grafana. If the provided config has isStartup=true,
+// it is assumed that this diff is for initial Grafana startup.
 func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDiff {
 	var changes []siteConfigDiff
-	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
+
+	// apply notifer changes on startup, since they can persist from Grafana's database
+	if other.isStartup || !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
 		changes = append(changes, siteConfigDiff{Type: "alerts", change: grafanaChangeNotifiers})
 	}
+
 	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
 		changes = append(changes, siteConfigDiff{Type: "email", change: grafanaChangeSMTP})
 	}
+
 	return changes
 }
 
@@ -110,12 +118,12 @@ func newSiteConfigSubscriber(ctx context.Context, logger log15.Logger, grafana *
 		}
 	}
 
-	subscriber := &siteConfigSubscriber{
-		log:     log,
-		grafana: grafana,
-	}
-	// set initial grafana state
-	subscriber.updateGrafanaConfig(ctx, siteConfig, siteConfig.Diff(newSubscribedSiteConfig(schema.SiteConfiguration{})))
+	// set initial grafana state using a zero-value site config
+	subscriber := &siteConfigSubscriber{log: log, grafana: grafana}
+	zeroConfig := newSubscribedSiteConfig(schema.SiteConfiguration{})
+	zeroConfig.isStartup = true
+	subscriber.updateGrafanaConfig(ctx, siteConfig, siteConfig.Diff(zeroConfig))
+
 	return subscriber, nil
 }
 
