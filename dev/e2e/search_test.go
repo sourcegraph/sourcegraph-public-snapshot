@@ -3,6 +3,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -94,6 +95,20 @@ func TestSearch(t *testing.T) {
 					t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
 				}
 			})
+		}
+	})
+
+	t.Run("execute search with search operators", func(t *testing.T) {
+		results, err := client.SearchFiles("repo:^github.com/sourcegraph/go-diff$ type:file file:.go -file:.md")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Make sure only got .go files and no .md files
+		for _, r := range results {
+			if !strings.HasSuffix(r.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.Name)
+			}
 		}
 	})
 }
