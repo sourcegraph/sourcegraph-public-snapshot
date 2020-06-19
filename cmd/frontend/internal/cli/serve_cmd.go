@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
@@ -54,12 +53,6 @@ var (
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
-
-func init() {
-	// If CACHE_DIR is specified, use that
-	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
-	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
-}
 
 // defaultExternalURL returns the default external URL of the application.
 func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
@@ -115,6 +108,12 @@ func InitDB() error {
 func Main(enterpriseSetupHook func() enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
+
+	// If CACHE_DIR is specified, use that
+	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
+
+	env.Lock()
 
 	if err := InitDB(); err != nil {
 		log.Fatalf("ERROR: %v", err)
@@ -180,8 +179,6 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
 		return err
 	}
-
-	go debugserver.Start()
 
 	siteid.Init()
 

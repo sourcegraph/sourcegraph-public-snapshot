@@ -148,8 +148,6 @@ func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.R
 // server. This should only be invoked by the frontend, or else a panic will
 // occur. This function should only ever be called once.
 func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
-	log.Println("XXXXX")
-
 	mode := getMode()
 
 	if mode == modeEmpty {

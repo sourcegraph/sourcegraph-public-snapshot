@@ -44,6 +44,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -51,6 +52,8 @@ import (
 )
 
 func main() {
+	go debugserver.Start()
+
 	shared.Main(func() enterprise.Services {
 		debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 		if debug {
