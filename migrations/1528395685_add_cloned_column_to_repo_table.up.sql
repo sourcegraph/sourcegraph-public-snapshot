@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE repo ADD COLUMN cloned BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX repo_cloned ON repo (cloned);
+
+COMMIT;
