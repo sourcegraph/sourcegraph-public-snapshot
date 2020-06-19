@@ -183,7 +183,6 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	globals.WatchPermissionsUserMapping()
 	globals.WatchPermissionsBackgroundSync()
 
-	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
