@@ -8,8 +8,6 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/tele
 import { PageTitle } from '../../../components/PageTitle'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { shallow, mount } from 'enzyme'
-import { eventLogger } from '../../../tracking/eventLogger'
-import sinon from 'sinon'
 
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
@@ -27,18 +25,6 @@ jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 const history = H.createMemoryHistory()
 
 describe('CampaignDetails', () => {
-    let stub: sinon.SinonStub<[string, (boolean | undefined)?], void>
-
-    beforeAll(() => {
-        stub = sinon.stub(eventLogger, 'logViewEvent')
-    })
-
-    afterAll(() => {
-        if (stub) {
-            stub.restore()
-        }
-    })
-
     afterEach(() => {
         PageTitle.titleSet = false
     })

@@ -16,6 +16,10 @@ export interface TelemetryService {
      * Log an event (by sending it to the server).
      */
     log(eventName: string, eventProperties?: any): void
+    /**
+     * Log a pageview event (by sending it to the server).
+     */
+    logViewEvent(eventName: string): void
 }
 
 /**
@@ -23,6 +27,9 @@ export interface TelemetryService {
  */
 export const NOOP_TELEMETRY_SERVICE: TelemetryService = {
     log: () => {
+        /* noop */
+    },
+    logViewEvent: () => {
         /* noop */
     },
 }
