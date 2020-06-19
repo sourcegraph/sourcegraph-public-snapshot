@@ -11,7 +11,7 @@ import (
 
 func TestSearch(t *testing.T) {
 	if len(*githubToken) == 0 {
-		t.Fatal("Environment variable GITHUB_TOKEN is not set")
+		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
 	// Set up external service
