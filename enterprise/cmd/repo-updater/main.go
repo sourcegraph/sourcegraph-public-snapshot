@@ -23,9 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/servicecmdutil"
 )
 
 func main() {
+	servicecmdutil.Init()
 	shared.Main(enterpriseInit)
 }
 

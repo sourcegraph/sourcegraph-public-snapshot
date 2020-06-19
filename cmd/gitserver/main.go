@@ -3,10 +3,10 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/servicecmdutil"
 )
 
 func main() {
-	go debugserver.Start()
+	servicecmdutil.Init()
 	shared.Main()
 }

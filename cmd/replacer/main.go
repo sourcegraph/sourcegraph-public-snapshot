@@ -18,13 +18,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/replace"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/servicecmdutil"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
@@ -33,12 +31,10 @@ var cacheSizeMB = env.Get("REPLACER_CACHE_SIZE_MB", "100000", "maximum size of t
 const port = "3185"
 
 func main() {
+	servicecmdutil.Init()
+
 	env.Lock()
 	env.HandleHelpFlag()
-	log.SetFlags(0)
-	tracer.Init()
-
-	go debugserver.Start()
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {

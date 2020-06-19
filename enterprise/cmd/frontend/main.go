@@ -45,10 +45,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/servicecmdutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func main() {
+	servicecmdutil.Init()
+
 	shared.Main(func() enterprise.Services {
 		ctx := context.Background()
 		enterpriseServices := enterprise.DefaultServices()

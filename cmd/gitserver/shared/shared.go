@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 var (
@@ -31,8 +30,6 @@ var (
 func Main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	tracer.Init()
-
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}

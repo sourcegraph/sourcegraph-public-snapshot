@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 var (
@@ -33,9 +32,6 @@ const port = "3181"
 func Main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	log.SetFlags(0)
-	tracer.Init()
-
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
 		log.Fatalf("invalid int %q for SEARCHER_CACHE_SIZE_MB: %s", cacheSizeMB, err)

@@ -27,12 +27,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 )
@@ -109,10 +107,7 @@ func InitDB() error {
 
 // Main is the main entrypoint for the frontend server program.
 func Main(enterpriseSetupHook func() enterprise.Services) error {
-	log.SetFlags(0)
-	log.SetPrefix("")
-
-	tracer.Init()
+	env.Lock()
 
 	if err := InitDB(); err != nil {
 		log.Fatalf("ERROR: %v", err)
@@ -174,8 +169,6 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
 		return err
 	}
-
-	go debugserver.Start()
 
 	siteid.Init()
 
