@@ -252,6 +252,18 @@ var tests = []test{
 		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and main`,
 	},
 	{
+		Name:  `Simple combined union and intersect file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go ((func main and package main) or return prom.NewClient)`,
+	},
+	{
+		Name:  `Complex union of intersect file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go ((main and NamersFromConfig) or (genericPromClient and stopCh <-))`,
+	},
+	{
+		Name:  `Complex intersect of union file matches per file and accurate counts`,
+		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go ((func main or package main) and (baseURL or mprom))`,
+	},
+	{
 		Name:  `Intersect file matches per file against an empty result set`,
 		Query: `repo:^github\.com/rvantonderp/DirectXMan12-k8s-prometheus-adapter$@4b5788e file:^cmd/adapter/adapter\.go func and doesnotexist838338`,
 	},

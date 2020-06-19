@@ -663,31 +663,39 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 // unionMerge performs a merge of file match results, merging line matches when
 // they occur in the same file, and taking care to update match counts.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
+	var count int // count non-overlapping files when we merge.
 	for _, leftMatch := range left.SearchResults {
 		for _, rightMatch := range right.SearchResults {
 			rightFileMatch, ok := rightMatch.ToFileMatch()
 			if !ok {
 				left.SearchResults = append(left.SearchResults, rightMatch)
+				count++
 				continue
 			}
 
 			leftFileMatch, ok := leftMatch.ToFileMatch()
 			if !ok {
 				left.SearchResults = append(left.SearchResults, rightMatch)
+				count++
+				continue
 			}
 
 			if leftFileMatch.uri == rightFileMatch.uri {
+				// Do not count this match, since it will be counted by the outer-loop.
 				leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
 				leftFileMatch.MatchCount += rightFileMatch.MatchCount
 				leftFileMatch.JLimitHit = leftFileMatch.JLimitHit || rightFileMatch.JLimitHit
 			} else {
 				left.SearchResults = append(left.SearchResults, rightMatch)
+				count++
 			}
-
 		}
+		count++
 	}
 	// merge common search data.
 	left.searchResultsCommon.update(right.searchResultsCommon)
+	// set the count that tracks non-overlapping result count.
+	left.searchResultsCommon.resultCount = int32(count)
 	return left
 }
 
@@ -737,6 +745,8 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	}
 	left.SearchResults = merged
 	left.searchResultsCommon.update(right.searchResultsCommon)
+	// for intersect we want the newly computed intersection size.
+	left.searchResultsCommon.resultCount = int32(len(merged))
 	return left
 }
 
@@ -855,7 +865,12 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	if err != nil {
 		return nil, err
 	}
-	if result.searchResultsCommon.resultCount > int32(wantCount) {
+	if result == nil {
+		return nil, nil
+	}
+	// Do not rely on result.searchResultsCommon.resultCount because it may
+	// count non-content matches and there's no easy way to know.
+	if len(result.SearchResults) > wantCount {
 		result.SearchResults = result.SearchResults[:wantCount]
 		result.searchResultsCommon.resultCount = int32(wantCount)
 		return result, nil
@@ -868,7 +883,9 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 		}
 		if new != nil {
 			result = union(result, new)
-			if result.searchResultsCommon.resultCount > int32(wantCount) {
+			// Do not rely on result.searchResultsCommon.resultCount because it may
+			// count non-content matches and there's no easy way to know.
+			if len(result.SearchResults) > wantCount {
 				result.SearchResults = result.SearchResults[:wantCount]
 				result.searchResultsCommon.resultCount = int32(wantCount)
 				return result, nil
