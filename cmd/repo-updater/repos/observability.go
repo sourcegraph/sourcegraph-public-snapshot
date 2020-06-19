@@ -9,7 +9,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -125,7 +124,7 @@ type StoreMetrics struct {
 	ListRepos              *metrics.OperationMetrics
 	UpsertExternalServices *metrics.OperationMetrics
 	ListExternalServices   *metrics.OperationMetrics
-	ListAllRepoNames       *metrics.OperationMetrics
+	CountNotClonedRepos    *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -138,7 +137,7 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.UpsertRepos,
 		sm.ListExternalServices,
 		sm.UpsertExternalServices,
-		sm.ListAllRepoNames,
+		sm.CountNotClonedRepos,
 	} {
 		r.MustRegister(om.Count)
 		r.MustRegister(om.Duration)
@@ -234,7 +233,7 @@ func NewStoreMetrics() StoreMetrics {
 				Help: "Total number of errors when listing external_services",
 			}, []string{}),
 		},
-		ListAllRepoNames: &metrics.OperationMetrics{
+		CountNotClonedRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_store_list_all_repo_names_duration_seconds",
 				Help: "Time spent listing repo names",
@@ -393,23 +392,22 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 	return o.store.ListRepos(ctx, args)
 }
 
-// ListAllRepoNames calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListAllRepoNames(ctx context.Context) (names []api.RepoName, err error) {
-	tr, ctx := o.trace(ctx, "Store.ListAllRepoNames")
+// CountNotClonedRepos calls into the inner Store and registers the observed results.
+func (o *ObservedStore) CountNotClonedRepos(ctx context.Context) (count int64, err error) {
+	tr, ctx := o.trace(ctx, "Store.CountNotClonedRepos")
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		count := float64(len(names))
 
-		o.metrics.ListAllRepoNames.Observe(secs, count, &err)
-		logging.Log(o.log, "store.list-all-repo-names", &err, "count", len(names))
+		o.metrics.CountNotClonedRepos.Observe(secs, float64(count), &err)
+		logging.Log(o.log, "store.count-not-cloned-repos", &err, "count", count)
 
-		tr.LogFields(otlog.Int("count", len(names)))
+		tr.LogFields(otlog.Int64("count", count))
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
-	return o.store.ListAllRepoNames(ctx)
+	return o.store.CountNotClonedRepos(ctx)
 }
 
 // UpsertRepos calls into the inner Store and registers the observed results.

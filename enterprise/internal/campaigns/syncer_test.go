@@ -496,7 +496,7 @@ func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) er
 	panic("implement me")
 }
 
-func (m MockRepoStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error) {
+func (m MockRepoStore) CountNotClonedRepos(ctx context.Context) (int64, error) {
 	panic("implement me")
 }
 

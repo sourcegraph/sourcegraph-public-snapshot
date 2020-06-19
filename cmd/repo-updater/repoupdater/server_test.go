@@ -550,26 +550,23 @@ func TestServer_StatusMessages(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name            string
-		stored          repos.Repos
-		gitserverCloned []string
-		sourcerErr      error
-		listRepoErr     error
-		res             *protocol.StatusMessagesResponse
-		err             string
+		name        string
+		stored      repos.Repos
+		sourcerErr  error
+		listRepoErr error
+		res         *protocol.StatusMessagesResponse
+		err         string
 	}{
 		{
-			name:            "all cloned",
-			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "foobar"}},
+			name:   "all cloned",
+			stored: []*repos.Repo{{Name: "foobar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
 		},
 		{
-			name:            "nothing cloned",
-			stored:          []*repos.Repo{{Name: "foobar"}},
-			gitserverCloned: []string{},
+			name:   "nothing cloned",
+			stored: []*repos.Repo{{Name: "foobar", Cloned: false}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
@@ -581,9 +578,8 @@ func TestServer_StatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:            "subset cloned",
-			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			gitserverCloned: []string{"foobar"},
+			name:   "subset cloned",
+			stored: []*repos.Repo{{Name: "foobar", Cloned: true}, {Name: "barfoo"}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
@@ -592,44 +588,6 @@ func TestServer_StatusMessages(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		{
-			name:            "more cloned than stored",
-			stored:          []*repos.Repo{{Name: "foobar"}},
-			gitserverCloned: []string{"foobar", "barfoo"},
-			res: &protocol.StatusMessagesResponse{
-				Messages: []protocol.StatusMessage{},
-			},
-		},
-		{
-			name:            "cloned different than stored",
-			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			gitserverCloned: []string{"one", "two", "three"},
-			res: &protocol.StatusMessagesResponse{
-				Messages: []protocol.StatusMessage{
-					{
-						Cloning: &protocol.CloningProgress{
-							Message: "2 repositories enqueued for cloning...",
-						},
-					},
-				},
-			},
-		},
-		{
-			name:            "case insensitivity",
-			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
-			res: &protocol.StatusMessagesResponse{
-				Messages: []protocol.StatusMessage{},
-			},
-		},
-		{
-			name:            "case insensitivity to gitserver names",
-			gitserverCloned: []string{"FOOBar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
-			res: &protocol.StatusMessagesResponse{
-				Messages: []protocol.StatusMessage{},
 			},
 		},
 		{
@@ -666,8 +624,6 @@ func TestServer_StatusMessages(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
-
 			stored := tc.stored.Clone()
 			for i, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
@@ -702,9 +658,8 @@ func TestServer_StatusMessages(t *testing.T) {
 			}
 
 			s := &Server{
-				Syncer:    syncer,
-				Store:     store,
-				Gitserver: gitserverClient,
+				Syncer: syncer,
+				Store:  store,
 			}
 
 			srv := httptest.NewServer(s.Handler())

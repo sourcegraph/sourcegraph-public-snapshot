@@ -41,7 +41,6 @@ type Server struct {
 		UpdateOnce(id api.RepoID, name api.RepoName, url string)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
-	Gitserver             repos.CloneLister
 	ChangesetSyncRegistry interface {
 		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
@@ -505,7 +504,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		Messages: []protocol.StatusMessage{},
 	}
 
-	notCloned, err := s.computeNotClonedCount(r.Context())
+	notCloned, err := s.Store.CountNotClonedRepos(r.Context())
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -558,44 +557,6 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 	log15.Debug("TRACE handleStatusMessages", "messages", log15.Lazy{Fn: messagesSummary})
 
 	respond(w, http.StatusOK, resp)
-}
-
-func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
-	// Coarse lock so we single flight the expensive computation.
-	s.notClonedCountMu.Lock()
-	defer s.notClonedCountMu.Unlock()
-
-	if expiresAt := s.notClonedCountUpdatedAt.Add(30 * time.Second); expiresAt.After(time.Now()) {
-		return s.notClonedCount, nil
-	}
-
-	names, err := s.Store.ListAllRepoNames(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	notCloned := make(map[string]struct{}, len(names))
-	for _, n := range names {
-		lower := strings.ToLower(string(n))
-		notCloned[lower] = struct{}{}
-	}
-
-	cloned, err := s.Gitserver.ListCloned(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	for _, c := range cloned {
-		lower := strings.ToLower(c)
-		if _, ok := notCloned[lower]; ok {
-			delete(notCloned, lower)
-		}
-	}
-
-	s.notClonedCount = uint64(len(notCloned))
-	s.notClonedCountUpdatedAt = time.Now()
-
-	return s.notClonedCount, nil
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {

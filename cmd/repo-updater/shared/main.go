@@ -102,7 +102,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	server := &repoupdater.Server{
 		Store:     store,
 		Scheduler: scheduler,
-		Gitserver: gitserver.DefaultClient,
 	}
 
 	// All dependencies ready

@@ -101,8 +101,8 @@ func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
 	return nil
 }
 
-func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, error) {
-	return nil, nil
+func (s *mockReposStore) CountNotClonedRepos(context.Context) (int64, error) {
+	return 0, nil
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {

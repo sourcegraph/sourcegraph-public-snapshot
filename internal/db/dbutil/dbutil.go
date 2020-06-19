@@ -58,6 +58,7 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 // A DB captures the essential method of a sql.DB: QueryContext.
 type DB interface {
 	QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row
 }
 
 // A Tx captures the essential methods of a sql.Tx.
