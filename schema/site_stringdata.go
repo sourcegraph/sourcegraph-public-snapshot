@@ -171,7 +171,7 @@ const SiteSchemaJSON = `{
                 "description": "Name of the version context, it must be unique.",
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 14
+                "maxLength": 50
               },
               "revisions": {
                 "description": "List of repositories of the version context",
