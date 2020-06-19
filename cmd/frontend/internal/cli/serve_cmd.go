@@ -112,6 +112,8 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
+	tracer.Init()
+
 	if err := InitDB(); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
@@ -122,8 +124,6 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
-
-	tracer.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook()
