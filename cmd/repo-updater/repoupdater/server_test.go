@@ -702,9 +702,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			}
 
 			s := &Server{
-				Syncer:          syncer,
-				Store:           store,
-				GitserverClient: gitserverClient,
+				Syncer:    syncer,
+				Store:     store,
+				Gitserver: gitserverClient,
 			}
 
 			srv := httptest.NewServer(s.Handler())
@@ -1078,9 +1078,11 @@ func TestRepoLookup(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			gitserverClient := &fakeGitserverClient{listClonedResponse: nil}
 			syncer := &repos.Syncer{
-				Store: store,
-				Now:   clock.Now,
+				Store:     store,
+				Gitserver: gitserverClient,
+				Now:       clock.Now,
 			}
 			s := &Server{Syncer: syncer, Store: store}
 			if tc.githubDotComSource != nil {

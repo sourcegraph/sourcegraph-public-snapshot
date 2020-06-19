@@ -41,9 +41,7 @@ type Server struct {
 		UpdateOnce(id api.RepoID, name api.RepoName, url string)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
-	GitserverClient interface {
-		ListCloned(context.Context) ([]string, error)
-	}
+	Gitserver             repos.CloneLister
 	ChangesetSyncRegistry interface {
 		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
@@ -582,7 +580,7 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 		notCloned[lower] = struct{}{}
 	}
 
-	cloned, err := s.GitserverClient.ListCloned(ctx)
+	cloned, err := s.Gitserver.ListCloned(ctx)
 	if err != nil {
 		return 0, err
 	}

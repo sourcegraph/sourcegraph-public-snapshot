@@ -253,6 +253,11 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 		s.upsert(r, false)
 	}
 
+	for _, r := range diff.NotCloned {
+		updated := s.updateQueue.enqueue(configuredRepo2FromRepo(r), priorityLow)
+		log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
+	}
+
 	schedKnownRepos.Set(float64(known))
 }
 

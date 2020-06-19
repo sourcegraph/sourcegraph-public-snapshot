@@ -22,6 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 )
 
+type fakeGitserverClient struct {
+	listClonedResponse []string
+}
+
+func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) {
+	return g.listClonedResponse, nil
+}
+
 func TestSyncer_Sync(t *testing.T) {
 	t.Parallel()
 
@@ -34,6 +42,7 @@ func TestSyncer_Sync(t *testing.T) {
 		name    string
 		sourcer repos.Sourcer
 		store   repos.Store
+		cloned  []string
 		err     string
 	}{
 		{
@@ -70,10 +79,12 @@ func TestSyncer_Sync(t *testing.T) {
 			now := clock.Now
 			ctx := context.Background()
 
+			gitserverClient := &fakeGitserverClient{tc.cloned}
 			syncer := &repos.Syncer{
-				Store:   tc.store,
-				Sourcer: tc.sourcer,
-				Now:     now,
+				Store:     tc.store,
+				Sourcer:   tc.sourcer,
+				Gitserver: gitserverClient,
+				Now:       now,
 			}
 			err := syncer.Sync(ctx)
 
@@ -214,6 +225,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		sourcer repos.Sourcer
 		store   repos.Store
 		stored  repos.Repos
+		cloned  []string
 		ctx     context.Context
 		now     func() time.Time
 		diff    repos.Diff
@@ -547,10 +559,12 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					}
 				}
 
+				gitserverClient := &fakeGitserverClient{tc.cloned}
 				syncer := &repos.Syncer{
-					Store:   st,
-					Sourcer: tc.sourcer,
-					Now:     now,
+					Store:     st,
+					Sourcer:   tc.sourcer,
+					Gitserver: gitserverClient,
+					Now:       now,
 				}
 				err := syncer.Sync(ctx)
 
@@ -619,6 +633,7 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 		name    string
 		sourced repos.Repos
 		stored  repos.Repos
+		cloned  []string
 		assert  repos.ReposAssertion
 	}{{
 		name:   "no sourced",
@@ -692,9 +707,11 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 				}
 
 				clock := clock
+				gitserverClient := &fakeGitserverClient{listClonedResponse: tc.cloned}
 				syncer := &repos.Syncer{
-					Store: st,
-					Now:   clock.Now,
+					Store:     st,
+					Gitserver: gitserverClient,
+					Now:       clock.Now,
 				}
 				err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
 				if err != nil {
@@ -728,6 +745,7 @@ func TestDiff(t *testing.T) {
 		name   string
 		store  repos.Repos
 		source repos.Repos
+		cloned []string
 		diff   repos.Diff
 	}
 
@@ -762,11 +780,20 @@ func TestDiff(t *testing.T) {
 			}},
 		},
 		{
-			name:   "unmodified",
-			store:  repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
-			source: repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
+			name:   "unmodified cloned",
+			store:  repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
+			source: repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
+			cloned: []string{"bar"},
 			diff: repos.Diff{Unmodified: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "foo"},
+				{Name: "bar", ExternalRepo: eid("1"), Description: "foo"},
+			}},
+		},
+		{
+			name:   "unmodified not cloned",
+			store:  repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
+			source: repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
+			diff: repos.Diff{NotCloned: repos.Repos{
+				{Name: "bar", ExternalRepo: eid("1"), Description: "foo"},
 			}},
 		},
 		{
@@ -801,13 +828,14 @@ func TestDiff(t *testing.T) {
 		{
 			name: "unmodified preserves stored repo",
 			store: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
+				{Name: "bar", ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
 			},
 			source: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "foo"},
+				{Name: "bar", ExternalRepo: eid("1"), Description: "foo"},
 			},
+			cloned: []string{"bar"},
 			diff: repos.Diff{Unmodified: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
+				{Name: "bar", ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
 			}},
 		},
 	}
@@ -926,6 +954,7 @@ func TestDiff(t *testing.T) {
 				{Name: "foo", ExternalRepo: eid("1")},
 				{Name: "Foo", ExternalRepo: eid("2")},
 			},
+			cloned: []string{"Foo"},
 			diff: repos.Diff{
 				Unmodified: repos.Repos{
 					{Name: "Foo", ExternalRepo: eid("2")},
@@ -958,6 +987,7 @@ func TestDiff(t *testing.T) {
 					name:   fmt.Sprintf("%s/permutation_%d_%d", tc.name, i, j),
 					store:  tc.store.Clone(),
 					source: tc.source.Clone(),
+					cloned: tc.cloned,
 					diff:   tc.diff,
 				})
 			}
@@ -969,7 +999,7 @@ func TestDiff(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			diff := repos.NewDiff(tc.source, tc.store)
+			diff := repos.NewDiff(tc.source, tc.store, tc.cloned)
 			diff.Sort()
 			tc.diff.Sort()
 			if cDiff := cmp.Diff(diff, tc.diff); cDiff != "" {

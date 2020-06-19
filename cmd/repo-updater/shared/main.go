@@ -100,9 +100,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	scheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
-		Store:           store,
-		Scheduler:       scheduler,
-		GitserverClient: gitserver.DefaultClient,
+		Store:     store,
+		Scheduler: scheduler,
+		Gitserver: gitserver.DefaultClient,
 	}
 
 	// All dependencies ready
@@ -171,6 +171,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	syncer := &repos.Syncer{
 		Store:            store,
 		Sourcer:          src,
+		Gitserver:        server.Gitserver,
 		DisableStreaming: !streamingSyncer,
 		Logger:           log15.Root(),
 		Now:              clock,

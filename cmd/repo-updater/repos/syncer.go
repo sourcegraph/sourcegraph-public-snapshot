@@ -15,11 +15,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+// CloneLister lists repositories that are cloned on disk (on gitserver).
+type CloneLister interface {
+	ListCloned(context.Context) ([]string, error)
+}
+
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
-	Store   Store
-	Sourcer Sourcer
+	Store     Store
+	Sourcer   Sourcer
+	Gitserver CloneLister
 
 	// DisableStreaming if true will prevent the syncer from streaming in new
 	// sourced repositories into the store.
@@ -139,7 +145,11 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
-	diff = NewDiff(sourced, stored)
+	var cloned []string
+	if cloned, err = s.Gitserver.ListCloned(ctx); err != nil {
+		return errors.Wrap(err, "syncer.sync.gitserver.list-cloned")
+	}
+	diff = NewDiff(sourced, stored, cloned)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
@@ -211,7 +221,11 @@ func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset 
 		return Diff{}, nil
 	}
 
-	diff = NewDiff(sourcedSubset, storedSubset)
+	var cloned []string
+	if cloned, err = s.Gitserver.ListCloned(ctx); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.sync.gitserver.list-cloned")
+	}
+	diff = NewDiff(sourcedSubset, storedSubset, cloned)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
@@ -254,6 +268,7 @@ type Diff struct {
 	Deleted    Repos
 	Modified   Repos
 	Unmodified Repos
+	NotCloned  Repos // Unmodified, but also not currently cloned
 }
 
 // Sort sorts all Diff elements by Repo.IDs.
@@ -263,6 +278,7 @@ func (d *Diff) Sort() {
 		d.Deleted,
 		d.Modified,
 		d.Unmodified,
+		d.NotCloned,
 	} {
 		sort.Sort(ds)
 	}
@@ -273,13 +289,15 @@ func (d Diff) Repos() Repos {
 	all := make(Repos, 0, len(d.Added)+
 		len(d.Deleted)+
 		len(d.Modified)+
-		len(d.Unmodified))
+		len(d.Unmodified)+
+		len(d.NotCloned))
 
 	for _, rs := range []Repos{
 		d.Added,
 		d.Deleted,
 		d.Modified,
 		d.Unmodified,
+		d.NotCloned,
 	} {
 		all = append(all, rs...)
 	}
@@ -287,8 +305,8 @@ func (d Diff) Repos() Repos {
 	return all
 }
 
-// NewDiff returns a diff from the given sourced and stored repos.
-func NewDiff(sourced, stored []*Repo) (diff Diff) {
+// NewDiff returns a diff from the given sourced, stored, and currently cloned repos.
+func NewDiff(sourced, stored []*Repo, cloned []string) (diff Diff) {
 	// Sort sourced so we merge determinstically
 	sort.Sort(Repos(sourced))
 
@@ -317,6 +335,11 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		}
 	}
 
+	isCloned := make(map[string]struct{}, len(cloned))
+	for _, r := range cloned {
+		isCloned[strings.ToLower(r)] = struct{}{}
+	}
+
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 	seenName := make(map[string]bool, len(stored))
 
@@ -328,7 +351,11 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		} else if old.Update(src) {
 			diff.Modified = append(diff.Modified, old)
 		} else {
-			diff.Unmodified = append(diff.Unmodified, old)
+			if _, cloned := isCloned[strings.ToLower(old.Name)]; cloned {
+				diff.Unmodified = append(diff.Unmodified, old)
+			} else {
+				diff.NotCloned = append(diff.NotCloned, old)
+			}
 		}
 
 		seenID[old.ExternalRepo] = true
@@ -340,7 +367,6 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 			diff.Added = append(diff.Added, r)
 		}
 	}
-
 	return diff
 }
 
