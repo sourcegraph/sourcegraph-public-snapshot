@@ -319,6 +319,21 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
+				name:    "repo clone status changes",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
+				store:   s,
+				stored:  repos.Repos{tc.repo.Clone()},
+				cloned:  []string{tc.repo.Name},
+				now:     clock.Now,
+				diff: repos.Diff{Modified: repos.Repos{
+					tc.repo.With(
+						repos.Opt.RepoModifiedAt(clock.Time(1)),
+						func(r *repos.Repo) { r.Cloned = true },
+					),
+				}},
+				err: "<nil>",
+			},
+			testCase{
 				name: "repo got renamed to another repo that gets deleted",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil,
@@ -780,20 +795,29 @@ func TestDiff(t *testing.T) {
 			}},
 		},
 		{
-			name:   "unmodified cloned",
-			store:  repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
-			source: repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
+			name:   "modified cloned",
+			store:  repos.Repos{{Name: "bar", ExternalRepo: eid("1")}},
+			source: repos.Repos{{Name: "bar", ExternalRepo: eid("1")}},
 			cloned: []string{"bar"},
-			diff: repos.Diff{Unmodified: repos.Repos{
-				{Name: "bar", ExternalRepo: eid("1"), Description: "foo"},
+			diff: repos.Diff{Modified: repos.Repos{
+				{Name: "bar", ExternalRepo: eid("1"), Cloned: true},
 			}},
 		},
 		{
-			name:   "unmodified not cloned",
-			store:  repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
-			source: repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Description: "foo"}},
+			name:   "unmodified cloned",
+			store:  repos.Repos{{Name: "bar", ExternalRepo: eid("1"), Cloned: true}},
+			source: repos.Repos{{Name: "bar", ExternalRepo: eid("1")}},
+			cloned: []string{"bar"},
+			diff: repos.Diff{Unmodified: repos.Repos{
+				{Name: "bar", ExternalRepo: eid("1"), Cloned: true},
+			}},
+		},
+		{
+			name:   "not cloned",
+			store:  repos.Repos{{Name: "bar", ExternalRepo: eid("1")}},
+			source: repos.Repos{{Name: "bar", ExternalRepo: eid("1")}},
 			diff: repos.Diff{NotCloned: repos.Repos{
-				{Name: "bar", ExternalRepo: eid("1"), Description: "foo"},
+				{Name: "bar", ExternalRepo: eid("1")},
 			}},
 		},
 		{
@@ -828,14 +852,13 @@ func TestDiff(t *testing.T) {
 		{
 			name: "unmodified preserves stored repo",
 			store: repos.Repos{
-				{Name: "bar", ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
+				{ExternalRepo: eid("1"), Description: "foo", Cloned: true, UpdatedAt: now},
 			},
 			source: repos.Repos{
-				{Name: "bar", ExternalRepo: eid("1"), Description: "foo"},
+				{ExternalRepo: eid("1"), Description: "foo", Cloned: true},
 			},
-			cloned: []string{"bar"},
 			diff: repos.Diff{Unmodified: repos.Repos{
-				{Name: "bar", ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
+				{ExternalRepo: eid("1"), Description: "foo", Cloned: true, UpdatedAt: now},
 			}},
 		},
 	}
@@ -956,8 +979,8 @@ func TestDiff(t *testing.T) {
 			},
 			cloned: []string{"Foo"},
 			diff: repos.Diff{
-				Unmodified: repos.Repos{
-					{Name: "Foo", ExternalRepo: eid("2")},
+				Modified: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("2"), Cloned: true},
 				},
 			},
 		},

@@ -329,6 +329,7 @@ SELECT
   external_id,
   archived,
   fork,
+  cloned,
   private,
   sources,
   metadata
@@ -575,6 +576,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		ExternalID          *string         `json:"external_id,omitempty"`
 		Archived            bool            `json:"archived"`
 		Fork                bool            `json:"fork"`
+		Cloned              bool            `json:"cloned"`
 		Private             bool            `json:"private"`
 		Sources             json.RawMessage `json:"sources"`
 		Metadata            json.RawMessage `json:"metadata"`
@@ -606,6 +608,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
 			Archived:            r.Archived,
 			Fork:                r.Fork,
+			Cloned:              r.Cloned,
 			Private:             r.Private,
 			Sources:             sources,
 			Metadata:            metadata,
@@ -650,6 +653,7 @@ WITH batch AS (
       external_id           text,
       archived              boolean,
       fork                  boolean,
+      cloned                boolean,
       private               boolean,
       sources               jsonb,
       metadata              jsonb
@@ -673,6 +677,7 @@ SET
   external_id           = batch.external_id,
   archived              = batch.archived,
   fork                  = batch.fork,
+  cloned                = batch.cloned,
   private               = batch.private,
   sources               = batch.sources,
   metadata              = batch.metadata
@@ -710,6 +715,7 @@ INSERT INTO repo (
   external_id,
   archived,
   fork,
+  cloned,
   private,
   sources,
   metadata
@@ -727,6 +733,7 @@ SELECT
   external_id,
   archived,
   fork,
+  cloned,
   private,
   sources,
   metadata
@@ -828,6 +835,7 @@ func scanRepo(r *Repo, s scanner) error {
 		&dbutil.NullString{S: &r.ExternalRepo.ID},
 		&r.Archived,
 		&r.Fork,
+		&r.Cloned,
 		&r.Private,
 		&sources,
 		&metadata,

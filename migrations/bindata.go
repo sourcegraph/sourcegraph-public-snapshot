@@ -70,6 +70,9 @@
 // 1528395683_empty.up.sql (159B)
 // 1528395684_lsif_num_resets.down.sql (293B)
 // 1528395684_lsif_num_resets.up.sql (340B)
+// 1528395685_add_cloned_column_to_repo_table.down.sql (54B)
+// 1528395685_add_cloned_column_to_repo_table.up.sql (113B)
+// coverage.txt (13B)
 
 package migrations
 
@@ -1538,6 +1541,66 @@ func _1528395684_lsif_num_resetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395685_add_cloned_column_to_repo_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x48\xce\xcf\x29\xcd\xcd\x53\x48\xce\xc9\xcf\x4b\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x0b\x47\x20\x59\x36\x00\x00\x00")
+
+func _1528395685_add_cloned_column_to_repo_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395685_add_cloned_column_to_repo_tableDownSql,
+		"1528395685_add_cloned_column_to_repo_table.down.sql",
+	)
+}
+
+func _1528395685_add_cloned_column_to_repo_tableDownSql() (*asset, error) {
+	bytes, err := _1528395685_add_cloned_column_to_repo_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395685_add_cloned_column_to_repo_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x57, 0xbc, 0x2c, 0x1a, 0xc7, 0xbe, 0xa4, 0x35, 0x46, 0x81, 0x5f, 0xfe, 0x78, 0x87, 0xd0, 0x7f, 0xc5, 0x48, 0xa0, 0x5c, 0xba, 0x55, 0xbc, 0xc8, 0x9, 0x14, 0x7, 0xcb, 0x4b, 0xc, 0x54, 0x94}}
+	return a, nil
+}
+
+var __1528395685_add_cloned_column_to_repo_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2c\x8c\xb1\x0a\x82\x31\x0c\x06\xf7\x3c\xc5\x37\xea\x33\x64\x4a\xdb\x20\x85\x34\x81\x9f\xfc\xe0\xe6\xa0\xff\x26\x56\x7c\xff\x41\xb0\x8e\x07\x77\x57\xf4\xd2\x9d\x89\xc4\x52\x37\xa4\x14\x53\x7c\x8e\xf7\x84\xb4\x86\x1a\xb6\x0f\xc7\xfd\x39\x5f\xc7\x03\x25\xc2\x54\x1c\x1e\x09\xdf\xcd\x98\xea\xa6\x92\x8a\xee\x4d\xaf\xbf\xea\xf6\x57\xc3\xd7\xe4\xb4\xf8\xcc\x44\x35\xc6\xe8\xc9\xf4\x0d\x00\x00\xff\xff\xe7\xfc\x40\xd8\x71\x00\x00\x00")
+
+func _1528395685_add_cloned_column_to_repo_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395685_add_cloned_column_to_repo_tableUpSql,
+		"1528395685_add_cloned_column_to_repo_table.up.sql",
+	)
+}
+
+func _1528395685_add_cloned_column_to_repo_tableUpSql() (*asset, error) {
+	bytes, err := _1528395685_add_cloned_column_to_repo_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395685_add_cloned_column_to_repo_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x51, 0x37, 0x17, 0x46, 0xf2, 0x79, 0x26, 0xb6, 0x97, 0xb9, 0xb7, 0x3a, 0x6e, 0x65, 0x59, 0x5a, 0x5d, 0xcc, 0x21, 0x1b, 0x78, 0x94, 0xd5, 0xa5, 0x1f, 0x58, 0xe7, 0x98, 0x6a, 0xc0, 0xc6, 0x39}}
+	return a, nil
+}
+
+var _coverageTxt = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xca\xcd\x4f\x49\xb5\x52\x48\x2c\xc9\xcf\xcd\x4c\xe6\x02\x04\x00\x00\xff\xff\x5e\xeb\x98\x0f\x0d\x00\x00\x00")
+
+func coverageTxtBytes() ([]byte, error) {
+	return bindataRead(
+		_coverageTxt,
+		"coverage.txt",
+	)
+}
+
+func coverageTxt() (*asset, error) {
+	bytes, err := coverageTxtBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "coverage.txt", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x15, 0xe3, 0x9e, 0xe7, 0xd1, 0xea, 0x1e, 0x23, 0xc2, 0xca, 0xa8, 0x2c, 0x7f, 0xa0, 0x79, 0x7, 0xbc, 0x8a, 0xe8, 0x26, 0x84, 0x7b, 0x14, 0x99, 0xa8, 0x94, 0x30, 0x87, 0x34, 0x78, 0xa, 0x89}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1699,6 +1762,9 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395683_empty.up.sql":                                                 _1528395683_emptyUpSql,
 	"1528395684_lsif_num_resets.down.sql":                                     _1528395684_lsif_num_resetsDownSql,
 	"1528395684_lsif_num_resets.up.sql":                                       _1528395684_lsif_num_resetsUpSql,
+	"1528395685_add_cloned_column_to_repo_table.down.sql":                     _1528395685_add_cloned_column_to_repo_tableDownSql,
+	"1528395685_add_cloned_column_to_repo_table.up.sql":                       _1528395685_add_cloned_column_to_repo_tableUpSql,
+	"coverage.txt": coverageTxt,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1815,6 +1881,9 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395683_empty.up.sql":                                                 {_1528395683_emptyUpSql, map[string]*bintree{}},
 	"1528395684_lsif_num_resets.down.sql":                                     {_1528395684_lsif_num_resetsDownSql, map[string]*bintree{}},
 	"1528395684_lsif_num_resets.up.sql":                                       {_1528395684_lsif_num_resetsUpSql, map[string]*bintree{}},
+	"1528395685_add_cloned_column_to_repo_table.down.sql":                     {_1528395685_add_cloned_column_to_repo_tableDownSql, map[string]*bintree{}},
+	"1528395685_add_cloned_column_to_repo_table.up.sql":                       {_1528395685_add_cloned_column_to_repo_tableUpSql, map[string]*bintree{}},
+	"coverage.txt": {coverageTxt, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

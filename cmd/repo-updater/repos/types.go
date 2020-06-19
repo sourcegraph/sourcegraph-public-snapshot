@@ -572,6 +572,8 @@ type Repo struct {
 	Archived bool
 	// Private is whether the repository is private.
 	Private bool
+	// Cloned is set when this repository was already cloned by Sourcegraph.
+	Cloned bool
 	// CreatedAt is when this repository was created on Sourcegraph.
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
@@ -667,6 +669,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Private != n.Private {
 		r.Private, modified = n.Private, true
+	}
+
+	if r.Cloned != n.Cloned {
+		r.Cloned, modified = n.Cloned, true
 	}
 
 	if !reflect.DeepEqual(r.Sources, n.Sources) {

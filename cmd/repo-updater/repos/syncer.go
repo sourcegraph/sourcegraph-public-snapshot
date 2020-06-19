@@ -335,9 +335,10 @@ func NewDiff(sourced, stored []*Repo, cloned []string) (diff Diff) {
 		}
 	}
 
-	isCloned := make(map[string]struct{}, len(cloned))
-	for _, r := range cloned {
-		isCloned[strings.ToLower(r)] = struct{}{}
+	for _, name := range cloned {
+		if r := byName[strings.ToLower(name)]; r != nil {
+			r.Cloned = true
+		}
 	}
 
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
@@ -350,12 +351,10 @@ func NewDiff(sourced, stored []*Repo, cloned []string) (diff Diff) {
 			diff.Deleted = append(diff.Deleted, old)
 		} else if old.Update(src) {
 			diff.Modified = append(diff.Modified, old)
+		} else if src.Cloned {
+			diff.Unmodified = append(diff.Unmodified, old)
 		} else {
-			if _, cloned := isCloned[strings.ToLower(old.Name)]; cloned {
-				diff.Unmodified = append(diff.Unmodified, old)
-			} else {
-				diff.NotCloned = append(diff.NotCloned, old)
-			}
+			diff.NotCloned = append(diff.NotCloned, old)
 		}
 
 		seenID[old.ExternalRepo] = true
