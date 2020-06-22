@@ -10,6 +10,7 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 type Worker struct {
@@ -43,8 +44,10 @@ func NewWorker(
 }
 
 func (w *Worker) Start() {
+	ctx := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+
 	for {
-		if ok, _ := w.dequeueAndProcess(context.Background()); !ok {
+		if ok, _ := w.dequeueAndProcess(ctx); !ok {
 			select {
 			case <-time.After(w.pollInterval):
 			case <-w.done:
