@@ -171,7 +171,7 @@ const SiteSchemaJSON = `{
                 "description": "Name of the version context, it must be unique.",
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 14
+                "maxLength": 50
               },
               "revisions": {
                 "description": "List of repositories of the version context",
@@ -1000,7 +1000,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierSlack": {
-      "description": "Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack",
+      "description": "Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -1047,7 +1047,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierPagerduty": {
-      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty",
+      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty",
       "type": "object",
       "required": ["type", "integrationKey"],
       "properties": {
@@ -1066,7 +1066,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierWebhook": {
-      "description": "Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook",
+      "description": "Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook",
       "type": "object",
       "required": ["type", "url"],
       "properties": {
@@ -1080,7 +1080,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierEmail": {
-      "description": "Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#email",
+      "description": "Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/latest/alerting/notifications/#email",
       "type": "object",
       "required": ["type", "addresses"],
       "properties": {
