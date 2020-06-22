@@ -257,7 +257,7 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	schedKnownRepos.Set(float64(known))
 }
 
-// SetCloned will ensure only repos in named are treated as cloned. All other
+// SetCloned will ensure only repos in names are treated as cloned. All other
 // repositories in the scheduler will be marked as uncloned.
 //
 // This method should be called periodically with the list of all repositories
