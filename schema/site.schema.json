@@ -166,7 +166,7 @@
                 "description": "Name of the version context, it must be unique.",
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 14
+                "maxLength": 50
               },
               "revisions": {
                 "description": "List of repositories of the version context",
@@ -994,7 +994,7 @@
       }
     },
     "GrafanaNotifierSlack": {
-      "description": "Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack",
+      "description": "Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -1041,7 +1041,7 @@
       }
     },
     "GrafanaNotifierPagerduty": {
-      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty",
+      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty",
       "type": "object",
       "required": ["type", "integrationKey"],
       "properties": {
@@ -1060,7 +1060,7 @@
       }
     },
     "GrafanaNotifierWebhook": {
-      "description": "Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook",
+      "description": "Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook",
       "type": "object",
       "required": ["type", "url"],
       "properties": {

@@ -523,8 +523,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		AuthorID:        userID,
 		NamespaceUserID: userID,
 		// We attach the two changesets to the campaign
-		// Note: we are mixing a "manual" and "non-manual" campaign here, but
-		// that shouldn't matter for the purposes of this test.
 		ChangesetIDs: changesetIDs,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {

@@ -288,3 +288,16 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 
 	return jsoniter.Unmarshal(body, &target)
 }
+
+// Get performs a GET request to the URL with authenticated user.
+func (c *Client) Get(url string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.AddCookie(c.csrfCookie)
+	req.AddCookie(c.sessionCookie)
+
+	return http.DefaultClient.Do(req)
+}

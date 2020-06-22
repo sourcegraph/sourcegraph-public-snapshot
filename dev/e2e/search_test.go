@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestSearch(t *testing.T) {
@@ -15,7 +16,7 @@ func TestSearch(t *testing.T) {
 
 	// Set up external service
 	esID, err := client.AddExternalService(e2eutil.AddExternalServiceInput{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "e2e-test-github",
 		Config: mustMarshalJSONString(struct {
 			URL   string   `json:"url"`

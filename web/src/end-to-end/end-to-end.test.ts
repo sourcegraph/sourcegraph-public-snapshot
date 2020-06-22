@@ -131,7 +131,7 @@ describe('e2e test suite', () => {
                 })
             ).jsonValue()
 
-            const resp = await got.post('/.api/graphql', {
+            const resp = await got.post('.api/graphql', {
                 prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
@@ -450,18 +450,18 @@ describe('e2e test suite', () => {
             await driver.page.click(selector)
         }
 
-        // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
-        const getHoverContents = async (expectedCount = 1): Promise<string[]> => {
-            const selector =
-                expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : '.e2e-tooltip-content'
+        const getHoverContents = async (): Promise<string[]> => {
+            // Search for any child of e2e-tooltip-content: as e2e-tooltip-content has display: contents,
+            // it will never be detected as visible by waitForSelector(), but its children will.
+            const selector = '.e2e-tooltip-content *'
             await driver.page.waitForSelector(selector, { visible: true })
             return driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
                 [...document.querySelectorAll('.e2e-tooltip-content')].map(content => content.textContent || '')
             )
         }
-        const assertHoverContentContains = async (value: string, count?: number): Promise<void> => {
-            expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(value)]))
+        const assertHoverContentContains = async (value: string): Promise<void> => {
+            expect(await getHoverContents()).toEqual(expect.arrayContaining([expect.stringContaining(value)]))
         }
 
         const clickHoverJ2D = async (): Promise<void> => {

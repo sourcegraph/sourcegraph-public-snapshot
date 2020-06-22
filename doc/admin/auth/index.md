@@ -1,7 +1,5 @@
 # User authentication (SSO)
 
-> NOTE: In versions before v3.11, user authentication was part of the [**critical configuration**](../config/critical_config.md), which meant it must be edited from the [management console](../management_console.md). It is now in the [site configuration](../config/site_config.md).
-
 Sourcegraph supports the following ways for users to sign in:
 
 - [Builtin](#builtin-password-authentication)
@@ -11,7 +9,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [SAML](saml/index.md)
 - [HTTP authentication proxies](#http-authentication-proxies)
 
-The authentication provider is configured in the [`auth.providers`](../config/critical_config.md#authentication-providers) critical configuration option.
+The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
 ### Guidance
 
@@ -46,7 +44,7 @@ external identity provider.
 
 ## Builtin password authentication
 
-The [`builtin` auth provider](../config/critical_config.md#builtin-password-authentication) manages user accounts internally in its own database. It supports user signup, login, and password reset (via email if configured, or else via a site admin).
+The [`builtin` auth provider](../config/site_config.md#builtin-password-authentication) manages user accounts internally in its own database. It supports user signup, login, and password reset (via email if configured, or else via a site admin).
 
 Site configuration example:
 
@@ -72,7 +70,7 @@ GitHub Enterprise, create one on your instance, not GitHub.com). Set the followi
 > organization (rather than your personal account) or by [following these
 > instructions](https://help.github.com/articles/approving-oauth-apps-for-your-organization/).
 
-Then add the following lines to your critical configuration:
+Then add the following lines to your site configuration:
 
 ```json
 {
@@ -114,7 +112,7 @@ Sourcegraph instance:
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
 - Scopes: `api`, `read_user`
 
-Then add the following lines to your critical configuration:
+Then add the following lines to your site configuration:
 
 ```json
 {
@@ -138,7 +136,7 @@ to Sourcegraph](../external_service/gitlab.md#repository-syncing).
 
 ## OpenID Connect
 
-The [`openidconnect` auth provider](../config/critical_config.md#openid-connect-including-g-suite) authenticates users via OpenID Connect, which is supported by many external services, including:
+The [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-g-suite) authenticates users via OpenID Connect, which is supported by many external services, including:
 
 - [G Suite (Google accounts)](#g-suite-google-accounts)
 - [Okta](https://developer.okta.com/docs/api/resources/oidc.html)
@@ -153,10 +151,10 @@ To configure Sourcegraph to authenticate users via OpenID Connect:
 
 1. Create a new OpenID Connect client in the external service (such as one of those listed above).
     - **Redirect/callback URI:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `externalURL` property in your config)
-1. Provide the OpenID Connect client's issuer, client ID, and client secret in the Sourcegraph critical configuration shown below.
+1. Provide the OpenID Connect client's issuer, client ID, and client secret in the Sourcegraph site configuration shown below.
 1. (Optional) Require users to have a specific email domain name to authenticate (e.g., to limit users to only those from your organization).
 
-Example [`openidconnect` auth provider](../config/critical_config.md#openid-connect-including-g-suite) configuration:
+Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-g-suite) configuration:
 
 ```json
 {
@@ -176,7 +174,7 @@ Example [`openidconnect` auth provider](../config/critical_config.md#openid-conn
 
 Sourcegraph supports the OpenID Connect Discovery standard for configuring the auth provider (using the document at, e.g., `https://oidc.example.com/.well-known/openid-configuration`).
 
-See the [`openid` auth provider documentation](../config/critical_config.md#openid-connect-including-g-suite) for the full set of configuration options.
+See the [`openid` auth provider documentation](../config/site_config.md#openid-connect-including-g-suite) for the full set of configuration options.
 
 ### G Suite (Google accounts)
 
@@ -187,10 +185,10 @@ Google's G Suite supports OpenID Connect, which is the best way to enable Source
     - **Name:** Sourcegraph (or any other name your users will recognize)
     - **Authorized JavaScript origins:** (leave blank)
     - **Authorized redirect URIs:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `externalURL` property in your config)
-1. Use the **client ID** and **client secret** values in Sourcegraph critical configuration (as shown in the example below).
+1. Use the **client ID** and **client secret** values in Sourcegraph site configuration (as shown in the example below).
 1. Set your G Suite domain in `requireEmailDomain` to prevent users outside your organization from signing in.
 
-Example [`openidconnect` auth provider](../config/critical_config.md#openid-connect-including-g-suite) configuration for G Suite:
+Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-g-suite) configuration for G Suite:
 
 ```json
 {
@@ -212,7 +210,7 @@ Example [`openidconnect` auth provider](../config/critical_config.md#openid-conn
 
 You can wrap Sourcegraph in an authentication proxy that authenticates the user and passes the user's username to Sourcegraph via HTTP headers. The most popular such authentication proxy is [pusher/oauth2_proxy](https://github.com/pusher/oauth2_proxy). Another example is [Google Identity-Aware Proxy (IAP)](https://cloud.google.com/iap/). Both work well with Sourcegraph.
 
-To use an authentication proxy to authenticate users to Sourcegraph, add the following lines to your critical configuration:
+To use an authentication proxy to authenticate users to Sourcegraph, add the following lines to your site configuration:
 
 ```json
 {
@@ -234,7 +232,7 @@ For pusher/oauth2_proxy, use the `-pass-basic-auth false` option to prevent it f
 
 ### Username header prefixes
 
-Some proxies add a prefix to the username header value. For example, Google IAP sets the `x-goog-authenticated-user-id` to a value like `accounts.google.com:alice` rather than just `alice`. If this is the case, use the `stripUsernameHeaderPrefix` field. If using Google IAP, for example, add the following lines to your critical configuration:
+Some proxies add a prefix to the username header value. For example, Google IAP sets the `x-goog-authenticated-user-id` to a value like `accounts.google.com:alice` rather than just `alice`. If this is the case, use the `stripUsernameHeaderPrefix` field. If using Google IAP, for example, add the following lines to your site configuration:
 
 ```json
 {

@@ -107,6 +107,13 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			// default
 			if args.Zoekt.Enabled() {
 				tr.LogFields(otlog.Int("indexed-repos", len(zoektRepos)), otlog.Int("unindexed-repos", len(searcherRepos)))
+
+				// Limit the number of unindexed repositories searched for a single query. Searching
+				// more than this will merely flood the system and network with requests that will timeout.
+				searcherRepos, common.missing = limitSearcherRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery)
+				if len(common.missing) > 0 {
+					tr.LazyPrintf("index:yes, limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+				}
 			}
 		case Only:
 			if !args.Zoekt.Enabled() {
@@ -194,7 +201,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, args.Query, limit)
+			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			if repoErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
@@ -251,7 +258,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query query.QueryInfo, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*FileMatchResolver, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {

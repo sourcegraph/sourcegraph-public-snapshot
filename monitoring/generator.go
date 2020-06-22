@@ -313,8 +313,8 @@ func (p panelOptions) MinAuto() panelOptions {
 }
 
 // Max sets the maximum value of the Y axis on the panel. The default is auto.
-func (p panelOptions) Max(min float64) panelOptions {
-	p.min = &min
+func (p panelOptions) Max(max float64) panelOptions {
+	p.max = &max
 	return p
 }
 
@@ -843,6 +843,7 @@ func main() {
 		Searcher(),
 		Symbols(),
 		SyntectServer(),
+		UpdateCheck(),
 		ZoektIndexServer(),
 		ZoektWebServer(),
 	}
