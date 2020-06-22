@@ -81,9 +81,6 @@ type Store interface {
 	// identifiers.
 	ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error)
 
-	// GetDumpIDs returns all dump ids in chronological order.
-	GetDumpIDs(ctx context.Context) ([]int, error)
-
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)
 

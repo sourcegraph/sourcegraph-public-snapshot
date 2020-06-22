@@ -69,11 +69,6 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 	return dumps[0], true, nil
 }
 
-// GetDumpIDs returns all dump ids in chronological order.
-func (s *store) GetDumpIDs(ctx context.Context) ([]int, error) {
-	return scanInts(s.query(ctx, sqlf.Sprintf(`SELECT d.id FROM lsif_dumps d ORDER BY uploaded_at`)))
-}
-
 // GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 	return scanFirstDump(s.query(ctx, sqlf.Sprintf(`
