@@ -2975,7 +2975,7 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         character: Int!
 
         # If true, only return references that exist within the same document.
-        local: Bool
+        local: Boolean
 
         # When specified, indicates that this request should be paginated and
         # to fetch results starting at this cursor.
