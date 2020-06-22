@@ -273,22 +273,22 @@ func TestReferences(t *testing.T) {
 	if val := len(mockCodeIntelAPI.ReferencesFunc.History()); val != 3 {
 		t.Errorf("unexpected call count. want=%d have=%d", 3, val)
 	}
-	if val := mockCodeIntelAPI.ReferencesFunc.History()[0].Arg3; val != 3 {
+	if val := mockCodeIntelAPI.ReferencesFunc.History()[0].Arg4; val != 3 {
 		t.Errorf("unexpected limit. want=%d have=%d", 3, val)
 	}
-	if diff := cmp.Diff(cursorIn1, mockCodeIntelAPI.ReferencesFunc.History()[0].Arg4); diff != "" {
+	if diff := cmp.Diff(cursorIn1, mockCodeIntelAPI.ReferencesFunc.History()[0].Arg5); diff != "" {
 		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
-	if val := mockCodeIntelAPI.ReferencesFunc.History()[1].Arg3; val != 3 {
+	if val := mockCodeIntelAPI.ReferencesFunc.History()[1].Arg4; val != 3 {
 		t.Errorf("unexpected limit. want=%d have=%d", 3, val)
 	}
-	if diff := cmp.Diff(cursorIn2, mockCodeIntelAPI.ReferencesFunc.History()[1].Arg4); diff != "" {
+	if diff := cmp.Diff(cursorIn2, mockCodeIntelAPI.ReferencesFunc.History()[1].Arg5); diff != "" {
 		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
-	if val := mockCodeIntelAPI.ReferencesFunc.History()[2].Arg3; val != 3 {
+	if val := mockCodeIntelAPI.ReferencesFunc.History()[2].Arg4; val != 3 {
 		t.Errorf("unexpected limit. want=%d have=%d", 3, val)
 	}
-	if diff := cmp.Diff(cursorIn3, mockCodeIntelAPI.ReferencesFunc.History()[2].Arg4); diff != "" {
+	if diff := cmp.Diff(cursorIn3, mockCodeIntelAPI.ReferencesFunc.History()[2].Arg5); diff != "" {
 		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
 }
