@@ -2190,6 +2190,12 @@ type ListPatchesOpts struct {
 	// If this is set only the Patches where diff_stat_added OR
 	// diff_stat_changed OR diff_stat_deleted are NULL.
 	OnlyWithoutDiffStats bool
+
+	// If this is set, the patches.diff column is not loaded. The idea is to
+	// speed up the query, since diffs can become quite large and require
+	// memory allocations that can be unnecessary if only the other columns are
+	// used.
+	NoDiff bool
 }
 
 // ListPatches lists Patches with the given filters.
@@ -2222,7 +2228,7 @@ SELECT
   patches.repo_id,
   patches.rev,
   patches.base_ref,
-  patches.diff,
+  %s,
   patches.diff_stat_added,
   patches.diff_stat_deleted,
   patches.diff_stat_changed,
@@ -2270,8 +2276,17 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
 	}
 
+	// To replace a field within a SELECT, we need to avoid extra escaping,
+	// which we can do by ensuring it's a sqlf.Query already by using
+	// sqlf.Sprintf, even though there's no actual formatting to be done.
+	diffSrc := sqlf.Sprintf("patches.diff")
+	if opts.NoDiff {
+		diffSrc = sqlf.Sprintf("''")
+	}
+
 	return sqlf.Sprintf(
 		listPatchesQueryFmtstr+limitClause,
+		diffSrc,
 		sqlf.Join(preds, "\n AND "),
 	)
 }

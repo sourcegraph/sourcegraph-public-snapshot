@@ -78,7 +78,9 @@ func (r *patchSetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func patchSetDiffStat(ctx context.Context, store *ee.Store, opts ee.ListPatchesOpts) (*graphqlbackend.DiffStat, error) {
-	patches, _, err := store.ListPatches(ctx, opts)
+	noDiffOpts := opts
+	noDiffOpts.NoDiff = true
+	patches, _, err := store.ListPatches(ctx, noDiffOpts)
 	if err != nil {
 		return nil, err
 	}
