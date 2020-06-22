@@ -253,9 +253,6 @@ Format of the action JSON files:
 			clearCache: *clearCacheFlag,
 			cache:      actionExecutionDiskCache{dir: *cacheDirFlag},
 		}
-		if !*verbose {
-			opts.onUpdate = newTerminalUI(*keepLogsFlag)
-		}
 
 		// Query repos over which to run action
 		logger.Infof("Querying %s for repositories matching '%s'...\n", cfg.Endpoint, action.ScopeQuery)
@@ -263,7 +260,7 @@ Format of the action JSON files:
 		if err != nil {
 			return err
 		}
-		logger.Infof("Use 'src actions scope-query' for help with scoping.\n")
+		logger.Infof("Use 'src actions scope-query' for help with scoping.\n\n")
 
 		totalSteps := len(repos) * len(action.Steps)
 		logger.Start(totalSteps)

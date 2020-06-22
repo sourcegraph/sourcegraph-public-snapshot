@@ -64,24 +64,22 @@ func newActionLogger(verbose, keepLogs bool) *actionLogger {
 }
 
 func (a *actionLogger) Start(totalSteps int) {
-	if a.verbose {
-		a.progress.SetTotalSteps(int64(totalSteps))
-		fmt.Fprintln(os.Stderr)
-	}
+	a.progress.SetTotalSteps(int64(totalSteps))
 }
 
 func (a *actionLogger) Infof(format string, args ...interface{}) {
-	a.log("", grey, format, args...)
+	if a.verbose {
+		a.log("", grey, format, args...)
+	}
 }
 
 func (a *actionLogger) Warnf(format string, args ...interface{}) {
-	a.log("", yellow, "WARNING: "+format, args...)
+	if a.verbose {
+		a.log("", yellow, "WARNING: "+format, args...)
+	}
 }
 
 func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
-	if !a.verbose {
-		return
-	}
 	a.out.Close()
 	fmt.Fprintln(os.Stderr)
 	if perr, ok := err.(parallel.Errors); ok {
@@ -106,9 +104,6 @@ func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
 }
 
 func (a *actionLogger) ActionSuccess(patches []PatchInput) {
-	if !a.verbose {
-		return
-	}
 	a.out.Close()
 	fmt.Fprintln(os.Stderr)
 	format := "✔  Action produced %d patches."
@@ -151,18 +146,12 @@ func (a *actionLogger) RepoWriter(repoName string) (io.Writer, bool) {
 }
 
 func (a *actionLogger) InfoPipe(prefix string) io.Writer {
-	if !a.verbose {
-		return ioutil.Discard
-	}
 	stdoutPrefix := fmt.Sprintf("%s -> [STDOUT]: ", yellow.Sprint(prefix))
 	stderr := textio.NewPrefixWriter(os.Stderr, stdoutPrefix)
 	return io.Writer(stderr)
 }
 
 func (a *actionLogger) ErrorPipe(prefix string) io.Writer {
-	if !a.verbose {
-		return ioutil.Discard
-	}
 	stderrPrefix := fmt.Sprintf("%s -> [STDERR]: ", yellow.Sprint(prefix))
 	stderr := textio.NewPrefixWriter(os.Stderr, stderrPrefix)
 	return io.Writer(stderr)
@@ -172,10 +161,6 @@ func (a *actionLogger) RepoStdoutStderr(repoName string) (io.Writer, io.Writer, 
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	w, ok := a.logWriters[repoName]
-
-	if !a.verbose {
-		return w, w, ok
-	}
 
 	stderrPrefix := fmt.Sprintf("%s -> [STDERR]: ", yellow.Sprint(repoName))
 	stderr := textio.NewPrefixWriter(a.out, stderrPrefix)
@@ -265,11 +250,8 @@ func (a *actionLogger) write(repoName string, c *color.Color, format string, arg
 	a.log(repoName, c, format, args...)
 }
 
-// log logs only to stderr, it does not log to our repoWriters. When not in verbose mode, it's a noop.
+// log logs only to stderr, it does not log to our repoWriters.
 func (a *actionLogger) log(repoName string, c *color.Color, format string, args ...interface{}) {
-	if !a.verbose {
-		return
-	}
 	if len(repoName) > 0 {
 		format = fmt.Sprintf("%s -> %s", c.Sprint(repoName), format)
 	}
