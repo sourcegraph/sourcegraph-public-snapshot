@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -18,6 +19,15 @@ func (r printableRank) String() string {
 		return "nil"
 	}
 	return fmt.Sprintf("%d", *r.value)
+}
+
+type printableTime struct{ value *time.Time }
+
+func (r printableTime) String() string {
+	if r.value == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%v", *r.value)
 }
 
 // makeCommit formats an integer as a 40-character git commit hash.

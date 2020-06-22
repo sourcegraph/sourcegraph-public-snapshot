@@ -99,6 +99,10 @@ func (j *Janitor) run() error {
 		return errors.Wrap(err, "janitor.removeProcessedUploadsWithoutBundle")
 	}
 
+	if err := j.removeOldUploadingUploads(); err != nil {
+		return errors.Wrap(err, "janitor.removeOldUploadingUploads")
+	}
+
 	return nil
 }
 
