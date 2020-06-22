@@ -2,6 +2,9 @@ name: Licenses Update
 on:
   schedule:
   - cron: '0 0 * * MON'
+  # TODO remove
+  push:
+    branches: [ bobheadxi/licenses-testing ]
 
 jobs:
   update:
@@ -26,6 +29,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: Update third-party licenses
+        base: master
         branch: chore/licenses-update
         title: 'chore: update third-party licenses'
         body: |
