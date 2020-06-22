@@ -135,8 +135,16 @@ func (c *siteConfigSubscriber) Handler() http.Handler {
 		c.mux.RLock()
 		defer c.mux.RUnlock()
 
+		problems := c.problems
+
+		// check how Grafana is doing, and report an issue if it is unavailable
+		if _, err := c.grafana.GetHealth(req.Context()); err != nil {
+			c.log.Error("unable to get Grafana status", "error", err)
+			problems = append(problems, conf.NewSiteProblem("Unable to reach Grafana: please refer to the Grafana logs for more details"))
+		}
+
 		b, err := json.Marshal(map[string]interface{}{
-			"problems": c.problems,
+			"problems": problems,
 		})
 		if err != nil {
 			w.WriteHeader(500)
