@@ -39,7 +39,7 @@ func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *Cached
 func (r *QueryResolver) ToGitTreeLSIFData() (gql.GitTreeLSIFDataResolver, bool) { return r, true }
 func (r *QueryResolver) ToGitBlobLSIFData() (gql.GitBlobLSIFDataResolver, bool) { return r, true }
 
-func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPositionArgs) (gql.LocationConnectionResolver, error) {
+func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFDefinitionsArgs) (gql.LocationConnectionResolver, error) {
 	locations, err := r.resolver.Definitions(ctx, int(args.Line), int(args.Character))
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPosi
 	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
 }
 
-func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (gql.LocationConnectionResolver, error) {
+func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFReferencesArgs) (gql.LocationConnectionResolver, error) {
 	limit := derefInt32(args.First, DefaultReferencesPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
@@ -58,7 +58,7 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 		return nil, err
 	}
 
-	locations, cursor, err := r.resolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	locations, cursor, err := r.resolver.References(ctx, int(args.Line), int(args.Character), derefBool(args.Local, false), limit, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
 }
 
-func (r *QueryResolver) Hover(ctx context.Context, args *gql.LSIFQueryPositionArgs) (gql.HoverResolver, error) {
+func (r *QueryResolver) Hover(ctx context.Context, args *gql.LSIFHoverArgs) (gql.HoverResolver, error) {
 	text, rx, exists, err := r.resolver.Hover(ctx, int(args.Line), int(args.Character))
 	if err != nil || !exists {
 		return nil, err

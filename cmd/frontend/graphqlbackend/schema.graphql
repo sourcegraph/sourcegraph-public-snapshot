@@ -2981,6 +2981,9 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
         character: Int!
 
+        # If true, only return references that exist within the same document.
+        local: Boolean
+
         # When specified, indicates that this request should be paginated and
         # to fetch results starting at this cursor.
         #

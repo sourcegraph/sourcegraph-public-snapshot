@@ -21,8 +21,9 @@ const RemoteDumpLimit = 20
 var ErrIllegalLimit = errors.New("limit must be positive")
 
 // References returns the list of source locations that reference the symbol at the given position.
-// This may include references from other dumps and repositories.
-func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+// This may include references from other dumps and repositories. If local is true, then the result
+// set will include references only in the source file.
+func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commit string, local bool, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
 	if limit <= 0 {
 		return nil, Cursor{}, false, ErrIllegalLimit
 	}
@@ -32,6 +33,7 @@ func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commi
 		bundleManagerClient: api.bundleManagerClient,
 		repositoryID:        repositoryID,
 		commit:              commit,
+		local:               local,
 		remoteDumpLimit:     RemoteDumpLimit,
 		limit:               limit,
 	}
@@ -44,6 +46,7 @@ type ReferencePageResolver struct {
 	bundleManagerClient bundles.BundleManagerClient
 	repositoryID        int
 	commit              string
+	local               bool
 	remoteDumpLimit     int
 	limit               int
 }
@@ -108,7 +111,13 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 		return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.References")
 	}
 
-	resolvedLocations := resolveLocationsWithDump(dump, sliceLocations(locations, cursor.SkipResults, cursor.SkipResults+s.limit))
+	filteredLocations := sliceLocations(locations, cursor.SkipResults, cursor.SkipResults+s.limit)
+	if s.local {
+		// Remove references outside of the cursor path. Ensure we assign this ot a
+		// variable that does not influence pagination offsets.
+		filteredLocations = filterLocationsWithPath(cursor.Path, filteredLocations)
+	}
+	resolvedLocations := resolveLocationsWithDump(dump, filteredLocations)
 
 	if newOffset := cursor.SkipResults + s.limit; newOffset <= len(locations) {
 		newCursor := Cursor{
@@ -191,7 +200,13 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 		}
 	}
 
-	resolvedLocations := resolveLocationsWithDump(dump, locations)
+	filteredLocations := locations
+	if s.local {
+		// Remove references outside of the cursor path. Ensure we assign this ot a
+		// variable that does not influence pagination offsets.
+		filteredLocations = filterLocationsWithPath(cursor.Path, filteredLocations)
+	}
+	resolvedLocations := resolveLocationsWithDump(dump, filteredLocations)
 
 	if newOffset := cursor.SkipResults + s.limit; newOffset <= totalCount {
 		newCursor := Cursor{
@@ -204,6 +219,12 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 			SkipResults: newOffset,
 		}
 		return resolvedLocations, newCursor, true, nil
+	}
+
+	if s.local {
+		// If we only want references in the current file, stop paginating here so we
+		// don't open external dumps.
+		return resolvedLocations, Cursor{}, false, nil
 	}
 
 	newCursor := Cursor{

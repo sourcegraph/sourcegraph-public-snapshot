@@ -35,7 +35,7 @@ type AdjustedDiagnostic struct {
 // API.
 type QueryResolver interface {
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
-	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
+	References(ctx context.Context, line, character int, local bool, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Hover(ctx context.Context, line, character int) (string, bundles.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 }
@@ -108,8 +108,9 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) ([
 
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories. If there are multiple bundles
-// associated with this resolver, results from all bundles will be concatenated and returned.
-func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error) {
+// associated with this resolver, results from all bundles will be concatenated and returned. If
+// local is true, then the result set will include references only in the source file.
+func (r *queryResolver) References(ctx context.Context, line, character int, local bool, limit int, rawCursor string) ([]AdjustedLocation, string, error) {
 	position := bundles.Position{Line: line, Character: character}
 
 	// Decode a map of upload ids to the next url that serves
@@ -151,7 +152,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			return nil, "", err
 		}
 
-		locations, newCursor, hasNewCursor, err := r.codeIntelAPI.References(ctx, r.repositoryID, r.commit, limit, cursor)
+		locations, newCursor, hasNewCursor, err := r.codeIntelAPI.References(ctx, r.repositoryID, r.commit, local, limit, cursor)
 		if err != nil {
 			return nil, "", err
 		}

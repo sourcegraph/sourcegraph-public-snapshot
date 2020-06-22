@@ -23,8 +23,9 @@ type CodeIntelAPI interface {
 	Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error)
 
 	// References returns the list of source locations that reference the symbol at the given position.
-	// This may include references from other dumps and repositories.
-	References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error)
+	// This may include references from other dumps and repositories. If local is true, then the result
+	// set will include references only in the source file.
+	References(ctx context.Context, repositoryID int, commit string, local bool, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error)
 
 	// Hover returns the hover text and range for the symbol at the given position.
 	Hover(ctx context.Context, file string, line, character, uploadID int) (string, bundles.Range, bool, error)

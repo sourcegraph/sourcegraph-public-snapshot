@@ -21,15 +21,26 @@ func sliceLocations(locations []bundles.Location, lo, hi int) []bundles.Location
 	return locations[lo:hi]
 }
 
+func filterLocationsWithPath(path string, locations []bundles.Location) []bundles.Location {
+	filtered := make([]bundles.Location, 0, len(locations))
+	for _, l := range locations {
+		if l.Path == path {
+			filtered = append(filtered, l)
+		}
+	}
+
+	return filtered
+}
+
 func resolveLocationsWithDump(dump store.Dump, locations []bundles.Location) []ResolvedLocation {
-	var resolvedLocations []ResolvedLocation
+	resolved := make([]ResolvedLocation, 0, len(locations))
 	for _, location := range locations {
-		resolvedLocations = append(resolvedLocations, ResolvedLocation{
+		resolved = append(resolved, ResolvedLocation{
 			Dump:  dump,
 			Path:  dump.Root + location.Path,
 			Range: location.Range,
 		})
 	}
 
-	return resolvedLocations
+	return resolved
 }

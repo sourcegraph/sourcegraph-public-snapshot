@@ -220,7 +220,7 @@ func TestReferences(t *testing.T) {
 		t.Fatalf("unexpected error creating cursor: %s", err)
 	}
 
-	references, nextCursor, err := queryResolver.References(context.Background(), 10, 15, 3, cursor)
+	references, nextCursor, err := queryResolver.References(context.Background(), 10, 15, false, 3, cursor)
 	if err != nil {
 		t.Fatalf("unexpected error resolving references: %s", err)
 	}

@@ -75,10 +75,10 @@ func (api *ObservedCodeIntelAPI) Definitions(ctx context.Context, file string, l
 }
 
 // References calls into the inner CodeIntelAPI and registers the observed results.
-func (api *ObservedCodeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) (references []ResolvedLocation, _ Cursor, _ bool, err error) {
+func (api *ObservedCodeIntelAPI) References(ctx context.Context, repositoryID int, commit string, local bool, limit int, cursor Cursor) (references []ResolvedLocation, _ Cursor, _ bool, err error) {
 	ctx, endObservation := api.referencesOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(references)), observation.Args{}) }()
-	return api.codeIntelAPI.References(ctx, repositoryID, commit, limit, cursor)
+	return api.codeIntelAPI.References(ctx, repositoryID, commit, local, limit, cursor)
 }
 
 // Hover calls into the inner CodeIntelAPI and registers the observed results.

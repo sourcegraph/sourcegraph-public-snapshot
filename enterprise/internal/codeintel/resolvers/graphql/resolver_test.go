@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -94,12 +93,10 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 
 	opts, err := makeGetUploadsOptions(context.Background(), &gql.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{
-			ConnectionArgs: graphqlutil.ConnectionArgs{
-				First: intPtr(5),
-			},
 			Query:           strPtr("q"),
 			State:           strPtr("s"),
 			IsLatestForRepo: boolPtr(true),
+			First:           intPtr(5),
 			After:           encodeIntCursor(intPtr(25)).EndCursor(),
 		},
 		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),
@@ -155,11 +152,9 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 
 	opts, err := makeGetIndexesOptions(context.Background(), &gql.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: &gql.LSIFIndexesQueryArgs{
-			ConnectionArgs: graphqlutil.ConnectionArgs{
-				First: intPtr(5),
-			},
 			Query: strPtr("q"),
 			State: strPtr("s"),
+			First: intPtr(5),
 			After: encodeIntCursor(intPtr(25)).EndCursor(),
 		},
 		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),

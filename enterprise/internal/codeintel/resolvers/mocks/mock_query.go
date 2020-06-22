@@ -48,7 +48,7 @@ func NewMockQueryResolver() *MockQueryResolver {
 			},
 		},
 		ReferencesFunc: &QueryResolverReferencesFunc{
-			defaultHook: func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+			defaultHook: func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error) {
 				return nil, "", nil
 			},
 		},
@@ -419,24 +419,24 @@ func (c QueryResolverHoverFuncCall) Results() []interface{} {
 // QueryResolverReferencesFunc describes the behavior when the References
 // method of the parent MockQueryResolver instance is invoked.
 type QueryResolverReferencesFunc struct {
-	defaultHook func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)
-	hooks       []func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)
+	defaultHook func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error)
+	hooks       []func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error)
 	history     []QueryResolverReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // References delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockQueryResolver) References(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]resolvers.AdjustedLocation, string, error) {
-	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ReferencesFunc.appendCall(QueryResolverReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+func (m *MockQueryResolver) References(v0 context.Context, v1 int, v2 int, v3 bool, v4 int, v5 string) ([]resolvers.AdjustedLocation, string, error) {
+	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReferencesFunc.appendCall(QueryResolverReferencesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the References method of
 // the parent MockQueryResolver instance is invoked and the hook queue is
 // empty.
-func (f *QueryResolverReferencesFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)) {
+func (f *QueryResolverReferencesFunc) SetDefaultHook(hook func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error)) {
 	f.defaultHook = hook
 }
 
@@ -444,7 +444,7 @@ func (f *QueryResolverReferencesFunc) SetDefaultHook(hook func(context.Context, 
 // References method of the parent MockQueryResolver instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *QueryResolverReferencesFunc) PushHook(hook func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)) {
+func (f *QueryResolverReferencesFunc) PushHook(hook func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -453,7 +453,7 @@ func (f *QueryResolverReferencesFunc) PushHook(hook func(context.Context, int, i
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *QueryResolverReferencesFunc) SetDefaultReturn(r0 []resolvers.AdjustedLocation, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+	f.SetDefaultHook(func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error) {
 		return r0, r1, r2
 	})
 }
@@ -461,12 +461,12 @@ func (f *QueryResolverReferencesFunc) SetDefaultReturn(r0 []resolvers.AdjustedLo
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *QueryResolverReferencesFunc) PushReturn(r0 []resolvers.AdjustedLocation, r1 string, r2 error) {
-	f.PushHook(func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+	f.PushHook(func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *QueryResolverReferencesFunc) nextHook() func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+func (f *QueryResolverReferencesFunc) nextHook() func(context.Context, int, int, bool, int, string) ([]resolvers.AdjustedLocation, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -510,10 +510,13 @@ type QueryResolverReferencesFuncCall struct {
 	Arg2 int
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int
+	Arg3 bool
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 string
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []resolvers.AdjustedLocation
@@ -528,7 +531,7 @@ type QueryResolverReferencesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c QueryResolverReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this

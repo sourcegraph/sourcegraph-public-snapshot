@@ -555,11 +555,6 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 	}
 }
 
-//
-//
-//
-//
-
 func TestHandleRemoteRepoCursor(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
@@ -808,4 +803,123 @@ func TestApplyBloomFilter(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLocalReferences(t *testing.T) {
+	mockStore := storemocks.NewMockStore()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
+
+	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
+	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
+	setMockBundleClientReferences(t, mockBundleClient, "foo.go", 23, 34, []bundles.Location{
+		{DumpID: 42, Path: "foo.go", Range: testRange1},
+		{DumpID: 42, Path: "bar.go", Range: testRange1},
+		{DumpID: 42, Path: "foo.go", Range: testRange2},
+		{DumpID: 42, Path: "bar.go", Range: testRange2},
+		{DumpID: 42, Path: "foo.go", Range: testRange3},
+		{DumpID: 42, Path: "bar.go", Range: testRange3},
+		{DumpID: 42, Path: "foo.go", Range: testRange4},
+		{DumpID: 42, Path: "bar.go", Range: testRange4},
+		{DumpID: 42, Path: "foo.go", Range: testRange5},
+	})
+
+	t.Run("partial results", func(t *testing.T) {
+		rpr := &ReferencePageResolver{
+			store:               mockStore,
+			bundleManagerClient: mockBundleManagerClient,
+			repositoryID:        100,
+			commit:              testCommit,
+			local:               true,
+			limit:               5,
+		}
+
+		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
+			Phase:       "same-dump",
+			DumpID:      42,
+			Path:        "foo.go",
+			Line:        23,
+			Character:   34,
+			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			SkipResults: 0,
+		})
+		if err != nil {
+			t.Fatalf("expected error getting references: %s", err)
+		}
+
+		expectedReferences := []ResolvedLocation{
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange1},
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange2},
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange3},
+		}
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
+		}
+
+		expectedNewCursor := Cursor{
+			Phase:       "same-dump",
+			DumpID:      42,
+			Path:        "foo.go",
+			Line:        23,
+			Character:   34,
+			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			SkipResults: 5,
+		}
+		if !hasNewCursor {
+			t.Errorf("expected new cursor")
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("end of result set", func(t *testing.T) {
+		rpr := &ReferencePageResolver{
+			store:               mockStore,
+			bundleManagerClient: mockBundleManagerClient,
+			repositoryID:        100,
+			commit:              testCommit,
+			local:               true,
+			limit:               10,
+		}
+
+		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
+			Phase:       "same-dump",
+			DumpID:      42,
+			Path:        "foo.go",
+			Line:        23,
+			Character:   34,
+			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			SkipResults: 0,
+		})
+		if err != nil {
+			t.Fatalf("expected error getting references: %s", err)
+		}
+
+		expectedReferences := []ResolvedLocation{
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange1},
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange2},
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange3},
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange4},
+			{Dump: testDump1, Path: "sub1/foo.go", Range: testRange5},
+		}
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
+		}
+
+		expectedNewCursor := Cursor{
+			Phase:       "same-dump-monikers",
+			DumpID:      42,
+			Path:        "foo.go",
+			Line:        23,
+			Character:   34,
+			Monikers:    []bundles.MonikerData{{Kind: "export", Scheme: "gomod", Identifier: "pad"}},
+			SkipResults: 0,
+		}
+		if !hasNewCursor {
+			t.Errorf("expected new cursor")
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
+		}
+	})
+
 }

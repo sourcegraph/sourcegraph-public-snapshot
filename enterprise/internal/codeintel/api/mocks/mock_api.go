@@ -57,7 +57,7 @@ func NewMockCodeIntelAPI() *MockCodeIntelAPI {
 			},
 		},
 		ReferencesFunc: &CodeIntelAPIReferencesFunc{
-			defaultHook: func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
+			defaultHook: func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
 				return nil, api.Cursor{}, false, nil
 			},
 		},
@@ -574,24 +574,24 @@ func (c CodeIntelAPIHoverFuncCall) Results() []interface{} {
 // CodeIntelAPIReferencesFunc describes the behavior when the References
 // method of the parent MockCodeIntelAPI instance is invoked.
 type CodeIntelAPIReferencesFunc struct {
-	defaultHook func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)
-	hooks       []func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)
+	defaultHook func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)
+	hooks       []func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)
 	history     []CodeIntelAPIReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // References delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeIntelAPI) References(v0 context.Context, v1 int, v2 string, v3 int, v4 api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
-	r0, r1, r2, r3 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ReferencesFunc.appendCall(CodeIntelAPIReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
+func (m *MockCodeIntelAPI) References(v0 context.Context, v1 int, v2 string, v3 bool, v4 int, v5 api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
+	r0, r1, r2, r3 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReferencesFunc.appendCall(CodeIntelAPIReferencesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2, r3})
 	return r0, r1, r2, r3
 }
 
 // SetDefaultHook sets function that is called when the References method of
 // the parent MockCodeIntelAPI instance is invoked and the hook queue is
 // empty.
-func (f *CodeIntelAPIReferencesFunc) SetDefaultHook(hook func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)) {
+func (f *CodeIntelAPIReferencesFunc) SetDefaultHook(hook func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -599,7 +599,7 @@ func (f *CodeIntelAPIReferencesFunc) SetDefaultHook(hook func(context.Context, i
 // References method of the parent MockCodeIntelAPI instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CodeIntelAPIReferencesFunc) PushHook(hook func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)) {
+func (f *CodeIntelAPIReferencesFunc) PushHook(hook func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -608,7 +608,7 @@ func (f *CodeIntelAPIReferencesFunc) PushHook(hook func(context.Context, int, st
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeIntelAPIReferencesFunc) SetDefaultReturn(r0 []api.ResolvedLocation, r1 api.Cursor, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
+	f.SetDefaultHook(func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
@@ -616,12 +616,12 @@ func (f *CodeIntelAPIReferencesFunc) SetDefaultReturn(r0 []api.ResolvedLocation,
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeIntelAPIReferencesFunc) PushReturn(r0 []api.ResolvedLocation, r1 api.Cursor, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
+	f.PushHook(func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *CodeIntelAPIReferencesFunc) nextHook() func(context.Context, int, string, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
+func (f *CodeIntelAPIReferencesFunc) nextHook() func(context.Context, int, string, bool, int, api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -665,10 +665,13 @@ type CodeIntelAPIReferencesFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int
+	Arg3 bool
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 api.Cursor
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 api.Cursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []api.ResolvedLocation
@@ -686,7 +689,7 @@ type CodeIntelAPIReferencesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeIntelAPIReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this

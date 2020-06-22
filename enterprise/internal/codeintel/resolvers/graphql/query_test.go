@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/mocks"
 )
@@ -15,7 +14,7 @@ func TestDefinitions(t *testing.T) {
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver())
 
-	args := &gql.LSIFQueryPositionArgs{Line: 10, Character: 15}
+	args := &gql.LSIFDefinitionsArgs{Line: 10, Character: 15}
 	if _, err := resolver.Definitions(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -38,13 +37,11 @@ func TestReferences(t *testing.T) {
 	offset := int32(25)
 	cursor := base64.StdEncoding.EncodeToString([]byte("test-cursor"))
 
-	args := &gql.LSIFPagedQueryPositionArgs{
-		LSIFQueryPositionArgs: gql.LSIFQueryPositionArgs{
-			Line:      10,
-			Character: 15,
-		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
-		After:          &cursor,
+	args := &gql.LSIFReferencesArgs{
+		Line:      10,
+		Character: 15,
+		First:     &offset,
+		After:     &cursor,
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != nil {
@@ -60,11 +57,11 @@ func TestReferences(t *testing.T) {
 	if val := mockResolver.ReferencesFunc.History()[0].Arg2; val != 15 {
 		t.Fatalf("unexpected character. want=%d have=%d", 15, val)
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg3; val != 25 {
-		t.Fatalf("unexpected character. want=%d have=%d", 25, val)
+	if val := mockResolver.ReferencesFunc.History()[0].Arg4; val != 25 {
+		t.Fatalf("unexpected limit. want=%d have=%d", 25, val)
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg4; val != "test-cursor" {
-		t.Fatalf("unexpected character. want=%s have=%s", "test-cursor", val)
+	if val := mockResolver.ReferencesFunc.History()[0].Arg5; val != "test-cursor" {
+		t.Fatalf("unexpected cursor. want=%s have=%s", "test-cursor", val)
 	}
 }
 
@@ -72,12 +69,9 @@ func TestReferencesDefaultLimit(t *testing.T) {
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver())
 
-	args := &gql.LSIFPagedQueryPositionArgs{
-		LSIFQueryPositionArgs: gql.LSIFQueryPositionArgs{
-			Line:      10,
-			Character: 15,
-		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{},
+	args := &gql.LSIFReferencesArgs{
+		Line:      10,
+		Character: 15,
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != nil {
@@ -87,7 +81,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 	if len(mockResolver.ReferencesFunc.History()) != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.DiagnosticsFunc.History()))
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg3; val != DefaultReferencesPageSize {
+	if val := mockResolver.ReferencesFunc.History()[0].Arg4; val != DefaultReferencesPageSize {
 		t.Fatalf("unexpected limit. want=%d have=%d", DefaultReferencesPageSize, val)
 	}
 }
@@ -97,12 +91,10 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver())
 
 	offset := int32(-1)
-	args := &gql.LSIFPagedQueryPositionArgs{
-		LSIFQueryPositionArgs: gql.LSIFQueryPositionArgs{
-			Line:      10,
-			Character: 15,
-		},
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+	args := &gql.LSIFReferencesArgs{
+		Line:      10,
+		Character: 15,
+		First:     &offset,
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != ErrIllegalLimit {
@@ -115,7 +107,7 @@ func TestHover(t *testing.T) {
 	mockResolver.HoverFunc.SetDefaultReturn("text", bundles.Range{}, true, nil)
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver())
 
-	args := &gql.LSIFQueryPositionArgs{Line: 10, Character: 15}
+	args := &gql.LSIFHoverArgs{Line: 10, Character: 15}
 	if _, err := resolver.Hover(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -137,7 +129,7 @@ func TestDiagnostics(t *testing.T) {
 
 	offset := int32(25)
 	args := &gql.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		First: &offset,
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
@@ -156,9 +148,7 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver())
 
-	args := &gql.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{},
-	}
+	args := &gql.LSIFDiagnosticsArgs{}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -178,7 +168,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	offset := int32(-1)
 	args := &gql.LSIFDiagnosticsArgs{
-		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
+		First: &offset,
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != ErrIllegalLimit {

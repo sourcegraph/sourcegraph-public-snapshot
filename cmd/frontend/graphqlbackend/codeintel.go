@@ -81,10 +81,10 @@ func (r *schemaResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID g
 }
 
 type LSIFUploadsQueryArgs struct {
-	graphqlutil.ConnectionArgs
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
+	First           *int32
 	After           *string
 }
 
@@ -115,9 +115,9 @@ type LSIFUploadConnectionResolver interface {
 }
 
 type LSIFIndexesQueryArgs struct {
-	graphqlutil.ConnectionArgs
 	Query *string
 	State *string
+	First *int32
 	After *string
 }
 
@@ -153,9 +153,9 @@ type GitBlobLSIFDataResolver interface {
 	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
 	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
 
-	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
-	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
-	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
+	Definitions(ctx context.Context, args *LSIFDefinitionsArgs) (LocationConnectionResolver, error)
+	References(ctx context.Context, args *LSIFReferencesArgs) (LocationConnectionResolver, error)
+	Hover(ctx context.Context, args *LSIFHoverArgs) (HoverResolver, error)
 }
 
 type GitBlobLSIFDataArgs struct {
@@ -166,19 +166,26 @@ type GitBlobLSIFDataArgs struct {
 	ToolName  string
 }
 
-type LSIFQueryPositionArgs struct {
+type LSIFDefinitionsArgs struct {
 	Line      int32
 	Character int32
 }
 
-type LSIFPagedQueryPositionArgs struct {
-	LSIFQueryPositionArgs
-	graphqlutil.ConnectionArgs
-	After *string
+type LSIFReferencesArgs struct {
+	Line      int32
+	Character int32
+	Local     *bool
+	First     *int32
+	After     *string
+}
+
+type LSIFHoverArgs struct {
+	Line      int32
+	Character int32
 }
 
 type LSIFDiagnosticsArgs struct {
-	graphqlutil.ConnectionArgs
+	First *int32
 }
 
 type LocationConnectionResolver interface {
