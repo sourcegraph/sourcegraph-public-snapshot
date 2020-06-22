@@ -57,8 +57,7 @@ COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832def
 RUN set -ex && \
     addgroup -S grafana && \
     adduser -S -G grafana grafana && \
-    apk add --no-cache libc6-compat ca-certificates su-exec && \
-    mkdir -p /var/opt/sourcegraph/grafana
+    apk add --no-cache libc6-compat ca-certificates su-exec
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /entry.sh /grafana-entry.sh
