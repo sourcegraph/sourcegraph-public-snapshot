@@ -513,6 +513,7 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 	patches, _, err := s.store.ListPatches(ctx, ListPatchesOpts{
 		PatchSetID: campaign.PatchSetID,
 		Limit:      -1,
+		NoDiff:     true,
 	})
 	if err != nil {
 		return nil, err
@@ -585,6 +586,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		Limit:                   -1,
 		OnlyWithDiff:            true,
 		OnlyWithoutChangesetJob: campaign.ID,
+		NoDiff:                  true,
 	})
 	if err != nil {
 		return nil, err
@@ -1007,6 +1009,7 @@ func resetAccessibleChangesetJobs(ctx context.Context, tx *Store, campaign *camp
 		PatchSetID:   campaign.PatchSetID,
 		Limit:        -1,
 		OnlyWithDiff: true,
+		NoDiff:       true,
 	})
 	if err != nil {
 		return errors.Wrap(err, "listing patches")

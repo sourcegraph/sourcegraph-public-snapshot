@@ -1873,6 +1873,25 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 				}
 			}
 		})
+
+		t.Run("NoDiff", func(t *testing.T) {
+			ps, _, err := s.ListPatches(ctx, ListPatchesOpts{NoDiff: true})
+			if err != nil {
+				fmt.Printf("err=%T", err)
+				t.Fatal(err)
+			}
+
+			have, want := ps, patches
+			if len(have) != len(want) {
+				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+			}
+
+			for _, p := range ps {
+				if p.Diff != "" {
+					t.Fatalf("patch has non-blank diff: %+v", p)
+				}
+			}
+		})
 	})
 
 	t.Run("Listing OnlyWithoutChangesetJob", func(t *testing.T) {
