@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
-func TestRemoveProcessedUploadsWithoutBundleFile(t *testing.T) {
+func TestRemoveProcessedRecordsWithoutBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 	ids := []int{1, 2, 3, 4, 5}
 
@@ -33,7 +33,7 @@ func TestRemoveProcessedUploadsWithoutBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeProcessedUploadsWithoutBundleFile(); err != nil {
+	if err := j.removeProcessedRecordsWithoutBundleFile(); err != nil {
 		t.Fatalf("unexpected error removing processed uploads without bundle files: %s", err)
 	}
 
@@ -52,7 +52,7 @@ func TestRemoveProcessedUploadsWithoutBundleFile(t *testing.T) {
 	}
 }
 
-func TestRemoveOldUploadingUploads(t *testing.T) {
+func TestRemoveOldUploadingRecords(t *testing.T) {
 	bundleDir := testRoot(t)
 
 	mockStore := storemocks.NewMockStore()
@@ -70,7 +70,7 @@ func TestRemoveOldUploadingUploads(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOldUploadingUploads(); err != nil {
+	if err := j.removeOldUploadingRecords(); err != nil {
 		t.Fatalf("unexpected error removing processed uploads without bundle files: %s", err)
 	}
 

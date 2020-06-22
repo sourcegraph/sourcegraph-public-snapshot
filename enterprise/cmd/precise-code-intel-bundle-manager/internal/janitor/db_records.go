@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
-// removeProcessedUploadsWithoutBundleFile removes all processed upload records
-// that do not have a corresponding bundle file on disk.
-func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
+// removeProcessedRecordsWithoutBundleFile removes all upload records in the
+// processed state that do not have a corresponding bundle file on disk.
+func (j *Janitor) removeProcessedRecordsWithoutBundleFile() error {
 	ctx := context.Background()
 
 	// TODO(efritz) - request in batches
@@ -46,9 +46,9 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	return nil
 }
 
-// removeOldUploadingUploads removes all uploads in the uploading state that are
-// older than the max upload part age.
-func (j *Janitor) removeOldUploadingUploads() error {
+// removeOldUploadingRecords removes all upload records in the uploading state that
+// are older than the max upload part age.
+func (j *Janitor) removeOldUploadingRecords() error {
 	ctx := context.Background()
 	t := time.Now().UTC().Add(-j.maxUploadPartAge)
 
