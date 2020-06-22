@@ -589,9 +589,7 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 
 	for _, c := range cloned {
 		lower := strings.ToLower(c)
-		if _, ok := notCloned[lower]; ok {
-			delete(notCloned, lower)
-		}
+		delete(notCloned, lower)
 	}
 
 	s.notClonedCount = uint64(len(notCloned))
