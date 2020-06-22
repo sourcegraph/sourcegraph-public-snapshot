@@ -622,7 +622,8 @@ const SiteSchemaJSON = `{
           },
           "id": {
             "description": "Unique identifier for this alert.",
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "notifier": {
             "type": "object",
@@ -641,6 +642,13 @@ const SiteSchemaJSON = `{
             "!go": {
               "taggedUnionType": true
             }
+          }
+        },
+        "default": {
+          "id": "",
+          "level": "critical",
+          "notifier": {
+            "type": ""
           }
         }
       }
