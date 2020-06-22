@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -2229,7 +2228,7 @@ SELECT
   patches.repo_id,
   patches.rev,
   patches.base_ref,
-  patches.diff,
+  %s,
   patches.diff_stat_added,
   patches.diff_stat_deleted,
   patches.diff_stat_changed,
@@ -2277,13 +2276,17 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
 	}
 
-	fmtstr := listPatchesQueryFmtstr
+	// To replace a field within a SELECT, we need to avoid extra escaping,
+	// which we can do by ensuring it's a sqlf.Query already by using
+	// sqlf.Sprintf, even though there's no actual formatting to be done.
+	diffSrc := sqlf.Sprintf("patches.diff")
 	if opts.NoDiff {
-		fmtstr = strings.Replace(fmtstr, "patches.diff", `'' AS diff`, 1)
+		diffSrc = sqlf.Sprintf("''")
 	}
 
 	return sqlf.Sprintf(
-		fmtstr+limitClause,
+		listPatchesQueryFmtstr+limitClause,
+		diffSrc,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
