@@ -90,7 +90,7 @@ func TestDequeueAndProcessProcessFailure(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockProcessor := NewMockProcessor()
 	mockStore.DequeueFunc.SetDefaultReturn(upload, mockStore, true, nil)
-	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("process failure"))
+	mockProcessor.ProcessFunc.SetDefaultReturn(false, fmt.Errorf("process failure"))
 
 	worker := &Worker{
 		store:     mockStore,
@@ -131,7 +131,7 @@ func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
 	mockProcessor := NewMockProcessor()
 	mockStore.DequeueFunc.SetDefaultReturn(upload, mockStore, true, nil)
 	mockStore.MarkErroredFunc.SetDefaultReturn(fmt.Errorf("store failure"))
-	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("failed"))
+	mockProcessor.ProcessFunc.SetDefaultReturn(false, fmt.Errorf("failed"))
 
 	worker := &Worker{
 		store:     mockStore,
@@ -163,7 +163,7 @@ func TestDequeueAndProcessDoneFailure(t *testing.T) {
 	mockProcessor := NewMockProcessor()
 	mockStore.DequeueFunc.SetDefaultReturn(upload, mockStore, true, nil)
 	mockStore.DoneFunc.SetDefaultReturn(fmt.Errorf("store failure"))
-	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("failed"))
+	mockProcessor.ProcessFunc.SetDefaultReturn(false, fmt.Errorf("failed"))
 
 	worker := &Worker{
 		store:     mockStore,

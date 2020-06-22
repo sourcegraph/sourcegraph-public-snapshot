@@ -86,8 +86,12 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 
 	log15.Info("Dequeued upload for processing", "id", upload.ID)
 
-	if processErr := w.processor.Process(ctx, store, upload); processErr == nil {
-		log15.Info("Processed upload", "id", upload.ID)
+	if requeued, processErr := w.processor.Process(ctx, store, upload); processErr == nil {
+		if requeued {
+			log15.Info("Requeueing upload", "id", upload.ID)
+		} else {
+			log15.Info("Processed upload", "id", upload.ID)
+		}
 	} else {
 		// TODO(efritz) - distinguish between correlation and system errors
 		log15.Warn("Failed to process upload", "id", upload.ID, "err", processErr)

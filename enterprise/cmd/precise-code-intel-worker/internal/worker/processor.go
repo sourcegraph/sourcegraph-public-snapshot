@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
@@ -17,11 +19,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
+
+// CloneInProgressDelay is the delay between processing attempts when a repo is currently being cloned.
+const CloneInProgressDelay = time.Minute
 
 // Processor converts raw uploads into dumps.
 type Processor interface {
-	Process(ctx context.Context, tx store.Store, upload store.Upload) error
+	Process(ctx context.Context, tx store.Store, upload store.Upload) (bool, error)
 }
 
 type processor struct {
@@ -29,12 +36,27 @@ type processor struct {
 	gitserverClient     gitserver.Client
 }
 
-// process converts a raw upload into a dump within the given transaction context.
-func (p *processor) Process(ctx context.Context, store store.Store, upload store.Upload) (err error) {
+// process converts a raw upload into a dump within the given transaction context. Returns true if the
+// upload record was requeued and false otherwise.
+func (p *processor) Process(ctx context.Context, store store.Store, upload store.Upload) (_ bool, err error) {
+	// Ensure that the repo and revision are resolvable. If the repo does not exist, or if the repo has finished
+	// cloning and the revision does not exist, then the upload will fail to process. If the repo is currently
+	// cloning, then we'll requeue the upload to be tried again later. This will not increase the reset count
+	// of the record (so this doesn't count against the upload as a legitimate attempt).
+	if cloneInProgress, err := isRepoCurrentlyCloning(ctx, upload.RepositoryID, upload.Commit); err != nil {
+		return false, err
+	} else if cloneInProgress {
+		if err := store.Requeue(ctx, upload.ID, time.Now().UTC().Add(CloneInProgressDelay)); err != nil {
+			return false, errors.Wrap(err, "store.Requeue")
+		}
+
+		return true, nil
+	}
+
 	// Create scratch directory that we can clean on completion/failure
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer func() {
 		if cleanupErr := os.RemoveAll(tempDir); cleanupErr != nil {
@@ -45,7 +67,7 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 	// Pull raw uploaded data from bundle manager
 	r, err := p.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {
-		return errors.Wrap(err, "bundleManager.GetUpload")
+		return false, errors.Wrap(err, "bundleManager.GetUpload")
 	}
 	defer func() {
 		if err != nil {
@@ -71,7 +93,7 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 		},
 	)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// At this point we haven't touched the database. We're going to start a nested transaction
@@ -81,7 +103,7 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 	// but still commit the transaction as a whole.
 	savepointID, err := store.Savepoint(ctx)
 	if err != nil {
-		return errors.Wrap(err, "store.Savepoint")
+		return false, errors.Wrap(err, "store.Savepoint")
 	}
 	defer func() {
 		if err != nil {
@@ -93,17 +115,17 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 
 	// Update package and package reference data to support cross-repo queries.
 	if err := store.UpdatePackages(ctx, packages); err != nil {
-		return errors.Wrap(err, "store.UpdatePackages")
+		return false, errors.Wrap(err, "store.UpdatePackages")
 	}
 	if err := store.UpdatePackageReferences(ctx, packageReferences); err != nil {
-		return errors.Wrap(err, "store.UpdatePackageReferences")
+		return false, errors.Wrap(err, "store.UpdatePackageReferences")
 	}
 
 	// Before we mark the upload as complete, we need to delete any existing completed uploads
 	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 	// will fail as these values form a unique constraint.
 	if err := store.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-		return errors.Wrap(err, "store.DeleteOverlappingDumps")
+		return false, errors.Wrap(err, "store.DeleteOverlappingDumps")
 	}
 
 	// Almost-success: we need to mark this upload as complete at this point as the next step changes
@@ -111,21 +133,21 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 	// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
 	// still roll back to the save point and mark the upload as errored.
 	if err := store.MarkComplete(ctx, upload.ID); err != nil {
-		return errors.Wrap(err, "store.MarkComplete")
+		return false, errors.Wrap(err, "store.MarkComplete")
 	}
 
 	// Discover commits around the current tip commit and the commit of this upload. Upsert these
 	// commits into the lsif_commits table, then update the visibility of all dumps for this repository.
 	if err := p.updateCommitsAndVisibility(ctx, store, upload.RepositoryID, upload.Commit); err != nil {
-		return errors.Wrap(err, "updateCommitsAndVisibility")
+		return false, errors.Wrap(err, "updateCommitsAndVisibility")
 	}
 
 	// Send converted database file to bundle manager
 	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, tempDir); err != nil {
-		return errors.Wrap(err, "bundleManager.SendDB")
+		return false, errors.Wrap(err, "bundleManager.SendDB")
 	}
 
-	return nil
+	return false, nil
 }
 
 // updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
@@ -164,6 +186,25 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, store store.
 	}
 
 	return nil
+}
+
+// isRepoCurrentlyCloning determines if the target repository is currently being cloned.
+// This function returns an error if the repo or commit cannot be resolved.
+func isRepoCurrentlyCloning(ctx context.Context, repoID int, commit string) (bool, error) {
+	repo, err := backend.Repos.Get(ctx, api.RepoID(repoID))
+	if err != nil {
+		return false, errors.Wrap(err, "Repos.Get")
+	}
+
+	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
+		if vcs.IsCloneInProgress(err) {
+			return true, nil
+		}
+
+		return false, errors.Wrap(err, "Repos.ResolveRev")
+	}
+
+	return false, nil
 }
 
 // convert correlates the raw input data and commits the correlated data to disk.
