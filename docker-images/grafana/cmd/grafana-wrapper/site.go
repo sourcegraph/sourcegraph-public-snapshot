@@ -140,7 +140,8 @@ func (c *siteConfigSubscriber) Handler() http.Handler {
 		// check how Grafana is doing, and report an issue if it is unavailable
 		if _, err := c.grafana.GetHealth(req.Context()); err != nil {
 			c.log.Error("unable to get Grafana status", "error", err)
-			problems = append(problems, conf.NewSiteProblem("Unable to reach Grafana: please refer to the Grafana logs for more details"))
+			problems = append(problems,
+				conf.NewSiteProblem("observability: unable to reach Grafana - please refer to the Grafana logs for more details"))
 		}
 
 		b, err := json.Marshal(map[string]interface{}{
@@ -211,7 +212,7 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfi
 	if configChange {
 		// TODO what do if fail
 		if err := grafanaConfig.SaveTo(grafanaConfigPath); err != nil {
-			c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("failed to save Grafana config: %v", err)))
+			c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("observability: failed to save Grafana config: %v", err)))
 			return
 		}
 

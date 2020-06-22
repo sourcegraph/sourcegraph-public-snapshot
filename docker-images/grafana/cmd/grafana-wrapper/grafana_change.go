@@ -30,7 +30,7 @@ type GrafanaChange func(ctx context.Context, log log15.Logger, grafana GrafanaCo
 func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana GrafanaContext, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
 	// convenience function for creating a prefixed problem
 	newProblem := func(err error) *conf.Problem {
-		return conf.NewSiteProblem(fmt.Sprintf("observability.alerts: %v", err))
+		return conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: %v", err))
 	}
 
 	// generate new notifiers configuration
@@ -103,7 +103,7 @@ func grafanaChangeNotifiers(ctx context.Context, log log15.Logger, grafana Grafa
 func grafanaChangeSMTP(ctx context.Context, log log15.Logger, grafana GrafanaContext, newConfig *subscribedSiteConfig) (result GrafanaChangeResult) {
 	// convenience function for creating a prefixed problem
 	newProblem := func(err error) *conf.Problem {
-		return conf.NewSiteProblem(fmt.Sprintf("observability (email.smtp): %v", err))
+		return conf.NewSiteProblem(fmt.Sprintf("`email.smtp`: %v", err))
 	}
 
 	grafana.Config.DeleteSection("smtp")
