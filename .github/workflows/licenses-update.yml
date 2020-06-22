@@ -2,6 +2,9 @@ name: Licenses Update
 on:
   schedule:
   - cron: '0 0 * * MON'
+  # TODO remove
+  push:
+    branches: [ bobheadxi/licenses-testing ]
 
 jobs:
   update:
