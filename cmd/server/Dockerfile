@@ -57,18 +57,25 @@ COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832def
 RUN set -ex && \
     addgroup -S grafana && \
     adduser -S -G grafana grafana && \
-    apk add --no-cache libc6-compat ca-certificates su-exec
+    apk add --no-cache libc6-compat ca-certificates su-exec && \
+    mkdir -p /var/opt/sourcegraph/grafana
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:61407_2020-04-18_9aa5791@sha256:27845c4e03643f2a774873abfe549956bdbb3a19508a6e3f96f83c80eb24d81f /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:server /entry.sh /grafana-entry.sh
+
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/grafana:server /grafana-run.sh /grafana-run.sh
+
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/grafana:server /usr /usr
+
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/grafana:server /sg_config_grafana /sg_config_grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
 ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
-
-# hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:61407_2020-04-18_9aa5791@sha256:27845c4e03643f2a774873abfe549956bdbb3a19508a6e3f96f83c80eb24d81f /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
 # hadolint ignore=DL3022
 COPY --from=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b /postgres_exporter /usr/local/bin/postgres_exporter

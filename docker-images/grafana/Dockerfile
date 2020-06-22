@@ -36,7 +36,7 @@ LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # copy cross-compiled grafana-wrapper command
-COPY ./.bin/grafana-wrapper /bin/grafana-wrapper
+COPY ./.bin/grafana-wrapper /usr/share/grafana-wrapper
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana config /sg_config_grafana
@@ -51,6 +51,9 @@ ADD --chown=grafana:grafana entry.sh /
 USER root
 # hadolint ignore=DL3018
 RUN apk add --no-cache curl
+
+# give grafana entrypoint a clearer name
+RUN mv /run.sh /grafana-run.sh
 
 EXPOSE 3370
 USER grafana

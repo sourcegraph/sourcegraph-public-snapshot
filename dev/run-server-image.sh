@@ -24,10 +24,9 @@ if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
 fi
 
 IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
-echo "pulling docker image ${IMAGE}"
-docker pull "$IMAGE"
 
-echo "starting server..."
+echo "starting server ${IMAGE}..."
+# Run will also pull image if it can't find it
 docker run "$@" \
   --publish 7080:7080 \
   --rm \

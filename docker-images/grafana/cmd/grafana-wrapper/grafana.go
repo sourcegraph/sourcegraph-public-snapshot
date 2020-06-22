@@ -16,7 +16,7 @@ const overviewDashboardUID = "overview"
 
 // newGrafanaRunCmd instantiates a new command to run grafana.
 func newGrafanaRunCmd() *exec.Cmd {
-	cmd := exec.Command("/run.sh")
+	cmd := exec.Command("/grafana-run.sh")
 	cmd.Env = os.Environ() // propagate env to grafana
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
