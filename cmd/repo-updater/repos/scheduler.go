@@ -259,9 +259,6 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 // cloned on gitserver. This ensures the scheduler treats uncloned
 // repositories with a higher priority.
 func (s *updateScheduler) SetCloned(names []string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	s.schedule.setCloned(names)
 }
 
