@@ -76,6 +76,8 @@ func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDif
 	return changes
 }
 
+// siteConfigSubscriber is a sidecar service that subscribes to Sourcegraph site configuration and
+// applies relevant (subscribedSiteConfig) changes to Grafana.
 type siteConfigSubscriber struct {
 	log     log15.Logger
 	grafana *grafanaController
