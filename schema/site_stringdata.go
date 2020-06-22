@@ -636,9 +636,6 @@ const SiteSchemaJSON = `{
               { "$ref": "#/definitions/GrafanaNotifierSlack" },
               { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
               { "$ref": "#/definitions/GrafanaNotifierWebhook" },
-              { "$ref": "#/definitions/GrafanaNotifierKafka" },
-              { "$ref": "#/definitions/GrafanaNotifierPrometheus" },
-              { "$ref": "#/definitions/GrafanaNotifierDingDing" },
               { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
             ],
             "!go": {
@@ -1080,57 +1077,6 @@ const SiteSchemaJSON = `{
         "url": { "type": "string" },
         "username": { "type": "string" },
         "password": { "type": "string" }
-      }
-    },
-    "GrafanaNotifierKafka": {
-      "description": "Kafka notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#kafka",
-      "type": "object",
-      "required": ["type", "kafkaRestProxy", "kafkaTopic"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "kafka"
-        },
-        "kafkaRestProxy": { "type": "string" },
-        "kafkaTopic": { "type": "string" }
-      }
-    },
-    "GrafanaNotifierPrometheus": {
-      "description": "Prometheus alertmanager notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#prometheus-alertmanager",
-      "type": "object",
-      "required": ["type", "url"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "prometheus-alertmanager"
-        },
-        "url": { "type": "string" },
-        "basicAuthUser": { "type": "string" },
-        "basicAuthPassword": { "type": "string" }
-      }
-    },
-    "GrafanaNotifierDingDing": {
-      "description": "DingDing or DingTalk notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#dingding-dingtalk",
-      "type": "object",
-      "required": ["type", "url"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "dingding"
-        },
-        "url": { "type": "string" }
-      }
-    },
-    "GrafanaNotifierTeams": {
-      "description": "Microsoft Teams notifier",
-      "type": "object",
-      "required": ["type", "url"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "teams"
-        },
-        "url": { "type": "string" }
       }
     },
     "GrafanaNotifierOpsGenie": {

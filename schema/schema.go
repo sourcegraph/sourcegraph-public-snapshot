@@ -631,19 +631,6 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
-// GrafanaNotifierDingDing description: DingDing or DingTalk notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#dingding-dingtalk
-type GrafanaNotifierDingDing struct {
-	Type string `json:"type"`
-	Url  string `json:"url"`
-}
-
-// GrafanaNotifierKafka description: Kafka notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#kafka
-type GrafanaNotifierKafka struct {
-	KafkaRestProxy string `json:"kafkaRestProxy"`
-	KafkaTopic     string `json:"kafkaTopic"`
-	Type           string `json:"type"`
-}
-
 // GrafanaNotifierOpsGenie description: OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration
 type GrafanaNotifierOpsGenie struct {
 	ApiKey    string `json:"apiKey"`
@@ -659,14 +646,6 @@ type GrafanaNotifierPagerduty struct {
 	// IntegrationKey description: Integration key for PagerDuty.
 	IntegrationKey string `json:"integrationKey"`
 	Type           string `json:"type"`
-}
-
-// GrafanaNotifierPrometheus description: Prometheus alertmanager notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#prometheus-alertmanager
-type GrafanaNotifierPrometheus struct {
-	BasicAuthPassword string `json:"basicAuthPassword,omitempty"`
-	BasicAuthUser     string `json:"basicAuthUser,omitempty"`
-	Type              string `json:"type"`
-	Url               string `json:"url"`
 }
 
 // GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack
@@ -690,12 +669,6 @@ type GrafanaNotifierSlack struct {
 	Url string `json:"url,omitempty"`
 	// Username description: Set the username for the bot’s message.
 	Username string `json:"username,omitempty"`
-}
-
-// GrafanaNotifierTeams description: Microsoft Teams notifier
-type GrafanaNotifierTeams struct {
-	Type string `json:"type"`
-	Url  string `json:"url"`
 }
 
 // GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook
@@ -766,13 +739,10 @@ type Notice struct {
 	Message string `json:"message"`
 }
 type Notifier struct {
-	Slack                  *GrafanaNotifierSlack
-	Pagerduty              *GrafanaNotifierPagerduty
-	Webhook                *GrafanaNotifierWebhook
-	Kafka                  *GrafanaNotifierKafka
-	PrometheusAlertmanager *GrafanaNotifierPrometheus
-	Dingding               *GrafanaNotifierDingDing
-	Opsgenie               *GrafanaNotifierOpsGenie
+	Slack     *GrafanaNotifierSlack
+	Pagerduty *GrafanaNotifierPagerduty
+	Webhook   *GrafanaNotifierWebhook
+	Opsgenie  *GrafanaNotifierOpsGenie
 }
 
 func (v Notifier) MarshalJSON() ([]byte, error) {
@@ -784,15 +754,6 @@ func (v Notifier) MarshalJSON() ([]byte, error) {
 	}
 	if v.Webhook != nil {
 		return json.Marshal(v.Webhook)
-	}
-	if v.Kafka != nil {
-		return json.Marshal(v.Kafka)
-	}
-	if v.PrometheusAlertmanager != nil {
-		return json.Marshal(v.PrometheusAlertmanager)
-	}
-	if v.Dingding != nil {
-		return json.Marshal(v.Dingding)
 	}
 	if v.Opsgenie != nil {
 		return json.Marshal(v.Opsgenie)
@@ -807,22 +768,16 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
-	case "dingding":
-		return json.Unmarshal(data, &v.Dingding)
-	case "kafka":
-		return json.Unmarshal(data, &v.Kafka)
 	case "opsgenie":
 		return json.Unmarshal(data, &v.Opsgenie)
 	case "pagerduty":
 		return json.Unmarshal(data, &v.Pagerduty)
-	case "prometheus-alertmanager":
-		return json.Unmarshal(data, &v.PrometheusAlertmanager)
 	case "slack":
 		return json.Unmarshal(data, &v.Slack)
 	case "webhook":
 		return json.Unmarshal(data, &v.Webhook)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "kafka", "prometheus-alertmanager", "dingding", "opsgenie"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "opsgenie"})
 }
 
 type OAuthIdentity struct {
