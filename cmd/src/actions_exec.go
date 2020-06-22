@@ -483,6 +483,7 @@ query ActionRepos($query: String!) {
 					}
 				}
 			}
+			...SearchResultsAlertFields
 		}
 	}
 }
@@ -500,7 +501,8 @@ fragment repositoryFields on Repository {
 		}
 	}
 }
-`
+` + searchResultsAlertFragment
+
 	type Repository struct {
 		ID, Name           string
 		ExternalRepository struct {
@@ -527,6 +529,7 @@ fragment repositoryFields on Repository {
 						}
 						Repository Repository `json:"repository"`
 					}
+					Alert searchResultsAlert
 				}
 			}
 		} `json:"data,omitempty"`
@@ -632,6 +635,12 @@ fragment repositoryFields on Repository {
 
 	if len(repos) == 0 && !*verbose {
 		yellow.Fprintf(os.Stderr, "WARNING: No repositories matched by scopeQuery\n")
+	}
+
+	if content, err := result.Data.Search.Results.Alert.Render(); err != nil {
+		yellow.Fprint(os.Stderr, err)
+	} else {
+		os.Stderr.WriteString(content)
 	}
 
 	return repos, nil

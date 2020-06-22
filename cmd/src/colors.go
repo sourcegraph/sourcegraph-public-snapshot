@@ -37,6 +37,13 @@ var ansiColors = map[string]string{
 	"search-commit-author":  fg256Color(2),
 	"search-commit-subject": fg256Color(68),
 	"search-commit-date":    fg256Color(23),
+
+	// Search alert specific colors.
+	"search-alert-title":                fg256Color(124),
+	"search-alert-description":          fg256Color(124),
+	"search-alert-proposed-title":       "",
+	"search-alert-proposed-query":       fg256Color(69),
+	"search-alert-proposed-description": "",
 }
 
 // Borrowed from https://github.com/acarl005/stripansi/blob/master/stripansi.go
