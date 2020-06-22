@@ -73,10 +73,10 @@ const SiteSchemaJSON = `{
           }
         },
         "automation": {
-          "description": "Enables the experimental code change management campaigns feature. NOTE: The automation feature was renamed to campaigns, but this experimental feature flag name was not changed (because the feature flag will go away soon anyway).",
+          "description": "DEPRECATED: Enables the experimental code change management campaigns feature. This field has been deprecated in favour of campaigns.enabled",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -258,8 +258,14 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Campaigns"
     },
+    "campaigns.enabled": {
+      "description": "Enables/disables the campaigns feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns"
+    },
     "campaigns.readAccess.enabled": {
-      "description": "Enables read-only access to campaigns for non-site-admin users. This is a setting for the experimental campaigns feature. These will only have an effect when campaigns is enabled with ` + "`" + `{\"experimentalFeatures\": {\"automation\": \"enabled\"}}` + "`" + `.",
+      "description": "DEPRECATED: Enables read-only access to campaigns for non-site-admin users. This doesn't have an effect anymore.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns"
