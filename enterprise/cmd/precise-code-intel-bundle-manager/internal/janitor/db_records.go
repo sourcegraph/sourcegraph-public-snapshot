@@ -18,13 +18,15 @@ func (j *Janitor) removeProcessedRecordsWithoutBundleFile() error {
 	ctx := context.Background()
 
 	// TODO(efritz) - request in batches
-	ids, err := j.store.GetDumpIDs(ctx)
+	uploads, _, err := j.store.GetUploads(ctx, store.GetUploadsOptions{
+		State: "processed",
+	})
 	if err != nil {
-		return errors.Wrap(err, "store.GetDumpIDs")
+		return errors.Wrap(err, "store.GetUploads")
 	}
 
-	for _, id := range ids {
-		exists, err := paths.PathExists(paths.DBDir(j.bundleDir, int64(id)))
+	for _, upload := range uploads {
+		exists, err := paths.PathExists(paths.DBDir(j.bundleDir, int64(upload.ID)))
 		if err != nil {
 			return errors.Wrap(err, "paths.PathExists")
 		}
@@ -32,13 +34,13 @@ func (j *Janitor) removeProcessedRecordsWithoutBundleFile() error {
 			continue
 		}
 
-		deleted, err := j.store.DeleteUploadByID(ctx, id, j.getTipCommit)
+		deleted, err := j.store.DeleteUploadByID(ctx, upload.ID, j.getTipCommit)
 		if err != nil {
 			return errors.Wrap(err, "store.DeleteUploadByID")
 		}
 
 		if deleted {
-			log15.Debug("Removed upload record with no bundle file", "id", id)
+			log15.Debug("Removed upload record with no bundle file", "id", upload.ID)
 			j.metrics.UploadRecordsRemoved.Inc()
 		}
 	}

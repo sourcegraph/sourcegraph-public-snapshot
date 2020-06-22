@@ -15,7 +15,6 @@ import (
 
 func TestRemoveProcessedRecordsWithoutBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
-	ids := []int{1, 2, 3, 4, 5}
 
 	for _, id := range []int{1, 3, 5} {
 		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
@@ -25,7 +24,13 @@ func TestRemoveProcessedRecordsWithoutBundleFile(t *testing.T) {
 	}
 
 	mockStore := storemocks.NewMockStore()
-	mockStore.GetDumpIDsFunc.SetDefaultReturn(ids, nil)
+	mockStore.GetUploadsFunc.SetDefaultReturn([]store.Upload{
+		{ID: 1},
+		{ID: 2},
+		{ID: 3},
+		{ID: 4},
+		{ID: 5},
+	}, 0, nil)
 
 	j := &Janitor{
 		store:     mockStore,
