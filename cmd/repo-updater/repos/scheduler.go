@@ -95,8 +95,6 @@ const (
 // A worker continuously dequeues repos and sends updates to gitserver, but its concurrency
 // is limited by the gitMaxConcurrentClones site configuration.
 type updateScheduler struct {
-	mu sync.Mutex
-
 	updateQueue *updateQueue
 	schedule    *schedule
 }
@@ -229,9 +227,6 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 
 // UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
 func (s *updateScheduler) UpdateFromDiff(diff Diff) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	for _, r := range diff.Deleted {
 		s.remove(r)
 	}
