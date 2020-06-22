@@ -182,7 +182,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		syncer.Synced = make(chan repos.Diff)
 		syncer.SubsetSynced = make(chan repos.Diff)
 		go watchSyncer(ctx, syncer, scheduler, gps)
-		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
+		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval)) }()
 	}
 	server.Syncer = syncer
 
