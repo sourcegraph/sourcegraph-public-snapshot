@@ -28,6 +28,7 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
     - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
     - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
     - [Running out of disk space](#running-out-of-disk-space)
+    - [Certificate expiry](#certificate-expiry)
 - [How to Run Tests](#how-to-run-tests)
 - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
 - [How to debug live code](#how-to-debug-live-code)
@@ -548,6 +549,12 @@ You can override that by setting this env variable:
 # means 5%. You may want to put that into .bashrc for convinience
 SRC_REPOS_DESIRED_PERCENT_FREE=5
 ```
+
+#### Certificate Expiry
+
+If you see a certificate expiry warning you may need to delete your certificate and restart your server.
+
+On MaCOS, the certificate can be removed from here: `~/Library/Application\ Support/Caddy/certificates/local/sourcegraph.test`
 
 ## How to Run Tests
 
