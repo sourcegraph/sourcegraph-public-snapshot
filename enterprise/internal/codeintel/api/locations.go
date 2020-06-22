@@ -23,9 +23,9 @@ func sliceLocations(locations []bundles.Location, lo, hi int) []bundles.Location
 
 func filterLocationsWithPath(path string, locations []bundles.Location) []bundles.Location {
 	filtered := make([]bundles.Location, 0, len(locations))
-	for _, l := range locations {
-		if l.Path == path {
-			filtered = append(filtered, l)
+	for _, location := range locations {
+		if location.Path == path {
+			filtered = append(filtered, location)
 		}
 	}
 

@@ -113,7 +113,7 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 
 	filteredLocations := sliceLocations(locations, cursor.SkipResults, cursor.SkipResults+s.limit)
 	if s.local {
-		// Remove references outside of the cursor path. Ensure we assign this ot a
+		// Remove references outside of the cursor path. Ensure we assign this to a
 		// variable that does not influence pagination offsets.
 		filteredLocations = filterLocationsWithPath(cursor.Path, filteredLocations)
 	}
@@ -202,7 +202,7 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 
 	filteredLocations := locations
 	if s.local {
-		// Remove references outside of the cursor path. Ensure we assign this ot a
+		// Remove references outside of the cursor path. Ensure we assign this to a
 		// variable that does not influence pagination offsets.
 		filteredLocations = filterLocationsWithPath(cursor.Path, filteredLocations)
 	}
