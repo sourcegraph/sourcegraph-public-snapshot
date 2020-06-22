@@ -199,7 +199,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		FindClosestDumpsFunc: &StoreFindClosestDumpsFunc{
-			defaultHook: func(context.Context, int, string, string, string) ([]store.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
 				return nil, nil
 			},
 		},
@@ -1409,24 +1409,24 @@ func (c StoreDoneFuncCall) Results() []interface{} {
 // StoreFindClosestDumpsFunc describes the behavior when the
 // FindClosestDumps method of the parent MockStore instance is invoked.
 type StoreFindClosestDumpsFunc struct {
-	defaultHook func(context.Context, int, string, string, string) ([]store.Dump, error)
-	hooks       []func(context.Context, int, string, string, string) ([]store.Dump, error)
+	defaultHook func(context.Context, int, string, string, bool, string) ([]store.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]store.Dump, error)
 	history     []StoreFindClosestDumpsFuncCall
 	mutex       sync.Mutex
 }
 
 // FindClosestDumps delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 string) ([]store.Dump, error) {
-	r0, r1 := m.FindClosestDumpsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.FindClosestDumpsFunc.appendCall(StoreFindClosestDumpsFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockStore) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]store.Dump, error) {
+	r0, r1 := m.FindClosestDumpsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.FindClosestDumpsFunc.appendCall(StoreFindClosestDumpsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the FindClosestDumps
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, string) ([]store.Dump, error)) {
+func (f *StoreFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]store.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -1434,7 +1434,7 @@ func (f *StoreFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, in
 // FindClosestDumps method of the parent MockStore instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, string) ([]store.Dump, error)) {
+func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]store.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1443,7 +1443,7 @@ func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, str
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreFindClosestDumpsFunc) SetDefaultReturn(r0 []store.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, string) ([]store.Dump, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
 		return r0, r1
 	})
 }
@@ -1451,12 +1451,12 @@ func (f *StoreFindClosestDumpsFunc) SetDefaultReturn(r0 []store.Dump, r1 error) 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreFindClosestDumpsFunc) PushReturn(r0 []store.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, string) ([]store.Dump, error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, string) ([]store.Dump, error) {
+func (f *StoreFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]store.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1503,7 +1503,10 @@ type StoreFindClosestDumpsFuncCall struct {
 	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 string
+	Arg4 bool
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []store.Dump
@@ -1515,7 +1518,7 @@ type StoreFindClosestDumpsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreFindClosestDumpsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
