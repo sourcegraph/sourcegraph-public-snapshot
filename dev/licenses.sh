@@ -17,6 +17,7 @@ fi
 
 # prepare dependencies
 yarn --mutex network --frozen-lockfile
+go mod tidy
 go clean -modcache # stuff in cache causes strange things to happen
 go mod vendor      # go mod download does not work with license_finder
 
