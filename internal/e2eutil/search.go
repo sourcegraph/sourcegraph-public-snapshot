@@ -62,3 +62,52 @@ query Search($query: String!) {
 
 	return resp.Data.Search.Results.Results, nil
 }
+
+type SearchFileResult struct {
+	Name string `json:"name"`
+}
+
+type SearchFileResults []*SearchFileResult
+
+// SearchFiles search files with given query.
+func (c *Client) SearchFiles(query string) (SearchFileResults, error) {
+	const gqlQuery = `
+query Search($query: String!) {
+	search(query: $query) {
+		results {
+			results {
+				... on FileMatch {
+					file {
+						name
+					}
+				}
+			}
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"query": query,
+	}
+	var resp struct {
+		Data struct {
+			Search struct {
+				Results struct {
+					Results []struct {
+						*SearchFileResult `json:"file"`
+					} `json:"results"`
+				} `json:"results"`
+			} `json:"search"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	results := make([]*SearchFileResult, 0, len(resp.Data.Search.Results.Results))
+	for _, r := range resp.Data.Search.Results.Results {
+		results = append(results, r.SearchFileResult)
+	}
+	return results, nil
+}
