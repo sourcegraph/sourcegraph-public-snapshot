@@ -631,7 +631,7 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
-// GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty
+// GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty
 type GrafanaNotifierPagerduty struct {
 	// AutoResolve description: Resolve incidents in PagerDuty once the alert goes back to ok
 	AutoResolve bool `json:"autoResolve,omitempty"`
@@ -640,7 +640,7 @@ type GrafanaNotifierPagerduty struct {
 	Type           string `json:"type"`
 }
 
-// GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack
+// GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack
 type GrafanaNotifierSlack struct {
 	// Icon_emoji description: Provide an emoji to use as the icon for the bot’s message. Ex :smile:
 	Icon_emoji string `json:"icon_emoji,omitempty"`
@@ -663,7 +663,7 @@ type GrafanaNotifierSlack struct {
 	Username string `json:"username,omitempty"`
 }
 
-// GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook
+// GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook
 type GrafanaNotifierWebhook struct {
 	Password string `json:"password,omitempty"`
 	Type     string `json:"type"`
