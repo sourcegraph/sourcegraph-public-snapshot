@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- The single-container `sourcegraph/server` image now correctly reports its version.
+
 ### Removed
 
 ## 3.17.0
