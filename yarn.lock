@@ -1355,6 +1355,13 @@
     "@gql2ts/util" "^1.9.0"
     humps "^2.0.0"
 
+"@gql2ts/types@^1.9.0":
+  version "1.9.0"
+  resolved "https://registry.npmjs.org/@gql2ts/types/-/types-1.9.0.tgz#f6725aa2beda33b6f1948e046be260e34d0b3405"
+  integrity sha512-1gtNzOMczIBS+ZnA3wizxOhLgy3lxfUVydQVMeGCe8kGRRI51BQzJKOza39OsIB9Fmwc6psHyamk/Z8RllTksA==
+  dependencies:
+    "@gql2ts/util" "^1.9.0"
+
 "@gql2ts/util@^1.9.0":
   version "1.9.0"
   resolved "https://registry.npmjs.org/@gql2ts/util/-/util-1.9.0.tgz#d07a54832757d2f2d1fc9891e5b0e3e3b4886c6a"
@@ -2195,7 +2202,8 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.1.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -19605,7 +19613,8 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "24.5.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

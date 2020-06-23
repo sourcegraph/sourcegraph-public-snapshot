@@ -81,7 +81,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                                 <ExtensionsExploreSectionExtensionCard
                                     key={extension.id}
                                     extensionID={extension.extensionIDWithoutRegistry}
-                                    description={(extension.manifest && extension.manifest.description) || undefined}
+                                    description={extension.manifest?.description || undefined}
                                     url={extension.url}
                                     className="list-group-item list-group-item-action"
                                 />

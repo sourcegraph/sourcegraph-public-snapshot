@@ -100,11 +100,7 @@ export const diffDOMFunctions: DOMFunctions = {
 
         const diffSide = codeElement.closest('.diff-editor')!
 
-        return diffSide.previousElementSibling &&
-            // If the sibling to the left is the diff divider, it's in the HEAD.
-            diffSide.previousElementSibling.classList.contains('segment-connector-column')
-            ? 'head'
-            : 'base'
+        return diffSide.previousElementSibling?.classList.contains('segment-connector-column') ? 'head' : 'base'
     },
     isFirstCharacterDiffIndicator: () => false,
 }

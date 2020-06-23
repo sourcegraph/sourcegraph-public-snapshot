@@ -29,7 +29,7 @@ interface State {
  */
 export class UserNavItem extends React.PureComponent<Props, State> {
     private supportsSystemTheme = Boolean(
-        window.matchMedia && window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
+        window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
     )
 
     public state: State = { isOpen: false }
@@ -98,10 +98,9 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </small>
                             </div>
                         )}
-                        {this.props.keyboardShortcutForSwitchTheme &&
-                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, index) => (
-                                <Shortcut key={index} {...keybinding} onMatch={this.onThemeCycle} />
-                            ))}
+                        {this.props.keyboardShortcutForSwitchTheme?.keybindings.map((keybinding, index) => (
+                            <Shortcut key={index} {...keybinding} onMatch={this.onThemeCycle} />
+                        ))}
                     </div>
                     {this.props.authenticatedUser.organizations.nodes.length > 0 && (
                         <>
@@ -130,7 +129,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             Help
                         </Link>
                     )}
-                    {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
+                    {this.props.authenticatedUser.session?.canSignOut && (
                         <a href="/-/sign-out" className="dropdown-item">
                             Sign out
                         </a>

@@ -78,7 +78,7 @@ export interface PlatformContext {
      * @returns A promise that resolves after the update succeeds and {@link PlatformContext#settings} reflects the
      * update.
      */
-    updateSettings(subject: GQL.ID, edit: SettingsEdit | string): Promise<void>
+    updateSettings: (subject: GQL.ID, edit: SettingsEdit | string) => Promise<void>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.
@@ -87,7 +87,7 @@ export interface PlatformContext {
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
      */
-    requestGraphQL<R extends GQL.IQuery | GQL.IMutation>(options: {
+    requestGraphQL: <R extends GQL.IQuery | GQL.IMutation>(options: {
         /**
          * The GraphQL request (query or mutation)
          */
@@ -101,12 +101,12 @@ export interface PlatformContext {
          * could leak private information such as repository names.
          */
         mightContainPrivateInfo: boolean
-    }): Observable<GraphQLResult<R>>
+    }) => Observable<GraphQLResult<R>>
 
     /**
      * Forces the currently displayed tooltip, if any, to update its contents.
      */
-    forceUpdateTooltip(): void
+    forceUpdateTooltip: () => void
 
     /**
      * Spawns a new JavaScript execution context (such as a Web Worker or browser extension
@@ -116,7 +116,7 @@ export interface PlatformContext {
      * @returns An observable that emits at most once with the message transports for communicating
      * with the execution context (using, e.g., postMessage/onmessage) when it is ready.
      */
-    createExtensionHost(): Observable<EndpointPair>
+    createExtensionHost: () => Observable<EndpointPair>
 
     /**
      * Returns the script URL suitable for passing to importScripts for an extension's bundle.
@@ -129,7 +129,7 @@ export interface PlatformContext {
      * @returns A script URL suitable for passing to importScripts, typically either the original
      * https:// URL for the extension's bundle or a blob: URI for it.
      */
-    getScriptURLForExtension(bundleURL: string): string | Promise<string>
+    getScriptURLForExtension: (bundleURL: string) => string | Promise<string>
 
     /**
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.
@@ -138,7 +138,7 @@ export interface PlatformContext {
      * @param context Contextual information about the context of this invocation.
      * @returns The URL to the file with the specified options.
      */
-    urlToFile(
+    urlToFile: (
         target: RepoSpec &
             Partial<RawRepoSpec> &
             RevisionSpec &
@@ -146,7 +146,7 @@ export interface PlatformContext {
             Partial<UIPositionSpec> &
             Partial<ViewStateSpec>,
         context: URLToFileContext
-    ): string
+    ) => string
 
     /**
      * The URL to the Sourcegraph site that the user's session is associated with. This refers to

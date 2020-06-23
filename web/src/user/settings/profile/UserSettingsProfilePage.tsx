@@ -161,21 +161,19 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 <PageTitle title="Profile" />
                 <h2>Profile</h2>
 
-                {this.props.activation &&
-                    this.props.activation.completed &&
-                    percentageDone(this.props.activation.completed) < 100 && (
-                        <div className="card mb-3">
-                            <div className="card-body">
-                                <h3 className="mb-0">Almost there!</h3>
-                                <p className="mb-0">Complete the steps below to finish onboarding to Sourcegraph.</p>
-                            </div>
-                            <ActivationChecklist
-                                history={this.props.history}
-                                steps={this.props.activation.steps}
-                                completed={this.props.activation.completed}
-                            />
+                {this.props.activation?.completed && percentageDone(this.props.activation.completed) < 100 && (
+                    <div className="card mb-3">
+                        <div className="card-body">
+                            <h3 className="mb-0">Almost there!</h3>
+                            <p className="mb-0">Complete the steps below to finish onboarding to Sourcegraph.</p>
                         </div>
-                    )}
+                        <ActivationChecklist
+                            history={this.props.history}
+                            steps={this.props.activation.steps}
+                            completed={this.props.activation.completed}
+                        />
+                    </div>
+                )}
 
                 {isErrorLike(this.state.userOrError) && (
                     <ErrorAlert error={this.state.userOrError.message} history={this.props.history} />

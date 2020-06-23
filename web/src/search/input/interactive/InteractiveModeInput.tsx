@@ -202,10 +202,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         const { branding } = window.context
         if (branding) {
             if (this.props.isLightTheme) {
-                if (branding.light && branding.light.symbol) {
+                if (branding.light?.symbol) {
                     logoSource = branding.light.symbol
                 }
-            } else if (branding.dark && branding.dark.symbol) {
+            } else if (branding.dark?.symbol) {
                 logoSource = branding.dark.symbol
             }
             if (branding.disableSymbolSpin) {

@@ -67,7 +67,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                                     key={step.id}
                                     {...step}
                                     history={this.props.history}
-                                    done={(this.props.completed && this.props.completed[step.id]) || false}
+                                    done={this.props.completed?.[step.id] || false}
                                     className={this.props.buttonClassName}
                                 />
                             </AccordionButton>

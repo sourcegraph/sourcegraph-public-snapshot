@@ -38,7 +38,7 @@ export class EventLogger implements TelemetryService {
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logViewEvent(pageTitle: string, logAsActiveUser = true): void {
-        if ((window.context && window.context.userAgentIsBot) || !pageTitle) {
+        if (window.context?.userAgentIsBot || !pageTitle) {
             return
         }
         pageTitle = `View${pageTitle}`
@@ -59,7 +59,7 @@ export class EventLogger implements TelemetryService {
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      */
     public log(eventLabel: string, eventProperties?: any): void {
-        if ((window.context && window.context.userAgentIsBot) || !eventLabel) {
+        if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
         serverAdmin.trackAction(eventLabel, eventProperties)

@@ -47,10 +47,10 @@ async function graphQLTypes() {
       },
       {
         generateNamespace: (name, interfaces) => interfaces,
-        interfaceBuilder: (name, body) => 'export ' + DEFAULT_OPTIONS.interfaceBuilder(name, body),
+        interfaceBuilder: (name, body) => `export ${DEFAULT_OPTIONS.interfaceBuilder(name, body)}`,
         enumTypeBuilder: (name, values) =>
-          'export ' + DEFAULT_OPTIONS.enumTypeBuilder(name, values).replace(/^const enum/, 'enum'),
-        typeBuilder: (name, body) => 'export ' + DEFAULT_OPTIONS.typeBuilder(name, body),
+          `export ${DEFAULT_OPTIONS.enumTypeBuilder(name, values).replace(/^const enum/, 'enum')}`,
+        typeBuilder: (name, body) => `export ${DEFAULT_OPTIONS.typeBuilder(name, body)}`,
         wrapList: type => `${type}[]`,
         postProcessor: code => format(code, { ...formatOptions, parser: 'typescript' }),
       }
