@@ -683,9 +683,9 @@ AND repo.external_id = batch.external_id
 `
 
 // delete is a soft-delete. name is unique and the syncer ensures we respect
-// that constraint. However, the syncer is unaware of soft-deleted
-// repositories. So we update the name to something unique to prevent
-// violating this constraint between active and soft-deleted names.
+// that constraint. However, the syncer is unaware of soft-deleted repositories.
+// So we update the name to something unique to prevent violating this constraint
+// between active and soft-deleted names.
 //
 // NOTE: The code intel store package is aware of the soft-deleted name prefix
 // '^DELETED-\d+\.\d+'. If this prefix is changed, it should also be updated in
