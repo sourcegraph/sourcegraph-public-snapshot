@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -19,6 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
+
+// seededRand is used to populate the RandID fields on CampaignSpec and
+// ChangesetSpec when creating them.
+var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // Store exposes methods to read and write campaigns domain models
 // from persistent storage.
@@ -402,7 +407,7 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 	records := make([]record, 0, len(cs))
 
 	for _, c := range cs {
-		metadata, err := metadataColumn(c.Metadata)
+		metadata, err := jsonbColumn(c.Metadata)
 		if err != nil {
 			return nil, err
 		}
@@ -1151,7 +1156,7 @@ func batchChangesetEventsQuery(fmtstr string, es []*campaigns.ChangesetEvent) (*
 	records := make([]record, 0, len(es))
 
 	for _, e := range es {
-		metadata, err := metadataColumn(e.Metadata)
+		metadata, err := jsonbColumn(e.Metadata)
 		if err != nil {
 			return nil, err
 		}
@@ -3007,7 +3012,7 @@ func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner
 	)
 }
 
-func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
+func jsonbColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
 		msg = json.RawMessage("{}")
