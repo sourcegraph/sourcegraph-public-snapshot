@@ -27,7 +27,7 @@ func newGrafanaSMTPConfig(email *siteEmailConfig) *grafanaConfigSMTP {
 		Host:         fmt.Sprintf("%s:%d", email.SMTP.Host, email.SMTP.Port), // host, port are required
 		User:         email.SMTP.Username,
 		Password:     email.SMTP.Password,
-		EhloIdentity: email.SMTP.Domain, // TODO: is this right?
+		EhloIdentity: email.SMTP.Domain,
 
 		// Custom values for Sourcegraph
 		FromAddress: email.Address,

@@ -208,9 +208,8 @@ func (c *siteConfigSubscriber) updateGrafanaConfig(ctx context.Context, newConfi
 		}
 	}
 
-	// restart if needed
+	// restart if needed. if the restart fails, just report it as a problem.
 	if configChange {
-		// TODO what do if fail
 		if err := grafanaConfig.SaveTo(grafanaConfigPath); err != nil {
 			c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("observability: failed to save Grafana config: %v", err)))
 			return
