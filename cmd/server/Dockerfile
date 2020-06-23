@@ -65,6 +65,7 @@ COPY --from=sourcegraph/grafana:server /entry.sh /grafana-entry.sh
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /grafana-run.sh /grafana-run.sh
 
+# Executables in the grafana image are in /usr
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /usr /usr
 
