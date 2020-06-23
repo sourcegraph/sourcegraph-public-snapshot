@@ -7,60 +7,30 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-type AddChangesetsToCampaignArgs struct {
-	Campaign   graphql.ID
-	Changesets []graphql.ID
-}
-
 type CreateCampaignArgs struct {
-	Input struct {
-		Namespace   graphql.ID
-		Name        string
-		Description *string
-		Branch      *string
-		PatchSet    *graphql.ID
-	}
+	Namespace    graphql.ID
+	CampaignSpec graphql.ID
 }
 
-type UpdateCampaignArgs struct {
-	Input struct {
-		ID          graphql.ID
-		Name        *string
-		Description *string
-		Branch      *string
-		PatchSet    *graphql.ID
-	}
+type ApplyCampaignArgs struct {
+	Namespace      graphql.ID
+	CampaignSpec   graphql.ID
+	EnsureCampaign *graphql.ID
 }
 
-type CreatePatchSetFromPatchesArgs struct {
-	Patches []PatchInput
-}
-
-type PatchInput struct {
-	Repository   graphql.ID
-	BaseRevision api.CommitID
-	BaseRef      string
-	Patch        string
+type MoveCampaignArgs struct {
+	Campaign     graphql.ID
+	NewName      *string
+	NewNamespace *graphql.ID
 }
 
 type ListCampaignArgs struct {
 	First               *int32
 	State               *string
-	HasPatchSet         *bool
 	ViewerCanAdminister *bool
-}
-
-type DeleteCampaignArgs struct {
-	Campaign        graphql.ID
-	CloseChangesets bool
-}
-
-type RetryCampaignChangesetsArgs struct {
-	Campaign graphql.ID
 }
 
 type CloseCampaignArgs struct {
@@ -68,19 +38,8 @@ type CloseCampaignArgs struct {
 	CloseChangesets bool
 }
 
-type CreateChangesetsArgs struct {
-	Input []struct {
-		Repository graphql.ID
-		ExternalID string
-	}
-}
-
-type PublishCampaignChangesetsArgs struct {
+type DeleteCampaignArgs struct {
 	Campaign graphql.ID
-}
-
-type PublishChangesetArgs struct {
-	Patch graphql.ID
 }
 
 type SyncChangesetArgs struct {
@@ -92,97 +51,72 @@ type FileDiffsConnectionArgs struct {
 	After *string
 }
 
+type CreateChangesetSpecArgs struct {
+	ChangesetSpec string
+}
+
+type CreateCampaignSpecArgs struct {
+	Namespace graphql.ID
+
+	CampaignSpec   string
+	ChangesetSpecs []graphql.ID
+}
+
 type CampaignsResolver interface {
+	// Mutations
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
-	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
-	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
-	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
-	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
-	RetryCampaignChangesets(ctx context.Context, args *RetryCampaignChangesetsArgs) (CampaignResolver, error)
+	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (CampaignResolver, error)
+	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (CampaignResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
-	PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (CampaignResolver, error)
-	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
+	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
+	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
+	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
+	// ComputeCampaignDelta(ctx context.Context, args *ComputeCampaignDeltaArgs) (CampaignDeltaResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 
-	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
+	// Queries
+	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
+	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
-	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
-
-	CreatePatchSetFromPatches(ctx context.Context, args CreatePatchSetFromPatchesArgs) (PatchSetResolver, error)
-	PatchSetByID(ctx context.Context, id graphql.ID) (PatchSetResolver, error)
-
-	PatchByID(ctx context.Context, id graphql.ID) (PatchInterfaceResolver, error)
+	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
+	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
 }
 
-var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
+type CampaignSpecResolver interface {
+	ID() graphql.ID
 
-type defaultCampaignsResolver struct{}
+	OriginalInput() (string, error)
+	ParsedInput() (JSONValue, error)
+	ChangesetSpecs(context.Context) ([]ChangesetSpecResolver, error)
 
-var DefaultCampaignsResolver CampaignsResolver = defaultCampaignsResolver{}
+	Creator(context.Context) (*UserResolver, error)
+	CreatedAt() *DateTime
+	Namespace(context.Context) (*NamespaceResolver, error)
 
-func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+	ExpiresAt() *DateTime
+
+	PreviewURL() (string, error)
 }
 
-func (defaultCampaignsResolver) UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+type ChangesetSpecResolver interface {
+	ID() graphql.ID
+
+	// TODO: More fields, see PR
+	ExpiresAt() *DateTime
+
+	// TODO: This is a hack so that a CampaignSpecResolver cannot be cast into
+	// this interface in `(NodeResolver).ToChangesetSpec`
+	// This should be removed as soon as this resolver gets more methods.
+	OnlyChangesetSpec() bool
 }
 
-func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
+type CampaignDeltaResolver interface {
+	ID() (graphql.ID, error)
 
-func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
+	// TODO: More fields, see PR
 
-func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) RetryCampaignChangesets(ctx context.Context, args *RetryCampaignChangesetsArgs) (CampaignResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (CampaignResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) CreatePatchSetFromPatches(ctx context.Context, args CreatePatchSetFromPatchesArgs) (PatchSetResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) PatchSetByID(ctx context.Context, id graphql.ID) (PatchSetResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) PatchByID(ctx context.Context, id graphql.ID) (PatchInterfaceResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+	CreatedAt() DateTime
 }
 
 type ChangesetCountsArgs struct {
@@ -212,11 +146,8 @@ type CampaignResolver interface {
 	OpenChangesets(ctx context.Context) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
-	PatchSet(ctx context.Context) (PatchSetResolver, error)
 	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
-	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
-	HasUnpublishedPatches(ctx context.Context) (bool, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
@@ -284,44 +215,6 @@ type ExternalChangesetResolver interface {
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 }
 
-type PatchConnectionResolver interface {
-	Nodes(ctx context.Context) ([]PatchInterfaceResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
-// PatchInterfaceResolver is the "interface PatchInterface" in the GraphQL
-// schema and is implemented by Patch and HiddenPatch.
-type PatchInterfaceResolver interface {
-	ID() graphql.ID
-
-	ToPatch() (PatchResolver, bool)
-	ToHiddenPatch() (HiddenPatchResolver, bool)
-}
-
-// HiddenPatchResolver implements only the common interface,
-// PatchInterfaceResolver, to not reveal information to unauthorized users.
-//
-// Theoretically this type is not necessary, but it's easier to understand the
-// implementation of the GraphQL schema if we have a mapping between GraphQL
-// types and Go types.
-type HiddenPatchResolver interface {
-	PatchInterfaceResolver
-}
-
-// PatchResolver implements the PatchInterfaceResolver interface and additional
-// data.
-type PatchResolver interface {
-	PatchInterfaceResolver
-
-	Repository(ctx context.Context) (*RepositoryResolver, error)
-	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
-	Diff() PatchResolver
-	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
-	PublicationEnqueued(ctx context.Context) (bool, error)
-	Publishable(ctx context.Context) (bool, error)
-}
-
 type ChangesetEventsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ChangesetEventResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
@@ -354,11 +247,62 @@ type BackgroundProcessStatus interface {
 	Errors() []string
 }
 
-type PatchSetResolver interface {
-	ID() graphql.ID
+var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
 
-	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
+type defaultCampaignsResolver struct{}
 
-	PreviewURL() string
-	DiffStat(ctx context.Context) (*DiffStat, error)
+var DefaultCampaignsResolver CampaignsResolver = defaultCampaignsResolver{}
+
+// Mutations
+func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (CampaignResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (CampaignResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+// Queries
+func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
 }

@@ -23,6 +23,10 @@ func (e *OrgNotFoundError) Error() string {
 	return fmt.Sprintf("org not found: %s", e.Message)
 }
 
+func (e *OrgNotFoundError) NotFound() bool {
+	return true
+}
+
 var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user or another organization)")
 
 type orgs struct{}
