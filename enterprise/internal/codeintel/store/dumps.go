@@ -92,9 +92,11 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.process_after,
 			d.num_resets,
 			d.repository_id,
-			d.repository_name,
+			regexp_replace(r.name, '^DELETED-\d+\.\d+-', '') as repository_name,
 			d.indexer
-		FROM lsif_dumps_with_repository_name d WHERE id = %s
+		FROM lsif_dumps d
+		JOIN repo r ON r.id = d.repository_id
+		WHERE d.id = %s
 	`, id)))
 }
 
@@ -121,7 +123,7 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 	}
 
 	var conds []*sqlf.Query
-	conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(intsToQueries(ids), ", ")))
+	conds = append(conds, sqlf.Sprintf("d.id IN (%s)", sqlf.Join(intsToQueries(ids), ", ")))
 	if indexer != "" {
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
 	}
@@ -142,9 +144,11 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 				d.process_after,
 				d.num_resets,
 				d.repository_id,
-				d.repository_name,
+				regexp_replace(r.name, '^DELETED-\d+\.\d+-', '') as repository_name,
 				d.indexer
-			FROM lsif_dumps_with_repository_name d WHERE %s
+			FROM lsif_dumps d
+			JOIN repo r ON r.id = d.repository_id
+			WHERE %s
 		`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {

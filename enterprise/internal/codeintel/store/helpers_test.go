@@ -54,7 +54,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.UploadedParts = []int{}
 		}
 
-		// Ensure we have a repo for the inner join in lsif_uploads_with_repository_name
+		// Ensure we have a repo for the inner join in select queries
 		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName)
 
 		query := sqlf.Sprintf(`
@@ -112,7 +112,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.RepositoryID = 50
 		}
 
-		// Ensure we have a repo for the inner join in lsif_indexes_with_repository_name
+		// Ensure we have a repo for the inner join in select queries
 		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
 
 		query := sqlf.Sprintf(`

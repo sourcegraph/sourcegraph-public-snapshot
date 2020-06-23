@@ -78,7 +78,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 			ctx,
 			sqlf.Sprintf(`
 				SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
-				LEFT JOIN lsif_dumps d on r.dump_id = d.id
+				LEFT JOIN lsif_dumps d ON d.id = r.dump_id
 				WHERE %s ORDER BY d.root LIMIT %d OFFSET %d
 			`, sqlf.Join(conds, " AND "), limit, offset),
 		))
@@ -113,7 +113,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		ctx,
 		sqlf.Sprintf(`
 			SELECT COUNT(*) FROM lsif_references r
-			LEFT JOIN lsif_dumps d ON r.dump_id = d.id
+			LEFT JOIN lsif_dumps d ON d.id = r.dump_id
 			WHERE %s
 		`, sqlf.Join(conds, " AND ")),
 	))
@@ -124,7 +124,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
 		return scanPackageReferences(tx.query(ctx, sqlf.Sprintf(`
 			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
-			LEFT JOIN lsif_dumps d ON r.dump_id = d.id
+			LEFT JOIN lsif_dumps d ON d.id = r.dump_id
 			WHERE %s ORDER BY d.repository_id, d.root LIMIT %d OFFSET %d
 		`, sqlf.Join(conds, " AND "), limit, offset)))
 	}

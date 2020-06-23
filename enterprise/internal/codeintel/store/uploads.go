@@ -149,12 +149,13 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			u.process_after,
 			u.num_resets,
 			u.repository_id,
-			u.repository_name,
+			regexp_replace(r.name, '^DELETED-\d+\.\d+-', '') as repository_name,
 			u.indexer,
 			u.num_parts,
 			u.uploaded_parts,
 			s.rank
-		FROM lsif_uploads_with_repository_name u
+		FROM lsif_uploads u
+		JOIN repo r ON r.id = u.repository_id
 		LEFT JOIN (
 			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
 			FROM lsif_uploads r
@@ -205,7 +206,7 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 	count, _, err := scanFirstInt(tx.query(
 		ctx,
-		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s`, sqlf.Join(conds, " AND ")),
+		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads u JOIN repo r ON r.id = u.repository_id WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return nil, 0, err
@@ -227,12 +228,13 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.process_after,
 				u.num_resets,
 				u.repository_id,
-				u.repository_name,
+				regexp_replace(r.name, '^DELETED-\d+\.\d+-', '') as repository_name,
 				u.indexer,
 				u.num_parts,
 				u.uploaded_parts,
 				s.rank
-			FROM lsif_uploads_with_repository_name u
+			FROM lsif_uploads u
+			JOIN repo r ON r.id = u.repository_id
 			LEFT JOIN (
 				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
 				FROM lsif_uploads r
@@ -252,17 +254,17 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
 func makeSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"state::text",
-		"repository_name",
-		"commit",
-		"root",
-		"indexer",
-		"failure_message",
+		"(u.state)::text",
+		`regexp_replace(r.name, '^DELETED-\d+\.\d+-', '')`,
+		"u.commit",
+		"u.root",
+		"u.indexer",
+		"u.failure_message",
 	}
 
 	var termConds []*sqlf.Query
 	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf("u."+column+" ILIKE %s", "%"+term+"%"))
+		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
 	}
 
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
@@ -341,22 +343,22 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) 
 }
 
 var uploadColumnsWithNullRank = []*sqlf.Query{
-	sqlf.Sprintf("id"),
-	sqlf.Sprintf("commit"),
-	sqlf.Sprintf("root"),
-	sqlf.Sprintf("visible_at_tip"),
-	sqlf.Sprintf("uploaded_at"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
-	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("repository_id"),
-	sqlf.Sprintf("repository_name"),
-	sqlf.Sprintf("indexer"),
-	sqlf.Sprintf("num_parts"),
-	sqlf.Sprintf("uploaded_parts"),
+	sqlf.Sprintf("u.id"),
+	sqlf.Sprintf("u.commit"),
+	sqlf.Sprintf("u.root"),
+	sqlf.Sprintf("u.visible_at_tip"),
+	sqlf.Sprintf("u.uploaded_at"),
+	sqlf.Sprintf("u.state"),
+	sqlf.Sprintf("u.failure_message"),
+	sqlf.Sprintf("u.started_at"),
+	sqlf.Sprintf("u.finished_at"),
+	sqlf.Sprintf("u.process_after"),
+	sqlf.Sprintf("u.num_resets"),
+	sqlf.Sprintf("u.repository_id"),
+	sqlf.Sprintf(`regexp_replace(r.name, '^DELETED-\d+\.\d+-', '')`),
+	sqlf.Sprintf("u.indexer"),
+	sqlf.Sprintf("u.num_parts"),
+	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("NULL"),
 }
 
@@ -365,14 +367,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
 // valued flag. This method must not be called from within a transaction.
 func (s *store) Dequeue(ctx context.Context) (Upload, Store, bool, error) {
-	upload, tx, ok, err := s.dequeueRecord(
-		ctx,
-		"lsif_uploads_with_repository_name",
-		"lsif_uploads",
-		uploadColumnsWithNullRank,
-		sqlf.Sprintf("uploaded_at"),
-		scanFirstUploadInterface,
-	)
+	upload, tx, ok, err := s.dequeueRecord(ctx, "lsif_uploads", uploadColumnsWithNullRank, sqlf.Sprintf("uploaded_at"), scanFirstUploadInterface)
 	if err != nil || !ok {
 		return Upload{}, tx, ok, err
 	}

@@ -15,21 +15,10 @@ type dequeueScanner func(rows *sql.Rows, err error) (interface{}, bool, error)
 // This transaction must be closed by the caller. If there is no such unlocked record, a nil record and a nil store
 // will be returned along with a false-valued flag. This method must not be called from within a transaction.
 //
-// A table and view name can both be supplied. The table name will be used to update the record, and the view name
-// will be used to select the record with the locked identifier. This allows users to construct common views with
-// more complex joins so that additional fields can be aggregated from different tables without an additional
-// select query.
-//
-// Assumptions: The table name describes a record with an `id`, `state`, `started_at`, and `process_after` column,
-// where state can be one of (at least) 'queued' or 'processing'.
-func (s *store) dequeueRecord(
-	ctx context.Context,
-	viewName string,
-	tableName string,
-	columnExpressions []*sqlf.Query,
-	sortExpression *sqlf.Query,
-	scan dequeueScanner,
-) (interface{}, Store, bool, error) {
+// Assumptions: The table name describes a record with an `id`, `state`, `started_at`, `process_after`, and
+// `repository_id` column, where state can be one of (at least) 'queued' or 'processing' and repository_id refers
+// to the PK of the repo table..
+func (s *store) dequeueRecord(ctx context.Context, tableName string, columnExpressions []*sqlf.Query, sortExpression *sqlf.Query, scan dequeueScanner) (interface{}, Store, bool, error) {
 	for {
 		// First, we try to select an eligible record outside of a transaction. This will skip
 		// any rows that are currently locked inside of a transaction of another dequeue process.
@@ -44,7 +33,7 @@ func (s *store) dequeueRecord(
 			return nil, nil, false, err
 		}
 
-		record, tx, ok, err := s.dequeueByID(ctx, viewName, columnExpressions, scan, id)
+		record, tx, ok, err := s.dequeueByID(ctx, tableName, columnExpressions, scan, id)
 		if err != nil {
 			// This will occur if we selected an ID that raced with another dequeue process. If both
 			// dequeue processes select the same ID and the other process begins its transaction first,
@@ -84,7 +73,7 @@ func (s *store) dequeueByID(
 	// on race conditions with other dequeue attempts.
 	record, exists, err := scan(tx.query(
 		ctx,
-		sqlf.Sprintf(`SELECT %s FROM `+tableName+` WHERE id = %s FOR UPDATE SKIP LOCKED LIMIT 1`, sqlf.Join(columnExpressions, ","), id),
+		sqlf.Sprintf(`SELECT %s FROM `+tableName+` u JOIN repo r ON r.id = u.repository_id WHERE u.id = %s FOR UPDATE SKIP LOCKED LIMIT 1`, sqlf.Join(columnExpressions, ","), id),
 	))
 	if err != nil {
 		return nil, nil, false, tx.Done(err)

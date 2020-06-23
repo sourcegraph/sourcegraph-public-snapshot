@@ -50,7 +50,7 @@ func withAncestorLineage(query string, repositoryID int, commit string, args ...
 		RECURSIVE lineage(id, "commit", parent, repository_id) AS (
 			SELECT c.* FROM lsif_commits c WHERE c.repository_id = %s AND c."commit" = %s
 			UNION
-			SELECT c.* FROM lineage a JOIN lsif_commits c ON a.repository_id = c.repository_id AND a.parent = c."commit"
+			SELECT c.* FROM lineage a JOIN lsif_commits c ON c.repository_id = a.repository_id AND a.parent = c."commit"
 		), ` + visibleIDsCTE + " " + query
 
 	return sqlf.Sprintf(queryWithCTEs, append([]interface{}{repositoryID, commit}, args...)...)
@@ -77,10 +77,10 @@ func withBidirectionalLineage(query string, repositoryID int, commit string, arg
 			SELECT * FROM (
 				WITH l_inner AS (SELECT * FROM lineage)
 				-- get next ancestors (multiple parents for merge commits)
-				SELECT c.*, 'A' FROM l_inner l JOIN lsif_commits c ON l.direction = 'A' AND c.repository_id = l.repository_id AND c."commit" = l.parent_commit
+				SELECT c.*, 'A' FROM l_inner l JOIN lsif_commits c ON c.repository_id = l.repository_id AND c."commit" = l.parent_commit AND l.direction = 'A'
 				UNION
 				-- get next descendants
-				SELECT c.*, 'D' FROM l_inner l JOIN lsif_commits c ON l.direction = 'D' and c.repository_id = l.repository_id AND c.parent_commit = l."commit"
+				SELECT c.*, 'D' FROM l_inner l JOIN lsif_commits c ON c.repository_id = l.repository_id AND c.parent_commit = l."commit" AND l.direction = 'D'
 			) subquery
 		), ` + visibleIDsCTE + " " + query
 
