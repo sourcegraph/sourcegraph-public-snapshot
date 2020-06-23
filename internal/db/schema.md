@@ -21,6 +21,32 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.campaign_specs"
+```
+      Column       |           Type           |                          Modifiers                          
+-------------------+--------------------------+-------------------------------------------------------------
+ id                | bigint                   | not null default nextval('campaign_specs_id_seq'::regclass)
+ rand_id           | text                     | not null
+ raw_spec          | text                     | not null
+ spec              | jsonb                    | not null default '{}'::jsonb
+ namespace_user_id | integer                  | 
+ namespace_org_id  | integer                  | 
+ user_id           | integer                  | not null
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+Indexes:
+    "campaign_specs_pkey" PRIMARY KEY, btree (id)
+    "campaign_specs_rand_id" btree (rand_id)
+Check constraints:
+    "campaign_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
+Foreign-key constraints:
+    "campaign_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
+Referenced by:
+    TABLE "campaigns" CONSTRAINT "campaigns_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
+    TABLE "changeset_specs" CONSTRAINT "changeset_specs_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
+
+```
+
 # Table "public.campaigns"
 ```
       Column       |           Type           |                       Modifiers                        
@@ -37,6 +63,7 @@ Foreign-key constraints:
  patch_set_id      | integer                  | 
  closed_at         | timestamp with time zone | 
  branch            | text                     | 
+ campaign_spec_id  | bigint                   | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -49,6 +76,7 @@ Check constraints:
 Foreign-key constraints:
     "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_campaign_plan_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) DEFERRABLE
+    "campaigns_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -106,6 +134,29 @@ Foreign-key constraints:
     "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
     "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (patch_id) REFERENCES patches(id) ON DELETE CASCADE DEFERRABLE
     "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.changeset_specs"
+```
+      Column      |           Type           |                          Modifiers                           
+------------------+--------------------------+--------------------------------------------------------------
+ id               | bigint                   | not null default nextval('changeset_specs_id_seq'::regclass)
+ rand_id          | text                     | not null
+ raw_spec         | text                     | not null
+ spec             | jsonb                    | not null default '{}'::jsonb
+ campaign_spec_id | bigint                   | 
+ repo_id          | integer                  | not null
+ user_id          | integer                  | not null
+ created_at       | timestamp with time zone | not null default now()
+ updated_at       | timestamp with time zone | not null default now()
+Indexes:
+    "changeset_specs_pkey" PRIMARY KEY, btree (id)
+    "changeset_specs_rand_id" btree (rand_id)
+Foreign-key constraints:
+    "changeset_specs_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
+    "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+    "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
 
 ```
 
@@ -762,6 +813,7 @@ Check constraints:
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "patches" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -1016,8 +1068,10 @@ Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "patch_sets" CONSTRAINT "campaign_plans_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
+    TABLE "campaign_specs" CONSTRAINT "campaign_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
