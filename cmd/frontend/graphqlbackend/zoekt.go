@@ -86,10 +86,10 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 
 	// Tell zoekt which repos to search
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[api.RepoName]*search.RepositoryRevisions, len(repos))
+	repoMap := make(map[string]*search.RepositoryRevisions, len(repos))
 	for _, repoRev := range repos {
 		repoSet.Set[string(repoRev.Repo.Name)] = true
-		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
+		repoMap[string(repoRev.Repo.Name)] = repoRev
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol)
@@ -200,7 +200,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		repoRev := repoMap[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
@@ -475,7 +475,7 @@ func zoektSingleIndexedRepo(ctx context.Context, z *searchbackend.Zoekt, rev *se
 		return nil, nil, err
 	}
 
-	repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
+	repo, ok := set[string(rev.Repo.Name)]
 	if !ok || (filter != nil && !filter(repo)) {
 		return indexed, append(unindexed, rev), nil
 	}
@@ -541,7 +541,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 			continue
 		}
 
-		repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
+		repo, ok := set[string(rev.Repo.Name)]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, rev)
 			continue
