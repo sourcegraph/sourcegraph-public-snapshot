@@ -121,7 +121,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [campaign, setCampaign] = useState<Campaign | null>()
 
     useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')
     }, [campaignID, telemetryService])
 
