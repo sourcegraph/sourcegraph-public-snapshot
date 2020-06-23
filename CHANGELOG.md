@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Some monitoring alerts now have more useful descriptions. [#11542](https://github.com/sourcegraph/sourcegraph/pull/11542)
+
 ### Fixed
 
 - The single-container `sourcegraph/server` image now correctly reports its version.
