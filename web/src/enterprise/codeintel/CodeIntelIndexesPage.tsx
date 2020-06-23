@@ -66,7 +66,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
                         <code>{node.projectRoot.repository.name}</code>
                     </Link>
                 ) : (
-                    'unknown'
+                    node.inputRepositoryName
                 )}
             </td>
             <td>

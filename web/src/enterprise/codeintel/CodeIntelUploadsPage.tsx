@@ -68,7 +68,7 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
                         <code>{node.projectRoot.repository.name}</code>
                     </Link>
                 ) : (
-                    'unknown'
+                    node.inputRepositoryName
                 )}
             </td>
             <td>

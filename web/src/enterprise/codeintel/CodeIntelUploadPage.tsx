@@ -161,7 +161,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                             {uploadOrError.projectRoot.repository.name}
                                         </Link>
                                     ) : (
-                                        repo?.name || 'unknown'
+                                        repo?.name || uploadOrError.inputRepositoryName
                                     )}
                                 </td>
                             </tr>

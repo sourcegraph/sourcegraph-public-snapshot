@@ -147,7 +147,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                             {indexOrError.projectRoot.repository.name}
                                         </Link>
                                     ) : (
-                                        repo?.name || 'unknown'
+                                        repo?.name || indexOrError.inputRepositoryName
                                     )}
                                 </td>
                             </tr>

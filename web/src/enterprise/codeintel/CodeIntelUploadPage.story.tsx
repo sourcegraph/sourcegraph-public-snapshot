@@ -31,7 +31,10 @@ const commonProps = {
     now: () => new Date('2020-06-15T15:25:00+00:00'),
 }
 
-const upload: Pick<Upload, 'id' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'> = {
+const upload: Pick<
+    Upload,
+    'id' | 'projectRoot' | 'inputRepositoryName' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'
+> = {
     id: '1234',
     projectRoot: {
         url: '',
@@ -46,6 +49,7 @@ const upload: Pick<Upload, 'id' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 
             abbreviatedOID: '9ea5e9f',
         },
     },
+    inputRepositoryName: 'github.com/sourcegraph/sourcegraph',
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
     inputRoot: 'web/',
     inputIndexer: 'lsif-tsc',
