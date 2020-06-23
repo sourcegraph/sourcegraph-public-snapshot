@@ -640,6 +640,14 @@ type GrafanaNotifierEmail struct {
 	Type        string `json:"type"`
 }
 
+// GrafanaNotifierOpsGenie description: OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration
+type GrafanaNotifierOpsGenie struct {
+	ApiKey    string `json:"apiKey"`
+	ApiUrl    string `json:"apiUrl"`
+	AutoClose bool   `json:"autoClose,omitempty"`
+	Type      string `json:"type"`
+}
+
 // GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty
 type GrafanaNotifierPagerduty struct {
 	// AutoResolve description: Resolve incidents in PagerDuty once the alert goes back to ok
@@ -744,6 +752,7 @@ type Notifier struct {
 	Pagerduty *GrafanaNotifierPagerduty
 	Webhook   *GrafanaNotifierWebhook
 	Email     *GrafanaNotifierEmail
+	Opsgenie  *GrafanaNotifierOpsGenie
 }
 
 func (v Notifier) MarshalJSON() ([]byte, error) {
@@ -759,6 +768,9 @@ func (v Notifier) MarshalJSON() ([]byte, error) {
 	if v.Email != nil {
 		return json.Marshal(v.Email)
 	}
+	if v.Opsgenie != nil {
+		return json.Marshal(v.Opsgenie)
+	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
 func (v *Notifier) UnmarshalJSON(data []byte) error {
@@ -771,6 +783,8 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 	switch d.DiscriminantProperty {
 	case "email":
 		return json.Unmarshal(data, &v.Email)
+	case "opsgenie":
+		return json.Unmarshal(data, &v.Opsgenie)
 	case "pagerduty":
 		return json.Unmarshal(data, &v.Pagerduty)
 	case "slack":
@@ -778,7 +792,7 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 	case "webhook":
 		return json.Unmarshal(data, &v.Webhook)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "email"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "email", "opsgenie"})
 }
 
 type OAuthIdentity struct {
