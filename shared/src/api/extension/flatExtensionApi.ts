@@ -79,6 +79,8 @@ export const initNewExtensionAPI = (
 
     const rootChanges = new Subject<void>()
 
+    // Documents
+
     // Search
     const queryTransformersChanges = new ReplaySubject<sourcegraph.QueryTransformer[]>(1)
     queryTransformersChanges.next([])

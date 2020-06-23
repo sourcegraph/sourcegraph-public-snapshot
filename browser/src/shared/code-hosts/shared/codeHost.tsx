@@ -839,28 +839,26 @@ export function handleCodeHost({
 
             const { element, diffOrBlobInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
 
-            const initializeModelAndViewerForFileInfo = (
+            const initializeModelAndViewerForFileInfo = async (
                 fileInfo: FileInfoWithContent & FileInfoWithRepoName
-            ): CodeEditorWithPartialModel => {
-                const uri = toURIWithPath(fileInfo)
+            ): Promise<CodeEditorWithPartialModel> => {
+                const extensionHostAPI = await extensionsController.extensionHostAPI
 
                 // Add model
                 const languageId = getModeFromPath(fileInfo.filePath)
-                const model = { uri, languageId, text: fileInfo.content }
+                const model = { uri: toURIWithPath(fileInfo), languageId, text: fileInfo.content }
                 // Only add the model if it doesn't exist
                 // (there may be several code views on the page pointing to the same model)
-                if (!extensionsController.services.model.hasModel(uri)) {
-                    extensionsController.services.model.addModel(model)
-                }
+                await extensionHostAPI.addTextDocumentIfNotExists(model)
 
                 // Add viewer
                 const editorData: CodeEditorData = {
                     type: 'CodeEditor' as const,
-                    resource: uri,
+                    resource: model.uri,
                     selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
                     isActive: true,
                 }
-                const editorId = extensionsController.services.viewer.addViewer(editorData)
+                const editorId = await extensionHostAPI.addViewerIfNotExists(editorData)
 
                 // Add root ref
                 const rootURI = toRootURI(fileInfo)
@@ -869,7 +867,7 @@ export function handleCodeHost({
                 // Subscribe for removal
                 codeViewEvent.subscriptions.add(() => {
                     deleteRootReference(rootURI)
-                    extensionsController.services.viewer.removeViewer(editorId)
+                    extensionHostAPI.removeViewer(editorId)
                 })
 
                 return {
@@ -879,9 +877,9 @@ export function handleCodeHost({
                 }
             }
 
-            const initializeModelAndViewerForDiffOrFileInfo = (
+            const initializeModelAndViewerForDiffOrFileInfo = async (
                 diffOrFileInfo: DiffOrBlobInfo<FileInfoWithContent>
-            ): CodeEditorWithPartialModel => {
+            ): Promise<CodeEditorWithPartialModel> => {
                 if ('blob' in diffOrFileInfo) {
                     return initializeModelAndViewerForFileInfo(diffOrFileInfo.blob)
                 }
@@ -889,9 +887,8 @@ export function handleCodeHost({
                     // For diffs, both editors are created (for head and base)
                     // but only one of them is returned and later passed into
                     // the `scope` of the CodeViewToolbar component.
-                    const editor = initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
-                    initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
-                    return editor
+                    await initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
+                    return initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
                 }
                 if (diffOrFileInfo.base) {
                     return initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
@@ -899,7 +896,7 @@ export function handleCodeHost({
                 return initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
             }
 
-            const codeEditorWithPartialModel = initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
+            const codeEditorWithPartialModelPromise = initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
 
             const domFunctions = {
                 ...codeViewEvent.dom,
@@ -1000,26 +997,39 @@ export function handleCodeHost({
             element.classList.add('sg-mounted')
 
             // Render toolbar
-            if (getToolbarMount && !minimalUI) {
-                const mount = getToolbarMount(element)
-                render(
-                    <CodeViewToolbar
-                        {...codeHost.codeViewToolbarClassProps}
-                        fileInfoOrError={diffOrBlobInfo}
-                        sourcegraphURL={sourcegraphURL}
-                        telemetryService={telemetryService}
-                        platformContext={platformContext}
-                        extensionsController={extensionsController}
-                        buttonProps={toolbarButtonProps}
-                        location={H.createLocation(window.location)}
-                        scope={codeEditorWithPartialModel}
-                        // The bound function is constant
-                        // eslint-disable-next-line react/jsx-no-bind
-                        onSignInClose={nextSignInClose}
-                    />,
-                    mount
-                )
-            }
+            codeViewEvent.subscriptions.add(
+                from(codeEditorWithPartialModelPromise)
+                    .pipe(
+                        startWith(undefined),
+                        catchError(error => {
+                            console.error('Error initializing code editor', error)
+                            return EMPTY
+                        })
+                    )
+                    // eslint-disable-next-line rxjs/no-nested-subscribe
+                    .subscribe(codeEditorWithPartialModel => {
+                        if (getToolbarMount && !minimalUI) {
+                            const mount = getToolbarMount(element)
+                            render(
+                                <CodeViewToolbar
+                                    {...codeHost.codeViewToolbarClassProps}
+                                    fileInfoOrError={diffOrBlobInfo}
+                                    sourcegraphURL={sourcegraphURL}
+                                    telemetryService={telemetryService}
+                                    platformContext={platformContext}
+                                    extensionsController={extensionsController}
+                                    buttonProps={toolbarButtonProps}
+                                    location={H.createLocation(window.location)}
+                                    scope={codeEditorWithPartialModel}
+                                    // The bound function is constant
+                                    // eslint-disable-next-line react/jsx-no-bind
+                                    onSignInClose={nextSignInClose}
+                                />,
+                                mount
+                            )
+                        }
+                    })
+            )
         })
     )
 

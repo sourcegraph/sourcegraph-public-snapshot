@@ -5,8 +5,6 @@ import { hasProperty, keyExistsIn } from '../util/types'
 import { FlatExtHostAPI, MainThreadAPI } from './contract'
 import { noop } from 'lodash'
 import { proxySubscribable } from './extension/api/common'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { HoverMerged } from './client/types/hover'
 
 /**
  * Tests whether a value is a WHATWG URL object.

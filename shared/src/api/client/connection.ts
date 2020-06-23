@@ -80,32 +80,6 @@ export async function createExtensionHostClientConnection(
     const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
 
-    // Sync models and viewers to the extension host
-    subscription.add(
-        merge(
-            of([...services.model.models.entries()].map(([, model]): TextModelUpdate => ({ type: 'added', ...model }))),
-            from(services.model.modelUpdates)
-        )
-            .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
-            .subscribe()
-    )
-    subscription.add(
-        merge(
-            of(
-                [...services.viewer.viewers.entries()].map(
-                    ([viewerId, viewerData]): ViewerUpdate => ({
-                        type: 'added',
-                        viewerId,
-                        viewerData,
-                    })
-                )
-            ),
-            from(services.viewer.viewerUpdates)
-        )
-            .pipe(concatMap(viewerUpdates => proxy.windows.$acceptWindowData(viewerUpdates)))
-            .subscribe()
-    )
-
     const clientWindows = new ClientWindows(
         (parameters: ShowNotificationParams) => services.notifications.showMessages.next({ ...parameters }),
         (parameters: ShowMessageRequestParams) =>

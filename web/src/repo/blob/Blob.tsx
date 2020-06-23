@@ -4,8 +4,18 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
-import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
+import { combineLatest, fromEvent, merge, Observable, Subject, Subscription, from } from 'rxjs'
+import {
+    catchError,
+    distinctUntilChanged,
+    filter,
+    map,
+    share,
+    switchMap,
+    withLatestFrom,
+    concatMap,
+    mergeMap,
+} from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
@@ -295,7 +305,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
-        const modelChanges: Observable<
+        const fileSpec: Observable<
             AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
         > = this.componentUpdates.pipe(
             map(props =>
@@ -305,30 +315,42 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        // Update the Sourcegraph extensions model to reflect the current file.
-        this.subscriptions.add(
-            combineLatest([modelChanges, locationPositions]).subscribe(([model, position]) => {
-                const uri = toURIWithPath(model)
-                if (!this.props.extensionsController.services.model.hasModel(uri)) {
-                    this.props.extensionsController.services.model.addModel({
-                        uri,
-                        languageId: model.mode,
-                        text: model.content,
-                    })
-                }
-                this.props.extensionsController.services.viewer.removeAllViewers()
-                this.props.extensionsController.services.viewer.addViewer({
+        // Register a viewer in the extension API
+        const editor = from(props.extensionsController.extensionHostAPI).pipe(
+            mergeMap(async extensionHostAPI => {
+                const uri = toURIWithPath(props)
+                await extensionHostAPI.addTextDocumentIfNotExists({
+                    uri,
+                    languageId: props.mode,
+                    text: props.content,
+                })
+                const editor = await extensionHostAPI.addViewerIfNotExists({
                     type: 'CodeEditor' as const,
                     resource: uri,
-                    selections: lprToSelectionsZeroIndexed(position),
+                    selections: lprToSelectionsZeroIndexed(parseHash(props.location.hash)),
                     isActive: true,
                 })
+                this.subscriptions.add(() => extensionHostAPI.removeViewer(editor))
+                return editor
             })
+        )
+        this.subscriptions.add(editor.subscribe())
+
+        // Update selections as they change
+        this.subscriptions.add(
+            combineLatest([editor, locationPositions])
+                .pipe(
+                    withLatestFrom(this.props.extensionsController.extensionHostAPI),
+                    concatMap(async ([[editor, position], extensionHostAPI]) => {
+                        await extensionHostAPI.setEditorSelections(editor, lprToSelectionsZeroIndexed(position))
+                    })
+                )
+                .subscribe()
         )
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | null> = modelChanges.pipe(
+        const decorations: Observable<TextDocumentDecoration[] | null> = fileSpec.pipe(
             switchMap(model => {
                 const modelChanged = !isEqual(model, lastModel)
                 lastModel = model // record so we can compute modelChanged

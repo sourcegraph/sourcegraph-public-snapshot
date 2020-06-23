@@ -35,8 +35,8 @@ export class Services {
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
     public readonly workspace = createWorkspaceService()
-    public readonly model = createModelService()
-    public readonly viewer = createViewerService(this.model)
+    // public readonly model = createModelService()
+    // public readonly viewer = createViewerService(this.model)
     public readonly notifications = new NotificationsService()
     public readonly contribution = new ContributionRegistry(
         this.viewer,
