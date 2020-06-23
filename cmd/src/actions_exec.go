@@ -22,7 +22,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -268,11 +267,6 @@ Format of the action JSON files:
 		executor := newActionExecutor(action, *parallelismFlag, logger, opts)
 		for _, repo := range repos {
 			executor.enqueueRepo(repo)
-		}
-
-		// Execute actions
-		if opts.onUpdate != nil {
-			opts.onUpdate(executor.repos)
 		}
 
 		go executor.start(ctx)
@@ -644,38 +638,6 @@ fragment repositoryFields on Repository {
 	}
 
 	return repos, nil
-}
-
-func sumDiffStats(fileDiffs []*diff.FileDiff) diff.Stat {
-	sum := diff.Stat{}
-	for _, fileDiff := range fileDiffs {
-		stat := fileDiff.Stat()
-		sum.Added += stat.Added
-		sum.Changed += stat.Changed
-		sum.Deleted += stat.Deleted
-	}
-	return sum
-}
-
-func diffStatDescription(fileDiffs []*diff.FileDiff) string {
-	var plural string
-	if len(fileDiffs) > 1 {
-		plural = "s"
-	}
-
-	return fmt.Sprintf("%d file%s changed", len(fileDiffs), plural)
-}
-
-func diffStatDiagram(stat diff.Stat) string {
-	const maxWidth = 20
-	added := float64(stat.Added + stat.Changed)
-	deleted := float64(stat.Deleted + stat.Changed)
-	if total := added + deleted; total > maxWidth {
-		x := float64(20) / total
-		added *= x
-		deleted *= x
-	}
-	return color.GreenString(strings.Repeat("+", int(added))) + color.RedString(strings.Repeat("-", int(deleted)))
 }
 
 func isGitAvailable() bool {

@@ -14,8 +14,6 @@ type actionExecutorOptions struct {
 
 	clearCache bool
 	cache      actionExecutionCache
-
-	onUpdate func(map[ActionRepo]ActionRepoStatus)
 }
 
 type actionExecutor struct {
@@ -26,7 +24,6 @@ type actionExecutor struct {
 	repos   map[ActionRepo]ActionRepoStatus
 
 	par           *parallel.Run
-	done          chan struct{}
 	doneEnqueuing chan struct{}
 
 	logger *actionLogger
@@ -44,7 +41,6 @@ func newActionExecutor(action Action, parallelism int, logger *actionLogger, opt
 		par:    parallel.NewRun(parallelism),
 		logger: logger,
 
-		done:          make(chan struct{}),
 		doneEnqueuing: make(chan struct{}),
 	}
 }
@@ -79,10 +75,6 @@ func (x *actionExecutor) updateRepoStatus(repo ActionRepo, status ActionRepoStat
 	}
 
 	x.repos[repo] = status
-
-	if x.opt.onUpdate != nil {
-		x.opt.onUpdate(x.repos)
-	}
 }
 
 func (x *actionExecutor) allPatches() []PatchInput {
@@ -98,24 +90,6 @@ func (x *actionExecutor) allPatches() []PatchInput {
 }
 
 func (x *actionExecutor) start(ctx context.Context) {
-	if x.opt.onUpdate != nil {
-		go func() {
-			for {
-				select {
-				case <-x.done:
-					return
-				default:
-				}
-
-				x.reposMu.Lock()
-				x.opt.onUpdate(x.repos)
-				x.reposMu.Unlock()
-				time.Sleep(50 * time.Millisecond)
-			}
-		}()
-
-	}
-
 	x.reposMu.Lock()
 	allRepos := make([]ActionRepo, 0, len(x.repos))
 	for repo := range x.repos {
@@ -139,7 +113,5 @@ func (x *actionExecutor) start(ctx context.Context) {
 
 func (x *actionExecutor) wait() error {
 	<-x.doneEnqueuing
-	err := x.par.Wait()
-	close(x.done)
-	return err
+	return x.par.Wait()
 }
