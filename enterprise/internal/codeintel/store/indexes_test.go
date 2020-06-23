@@ -37,6 +37,7 @@ func TestGetIndexByID(t *testing.T) {
 		StartedAt:      &startedAt,
 		FinishedAt:     nil,
 		RepositoryID:   123,
+		RepositoryName: "n-123",
 		Rank:           nil,
 	}
 
@@ -257,6 +258,8 @@ func TestInsertIndex(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := rawTestStore()
 
+	insertRepo(t, dbconn.Global, 50, "")
+
 	id, err := store.InsertIndex(context.Background(), Index{
 		Commit:       makeCommit(1),
 		State:        "queued",
@@ -276,6 +279,7 @@ func TestInsertIndex(t *testing.T) {
 		StartedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Rank:           &rank,
 	}
 

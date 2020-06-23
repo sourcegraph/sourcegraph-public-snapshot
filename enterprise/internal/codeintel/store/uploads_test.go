@@ -40,6 +40,7 @@ func TestGetUploadByID(t *testing.T) {
 		StartedAt:      &startedAt,
 		FinishedAt:     nil,
 		RepositoryID:   123,
+		RepositoryName: "n-123",
 		Indexer:        "lsif-go",
 		NumParts:       1,
 		UploadedParts:  []int{},
@@ -230,6 +231,8 @@ func TestInsertUploadUploading(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
+	insertRepo(t, dbconn.Global, 50, "")
+
 	id, err := store.InsertUpload(context.Background(), Upload{
 		Commit:       makeCommit(1),
 		Root:         "sub/",
@@ -253,6 +256,7 @@ func TestInsertUploadUploading(t *testing.T) {
 		StartedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Indexer:        "lsif-go",
 		NumParts:       3,
 		UploadedParts:  []int{},
@@ -279,6 +283,8 @@ func TestInsertUploadQueued(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := rawTestStore()
 
+	insertRepo(t, dbconn.Global, 50, "")
+
 	id, err := store.InsertUpload(context.Background(), Upload{
 		Commit:        makeCommit(1),
 		Root:          "sub/",
@@ -304,6 +310,7 @@ func TestInsertUploadQueued(t *testing.T) {
 		StartedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Indexer:        "lsif-go",
 		NumParts:       1,
 		UploadedParts:  []int{0},

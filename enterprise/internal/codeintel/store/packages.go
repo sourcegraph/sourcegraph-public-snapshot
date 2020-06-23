@@ -23,9 +23,10 @@ func (s *store) GetPackage(ctx context.Context, scheme, name, version string) (D
 			d.process_after,
 			d.num_resets,
 			d.repository_id,
+			d.repository_name,
 			d.indexer
 		FROM lsif_packages p
-		JOIN lsif_dumps d ON p.dump_id = d.id
+		JOIN lsif_dumps_with_repository_name d ON p.dump_id = d.id
 		WHERE p.scheme = %s AND p.name = %s AND p.version = %s
 		ORDER BY d.uploaded_at DESC
 		LIMIT 1

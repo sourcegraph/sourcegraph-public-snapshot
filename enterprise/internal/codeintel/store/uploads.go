@@ -25,6 +25,7 @@ type Upload struct {
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
 	RepositoryID   int        `json:"repositoryId"`
+	RepositoryName string     `json:"repositoryName"`
 	Indexer        string     `json:"indexer"`
 	NumParts       int        `json:"numParts"`
 	UploadedParts  []int      `json:"uploadedParts"`
@@ -55,6 +56,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.ProcessAfter,
 			&upload.NumResets,
 			&upload.RepositoryID,
+			&upload.RepositoryName,
 			&upload.Indexer,
 			&upload.NumParts,
 			pq.Array(&rawUploadedParts),
@@ -147,11 +149,12 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			u.process_after,
 			u.num_resets,
 			u.repository_id,
+			u.repository_name,
 			u.indexer,
 			u.num_parts,
 			u.uploaded_parts,
 			s.rank
-		FROM lsif_uploads u
+		FROM lsif_uploads_with_repository_name u
 		LEFT JOIN (
 			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
 			FROM lsif_uploads r
@@ -224,11 +227,12 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.process_after,
 				u.num_resets,
 				u.repository_id,
+				u.repository_name,
 				u.indexer,
 				u.num_parts,
 				u.uploaded_parts,
 				s.rank
-			FROM lsif_uploads u
+			FROM lsif_uploads_with_repository_name u
 			LEFT JOIN (
 				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
 				FROM lsif_uploads r
@@ -347,6 +351,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("repository_id"),
+	sqlf.Sprintf("repository_name"),
 	sqlf.Sprintf("indexer"),
 	sqlf.Sprintf("num_parts"),
 	sqlf.Sprintf("uploaded_parts"),
@@ -358,7 +363,14 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
 // valued flag. This method must not be called from within a transaction.
 func (s *store) Dequeue(ctx context.Context) (Upload, Store, bool, error) {
-	upload, tx, ok, err := s.dequeueRecord(ctx, "lsif_uploads", uploadColumnsWithNullRank, sqlf.Sprintf("uploaded_at"), scanFirstUploadInterface)
+	upload, tx, ok, err := s.dequeueRecord(
+		ctx,
+		"lsif_uploads_with_repository_name",
+		"lsif_uploads",
+		uploadColumnsWithNullRank,
+		sqlf.Sprintf("uploaded_at"),
+		scanFirstUploadInterface,
+	)
 	if err != nil || !ok {
 		return Upload{}, tx, ok, err
 	}

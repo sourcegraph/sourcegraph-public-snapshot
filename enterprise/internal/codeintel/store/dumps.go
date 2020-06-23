@@ -23,6 +23,7 @@ type Dump struct {
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
 	RepositoryID   int        `json:"repositoryId"`
+	RepositoryName string     `json:"repositoryName"`
 	Indexer        string     `json:"indexer"`
 }
 
@@ -49,6 +50,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 			&dump.ProcessAfter,
 			&dump.NumResets,
 			&dump.RepositoryID,
+			&dump.RepositoryName,
 			&dump.Indexer,
 		); err != nil {
 			return nil, err
@@ -90,8 +92,9 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.process_after,
 			d.num_resets,
 			d.repository_id,
+			d.repository_name,
 			d.indexer
-		FROM lsif_dumps d WHERE id = %s
+		FROM lsif_dumps_with_repository_name d WHERE id = %s
 	`, id)))
 }
 
@@ -139,8 +142,9 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 				d.process_after,
 				d.num_resets,
 				d.repository_id,
+				d.repository_name,
 				d.indexer
-			FROM lsif_dumps d WHERE %s
+			FROM lsif_dumps_with_repository_name d WHERE %s
 		`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {

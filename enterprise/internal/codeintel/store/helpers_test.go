@@ -54,6 +54,9 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.UploadedParts = []int{}
 		}
 
+		// Ensure we have a repo for the inner join in lsif_uploads_with_repository_name
+		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName)
+
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_uploads (
 				id,
@@ -109,6 +112,9 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.RepositoryID = 50
 		}
 
+		// Ensure we have a repo for the inner join in lsif_indexes_with_repository_name
+		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
+
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_indexes (
 				id,
@@ -138,6 +144,23 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error while inserting index: %s", err)
 		}
+	}
+}
+
+// insertRepo creates a repository record with the given id and name. If there is already a repository
+// with the given identifier, nothing happens
+func insertRepo(t *testing.T, db *sql.DB, id int, name string) {
+	if name == "" {
+		name = fmt.Sprintf("n-%d", id)
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO repo (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING`,
+		id,
+		name,
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting repository: %s", err)
 	}
 }
 

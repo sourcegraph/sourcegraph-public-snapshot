@@ -21,6 +21,7 @@ type Index struct {
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
 	RepositoryID   int        `json:"repositoryId"`
+	RepositoryName string     `json:"repositoryName"`
 	Rank           *int       `json:"placeInQueue"`
 }
 
@@ -45,6 +46,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.ProcessAfter,
 			&index.NumResets,
 			&index.RepositoryID,
+			&index.RepositoryName,
 			&index.Rank,
 		); err != nil {
 			return nil, err
@@ -84,8 +86,9 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.process_after,
 			u.num_resets,
 			u.repository_id,
+			u.repository_name,
 			s.rank
-		FROM lsif_indexes u
+		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
 			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
 			FROM lsif_indexes r
@@ -152,8 +155,9 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.process_after,
 				u.num_resets,
 				u.repository_id,
+				u.repository_name,
 				s.rank
-			FROM lsif_indexes u
+			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
 				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
 				FROM lsif_indexes r
@@ -254,6 +258,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("repository_id"),
+	sqlf.Sprintf("repository_name"),
 	sqlf.Sprintf("NULL"),
 }
 
@@ -262,7 +267,14 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 // closed. If there is no such unlocked index, a zero-value index and nil store will be returned along with
 // a false valued flag. This method must not be called from within a transaction.
 func (s *store) DequeueIndex(ctx context.Context) (Index, Store, bool, error) {
-	index, tx, ok, err := s.dequeueRecord(ctx, "lsif_indexes", indexColumnsWithNullRank, sqlf.Sprintf("queued_at"), scanFirstIndexInterface)
+	index, tx, ok, err := s.dequeueRecord(
+		ctx,
+		"lsif_indexes_with_repository_name",
+		"lsif_indexes",
+		indexColumnsWithNullRank,
+		sqlf.Sprintf("queued_at"),
+		scanFirstIndexInterface,
+	)
 	if err != nil || !ok {
 		return Index{}, tx, ok, err
 	}
