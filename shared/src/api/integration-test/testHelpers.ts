@@ -5,13 +5,14 @@ import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { isDefined } from '../../util/types'
-import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
 import { ViewerData } from '../client/services/viewerService'
 import { TextModel } from '../client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
+import { FlatExtHostAPI } from '../contract'
+import { Remote } from 'comlink'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -67,9 +68,9 @@ export async function integrationTestContext(
     partialMocks: Partial<Mocks> = NOOP_MOCKS,
     initModel: TestInitData = FIXTURE_INIT_DATA
 ): Promise<{
-    client: ExtensionHostClient
     extensionAPI: typeof sourcegraph
     services: Services
+    extensionHost: Remote<FlatExtHostAPI>
 }> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
@@ -91,7 +92,22 @@ export async function integrationTestContext(
         sourcegraphURL: 'https://example.com/',
         clientApplication: 'sourcegraph',
     }
-    const client = await createExtensionHostClientConnection(clientEndpoints, services, initData, mocks)
+
+    // TODO (simon) do we need to handle unsub? I guess ports will be just garbage collected
+    const { api } = await createExtensionHostClientConnection(
+        Promise.resolve({
+            pair: clientEndpoints,
+            close: () => {
+                /* noop*/
+            },
+        }),
+        services,
+        initData,
+        mocks
+    )
+
+    // TODO
+    // eslint-disable-next-line no-unused-expressions
 
     const extensionAPI = await extensionHost.extensionAPI
     if (initModel.models) {
@@ -123,9 +139,9 @@ export async function integrationTestContext(
     }
 
     return {
-        client,
         extensionAPI,
         services,
+        extensionHost: api,
     }
 }
 

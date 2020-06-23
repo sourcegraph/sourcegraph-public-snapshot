@@ -18,6 +18,11 @@ export interface EndpointPair {
     expose: Endpoint
 }
 
+export interface ClosablePair {
+    pair: EndpointPair
+    close: () => void
+}
+
 const isEndpoint = (value: unknown): value is Endpoint =>
     isObject(value) &&
     hasProperty('addEventListener')(value) &&
@@ -113,10 +118,10 @@ export interface PlatformContext {
      * background worker) with the extension host and opens a communication channel to it. It is
      * called exactly once, to start the extension host.
      *
-     * @returns An observable that emits at most once with the message transports for communicating
+     * @returns A promise that emits at most once with the message transports for communicating
      * with the execution context (using, e.g., postMessage/onmessage) when it is ready.
      */
-    createExtensionHost: () => Observable<EndpointPair>
+    createExtensionHost(): Promise<ClosablePair>
 
     /**
      * Returns the script URL suitable for passing to importScripts for an extension's bundle.
