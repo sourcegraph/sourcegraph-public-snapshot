@@ -1,13 +1,13 @@
 import { Subscription } from 'rxjs'
 import * as uuid from 'uuid'
-import { EndpointPair, ClosablePair } from '../../../../shared/src/platform/context'
+import { EndpointPair, ClosableEndpointPair } from '../../../../shared/src/platform/context'
 import { isInPage } from '../context'
 import { SourcegraphIntegrationURLs } from './context'
 import { browserPortToMessagePort } from './ports'
 
 function createInPageExtensionHost({
     assetsURL,
-}: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Promise<ClosablePair> {
+}: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Promise<ClosableEndpointPair> {
     return new Promise(resolve => {
         // Create an iframe pointing to extensionHostFrame.html,
         // which will load the extension host worker, and forward it
@@ -42,12 +42,8 @@ function createInPageExtensionHost({
                     Object.values(clientEndpoints)
                 )
                 resolve({
-                    pair: workerEndpoints,
-                    close: () => {
-                        clientEndpoints.proxy.close()
-                        clientEndpoints.expose.close()
-                        frame.remove()
-                    },
+                    endpoints: workerEndpoints,
+                    subscription: new Subscription(() => frame.remove()),
                 })
             },
             {
@@ -70,7 +66,9 @@ function createInPageExtensionHost({
  * worker per pair of ports, and forward messages between the port objects and
  * the extension host worker's endpoints.
  */
-export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Promise<ClosablePair> {
+export function createExtensionHost(
+    urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>
+): Promise<ClosableEndpointPair> {
     if (isInPage) {
         return createInPageExtensionHost(urls)
     }
@@ -88,10 +86,10 @@ export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'asse
     }
 
     return Promise.resolve({
-        pair: {
+        endpoints: {
             proxy: setup('proxy'),
             expose: setup('expose'),
         },
-        close: () => subscription.unsubscribe(),
+        subscription,
     })
 }

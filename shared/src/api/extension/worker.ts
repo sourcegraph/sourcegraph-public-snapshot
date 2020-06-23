@@ -1,5 +1,6 @@
 import ExtensionHostWorker from 'worker-loader?inline&name=extensionHostWorker.bundle.js!./main.worker.ts'
-import { EndpointPair, ClosablePair } from '../../platform/context'
+import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
+import { Subscription } from 'rxjs'
 
 /**
  * Creates a web worker with the extension host and sets up a bidirectional MessageChannel-based communication channel.
@@ -20,7 +21,7 @@ export function createExtensionHostWorker(): { worker: ExtensionHostWorker; clie
     return { worker, clientEndpoints }
 }
 
-export function createExtensionHost(): Promise<ClosablePair> {
+export function createExtensionHost(): ClosableEndpointPair {
     const { clientEndpoints, worker } = createExtensionHostWorker()
-    return Promise.resolve({ pair: clientEndpoints, close: () => worker.terminate() })
+    return { endpoints: clientEndpoints, subscription: new Subscription(() => worker.terminate()) }
 }

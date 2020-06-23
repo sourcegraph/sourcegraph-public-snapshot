@@ -1,6 +1,6 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, throwError, of } from 'rxjs'
+import { BehaviorSubject, from, throwError, of, Subscription } from 'rxjs'
 import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
@@ -96,18 +96,13 @@ export async function integrationTestContext(
     // TODO (simon) do we need to handle unsub? I guess ports will be just garbage collected
     const { api } = await createExtensionHostClientConnection(
         Promise.resolve({
-            pair: clientEndpoints,
-            close: () => {
-                /* noop*/
-            },
+            endpoints: clientEndpoints,
+            subscription: new Subscription(),
         }),
         services,
         initData,
         mocks
     )
-
-    // TODO
-    // eslint-disable-next-line no-unused-expressions
 
     const extensionAPI = await extensionHost.extensionAPI
     if (initModel.models) {
