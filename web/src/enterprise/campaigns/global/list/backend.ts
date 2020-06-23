@@ -7,18 +7,12 @@ import { Observable } from 'rxjs'
 export const queryCampaigns = ({
     first,
     state,
-    hasPatchSet,
     viewerCanAdminister,
 }: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
     queryGraphQL(
         gql`
-            query Campaigns($first: Int, $state: CampaignState, $hasPatchSet: Boolean, $viewerCanAdminister: Boolean) {
-                campaigns(
-                    first: $first
-                    state: $state
-                    hasPatchSet: $hasPatchSet
-                    viewerCanAdminister: $viewerCanAdminister
-                ) {
+            query Campaigns($first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
+                campaigns(first: $first, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
                         id
                         name
@@ -32,15 +26,12 @@ export const queryCampaigns = ({
                                 state
                             }
                         }
-                        patches {
-                            totalCount
-                        }
                     }
                     totalCount
                 }
             }
         `,
-        { first, state, hasPatchSet, viewerCanAdminister }
+        { first, state, viewerCanAdminister }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)

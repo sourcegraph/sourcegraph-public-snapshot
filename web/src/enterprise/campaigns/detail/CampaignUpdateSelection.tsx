@@ -25,7 +25,7 @@ export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ histor
     // Only query open campaigns, that are non-manual. Those are the only ones that can be updated with a patch set.
     const queryConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            queryCampaigns({ ...args, state: GQL.CampaignState.OPEN, hasPatchSet: true, viewerCanAdminister: true }),
+            queryCampaigns({ ...args, state: GQL.CampaignState.OPEN, viewerCanAdminister: true }),
         []
     )
     if (!patchSetID) {

@@ -16,20 +16,15 @@ const PROPS = {
 
 describe('CampaignActionsBar', () => {
     test('new with patch set', () =>
-        expect(
-            shallow(<CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={true} campaign={undefined} />)
-        ).toMatchSnapshot())
+        expect(shallow(<CampaignActionsBar {...PROPS} mode="viewing" campaign={undefined} />)).toMatchSnapshot())
     test('new without patch set', () =>
-        expect(
-            shallow(<CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={false} campaign={undefined} />)
-        ).toMatchSnapshot())
+        expect(shallow(<CampaignActionsBar {...PROPS} mode="viewing" campaign={undefined} />)).toMatchSnapshot())
     test('not editable', () =>
         expect(
             shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -47,7 +42,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -65,7 +59,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: new Date().toISOString(),
                         name: 'Super campaign',
@@ -83,7 +76,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="editing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -101,7 +93,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="editing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -119,7 +110,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="saving"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -137,7 +127,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="deleting"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -155,7 +144,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="closing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -173,7 +161,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
@@ -191,7 +178,6 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingPatchSet={false}
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',

@@ -33,34 +33,4 @@ describe('CampaignDiffStat', () => {
                 />
             )
         ).toMatchSnapshot())
-    test('for patch set', () =>
-        expect(
-            shallow(
-                <CampaignDiffStat
-                    patchSet={{
-                        diffStat: {
-                            added: 888,
-                            changed: 777,
-                            deleted: 999,
-                        },
-                    }}
-                    className="abc"
-                />
-            )
-        ).toMatchSnapshot())
-    test('hidden for empty patch set', () =>
-        expect(
-            shallow(
-                <CampaignDiffStat
-                    patchSet={{
-                        diffStat: {
-                            added: 0,
-                            changed: 0,
-                            deleted: 0,
-                        },
-                    }}
-                    className="abc"
-                />
-            )
-        ).toMatchSnapshot())
 })
