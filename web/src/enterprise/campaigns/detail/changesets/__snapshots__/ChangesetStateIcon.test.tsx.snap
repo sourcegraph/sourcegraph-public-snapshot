@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ChangesetStateIcon renders CLOSED 1`] = `
+Object {
+  "className": "mr-1 icon-inline text-danger",
+  "data-tooltip": "closed",
+}
+`;
+
+exports[`ChangesetStateIcon renders DELETED 1`] = `
+Object {
+  "className": "mr-1 icon-inline text-muted",
+  "data-tooltip": "deleted",
+}
+`;
+
+exports[`ChangesetStateIcon renders MERGED 1`] = `
+Object {
+  "className": "mr-1 icon-inline text-merged",
+  "data-tooltip": "merged",
+}
+`;
+
+exports[`ChangesetStateIcon renders OPEN 1`] = `
+Object {
+  "className": "mr-1 icon-inline text-success",
+  "data-tooltip": "open",
+}
+`;

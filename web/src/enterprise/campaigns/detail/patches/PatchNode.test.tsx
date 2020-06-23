@@ -8,7 +8,7 @@ import { Subject } from 'rxjs'
 describe('PatchNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
-    const renderPatch = (enablePublishing: boolean): void => {
+    const renderPatch = ({ enablePublishing, fileDiff }: { enablePublishing: boolean; fileDiff: boolean }): void => {
         const renderer = createRenderer()
         renderer.render(
             <PatchNode
@@ -18,16 +18,18 @@ describe('PatchNode', () => {
                 node={
                     {
                         __typename: 'Patch',
-                        diff: {
-                            fileDiffs: {
-                                __typename: 'FileDiffConnection',
-                                diffStat: {
-                                    added: 100,
-                                    changed: 200,
-                                    deleted: 100,
-                                },
-                            },
-                        },
+                        diff: fileDiff
+                            ? {
+                                  fileDiffs: {
+                                      __typename: 'FileDiffConnection',
+                                      diffStat: {
+                                          added: 100,
+                                          changed: 200,
+                                          deleted: 100,
+                                      },
+                                  },
+                              }
+                            : null,
                         repository: {
                             __typename: 'Repository',
                             name: 'sourcegraph',
@@ -43,9 +45,12 @@ describe('PatchNode', () => {
         expect(result.props).toMatchSnapshot()
     }
     test('renders a patch with publishing disabled', () => {
-        renderPatch(false)
+        renderPatch({ enablePublishing: false, fileDiff: true })
     })
     test('renders a patch with publishing enabled', () => {
-        renderPatch(true)
+        renderPatch({ enablePublishing: true, fileDiff: true })
+    })
+    test('renders a patch without a filediff', () => {
+        renderPatch({ enablePublishing: true, fileDiff: false })
     })
 })

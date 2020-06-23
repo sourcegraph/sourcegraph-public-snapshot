@@ -1,0 +1,52 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`HiddenExternalChangesetNode renders 1`] = `
+Object {
+  "children": <div
+    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
+  >
+    <div
+      className="d-flex align-items-start m-1 ml-2"
+    >
+      <div
+        className="changeset-node__content flex-fill"
+      >
+        <div
+          className="d-flex flex-column"
+        >
+          <div
+            className="m-0 mb-2"
+          >
+            <h3
+              className="m-0 d-inline"
+            >
+              <ChangesetStateIcon
+                state="OPEN"
+              />
+              <span
+                className="text-muted"
+              >
+                Changeset in a private repository
+              </span>
+            </h3>
+          </div>
+          <div>
+            <ChangesetLastSynced
+              changeset={
+                Object {
+                  "id": "test",
+                  "nextSyncAt": "2006-01-03T22:04:05.000Z",
+                  "state": "OPEN",
+                  "updatedAt": "2006-01-02T22:04:05.000Z",
+                }
+              }
+              viewerCanAdminister={false}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>,
+  "className": "list-group-item e2e-changeset-node",
+}
+`;
