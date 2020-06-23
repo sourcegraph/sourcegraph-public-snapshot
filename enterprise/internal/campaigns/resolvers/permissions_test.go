@@ -63,25 +63,10 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createTestData := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64, patchID int64) {
+	createTestData := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64) {
 		t.Helper()
 
-		patchSet := &campaigns.PatchSet{UserID: userID}
-		if err := s.CreatePatchSet(ctx, patchSet); err != nil {
-			t.Fatal(err)
-		}
-
-		patch := &campaigns.Patch{
-			PatchSetID: patchSet.ID,
-			RepoID:     repo.ID,
-			BaseRef:    "refs/heads/master",
-		}
-		if err := s.CreatePatch(ctx, patch); err != nil {
-			t.Fatal(err)
-		}
-
 		c := &campaigns.Campaign{
-			PatchSetID:      patchSet.ID,
 			Name:            name,
 			AuthorID:        userID,
 			NamespaceUserID: userID,
@@ -92,12 +77,7 @@ func TestPermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		job := &campaigns.ChangesetJob{CampaignID: c.ID, PatchID: patch.ID, Error: "This is an error"}
-		if err := s.CreateChangesetJob(ctx, job); err != nil {
-			t.Fatal(err)
-		}
-
-		return c.ID, patch.ID
+		return c.ID
 	}
 
 	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
@@ -131,43 +111,38 @@ func TestPermissionLevels(t *testing.T) {
 
 		cleanUpCampaigns(t, store)
 
-		adminCampaign, _ := createTestData(t, store, "admin", adminID)
-		userCampaign, _ := createTestData(t, store, "user", userID)
+		adminCampaign := createTestData(t, store, "admin", adminID)
+		userCampaign := createTestData(t, store, "user", userID)
 
 		tests := []struct {
 			name                    string
 			currentUser             int32
 			campaign                int64
 			wantViewerCanAdminister bool
-			wantErrors              []string
 		}{
 			{
 				name:                    "site-admin viewing own campaign",
 				currentUser:             adminID,
 				campaign:                adminCampaign,
 				wantViewerCanAdminister: true,
-				wantErrors:              []string{"This is an error"},
 			},
 			{
 				name:                    "non-site-admin viewing other's campaign",
 				currentUser:             userID,
 				campaign:                adminCampaign,
 				wantViewerCanAdminister: false,
-				wantErrors:              []string{},
 			},
 			{
 				name:                    "site-admin viewing other's campaign",
 				currentUser:             adminID,
 				campaign:                userCampaign,
 				wantViewerCanAdminister: true,
-				wantErrors:              []string{"This is an error"},
 			},
 			{
 				name:                    "non-site-admin viewing own campaign",
 				currentUser:             userID,
 				campaign:                userCampaign,
 				wantViewerCanAdminister: true,
-				wantErrors:              []string{"This is an error"},
 			},
 		}
 
@@ -180,7 +155,7 @@ func TestPermissionLevels(t *testing.T) {
 				input := map[string]interface{}{"campaign": graphqlID}
 				queryCampaign := `
 				  query($campaign: ID!) {
-				    node(id: $campaign) { ... on Campaign { id, viewerCanAdminister, status { errors } } }
+				    node(id: $campaign) { ... on Campaign { id, viewerCanAdminister } }
 				  }
                 `
 
@@ -192,9 +167,6 @@ func TestPermissionLevels(t *testing.T) {
 				}
 				if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
 					t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
-				}
-				if diff := cmp.Diff(res.Node.Status.Errors, tc.wantErrors); diff != "" {
-					t.Fatalf("queried campaign's Errors is wrong: %s", diff)
 				}
 			})
 		}
@@ -276,67 +248,24 @@ func TestPermissionLevels(t *testing.T) {
 	t.Run("mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
-			mutationFunc func(campaignID string, changesetID string, patchID string) string
+			mutationFunc func(campaignID string, changesetID string) string
 		}{
 			{
 				name: "closeCampaign",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+				mutationFunc: func(campaignID string, changesetID string) string {
 					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
 				},
 			},
 			{
 				name: "deleteCampaign",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q, closeChangesets: false) { alwaysNil } } `, campaignID)
-				},
-			},
-			{
-				name: "retryCampaignChangesets",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaignID)
-				},
-			},
-			{
-				name: "updateCampaign",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { updateCampaign(input: {id: %q, name: "new name"}) { id } }`, campaignID)
-				},
-			},
-			{
-				name: "addChangesetsToCampaign",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(
-						`mutation { addChangesetsToCampaign(campaign: %q, changesets: [%q]) { id } }`,
-						campaignID,
-						changesetID,
-					)
-				},
-			},
-			{
-				name: "publishCampaignChangesets",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(
-						`mutation { publishCampaignChangesets(campaign: %q) { id } }`,
-						campaignID,
-					)
-				},
-			},
-			{
-				name: "publishChangeset",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(
-						`mutation { publishChangeset(patch: %q) { alwaysNil } }`,
-						patchID,
-					)
+				mutationFunc: func(campaignID string, changesetID string) string {
+					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } } `, campaignID)
 				},
 			},
 			{
 				name: "syncChangeset",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(
-						`mutation { syncChangeset(changeset: %q) { alwaysNil } }`,
-						changesetID,
-					)
+				mutationFunc: func(campaignID string, changesetID string) string {
+					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
 				},
 			},
 		}
@@ -373,7 +302,7 @@ func TestPermissionLevels(t *testing.T) {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
-						campaignID, patchID := createTestData(t, store, "test-campaign", tc.campaignAuthor)
+						campaignID := createTestData(t, store, "test-campaign", tc.campaignAuthor)
 
 						// We add the changeset to the campaign. It doesn't matter
 						// for the addChangesetsToCampaign mutation, since that is
@@ -386,7 +315,6 @@ func TestPermissionLevels(t *testing.T) {
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
 							string(marshalExternalChangesetID(changeset.ID)),
-							string(marshalPatchID(patchID)),
 						)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
@@ -564,20 +492,10 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetTypes:     map[string]int{"ExternalChangeset": 2},
 		changesetsCount:    2,
 		openChangesetTypes: map[string]int{"ExternalChangeset": 2},
-		errors: []string{
-			fmt.Sprintf("error patch %d", patches[0].ID),
-			fmt.Sprintf("error patch %d", patches[1].ID),
-		},
-		patchTypes: map[string]int{"Patch": 2},
 		campaignDiffStat: apitest.DiffStat{
-			Added:   2*patchesDiffStat.Added + 2*changesetDiffStat.Added,
-			Changed: 2*patchesDiffStat.Changed + 2*changesetDiffStat.Changed,
-			Deleted: 2*patchesDiffStat.Deleted + 2*changesetDiffStat.Deleted,
-		},
-		patchSetDiffStat: apitest.DiffStat{
-			Added:   2 * patchesDiffStat.Added,
-			Changed: 2 * patchesDiffStat.Changed,
-			Deleted: 2 * patchesDiffStat.Deleted,
+			Added:   2 * changesetDiffStat.Added,
+			Changed: 2 * changesetDiffStat.Changed,
+			Deleted: 2 * changesetDiffStat.Deleted,
 		},
 	})
 
@@ -586,13 +504,8 @@ func TestRepositoryPermissions(t *testing.T) {
 		testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
 	}
 
-	for _, p := range patches {
-		testPatchResponse(t, s, userCtx, p.ID, "Patch")
-	}
-
 	// Now we add the authzFilter and filter out 2 repositories
 	filteredRepoIDs := map[api.RepoID]bool{
-		patches[0].RepoID:    true,
 		changesets[0].RepoID: true,
 	}
 
@@ -623,23 +536,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			"ExternalChangeset":       1,
 			"HiddenExternalChangeset": 1,
 		},
-		errors: []string{
-			// patches[0] is filtered out
-			fmt.Sprintf("error patch %d", patches[1].ID),
-		},
-		patchTypes: map[string]int{
-			"Patch":       1,
-			"HiddenPatch": 1,
-		},
 		campaignDiffStat: apitest.DiffStat{
-			Added:   1*patchesDiffStat.Added + 1*changesetDiffStat.Added,
-			Changed: 1*patchesDiffStat.Changed + 1*changesetDiffStat.Changed,
-			Deleted: 1*patchesDiffStat.Deleted + 1*changesetDiffStat.Deleted,
-		},
-		patchSetDiffStat: apitest.DiffStat{
-			Added:   1 * patchesDiffStat.Added,
-			Changed: 1 * patchesDiffStat.Changed,
-			Deleted: 1 * patchesDiffStat.Deleted,
+			Added:   1 * changesetDiffStat.Added,
+			Changed: 1 * changesetDiffStat.Changed,
+			Deleted: 1 * changesetDiffStat.Deleted,
 		},
 	}
 	testCampaignResponse(t, s, userCtx, input, want)
@@ -650,15 +550,6 @@ func TestRepositoryPermissions(t *testing.T) {
 			testChangesetResponse(t, s, userCtx, c.ID, "HiddenExternalChangeset")
 		} else {
 			testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
-		}
-	}
-
-	for _, p := range patches {
-		// The patch whose repository has been filtered should be hidden
-		if _, ok := filteredRepoIDs[p.RepoID]; ok {
-			testPatchResponse(t, s, userCtx, p.ID, "HiddenPatch")
-		} else {
-			testPatchResponse(t, s, userCtx, p.ID, "Patch")
 		}
 	}
 
@@ -691,13 +582,10 @@ func TestRepositoryPermissions(t *testing.T) {
 }
 
 type wantCampaignResponse struct {
-	patchTypes         map[string]int
 	changesetTypes     map[string]int
 	changesetsCount    int
 	openChangesetTypes map[string]int
-	errors             []string
 	campaignDiffStat   apitest.DiffStat
-	patchSetDiffStat   apitest.DiffStat
 }
 
 func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]interface{}, w wantCampaignResponse) {
@@ -708,10 +596,6 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 
 	if have, want := response.Node.ID, in["campaign"]; have != want {
 		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
-	}
-
-	if diff := cmp.Diff(w.errors, response.Node.Status.Errors); diff != "" {
-		t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
 	}
 
 	if diff := cmp.Diff(w.changesetsCount, response.Node.Changesets.TotalCount); diff != "" {
@@ -734,27 +618,8 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected open changeset types (-want +got):\n%s", diff)
 	}
 
-	patchTypes := map[string]int{}
-	for _, p := range response.Node.Patches.Nodes {
-		patchTypes[p.Typename]++
-	}
-	if diff := cmp.Diff(w.patchTypes, patchTypes); diff != "" {
-		t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
-	}
-
 	if diff := cmp.Diff(w.campaignDiffStat, response.Node.DiffStat); diff != "" {
 		t.Fatalf("unexpected campaign diff stat (-want +got):\n%s", diff)
-	}
-
-	patchSetPatchTypes := map[string]int{}
-	for _, p := range response.Node.PatchSet.Patches.Nodes {
-		patchSetPatchTypes[p.Typename]++
-	}
-	if diff := cmp.Diff(w.patchTypes, patchSetPatchTypes); diff != "" {
-		t.Fatalf("unexpected patch set patch types (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(w.patchSetDiffStat, response.Node.PatchSet.DiffStat); diff != "" {
-		t.Fatalf("unexpected patch set diff stat (-want +got):\n%s", diff)
 	}
 }
 
@@ -802,50 +667,10 @@ query($campaign: ID!, $state: ChangesetState, $reviewState: ChangesetReviewState
         }
       }
 
-      patches(first: 100) {
-        nodes {
-          __typename
-          ... on HiddenPatch {
-            id
-          }
-          ... on Patch {
-            id
-            repository {
-              id
-              name
-            }
-          }
-        }
-      }
-
       diffStat {
         added
         changed
         deleted
-      }
-
-      patchSet {
-        diffStat {
-          added
-          changed
-          deleted
-        }
-
-        patches(first: 100) {
-          nodes {
-            __typename
-            ... on HiddenPatch {
-              id
-            }
-            ... on Patch {
-              id
-              repository {
-                id
-                name
-              }
-            }
-          }
-        }
       }
     }
   }
@@ -911,36 +736,6 @@ query {
 	    totalCount
 	  }
 
-      repository {
-        id
-        name
-      }
-    }
-  }
-}
-`
-
-func testPatchResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, wantType string) {
-	t.Helper()
-
-	var res struct{ Node apitest.Patch }
-	query := fmt.Sprintf(queryPatchPermLevels, marshalPatchID(id))
-	apitest.MustExec(ctx, t, s, nil, &res, query)
-
-	if have, want := res.Node.Typename, wantType; have != want {
-		t.Fatalf("patch has wrong typename. want=%q, have=%q", want, have)
-	}
-}
-
-const queryPatchPermLevels = `
-query {
-  node(id: %q) {
-    __typename
-    ... on HiddenPatch {
-      id
-    }
-    ... on Patch {
-      id
       repository {
         id
         name
