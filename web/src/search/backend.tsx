@@ -1,4 +1,4 @@
-import { Observable, of, combineLatest, defer } from 'rxjs'
+import { Observable, of, combineLatest, defer, from } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -7,7 +7,9 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
-import { Services } from '../../../shared/src/api/client/services'
+import { Remote } from 'comlink'
+import { FlatExtHostAPI } from '../../../shared/src/api/contract'
+import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 
 // TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
 const genericSearchResultInterfaceFields = `
@@ -39,11 +41,11 @@ export function search(
     version: string,
     patternType: GQL.SearchPatternType,
     versionContext: string | undefined,
-    services: Services
+    extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
-    const transformedQuery = services.queryTransformer.transformQuery
-        ? services.queryTransformer.transformQuery(query)
-        : of(query)
+    const transformedQuery = from(extensionHostPromise).pipe(
+        switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
+    )
 
     return transformedQuery.pipe(
         switchMap(query =>

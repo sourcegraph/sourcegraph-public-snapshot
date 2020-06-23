@@ -7,6 +7,8 @@ import { integrationTestContext } from '../../../../../shared/src/api/integratio
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { MutationRecordLike } from '../../util/dom'
 import { handleTextFields } from './textFields'
+import { pretendRemote } from '../../../../../shared/src/api/util'
+import { FlatExtHostAPI } from '../../../../../shared/src/api/contract'
 
 jest.mock('uuid', () => ({
     v4: () => 'uuid',
@@ -17,6 +19,7 @@ const createMockController = (services: Services): Controller => ({
     notifications: NEVER,
     executeCommand: () => Promise.resolve(),
     unsubscribe: noop,
+    extHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
 })
 
 describe('textFields', () => {
