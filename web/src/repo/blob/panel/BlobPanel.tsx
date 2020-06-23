@@ -1,10 +1,9 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { from, Subject, Subscription } from 'rxjs'
+import { from, Subject, Subscription, Observable, of } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/viewerService'
-import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
     ProvidePanelViewSignature,
@@ -12,7 +11,6 @@ import {
 } from '../../../../../shared/src/api/client/services/panelViews'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
@@ -20,6 +18,10 @@ import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { Controller } from '../../../../../shared/src/extensions/controller'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import * as clientType from '@sourcegraph/extension-api-types'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -28,7 +30,6 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps,
         ThemeProps,
         ActivationProps {
     location: H.Location
@@ -37,6 +38,7 @@ interface Props
     repoName: string
     commitID: string
     authenticatedUser: GQL.IUser | null
+    extensionsController: Controller
 }
 
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
@@ -89,7 +91,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             id: string,
             title: string,
             priority: number,
-            registry: TextDocumentLocationProviderRegistry<P>,
+            provideLocations: (params: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
@@ -104,56 +106,49 @@ export class BlobPanel extends React.PureComponent<Props> {
                           }
                         : undefined
                 ),
-                switchMap(activeEditor =>
-                    registry.hasProvidersForActiveTextDocument(activeEditor).pipe(
-                        map(hasProviders => {
-                            if (!hasProviders) {
-                                return null
-                            }
-                            const parameters: TextDocumentPositionParams | null = getActiveCodeEditorPosition(
-                                activeEditor
-                            )
-                            if (!parameters) {
-                                return null
-                            }
-                            return {
-                                title,
-                                content: '',
-                                priority,
+                map(activeEditor => {
+                    const parameters: TextDocumentPositionParams | null = getActiveCodeEditorPosition(activeEditor)
+                    if (!parameters) {
+                        return null
+                    }
+                    return {
+                        title,
+                        content: '',
+                        priority,
 
-                                // This disable directive is necessary because TypeScript is not yet smart
-                                // enough to know that (typeof params & typeof extraParams) is P.
-                                //
-                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                                locationProvider: registry
-                                    .getLocations({ ...parameters, ...extraParameters } as P)
-                                    .pipe(
-                                        tap(({ result: locations }) => {
-                                            if (this.props.activation && id === 'references' && locations.length > 0) {
-                                                this.props.activation.update({ FoundReferences: true })
-                                            }
-                                        })
-                                    ),
-                            }
-                        })
-                    )
-                )
+                        // This disable directive is necessary because TypeScript is not yet smart
+                        // enough to know that (typeof params & typeof extraParams) is P.
+                        //
+                        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                        locationProvider: provideLocations({ ...parameters, ...extraParameters } as P).pipe(
+                            tap(({ result: locations }) => {
+                                if (this.props.activation && id === 'references' && locations.length > 0) {
+                                    this.props.activation.update({ FoundReferences: true })
+                                }
+                            })
+                        ),
+                    }
+                })
             ),
         })
 
         this.subscriptions.add(
             this.props.extensionsController.services.panelViews.registerProviders([
-                entryForViewProviderRegistration(
-                    'def',
-                    'Definition',
-                    190,
-                    this.props.extensionsController.services.textDocumentDefinition
+                entryForViewProviderRegistration('def', 'Definition', 190, parameters =>
+                    from(this.props.extensionsController.extensionHostAPI).pipe(
+                        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getDefinitions(parameters)))
+                    )
                 ),
                 entryForViewProviderRegistration(
                     'references',
                     'References',
                     180,
-                    this.props.extensionsController.services.textDocumentReferences,
+                    parameters =>
+                        from(this.props.extensionsController.extensionHostAPI).pipe(
+                            switchMap(extensionHostAPI =>
+                                wrapRemoteObservable(extensionHostAPI.getReferences(parameters))
+                            )
+                        ),
                     {
                         context: { includeDeclaration: false },
                     }

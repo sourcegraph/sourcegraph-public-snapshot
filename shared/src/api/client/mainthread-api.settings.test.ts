@@ -7,8 +7,6 @@ import { SettingsCascade } from '../../settings/settings'
 import { FlatExtHostAPI } from '../contract'
 import { createWorkspaceService } from './services/workspaceService'
 import { CommandRegistry } from './services/command'
-import { noop } from 'lodash'
-import { proxySubscribable } from '../extension/api/common'
 
 const defaultDependencies = (): MainThreadAPIDependencies => ({
     workspace: createWorkspaceService(),
@@ -78,9 +76,7 @@ describe('configuration', () => {
         const passedToExtensionHost: SettingsCascade<object>[] = []
         initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
-                syncRoots: noop,
-                syncVersionContext: noop,
-                transformSearchQuery: (query: string) => proxySubscribable(of(query)),
+                ...noopFlatExtensionHostAPI,
                 syncSettingsData: data => {
                     passedToExtensionHost.push(data)
                 },
@@ -102,9 +98,7 @@ describe('configuration', () => {
         const passedToExtensionHost: SettingsCascade<object>[] = []
         const { subscription } = initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
-                syncRoots: noop,
-                syncVersionContext: noop,
-                transformSearchQuery: (query: string) => proxySubscribable(of(query)),
+                ...noopFlatExtensionHostAPI,
                 syncSettingsData: data => {
                     passedToExtensionHost.push(data)
                 },

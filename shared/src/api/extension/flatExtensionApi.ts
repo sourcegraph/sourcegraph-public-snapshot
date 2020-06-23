@@ -1,12 +1,17 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from } from 'rxjs'
+import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from, concat, isObservable } from 'rxjs'
 
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
-import { syncSubscription } from '../util'
-import { switchMap, mergeMap } from 'rxjs/operators'
+import { syncSubscription, isPromiseLike } from '../util'
+import { switchMap, mergeMap, defaultIfEmpty, map, distinctUntilChanged, catchError } from 'rxjs/operators'
 import { proxySubscribable } from './api/common'
+import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
+import { LOADING } from '@sourcegraph/codeintellify'
+import { fromHoverMerged } from '../client/types/hover'
+import { isNot, isExactly } from '../../util/types'
+import { isEqual } from 'lodash'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -21,6 +26,11 @@ export interface ExtState {
 
     // Search
     queryTransformers: sourcegraph.QueryTransformer[]
+
+    // languages
+    hoverProviders: sourcegraph.HoverProvider[]
+    definitionProviders: sourcegraph.DefinitionProvider[]
+    referenceProviders: sourcegraph.ReferenceProvider[]
 }
 
 export interface InitResult {
@@ -31,6 +41,7 @@ export interface InitResult {
     state: Readonly<ExtState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
+    languages: typeof sourcegraph['languages']
 }
 
 /**
@@ -51,7 +62,15 @@ export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
     initialSettings: Readonly<SettingsCascade<object>>
 ): InitResult => {
-    const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings, queryTransformers: [] }
+    const state: ExtState = {
+        roots: [],
+        versionContext: undefined,
+        settings: initialSettings,
+        queryTransformers: [],
+        hoverProviders: [],
+        definitionProviders: [],
+        referenceProviders: [],
+    }
 
     const configChanges = new BehaviorSubject<void>(undefined)
     // Most extensions never call `configuration.get()` synchronously in `activate()` to get
@@ -59,8 +78,18 @@ export const initNewExtensionAPI = (
     // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
     const rootChanges = new Subject<void>()
+
+    // Search
     const queryTransformersChanges = new ReplaySubject<sourcegraph.QueryTransformer[]>(1)
     queryTransformersChanges.next([])
+
+    // Languages
+    const hoverProviderChanges = new ReplaySubject<sourcegraph.HoverProvider[]>(1)
+    hoverProviderChanges.next([])
+    const definitionProviderChanges = new ReplaySubject<sourcegraph.DefinitionProvider[]>(1)
+    definitionProviderChanges.next([])
+    const referenceProviderChanges = new ReplaySubject<sourcegraph.ReferenceProvider[]>(1)
+    referenceProviderChanges.next([])
 
     const versionContextChanges = new Subject<string | undefined>()
 
@@ -102,6 +131,47 @@ export const initNewExtensionAPI = (
                         )
                     )
                 )
+            ),
+
+        // Languages
+        getHover: ({ textDocument, position }) =>
+            proxySubscribable(
+                hoverProviderChanges.pipe(
+                    switchMap(providers =>
+                        combineLatestOrDefault(
+                            providers.map(provider => {
+                                // TODO textDocument needs to be a TextDocument instance
+                                const providerResult = provider.provideHover(textDocument, position)
+                                return isPromiseLike(providerResult) || isObservable(providerResult)
+                                    ? concat([LOADING], from(providerResult)).pipe(
+                                          defaultIfEmpty(null),
+                                          catchError(error => {
+                                              console.error('Hover provider errored:', error)
+                                              return [null]
+                                          })
+                                      )
+                                    : of(providerResult)
+                            })
+                        ).pipe(
+                            defaultIfEmpty<(typeof LOADING | sourcegraph.Hover | null | undefined)[]>([]),
+                            map(hoversFromProviders => ({
+                                isLoading: hoversFromProviders.some(hover => hover === LOADING),
+                                result: fromHoverMerged(hoversFromProviders.filter(isNot(isExactly(LOADING)))),
+                            })),
+                            distinctUntilChanged((a, b) => isEqual(a, b))
+                        )
+                    )
+                )
+            ),
+        getDefinitions: ({ textDocument, position }) =>
+            proxySubscribable(
+                // Do some stuff
+                definitionProviderChanges.pipe()
+            ),
+        getReferences: ({ textDocument, position }) =>
+            proxySubscribable(
+                // Do some stuff
+                definitionProviderChanges.pipe()
             ),
     }
 
@@ -146,11 +216,51 @@ export const initNewExtensionAPI = (
         },
     }
 
+    const languages: typeof sourcegraph['languages'] = {
+        registerHoverProvider: (selector, provider) => {
+            state.hoverProviders.push(provider)
+            hoverProviderChanges.next(state.hoverProviders)
+            return {
+                unsubscribe: () => {
+                    state.hoverProviders = state.hoverProviders.filter(
+                        registeredProvider => registeredProvider !== provider
+                    )
+                    hoverProviderChanges.next(state.hoverProviders)
+                },
+            }
+        },
+        registerDefinitionProvider: (selector, provider) => {
+            state.definitionProviders.push(provider)
+            definitionProviderChanges.next(state.definitionProviders)
+            return {
+                unsubscribe: () => {
+                    state.definitionProviders = state.definitionProviders.filter(
+                        registeredProvider => registeredProvider !== provider
+                    )
+                    definitionProviderChanges.next(state.definitionProviders)
+                },
+            }
+        },
+        registerReferenceProvider: (selector, provider) => {
+            state.referenceProviders.push(provider)
+            referenceProviderChanges.next(state.referenceProviders)
+            return {
+                unsubscribe: () => {
+                    state.referenceProviders = state.referenceProviders.filter(
+                        registeredProvider => registeredProvider !== provider
+                    )
+                    referenceProviderChanges.next(state.referenceProviders)
+                },
+            }
+        },
+    }
+
     return {
+        exposedToMain,
         configuration: Object.assign(configChanges.asObservable(), {
             get: getConfiguration,
         }),
-        exposedToMain,
+        languages,
         workspace,
         state,
         commands,

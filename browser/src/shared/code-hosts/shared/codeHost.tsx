@@ -112,6 +112,7 @@ import { NotificationType } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 
 registerHighlightContributions()
 
@@ -384,8 +385,14 @@ function initCodeIntelligence({
         ),
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
-                extensionsController.services.textDocumentHover.getHover(
-                    toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                from(extensionsController.extensionHostAPI).pipe(
+                    mergeMap(extensionHostAPI =>
+                        wrapRemoteObservable(
+                            extensionHostAPI.getHover(
+                                toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                            )
+                        )
+                    )
                 ),
                 getActiveHoverAlerts(hoverAlerts),
             ]).pipe(

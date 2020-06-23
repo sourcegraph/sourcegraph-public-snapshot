@@ -5,6 +5,8 @@ import { hasProperty, keyExistsIn } from '../util/types'
 import { FlatExtHostAPI, MainThreadAPI } from './contract'
 import { noop } from 'lodash'
 import { proxySubscribable } from './extension/api/common'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { HoverMerged } from './client/types/hover'
 
 /**
  * Tests whether a value is a WHATWG URL object.
@@ -94,6 +96,9 @@ export const noopFlatExtensionHostAPI: FlatExtHostAPI = {
     syncVersionContext: noop,
     transformSearchQuery: (query: string) => proxySubscribable(of(query)),
     syncSettingsData: noop,
+    getHover: () => proxySubscribable(of({ isLoading: false, result: null })),
+    getDefinitions: () => proxySubscribable(of({ isLoading: false, result: [] })),
+    getReferences: () => proxySubscribable(of({ isLoading: false, result: [] })),
 }
 
 export const noopMainThreadAPI: MainThreadAPI = {
