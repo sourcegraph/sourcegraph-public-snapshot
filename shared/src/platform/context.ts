@@ -120,7 +120,7 @@ export interface PlatformContext {
      * background worker) with the extension host and opens a communication channel to it. It is
      * called exactly once, to start the extension host.
      *
-     * @returns A promise that emits at most once with the message transports for communicating
+     * @returns A promise of the message transports for communicating
      * with the execution context (using, e.g., postMessage/onmessage) when it is ready.
      */
     createExtensionHost(): Promise<ClosableEndpointPair>
