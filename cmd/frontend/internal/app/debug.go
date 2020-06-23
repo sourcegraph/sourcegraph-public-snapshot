@@ -157,7 +157,6 @@ func addNoJaegerHandler(r *mux.Router) {
 
 func addJaeger(r *mux.Router) {
 	if len(jaegerURLFromEnv) > 0 {
-		fmt.Println("Jaeger URL from env ", jaegerURLFromEnv)
 		jaegerURL, err := url.Parse(jaegerURLFromEnv)
 		if err != nil {
 			log.Printf("failed to parse JAEGER_SERVER_URL=%s: %v", jaegerURLFromEnv, err)
