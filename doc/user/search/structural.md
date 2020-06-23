@@ -49,7 +49,7 @@ In this case, we didn't have to do any special thinking about handling multiple
 lines. The hole `:[args]` by default matches across newlines, but it stops
 inside balanced parentheses. This lets us match large, logical blocks or
 expressions without the limitations of typical line-based regular expression
-patterns. For [more examples](#examples), see below. Next, we cover a
+patterns. For [more examples](#examples), see below. Next, we cover
 reference notes to consider when using structural search.
 
 ### Current functionality and restrictions
@@ -62,7 +62,7 @@ following:
 
 - **The `lang` keyword is semantically significant.** Adding the `lang` [keyword](queries.md) informs the parser about language-specific syntax for comments, strings, and code. This makes structural search more accurate for that language. For example, `patterntype:structural 'fmt.Sprintf(:[args])' lang:go`. If `lang` is omitted, we perform a best-effort to infer the language based on matching file extensions, or fall back to a generic structural matcher.
 
-- **Enclosing patterns with quotes.** Prior to version 3.17, it is recommended to enclose a pattern with quotes, in case the pattern conflicts with other query syntax. As of version 3.17, quotes should no longer be included, unless the intent is to match actual quotes. To avoid syntax conflicts in version 3.17 and onwards, use the `content:` parameter.
+- **Enclosing patterns with quotes.** Prior to version 3.17, we recommended you enclose a pattern with quotes, in case the pattern conflicts with other query syntax. As of version 3.17, quotes should no longer be included, unless the intent is to match actual quotes. To avoid syntax conflicts in version 3.17 and onwards, use the `content:` parameter.
 
 - **Saved search are not supported.** It is not currently possible to save structural searches.
 

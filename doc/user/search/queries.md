@@ -1,3 +1,4 @@
+
 # Search query syntax
 
 <!-- Search syntax styling overrides -->
@@ -93,7 +94,7 @@ Multiple or combined **repo:** and **file:** keywords are intersected. For examp
 
 Use operators to create more expressive searches.
 
-> NOTE: Operators are enabled by default as of 3.17 for searching file contents. This feature may be disabled with `{"experimentalFeatures": {"andOrQuery": "disabled"}}` in the site configuration.
+> NOTE: As of 3.17, Operators are enabled by default for searching file contents. This feature may be disabled with `{"experimentalFeatures": {"andOrQuery": "disabled"}}` in the site configuration.
 
 | Operator | Example |
 | --- | --- |
