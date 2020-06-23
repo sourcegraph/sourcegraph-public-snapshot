@@ -97,7 +97,7 @@ const SiteSchemaJSON = `{
           "default": "disabled"
         },
         "searchMultipleRevisionsPerRepository": {
-          "description": "Enables searching multiple revisions of the same repository (using ` + "`" + `repo:myrepo@branch1:branch2` + "`" + `).",
+          "description": "DEPRECATED. Always on. Will be removed in 3.19.",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }

@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 
@@ -627,10 +626,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
 			if err != nil {
 				return err
-			}
-
-			if len(revSpecs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
-				return errMultipleRevsNotSupported
 			}
 
 			for _, rev := range revSpecs {
