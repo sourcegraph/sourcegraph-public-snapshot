@@ -363,7 +363,7 @@ Group expressions with parentheses to build more complex expressions. If there a
 A pattern to search. By default the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
 <ul class="r">
     <li class="r"><img class="r" src="../img/regex.png">Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting patterns performs a literal search.<br>
-    <strong>Example:</strong> <code>foo.*bar.*baz</code><a href="https://sourcegraph.com/search?q=foo+bar&patternType=regexp"> ↗</a> <code>"foo bar"</code><a href="https://sourcegraph.com/search?q=%22foo+bar%22&patternType=regexp"> ↗</a></li>
+    <strong>Example:</strong> <code>foo.*bar.*baz</code><a href="https://sourcegraph.com/search?q=foo+bar&patternType=regexp"> ↗</a> <code>"foo bar"</code><a href="https://sourcegraph.com/search?q=%22foo+bar%22&patternType=regexp"> ↗</a></li>
     <li class="r"><img class="r" src="../img/structural.png">Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural search. <br><strong>Example:</strong> <code>fmt.Sprintf(":[format]", :[args])</code><a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"> ↗</a></li>
 </ul>
 
@@ -667,7 +667,7 @@ Search a repository at a given revision. For example, a branch name, commit hash
 Search files whose full path matches the regular expression. A `-` before `file`
 excludes the file from being searched.
 
-**Example:** `file:\.js$ httptest` [↗](https://sourcegraph.com/search?q=file:%5C.js%24+httptest&patternType=regexp) `file:\.js$ -file:test http` [↗](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http&patternType=regexp)
+**Example:** `file:\.js$ httptest` [↗](https://sourcegraph.com/search?q=file:%5C.js%24+httptest&patternType=regexp) `file:\.js$ -file:test http` [↗](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http&patternType=regexp)
 
 ### Language
 
@@ -717,10 +717,9 @@ Only search files in the specified programming language, like `typescript` or
   </table>
 </div>
 
-Set the search pattern to search using a dedicated parameter.
-Useful, for example, when searching literally for a string
-like `repo:my-repo` that may conflict with the syntax of
-parameters in this Sourcegraph language.
+Set the search pattern to search using a dedicated parameter. Useful, for
+example, when searching literally for a string like `repo:my-repo` that may
+conflict with the syntax of parameters in this Sourcegraph language.
 
 **Example:** `repo:sourcegraph content:"repo:sourcegraph"` [↗](https://sourcegraph.com/search?q=repo:sourcegraph+content:%22repo:sourcegraph%22&patternType=literal)
 
@@ -795,7 +794,10 @@ parameters in this Sourcegraph language.
   </table>
 </div>
 
-Set whether the search pattern should only conduct a search of a certain type (e.g., only files or repos), or to perform special commit or diff searches.
+Set whether the search pattern should perform a search of a certain type.
+Notable search types are symbol, commit, and diff searches.
+
+**Example:** `type:symbol path` [↗](https://sourcegraph.com/search?q=type:symbol+path) `type:commit author:nick` [↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph%24+type:commit+author:nick&patternType=regexp)
 
 ### Case
 
@@ -827,7 +829,10 @@ Set whether the search pattern should only conduct a search of a certain type (e
   </table>
 </div>
 
-Set whether the search pattern should be treated case-sensitively.
+Set whether the search pattern should be treated case-sensitively. This is
+synonymous with the <img class="r" src=../img/case.png>toggle button.
+
+**Example:** `OPEN_FILE case:yes` [↗](https://sourcegraph.com/search?q=OPEN_FILE+case:yes)
 
 
 ### Fork
@@ -868,6 +873,8 @@ Set whether the search pattern should be treated case-sensitively.
 Set to `yes` if repository forks should be included or `only` if only forks
 should be searched. Respository forks are excluded by default.
 
+**Example:** `fork:yes repo:sourcegraph` [↗](https://sourcegraph.com/search?q=fork:yes+repo:sourcegraph&patternType=regexp)
+
 ### Archived
 
 <div name="r">
@@ -905,6 +912,8 @@ should be searched. Respository forks are excluded by default.
 
 Set to `yes` if archived repositories should be included or `only` if only
 archives should be searched. Archived repositories are excluded by default.
+
+**Example:** `archived:only repo:sourcegraph` [↗](https://sourcegraph.com/search?q=archived:only+repo:sourcegraph&patternType=regexp)
 
 ### Repo group
 
@@ -944,6 +953,7 @@ admin). Same as using [repo](#repo) that matches all of the group’s
 repositories. Use [repo](#repo) unless you know that the group
 exists.
 
+**Example:** `repogroup:go-gh-100 helm` [↗](https://sourcegraph.com/search?q=repogroup:go-gh-100+helm&patternType=literal)  – searches the top 100 Go repositories on GitHub, ranked by stars.
 
 ### Repo has file
 
@@ -990,6 +1000,8 @@ keyword is a pure filter, so it requires at least one other search term in the
 query. Note: this filter currently only works on text matches and file path
 matches.
 
+**Example:** `repohasfile:\.py file:Dockerfile$ pip` [↗](https://sourcegraph.com/search?q=repohasfile:%5C.py+file:Dockerfile%24+pip+repo:sourcegraph+&patternType=regexp)
+
 ### Repo has commit after
 
 <div name="r">
@@ -1016,6 +1028,8 @@ matches.
 
 Filter out stale repositories that don’t contain commits past the specified time
 frame. This parameter is experimental.
+
+**Example:** `-repohasfile:Dockerfile docker` [↗](https://sourcegraph.com/search?q=-repohasfile:Dockerfile+docker&patternType=regexp)
 
 ### Count
 
@@ -1045,6 +1059,8 @@ Retrieve at least N results. By default, Sourcegraph stops searching early and
 returns if it finds a full page of results. This is desirable for most
 interactive searches. To wait for all results, or to see results beyond the
 first page, use the count: keyword with a larger N.
+
+**Example:** `count:1000 function` [↗](https://sourcegraph.com/search?q=count:1000+repo:sourcegraph/sourcegraph%24+function&patternType=regexp)
 
 ### Timeout
 
@@ -1076,6 +1092,8 @@ package's [ParseDuration](https://golang.org/pkg/time/#ParseDuration).
 By default the timeout is set to 10 seconds, and the search will optimize for
 returning results as soon as possible. The timeout value cannot be set longer
 than 1 minute.
+
+**Example:** `timeout:15s count:10000 func` [↗](https://sourcegraph.com/search?q=repo:%5Egithub.com/sourcegraph/+timeout:15s+func+count:10000)  – sets a longer timeout for a search that contains _a lot_ of results.
 
 ### Visibility
 
@@ -1115,6 +1133,8 @@ than 1 minute.
 Filter results to only public or private repositories. The default is to include
 both private and public repositories.
 
+**Example:** `type:repo visibility:public` [↗](https://sourcegraph.com/search?q=type:repo+visibility:public&patternType=regexp)
+
 ### Pattern type
 
 <div name="r">
@@ -1151,8 +1171,8 @@ both private and public repositories.
 </div>
 
 Set whether the pattern should run a literal search, regular expression search,
-or a structural search pattern. This keyword is available as a commannd-line and
-accessibility option, and equivalent to the visual toggles
+or a structural search pattern. This parameter is available as a commannd-line and
+accessibility option, and synonymous with the visual [search pattern](#search-pattern) toggles.
 in [search pattern](#search-pattern).
 
 ## Regular expression
@@ -1344,7 +1364,7 @@ Include commits or diffs that are authored by the user.
 
 Include results which have a commit date before the specified time frame.
 
-Example time values are `last thursday` or `november 1 2019`.
+**Example:** `before:"last thursday"` [↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph%24+type:diff+author:nick+before:%22last+thursday%22&patternType=regexp) `before:"november 1 2019"` [↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+before:%22november+1+2019%22)
 
 ### After
 
@@ -1384,7 +1404,7 @@ Example time values are `last thursday` or `november 1 2019`.
 
 Include results which have a commit date before the specified time frame.
 
-Example time values are `last thursday` or `november 1 2019`.
+**Example:** `after:"6 weeks ago"` [↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%226+weeks+ago%22) `after:"november 1 2019"` [↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%22november+1+2019%22)
 
 ### Message
 
@@ -1420,3 +1440,5 @@ Example time values are `last thursday` or `november 1 2019`.
 </div>
 
 Include results which have commit messages containing the string.
+
+**Example:** `type:commit message:"testing"` [↗](https://sourcegraph.com/search?q=type:commit+message:%22testing%22+repo:sourcegraph/sourcegraph%24+&patternType=regexp)
