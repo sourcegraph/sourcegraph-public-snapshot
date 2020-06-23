@@ -1299,7 +1299,8 @@ type Query {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifUploads(
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # commit, root, and indexer properties.
         query: String
 
         # The state of returned uploads.
@@ -1326,8 +1327,8 @@ type Query {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifIndexes(
-        # TODO(efritz) - update
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # and commit properties.
         query: String
 
         # The state of returned uploads.
@@ -1872,7 +1873,8 @@ type Repository implements Node & GenericSearchResultInterface {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifUploads(
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # commit, root, and indexer properties.
         query: String
 
         # The state of returned uploads.
@@ -1899,8 +1901,8 @@ type Repository implements Node & GenericSearchResultInterface {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifIndexes(
-        # TODO(efritz) - update
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # and commit properties.
         query: String
 
         # The state of returned uploads.
