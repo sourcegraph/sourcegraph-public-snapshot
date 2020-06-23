@@ -7,15 +7,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -123,22 +119,23 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
-func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchInterfaceResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patches.
+func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
-	patchID, err := unmarshalPatchID(id)
+	campaignSpecRandID, err := unmarshalCampaignSpecID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if patchID == 0 {
+	if campaignSpecRandID == "" {
 		return nil, nil
 	}
 
-	patch, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
+	opts := ee.GetCampaignSpecOpts{RandID: campaignSpecRandID}
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, opts)
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -146,35 +143,26 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
-	// filters out repositories that the user doesn't have access to.
-	repo, err := db.Repos.Get(ctx, patch.RepoID)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return &hiddenPatchResolver{patch: patch}, nil
-		}
-		return nil, err
-	}
-
-	return &patchResolver{store: r.store, patch: patch, preloadedRepo: repo}, nil
+	return &campaignSpecResolver{store: r.store, httpFactory: r.httpFactory, campaignSpec: campaignSpec}, nil
 }
 
-func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchSetResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patch sets.
+func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
-	patchSetID, err := unmarshalPatchSetID(id)
+	changesetSpecRandID, err := unmarshalChangesetSpecID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if patchSetID == 0 {
+	if changesetSpecRandID == "" {
 		return nil, nil
 	}
 
-	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: patchSetID})
+	opts := ee.GetChangesetSpecOpts{RandID: changesetSpecRandID}
+	changesetSpec, err := r.store.GetChangesetSpec(ctx, opts)
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -182,49 +170,12 @@ func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
-}
-
-func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbackend.AddChangesetsToCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
-	if err != nil {
-		return nil, err
-	}
-
-	if campaignID == 0 {
-		return nil, nil
-	}
-
-	changesetIDs := make([]int64, 0, len(args.Changesets))
-	set := map[int64]struct{}{}
-	for _, changesetID := range args.Changesets {
-		id, err := unmarshalChangesetID(changesetID)
-		if err != nil {
-			return nil, err
-		}
-		if id == 0 {
-			continue
-		}
-
-		if _, ok := set[id]; !ok {
-			changesetIDs = append(changesetIDs, id)
-			set[id] = struct{}{}
-		}
-	}
-
-	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: AddChangesetsToCampaign checks whether current user is authorized.
-	campaign, err := svc.AddChangesetsToCampaign(ctx, campaignID, changesetIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &changesetSpecResolver{store: r.store, httpFactory: r.httpFactory, changesetSpec: changesetSpec}, nil
 }
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", args.Input.Name)
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("Namespace %s, CampaignSpec %s", args.Namespace, args.CampaignSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -240,32 +191,17 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	campaign := &campaigns.Campaign{
-		Name:     args.Input.Name,
+		Name:     "TODO: not blank",
 		AuthorID: user.ID,
 	}
 
-	if args.Input.Description != nil {
-		campaign.Description = *args.Input.Description
-	}
-	if args.Input.Branch != nil {
-		campaign.Branch = *args.Input.Branch
-	}
-
-	if args.Input.PatchSet != nil {
-		patchSetID, err := unmarshalPatchSetID(*args.Input.PatchSet)
-		if err != nil {
-			return nil, err
-		}
-		campaign.PatchSetID = patchSetID
-	}
-
-	switch relay.UnmarshalKind(args.Input.Namespace) {
+	switch relay.UnmarshalKind(args.Namespace) {
 	case "User":
-		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
+		err = relay.UnmarshalSpec(args.Namespace, &campaign.NamespaceUserID)
 	case "Org":
-		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceOrgID)
+		err = relay.UnmarshalSpec(args.Namespace, &campaign.NamespaceOrgID)
 	default:
-		err = errors.Errorf("Invalid namespace %q", args.Input.Namespace)
+		err = errors.Errorf("Invalid namespace %q", args.Namespace)
 	}
 
 	if err != nil {
@@ -281,54 +217,108 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
-func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.UpdateCampaign", fmt.Sprintf("Campaign: %q", args.Input.ID))
+func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	return nil, errors.New("TODO: not implemented")
+}
+
+func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.CampaignSpecResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignSpec", fmt.Sprintf("Namespace %s, Spec %q", args.Namespace, args.CampaignSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+
+	// 🚨 SECURITY: Only site admins may create campaign specs for now.
+	if !user.SiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
+	}
+
+	campaignSpec := &campaigns.CampaignSpec{
+		RawSpec: args.CampaignSpec,
+		UserID:  user.ID,
+	}
+
+	switch relay.UnmarshalKind(args.Namespace) {
+	case "User":
+		err = relay.UnmarshalSpec(args.Namespace, &campaignSpec.NamespaceUserID)
+	case "Org":
+		err = relay.UnmarshalSpec(args.Namespace, &campaignSpec.NamespaceOrgID)
+	default:
+		err = errors.Errorf("Invalid namespace %q", args.Namespace)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	var changesetSpecRandIDs []string
+	for _, graphqlID := range args.ChangesetSpecs {
+		randID, err := unmarshalChangesetSpecID(graphqlID)
+		if err != nil {
+			return nil, err
+		}
+		changesetSpecRandIDs = append(changesetSpecRandIDs, randID)
+	}
+
+	svc := ee.NewService(r.store, r.httpFactory)
+	err = svc.CreateCampaignSpec(ctx, campaignSpec, changesetSpecRandIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	specResolver := &campaignSpecResolver{
+		store:        r.store,
+		httpFactory:  r.httpFactory,
+		campaignSpec: campaignSpec,
+	}
+
+	return specResolver, nil
+}
+
+func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend.CreateChangesetSpecArgs) (graphqlbackend.ChangesetSpecResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetSpec", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Input.ID)
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
 	}
 
-	if campaignID == 0 {
-		return nil, nil
+	// 🚨 SECURITY: Only site admins may create campaign specs for now.
+	if !user.SiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	updateArgs := ee.UpdateCampaignArgs{Campaign: campaignID}
-	updateArgs.Name = args.Input.Name
-	updateArgs.Description = args.Input.Description
-	updateArgs.Branch = args.Input.Branch
-
-	if args.Input.PatchSet != nil {
-		patchSetID, err := unmarshalPatchSetID(*args.Input.PatchSet)
-		if err != nil {
-			return nil, err
-		}
-		updateArgs.PatchSet = &patchSetID
+	changesetSpec := &campaigns.ChangesetSpec{
+		RawSpec: args.ChangesetSpec,
+		UserID:  user.ID,
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-
-	// 🚨 SECURITY: UpdateCampaign checks whether current user is authorized.
-	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
-	if err != nil {
+	if err = svc.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		return nil, err
 	}
 
-	if len(detachedChangesets) != 0 {
-		go func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
-			err := svc.CloseOpenChangesets(ctx, detachedChangesets)
-			if err != nil {
-				log15.Error("CloseOpenChangesets", "err", err)
-			}
-		}()
+	specResolver := &changesetSpecResolver{
+		store:         r.store,
+		httpFactory:   r.httpFactory,
+		changesetSpec: changesetSpec,
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return specResolver, nil
+}
+
+func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	return nil, errors.New("TODO: not implemented")
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -349,35 +339,8 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: DeleteCampaign checks whether current user is authorized.
-	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
+	err = svc.DeleteCampaign(ctx, campaignID)
 	return &graphqlbackend.EmptyResponse{}, err
-}
-
-func (r *Resolver) RetryCampaignChangesets(ctx context.Context, args *graphqlbackend.RetryCampaignChangesetsArgs) (graphqlbackend.CampaignResolver, error) {
-	var err error
-	tr, ctx := trace.New(ctx, "Resolver.RetryCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
-	if err != nil {
-		return nil, errors.Wrap(err, "unmarshaling campaign id")
-	}
-
-	if campaignID == 0 {
-		return nil, ErrIDIsZero
-	}
-
-	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: RetryPublishCampaign checks whether current user is authorized.
-	campaign, err := svc.RetryPublishCampaign(ctx, campaignID)
-	if err != nil {
-		return nil, errors.Wrap(err, "publishing campaign")
-	}
-
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
@@ -385,9 +348,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-	opts := ee.ListCampaignsOpts{
-		HasPatchSet: args.HasPatchSet,
-	}
+	opts := ee.ListCampaignsOpts{}
 	state, err := parseCampaignState(args.State)
 	if err != nil {
 		return nil, err
@@ -412,98 +373,6 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		httpFactory: r.httpFactory,
 		opts:        opts,
 	}, nil
-}
-
-func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ExternalChangesetResolver, err error) {
-	// 🚨 SECURITY: Only site admins may create changesets for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	var repoIDs []api.RepoID
-	repoSet := map[api.RepoID]*types.Repo{}
-	cs := make([]*campaigns.Changeset, 0, len(args.Input))
-
-	for _, c := range args.Input {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(c.Repository)
-		if err != nil {
-			return nil, err
-		}
-
-		if _, ok := repoSet[repoID]; !ok {
-			repoSet[repoID] = nil
-			repoIDs = append(repoIDs, repoID)
-		}
-
-		cs = append(cs, &campaigns.Changeset{
-			RepoID:     repoID,
-			ExternalID: c.ExternalID,
-		})
-	}
-
-	tx, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating transaction")
-	}
-	defer tx.Done(&err)
-
-	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
-	// filters out repositories that the user doesn't have access to.
-	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, r := range rs {
-		if !campaigns.IsRepoSupported(&r.ExternalRepo) {
-			err = errors.Errorf(
-				"External service type %s of repository %q is currently not supported for use with campaigns",
-				r.ExternalRepo.ServiceType,
-				r.Name,
-			)
-			return nil, err
-		}
-
-		repoSet[r.ID] = r
-	}
-
-	for id, r := range repoSet {
-		if r == nil {
-			return nil, errors.Errorf("repo %v not found", graphqlbackend.MarshalRepositoryID(api.RepoID(id)))
-		}
-	}
-
-	for _, c := range cs {
-		c.ExternalServiceType = repoSet[c.RepoID].ExternalRepo.ServiceType
-	}
-
-	err = tx.CreateChangesets(ctx, cs...)
-	if err != nil {
-		if _, ok := err.(ee.AlreadyExistError); !ok {
-			return nil, err
-		}
-	}
-
-	repoStore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
-	// NOTE: We are performing a blocking sync here in order to ensure
-	// that the remote changeset exists and also to remove the possibility
-	// of an unsynced changeset entering our database
-	if err = ee.SyncChangesets(ctx, repoStore, tx, r.httpFactory, cs...); err != nil {
-		return nil, errors.Wrap(err, "syncing changesets")
-	}
-
-	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
-	for i := range cs {
-		csr[i] = &changesetResolver{
-			store:         r.store,
-			httpFactory:   r.httpFactory,
-			Changeset:     cs[i],
-			preloadedRepo: repoSet[cs[i].RepoID],
-		}
-	}
-
-	return csr, nil
 }
 
 // listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into
@@ -555,58 +424,6 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 	return opts, safe, nil
 }
 
-func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlbackend.CreatePatchSetFromPatchesArgs) (graphqlbackend.PatchSetResolver, error) {
-	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreatePatchSetFromPatches", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	// 🚨 SECURITY: Only site admins may create patch sets for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	user, err := backend.CurrentUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
-	}
-	if user == nil {
-		return nil, backend.ErrNotAuthenticated
-	}
-
-	patches := make([]*campaigns.Patch, len(args.Patches))
-	for i, patch := range args.Patches {
-		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
-		if err != nil {
-			return nil, err
-		}
-
-		p := &campaigns.Patch{
-			RepoID:  repo,
-			Rev:     patch.BaseRevision,
-			BaseRef: patch.BaseRef,
-			Diff:    patch.Patch,
-		}
-		// Ensure patch is a valid unified diff by computing diff stats.
-		err = p.ComputeDiffStat()
-		if err != nil {
-			return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
-		}
-
-		patches[i] = p
-	}
-
-	svc := ee.NewService(r.store, r.httpFactory)
-	patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
-}
-
 func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CloseCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
 	defer func() {
@@ -631,56 +448,6 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	}
 
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
-}
-
-func (r *Resolver) PublishCampaignChangesets(ctx context.Context, args *graphqlbackend.PublishCampaignChangesetsArgs) (_ graphqlbackend.CampaignResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
-	if err != nil {
-		return nil, errors.Wrap(err, "unmarshaling campaign id")
-	}
-
-	if campaignID == 0 {
-		return nil, ErrIDIsZero
-	}
-
-	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: EnqueueChangesetJobs checks whether current user is authorized.
-	campaign, err := svc.EnqueueChangesetJobs(ctx, campaignID)
-	if err != nil {
-		return nil, errors.Wrap(err, "publishing campaign changesets")
-	}
-
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
-}
-func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("Patch: %q", args.Patch))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	patchID, err := unmarshalPatchID(args.Patch)
-	if err != nil {
-		return nil, err
-	}
-
-	if patchID == 0 {
-		return nil, ErrIDIsZero
-	}
-
-	// 🚨 SECURITY: EnqueueChangesetJobForPatch checks whether current user is authorized.
-	svc := ee.NewService(r.store, r.httpFactory)
-	if err = svc.EnqueueChangesetJobForPatch(ctx, patchID); err != nil {
-		return nil, err
-	}
-
-	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {

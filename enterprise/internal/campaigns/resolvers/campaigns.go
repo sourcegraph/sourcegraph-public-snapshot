@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -159,42 +158,6 @@ func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.C
 	}, nil
 }
 
-func (r *campaignResolver) Patches(
-	ctx context.Context,
-	args *graphqlutil.ConnectionArgs,
-) graphqlbackend.PatchConnectionResolver {
-	if r.Campaign.PatchSetID == 0 {
-		return &emptyPatchConnectionResolver{}
-	}
-
-	return &patchesConnectionResolver{
-		store: r.store,
-		opts: ee.ListPatchesOpts{
-			PatchSetID:                r.Campaign.PatchSetID,
-			Limit:                     int(args.GetFirst()),
-			OnlyWithDiff:              true,
-			OnlyUnpublishedInCampaign: r.Campaign.ID,
-		},
-	}
-}
-
-func (r *campaignResolver) HasUnpublishedPatches(ctx context.Context) (bool, error) {
-	if r.Campaign.PatchSetID == 0 {
-		return false, nil
-	}
-
-	unpublishedCount, err := r.store.CountPatches(ctx, ee.CountPatchesOpts{
-		PatchSetID:              r.Campaign.PatchSetID,
-		OnlyWithoutChangesetJob: r.Campaign.ID,
-		OnlyWithDiff:            true,
-	})
-	if err != nil {
-		return false, errors.Wrap(err, "getting unpublished patches count")
-	}
-
-	return unpublishedCount != 0, nil
-}
-
 func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
@@ -244,19 +207,6 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	return resolvers, nil
 }
 
-func (r *campaignResolver) PatchSet(ctx context.Context) (graphqlbackend.PatchSetResolver, error) {
-	if r.Campaign.PatchSetID == 0 {
-		return nil, nil
-	}
-
-	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: r.Campaign.PatchSetID})
-	if err != nil {
-		return nil, err
-	}
-
-	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
-}
-
 func (r *campaignResolver) RepositoryDiffs(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
@@ -302,22 +252,6 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 		}
 	}
 
-	// We don't have a patch set, so we don't have patches and can return
-	if r.Campaign.PatchSetID == 0 {
-		return totalStat, nil
-	}
-
-	patchSetStat, err := patchSetDiffStat(ctx, r.store, ee.ListPatchesOpts{
-		PatchSetID:                r.Campaign.PatchSetID,
-		Limit:                     -1, // Fetch all patches in a patch set
-		OnlyWithDiff:              true,
-		OnlyUnpublishedInCampaign: r.Campaign.ID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	totalStat.AddDiffStat(patchSetStat)
-
 	return totalStat, nil
 }
 
@@ -358,18 +292,4 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 
 	}
 	return resolvers, nil
-}
-
-type emptyPatchConnectionResolver struct{}
-
-func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchInterfaceResolver, error) {
-	return []graphqlbackend.PatchInterfaceResolver{}, nil
-}
-
-func (r *emptyPatchConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return 0, nil
-}
-
-func (r *emptyPatchConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
 }

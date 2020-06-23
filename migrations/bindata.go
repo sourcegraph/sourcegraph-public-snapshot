@@ -82,6 +82,8 @@
 // 1528395689_lsif_indexable_repositories_enable.up.sql (85B)
 // 1528395690_lsif_upload_size.down.sql (697B)
 // 1528395690_lsif_upload_size.up.sql (703B)
+// 1528395691_add_campaign_specs_and_changeset_specs.down.sql (165B)
+// 1528395691_add_campaign_specs_and_changeset_specs.up.sql (1.465kB)
 
 package migrations
 
@@ -1790,6 +1792,46 @@ func _1528395690_lsif_upload_sizeUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395691_add_campaign_specs_and_changeset_specsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\xc3\x22\x1f\x5f\x5c\x90\x9a\x1c\x9f\x99\x62\xcd\xc5\x05\x56\x88\x61\x4e\x46\x62\x5e\x7a\x6a\x71\x6a\x09\x58\x61\xb1\x35\x0e\x55\xc8\xa6\x15\x5b\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xb6\xb7\x40\x4c\xa5\x00\x00\x00")
+
+func _1528395691_add_campaign_specs_and_changeset_specsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395691_add_campaign_specs_and_changeset_specsDownSql,
+		"1528395691_add_campaign_specs_and_changeset_specs.down.sql",
+	)
+}
+
+func _1528395691_add_campaign_specs_and_changeset_specsDownSql() (*asset, error) {
+	bytes, err := _1528395691_add_campaign_specs_and_changeset_specsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395691_add_campaign_specs_and_changeset_specs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc3, 0x47, 0x6d, 0x4b, 0x9e, 0x76, 0x8f, 0xf4, 0xbe, 0x88, 0xd1, 0xdf, 0xb0, 0x9f, 0xdf, 0xed, 0x23, 0x6b, 0x81, 0x5, 0x28, 0x6c, 0xfc, 0xbb, 0x7c, 0xe5, 0xdf, 0x38, 0xc2, 0x50, 0xa3, 0xea}}
+	return a, nil
+}
+
+var __1528395691_add_campaign_specs_and_changeset_specsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x93\x51\x6f\xdb\x20\x10\xc7\xdf\xfd\x29\xee\xad\x58\xca\xcb\x5e\xdb\x69\x92\x6b\x93\x0e\xd5\xc1\x13\x26\x52\xfb\x84\x68\x8c\x1c\xa6\x05\x5b\x86\x2a\xd3\xa6\x7d\xf7\x09\xea\xba\x31\x69\xb2\xae\xf5\x9b\xef\x0f\xff\xe3\xee\x7e\x77\x8d\x6f\x08\xbd\x4a\x92\x9c\xe1\x8c\x63\xe0\xd9\x75\x89\x61\x23\x77\xbd\xd4\xad\x11\xb6\x57\x1b\x0b\x28\x01\x00\xd0\x0d\x3c\xe8\xd6\xaa\x41\xcb\x1f\x40\x2b\x0e\x74\x5d\x96\xf0\x8d\x91\x55\xc6\xee\xe1\x16\xdf\x2f\xc2\xb1\x41\x9a\x46\xe8\x06\x9c\xfa\xe9\xa6\x63\x8b\x64\xd4\xf6\xc1\x32\x16\xbd\x16\xe2\xdf\x6d\x67\x1e\xa0\xc0\xcb\x6c\x5d\x72\xb8\xf8\xfd\xe7\xe2\xf2\xf2\x29\x16\x39\x19\xb9\x53\xb6\x97\x1b\x25\x1e\xad\x1a\x7c\x3e\x6d\x9c\x6a\xd5\xb0\x88\xe4\x6e\x68\x67\x6a\x90\xa3\x3b\xb1\xf9\x66\x50\xd2\xa9\x46\x48\x07\x4e\xef\x94\x75\x72\xd7\xc3\x5e\xbb\x6d\xf8\x85\x5f\x9d\x51\xd3\x1b\x4d\xb7\x47\x69\x54\xca\x63\xdf\xbc\xfb\x7e\x30\xc8\x2b\x5a\x73\x96\x11\xca\xa3\x51\x88\xad\xb4\xe2\x93\x98\xca\x83\xfc\x2b\xce\x6f\x01\x21\x74\xdc\x10\x52\x07\xcb\x14\x3e\x7f\x01\x74\xd4\x90\x67\x35\x4d\xc7\x9c\xcb\x8a\x61\x72\x43\xfd\x20\x01\x8d\x1e\x29\x30\xbc\xc4\x0c\xd3\x1c\xd7\xa1\x69\x16\xf9\x60\xe1\x83\xcc\x93\x92\xa4\x2f\xe8\x10\x5a\xe0\x3b\x20\xcb\x50\x0c\xbe\x23\x35\xaf\xe3\xd7\x3f\xb3\x51\xd1\x48\x41\xa3\xe2\xed\xb2\x92\x63\x16\x81\x68\x13\x80\xac\x28\x20\xaf\xca\xf5\x8a\x9e\x4b\x22\x9e\x30\xd5\xc6\x1d\xbe\x3d\xca\x36\x2f\xe2\x88\xfe\xad\x34\xad\xb2\xca\x1d\xe0\xff\x26\xf8\x4f\xa3\x7f\x1a\xfc\xff\xc1\xfe\x44\xa1\x21\xb5\xea\xbb\x93\x44\x9f\xc5\xfd\x63\xb0\x7f\x10\xf5\x19\x74\x71\x79\xe9\x9b\x27\xb8\x88\xad\xc6\x76\xa4\x30\x7d\x07\x56\x5e\x44\x33\xf1\x9c\xd5\xb4\x0a\xaf\x59\xbd\xec\xc4\x2b\x56\xff\x5c\x8e\x39\x67\xb3\xed\x98\x4b\x87\xeb\x91\x57\xab\x15\xe1\x57\xc9\xdf\x00\x00\x00\xff\xff\xb8\xfb\xfc\x64\xb9\x05\x00\x00")
+
+func _1528395691_add_campaign_specs_and_changeset_specsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395691_add_campaign_specs_and_changeset_specsUpSql,
+		"1528395691_add_campaign_specs_and_changeset_specs.up.sql",
+	)
+}
+
+func _1528395691_add_campaign_specs_and_changeset_specsUpSql() (*asset, error) {
+	bytes, err := _1528395691_add_campaign_specs_and_changeset_specsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395691_add_campaign_specs_and_changeset_specs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf1, 0xe6, 0x7, 0xfa, 0x28, 0x9e, 0xb8, 0x2, 0x19, 0x4c, 0x84, 0xc, 0xb0, 0x65, 0x80, 0x8b, 0xb2, 0x4a, 0xba, 0x5a, 0x68, 0x18, 0x26, 0xd6, 0x1a, 0x31, 0x1a, 0xd6, 0x8a, 0x91, 0xdf, 0x12}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1963,6 +2005,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395689_lsif_indexable_repositories_enable.up.sql":                    _1528395689_lsif_indexable_repositories_enableUpSql,
 	"1528395690_lsif_upload_size.down.sql":                                    _1528395690_lsif_upload_sizeDownSql,
 	"1528395690_lsif_upload_size.up.sql":                                      _1528395690_lsif_upload_sizeUpSql,
+	"1528395691_add_campaign_specs_and_changeset_specs.down.sql":              _1528395691_add_campaign_specs_and_changeset_specsDownSql,
+	"1528395691_add_campaign_specs_and_changeset_specs.up.sql":                _1528395691_add_campaign_specs_and_changeset_specsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2091,6 +2135,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395689_lsif_indexable_repositories_enable.up.sql":                    {_1528395689_lsif_indexable_repositories_enableUpSql, map[string]*bintree{}},
 	"1528395690_lsif_upload_size.down.sql":                                    {_1528395690_lsif_upload_sizeDownSql, map[string]*bintree{}},
 	"1528395690_lsif_upload_size.up.sql":                                      {_1528395690_lsif_upload_sizeUpSql, map[string]*bintree{}},
+	"1528395691_add_campaign_specs_and_changeset_specs.down.sql":              {_1528395691_add_campaign_specs_and_changeset_specsDownSql, map[string]*bintree{}},
+	"1528395691_add_campaign_specs_and_changeset_specs.up.sql":                {_1528395691_add_campaign_specs_and_changeset_specsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
