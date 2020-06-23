@@ -599,7 +599,6 @@ func newChangesetCampaignsConnectionsResolver(
 ) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: changeset,
-		HasPatchSet: args.HasPatchSet,
 	}
 
 	state, err := parseCampaignState(args.State)
