@@ -635,7 +635,8 @@ const SiteSchemaJSON = `{
             "oneOf": [
               { "$ref": "#/definitions/GrafanaNotifierSlack" },
               { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierWebhook" }
+              { "$ref": "#/definitions/GrafanaNotifierWebhook" },
+              { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
@@ -1076,6 +1077,20 @@ const SiteSchemaJSON = `{
         "url": { "type": "string" },
         "username": { "type": "string" },
         "password": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierOpsGenie": {
+      "description": "OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration",
+      "type": "object",
+      "required": ["type", "apiKey", "apiUrl"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "opsgenie"
+        },
+        "apiKey": { "type": "string" },
+        "apiUrl": { "type": "string" },
+        "autoClose": { "type": "boolean" }
       }
     }
   }

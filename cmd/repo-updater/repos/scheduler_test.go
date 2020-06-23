@@ -9,6 +9,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 )
@@ -805,6 +806,40 @@ func TestSchedule_upsert(t *testing.T) {
 			verifyScheduleRecording(t, s, test.timeAfterFuncDelays, test.wakeupNotifications, r)
 		})
 	}
+}
+
+func TestUpdateQueue_setCloned(t *testing.T) {
+	cloned1 := configuredRepo2{ID: 1, Name: "cloned1"}
+	cloned2 := configuredRepo2{ID: 2, Name: "CLONED2"}
+	notcloned := configuredRepo2{ID: 3, Name: "notcloned"}
+
+	_, stop := startRecording()
+	defer stop()
+
+	s := NewUpdateScheduler()
+
+	assertFront := func(name api.RepoName) {
+		t.Helper()
+		front := s.schedule.heap[0].Repo.Name
+		if front != name {
+			t.Fatalf("front of schedule is %q, want %q", front, name)
+		}
+	}
+
+	// add everything to the scheduler for the distant future.
+	mockTime(defaultTime.Add(time.Hour))
+	for _, repo := range []configuredRepo2{cloned1, cloned2, notcloned} {
+		s.schedule.upsert(repo)
+	}
+
+	assertFront(cloned1.Name)
+
+	// Reset the time to now and do setCloned. We then verify that notcloned
+	// is now at the front of the queue.
+	mockTime(defaultTime)
+	s.schedule.setCloned([]string{"CLONED1", "cloned2", "notscheduled"})
+
+	assertFront(notcloned.Name)
 }
 
 func TestSchedule_updateInterval(t *testing.T) {

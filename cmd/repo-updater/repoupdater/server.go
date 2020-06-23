@@ -576,10 +576,10 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 		return 0, err
 	}
 
-	clonedRepos := make(map[string]bool, len(names))
+	notCloned := make(map[string]struct{}, len(names))
 	for _, n := range names {
 		lower := strings.ToLower(string(n))
-		clonedRepos[lower] = false
+		notCloned[lower] = struct{}{}
 	}
 
 	cloned, err := s.GitserverClient.ListCloned(ctx)
@@ -589,22 +589,13 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 
 	for _, c := range cloned {
 		lower := strings.ToLower(c)
-		if _, ok := clonedRepos[lower]; ok {
-			clonedRepos[lower] = true
-		}
+		delete(notCloned, lower)
 	}
 
-	var notCloned uint64
-	for _, cloned := range clonedRepos {
-		if !cloned {
-			notCloned++
-		}
-	}
-
-	s.notClonedCount = notCloned
+	s.notClonedCount = uint64(len(notCloned))
 	s.notClonedCountUpdatedAt = time.Now()
 
-	return notCloned, nil
+	return s.notClonedCount, nil
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
