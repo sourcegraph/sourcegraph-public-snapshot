@@ -51,7 +51,7 @@ type Syncer struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
+func (s *Syncer) Run(pctx context.Context, interval func() time.Duration) error {
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
 
@@ -59,7 +59,7 @@ func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
-		sleep(ctx, interval)
+		sleep(ctx, interval())
 
 		cancel()
 	}

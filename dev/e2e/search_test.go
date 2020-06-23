@@ -3,7 +3,10 @@
 package main
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -11,7 +14,7 @@ import (
 
 func TestSearch(t *testing.T) {
 	if len(*githubToken) == 0 {
-		t.Fatal("Environment variable GITHUB_TOKEN is not set")
+		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
 	// Set up external service
@@ -63,14 +66,49 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("type:repo visibility:private", func(t *testing.T) {
-		results, err := client.SearchRepositories("type:repo visibility:private")
+	t.Run("visibility", func(t *testing.T) {
+		tests := []struct {
+			query       string
+			wantMissing []string
+		}{
+			{
+				query:       "type:repo visibility:private",
+				wantMissing: []string{},
+			},
+			{
+				query:       "type:repo visibility:public",
+				wantMissing: []string{"github.com/sourcegraph/e2e-test-private-repository"},
+			},
+			{
+				query:       "type:repo visibility:any",
+				wantMissing: []string{},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.query, func(t *testing.T) {
+				results, err := client.SearchRepositories(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+				missing := results.Exists("github.com/sourcegraph/e2e-test-private-repository")
+				if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
+					t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("execute search with search operators", func(t *testing.T) {
+		results, err := client.SearchFiles("repo:^github.com/sourcegraph/go-diff$ type:file file:.go -file:.md")
 		if err != nil {
 			t.Fatal(err)
 		}
-		missing := results.Exists("github.com/sourcegraph/e2e-test-private-repository")
-		if len(missing) > 0 {
-			t.Fatalf("private repository not found: %v", missing)
+
+		// Make sure only got .go files and no .md files
+		for _, r := range results {
+			if !strings.HasSuffix(r.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.Name)
+			}
 		}
 	})
 }

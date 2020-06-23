@@ -13,7 +13,7 @@ import (
 
 func TestExternalService(t *testing.T) {
 	if len(*githubToken) == 0 {
-		t.Fatal("Environment variable GITHUB_TOKEN is not set")
+		t.Skip("Environment variable GITHUB_TOKEN is not set")
 	}
 
 	t.Run("repositoryPathPattern", func(t *testing.T) {
