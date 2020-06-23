@@ -8,3 +8,7 @@ datasources:
     url: http://host.docker.internal:9090
     isDefault: true
     editable: false
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://host.docker.internal:16686/-/debug/jaeger

@@ -84,7 +84,7 @@ func TestOrganization(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff([]schema.QuickLink{}, got.QuickLinks); diff != "" {
+			if diff := cmp.Diff([]schema.QuickLink(nil), got.QuickLinks); diff != "" {
 				t.Fatalf("QuickLinks mismatch (-want +got):\n%s", diff)
 			}
 		}

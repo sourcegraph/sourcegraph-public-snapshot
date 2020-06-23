@@ -631,7 +631,15 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
-// GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty
+// GrafanaNotifierOpsGenie description: OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration
+type GrafanaNotifierOpsGenie struct {
+	ApiKey    string `json:"apiKey"`
+	ApiUrl    string `json:"apiUrl"`
+	AutoClose bool   `json:"autoClose,omitempty"`
+	Type      string `json:"type"`
+}
+
+// GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty
 type GrafanaNotifierPagerduty struct {
 	// AutoResolve description: Resolve incidents in PagerDuty once the alert goes back to ok
 	AutoResolve bool `json:"autoResolve,omitempty"`
@@ -640,7 +648,7 @@ type GrafanaNotifierPagerduty struct {
 	Type           string `json:"type"`
 }
 
-// GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack
+// GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack
 type GrafanaNotifierSlack struct {
 	// Icon_emoji description: Provide an emoji to use as the icon for the bot’s message. Ex :smile:
 	Icon_emoji string `json:"icon_emoji,omitempty"`
@@ -663,7 +671,7 @@ type GrafanaNotifierSlack struct {
 	Username string `json:"username,omitempty"`
 }
 
-// GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook
+// GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook
 type GrafanaNotifierWebhook struct {
 	Password string `json:"password,omitempty"`
 	Type     string `json:"type"`
@@ -734,6 +742,7 @@ type Notifier struct {
 	Slack     *GrafanaNotifierSlack
 	Pagerduty *GrafanaNotifierPagerduty
 	Webhook   *GrafanaNotifierWebhook
+	Opsgenie  *GrafanaNotifierOpsGenie
 }
 
 func (v Notifier) MarshalJSON() ([]byte, error) {
@@ -746,6 +755,9 @@ func (v Notifier) MarshalJSON() ([]byte, error) {
 	if v.Webhook != nil {
 		return json.Marshal(v.Webhook)
 	}
+	if v.Opsgenie != nil {
+		return json.Marshal(v.Opsgenie)
+	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
 func (v *Notifier) UnmarshalJSON(data []byte) error {
@@ -756,6 +768,8 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "opsgenie":
+		return json.Unmarshal(data, &v.Opsgenie)
 	case "pagerduty":
 		return json.Unmarshal(data, &v.Pagerduty)
 	case "slack":
@@ -763,7 +777,7 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 	case "webhook":
 		return json.Unmarshal(data, &v.Webhook)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "opsgenie"})
 }
 
 type OAuthIdentity struct {

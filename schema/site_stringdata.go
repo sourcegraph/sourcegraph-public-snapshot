@@ -635,7 +635,8 @@ const SiteSchemaJSON = `{
             "oneOf": [
               { "$ref": "#/definitions/GrafanaNotifierSlack" },
               { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierWebhook" }
+              { "$ref": "#/definitions/GrafanaNotifierWebhook" },
+              { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
@@ -999,7 +1000,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierSlack": {
-      "description": "Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack",
+      "description": "Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -1046,7 +1047,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierPagerduty": {
-      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty",
+      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty",
       "type": "object",
       "required": ["type", "integrationKey"],
       "properties": {
@@ -1065,7 +1066,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierWebhook": {
-      "description": "Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook",
+      "description": "Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook",
       "type": "object",
       "required": ["type", "url"],
       "properties": {
@@ -1076,6 +1077,20 @@ const SiteSchemaJSON = `{
         "url": { "type": "string" },
         "username": { "type": "string" },
         "password": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierOpsGenie": {
+      "description": "OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration",
+      "type": "object",
+      "required": ["type", "apiKey", "apiUrl"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "opsgenie"
+        },
+        "apiKey": { "type": "string" },
+        "apiUrl": { "type": "string" },
+        "autoClose": { "type": "boolean" }
       }
     }
   }
