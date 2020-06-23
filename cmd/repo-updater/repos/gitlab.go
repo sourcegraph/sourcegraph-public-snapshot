@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -147,7 +148,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
 	}
-	if s.config.Token == "" || !proj.RequiresAuthentication() {
+	if s.config.Token == "" {
 		return proj.HTTPURLToRepo
 	}
 	u, err := url.Parse(proj.HTTPURLToRepo)
@@ -299,4 +300,56 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil
+}
+
+// CreateChangeset will create the Changeset on the source. If it already
+// exists, *Changeset will be populated and the return value will be true.
+func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	project := c.Repo.Metadata.(*gitlab.Project)
+	exists := false
+	source := git.AbbreviateRef(c.HeadRef)
+	target := git.AbbreviateRef(c.BaseRef)
+
+	mr, err := s.client.CreateMergeRequest(ctx, project, gitlab.CreateMergeRequestOpts{
+		SourceBranch: source,
+		TargetBranch: target,
+		Title:        c.Title,
+		Description:  c.Body,
+	})
+	if err != nil {
+		if err == gitlab.ErrMergeRequestAlreadyExists {
+			exists = true
+
+			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, project, source, target)
+			if err != nil {
+				return exists, errors.Wrap(err, "retrieving an extant merge request")
+			}
+		} else {
+			return exists, errors.Wrap(err, "creating the merge request")
+		}
+	}
+
+	if err := c.SetMetadata(mr); err != nil {
+		return exists, errors.Wrap(err, "setting changeset metadata")
+	}
+	return exists, nil
+}
+
+// CloseChangeset will close the Changeset on the source, where "close" means
+// the appropriate final state on the codehost (e.g. "declined" on Bitbucket
+// Server).
+func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	return errors.New("CloseChangeset is unimplemented")
+}
+
+// LoadChangesets loads the given Changesets from the sources and updates them.
+// If a Changeset could not be found on the source, it's included in the
+// returned slice.
+func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	return errors.New("LoadChangesets is unimplemented")
+}
+
+// UpdateChangeset can update Changesets.
+func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	return errors.New("UpdateChangeset is unimplemented")
 }
