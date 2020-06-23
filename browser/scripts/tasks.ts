@@ -118,6 +118,7 @@ function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: 
     if (USE_INLINE_EXTENSIONS) {
         manifest.web_accessible_resources = manifest.web_accessible_resources || []
         manifest.web_accessible_resources.push('extensions/*')
+        manifest.content_security_policy = "script-src 'self'; object-src 'self'"
     }
 
     delete manifest.$schema
