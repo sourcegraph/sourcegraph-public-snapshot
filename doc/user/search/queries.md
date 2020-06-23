@@ -37,7 +37,7 @@ Literal search interprets search patterns literally to simplify searching for wo
 
 As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`.
 
-### Regexp search
+### Regular expression search
 
 Click the <img src=../img/regex.png> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
 
@@ -50,12 +50,12 @@ Click the <img src=../img/regex.png> toggle to interpret search patterns as rege
 
 ### Structural search
 
-Click the <img src=../img/brackets.png> toggle to activate [structural search](structural.md). Structural search is a way to match more complex syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
+Click the <img src=../img/brackets.png> toggle to activate structural search. Structural search is a way to match richer syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
 
 | Search pattern syntax | Description |
 | --- | --- |
 | [`New(:[args])`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). |
-| [`"New(:[args])"`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) or<br/> [`'New(:[args])'`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | Quoting the search pattern has the same meaning as `New(:[args])`, but avoids syntax errors that may conflict with [keyword syntax](#keywords-all-searches). Special characters like `"` and `\` may be escaped. |
+| [`"New(:[args])"`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) or<br/> [`'New(:[args])'`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | Search for the pattern including quoted strings (version 3.17 onwards). Prior to version 3.17, quoting the search pattern is the same as `New(:[args])` and allowed to avoid syntax errors that may conflict with [keyword syntax](#keywords-all-searches). As of version 3.17, the `content:` field should be used to avoid syntax conflicts. |
 
 Note: It is not possible to perform case-insensitive matching with structural search.
 

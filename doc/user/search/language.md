@@ -336,10 +336,10 @@ At a basic level, a query consists of [search patterns](#search-pattern) and [pa
 </div>
 
 Build query expressions by combining [basic queries](#basic-query) and operators like `AND` or `OR`.
-
-**Example** `repo:github.com/sourcegraph/sourcegraph rtr AND newRouter` [↗](repo:^github\.com/sourcegraph/sourcegraph$ rtr AND newRouter)
-
 Group expressions with parentheses to build more complex expressions. If there are no balanced parentheses, `AND` operators bind tighter, so `foo or bar and baz` means `foo or (bar and baz)`. You may also use lowercase `and` or `or`.
+
+**Example:** `repo:github.com/sourcegraph/sourcegraph rtr AND newRouter` [↗](repo:^github\.com/sourcegraph/sourcegraph$ rtr AND newRouter)
+
 
 ## Search pattern
 
@@ -360,10 +360,11 @@ Group expressions with parentheses to build more complex expressions. If there a
   </table>
 </div>
 
-A pattern to search. By default the pattern is searched literally. The kind of search may be toggled, in which case the pattern matches differently:
+A pattern to search. By default the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
 <ul class="r">
-    <li class="r"><img class="r" src="../img/regex.png">Interpret the pattern as a regular expression. We support [RE2 syntax](https://golang.org/s/re2syntax). If the pattern is a [quoted string](#quoted-string) we search for it literally.</li>
-    <li class="r"><img class="r" src="../img/structural.png">Interpret the pattern as a [structural search](https://docs.sourcegraph.com/user/search/structural) pattern.</li>
+    <li class="r"><img class="r" src="../img/regex.png">Perform a [regular expression search](queries.md#regular-expression-search). We support [RE2 syntax](https://golang.org/s/re2syntax). Quoting patterns performs a literal search.<br>
+    <strong>Example:</strong> <code>foo.*bar.*baz</code><a href="https://sourcegraph.com/search?q=foo+bar&patternType=regexp"> ↗</a> <code>"foo bar"</code><a href="https://sourcegraph.com/search?q=%22foo+bar%22&patternType=regexp"> ↗</a></li>
+    <li class="r"><img class="r" src="../img/structural.png">Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural search. <br><strong>Example:</strong> <code>fmt.Sprintf(":[format]", :[args])</code><a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural"> ↗</a></li>
 </ul>
 
 
@@ -451,7 +452,7 @@ A pattern to search. By default the pattern is searched literally. The kind of s
   </table>
 </div>
 
-Search parameters allow you to narrow search queries and modify search behavior.
+Search parameters allow you to filter search results or modify search behavior.
 
 ### Repo
 
@@ -526,10 +527,11 @@ Search parameters allow you to narrow search queries and modify search behavior.
 </div>
 
 Search repositories that match the regular expression.
-
 A `-` before `repo` excludes the repository. By default
 the repository will be searched at the `HEAD` commit of the default
 branch. You can optionally change the [revision](#revision).
+
+**Example:** `repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute&patternType=regexp)
 
 ### Revision
 
@@ -606,6 +608,8 @@ branch. You can optionally change the [revision](#revision).
 
 Search a repository at a given revision. For example, a branch name, commit hash, or git tag.
 
+**Example:** `repo:^github\.com/gorilla/mux@948bec34 testroute` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/gorilla/mux%40948bec34+testroute&patternType=literal)
+
 ### File
 
 <div name="r">
@@ -663,6 +667,8 @@ Search a repository at a given revision. For example, a branch name, commit hash
 Search files whose full path matches the regular expression. A `-` before `file`
 excludes the file from being searched.
 
+**Example:** `file:\.js$ httptest` [↗](https://sourcegraph.com/search?q=file:%5C.js%24+httptest&patternType=regexp) `file:\.js$ -file:test http` [↗](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http&patternType=regexp)
+
 ### Language
 
 <div name="r">
@@ -693,6 +699,8 @@ excludes the file from being searched.
 Only search files in the specified programming language, like `typescript` or
 `python`.
 
+**Example:** `lang:typescript encoding` [↗](https://sourcegraph.com/search?q=lang:typescript+encoding&patternType=regexp)
+
 ### Content
 
 <div name="r">
@@ -710,10 +718,11 @@ Only search files in the specified programming language, like `typescript` or
 </div>
 
 Set the search pattern to search using a dedicated parameter.
-
-Useful, for example, when searching a string
-like `content:"repo:foo"` that may conflict with the syntax of
+Useful, for example, when searching literally for a string
+like `repo:my-repo` that may conflict with the syntax of
 parameters in this Sourcegraph language.
+
+**Example:** `repo:sourcegraph content:"repo:sourcegraph"` [↗](https://sourcegraph.com/search?q=repo:sourcegraph+content:%22repo:sourcegraph%22&patternType=literal)
 
 ### Type
 
