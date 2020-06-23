@@ -531,7 +531,7 @@ A `-` before `repo` excludes the repository. By default
 the repository will be searched at the `HEAD` commit of the default
 branch. You can optionally change the [revision](#revision).
 
-**Example:** `repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute&patternType=regexp)
+**Example:** `repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute&patternType=regexp) `-repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=-repo:gorilla/mux+testroute&patternType=regexp)
 
 ### Revision
 
