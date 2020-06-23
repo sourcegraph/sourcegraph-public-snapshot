@@ -250,8 +250,8 @@ const services = {
     },
 }
 
-export const extensionsController: Pick<Controller, 'executeCommand' | 'services' | 'extHostAPI'> = {
+export const extensionsController: Pick<Controller, 'executeCommand' | 'services' | 'extensionHostAPI'> = {
     executeCommand: () => Promise.resolve(),
     services: services as any,
-    extHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
+    extensionHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
 }

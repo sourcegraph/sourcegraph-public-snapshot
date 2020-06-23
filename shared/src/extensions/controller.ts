@@ -44,7 +44,7 @@ export interface Controller extends Unsubscribable {
      */
     unsubscribe(): void
 
-    extHostAPI: Promise<Remote<FlatExtHostAPI>>
+    extensionHostAPI: Promise<Remote<FlatExtHostAPI>>
 }
 
 /**
@@ -150,7 +150,7 @@ export function createController(context: PlatformContext): Controller {
                 }
                 return Promise.reject(error)
             }),
-        extHostAPI: extensionHostClientPromise.then(({ api }) => api),
+        extensionHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }
 }

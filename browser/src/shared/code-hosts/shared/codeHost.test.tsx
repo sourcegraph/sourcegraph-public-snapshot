@@ -68,7 +68,7 @@ const createMockController = (services: Services): Controller => ({
     notifications: NEVER,
     executeCommand: () => Promise.resolve(),
     unsubscribe: noop,
-    extHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
+    extensionHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
 })
 
 const createMockPlatformContext = (
