@@ -95,6 +95,7 @@ type LSIFRepositoryUploadsQueryArgs struct {
 
 type LSIFUploadResolver interface {
 	ID() graphql.ID
+	InputRepositoryName() string
 	InputCommit() string
 	InputRoot() string
 	IsLatestForRepo() bool
@@ -128,6 +129,7 @@ type LSIFRepositoryIndexesQueryArgs struct {
 
 type LSIFIndexResolver interface {
 	ID() graphql.ID
+	InputRepositoryName() string
 	InputCommit() string
 	QueuedAt() DateTime
 	State() string
