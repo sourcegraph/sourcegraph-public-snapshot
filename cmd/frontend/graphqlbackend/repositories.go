@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"time"
 
@@ -117,7 +116,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if !searchIndexEnabled {
 				return true // do not need index
 			}
-			_, ok := indexed[strings.ToLower(string(repo))]
+			_, ok := indexed[string(repo)]
 			return ok
 		}
 		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
