@@ -355,3 +355,34 @@ func ExecChangesetJob(
 	runFinalUpdate(ctx, opts.Store)
 	return err
 }
+
+func isOutdated(c *repos.Changeset) (bool, error) {
+	currentTitle, err := c.Changeset.Title()
+	if err != nil {
+		return false, err
+	}
+
+	if currentTitle != c.Title {
+		return true, nil
+	}
+
+	currentBody, err := c.Changeset.Body()
+	if err != nil {
+		return false, err
+	}
+
+	if currentBody != c.Body {
+		return true, nil
+	}
+
+	currentBaseRef, err := c.Changeset.BaseRef()
+	if err != nil {
+		return false, err
+	}
+
+	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
+		return true, nil
+	}
+
+	return false, nil
+}
