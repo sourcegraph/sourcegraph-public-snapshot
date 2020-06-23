@@ -338,7 +338,7 @@ At a basic level, a query consists of [search patterns](#search-pattern) and [pa
 Build query expressions by combining [basic queries](#basic-query) and operators like `AND` or `OR`.
 Group expressions with parentheses to build more complex expressions. If there are no balanced parentheses, `AND` operators bind tighter, so `foo or bar and baz` means `foo or (bar and baz)`. You may also use lowercase `and` or `or`.
 
-**Example:** `repo:github.com/sourcegraph/sourcegraph rtr AND newRouter` [↗](repo:^github\.com/sourcegraph/sourcegraph$ rtr AND newRouter)
+**Example:** `repo:github.com/sourcegraph/sourcegraph rtr AND newRouter` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+rtr+AND+newRouter&patternType=literal)
 
 
 ## Search pattern
