@@ -47,6 +47,14 @@ func SetDerivedState(ctx context.Context, c *cmpgn.Changeset, es []*cmpgn.Change
 		c.ExternalReviewState = state
 	}
 
+	// If the changeset was "complete" (that is, not open) the last time we
+	// synced, and it's still complete, then we don't need to do any further
+	// work: the diffstat should still be correct, and this way we don't need to
+	// rely on gitserver having the head OID still available.
+	if c.SyncState.IsComplete && c.ExternalState != cmpgn.ChangesetStateOpen {
+		return
+	}
+
 	// Some of the fields on changesets are dependent on the SyncState: this
 	// encapsulates fields that we want to cache based on our current
 	// understanding of the changeset's state on the external provider that are
@@ -485,7 +493,11 @@ func computeSyncState(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Re
 		return nil, err
 	}
 
-	return &cmpgn.ChangesetSyncState{BaseRefOid: base, HeadRefOid: head}, nil
+	return &cmpgn.ChangesetSyncState{
+		BaseRefOid: base,
+		HeadRefOid: head,
+		IsComplete: c.ExternalState != cmpgn.ChangesetStateOpen,
+	}, nil
 }
 
 func computeRev(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Repo, getOid, getRef func(*cmpgn.Changeset) (string, error)) (string, error) {

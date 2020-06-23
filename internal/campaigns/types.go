@@ -698,10 +698,15 @@ func (c *Changeset) Labels() []ChangesetLabel {
 type ChangesetSyncState struct {
 	BaseRefOid string
 	HeadRefOid string
+
+	// This is essentially the result of c.ExternalState != CampaignStateOpen
+	// the last time a sync occured. We use this to short circuit computing the
+	// sync state if the changeset remains closed.
+	IsComplete bool
 }
 
 func (state *ChangesetSyncState) Equals(old *ChangesetSyncState) bool {
-	return state.BaseRefOid == old.BaseRefOid && state.HeadRefOid == old.HeadRefOid
+	return state.BaseRefOid == old.BaseRefOid && state.HeadRefOid == old.HeadRefOid && state.IsComplete == old.IsComplete
 }
 
 // A ChangesetEvent is an event that happened in the lifetime
