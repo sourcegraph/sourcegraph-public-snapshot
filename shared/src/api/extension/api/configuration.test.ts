@@ -1,6 +1,6 @@
 import { initNewExtensionAPI } from '../flatExtensionApi'
 import { SettingsEdit } from '../../client/services/settings'
-import { pretendRemote } from '../../util'
+import { pretendRemote, noopMainThreadAPI } from '../../util'
 import { MainThreadAPI } from '../../contract'
 import { SettingsCascade } from '../../../settings/settings'
 
@@ -15,7 +15,7 @@ describe('ConfigurationService', () => {
             const {
                 configuration,
                 exposedToMain: { syncSettingsData },
-            } = initNewExtensionAPI(pretendRemote({}), initialSettings({ a: 'a' }))
+            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }))
             syncSettingsData({ subjects: [], final: { a: 'b' } })
             syncSettingsData({ subjects: [], final: { a: 'c' } })
             expect(configuration.get<{ a: string }>().get('a')).toBe('c')
@@ -24,7 +24,7 @@ describe('ConfigurationService', () => {
 
     describe('changes', () => {
         test('emits immediately on subscription', () => {
-            const { configuration } = initNewExtensionAPI(pretendRemote({}), initialSettings({ a: 'a' }))
+            const { configuration } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }))
             let calledTimes = 0
             configuration.subscribe(() => calledTimes++)
             expect(calledTimes).toBe(1)
@@ -34,7 +34,7 @@ describe('ConfigurationService', () => {
             const {
                 configuration,
                 exposedToMain: { syncSettingsData },
-            } = initNewExtensionAPI(pretendRemote({}), initialSettings({ a: 'a' }))
+            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }))
             let calledTimes = 0
             configuration.subscribe(() => calledTimes++)
             syncSettingsData({ subjects: [], final: { a: 'b' } })
@@ -46,7 +46,7 @@ describe('ConfigurationService', () => {
             const {
                 configuration,
                 exposedToMain: { syncSettingsData },
-            } = initNewExtensionAPI(pretendRemote({}), initialSettings({ a: 'b' }))
+            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'b' }))
             const config = configuration.get<{ a: string }>()
             expect(config.get('a')).toBe('b')
             syncSettingsData({ subjects: [], final: { a: 'c' } })
@@ -59,10 +59,11 @@ describe('ConfigurationService', () => {
             const requestedEdits: SettingsEdit[] = []
             const { configuration } = initNewExtensionAPI(
                 pretendRemote<MainThreadAPI>({
-                    applySettingsEdit: edit =>
-                        Promise.resolve().then(() => {
-                            requestedEdits.push(edit)
-                        }),
+                    ...noopMainThreadAPI,
+                    applySettingsEdit: edit => {
+                        requestedEdits.push(edit)
+                        return Promise.resolve()
+                    },
                 }),
                 initialSettings({ a: 'b' })
             )

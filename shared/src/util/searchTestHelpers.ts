@@ -11,8 +11,7 @@ import {
     ISymbol,
     SearchResult,
 } from '../graphql/schema'
-import { pretendRemote } from '../api/util'
-import { FlatExtHostAPI } from '../api/contract'
+import { pretendRemote, noopFlatExtensionHostAPI } from '../api/util'
 
 export const RESULT = {
     __typename: 'FileMatch' as const,
@@ -253,5 +252,5 @@ const services = {
 export const extensionsController: Pick<Controller, 'executeCommand' | 'services' | 'extensionHostAPI'> = {
     executeCommand: () => Promise.resolve(),
     services: services as any,
-    extensionHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
+    extensionHostAPI: Promise.resolve(pretendRemote(noopFlatExtensionHostAPI)),
 }

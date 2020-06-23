@@ -1,7 +1,10 @@
-import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote } from 'comlink'
-import { Subscription } from 'rxjs'
+import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, proxy } from 'comlink'
+import { Subscription, of } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
-import { hasProperty } from '../util/types'
+import { hasProperty, keyExistsIn } from '../util/types'
+import { FlatExtHostAPI, MainThreadAPI } from './contract'
+import { noop } from 'lodash'
+import { proxySubscribable } from './extension/api/common'
 
 /**
  * Tests whether a value is a WHATWG URL object.
@@ -72,17 +75,29 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
  * NOTE: it does not handle ProxyMethods and callbacks yet
  * NOTE2: for testing purposes only!!
  */
-export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    (new Proxy(object, {
-        get: (a, property) => {
-            if (property in a) {
-                if (typeof (a as any)[property] !== 'function') {
-                    return Promise.resolve((a as any)[property])
-                }
-
-                return (...args: any[]) => Promise.resolve((a as any)[property](...args))
+export const pretendRemote = <T extends object>(object: T): Remote<T> =>
+    new Proxy(object, {
+        get: (target, key) => {
+            if (!keyExistsIn(key, target)) {
+                return undefined
             }
-            throw new Error(`unspecified property in the stub ${property.toString()}`)
+            const value = target[key]
+            if (typeof value === 'function') {
+                return (...args: unknown[]) => Promise.resolve(value(...args))
+            }
+            return Promise.resolve(value)
         },
-    }) as unknown) as Remote<T>
+    }) as Remote<T>
+
+export const noopFlatExtensionHostAPI: FlatExtHostAPI = {
+    syncRoots: noop,
+    syncVersionContext: noop,
+    transformSearchQuery: (query: string) => proxySubscribable(of(query)),
+    syncSettingsData: noop,
+}
+
+export const noopMainThreadAPI: MainThreadAPI = {
+    applySettingsEdit: () => Promise.resolve(),
+    executeCommand: () => Promise.resolve(),
+    registerCommand: () => proxy(new Subscription()),
+}

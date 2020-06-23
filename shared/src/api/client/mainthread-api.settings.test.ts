@@ -1,12 +1,14 @@
 import { initMainThreadAPI, MainThreadAPIDependencies } from './mainthread-api'
 import { PlatformContext } from '../../platform/context'
 import { of, Subject } from 'rxjs'
-import { pretendRemote } from '../util'
+import { pretendRemote, noopFlatExtensionHostAPI } from '../util'
 import { SettingsEdit } from './services/settings'
 import { SettingsCascade } from '../../settings/settings'
 import { FlatExtHostAPI } from '../contract'
 import { createWorkspaceService } from './services/workspaceService'
 import { CommandRegistry } from './services/command'
+import { noop } from 'lodash'
+import { proxySubscribable } from '../extension/api/common'
 
 const defaultDependencies = (): MainThreadAPIDependencies => ({
     workspace: createWorkspaceService(),
@@ -40,7 +42,11 @@ describe('configuration', () => {
             updateSettings,
         }
 
-        const { api } = initMainThreadAPI(pretendRemote({}), platformContext, defaultDependencies())
+        const { api } = initMainThreadAPI(
+            pretendRemote(noopFlatExtensionHostAPI),
+            platformContext,
+            defaultDependencies()
+        )
 
         const edit: SettingsEdit = { path: ['a'], value: 'newVal' }
         await api.applySettingsEdit(edit)
@@ -72,6 +78,9 @@ describe('configuration', () => {
         const passedToExtensionHost: SettingsCascade<object>[] = []
         initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
+                syncRoots: noop,
+                syncVersionContext: noop,
+                transformSearchQuery: (query: string) => proxySubscribable(of(query)),
                 syncSettingsData: data => {
                     passedToExtensionHost.push(data)
                 },
@@ -93,6 +102,9 @@ describe('configuration', () => {
         const passedToExtensionHost: SettingsCascade<object>[] = []
         const { subscription } = initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
+                syncRoots: noop,
+                syncVersionContext: noop,
+                transformSearchQuery: (query: string) => proxySubscribable(of(query)),
                 syncSettingsData: data => {
                     passedToExtensionHost.push(data)
                 },
