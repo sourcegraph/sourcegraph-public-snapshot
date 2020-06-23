@@ -36,7 +36,7 @@ export interface SourcegraphIntegrationURLs {
 }
 
 /**
- * The PlatformContext provided in the browser extension and native integrations.
+ * The PlatformContext provided in the browser (for browser extensions and native integrations).
  */
 export interface BrowserPlatformContext extends PlatformContext {
     /**
@@ -46,7 +46,7 @@ export interface BrowserPlatformContext extends PlatformContext {
 }
 
 /**
- * Creates the {@link PlatformContext} for the browser extension.
+ * Creates the {@link PlatformContext} for the browser (for browser extensions and native integrations)
  */
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
