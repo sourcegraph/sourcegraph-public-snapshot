@@ -40,7 +40,7 @@ var DefaultEnv = map[string]string{
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
 	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
-	"JAEGER_SERVER_URL":  "http://127.0.0.0.1:16686",
+	"JAEGER_SERVER_URL":  "http://127.0.0.1:16686",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
