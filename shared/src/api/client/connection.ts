@@ -2,7 +2,7 @@ import * as comlink from 'comlink'
 import { from, merge, Subject, Subscription, of } from 'rxjs'
 import { concatMap, first } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
-import { PlatformContext, ClosablePair } from '../../platform/context'
+import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
@@ -53,7 +53,7 @@ export interface ActivatedExtension {
  * @param endpoints The Worker object to communicate with
  */
 export async function createExtensionHostClientConnection(
-    endpointsPromise: Promise<ClosablePair>,
+    endpointsPromise: Promise<ClosableEndpointPair>,
     services: Services,
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
@@ -64,8 +64,8 @@ export async function createExtensionHostClientConnection(
 
     registerComlinkTransferHandlers()
 
-    const { pair: endpoints, close: closeEndpoint } = await endpointsPromise
-    subscription.add(closeEndpoint)
+    const endpoints = await endpointsPromise
+    subscription.add(endpoints.subscription)
 
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
