@@ -550,7 +550,7 @@ You can override that by setting this env variable:
 SRC_REPOS_DESIRED_PERCENT_FREE=5
 ```
 
-#### Certificate Expiry
+#### Certificate expiry
 
 If you see a certificate expiry warning you may need to delete your certificate and restart your server.
 
