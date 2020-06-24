@@ -653,7 +653,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						SyncError: &protocol.SyncError{
-							Message: "syncer.sync.streaming: syncer.storedExternalIDs: could not connect to database",
+							Message: "syncer.sync.store.list-repos: could not connect to database",
 						},
 					},
 				},
