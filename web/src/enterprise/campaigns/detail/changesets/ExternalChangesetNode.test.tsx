@@ -50,6 +50,11 @@ describe('ExternalChangesetNode', () => {
                                 nodes: [{ __typename: 'FileDiff' }],
                             },
                         },
+                        diffStat: {
+                            added: 100,
+                            changed: 200,
+                            deleted: 100,
+                        },
                         labels: [
                             {
                                 __typename: 'ChangesetLabel',

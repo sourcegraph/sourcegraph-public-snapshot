@@ -22,10 +22,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -107,6 +109,15 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		// Set up mocks to prevent the diffstat computation from trying to
+		// use a real gitserver, and so we can control what diff is used to
+		// create the diffstat.
+		state := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
+			Name: "repo",
+			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
+		})
+		defer state.Unmock()
 
 		err = SyncChangesets(ctx, repoStore, store, cf, changesets...)
 		if err != nil {

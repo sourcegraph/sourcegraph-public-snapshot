@@ -1,4 +1,4 @@
-package campaigns
+package testing
 
 import (
 	"context"
