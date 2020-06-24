@@ -1,20 +1,20 @@
 import * as H from 'history'
 import React from 'react'
-import { CampaignPatches } from './CampaignPatches'
+import { PatchSetPatches } from './PatchSetPatches'
 import { Subject, of } from 'rxjs'
 import { shallow } from 'enzyme'
 
-describe('CampaignPatches', () => {
+describe('PatchSetPatches', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
     test('renders', () => {
         expect(
             shallow(
-                <CampaignPatches
+                <PatchSetPatches
                     isLightTheme={true}
                     history={history}
                     location={location}
-                    campaign={{ id: 'test' }}
+                    patchSet={{ id: 'test' }}
                     campaignUpdates={new Subject<void>()}
                     changesetUpdates={new Subject<void>()}
                     enablePublishing={false}

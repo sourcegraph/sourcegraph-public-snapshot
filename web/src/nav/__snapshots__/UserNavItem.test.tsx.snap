@@ -30,15 +30,7 @@ exports[`UserNavItem simple 1`] = `
         }
       }
       isLightTheme={true}
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      location="[Location path=/]"
       onThemePreferenceChange={[Function]}
       showDotComMarketing={true}
       themePreference="light"

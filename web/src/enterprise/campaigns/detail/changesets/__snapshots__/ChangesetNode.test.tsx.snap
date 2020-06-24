@@ -1,111 +1,31 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ChangesetNode renders ExternalChangeset 1`] = `
-Object {
-  "campaignUpdates": Subject {
-    "_isScalar": false,
-    "closed": false,
-    "hasError": false,
-    "isStopped": false,
-    "observers": Array [],
-    "thrownError": null,
-  },
-  "history": Object {
-    "action": "POP",
-    "block": [Function],
-    "canGo": [Function],
-    "createHref": [Function],
-    "entries": Array [
-      Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-    ],
-    "go": [Function],
-    "goBack": [Function],
-    "goForward": [Function],
-    "index": 0,
-    "length": 1,
-    "listen": [Function],
-    "location": Object {
-      "hash": "",
-      "key": undefined,
-      "pathname": "/",
-      "search": "",
-      "state": undefined,
-    },
-    "push": [Function],
-    "replace": [Function],
-  },
-  "isLightTheme": true,
-  "location": Object {
-    "hash": "",
-    "key": undefined,
-    "pathname": "/campaigns",
-    "search": "",
-    "state": undefined,
-  },
-  "node": Object {
-    "__typename": "ExternalChangeset",
-  },
-  "viewerCanAdminister": false,
-}
+<ExternalChangesetNode
+  campaignUpdates="[Subject]"
+  history="[History]"
+  isLightTheme={true}
+  location="[Location path=/campaigns]"
+  node={
+    Object {
+      "__typename": "ExternalChangeset",
+    }
+  }
+  viewerCanAdminister={false}
+/>
 `;
 
 exports[`ChangesetNode renders HiddenExternalChangeset 1`] = `
-Object {
-  "campaignUpdates": Subject {
-    "_isScalar": false,
-    "closed": false,
-    "hasError": false,
-    "isStopped": false,
-    "observers": Array [],
-    "thrownError": null,
-  },
-  "history": Object {
-    "action": "POP",
-    "block": [Function],
-    "canGo": [Function],
-    "createHref": [Function],
-    "entries": Array [
-      Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-    ],
-    "go": [Function],
-    "goBack": [Function],
-    "goForward": [Function],
-    "index": 0,
-    "length": 1,
-    "listen": [Function],
-    "location": Object {
-      "hash": "",
-      "key": undefined,
-      "pathname": "/",
-      "search": "",
-      "state": undefined,
-    },
-    "push": [Function],
-    "replace": [Function],
-  },
-  "isLightTheme": true,
-  "location": Object {
-    "hash": "",
-    "key": undefined,
-    "pathname": "/campaigns",
-    "search": "",
-    "state": undefined,
-  },
-  "node": Object {
-    "__typename": "HiddenExternalChangeset",
-  },
-  "viewerCanAdminister": false,
-}
+<HiddenExternalChangesetNode
+  campaignUpdates="[Subject]"
+  history="[History]"
+  isLightTheme={true}
+  location="[Location path=/campaigns]"
+  node={
+    Object {
+      "__typename": "HiddenExternalChangeset",
+    }
+  }
+  viewerCanAdminister={false}
+/>
 `;

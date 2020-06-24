@@ -1,7 +1,7 @@
 import React from 'react'
-import { createRenderer } from 'react-test-renderer/shallow'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
+import { shallow } from 'enzyme'
 
 const PROPS = {
     name: 'Super campaign',
@@ -17,19 +17,15 @@ const PROPS = {
 describe('CampaignActionsBar', () => {
     test('new with patch set', () =>
         expect(
-            createRenderer().render(
-                <CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={true} campaign={undefined} />
-            )
+            shallow(<CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={true} campaign={undefined} />)
         ).toMatchSnapshot())
     test('new without patch set', () =>
         expect(
-            createRenderer().render(
-                <CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={false} campaign={undefined} />
-            )
+            shallow(<CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={false} campaign={undefined} />)
         ).toMatchSnapshot())
     test('not editable', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
@@ -47,7 +43,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('editable', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
@@ -65,7 +61,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('closed', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
@@ -83,7 +79,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('edit mode', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="editing"
@@ -101,7 +97,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('processing', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="editing"
@@ -119,7 +115,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('mode: saving', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="saving"
@@ -137,7 +133,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('mode: deleting', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="deleting"
@@ -155,7 +151,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('mode: closing', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="closing"
@@ -173,7 +169,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('some changesets still open', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
@@ -191,7 +187,7 @@ describe('CampaignActionsBar', () => {
         ).toMatchSnapshot())
     test('all changesets not open', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"

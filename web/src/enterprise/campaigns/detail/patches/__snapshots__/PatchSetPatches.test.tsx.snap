@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CampaignPatches renders 1`] = `
+exports[`PatchSetPatches renders 1`] = `
 <div
   className="list-group"
 >
@@ -23,6 +23,7 @@ exports[`CampaignPatches renders 1`] = `
     noun="patch"
     pluralNoun="patches"
     queryConnection={[Function]}
+    updates="[Subject]"
     useURLQuery={false}
   />
 </div>

@@ -1,8 +1,7 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { CampaignBranchField } from './CampaignBranchField'
+import { mount } from 'enzyme'
 
 describe('CampaignBranchField', () => {
-    test('renders', () =>
-        expect(renderer.create(<CampaignBranchField value="a" onChange={() => undefined} />)).toMatchSnapshot())
+    test('renders', () => expect(mount(<CampaignBranchField value="a" onChange={() => undefined} />)).toMatchSnapshot())
 })
