@@ -225,6 +225,7 @@ describe('getHover from ExtensionHost API', () => {
 
         it('restarts hover query if a provider was added in the middle of the execution', () => {
             // TODO
+            const noopDocuments = new ExtensionDocuments(() => Promise.resolve())
             const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
 
             const results: string[] = []

@@ -1,7 +1,7 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from } from 'rxjs'
+import { BehaviorSubject, Subject, of, Observable, from } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 import { switchMap, mergeMap, map } from 'rxjs/operators'

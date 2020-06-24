@@ -6,6 +6,9 @@ import * as sourcegraph from 'sourcegraph'
 import { Services } from '../client/services'
 import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { Remote } from 'comlink'
+import { FlatExtHostAPI } from '../contract'
+import { wrapRemoteObservable } from '../client/api/common'
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>({
@@ -22,11 +25,13 @@ describe('LanguageFeatures (integration)', () => {
             contents: labels.map(label => ({ value: label, kind: MarkupKind.PlainText })),
         }),
         providerWithImplementation: run => ({ provideHover: run } as sourcegraph.HoverProvider),
-        getResult: (services, uri) =>
-            services.textDocumentHover.getHover({
-                textDocument: { uri },
-                position: { line: 1, character: 2 },
-            }),
+        getResult: (services, uri, extHost) =>
+            wrapRemoteObservable(
+                extHost.getHover({
+                    textDocument: { uri },
+                    position: { line: 1, character: 2 },
+                })
+            ),
         emptyResultValue: null,
     })
     testLocationProvider<sourcegraph.DefinitionProvider>({
@@ -115,18 +120,22 @@ function testLocationProvider<P>({
     labeledProvider: (label: string) => P
     labeledProviderResults: (labels: string[]) => any
     providerWithImplementation: (run: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => void) => P
-    getResult: (services: Services, uri: string) => Observable<MaybeLoadingResult<unknown>>
+    getResult: (
+        services: Services,
+        uri: string,
+        extHost: Remote<FlatExtHostAPI>
+    ) => Observable<MaybeLoadingResult<unknown>>
     emptyResultValue: unknown
 }): void {
     describe(`languages.${name}`, () => {
         it('registers and unregisters a single provider', async () => {
-            const { services, extensionAPI } = await integrationTestContext()
+            const { services, extensionAPI, extensionHost } = await integrationTestContext()
 
             // Register the provider and call it.
             const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
             await extensionAPI.internal.sync()
             expect(
-                await getResult(services, 'file:///f')
+                await getResult(services, 'file:///f', extensionHost)
                     .pipe(
                         first(({ isLoading }) => !isLoading),
                         map(({ result }) => result)
@@ -137,7 +146,7 @@ function testLocationProvider<P>({
             // Unregister the provider and ensure it's removed.
             subscription.unsubscribe()
             expect(
-                await getResult(services, 'file:///f')
+                await getResult(services, 'file:///f', extensionHost)
                     .pipe(
                         first(({ isLoading }) => !isLoading),
                         map(({ result }) => result)
@@ -147,7 +156,7 @@ function testLocationProvider<P>({
         })
 
         it('syncs with models', async () => {
-            const { services, extensionAPI } = await integrationTestContext()
+            const { services, extensionHost, extensionAPI } = await integrationTestContext()
 
             const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
             await extensionAPI.internal.sync()
@@ -161,7 +170,7 @@ function testLocationProvider<P>({
             })
 
             expect(
-                await getResult(services, 'file:///f2')
+                await getResult(services, 'file:///f2', extensionHost)
                     .pipe(
                         first(({ isLoading }) => !isLoading),
                         map(({ result }) => result)
@@ -173,7 +182,7 @@ function testLocationProvider<P>({
         })
 
         it('supplies params to the provideXyz method', async () => {
-            const { services, extensionAPI } = await integrationTestContext()
+            const { services, extensionHost, extensionAPI } = await integrationTestContext()
             const { wait, done } = createBarrier()
             registerProvider(extensionAPI)(
                 ['*'],
@@ -184,7 +193,7 @@ function testLocationProvider<P>({
                 })
             )
             await extensionAPI.internal.sync()
-            await getResult(services, 'file:///f')
+            await getResult(services, 'file:///f', extensionHost)
                 .pipe(
                     first(({ isLoading }) => !isLoading),
                     map(({ result }) => result)
@@ -194,7 +203,7 @@ function testLocationProvider<P>({
         })
 
         it('supports multiple providers', async () => {
-            const { services, extensionAPI } = await integrationTestContext()
+            const { extensionHost, services, extensionAPI } = await integrationTestContext()
 
             // Register 2 providers with different results.
             registerProvider(extensionAPI)(['*'], labeledProvider('a'))
@@ -202,7 +211,7 @@ function testLocationProvider<P>({
             await extensionAPI.internal.sync()
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
-            expect(await getResult(services, 'file:///f').pipe(take(3), toArray()).toPromise()).toEqual([
+            expect(await getResult(services, 'file:///f', extensionHost).pipe(take(3), toArray()).toPromise()).toEqual([
                 { isLoading: true, result: emptyResultValue },
                 { isLoading: true, result: labeledProviderResults(['a']) },
                 { isLoading: false, result: labeledProviderResults(['a', 'b']) },

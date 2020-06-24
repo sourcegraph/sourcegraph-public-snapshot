@@ -26,6 +26,7 @@ export interface FlatExtHostAPI {
     // Search
     transformSearchQuery: (query: string) => ProxySubscribable<string>
 
+    // Languages
     getHover: (parameters: TextDocumentPositionParams) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
 }
 
