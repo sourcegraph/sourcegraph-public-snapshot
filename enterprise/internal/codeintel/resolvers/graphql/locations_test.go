@@ -154,6 +154,34 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 }
 
+func TestCachedLocationResolverUnknownRepository(t *testing.T) {
+	t.Cleanup(func() {
+		db.Mocks.Repos.Get = nil
+		git.Mocks.ResolveRevision = nil
+	})
+
+	db.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
+		return nil, &db.RepoNotFoundErr{ID: id}
+	}
+
+	repositoryResolver, err := NewCachedLocationResolver().Repository(context.Background(), 50)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if repositoryResolver != nil {
+		t.Errorf("unexpected non-nil resolver")
+	}
+
+	// Ensure no dereference in child resolvers either
+	pathResolver, err := NewCachedLocationResolver().Path(context.Background(), 50, "deadbeef", "main.go")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if pathResolver != nil {
+		t.Errorf("unexpected non-nil resolver")
+	}
+}
+
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	t.Cleanup(func() {
 		db.Mocks.Repos.Get = nil
@@ -173,6 +201,15 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if commitResolver != nil {
+		t.Errorf("unexpected non-nil resolver")
+	}
+
+	// Ensure no dereference in child resolvers either
+	pathResolver, err := NewCachedLocationResolver().Path(context.Background(), 50, "deadbeef", "main.go")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if pathResolver != nil {
 		t.Errorf("unexpected non-nil resolver")
 	}
 }
