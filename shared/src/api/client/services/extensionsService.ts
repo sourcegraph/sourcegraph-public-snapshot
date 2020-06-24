@@ -17,6 +17,8 @@ import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
 import { fromFetch } from '../../../graphql/fromFetch'
 import { getInlineExtensions } from './get-inline-extensions'
+import { isFirefox } from '../../../../../browser/src/shared/util/context'
+import { isExtension } from '../../../../../browser/src/shared/context'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -56,13 +58,17 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
     sideloadedExtensionURL: Subscribable<string | null>
 }
 
+export interface IExtensionsService {
+    activeExtensions: Subscribable<ExecutableExtension[]>
+}
+
 /**
  * Manages the set of extensions that are available and activated.
  *
  * @internal This is an internal implementation detail and is different from the product feature called the
  * "extension registry" (where users can search for and enable extensions).
  */
-export class ExtensionsService {
+export class ExtensionsService implements IExtensionsService {
     constructor(
         private platformContext: PartialContext,
         private modelService: Pick<ModelService, 'activeLanguages'>,
@@ -123,12 +129,6 @@ export class ExtensionsService {
      * plus a certain period of inactivity).
      */
     public get activeExtensions(): Subscribable<ExecutableExtension[]> {
-        // TODO: Selectively enable whether to use inline extensions
-        const useInlineExtensions = true
-        if (useInlineExtensions) {
-            return getInlineExtensions()
-        }
-
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()
@@ -225,4 +225,28 @@ function extensionsWithMatchedActivationEvent(
         }
         return false
     })
+}
+
+/**
+ * Manages the set of inline (bundled) extensions that are loaded. Only applicable to the Firefox browser addon.
+ *
+ * The inline extensions service loads extesions directly from the addon and does not load any code remotely.
+ */
+class InlineExtensionsService implements IExtensionsService {
+    public get activeExtensions(): Subscribable<ExecutableExtension[]> {
+        return getInlineExtensions()
+    }
+}
+
+export function createExtensionsService(
+    platformContext: PartialContext,
+    modelService: Pick<ModelService, 'activeLanguages'>
+): IExtensionsService {
+    // On Firefox extension, use the inline extensions service.
+    if (isExtension && isFirefox()) {
+        return new InlineExtensionsService()
+    }
+
+    // On all other platforms, use the standard extensions service.
+    return new ExtensionsService(platformContext, modelService)
 }

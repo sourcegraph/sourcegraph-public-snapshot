@@ -6,7 +6,7 @@ import { CompletionItemProviderRegistry } from './services/completion'
 import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { createViewerService } from './services/viewerService'
-import { ExtensionsService } from './services/extensionsService'
+import { createExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
 import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
@@ -45,7 +45,7 @@ export class Services {
         this.platformContext.settings,
         this.context.data
     )
-    public readonly extensions = new ExtensionsService(this.platformContext, this.model)
+    public readonly extensions = createExtensionsService(this.platformContext, this.model)
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
