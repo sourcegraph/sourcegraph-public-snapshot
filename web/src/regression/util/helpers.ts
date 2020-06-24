@@ -205,8 +205,8 @@ export async function getGlobalSettings(
     }
     return {
         subjectID: globalSettingsSubject.id,
-        settingsID: globalSettingsSubject.latestSettings && globalSettingsSubject.latestSettings.id,
-        contents: (globalSettingsSubject.latestSettings && globalSettingsSubject.latestSettings.contents) || '',
+        settingsID: globalSettingsSubject.latestSettings?.id ?? null,
+        contents: globalSettingsSubject.latestSettings?.contents || '',
     }
 }
 

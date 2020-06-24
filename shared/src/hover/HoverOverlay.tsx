@@ -160,8 +160,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                         ? {
                               opacity: 1,
                               visibility: 'visible',
-                              left: overlayPosition.left + 'px',
-                              top: overlayPosition.top + 'px',
+                              left: `${overlayPosition.left}px`,
+                              top: `${overlayPosition.top}px`,
                           }
                         : {
                               opacity: 0,

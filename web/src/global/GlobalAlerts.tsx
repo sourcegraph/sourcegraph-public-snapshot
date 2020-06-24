@@ -17,13 +17,6 @@ import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
 import * as H from 'history'
 
-// This module is not in @types/semver yet. We can't use the top-level semver module because it uses
-// dynamic requires, which Webpack complains about.
-//
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-import semverParse from 'semver/functions/parse'
-
 interface Props extends SettingsCascadeProps {
     history: H.History
     isSiteAdmin: boolean

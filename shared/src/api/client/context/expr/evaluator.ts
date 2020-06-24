@@ -97,6 +97,7 @@ function exec(node: ExpressionNode, context: ComputedContext): any {
             case '>=':
                 return left >= right()
             case '+':
+                // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
                 return left + right()
             case '-':
                 return left - right()

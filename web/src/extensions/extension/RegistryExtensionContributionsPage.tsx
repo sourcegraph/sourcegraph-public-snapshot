@@ -72,7 +72,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
 
     const settingsGroup: ContributionGroup = { title: 'Settings', columnHeaders: ['Name', 'Description'], rows: [] }
     try {
-        if (manifest.contributes.configuration && manifest.contributes.configuration.properties) {
+        if (manifest.contributes.configuration?.properties) {
             for (const [name, schema] of Object.entries(manifest.contributes.configuration.properties)) {
                 settingsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key

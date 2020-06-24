@@ -12,7 +12,7 @@ import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
 import { appendSubtreeQueryParameter } from '../../../../shared/src/util/url'
 
-export const filterAliases: Record<string, FilterSuggestionTypes | undefined> = {
+export const filterAliases: Record<string, FilterSuggestionTypes> = {
     r: FilterType.repo,
     g: FilterType.repogroup,
     f: FilterType.file,

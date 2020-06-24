@@ -5,7 +5,7 @@ import { subMinutes } from 'date-fns'
 
 describe('ChangesetLastSynced', () => {
     for (const viewerCanAdminister of [false, true]) {
-        describe('ViewerCanAdminister: ' + viewerCanAdminister, () => {
+        describe(`ViewerCanAdminister: ${viewerCanAdminister}`, () => {
             test('renders not scheduled', () => {
                 const result = renderer.create(
                     <ChangesetLastSynced

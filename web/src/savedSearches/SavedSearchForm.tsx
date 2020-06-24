@@ -157,7 +157,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         <div className="alert alert-warning mb-3">
                             <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
                             server.{' '}
-                            {this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
+                            {this.props.authenticatedUser?.siteAdmin
                                 ? 'Use the email.smtp site configuration setting to enable sending emails.'
                                 : 'Contact your server admin for more information.'}
                         </div>

@@ -244,7 +244,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 .pipe(
                     tap(() => this.setState({ saving: true, error: undefined })),
                     concatMap(newContents => {
-                        const lastConfiguration = this.state.site && this.state.site.configuration
+                        const lastConfiguration = this.state.site?.configuration
                         const lastConfigurationID = lastConfiguration?.id || 0
 
                         return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
@@ -369,9 +369,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             )
         }
         if (
-            this.state.site &&
-            this.state.site.configuration &&
-            this.state.site.configuration.validationMessages &&
+            this.state.site?.configuration?.validationMessages &&
             this.state.site.configuration.validationMessages.length > 0
         ) {
             alerts.push(
@@ -389,8 +387,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         }
 
         // Avoid user confusion with values.yaml properties mixed in with site config properties.
-        const contents =
-            this.state.site && this.state.site.configuration && this.state.site.configuration.effectiveContents
+        const contents = this.state.site?.configuration?.effectiveContents
         const legacyKubernetesConfigProps = [
             'alertmanagerConfig',
             'alertmanagerURL',
@@ -445,7 +442,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.site && this.state.site.configuration && (
+                {this.state.site?.configuration && (
                     <div>
                         <DynamicallyImportedMonacoSettingsEditor
                             value={contents || ''}
