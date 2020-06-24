@@ -65,7 +65,7 @@ export type PartialWorkspaceNamespace = Omit<
 export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
     initialSettings: Readonly<SettingsCascade<object>>,
-    textDcuments: ExtensionDocuments
+    textDocuments: ExtensionDocuments
 ): InitResult => {
     const state: ExtState = {
         roots: [],
@@ -126,7 +126,7 @@ export const initNewExtensionAPI = (
 
         // Language
         getHover: (textParameters: TextDocumentPositionParams) => {
-            const document = textDcuments.get(textParameters.textDocument.uri)
+            const document = textDocuments.get(textParameters.textDocument.uri)
 
             const matchedProviders = state.hoverProviders.pipe(
                 map(providers =>
