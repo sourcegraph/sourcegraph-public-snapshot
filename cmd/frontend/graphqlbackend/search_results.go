@@ -759,6 +759,39 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
+// setResultSetInScopeParameters builds a regex using the list of files contained in the given
+// result subset, separated by an | operator. It stores this regex in the "file" field
+// The returned scopeParameters are then used to limit the query to that list of files.
+// If scopeParameters already contains a file field, it is returned as is.
+func setResultSetInScopeParameters(scopeParameters []query.Node, subset []SearchResultResolver) []query.Node {
+	var found bool
+	query.VisitField(scopeParameters, "file", func(value string, negated bool) {
+		found = true
+	})
+
+	if found {
+		return scopeParameters
+	}
+
+	var fileSet strings.Builder
+	i := 0
+	for _, r := range subset {
+		if fileMatch, ok := r.ToFileMatch(); ok {
+			if fileSet.Len() != 0 {
+				fileSet.WriteByte('|')
+			}
+
+			fileSet.WriteString(fmt.Sprintf("^%s$", regexp.QuoteMeta(fileMatch.JPath)))
+			i++
+		}
+	}
+
+	return append(scopeParameters, query.Parameter{
+		Field: "file",
+		Value: fileSet.String(),
+	})
+}
+
 // evaluateAnd collects results for each expression and uses the previous result
 // to limit the search scope of subsequent searches. Each subexpression is then
 // only limited to the files already found for previous operands. Because the
@@ -771,14 +804,14 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // and likely yields fewer than N results). Thus, we perform a search of 2*N for
 // each expression, and if the intersection does not yield N results, and is not
 // exhaustive for every expression, we rerun the search by doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters, operands []query.Node) (*SearchResultsResolver, error) {
 	if len(operands) == 0 {
 		return nil, nil
 	}
 
 	var err error
 	var result *SearchResultsResolver
-	var new *SearchResultsResolver
+	var newResult *SearchResultsResolver
 
 	// The number of results we want. Note that for intersect, this number
 	// corresponds to documents, not line matches. By default, we ask for at
@@ -811,26 +844,30 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			return query.Parameter{Field: field, Value: value, Negated: negated}
 		})
 
-		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
+		// use a mutable copy of the scopeParameters in the rest of the loop
+		curScopeParameters := scopeParameters
+
+		result, err = r.evaluatePatternExpression(ctx, curScopeParameters, operands[0])
 		if err != nil {
 			return nil, err
 		}
-		if result == nil {
-			return nil, nil
+
+		if result == nil || len(result.SearchResults) == 0 {
+			break
 		}
-		// store the results to limit the scope of subsequent searches to
-		// the matched files
-		r.searchResultSubset = result.SearchResults
+
+		// if the result is not empty we need to limit the query to a subset of files
+		curScopeParameters = setResultSetInScopeParameters(curScopeParameters, result.SearchResults)
 
 		exhausted = !result.limitHit
 		for _, term := range operands[1:] {
-			new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+			newResult, err = r.evaluatePatternExpression(ctx, curScopeParameters, term)
 			if err != nil {
 				return nil, err
 			}
-			if new != nil {
-				exhausted = exhausted && !new.limitHit
-				if len(new.SearchResults) == 0 {
+			if newResult != nil {
+				exhausted = exhausted && !newResult.limitHit
+				if len(newResult.SearchResults) == 0 {
 					result = nil
 					break
 				}
@@ -839,13 +876,13 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 				// may include false positives.
 				// to avoid that, intersect the new results with the previous ones to be
 				// certain no new files are added to the set.
-				result = intersect(result, new)
-				// store the new subset
-				r.searchResultSubset = result.SearchResults
+				result = intersect(result, newResult)
+
+				// update the list of files to search into
+				curScopeParameters = setResultSetInScopeParameters(scopeParameters, result.SearchResults)
 			}
 		}
 
-		r.searchResultSubset = nil
 		if exhausted {
 			break
 		}
@@ -860,7 +897,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			return &SearchResultsResolver{alert: alertForCappedAndExpression()}, nil
 		}
 	}
-	result.limitHit = !exhausted
+
+	if result != nil {
+		result.limitHit = !exhausted
+	}
+
 	return result, nil
 }
 
@@ -1188,26 +1229,6 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	if err != nil {
 		return nil, err
 	}
-
-	if len(r.searchResultSubset) == 0 {
-		return p, nil
-	}
-
-	// if the searchResultSubset is not empty
-	// we need to limit the query to a subset of files
-	// TODO(asdine): find a way to limit to a repo+file instead
-	var fileSet strings.Builder
-	for _, r := range r.searchResultSubset {
-		if fileMatch, ok := r.ToFileMatch(); ok {
-			if fileSet.Len() != 0 {
-				fileSet.WriteByte('|')
-			}
-
-			fileSet.WriteString(fmt.Sprintf("^%s$", regexp.QuoteMeta(fileMatch.JPath)))
-		}
-	}
-
-	p.IncludePatterns = append(p.IncludePatterns, fileSet.String())
 
 	return p, nil
 }

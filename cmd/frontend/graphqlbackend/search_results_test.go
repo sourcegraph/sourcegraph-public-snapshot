@@ -434,40 +434,6 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			}
 		})
 	}
-
-	t.Run("with result subset", func(t *testing.T) {
-		query, err := query.ParseAndCheck("p")
-		if err != nil {
-			t.Fatal(err)
-		}
-		sr := searchResolver{
-			query: query,
-			searchResultSubset: []SearchResultResolver{
-				&FileMatchResolver{JPath: "foo.go"},
-				&FileMatchResolver{JPath: "bar.yml"},
-				&commitSearchResultResolver{},
-			},
-		}
-
-		p, err := sr.getPatternInfo(nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		want := search.TextPatternInfo{
-			Pattern:                "p",
-			IncludePatterns:        []string{`^foo\.go$|^bar\.yml$`},
-			IsRegExp:               true,
-			PathPatternsAreRegExps: true,
-		}
-
-		normalize(p)
-		normalize(&want)
-
-		if !reflect.DeepEqual(*p, want) {
-			t.Errorf("\ngot  %+v\nwant %+v", *p, want)
-		}
-	})
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
@@ -1177,7 +1143,7 @@ func TestEvaluateAnd(t *testing.T) {
 		}, nil
 	}
 
-	q, _ := query.ProcessAndOr("foo and bar and baz", query.SearchTypeRegex)
+	q, _ := query.ProcessAndOr("foo AND bar AND baz", query.SearchTypeRegex)
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q.(*query.AndOrQuery).Query)
 	if err != nil {
 		t.Fatal(err)
@@ -1227,5 +1193,16 @@ func TestEvaluateAnd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertEqual(t, res, 1)
+	expected := SearchResultsResolver{
+		SearchResults: []SearchResultResolver{
+			&FileMatchResolver{
+				JPath: "foo.md",
+			},
+			&FileMatchResolver{
+				JPath: "bar.md",
+			},
+		},
+	}
+
+	assertEqual(t, res, &expected)
 }
