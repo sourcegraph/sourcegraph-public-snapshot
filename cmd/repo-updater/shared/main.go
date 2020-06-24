@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -37,8 +36,6 @@ const port = "3182"
 type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
-	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
-
 	ctx := context.Background()
 	env.Lock()
 	env.HandleHelpFlag()
@@ -169,11 +166,10 @@ func Main(enterpriseInit EnterpriseInit) {
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
 
 	syncer := &repos.Syncer{
-		Store:            store,
-		Sourcer:          src,
-		DisableStreaming: !streamingSyncer,
-		Logger:           log15.Root(),
-		Now:              clock,
+		Store:   store,
+		Sourcer: src,
+		Logger:  log15.Root(),
+		Now:     clock,
 	}
 
 	if envvar.SourcegraphDotComMode() {
