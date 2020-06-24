@@ -610,7 +610,7 @@ describe('parseSearchQuery()', () => {
                         },
                         token: {
                             type: 'literal',
-                            value: 'AND',
+                            value: 'and',
                         },
                     },
                     {
@@ -649,7 +649,7 @@ describe('parseSearchQuery()', () => {
     })
 
     test('nested parenthesized parameters', () => {
-        expect(parseSearchQuery('(a and (b or c) and d)')).toMatchInlineSnapshot({
+        expect(parseSearchQuery('(a and (b or c) and d)')).toMatchObject({
             range: {
                 end: 22,
                 start: 0,
