@@ -55,7 +55,7 @@ func TestSyncer_Sync(t *testing.T) {
 			name:    "store list error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
 			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
-			err:     "syncer.sync.streaming: syncer.storedExternalIDs: boom",
+			err:     "syncer.sync.store.list-repos: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
