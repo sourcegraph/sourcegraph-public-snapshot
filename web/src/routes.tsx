@@ -161,6 +161,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
     },
     {
+        path: '/refactor-python2-to-3',
+        render: lazyComponent(() => import('./repogroups/Python2To3'), 'Python2To3'),
+    },
+    {
         path: '/:repoRevAndRest+',
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
