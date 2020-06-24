@@ -1024,8 +1024,14 @@ func TestSync_Run(t *testing.T) {
 	// Ignore fields store adds
 	ignore := cmpopts.IgnoreFields(repos.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
 
-	// First thing it should find the new repo and send it down SubsetSynced
-	diff := <-syncer.SubsetSynced
+	// The first thing sent down Synced is the list of repos in store.
+	diff := <-syncer.Synced
+	if d := cmp.Diff(repos.Diff{Unmodified: stored}, diff, ignore); d != "" {
+		t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
+	}
+
+	// Next up it should find the new repo and send it down SubsetSynced
+	diff = <-syncer.SubsetSynced
 	if d := cmp.Diff(repos.Diff{Added: repos.Repos{mk("new")}}, diff, ignore); d != "" {
 		t.Fatalf("SubsetSynced mismatch (-want +got):\n%s", d)
 	}
