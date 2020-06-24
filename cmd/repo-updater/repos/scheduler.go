@@ -225,7 +225,24 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 	return limiter
 }
 
-// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
+// UpdateFromDiff updates the scheduled and queued repos from the given sync
+// diff.
+//
+// We upsert all repos that exist to the scheduler. This is so the
+// scheduler can track the repositories and periodically update
+// them.
+//
+// Items on the update queue will be cloned/fetched as soon as
+// possible. We treat repos differently depending on which part of the
+// diff they are:
+//
+//
+//   Deleted    - remove from scheduler and queue.
+//   Added      - new repo, enqueue for asap clone.
+//   Modified   - likely new url or name. May also be a sign of new
+//                commits. Enqueue for asap clone (or fetch).
+//   Unmodified - we likely already have this cloned. Just rely on
+//                the scheduler and do not enqueue.
 func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	for _, r := range diff.Deleted {
 		s.remove(r)
@@ -262,6 +279,11 @@ func (s *updateScheduler) SetCloned(names []string) {
 	s.schedule.setCloned(names)
 }
 
+// upsert adds r to the scheduler for periodic updates. If r.ID is already in
+// the scheduler, then the fields are updated (upsert).
+//
+// If enqueue is true then r is also enqueued to the update queue for a git
+// fetch/clone soon.
 func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
 	repo := configuredRepo2FromRepo(r)
 

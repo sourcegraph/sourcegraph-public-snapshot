@@ -268,13 +268,17 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context) {
 		return
 	}
 
+	// Assuming sources returns no differences from the last sync, the Diff
+	// would be just a list of all stored repos Unmodified. This is the steady
+	// state, so is the initial diff we choose.
 	select {
 	case s.Synced <- Diff{Unmodified: stored}:
 	case <-ctx.Done():
 	}
 }
 
-// A Diff of two sets of Diffables.
+// Diff is the difference found by a sync between what is in the store and
+// what is returned from sources.
 type Diff struct {
 	Added      Repos
 	Deleted    Repos
