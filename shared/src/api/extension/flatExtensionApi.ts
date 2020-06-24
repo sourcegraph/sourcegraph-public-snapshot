@@ -210,6 +210,6 @@ function providersForDocument<P>(
 function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): sourcegraph.Unsubscribable {
     behaviorSubject.next([...behaviorSubject.value, value])
     return {
-        unsubscribe: () => behaviorSubject.next(behaviorSubject.value.filter(p => p != value)),
+        unsubscribe: () => behaviorSubject.next(behaviorSubject.value.filter(item => item !== value)),
     }
 }

@@ -25,9 +25,9 @@ describe('LanguageFeatures (integration)', () => {
             contents: labels.map(label => ({ value: label, kind: MarkupKind.PlainText })),
         }),
         providerWithImplementation: run => ({ provideHover: run } as sourcegraph.HoverProvider),
-        getResult: (services, uri, extHost) =>
+        getResult: (services, uri, extensionHost) =>
             wrapRemoteObservable(
-                extHost.getHover({
+                extensionHost.getHover({
                     textDocument: { uri },
                     position: { line: 1, character: 2 },
                 })
