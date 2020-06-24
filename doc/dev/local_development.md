@@ -533,6 +533,17 @@ We use Caddy 2 to setup HTTPS for local development. It creates self-signed cert
 
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
 
+### Adding Caddy certificates to Windows
+
+When running Caddy on WSL, you need to manually add the Caddy root certificate to the Windows certificate store using [certutil.exe](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certutil).
+
+```bash
+# Run inside WSL
+certutil.exe -addstore -user Root "$(find /usr/local/share/ca-certificates/ -name '*Caddy*')"
+```
+
+This command will add the certificate to the `Trusted Root Certification Authorities` for your Windows user.
+
 #### Running out of disk space
 
 If you see errors similar to this:
