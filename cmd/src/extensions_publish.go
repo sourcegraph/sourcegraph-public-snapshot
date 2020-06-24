@@ -56,7 +56,7 @@ Notes:
 
 		manifest, err := ioutil.ReadFile(*manifestFlag)
 		if err != nil {
-			return fmt.Errorf("%s\n\nRun this command in a directory with a %s file for an extension.\n\nSee 'src extensions %s -h' for help.", err, *manifestFlag, flagSet.Name())
+			return fmt.Errorf("%s\n\nRun this command in a directory with a %s file for an extension.\n\nSee 'src extensions %s -h' for help", err, *manifestFlag, flagSet.Name())
 		}
 		extensionID := *extensionIDFlag
 		if extensionID == "" {
