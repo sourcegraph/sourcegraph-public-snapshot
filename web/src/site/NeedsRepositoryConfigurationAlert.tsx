@@ -21,7 +21,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ classN
     >
         <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
             <CircleChevronRightIcon className="icon-inline site-alert__link-icon" />{' '}
-            <span className="underline">Configure external services</span>
+            <span className="underline">Connect a code host</span>
         </Link>
         &nbsp;to connect repositories to Sourcegraph.
     </DismissibleAlert>
