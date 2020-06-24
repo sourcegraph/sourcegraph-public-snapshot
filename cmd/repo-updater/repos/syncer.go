@@ -52,6 +52,8 @@ type Syncer struct {
 
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(pctx context.Context, interval func() time.Duration) error {
+	s.initialUnmodifiedDiffFromStore(pctx)
+
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
 
@@ -252,6 +254,28 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	}
 
 	return upserts
+}
+
+// initialUnmodifiedDiffFromStore creates a diff of all repos present in the
+// store and sends it to s.Synced. This is used so that on startup the reader
+// of s.Synced will receive a list of repos. In particular this is so that the
+// git update scheduler can start working straight away on existing
+// repositories.
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context) {
+	if s.Synced == nil {
+		return
+	}
+
+	stored, err := s.Store.ListRepos(ctx, StoreListReposArgs{})
+	if err != nil {
+		s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
+		return
+	}
+
+	select {
+	case s.Synced <- Diff{Unmodified: stored}:
+	case <-ctx.Done():
+	}
 }
 
 // A Diff of two sets of Diffables.
