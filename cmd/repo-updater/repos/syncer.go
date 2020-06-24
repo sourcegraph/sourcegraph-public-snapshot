@@ -147,7 +147,10 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	if s.Synced != nil {
-		s.Synced <- diff
+		select {
+		case s.Synced <- diff:
+		case <-ctx.Done():
+		}
 	}
 
 	return nil
@@ -219,7 +222,10 @@ func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset 
 	}
 
 	if s.SubsetSynced != nil {
-		s.SubsetSynced <- diff
+		select {
+		case s.SubsetSynced <- diff:
+		case <-ctx.Done():
+		}
 	}
 
 	return diff, nil
