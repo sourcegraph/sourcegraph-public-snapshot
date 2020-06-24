@@ -2,17 +2,17 @@ import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from } from 'rxjs'
-
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 import { switchMap, mergeMap, map } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable } from './api/common'
-import { getHover, ProvideTextDocumentHoverSignature } from '../client/services/hover'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { ExtensionDocuments } from './api/documents'
 import { toPosition } from './api/types'
+import { TextDocumentPositionParams } from '../protocol'
+import { ProvideTextDocumentHoverSignature, getHover } from './hover'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -129,7 +129,7 @@ export const initNewExtensionAPI = (
             ),
 
         // Language
-        getHover: textParameters => {
+        getHover: (textParameters: TextDocumentPositionParams) => {
             const document = textDcuments.get(textParameters.textDocument.uri)
 
             const matchedProviders = hoverProvidersChanges.pipe(
@@ -209,6 +209,8 @@ export const initNewExtensionAPI = (
     }
 }
 
+// TODO probably worth separate test suit.home
+// maybe copy from registry.ts?
 function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: P[],
@@ -222,7 +224,12 @@ function providersForDocument<P>(
     )
 }
 
-// TODO nice name here. ha-ha
+/**
+ * adds an element to an array with the ability to remove it back via Unsubscribable.
+ * Both of these changes will be notified via "notifyWith" subject
+ *
+ * @returns Unsubscribable to remove the element from the array.
+ */
 function addElementWithRollback<T>(
     value: T,
     {

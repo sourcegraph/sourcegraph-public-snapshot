@@ -57,7 +57,7 @@ export function toProxyableSubscribable<T, R>(
     return proxySubscribable(providerResultToObservable(result, mapFunc))
 }
 
-export function providerResultToObservable<T, R>(
+export function providerResultToObservable<T, R = T>(
     result: ProviderResult<T>,
     mapFunc: (value: T | undefined | null) => R = identity
 ): Observable<R> {

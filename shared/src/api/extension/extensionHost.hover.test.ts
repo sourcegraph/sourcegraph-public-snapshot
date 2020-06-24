@@ -1,16 +1,24 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { TestScheduler } from 'rxjs/testing'
 import { Hover } from 'sourcegraph'
-import { HoverMerged } from '../types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
-import { FIXTURE } from './registry.test'
+import { FIXTURE } from '../client/services/registry.test'
+import { HoverMerged } from '../client/types/hover'
+import { initNewExtensionAPI } from './flatExtensionApi'
+import { pretendRemote } from '../util'
+import { MainThreadAPI } from '../contract'
+import { SettingsCascade } from '../../settings/settings'
+import { Observer } from 'rxjs'
+import { ProxyMarked, proxyMarker, Remote } from 'comlink'
+import { ExtensionDocuments } from './api/documents'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_RESULT: Hover | null = { contents: { value: 'c', kind: MarkupKind.PlainText } }
 const FIXTURE_RESULT_MERGED: HoverMerged | null = { contents: [{ value: 'c', kind: MarkupKind.PlainText }] }
 
-describe('getHover', () => {
+describe('getHover standalone function', () => {
     describe('0 providers', () => {
         test('returns null', () => {
             scheduler().run(({ cold, expectObservable }) =>
@@ -169,4 +177,64 @@ describe('getHover', () => {
             })
         })
     })
+})
+
+describe('getHover from ExtensionHost API', () => {
+    const noopMain = pretendRemote<MainThreadAPI>({})
+    const emptySettings: SettingsCascade<object> = { subjects: [], final: {} }
+
+    const observe = <T>(onValue: (val: T) => void): Remote<Observer<T> & ProxyMarked> =>
+        pretendRemote({
+            next: onValue,
+            error: (error: any) => {
+                throw error
+            },
+            complete: () => {},
+            [proxyMarker]: Promise.resolve(true as const),
+        })
+
+    const textHover = (value: string): Hover => ({ contents: { value, kind: MarkupKind.PlainText } })
+
+    describe('integration(ish) tests for scenarios not covered by tests above', () => {
+        it('it filters hover providers', () => {
+            const typescriptFileUri = 'file:///f.ts'
+            const documents = new ExtensionDocuments(() => Promise.resolve())
+            documents.$acceptDocumentData([{ type: 'added', languageId: 'ts', text: 'body', uri: typescriptFileUri }])
+
+            const { exposedToMain, languages } = initNewExtensionAPI(noopMain, emptySettings, documents)
+
+            languages.registerHoverProvider([{ pattern: '*.js' }], {
+                provideHover: () => textHover('js'),
+            })
+
+            const tsHover: Hover = textHover('ts')
+            languages.registerHoverProvider([{ pattern: '*.ts' }], {
+                provideHover: () => tsHover,
+            })
+
+            const results: any[] = []
+            exposedToMain
+                .getHover({ position: { line: 1, character: 2 }, textDocument: { uri: typescriptFileUri } })
+                .subscribe(observe(value => results.push(value)))
+
+            expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+                { isLoading: true, result: null },
+                { isLoading: false, result: { contents: [tsHover.contents] } },
+            ])
+        })
+
+        it('restarts hover query if a provider was added in the middle of the execution', () => {
+            // TODO
+            const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+
+            const results: string[] = []
+            exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
+            expect(results).toEqual(['a'])
+
+            search.registerQueryTransformer({ transformQuery: query => query + '!' })
+            expect(results).toEqual(['a', 'a!'])
+        })
+    })
+
+    //
 })
