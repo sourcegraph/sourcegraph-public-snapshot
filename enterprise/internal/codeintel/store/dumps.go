@@ -95,8 +95,10 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 	`, id)))
 }
 
-// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
-func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (_ []Dump, err error) {
+// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
+// optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
+// any dump with a root intersecting the given path is returned.
+func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
 	tx, started, err := s.transact(ctx)
 	if err != nil {
 		return nil, err
@@ -105,13 +107,22 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 		defer func() { err = tx.Done(err) }()
 	}
 
+	var cond *sqlf.Query
+	if rootMustEnclosePath {
+		// Ensure that the root is a prefix of the path
+		cond = sqlf.Sprintf(`%s LIKE (d.root || '%%%%')`, path)
+	} else {
+		// Ensure that the root is a prefix of the path or vice versa
+		cond = sqlf.Sprintf(`%s LIKE (d.root || '%%%%') OR d.root LIKE (%s || '%%%%')`, path, path)
+	}
+
 	ids, err := scanInts(tx.query(
 		ctx,
 		withBidirectionalLineage(`
 			SELECT d.dump_id FROM lineage_with_dumps d
-			WHERE %s LIKE (d.root || '%%%%') AND d.dump_id IN (SELECT * FROM visible_ids)
+			WHERE %s AND d.dump_id IN (SELECT * FROM visible_ids)
 			ORDER BY d.n
-		`, repositoryID, commit, file),
+		`, repositoryID, commit, cond),
 	))
 	if err != nil || len(ids) == 0 {
 		return nil, err
