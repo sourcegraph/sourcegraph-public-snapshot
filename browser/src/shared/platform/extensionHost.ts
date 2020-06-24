@@ -1,14 +1,14 @@
-import { Observable, Subscription } from 'rxjs'
+import { Subscription } from 'rxjs'
 import * as uuid from 'uuid'
-import { EndpointPair } from '../../../../shared/src/platform/context'
+import { EndpointPair, ClosableEndpointPair } from '../../../../shared/src/platform/context'
 import { isInPage } from '../context'
 import { SourcegraphIntegrationURLs } from './context'
 import { browserPortToMessagePort } from './ports'
 
 function createInPageExtensionHost({
     assetsURL,
-}: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
-    return new Observable(subscriber => {
+}: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Promise<ClosableEndpointPair> {
+    return new Promise(resolve => {
         // Create an iframe pointing to extensionHostFrame.html,
         // which will load the extension host worker, and forward it
         // the client endpoints.
@@ -41,25 +41,23 @@ function createInPageExtensionHost({
                     new URL(assetsURL).origin,
                     Object.values(clientEndpoints)
                 )
-                subscriber.next(workerEndpoints)
+                resolve({
+                    endpoints: workerEndpoints,
+                    subscription: new Subscription(() => frame.remove()),
+                })
             },
             {
                 once: true,
             }
         )
-        return () => {
-            clientEndpoints.proxy.close()
-            clientEndpoints.expose.close()
-            frame.remove()
-        }
     })
 }
 
 /**
- * Returns an observable of a communication channel to an extension host.
+ * Returns a promise of a communication channel to an extension host and a Subscription to cleanup
  *
  * When executing in-page (for example as a Phabricator plugin), this simply
- * creates an extension host worker and emits the returned EndpointPair.
+ * creates an extension host worker and emits the returned EndpointPair + Subscription to cleanup.
  *
  * When executing in the browser extension, we create pair of browser.runtime.Port objects,
  * named 'expose-{uuid}' and 'proxy-{uuid}', and return the ports wrapped using ${@link endpointFromPort}.
@@ -68,26 +66,30 @@ function createInPageExtensionHost({
  * worker per pair of ports, and forward messages between the port objects and
  * the extension host worker's endpoints.
  */
-export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
+export function createExtensionHost(
+    urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>
+): Promise<ClosableEndpointPair> {
     if (isInPage) {
         return createInPageExtensionHost(urls)
     }
     const id = uuid.v4()
-    return new Observable(subscriber => {
-        // This is run in the content script
-        const subscription = new Subscription()
-        const setup = (role: keyof EndpointPair): MessagePort => {
-            const port = browser.runtime.connect({ name: `${role}-${id}` })
-            subscription.add(() => port.disconnect())
 
-            const link = browserPortToMessagePort(port, `comlink-${role}-`, name => browser.runtime.connect({ name }))
-            subscription.add(link.subscription)
-            return link.messagePort
-        }
-        subscriber.next({
+    // This is run in the content script
+    const subscription = new Subscription()
+    const setup = (role: keyof EndpointPair): MessagePort => {
+        const port = browser.runtime.connect({ name: `${role}-${id}` })
+        subscription.add(() => port.disconnect())
+
+        const link = browserPortToMessagePort(port, `comlink-${role}-`, name => browser.runtime.connect({ name }))
+        subscription.add(link.subscription)
+        return link.messagePort
+    }
+
+    return Promise.resolve({
+        endpoints: {
             proxy: setup('proxy'),
             expose: setup('expose'),
-        })
-        return subscription
+        },
+        subscription,
     })
 }

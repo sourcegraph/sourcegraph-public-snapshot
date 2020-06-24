@@ -1,5 +1,5 @@
 import { Endpoint } from 'comlink'
-import { NextObserver, Observable, Subscribable } from 'rxjs'
+import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
@@ -16,6 +16,13 @@ export interface EndpointPair {
 
     /** The endpoint to expose the API of this thread to */
     expose: Endpoint
+}
+
+export interface ClosableEndpointPair {
+    endpoints: EndpointPair
+
+    /** Destroys worker or iframe depending on the environment. */
+    subscription: Subscription
 }
 
 const isEndpoint = (value: unknown): value is Endpoint =>
@@ -113,10 +120,10 @@ export interface PlatformContext {
      * background worker) with the extension host and opens a communication channel to it. It is
      * called exactly once, to start the extension host.
      *
-     * @returns An observable that emits at most once with the message transports for communicating
+     * @returns A promise of the message transports for communicating
      * with the execution context (using, e.g., postMessage/onmessage) when it is ready.
      */
-    createExtensionHost: () => Observable<EndpointPair>
+    createExtensionHost: () => Promise<ClosableEndpointPair>
 
     /**
      * Returns the script URL suitable for passing to importScripts for an extension's bundle.
