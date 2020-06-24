@@ -1,4 +1,4 @@
-package main
+package campaigns
 
 import (
 	"context"
@@ -12,22 +12,30 @@ import (
 	"github.com/pkg/errors"
 )
 
-type actionExecutionCacheKey struct {
+func UserCacheDir() (string, error) {
+	userCacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(userCacheDir, "sourcegraph-src"), nil
+}
+
+type ExecutionCacheKey struct {
 	Repo ActionRepo
 	Runs []*ActionStep
 }
 
-type actionExecutionCache interface {
-	get(ctx context.Context, key actionExecutionCacheKey) (result PatchInput, ok bool, err error)
-	set(ctx context.Context, key actionExecutionCacheKey, result PatchInput) error
-	clear(ctx context.Context, key actionExecutionCacheKey) error
+type ExecutionCache interface {
+	Get(ctx context.Context, key ExecutionCacheKey) (result PatchInput, ok bool, err error)
+	Set(ctx context.Context, key ExecutionCacheKey, result PatchInput) error
+	Clear(ctx context.Context, key ExecutionCacheKey) error
 }
 
-type actionExecutionDiskCache struct {
-	dir string
+type ExecutionDiskCache struct {
+	Dir string
 }
 
-func (c actionExecutionDiskCache) cacheFilePath(key actionExecutionCacheKey) (string, error) {
+func (c ExecutionDiskCache) cacheFilePath(key ExecutionCacheKey) (string, error) {
 	keyJSON, err := json.Marshal(key)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to marshal JSON when generating action cache key")
@@ -36,10 +44,10 @@ func (c actionExecutionDiskCache) cacheFilePath(key actionExecutionCacheKey) (st
 	b := sha256.Sum256(keyJSON)
 	keyString := base64.RawURLEncoding.EncodeToString(b[:16])
 
-	return filepath.Join(c.dir, keyString+".json"), nil
+	return filepath.Join(c.Dir, keyString+".json"), nil
 }
 
-func (c actionExecutionDiskCache) get(ctx context.Context, key actionExecutionCacheKey) (PatchInput, bool, error) {
+func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (PatchInput, bool, error) {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return PatchInput{}, false, err
@@ -65,7 +73,7 @@ func (c actionExecutionDiskCache) get(ctx context.Context, key actionExecutionCa
 	return result, true, nil
 }
 
-func (c actionExecutionDiskCache) set(ctx context.Context, key actionExecutionCacheKey, result PatchInput) error {
+func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, result PatchInput) error {
 	data, err := json.Marshal(result)
 	if err != nil {
 		return err
@@ -83,7 +91,7 @@ func (c actionExecutionDiskCache) set(ctx context.Context, key actionExecutionCa
 	return ioutil.WriteFile(path, data, 0600)
 }
 
-func (c actionExecutionDiskCache) clear(ctx context.Context, key actionExecutionCacheKey) error {
+func (c ExecutionDiskCache) Clear(ctx context.Context, key ExecutionCacheKey) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -96,18 +104,18 @@ func (c actionExecutionDiskCache) clear(ctx context.Context, key actionExecution
 	return os.Remove(path)
 }
 
-// actionExecutionNoOpCache is an implementation of actionExecutionCache that does not store or
+// ExecutionNoOpCache is an implementation of actionExecutionCache that does not store or
 // retrieve cache entries.
-type actionExecutionNoOpCache struct{}
+type ExecutionNoOpCache struct{}
 
-func (actionExecutionNoOpCache) get(ctx context.Context, key actionExecutionCacheKey) (result PatchInput, ok bool, err error) {
+func (ExecutionNoOpCache) Get(ctx context.Context, key ExecutionCacheKey) (result PatchInput, ok bool, err error) {
 	return PatchInput{}, false, nil
 }
 
-func (actionExecutionNoOpCache) set(ctx context.Context, key actionExecutionCacheKey, result PatchInput) error {
+func (ExecutionNoOpCache) Set(ctx context.Context, key ExecutionCacheKey, result PatchInput) error {
 	return nil
 }
 
-func (actionExecutionNoOpCache) clear(ctx context.Context, key actionExecutionCacheKey) error {
+func (ExecutionNoOpCache) Clear(ctx context.Context, key ExecutionCacheKey) error {
 	return nil
 }

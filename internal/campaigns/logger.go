@@ -1,4 +1,4 @@
-package main
+package campaigns
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ var (
 	grey      = color.New(color.FgHiBlack)
 )
 
-type actionLogger struct {
+type ActionLogger struct {
 	verbose  bool
 	keepLogs bool
 
@@ -41,7 +41,7 @@ type actionLogger struct {
 	logWriters map[string]io.Writer
 }
 
-func newActionLogger(verbose, keepLogs bool) *actionLogger {
+func NewActionLogger(verbose, keepLogs bool) *ActionLogger {
 	useColor := isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd())
 	if useColor {
 		color.NoColor = false
@@ -49,7 +49,7 @@ func newActionLogger(verbose, keepLogs bool) *actionLogger {
 
 	progress := new(progress)
 
-	return &actionLogger{
+	return &ActionLogger{
 		verbose:   verbose,
 		keepLogs:  keepLogs,
 		highlight: color.New(color.Bold, color.FgGreen).SprintFunc(),
@@ -63,23 +63,23 @@ func newActionLogger(verbose, keepLogs bool) *actionLogger {
 	}
 }
 
-func (a *actionLogger) Start(totalSteps int) {
+func (a *ActionLogger) Start(totalSteps int) {
 	a.progress.SetTotalSteps(int64(totalSteps))
 }
 
-func (a *actionLogger) Infof(format string, args ...interface{}) {
+func (a *ActionLogger) Infof(format string, args ...interface{}) {
 	if a.verbose {
 		a.log("", grey, format, args...)
 	}
 }
 
-func (a *actionLogger) Warnf(format string, args ...interface{}) {
+func (a *ActionLogger) Warnf(format string, args ...interface{}) {
 	if a.verbose {
 		a.log("", yellow, "WARNING: "+format, args...)
 	}
 }
 
-func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
+func (a *ActionLogger) ActionFailed(err error, patches []PatchInput) {
 	a.out.Close()
 	fmt.Fprintln(os.Stderr)
 	if perr, ok := err.(parallel.Errors); ok {
@@ -103,14 +103,14 @@ func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
 	}
 }
 
-func (a *actionLogger) ActionSuccess(patches []PatchInput) {
+func (a *ActionLogger) ActionSuccess(patches []PatchInput) {
 	a.out.Close()
 	fmt.Fprintln(os.Stderr)
 	format := "✔  Action produced %d patches."
 	hiGreen.Fprintf(os.Stderr, format, len(patches))
 }
 
-func (a *actionLogger) RepoCacheHit(repo ActionRepo, stepCount int, patchProduced bool) {
+func (a *ActionLogger) RepoCacheHit(repo ActionRepo, stepCount int, patchProduced bool) {
 	a.progress.IncStepsComplete(int64(stepCount))
 	if patchProduced {
 		a.progress.IncPatchCount()
@@ -120,7 +120,7 @@ func (a *actionLogger) RepoCacheHit(repo ActionRepo, stepCount int, patchProduce
 	a.log(repo.Name, grey, "Cached result found: no diff produced for this repository.\n")
 }
 
-func (a *actionLogger) AddRepo(repo ActionRepo) (string, error) {
+func (a *ActionLogger) AddRepo(repo ActionRepo) (string, error) {
 	prefix := "action-" + strings.Replace(strings.Replace(repo.Name, "/", "-", -1), "github.com-", "", -1)
 
 	logFile, err := ioutil.TempFile(tempDirPrefix, prefix+"-log")
@@ -138,26 +138,26 @@ func (a *actionLogger) AddRepo(repo ActionRepo) (string, error) {
 	return logFile.Name(), nil
 }
 
-func (a *actionLogger) RepoWriter(repoName string) (io.Writer, bool) {
+func (a *ActionLogger) RepoWriter(repoName string) (io.Writer, bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	w, ok := a.logWriters[repoName]
 	return w, ok
 }
 
-func (a *actionLogger) InfoPipe(prefix string) io.Writer {
+func (a *ActionLogger) InfoPipe(prefix string) io.Writer {
 	stdoutPrefix := fmt.Sprintf("%s -> [STDOUT]: ", yellow.Sprint(prefix))
 	stderr := textio.NewPrefixWriter(os.Stderr, stdoutPrefix)
 	return io.Writer(stderr)
 }
 
-func (a *actionLogger) ErrorPipe(prefix string) io.Writer {
+func (a *ActionLogger) ErrorPipe(prefix string) io.Writer {
 	stderrPrefix := fmt.Sprintf("%s -> [STDERR]: ", yellow.Sprint(prefix))
 	stderr := textio.NewPrefixWriter(os.Stderr, stderrPrefix)
 	return io.Writer(stderr)
 }
 
-func (a *actionLogger) RepoStdoutStderr(repoName string) (io.Writer, io.Writer, bool) {
+func (a *ActionLogger) RepoStdoutStderr(repoName string) (io.Writer, io.Writer, bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	w, ok := a.logWriters[repoName]
@@ -171,7 +171,7 @@ func (a *actionLogger) RepoStdoutStderr(repoName string) (io.Writer, io.Writer, 
 	return io.MultiWriter(stdout, w), io.MultiWriter(stderr, w), ok
 }
 
-func (a *actionLogger) RepoFinished(repoName string, patchProduced bool, actionErr error) error {
+func (a *ActionLogger) RepoFinished(repoName string, patchProduced bool, actionErr error) error {
 	a.mu.Lock()
 	f, ok := a.logFiles[repoName]
 	if !ok {
@@ -208,42 +208,42 @@ func (a *actionLogger) RepoFinished(repoName string, patchProduced bool, actionE
 	return nil
 }
 
-func (a *actionLogger) RepoStarted(repoName, rev string, steps []*ActionStep) {
+func (a *ActionLogger) RepoStarted(repoName, rev string, steps []*ActionStep) {
 	a.write(repoName, yellow, "Starting action @ %s (%d steps)\n", rev, len(steps))
 }
 
-func (a *actionLogger) CommandStepStarted(repoName string, step int, args []string) {
+func (a *ActionLogger) CommandStepStarted(repoName string, step int, args []string) {
 	a.write(repoName, yellow, "%s command %v\n", boldBlack.Sprintf("[Step %d]", step), args)
 }
 
-func (a *actionLogger) CommandStepErrored(repoName string, step int, err error) {
+func (a *ActionLogger) CommandStepErrored(repoName string, step int, err error) {
 	a.progress.IncStepsComplete(1)
 	a.progress.IncStepsFailed()
 	a.write(repoName, boldRed, "%s %s.\n", boldBlack.Sprintf("[Step %d]", step), err)
 }
 
-func (a *actionLogger) CommandStepDone(repoName string, step int) {
+func (a *ActionLogger) CommandStepDone(repoName string, step int) {
 	a.progress.IncStepsComplete(1)
 	a.write(repoName, yellow, "%s Done.\n", boldBlack.Sprintf("[Step %d]", step))
 }
 
-func (a *actionLogger) DockerStepStarted(repoName string, step int, image string) {
+func (a *ActionLogger) DockerStepStarted(repoName string, step int, image string) {
 	a.write(repoName, yellow, "%s docker run %s\n", boldBlack.Sprintf("[Step %d]", step), image)
 }
 
-func (a *actionLogger) DockerStepErrored(repoName string, step int, err error, elapsed time.Duration) {
+func (a *ActionLogger) DockerStepErrored(repoName string, step int, err error, elapsed time.Duration) {
 	a.progress.IncStepsComplete(1)
 	a.progress.IncStepsFailed()
 	a.write(repoName, boldRed, "%s %s. (%s)\n", boldBlack.Sprintf("[Step %d]", step), err, elapsed)
 }
 
-func (a *actionLogger) DockerStepDone(repoName string, step int, elapsed time.Duration) {
+func (a *ActionLogger) DockerStepDone(repoName string, step int, elapsed time.Duration) {
 	a.progress.IncStepsComplete(1)
 	a.write(repoName, yellow, "%s Done. (%s)\n", boldBlack.Sprintf("[Step %d]", step), elapsed)
 }
 
 // write writes to the RepoWriter associated with the given repoName and logs the message using the log method.
-func (a *actionLogger) write(repoName string, c *color.Color, format string, args ...interface{}) {
+func (a *ActionLogger) write(repoName string, c *color.Color, format string, args ...interface{}) {
 	if w, ok := a.RepoWriter(repoName); ok {
 		fmt.Fprintf(w, format, args...)
 	}
@@ -251,7 +251,7 @@ func (a *actionLogger) write(repoName string, c *color.Color, format string, arg
 }
 
 // log logs only to stderr, it does not log to our repoWriters.
-func (a *actionLogger) log(repoName string, c *color.Color, format string, args ...interface{}) {
+func (a *ActionLogger) log(repoName string, c *color.Color, format string, args ...interface{}) {
 	if len(repoName) > 0 {
 		format = fmt.Sprintf("%s -> %s", c.Sprint(repoName), format)
 	}

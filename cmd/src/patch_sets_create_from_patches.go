@@ -10,6 +10,7 @@ import (
 
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/campaigns"
 )
 
 func init() {
@@ -62,7 +63,7 @@ Examples:
 			log.Println("# Waiting for JSON patches input on stdin...")
 		}
 
-		var patches []PatchInput
+		var patches []campaigns.PatchInput
 		if err := json.NewDecoder(os.Stdin).Decode(&patches); err != nil {
 			return errors.Wrap(err, "invalid JSON patches input")
 		}
@@ -88,7 +89,7 @@ mutation CreatePatchSetFromPatches($patches: [PatchInput!]!) {
 
 func createPatchSetFromPatches(
 	apiFlags *apiFlags,
-	patches []PatchInput,
+	patches []campaigns.PatchInput,
 	tmpl *template.Template,
 	numChangesets int,
 ) error {
@@ -112,9 +113,9 @@ func createPatchSetFromPatches(
 	// (e.g. "refs/heads/master") in `BaseRevision`, so we need to copy the
 	// value over.
 	if !supportsBaseRef {
-		patchesWithoutBaseRef := make([]PatchInput, len(patches))
+		patchesWithoutBaseRef := make([]campaigns.PatchInput, len(patches))
 		for i, p := range patches {
-			patchesWithoutBaseRef[i] = PatchInput{
+			patchesWithoutBaseRef[i] = campaigns.PatchInput{
 				Repository:   p.Repository,
 				BaseRevision: p.BaseRef,
 				BaseRef:      "IGNORE-THIS",

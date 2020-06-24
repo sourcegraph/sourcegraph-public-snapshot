@@ -1,4 +1,4 @@
-package main
+package campaigns
 
 import (
 	"archive/zip"
@@ -21,108 +21,10 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-type ActionRepoStatus struct {
-	Cached bool
-
-	LogFile    string
-	EnqueuedAt time.Time
-	StartedAt  time.Time
-	FinishedAt time.Time
-
-	Patch PatchInput
-	Err   error
-}
-
-func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
-	// Check if cached.
-	cacheKey := actionExecutionCacheKey{Repo: repo, Runs: x.action.Steps}
-	if x.opt.clearCache {
-		if err := x.opt.cache.clear(ctx, cacheKey); err != nil {
-			return errors.Wrapf(err, "clearing cache for %s", repo.Name)
-		}
-	} else {
-		if result, ok, err := x.opt.cache.get(ctx, cacheKey); err != nil {
-			return errors.Wrapf(err, "checking cache for %s", repo.Name)
-		} else if ok {
-			status := ActionRepoStatus{Cached: true, Patch: result}
-			x.updateRepoStatus(repo, status)
-			x.logger.RepoCacheHit(repo, len(x.action.Steps), status.Patch != PatchInput{})
-			return nil
-		}
-	}
-
-	prefix := "action-" + strings.Replace(strings.Replace(repo.Name, "/", "-", -1), "github.com-", "", -1)
-
-	logFileName, err := x.logger.AddRepo(repo)
-	if err != nil {
-		return errors.Wrapf(err, "failed to setup logging for repo %s", repo.Name)
-	}
-
-	x.updateRepoStatus(repo, ActionRepoStatus{
-		LogFile:   logFileName,
-		StartedAt: time.Now(),
-	})
-
-	runCtx, cancel := context.WithTimeout(ctx, x.opt.timeout)
-	defer cancel()
-
-	patch, err := runAction(runCtx, prefix, repo.Name, repo.Rev, x.action.Steps, x.logger)
-	status := ActionRepoStatus{
-		FinishedAt: time.Now(),
-	}
-	if len(patch) > 0 {
-		status.Patch = PatchInput{
-			Repository:   repo.ID,
-			BaseRevision: repo.Rev,
-			BaseRef:      repo.BaseRef,
-			Patch:        string(patch),
-		}
-	}
-	if err != nil {
-		if reachedTimeout(runCtx, err) {
-			err = &errTimeoutReached{timeout: x.opt.timeout}
-		}
-		status.Err = err
-	}
-
-	x.updateRepoStatus(repo, status)
-	lerr := x.logger.RepoFinished(repo.Name, len(patch) > 0, err)
-	if lerr != nil {
-		return lerr
-	}
-
-	// Add to cache if successful.
-	if err == nil {
-		// We don't use runCtx here because we want to write to the cache even
-		// if we've now reached the timeout
-		if err := x.opt.cache.set(ctx, cacheKey, status.Patch); err != nil {
-			return errors.Wrapf(err, "caching result for %s", repo.Name)
-		}
-	}
-
-	return err
-}
-
-type errTimeoutReached struct{ timeout time.Duration }
-
-func (e *errTimeoutReached) Error() string {
-	return fmt.Sprintf("Timeout reached. Execution took longer than %s.", e.timeout)
-}
-
-func reachedTimeout(cmdCtx context.Context, err error) bool {
-	if ee, ok := errors.Cause(err).(*exec.ExitError); ok {
-		if ee.String() == "signal: killed" && cmdCtx.Err() == context.DeadlineExceeded {
-			return true
-		}
-	}
-
-	return errors.Is(err, context.DeadlineExceeded)
-}
-
-func runAction(ctx context.Context, prefix, repoName, rev string, steps []*ActionStep, logger *actionLogger) ([]byte, error) {
+func runAction(ctx context.Context, endpoint, accessToken, prefix, repoName, rev string, steps []*ActionStep, logger *ActionLogger) ([]byte, error) {
 	logger.RepoStarted(repoName, rev, steps)
 
-	zipFile, err := fetchRepositoryArchive(ctx, repoName, rev)
+	zipFile, err := fetchRepositoryArchive(ctx, endpoint, accessToken, repoName, rev)
 	if err != nil {
 		return nil, errors.Wrap(err, "Fetching ZIP archive failed")
 	}
@@ -203,7 +105,7 @@ func runAction(ctx context.Context, prefix, repoName, rev string, steps []*Actio
 				// persistentCacheDir returns a host directory that persists across runs of this
 				// action for this repository. It is useful for (e.g.) yarn and npm caches.
 				persistentCacheDir := func(containerDir string) (string, error) {
-					baseCacheDir, err := userCacheDir()
+					baseCacheDir, err := UserCacheDir()
 					if err != nil {
 						return "", err
 					}
@@ -277,8 +179,8 @@ func unzipToTempDir(ctx context.Context, zipFile, prefix string) (string, error)
 	return volumeDir, unzip(zipFile, volumeDir)
 }
 
-func fetchRepositoryArchive(ctx context.Context, repoName, rev string) (*os.File, error) {
-	zipURL, err := repositoryZipArchiveURL(repoName, rev, "")
+func fetchRepositoryArchive(ctx context.Context, endpoint, accessToken, repoName, rev string) (*os.File, error) {
+	zipURL, err := repositoryZipArchiveURL(endpoint, repoName, rev, "")
 	if err != nil {
 		return nil, err
 	}
@@ -288,8 +190,8 @@ func fetchRepositoryArchive(ctx context.Context, repoName, rev string) (*os.File
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/zip")
-	if cfg.AccessToken != "" {
-		req.Header.Set("Authorization", "token "+cfg.AccessToken)
+	if accessToken != "" {
+		req.Header.Set("Authorization", "token "+accessToken)
 	}
 	resp, err := ctxhttp.Do(ctx, nil, req)
 	if err != nil {
@@ -313,8 +215,8 @@ func fetchRepositoryArchive(ctx context.Context, repoName, rev string) (*os.File
 	return f, nil
 }
 
-func repositoryZipArchiveURL(repoName, rev, token string) (*url.URL, error) {
-	u, err := url.Parse(cfg.Endpoint)
+func repositoryZipArchiveURL(endpoint, repoName, rev, token string) (*url.URL, error) {
+	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
 	}
