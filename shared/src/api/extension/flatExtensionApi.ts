@@ -16,7 +16,7 @@ import { ProvideTextDocumentHoverSignature, getHover } from './hover'
 
 /**
  * Holds the entire state exposed to the extension host
- * as a single plain object
+ * as a single object
  */
 export interface ExtState {
     settings: Readonly<SettingsCascade<object>>
@@ -26,10 +26,10 @@ export interface ExtState {
     versionContext: string | undefined
 
     // Search
-    queryTransformers: sourcegraph.QueryTransformer[]
+    queryTransformers: BehaviorSubject<sourcegraph.QueryTransformer[]>
 
     // Lang
-    hoverProviders: RegisteredHoverProvider[]
+    hoverProviders: BehaviorSubject<RegisteredHoverProvider[]>
 }
 
 interface RegisteredHoverProvider {
@@ -71,8 +71,8 @@ export const initNewExtensionAPI = (
         roots: [],
         versionContext: undefined,
         settings: initialSettings,
-        queryTransformers: [],
-        hoverProviders: [],
+        queryTransformers: new BehaviorSubject<sourcegraph.QueryTransformer[]>([]),
+        hoverProviders: new BehaviorSubject<RegisteredHoverProvider[]>([]),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -80,11 +80,7 @@ export const initNewExtensionAPI = (
     // the initial settings data, and instead only subscribe to configuration changes.
     // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
-    const hoverProvidersChanges = new BehaviorSubject<RegisteredHoverProvider[]>([])
-
     const rootChanges = new Subject<void>()
-    const queryTransformersChanges = new ReplaySubject<sourcegraph.QueryTransformer[]>(1)
-    queryTransformersChanges.next([])
 
     const versionContextChanges = new Subject<string | undefined>()
 
@@ -112,7 +108,7 @@ export const initNewExtensionAPI = (
             // in this case we need to reissue the transformation and emit the resulting value
             // we probably won't need an Observable if we somehow coordinate with extensions activation
             proxySubscribable(
-                queryTransformersChanges.pipe(
+                state.queryTransformers.pipe(
                     switchMap(transformers =>
                         transformers.reduce(
                             (currentQuery: Observable<string>, transformer) =>
@@ -132,7 +128,7 @@ export const initNewExtensionAPI = (
         getHover: (textParameters: TextDocumentPositionParams) => {
             const document = textDcuments.get(textParameters.textDocument.uri)
 
-            const matchedProviders = hoverProvidersChanges.pipe(
+            const matchedProviders = state.hoverProviders.pipe(
                 map(providers =>
                     providersForDocument(textParameters.textDocument, providers, ({ selector }) => selector).map(
                         ({ provider }): ProvideTextDocumentHoverSignature => parameters =>
@@ -172,27 +168,14 @@ export const initNewExtensionAPI = (
 
     // Search
     const search: typeof sourcegraph['search'] = {
-        registerQueryTransformer: transformer =>
-            addElementWithRollback(transformer, {
-                get: () => state.queryTransformers,
-                set: values => (state.queryTransformers = values),
-                notifyWith: queryTransformersChanges,
-            }),
+        registerQueryTransformer: transformer => addWithRollback(state.queryTransformers, transformer),
     }
 
     // Languages
     const registerHoverProvider = (
         selector: sourcegraph.DocumentSelector,
         provider: sourcegraph.HoverProvider
-    ): sourcegraph.Unsubscribable =>
-        addElementWithRollback(
-            { provider, selector },
-            {
-                get: () => state.hoverProviders,
-                set: values => (state.hoverProviders = values),
-                notifyWith: hoverProvidersChanges,
-            }
-        )
+    ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider })
 
     return {
         configuration: Object.assign(configChanges.asObservable(), {
@@ -224,33 +207,9 @@ function providersForDocument<P>(
     )
 }
 
-/**
- * adds an element to an array with the ability to remove it back via Unsubscribable.
- * Both of these changes will be notified via "notifyWith" subject
- *
- * @returns Unsubscribable to remove the element from the array.
- */
-function addElementWithRollback<T>(
-    value: T,
-    {
-        get,
-        set,
-        notifyWith: notify,
-    }: {
-        get: () => T[]
-        set: (val: T[]) => void
-        notifyWith: Subject<T[]>
-    }
-): sourcegraph.Unsubscribable {
-    const modifiedArray = get().concat(value)
-    set(modifiedArray)
-    notify.next(modifiedArray)
+function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): sourcegraph.Unsubscribable {
+    behaviorSubject.next([...behaviorSubject.value, value])
     return {
-        unsubscribe: () => {
-            // eslint-disable-next-line id-length
-            const filtered = get().filter(t => t !== value)
-            set(modifiedArray)
-            notify.next(filtered)
-        },
+        unsubscribe: () => behaviorSubject.next(behaviorSubject.value.filter(p => p != value)),
     }
 }
