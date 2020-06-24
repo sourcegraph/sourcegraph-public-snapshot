@@ -98,9 +98,7 @@ func Test_monthsFromDays(t *testing.T) {
 		})
 	}
 }
-
 func TestHowLongOutOfDate(t *testing.T) {
-
 	tests := []struct {
 		name           string
 		now            time.Time
@@ -108,7 +106,6 @@ func TestHowLongOutOfDate(t *testing.T) {
 		want           int
 		wantErr        bool
 	}{
-		// TODO: Add test cases.
 		{
 			"build is in the future",
 			time.Unix(1577577600, 0), // 2019-12-29
@@ -133,7 +130,6 @@ func TestHowLongOutOfDate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			MockTimestamp(tt.buildTimestamp)
 			got, err := HowLongOutOfDate(tt.now)
 			if (err != nil) != tt.wantErr {
