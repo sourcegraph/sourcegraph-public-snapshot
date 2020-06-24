@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
@@ -204,7 +205,8 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 		return nil
 	}
 	offline := globalUpdateStatus.Err != nil // Whether or not instance can connect to Sourcegraph.com for update checks
-	monthsOutOfDate, err := version.HowLongOutOfDate()
+	now := time.Now()
+	monthsOutOfDate, err := version.HowLongOutOfDate(now)
 	if err != nil {
 		log15.Error("failed to determine how out of date Sourcegraph is", "error", err)
 		return nil
