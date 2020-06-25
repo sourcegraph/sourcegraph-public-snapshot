@@ -110,6 +110,7 @@ func main() {
 		globalReposDir = globalFlags.String("repos-dir", "", "src-expose's git directories. src-expose creates a git repo per directory synced. The git repo is then served to Sourcegraph. The repositories are stored and served relative to this directory. Default: ~/.sourcegraph/src-expose-repos")
 		globalConfig   = globalFlags.String("config", "", "If set will be used instead of command line arguments to specify configuration.")
 		globalAddr     = globalFlags.String("addr", ":3434", "address on which to serve (end with : for unused port)")
+		globalRecurse  = globalFlags.Bool("recurse", true, "If true, src-expose serve will recursively search for git repositories to serve. Ignored by src-expose sync.")
 	)
 
 	newLogger := func(prefix string) *log.Logger {
@@ -197,7 +198,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(newLogger("serve: "), *globalAddr, repoDir)
+			return serveRepos(newLogger("serve: "), *globalAddr, repoDir, globalRecurse)
 		},
 	}
 
@@ -245,7 +246,7 @@ See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/exampl
 
 			go func() {
 				logger := newLogger("serve: ")
-				if err := serveRepos(logger, *globalAddr, s.Destination); err != nil {
+				if err := serveRepos(logger, *globalAddr, s.Destination, globalRecurse); err != nil {
 					log.Fatal(err)
 				}
 			}()

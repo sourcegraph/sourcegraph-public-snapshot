@@ -16,13 +16,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func serveRepos(logger *log.Logger, addr, repoDir string) error {
+func serveRepos(logger *log.Logger, addr, repoDir string, recurse bool) error {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrap(err, "listen")
 	}
 	logger.Printf("listening on http://%s", ln.Addr())
-	h, err := reposHandler(logger, ln.Addr().String(), repoDir)
+	h, err := reposHandler(logger, ln.Addr().String(), repoDir, recurse)
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
 	}
@@ -55,9 +55,9 @@ type Repo struct {
 	URI  string
 }
 
-func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, error) {
+func reposHandler(logger *log.Logger, addr, reposRoot string, recurse bool) (http.Handler, error) {
 	logger.Printf("serving git repositories from %s", reposRoot)
-	configureRepos(logger, reposRoot)
+	configureRepos(logger, reposRoot, recurse)
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
@@ -79,7 +79,7 @@ func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, err
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
 		var repos []Repo
 		var reposRootIsRepo bool
-		for _, name := range configureRepos(logger, reposRoot) {
+		for _, name := range configureRepos(logger, reposRoot, recurse) {
 			if name == "." {
 				reposRootIsRepo = true
 			}
@@ -151,7 +151,7 @@ func (d httpDir) Open(name string) (http.File, error) {
 // configureRepos finds all .git directories and configures them to be served.
 // It returns a slice of all the git directories it finds. The paths are
 // relative to root.
-func configureRepos(logger *log.Logger, root string) []string {
+func configureRepos(logger *log.Logger, root string, recurse bool) []string {
 	var gitDirs []string
 
 	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
@@ -161,6 +161,10 @@ func configureRepos(logger *log.Logger, root string) []string {
 		}
 		if !fi.IsDir() {
 			return nil
+		}
+
+		if !recurse && root != path {
+			return filepath.SkipDir
 		}
 
 		// We recurse into bare repositories to find subprojects. Prevent
