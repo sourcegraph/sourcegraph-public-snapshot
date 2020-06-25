@@ -1773,9 +1773,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(results) == 0 && r.patternType != query.SearchTypeStructural {
-		log15.Info("ok", "", args.PatternInfo.Pattern)
 		if matchHoleRegexp.MatchString(r.originalQuery) {
-			log15.Info("set")
 			alert = alertForStructuralSearchNotSet(r.originalQuery)
 		}
 	}
