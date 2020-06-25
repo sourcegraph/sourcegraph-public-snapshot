@@ -1,25 +1,65 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`HoverOverlay actions and hover empty 1`] = `
-<div
-  className="hover-overlay"
-  style={
+<HoverOverlay
+  actionsOrError={Array []}
+  extensionsController={
     Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
+      "executeCommand": [Function],
+    }
+  }
+  hoverOrError={null}
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
     }
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hover-overlay"
+    style={
+      Object {
+        "left": "0px",
+        "opacity": 1,
+        "top": "0px",
+        "visibility": "visible",
+      }
+    }
   >
-    <em>
-      No hover information available.
-    </em>
+    <div
+      className="hover-overlay__contents"
+    >
+      <em>
+        No hover information available.
+      </em>
+    </div>
   </div>
-</div>
+</HoverOverlay>
 `;
 
 exports[`HoverOverlay actions and hover error 1`] = `
@@ -47,29 +87,71 @@ exports[`HoverOverlay actions and hover error 1`] = `
 `;
 
 exports[`HoverOverlay actions and hover loading 1`] = `
-<div
-  className="hover-overlay"
-  style={
+<HoverOverlay
+  actionsOrError="loading"
+  extensionsController={
     Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
+      "executeCommand": [Function],
+    }
+  }
+  hoverOrError="loading"
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
     }
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hover-overlay"
+    style={
+      Object {
+        "left": "0px",
+        "opacity": 1,
+        "top": "0px",
+        "visibility": "visible",
+      }
+    }
   >
     <div
-      className="hover-overlay__loader-row"
+      className="hover-overlay__contents"
     >
       <div
-        className="loading-spinner "
-      />
+        className="hover-overlay__loader-row"
+      >
+        <LoadingSpinner>
+          <div
+            className="loading-spinner "
+          />
+        </LoadingSpinner>
+      </div>
     </div>
   </div>
-</div>
+</HoverOverlay>
 `;
 
 exports[`HoverOverlay actions and hover present 1`] = `
@@ -87,17 +169,15 @@ exports[`HoverOverlay actions and hover present 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content e2e-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+    <span
+      className="hover-overlay__content e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
 ",
-          }
         }
-      />
-    </React.Fragment>
+      }
+    />
   </div>
   <div
     className="hover-overlay__actions"
@@ -116,22 +196,12 @@ exports[`HoverOverlay actions and hover present 1`] = `
           "executeCommand": [Function],
         }
       }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      key="0"
+      location="[Location path=/]"
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+          "settings": "[Observable]",
         }
       }
       showInlineError={true}
@@ -188,24 +258,63 @@ exports[`HoverOverlay actions and hover undefined 1`] = `
 `;
 
 exports[`HoverOverlay actions empty 1`] = `
-<div
-  className="hover-overlay"
-  style={
+<HoverOverlay
+  actionsOrError={Array []}
+  extensionsController={
     Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
+      "executeCommand": [Function],
+    }
+  }
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
     }
   }
 >
   <div
-    className="hover-overlay__contents"
-  />
-</div>
+    className="hover-overlay"
+    style={
+      Object {
+        "left": "0px",
+        "opacity": 1,
+        "top": "0px",
+        "visibility": "visible",
+      }
+    }
+  >
+    <div
+      className="hover-overlay__contents"
+    />
+  </div>
+</HoverOverlay>
 `;
 
-exports[`HoverOverlay actions error 1`] = `null`;
+exports[`HoverOverlay actions error 1`] = `""`;
 
 exports[`HoverOverlay actions error, hover present 1`] = `
 <div
@@ -222,37 +331,74 @@ exports[`HoverOverlay actions error, hover present 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content e2e-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+    <span
+      className="hover-overlay__content e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
 ",
-          }
         }
-      />
-    </React.Fragment>
+      }
+    />
   </div>
 </div>
 `;
 
 exports[`HoverOverlay actions loading 1`] = `
-<div
-  className="hover-overlay"
-  style={
+<HoverOverlay
+  actionsOrError="loading"
+  extensionsController={
     Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
+      "executeCommand": [Function],
+    }
+  }
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
     }
   }
 >
   <div
-    className="hover-overlay__contents"
-  />
-</div>
+    className="hover-overlay"
+    style={
+      Object {
+        "left": "0px",
+        "opacity": 1,
+        "top": "0px",
+        "visibility": "visible",
+      }
+    }
+  >
+    <div
+      className="hover-overlay__contents"
+    />
+  </div>
+</HoverOverlay>
 `;
 
 exports[`HoverOverlay actions present 1`] = `
@@ -288,22 +434,12 @@ exports[`HoverOverlay actions present 1`] = `
           "executeCommand": [Function],
         }
       }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      key="0"
+      location="[Location path=/]"
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+          "settings": "[Observable]",
         }
       }
       showInlineError={true}
@@ -357,22 +493,12 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           "executeCommand": [Function],
         }
       }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      key="0"
+      location="[Location path=/]"
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+          "settings": "[Observable]",
         }
       }
       showInlineError={true}
@@ -403,38 +529,35 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content e2e-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+    <span
+      className="hover-overlay__content e2e-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
 ",
-          }
         }
-      />
-    </React.Fragment>
+      }
+    />
   </div>
   <div
     className="hover-overlay__alerts"
   >
     <div
       className="hover-overlay__alert"
+      key="a"
     >
       <div
         className="hover-overlay__alert-content"
       >
         <small>
-          <React.Fragment>
-            b 
-            <small>
-              c
-            </small>
-             
-            <code>
-              d
-            </code>
-          </React.Fragment>
+          b 
+          <small>
+            c
+          </small>
+           
+          <code>
+            d
+          </code>
         </small>
         <a
           className="hover-overlay__alert-close"
@@ -465,22 +588,12 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
           "executeCommand": [Function],
         }
       }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      key="0"
+      location="[Location path=/]"
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+          "settings": "[Observable]",
         }
       }
       showInlineError={true}
@@ -496,7 +609,46 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
 </div>
 `;
 
-exports[`HoverOverlay hover empty 1`] = `null`;
+exports[`HoverOverlay hover empty 1`] = `
+<HoverOverlay
+  extensionsController={
+    Object {
+      "executeCommand": [Function],
+    }
+  }
+  hoverOrError={null}
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
+    }
+  }
+/>
+`;
 
 exports[`HoverOverlay hover error 1`] = `
 <div
@@ -560,22 +712,12 @@ exports[`HoverOverlay hover error, actions present 1`] = `
           "executeCommand": [Function],
         }
       }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      key="0"
+      location="[Location path=/]"
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+          "settings": "[Observable]",
         }
       }
       showInlineError={true}
@@ -592,57 +734,146 @@ exports[`HoverOverlay hover error, actions present 1`] = `
 `;
 
 exports[`HoverOverlay hover loading 1`] = `
-<div
-  className="hover-overlay"
-  style={
+<HoverOverlay
+  extensionsController={
     Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
+      "executeCommand": [Function],
+    }
+  }
+  hoverOrError="loading"
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
     }
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hover-overlay"
+    style={
+      Object {
+        "left": "0px",
+        "opacity": 1,
+        "top": "0px",
+        "visibility": "visible",
+      }
+    }
   >
     <div
-      className="hover-overlay__loader-row"
+      className="hover-overlay__contents"
     >
       <div
-        className="loading-spinner "
-      />
+        className="hover-overlay__loader-row"
+      >
+        <LoadingSpinner>
+          <div
+            className="loading-spinner "
+          />
+        </LoadingSpinner>
+      </div>
     </div>
   </div>
-</div>
+</HoverOverlay>
 `;
 
 exports[`HoverOverlay hover present 1`] = `
-<div
-  className="hover-overlay"
-  style={
+<HoverOverlay
+  extensionsController={
     Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
+      "executeCommand": [Function],
+    }
+  }
+  hoverOrError={
+    Object {
+      "contents": Array [
+        Object {
+          "kind": "markdown",
+          "value": "v",
+        },
+      ],
+    }
+  }
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
     }
   }
 >
   <div
-    className="hover-overlay__contents"
-  >
-    <span
-      className="hover-overlay__content e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
-",
-        }
+    className="hover-overlay"
+    style={
+      Object {
+        "left": "0px",
+        "opacity": 1,
+        "top": "0px",
+        "visibility": "visible",
       }
-    />
+    }
+  >
+    <div
+      className="hover-overlay__contents"
+    >
+      <span
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
+",
+          }
+        }
+      />
+    </div>
   </div>
-</div>
+</HoverOverlay>
 `;
 
 exports[`HoverOverlay hover present, actions loading 1`] = `
@@ -660,36 +891,6 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content e2e-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </React.Fragment>
-  </div>
-</div>
-`;
-
-exports[`HoverOverlay multiple hovers present 1`] = `
-<div
-  className="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hover-overlay__contents"
-  >
     <span
       className="hover-overlay__content e2e-tooltip-content"
       dangerouslySetInnerHTML={
@@ -699,16 +900,96 @@ exports[`HoverOverlay multiple hovers present 1`] = `
         }
       }
     />
-    <hr />
-    <span
-      className="hover-overlay__content e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v2</p>
-",
-        }
-      }
-    />
   </div>
 </div>
+`;
+
+exports[`HoverOverlay multiple hovers present 1`] = `
+<HoverOverlay
+  extensionsController={
+    Object {
+      "executeCommand": [Function],
+    }
+  }
+  hoverOrError={
+    Object {
+      "contents": Array [
+        Object {
+          "kind": "markdown",
+          "value": "v",
+        },
+        Object {
+          "kind": "markdown",
+          "value": "v2",
+        },
+      ],
+    }
+  }
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
+    }
+  }
+>
+  <div
+    className="hover-overlay"
+    style={
+      Object {
+        "left": "0px",
+        "opacity": 1,
+        "top": "0px",
+        "visibility": "visible",
+      }
+    }
+  >
+    <div
+      className="hover-overlay__contents"
+    >
+      <span
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
+",
+          }
+        }
+      />
+      <hr />
+      <span
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v2</p>
+",
+          }
+        }
+      />
+    </div>
+  </div>
+</HoverOverlay>
 `;
