@@ -2,11 +2,11 @@ package gob
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/gob"
 	"io"
 	"sync"
 
+	"github.com/klauspost/compress/gzip"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
