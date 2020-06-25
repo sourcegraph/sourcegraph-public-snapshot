@@ -1,15 +1,20 @@
 ---
 name: Tracking issue
 about: An issue to capture planned and on-going work of a team's milestone.
-title: '$TEAM: $MILESTONE Tracking issue'
+title: 'WIP: $TEAM $MILESTONE Tracking issue'
 labels: 'tracking'
 assignees: ''
 
 ---
 
-### Status
+### Plan
 
-This tracking issue is being prepared.
+<!--
+Summarize:
+- What problems that the team is going to solve.
+- Why those problems are important and how they connect back to OKRs.
+- How the team is going solve those problems.
+-->
 
 ### Availability
 
