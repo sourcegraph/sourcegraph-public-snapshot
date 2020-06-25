@@ -60,7 +60,7 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
   }
   history="[History]"
   isLightTheme={true}
-  location="[Location path=/]"
+  location="[Location path=/?patchSet=p]"
   telemetryService={
     Object {
       "log": [Function],
@@ -293,7 +293,7 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
     enablePublishing={false}
     history="[History]"
     isLightTheme={true}
-    location="[Location path=/]"
+    location="[Location path=/?patchSet=p]"
     patchSet={
       Object {
         "__typename": "PatchSet",

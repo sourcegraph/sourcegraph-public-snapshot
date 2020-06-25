@@ -8,14 +8,10 @@ import { isPlainObject } from 'lodash'
 
 function maskProps(props: Record<string, any>, levelsDeep = 3): void {
     if (props.history) {
-        try {
-            props.history = '[History]'
-        } catch (error) {
-            console.log('ERROR', props, error)
-        }
+        props.history = '[History]'
     }
     if (props.location) {
-        props.location = `[Location path=${(props.location as H.Location).pathname}]`
+        props.location = `[Location path=${H.createPath(props.location as H.Location)}]`
     }
 
     for (const property of Object.keys(props)) {

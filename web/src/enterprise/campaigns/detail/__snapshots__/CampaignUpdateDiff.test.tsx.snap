@@ -19,7 +19,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
   }
   history="[History]"
   isLightTheme={true}
-  location="[Location path=/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D]"
+  location="[Location path=/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?patchSet=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D]"
   patchSet={
     Object {
       "id": "someothercampaign",
@@ -415,7 +415,7 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
   }
   history="[History]"
   isLightTheme={true}
-  location="[Location path=/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D]"
+  location="[Location path=/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?patchSet=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D]"
   patchSet={
     Object {
       "id": "someothercampaign",
