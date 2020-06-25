@@ -74,7 +74,7 @@ interface Props
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
-    /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer and enzyme. */
+    /** For testing only. Used because reactstrap's Popover is incompatible with enzyme. */
     hideNavLinks: boolean
 }
 

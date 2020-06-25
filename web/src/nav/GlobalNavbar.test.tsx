@@ -29,7 +29,7 @@ const PROPS: GlobalNavbar['props'] = {
     settingsCascade: NOOP_SETTINGS_CASCADE,
     showCampaigns: false,
     telemetryService: {} as any,
-    hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer and enzyme
+    hideNavLinks: true, // used because reactstrap Popover is incompatible with enzyme
     filtersInQuery: {} as any,
     splitSearchModes: false,
     interactiveSearchMode: false,

@@ -1,15 +1,14 @@
 import { ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { HTTPStatusError } from '../../../../../shared/src/backend/fetch'
 import * as React from 'react'
-import renderer, { ReactTestRenderer } from 'react-test-renderer'
 import { noop } from 'lodash'
+import { mount } from 'enzyme'
 
 describe('<ViewOnSourcegraphButton />', () => {
     describe('repository exists on the instance', () => {
         it('renders a link to the repository on the Sourcegraph instance', () => {
-            let root: ReactTestRenderer
-            renderer.act(() => {
-                root = renderer.create(
+            expect(
+                mount(
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
@@ -19,14 +18,12 @@ describe('<ViewOnSourcegraphButton />', () => {
                         minimalUI={false}
                     />
                 )
-            })
-            expect(root!).toMatchSnapshot()
+            ).toMatchSnapshot()
         })
 
         it('renders nothing in minimal UI mode', () => {
-            let root: ReactTestRenderer
-            renderer.act(() => {
-                root = renderer.create(
+            expect(
+                mount(
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
@@ -36,14 +33,12 @@ describe('<ViewOnSourcegraphButton />', () => {
                         minimalUI={true}
                     />
                 )
-            })
-            expect(root!).toMatchSnapshot()
+            ).toMatchSnapshot()
         })
 
         it('renders a link with the revision when provided', () => {
-            let root: ReactTestRenderer
-            renderer.act(() => {
-                root = renderer.create(
+            expect(
+                mount(
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
@@ -57,16 +52,14 @@ describe('<ViewOnSourcegraphButton />', () => {
                         minimalUI={false}
                     />
                 )
-            })
-            expect(root!).toMatchSnapshot()
+            ).toMatchSnapshot()
         })
     })
 
     describe('repository does not exist on the instance', () => {
         it('renders "Configure Sourcegraph" button when pointing at sourcegraph.com', () => {
-            let root: ReactTestRenderer
-            renderer.act(() => {
-                root = renderer.create(
+            expect(
+                mount(
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://sourcegraph.com"
@@ -81,14 +74,12 @@ describe('<ViewOnSourcegraphButton />', () => {
                         minimalUI={false}
                     />
                 )
-            })
-            expect(root!).toMatchSnapshot()
+            ).toMatchSnapshot()
         })
 
         it('renders a "Repository not found" button when not pointing at sourcegraph.com', () => {
-            let root: ReactTestRenderer
-            renderer.act(() => {
-                root = renderer.create(
+            expect(
+                mount(
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://sourcegraph.test"
@@ -103,8 +94,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         minimalUI={false}
                     />
                 )
-            })
-            expect(root!).toMatchSnapshot()
+            ).toMatchSnapshot()
         })
     })
 
@@ -113,9 +103,8 @@ describe('<ViewOnSourcegraphButton />', () => {
             for (const minimalUI of [true, false]) {
                 describe(`minimalUI = ${String(minimalUI)}`, () => {
                     it('renders a sign in button if showSignInButton = true', () => {
-                        let root: ReactTestRenderer
-                        renderer.act(() => {
-                            root = renderer.create(
+                        expect(
+                            mount(
                                 <ViewOnSourcegraphButton
                                     codeHostType="test-codehost"
                                     sourcegraphURL="https://test.com"
@@ -130,8 +119,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                                     minimalUI={minimalUI}
                                 />
                             )
-                        })
-                        expect(root!).toMatchSnapshot()
+                        ).toMatchSnapshot()
                     })
                 })
             }
@@ -139,9 +127,8 @@ describe('<ViewOnSourcegraphButton />', () => {
 
         describe('because of an unknown error', () => {
             it('renders a button with an error label', () => {
-                let root: ReactTestRenderer
-                renderer.act(() => {
-                    root = renderer.create(
+                expect(
+                    mount(
                         <ViewOnSourcegraphButton
                             codeHostType="test-codehost"
                             sourcegraphURL="https://test.com"
@@ -156,8 +143,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                             minimalUI={false}
                         />
                     )
-                })
-                expect(root!).toMatchSnapshot()
+                ).toMatchSnapshot()
             })
         })
     })

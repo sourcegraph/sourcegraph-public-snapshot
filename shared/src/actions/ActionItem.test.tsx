@@ -1,10 +1,10 @@
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem } from './ActionItem'
 import { NEVER } from 'rxjs'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
@@ -14,7 +14,7 @@ describe('ActionItem', () => {
     const history = H.createMemoryHistory()
 
     test('non-actionItem variant', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -23,11 +23,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('actionItem variant', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -37,11 +37,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('noop command', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -50,11 +50,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('pressed toggle actionItem', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'a', command: 'c', actionItem: { pressed: true, label: 'b' } }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -64,11 +64,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('non-pressed actionItem', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'a', command: 'c', actionItem: { pressed: false, label: 'b' } }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -78,11 +78,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('title element', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -93,13 +93,13 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('run command', async () => {
         const { wait, done } = createBarrier()
 
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -110,25 +110,20 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-
-        // Run command and wait for execution to finish.
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        component.simulate('click')
+        expect(component).toMatchSnapshot()
 
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('run command with showLoadingSpinnerDuringExecution', async () => {
         const { wait, done } = createBarrier()
 
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -140,22 +135,18 @@ describe('ActionItem', () => {
             />
         )
 
-        // Run command and wait for execution to finish.
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        component.simulate('click')
+        expect(component).toMatchSnapshot()
 
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('run command with error', async () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -172,15 +163,13 @@ describe('ActionItem', () => {
 
         // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
         // to result in the setState call.)
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
+        component.simulate('click')
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('run command with error with showInlineError', async () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionItem
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -197,18 +186,16 @@ describe('ActionItem', () => {
 
         // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
         // to result in the setState call.)
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
+        component.simulate('click')
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     describe('"open" command', () => {
         it('renders as link', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const component = renderer.create(
+            const component = mount(
                 <ActionItem
                     action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -217,13 +204,13 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(component).toMatchSnapshot()
         })
 
         it('renders as link with icon and opens a new tab for a different origin', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const component = renderer.create(
+            const component = mount(
                 <ActionItem
                     action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -232,13 +219,13 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(component).toMatchSnapshot()
         })
 
         it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const component = renderer.create(
+            const component = mount(
                 <ActionItem
                     action={{ id: 'c1', command: 'whatever', title: 'primary' }}
                     altAction={{ id: 'c2', command: 'open', commandArguments: ['https://other.com/foo'], title: 'alt' }}
@@ -248,7 +235,7 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(component).toMatchSnapshot()
         })
     })
 })

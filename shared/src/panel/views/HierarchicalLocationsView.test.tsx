@@ -1,5 +1,5 @@
 // react-visibility-sensor, used in CodeExcerpt depends on ReactDOM.findDOMNode,
-// which is not supported when using react-test-renderer + jest.
+// which is not supported when using enzyme + jest.
 // This mock makes it so that <VisibilitySensor /> simply becomes a <div> in the rendered output.
 jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
 

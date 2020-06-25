@@ -8,6 +8,8 @@ import { ISiteUsagePeriod } from '../../../../shared/src/graphql/schema'
 import { PageTitle } from '../../components/PageTitle'
 import { mount } from 'enzyme'
 
+jest.mock('../../components/d3/BarChart', () => ({ BarChart: 'BarChart' }))
+
 describe('SiteAdminOverviewPage', () => {
     afterEach(() => {
         PageTitle.titleSet = false
@@ -112,31 +114,31 @@ describe('SiteAdminOverviewPage', () => {
             startTime: new Date().toISOString(),
             stages: undefined as any,
         }
-        expect(
-            mount(
-                <SiteAdminOverviewPage
-                    {...baseProps}
-                    _fetchOverview={() =>
-                        of({
-                            repositories: 100,
-                            users: 10,
-                            orgs: 5,
-                            surveyResponses: {
-                                totalCount: 100,
-                                averageScore: 10,
-                            },
-                        })
-                    }
-                    _fetchWeeklyActiveUsers={() =>
-                        of({
-                            __typename: 'SiteUsageStatistics',
-                            daus: [],
-                            waus: [usageStat, usageStat],
-                            maus: [],
-                        })
-                    }
-                />
-            )
-        ).toMatchSnapshot()
+        const component = mount(
+            <SiteAdminOverviewPage
+                {...baseProps}
+                _fetchOverview={() =>
+                    of({
+                        repositories: 100,
+                        users: 10,
+                        orgs: 5,
+                        surveyResponses: {
+                            totalCount: 100,
+                            averageScore: 10,
+                        },
+                    })
+                }
+                _fetchWeeklyActiveUsers={() =>
+                    of({
+                        __typename: 'SiteUsageStatistics',
+                        daus: [],
+                        waus: [usageStat, usageStat],
+                        maus: [],
+                    })
+                }
+            />
+        )
+        component.update()
+        expect(component).toMatchSnapshot()
     })
 })

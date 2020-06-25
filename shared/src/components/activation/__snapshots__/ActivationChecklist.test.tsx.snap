@@ -1,307 +1,1266 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ActivationChecklist render 0/1 complete 1`] = `
-<div
-  className="activation-checklist list-group list-group-flush "
+<ActivationChecklist
+  completed={Object {}}
+  history="[History]"
+  steps={
+    Array [
+      Object {
+        "detail": "detail1",
+        "id": "ConnectedCodeHost",
+        "title": "title1",
+      },
+    ]
+  }
 >
   <div
-    data-reach-accordion=""
+    className="activation-checklist list-group list-group-flush "
   >
-    <div
-      className="activation-checklist__container list-group-item "
-      data-reach-accordion-item=""
-      data-state="open"
+    <Accordion
+      collapsible={true}
     >
-      <button
-        aria-controls="panel--1---1"
-        aria-expanded={true}
-        className="activation-checklist__button list-group-item list-group-item-action"
-        data-reach-accordion-button=""
-        id="button--1---1"
-        onClick={[Function]}
-        onKeyDown={[Function]}
+      <DescendantProvider
+        context={
+          Object {
+            "$$typeof": Symbol(react.context),
+            "Consumer": Object {
+              "$$typeof": Symbol(react.context),
+              "_calculateChangedBits": null,
+              "_context": Object {
+                "$$typeof": Symbol(react.context),
+                "Consumer": Object {
+                  "$$typeof": Symbol(react.context),
+                  "_calculateChangedBits": null,
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "Provider": Object {
+                  "$$typeof": Symbol(react.provider),
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "_calculateChangedBits": null,
+                "_currentRenderer": Object {},
+                "_currentRenderer2": null,
+                "_currentValue": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_currentValue2": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_threadCount": 0,
+                "displayName": "AccordionDescendantContext",
+              },
+            },
+            "Provider": Object {
+              "$$typeof": Symbol(react.provider),
+              "_context": Object {
+                "$$typeof": Symbol(react.context),
+                "Consumer": Object {
+                  "$$typeof": Symbol(react.context),
+                  "_calculateChangedBits": null,
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "Provider": Object {
+                  "$$typeof": Symbol(react.provider),
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "_calculateChangedBits": null,
+                "_currentRenderer": Object {},
+                "_currentRenderer2": null,
+                "_currentValue": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_currentValue2": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_threadCount": 0,
+                "displayName": "AccordionDescendantContext",
+              },
+            },
+            "_calculateChangedBits": null,
+            "_currentRenderer": Object {},
+            "_currentRenderer2": null,
+            "_currentValue": Object {
+              "descendants": Array [],
+              "registerDescendant": [Function],
+              "unregisterDescendant": [Function],
+            },
+            "_currentValue2": Object {
+              "descendants": Array [],
+              "registerDescendant": [Function],
+              "unregisterDescendant": [Function],
+            },
+            "_threadCount": 0,
+            "displayName": "AccordionDescendantContext",
+          }
+        }
+        items={
+          Array [
+            Object {
+              "disabled": false,
+              "element": <button
+                aria-controls="panel--1--0"
+                aria-expanded="false"
+                class="activation-checklist__button list-group-item list-group-item-action"
+                data-reach-accordion-button=""
+                id="button--1--0"
+              >
+                <div
+                  class="activation-checklist-item d-flex justify-content-between"
+                >
+                  <div
+                    class="d-flex align-items-center"
+                  >
+                    <span
+                      class="activation-checklist-item__icon-container icon-inline icon-down"
+                    >
+                      <svg
+                        class="mdi-icon activation-checklist-item__icon"
+                        fill="currentColor"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="activation-checklist-item__icon-container icon-inline icon-right"
+                    >
+                      <svg
+                        class="mdi-icon activation-checklist-item__icon"
+                        fill="currentColor"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                        />
+                      </svg>
+                    </span>
+                    <a
+                      class="activation-checklist__title"
+                      href=""
+                    >
+                      title1
+                    </a>
+                  </div>
+                  <div>
+                    <svg
+                      class="mdi-icon icon-inline text-muted"
+                      fill="currentColor"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </button>,
+              "index": 0,
+            },
+          ]
+        }
+        set={[Function]}
       >
         <div
-          className="activation-checklist-item d-flex justify-content-between"
+          data-reach-accordion=""
         >
-          <div
-            className="d-flex align-items-center"
+          <AccordionItem
+            className="activation-checklist__container list-group-item "
+            key="ConnectedCodeHost"
           >
-            <span
-              className="activation-checklist-item__icon-container icon-inline icon-down"
+            <div
+              className="activation-checklist__container list-group-item "
+              data-reach-accordion-item=""
+              data-state="collapsed"
             >
-              <svg
-                className="mdi-icon activation-checklist-item__icon"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
+              <AccordionButton
+                className="activation-checklist__button list-group-item list-group-item-action"
               >
-                <path
-                  d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                />
-              </svg>
-            </span>
-            <span
-              className="activation-checklist-item__icon-container icon-inline icon-right"
-            >
-              <svg
-                className="mdi-icon activation-checklist-item__icon"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
+                <button
+                  aria-controls="panel--1--0"
+                  aria-expanded={false}
+                  className="activation-checklist__button list-group-item list-group-item-action"
+                  data-reach-accordion-button=""
+                  id="button--1--0"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                >
+                  <ActivationChecklistItem
+                    detail="detail1"
+                    done={false}
+                    history="[History]"
+                    id="ConnectedCodeHost"
+                    key="ConnectedCodeHost"
+                    title="title1"
+                  >
+                    <div
+                      className="activation-checklist-item d-flex justify-content-between"
+                    >
+                      <div
+                        className="d-flex align-items-center"
+                      >
+                        <span
+                          className="activation-checklist-item__icon-container icon-inline icon-down"
+                        >
+                          <Memo(ChevronDownIcon)
+                            className="activation-checklist-item__icon"
+                          >
+                            <svg
+                              className="mdi-icon activation-checklist-item__icon"
+                              fill="currentColor"
+                              height={24}
+                              viewBox="0 0 24 24"
+                              width={24}
+                            >
+                              <path
+                                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                              />
+                            </svg>
+                          </Memo(ChevronDownIcon)>
+                        </span>
+                        <span
+                          className="activation-checklist-item__icon-container icon-inline icon-right"
+                        >
+                          <Memo(ChevronRightIcon)
+                            className="activation-checklist-item__icon"
+                          >
+                            <svg
+                              className="mdi-icon activation-checklist-item__icon"
+                              fill="currentColor"
+                              height={24}
+                              viewBox="0 0 24 24"
+                              width={24}
+                            >
+                              <path
+                                d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                              />
+                            </svg>
+                          </Memo(ChevronRightIcon)>
+                        </span>
+                        <a
+                          className="activation-checklist__title"
+                          href=""
+                        >
+                          title1
+                        </a>
+                      </div>
+                      <div>
+                        <Memo(CheckboxBlankCircleOutlineIcon)
+                          className="icon-inline text-muted"
+                        >
+                          <svg
+                            className="mdi-icon icon-inline text-muted"
+                            fill="currentColor"
+                            height={24}
+                            viewBox="0 0 24 24"
+                            width={24}
+                          >
+                            <path
+                              d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                            />
+                          </svg>
+                        </Memo(CheckboxBlankCircleOutlineIcon)>
+                      </div>
+                    </div>
+                  </ActivationChecklistItem>
+                </button>
+              </AccordionButton>
+              <AccordionPanel
+                className="px-2"
               >
-                <path
-                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
-                />
-              </svg>
-            </span>
-            <a
-              className="activation-checklist__title"
-              href=""
-            >
-              title1
-            </a>
-          </div>
-          <div>
-            <svg
-              className="mdi-icon icon-inline text-muted"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-              />
-            </svg>
-          </div>
+                <div
+                  aria-labelledby="button--1--0"
+                  className="px-2"
+                  data-reach-accordion-panel=""
+                  data-state="collapsed"
+                  hidden={true}
+                  id="panel--1--0"
+                  role="region"
+                  tabIndex={-1}
+                >
+                  <div
+                    className="activation-checklist__detail pb-1"
+                  >
+                    detail1
+                  </div>
+                </div>
+              </AccordionPanel>
+            </div>
+          </AccordionItem>
         </div>
-      </button>
-      <div
-        aria-labelledby="button--1---1"
-        className="px-2"
-        data-reach-accordion-panel=""
-        data-state="open"
-        hidden={false}
-        id="panel--1---1"
-        role="region"
-        tabIndex={-1}
-      >
-        <div
-          className="activation-checklist__detail pb-1"
-        >
-          detail1
-        </div>
-      </div>
-    </div>
+      </DescendantProvider>
+    </Accordion>
   </div>
-</div>
+</ActivationChecklist>
 `;
 
 exports[`ActivationChecklist render 0/1 complete 2`] = `
-<div
-  className="activation-checklist list-group list-group-flush "
+<ActivationChecklist
+  completed={
+    Object {
+      "EnabledRepository": true,
+    }
+  }
+  history="[History]"
+  steps={
+    Array [
+      Object {
+        "detail": "detail1",
+        "id": "ConnectedCodeHost",
+        "title": "title1",
+      },
+    ]
+  }
 >
   <div
-    data-reach-accordion=""
+    className="activation-checklist list-group list-group-flush "
   >
-    <div
-      className="activation-checklist__container list-group-item "
-      data-reach-accordion-item=""
-      data-state="open"
+    <Accordion
+      collapsible={true}
     >
-      <button
-        aria-controls="panel--3---1"
-        aria-expanded={true}
-        className="activation-checklist__button list-group-item list-group-item-action"
-        data-reach-accordion-button=""
-        id="button--3---1"
-        onClick={[Function]}
-        onKeyDown={[Function]}
+      <DescendantProvider
+        context={
+          Object {
+            "$$typeof": Symbol(react.context),
+            "Consumer": Object {
+              "$$typeof": Symbol(react.context),
+              "_calculateChangedBits": null,
+              "_context": Object {
+                "$$typeof": Symbol(react.context),
+                "Consumer": Object {
+                  "$$typeof": Symbol(react.context),
+                  "_calculateChangedBits": null,
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "Provider": Object {
+                  "$$typeof": Symbol(react.provider),
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "_calculateChangedBits": null,
+                "_currentRenderer": Object {},
+                "_currentRenderer2": null,
+                "_currentValue": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_currentValue2": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_threadCount": 0,
+                "displayName": "AccordionDescendantContext",
+              },
+            },
+            "Provider": Object {
+              "$$typeof": Symbol(react.provider),
+              "_context": Object {
+                "$$typeof": Symbol(react.context),
+                "Consumer": Object {
+                  "$$typeof": Symbol(react.context),
+                  "_calculateChangedBits": null,
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "Provider": Object {
+                  "$$typeof": Symbol(react.provider),
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "_calculateChangedBits": null,
+                "_currentRenderer": Object {},
+                "_currentRenderer2": null,
+                "_currentValue": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_currentValue2": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_threadCount": 0,
+                "displayName": "AccordionDescendantContext",
+              },
+            },
+            "_calculateChangedBits": null,
+            "_currentRenderer": Object {},
+            "_currentRenderer2": null,
+            "_currentValue": Object {
+              "descendants": Array [],
+              "registerDescendant": [Function],
+              "unregisterDescendant": [Function],
+            },
+            "_currentValue2": Object {
+              "descendants": Array [],
+              "registerDescendant": [Function],
+              "unregisterDescendant": [Function],
+            },
+            "_threadCount": 0,
+            "displayName": "AccordionDescendantContext",
+          }
+        }
+        items={
+          Array [
+            Object {
+              "disabled": false,
+              "element": <button
+                aria-controls="panel--4--0"
+                aria-expanded="false"
+                class="activation-checklist__button list-group-item list-group-item-action"
+                data-reach-accordion-button=""
+                id="button--4--0"
+              >
+                <div
+                  class="activation-checklist-item d-flex justify-content-between"
+                >
+                  <div
+                    class="d-flex align-items-center"
+                  >
+                    <span
+                      class="activation-checklist-item__icon-container icon-inline icon-down"
+                    >
+                      <svg
+                        class="mdi-icon activation-checklist-item__icon"
+                        fill="currentColor"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="activation-checklist-item__icon-container icon-inline icon-right"
+                    >
+                      <svg
+                        class="mdi-icon activation-checklist-item__icon"
+                        fill="currentColor"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                        />
+                      </svg>
+                    </span>
+                    <a
+                      class="activation-checklist__title"
+                      href=""
+                    >
+                      title1
+                    </a>
+                  </div>
+                  <div>
+                    <svg
+                      class="mdi-icon icon-inline text-muted"
+                      fill="currentColor"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </button>,
+              "index": 0,
+            },
+          ]
+        }
+        set={[Function]}
       >
         <div
-          className="activation-checklist-item d-flex justify-content-between"
+          data-reach-accordion=""
         >
-          <div
-            className="d-flex align-items-center"
+          <AccordionItem
+            className="activation-checklist__container list-group-item "
+            key="ConnectedCodeHost"
           >
-            <span
-              className="activation-checklist-item__icon-container icon-inline icon-down"
+            <div
+              className="activation-checklist__container list-group-item "
+              data-reach-accordion-item=""
+              data-state="collapsed"
             >
-              <svg
-                className="mdi-icon activation-checklist-item__icon"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
+              <AccordionButton
+                className="activation-checklist__button list-group-item list-group-item-action"
               >
-                <path
-                  d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                />
-              </svg>
-            </span>
-            <span
-              className="activation-checklist-item__icon-container icon-inline icon-right"
-            >
-              <svg
-                className="mdi-icon activation-checklist-item__icon"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
+                <button
+                  aria-controls="panel--4--0"
+                  aria-expanded={false}
+                  className="activation-checklist__button list-group-item list-group-item-action"
+                  data-reach-accordion-button=""
+                  id="button--4--0"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                >
+                  <ActivationChecklistItem
+                    detail="detail1"
+                    done={false}
+                    history="[History]"
+                    id="ConnectedCodeHost"
+                    key="ConnectedCodeHost"
+                    title="title1"
+                  >
+                    <div
+                      className="activation-checklist-item d-flex justify-content-between"
+                    >
+                      <div
+                        className="d-flex align-items-center"
+                      >
+                        <span
+                          className="activation-checklist-item__icon-container icon-inline icon-down"
+                        >
+                          <Memo(ChevronDownIcon)
+                            className="activation-checklist-item__icon"
+                          >
+                            <svg
+                              className="mdi-icon activation-checklist-item__icon"
+                              fill="currentColor"
+                              height={24}
+                              viewBox="0 0 24 24"
+                              width={24}
+                            >
+                              <path
+                                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                              />
+                            </svg>
+                          </Memo(ChevronDownIcon)>
+                        </span>
+                        <span
+                          className="activation-checklist-item__icon-container icon-inline icon-right"
+                        >
+                          <Memo(ChevronRightIcon)
+                            className="activation-checklist-item__icon"
+                          >
+                            <svg
+                              className="mdi-icon activation-checklist-item__icon"
+                              fill="currentColor"
+                              height={24}
+                              viewBox="0 0 24 24"
+                              width={24}
+                            >
+                              <path
+                                d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                              />
+                            </svg>
+                          </Memo(ChevronRightIcon)>
+                        </span>
+                        <a
+                          className="activation-checklist__title"
+                          href=""
+                        >
+                          title1
+                        </a>
+                      </div>
+                      <div>
+                        <Memo(CheckboxBlankCircleOutlineIcon)
+                          className="icon-inline text-muted"
+                        >
+                          <svg
+                            className="mdi-icon icon-inline text-muted"
+                            fill="currentColor"
+                            height={24}
+                            viewBox="0 0 24 24"
+                            width={24}
+                          >
+                            <path
+                              d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                            />
+                          </svg>
+                        </Memo(CheckboxBlankCircleOutlineIcon)>
+                      </div>
+                    </div>
+                  </ActivationChecklistItem>
+                </button>
+              </AccordionButton>
+              <AccordionPanel
+                className="px-2"
               >
-                <path
-                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
-                />
-              </svg>
-            </span>
-            <a
-              className="activation-checklist__title"
-              href=""
-            >
-              title1
-            </a>
-          </div>
-          <div>
-            <svg
-              className="mdi-icon icon-inline text-muted"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-              />
-            </svg>
-          </div>
+                <div
+                  aria-labelledby="button--4--0"
+                  className="px-2"
+                  data-reach-accordion-panel=""
+                  data-state="collapsed"
+                  hidden={true}
+                  id="panel--4--0"
+                  role="region"
+                  tabIndex={-1}
+                >
+                  <div
+                    className="activation-checklist__detail pb-1"
+                  >
+                    detail1
+                  </div>
+                </div>
+              </AccordionPanel>
+            </div>
+          </AccordionItem>
         </div>
-      </button>
-      <div
-        aria-labelledby="button--3---1"
-        className="px-2"
-        data-reach-accordion-panel=""
-        data-state="open"
-        hidden={false}
-        id="panel--3---1"
-        role="region"
-        tabIndex={-1}
-      >
-        <div
-          className="activation-checklist__detail pb-1"
-        >
-          detail1
-        </div>
-      </div>
-    </div>
+      </DescendantProvider>
+    </Accordion>
   </div>
-</div>
+</ActivationChecklist>
 `;
 
 exports[`ActivationChecklist render 1/1 complete 1`] = `
-<div
-  className="activation-checklist list-group list-group-flush "
+<ActivationChecklist
+  completed={
+    Object {
+      "ConnectedCodeHost": true,
+    }
+  }
+  history="[History]"
+  steps={
+    Array [
+      Object {
+        "detail": "detail1",
+        "id": "ConnectedCodeHost",
+        "title": "title1",
+      },
+    ]
+  }
 >
   <div
-    data-reach-accordion=""
+    className="activation-checklist list-group list-group-flush "
   >
-    <div
-      className="activation-checklist__container list-group-item "
-      data-reach-accordion-item=""
-      data-state="open"
+    <Accordion
+      collapsible={true}
     >
-      <button
-        aria-controls="panel--4---1"
-        aria-expanded={true}
-        className="activation-checklist__button list-group-item list-group-item-action"
-        data-reach-accordion-button=""
-        id="button--4---1"
-        onClick={[Function]}
-        onKeyDown={[Function]}
+      <DescendantProvider
+        context={
+          Object {
+            "$$typeof": Symbol(react.context),
+            "Consumer": Object {
+              "$$typeof": Symbol(react.context),
+              "_calculateChangedBits": null,
+              "_context": Object {
+                "$$typeof": Symbol(react.context),
+                "Consumer": Object {
+                  "$$typeof": Symbol(react.context),
+                  "_calculateChangedBits": null,
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "Provider": Object {
+                  "$$typeof": Symbol(react.provider),
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "_calculateChangedBits": null,
+                "_currentRenderer": Object {},
+                "_currentRenderer2": null,
+                "_currentValue": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_currentValue2": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_threadCount": 0,
+                "displayName": "AccordionDescendantContext",
+              },
+            },
+            "Provider": Object {
+              "$$typeof": Symbol(react.provider),
+              "_context": Object {
+                "$$typeof": Symbol(react.context),
+                "Consumer": Object {
+                  "$$typeof": Symbol(react.context),
+                  "_calculateChangedBits": null,
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "Provider": Object {
+                  "$$typeof": Symbol(react.provider),
+                  "_context": Object {
+                    "$$typeof": Symbol(react.context),
+                    "Consumer": Object {
+                      "$$typeof": Symbol(react.context),
+                      "_calculateChangedBits": null,
+                      "_context": [Circular],
+                    },
+                    "Provider": Object {
+                      "$$typeof": Symbol(react.provider),
+                      "_context": [Circular],
+                    },
+                    "_calculateChangedBits": null,
+                    "_currentRenderer": Object {},
+                    "_currentRenderer2": null,
+                    "_currentValue": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_currentValue2": Object {
+                      "descendants": Array [],
+                      "registerDescendant": [Function],
+                      "unregisterDescendant": [Function],
+                    },
+                    "_threadCount": 0,
+                    "displayName": "AccordionDescendantContext",
+                  },
+                },
+                "_calculateChangedBits": null,
+                "_currentRenderer": Object {},
+                "_currentRenderer2": null,
+                "_currentValue": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_currentValue2": Object {
+                  "descendants": Array [],
+                  "registerDescendant": [Function],
+                  "unregisterDescendant": [Function],
+                },
+                "_threadCount": 0,
+                "displayName": "AccordionDescendantContext",
+              },
+            },
+            "_calculateChangedBits": null,
+            "_currentRenderer": Object {},
+            "_currentRenderer2": null,
+            "_currentValue": Object {
+              "descendants": Array [],
+              "registerDescendant": [Function],
+              "unregisterDescendant": [Function],
+            },
+            "_currentValue2": Object {
+              "descendants": Array [],
+              "registerDescendant": [Function],
+              "unregisterDescendant": [Function],
+            },
+            "_threadCount": 0,
+            "displayName": "AccordionDescendantContext",
+          }
+        }
+        items={
+          Array [
+            Object {
+              "disabled": false,
+              "element": <button
+                aria-controls="panel--6--0"
+                aria-expanded="false"
+                class="activation-checklist__button list-group-item list-group-item-action"
+                data-reach-accordion-button=""
+                id="button--6--0"
+              >
+                <div
+                  class="activation-checklist-item d-flex justify-content-between"
+                >
+                  <div
+                    class="d-flex align-items-center"
+                  >
+                    <span
+                      class="activation-checklist-item__icon-container icon-inline icon-down"
+                    >
+                      <svg
+                        class="mdi-icon activation-checklist-item__icon"
+                        fill="currentColor"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="activation-checklist-item__icon-container icon-inline icon-right"
+                    >
+                      <svg
+                        class="mdi-icon activation-checklist-item__icon"
+                        fill="currentColor"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        width="24"
+                      >
+                        <path
+                          d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                        />
+                      </svg>
+                    </span>
+                    <a
+                      class="activation-checklist__title"
+                      href=""
+                    >
+                      title1
+                    </a>
+                  </div>
+                  <div>
+                    <svg
+                      class="mdi-icon icon-inline text-success"
+                      fill="currentColor"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </button>,
+              "index": 0,
+            },
+          ]
+        }
+        set={[Function]}
       >
         <div
-          className="activation-checklist-item d-flex justify-content-between"
+          data-reach-accordion=""
         >
-          <div
-            className="d-flex align-items-center"
+          <AccordionItem
+            className="activation-checklist__container list-group-item "
+            key="ConnectedCodeHost"
           >
-            <span
-              className="activation-checklist-item__icon-container icon-inline icon-down"
+            <div
+              className="activation-checklist__container list-group-item "
+              data-reach-accordion-item=""
+              data-state="collapsed"
             >
-              <svg
-                className="mdi-icon activation-checklist-item__icon"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
+              <AccordionButton
+                className="activation-checklist__button list-group-item list-group-item-action"
               >
-                <path
-                  d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                />
-              </svg>
-            </span>
-            <span
-              className="activation-checklist-item__icon-container icon-inline icon-right"
-            >
-              <svg
-                className="mdi-icon activation-checklist-item__icon"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
+                <button
+                  aria-controls="panel--6--0"
+                  aria-expanded={false}
+                  className="activation-checklist__button list-group-item list-group-item-action"
+                  data-reach-accordion-button=""
+                  id="button--6--0"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                >
+                  <ActivationChecklistItem
+                    detail="detail1"
+                    done={true}
+                    history="[History]"
+                    id="ConnectedCodeHost"
+                    key="ConnectedCodeHost"
+                    title="title1"
+                  >
+                    <div
+                      className="activation-checklist-item d-flex justify-content-between"
+                    >
+                      <div
+                        className="d-flex align-items-center"
+                      >
+                        <span
+                          className="activation-checklist-item__icon-container icon-inline icon-down"
+                        >
+                          <Memo(ChevronDownIcon)
+                            className="activation-checklist-item__icon"
+                          >
+                            <svg
+                              className="mdi-icon activation-checklist-item__icon"
+                              fill="currentColor"
+                              height={24}
+                              viewBox="0 0 24 24"
+                              width={24}
+                            >
+                              <path
+                                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                              />
+                            </svg>
+                          </Memo(ChevronDownIcon)>
+                        </span>
+                        <span
+                          className="activation-checklist-item__icon-container icon-inline icon-right"
+                        >
+                          <Memo(ChevronRightIcon)
+                            className="activation-checklist-item__icon"
+                          >
+                            <svg
+                              className="mdi-icon activation-checklist-item__icon"
+                              fill="currentColor"
+                              height={24}
+                              viewBox="0 0 24 24"
+                              width={24}
+                            >
+                              <path
+                                d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                              />
+                            </svg>
+                          </Memo(ChevronRightIcon)>
+                        </span>
+                        <a
+                          className="activation-checklist__title"
+                          href=""
+                        >
+                          title1
+                        </a>
+                      </div>
+                      <div>
+                        <Memo(CheckCircleIcon)
+                          className="icon-inline text-success"
+                        >
+                          <svg
+                            className="mdi-icon icon-inline text-success"
+                            fill="currentColor"
+                            height={24}
+                            viewBox="0 0 24 24"
+                            width={24}
+                          >
+                            <path
+                              d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
+                            />
+                          </svg>
+                        </Memo(CheckCircleIcon)>
+                      </div>
+                    </div>
+                  </ActivationChecklistItem>
+                </button>
+              </AccordionButton>
+              <AccordionPanel
+                className="px-2"
               >
-                <path
-                  d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
-                />
-              </svg>
-            </span>
-            <a
-              className="activation-checklist__title"
-              href=""
-            >
-              title1
-            </a>
-          </div>
-          <div>
-            <svg
-              className="mdi-icon icon-inline text-success"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
-              />
-            </svg>
-          </div>
+                <div
+                  aria-labelledby="button--6--0"
+                  className="px-2"
+                  data-reach-accordion-panel=""
+                  data-state="collapsed"
+                  hidden={true}
+                  id="panel--6--0"
+                  role="region"
+                  tabIndex={-1}
+                >
+                  <div
+                    className="activation-checklist__detail pb-1"
+                  >
+                    detail1
+                  </div>
+                </div>
+              </AccordionPanel>
+            </div>
+          </AccordionItem>
         </div>
-      </button>
-      <div
-        aria-labelledby="button--4---1"
-        className="px-2"
-        data-reach-accordion-panel=""
-        data-state="open"
-        hidden={false}
-        id="panel--4---1"
-        role="region"
-        tabIndex={-1}
-      >
-        <div
-          className="activation-checklist__detail pb-1"
-        >
-          detail1
-        </div>
-      </div>
-    </div>
+      </DescendantProvider>
+    </Accordion>
   </div>
-</div>
+</ActivationChecklist>
 `;
 
 exports[`ActivationChecklist render loading 1`] = `
-<div
-  className="loading-spinner icon-inline my-2"
-/>
+<ActivationChecklist
+  history="[History]"
+  steps={Array []}
+>
+  <LoadingSpinner
+    className="icon-inline my-2"
+  >
+    <div
+      className="loading-spinner icon-inline my-2"
+    />
+  </LoadingSpinner>
+</ActivationChecklist>
 `;

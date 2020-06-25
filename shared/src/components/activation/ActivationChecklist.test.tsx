@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { ActivationChecklist } from './ActivationChecklist'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/CheckboxBlankCircleIcon', () => 'CheckboxBlankCircleIcon')
 jest.mock('mdi-react/CheckIcon', () => 'CheckIcon')
@@ -9,14 +9,12 @@ jest.mock('mdi-react/CheckIcon', () => 'CheckIcon')
 describe('ActivationChecklist', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     test('render loading', () => {
-        const component = renderer.create(
-            <ActivationChecklist steps={[]} history={H.createMemoryHistory({ keyLength: 0 })} />
-        )
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = mount(<ActivationChecklist steps={[]} history={H.createMemoryHistory({ keyLength: 0 })} />)
+        expect(component).toMatchSnapshot()
     })
     test('render 0/1 complete', () => {
         {
-            const component = renderer.create(
+            const component = mount(
                 <ActivationChecklist
                     steps={[
                         {
@@ -29,10 +27,10 @@ describe('ActivationChecklist', () => {
                     history={history}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(component).toMatchSnapshot()
         }
         {
-            const component = renderer.create(
+            const component = mount(
                 <ActivationChecklist
                     steps={[
                         {
@@ -45,11 +43,11 @@ describe('ActivationChecklist', () => {
                     history={history}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(component).toMatchSnapshot()
         }
     })
     test('render 1/1 complete', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActivationChecklist
                 steps={[
                     {
@@ -62,6 +60,6 @@ describe('ActivationChecklist', () => {
                 history={H.createMemoryHistory({ keyLength: 0 })}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 })

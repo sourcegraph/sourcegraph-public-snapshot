@@ -39,125 +39,261 @@ exports[`SiteAdminOverviewPage < 2 users 1`] = `
 `;
 
 exports[`SiteAdminOverviewPage >= 2 users 1`] = `
-<div
-  className="site-admin-overview-page"
+<SiteAdminOverviewPage
+  _fetchOverview={[Function]}
+  _fetchWeeklyActiveUsers={[Function]}
+  history="[History]"
+  isLightTheme={true}
+  overviewComponents={Array []}
 >
   <div
-    className="pt-3 mb-4"
-  />
-  <div
-    className="list-group"
+    className="site-admin-overview-page"
   >
-    <a
-      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
-      href="/site-admin/repositories"
-    >
-      100
-       
-      repositories
-    </a>
-    <a
-      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
-      href="/site-admin/users"
-    >
-      10
-       
-      users
-    </a>
-    <a
-      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
-      href="/site-admin/organizations"
-    >
-      5
-       
-      organizations
-    </a>
-    <a
-      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
-      href="/site-admin/surveys"
-    >
-      100
-       
-      user survey responses
-    </a>
+    <PageTitle
+      title="Overview - Admin"
+    />
     <div
-      className="list-group-item"
+      className="pt-3 mb-4"
+    />
+    <div
+      className="list-group"
     >
-      <div
-        className="d-flex justify-content-between align-items-center position-relative"
+      <AnchorLink
+        className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        to="/site-admin/repositories"
       >
-        <span
-          className="h5 mb-0 font-weight-normal p-2"
+        <a
+          className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+          href="/site-admin/repositories"
+        >
+          100
+           
+          repositories
+        </a>
+      </AnchorLink>
+      <AnchorLink
+        className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        to="/site-admin/users"
+      >
+        <a
+          className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+          href="/site-admin/users"
         >
           10
            
-          active users
-           last week
-        </span>
-        <button
-          aria-label="Collapse section"
-          className="d-flex btn btn-icon collapsible__expand-btn stretched-link"
-          onClick={[Function]}
-          type="button"
+          users
+        </a>
+      </AnchorLink>
+      <AnchorLink
+        className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        to="/site-admin/organizations"
+      >
+        <a
+          className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+          href="/site-admin/organizations"
         >
-          <svg
-            aria-label="Close section"
-            className="mdi-icon icon-inline"
-            fill="currentColor"
-            height={24}
-            viewBox="0 0 24 24"
-            width={24}
-          >
-            <path
-              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-            />
-          </svg>
-        </button>
-      </div>
-      <div
-        className="site-admin-usage-statistics-page"
+          5
+           
+          organizations
+        </a>
+      </AnchorLink>
+      <AnchorLink
+        className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        to="/site-admin/surveys"
+      >
+        <a
+          className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+          href="/site-admin/surveys"
+        >
+          100
+           
+          user survey responses
+        </a>
+      </AnchorLink>
+      <Collapsible
+        className="list-group-item"
+        defaultExpanded={true}
+        title={
+          <React.Fragment>
+            10
+             
+            active users
+             last week
+          </React.Fragment>
+        }
+        titleAtStart={true}
+        titleClassName="h5 mb-0 font-weight-normal p-2"
       >
         <div
-          className="site-admin-overview-page__detail-header"
+          className="list-group-item"
         >
-          <h2>
-            Weekly unique users
-          </h2>
-          <h3>
-            <a
-              className="btn btn-secondary"
-              href="/site-admin/usage-statistics"
+          <div
+            className="d-flex justify-content-between align-items-center position-relative"
+          >
+            <span
+              className="h5 mb-0 font-weight-normal p-2"
             >
-              View all usage statistics
+              10
                
-              <svg
-                className="mdi-icon icon-inline"
-                fill="currentColor"
-                height={24}
-                viewBox="0 0 24 24"
-                width={24}
+              active users
+               last week
+            </span>
+            <button
+              aria-label="Collapse section"
+              className="d-flex btn btn-icon collapsible__expand-btn stretched-link"
+              onClick={[Function]}
+              type="button"
+            >
+              <Memo(ChevronDownIcon)
+                aria-label="Close section"
+                className="icon-inline"
               >
-                <path
-                  d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-                />
-              </svg>
-            </a>
-          </h3>
+                <svg
+                  aria-label="Close section"
+                  className="mdi-icon icon-inline"
+                  fill="currentColor"
+                  height={24}
+                  viewBox="0 0 24 24"
+                  width={24}
+                >
+                  <path
+                    d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+                  />
+                </svg>
+              </Memo(ChevronDownIcon)>
+            </button>
+          </div>
+          <UsageChart
+            chartID="waus"
+            header={
+              <div
+                className="site-admin-overview-page__detail-header"
+              >
+                <h2>
+                  Weekly unique users
+                </h2>
+                <h3>
+                  <AnchorLink
+                    className="btn btn-secondary"
+                    to="/site-admin/usage-statistics"
+                  >
+                    View all usage statistics
+                     
+                    <Memo(OpenInNewIcon)
+                      className="icon-inline"
+                    />
+                  </AnchorLink>
+                </h3>
+              </div>
+            }
+            isLightTheme={true}
+            showLegend={false}
+            stats={
+              Object {
+                "__typename": "SiteUsageStatistics",
+                "daus": Array [],
+                "maus": Array [],
+                "waus": Array [
+                  Object {
+                    "__typename": "SiteUsagePeriod",
+                    "anonymousUserCount": 2,
+                    "integrationUserCount": 0,
+                    "registeredUserCount": 8,
+                    "stages": undefined,
+                    "startTime": "2006-01-02T22:04:05.000Z",
+                    "userCount": 10,
+                  },
+                  Object {
+                    "__typename": "SiteUsagePeriod",
+                    "anonymousUserCount": 2,
+                    "integrationUserCount": 0,
+                    "registeredUserCount": 8,
+                    "stages": undefined,
+                    "startTime": "2006-01-02T22:04:05.000Z",
+                    "userCount": 10,
+                  },
+                ],
+              }
+            }
+          >
+            <div
+              className="site-admin-usage-statistics-page"
+            >
+              <div
+                className="site-admin-overview-page__detail-header"
+              >
+                <h2>
+                  Weekly unique users
+                </h2>
+                <h3>
+                  <AnchorLink
+                    className="btn btn-secondary"
+                    to="/site-admin/usage-statistics"
+                  >
+                    <a
+                      className="btn btn-secondary"
+                      href="/site-admin/usage-statistics"
+                    >
+                      View all usage statistics
+                       
+                      <Memo(OpenInNewIcon)
+                        className="icon-inline"
+                      >
+                        <svg
+                          className="mdi-icon icon-inline"
+                          fill="currentColor"
+                          height={24}
+                          viewBox="0 0 24 24"
+                          width={24}
+                        >
+                          <path
+                            d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+                          />
+                        </svg>
+                      </Memo(OpenInNewIcon)>
+                    </a>
+                  </AnchorLink>
+                </h3>
+              </div>
+              <BarChart
+                data={
+                  Array [
+                    Object {
+                      "xLabel": "Tue, Jan 3",
+                      "yValues": Object {
+                        "Anonymous": 2,
+                        "Registered": 8,
+                      },
+                    },
+                    Object {
+                      "xLabel": "Tue, Jan 3",
+                      "yValues": Object {
+                        "Anonymous": 2,
+                        "Registered": 8,
+                      },
+                    },
+                  ]
+                }
+                height={200}
+                isLightTheme={true}
+                showLabels={true}
+                showLegend={false}
+                width={500}
+              />
+              <small
+                className="site-admin-usage-statistics-page__tz-note"
+              >
+                <i>
+                  GMT/UTC time
+                </i>
+              </small>
+            </div>
+          </UsageChart>
         </div>
-        <svg
-          viewBox="0 0 500 200"
-        />
-        <small
-          className="site-admin-usage-statistics-page__tz-note"
-        >
-          <i>
-            GMT/UTC time
-          </i>
-        </small>
-      </div>
+      </Collapsible>
     </div>
   </div>
-</div>
+</SiteAdminOverviewPage>
 `;
 
 exports[`SiteAdminOverviewPage activation in progress 1`] = `
