@@ -59,7 +59,7 @@ var tests = []test{
 	// Global simple text search.
 	{
 		Name:  `Global search, zero results`,
-		Query: `asdfalksd+jflaksjdfklas patterntype:literal`,
+		Query: `asdfalksd+jflaksjdfklas patterntype:literal -repo:sourcegraph`,
 	},
 	{
 		Name:  `Global search, double-quoted pattern, nonzero result`,
@@ -108,6 +108,10 @@ var tests = []test{
 	{
 		Name:  `Structural search quotes are interpreted literally`,
 		Query: `repo:^github\.com/rvantonderp/auth0-go-jwt-middleware$ file:^README\.md "This :[_] authenticated :[_]" patterntype:structural`,
+	},
+	{
+		Name:  `Alert to activate structural search mode`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ patterntype:literal i can't :[believe] it's not butter`,
 	},
 	// Repo search (part 2).
 	{
