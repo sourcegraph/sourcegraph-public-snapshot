@@ -8,7 +8,7 @@ import { initNewExtensionAPI } from './flatExtensionApi'
 import { pretendRemote } from '../util'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
-import { Observer } from 'rxjs'
+import { Observer, Subject } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { ExtensionDocuments } from './api/documents'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -223,17 +223,105 @@ describe('getHover from ExtensionHost API', () => {
             ])
         })
 
-        it('restarts hover query if a provider was added in the middle of the execution', () => {
-            // TODO
-            const noopDocuments = new ExtensionDocuments(() => Promise.resolve())
-            const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+        it('adds hover results if a provider was added in the middle of the execution', () => {
+            const typescriptFileUri = 'file:///f.ts'
+            const documents = new ExtensionDocuments(() => Promise.resolve())
+            documents.$acceptDocumentData([{ type: 'added', languageId: 'ts', text: 'body', uri: typescriptFileUri }])
 
-            const results: string[] = []
-            exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
-            expect(results).toEqual(['a'])
+            const { exposedToMain, languages } = initNewExtensionAPI(noopMain, emptySettings, documents)
 
-            search.registerQueryTransformer({ transformQuery: query => query + '!' })
-            expect(results).toEqual(['a', 'a!'])
+            const hovers = new Subject<Hover>()
+            // let calledTimes = 0
+
+            languages.registerHoverProvider([{ pattern: '*.ts' }], {
+                provideHover: () => {
+                    // calledTimes++
+                    return hovers
+                },
+            })
+            const results: any[] = []
+            exposedToMain
+                .getHover({ position: { line: 1, character: 2 }, textDocument: { uri: typescriptFileUri } })
+                .subscribe(observe(value => results.push(value)))
+
+            hovers.next(textHover('a'))
+
+            languages.registerHoverProvider([{ pattern: '*.ts' }], {
+                provideHover: () => textHover('b'),
+            })
+
+            hovers.next(textHover('c'))
+            hovers.complete()
+
+            expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+                { isLoading: true, result: null },
+                // 'a' from the first provider
+                // TODO(simon) shouldn't there be a loading 'true' state?
+                { isLoading: false, result: { contents: [textHover('a').contents] } },
+                // 'c' -> first,  'b'-> second
+                { isLoading: false, result: { contents: ['c', 'b'].map(value => textHover(value).contents) } },
+            ])
+        })
+
+        it('restarts hover call if a provider was added', () => {
+            const typescriptFileUri = 'file:///f.ts'
+            const documents = new ExtensionDocuments(() => Promise.resolve())
+            documents.$acceptDocumentData([{ type: 'added', languageId: 'ts', text: 'body', uri: typescriptFileUri }])
+
+            const { exposedToMain, languages } = initNewExtensionAPI(noopMain, emptySettings, documents)
+
+            let counter = 0
+            languages.registerHoverProvider([{ pattern: '*.ts' }], {
+                provideHover: () => textHover('a' + ++counter),
+            })
+
+            const results: any[] = []
+            exposedToMain
+                .getHover({ position: { line: 1, character: 2 }, textDocument: { uri: typescriptFileUri } })
+                .subscribe(observe(value => results.push(value)))
+
+            languages.registerHoverProvider([{ pattern: '*.ts' }], {
+                provideHover: () => textHover('b'),
+            })
+
+            expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+                { isLoading: true, result: null },
+                { isLoading: false, result: { contents: [textHover('a1').contents] } },
+                // TODO(simon) do we actually need loading here?
+                { isLoading: true, result: { contents: [textHover('a2').contents] } },
+                { isLoading: false, result: { contents: ['a2', 'b'].map(value => textHover(value).contents) } },
+            ])
+        })
+
+        it('restarts hover query if a provider was deleted', () => {
+            const typescriptFileUri = 'file:///f.ts'
+            const documents = new ExtensionDocuments(() => Promise.resolve())
+            documents.$acceptDocumentData([{ type: 'added', languageId: 'ts', text: 'body', uri: typescriptFileUri }])
+
+            const { exposedToMain, languages } = initNewExtensionAPI(noopMain, emptySettings, documents)
+
+            let counter = 0
+            languages.registerHoverProvider([{ pattern: '*.ts' }], {
+                provideHover: () => textHover('a' + ++counter),
+            })
+
+            const subscription = languages.registerHoverProvider([{ pattern: '*.ts' }], {
+                provideHover: () => textHover('b'),
+            })
+
+            const results: any[] = []
+            exposedToMain
+                .getHover({ position: { line: 1, character: 2 }, textDocument: { uri: typescriptFileUri } })
+                .subscribe(observe(value => results.push(value)))
+
+            subscription.unsubscribe()
+
+            expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
+                { isLoading: true, result: { contents: [textHover('a1').contents] } },
+                { isLoading: false, result: { contents: ['a1', 'b'].map(value => textHover(value).contents) } },
+                { isLoading: true, result: null },
+                { isLoading: false, result: { contents: [textHover('a2').contents] } },
+            ])
         })
     })
 
