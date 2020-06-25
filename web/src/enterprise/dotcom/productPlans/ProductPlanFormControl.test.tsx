@@ -1,9 +1,9 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import renderer, { act } from 'react-test-renderer'
 import { ProductPlanFormControl } from './ProductPlanFormControl'
 import { of } from 'rxjs'
 import { createMemoryHistory } from 'history'
+import { mount } from 'enzyme'
 
 jest.mock('./ProductPlanPrice', () => ({
     ProductPlanPrice: 'ProductPlanPrice',
@@ -15,7 +15,7 @@ jest.mock('./ProductPlanTiered', () => ({
 
 describe('ProductPlanFormControl', () => {
     test('new subscription', () => {
-        const component = renderer.create(
+        const component = mount(
             <ProductPlanFormControl
                 value="p"
                 onChange={() => undefined}
@@ -50,7 +50,6 @@ describe('ProductPlanFormControl', () => {
                 history={createMemoryHistory()}
             />
         )
-        act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 })

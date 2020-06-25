@@ -1,59 +1,143 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Notices no notices 1`] = `null`;
+exports[`Notices no notices 1`] = `
+<Notices
+  history="[History]"
+  location="home"
+  settingsCascade={
+    Object {
+      "final": Object {
+        "notices": null,
+      },
+      "subjects": Array [],
+    }
+  }
+/>
+`;
 
 exports[`Notices shows notices for location 1`] = `
-<div
-  className="notices "
+<Notices
+  history="[History]"
+  location="home"
+  settingsCascade={
+    Object {
+      "final": Object {
+        "notices": Array [
+          Object {
+            "location": "home",
+            "message": "a",
+          },
+          Object {
+            "dismissible": true,
+            "location": "home",
+            "message": "a",
+          },
+          Object {
+            "location": "top",
+            "message": "b",
+          },
+        ],
+      },
+      "subjects": Array [],
+    }
+  }
 >
   <div
-    className="alert bg-transparent border "
+    className="notices "
   >
-    <div
-      className="markdown"
-      dangerouslySetInnerHTML={
+    <NoticeAlert
+      history="[History]"
+      key="0"
+      notice={
         Object {
-          "__html": "<p>a</p>
-",
+          "location": "home",
+          "message": "a",
         }
       }
-      onClick={[Function]}
-    />
-  </div>
-  <div
-    className="alert dismissible-alert bg-transparent border "
-  >
-    <div
-      className="dismissible-alert__content"
     >
       <div
-        className="markdown"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>a</p>
-",
-          }
-        }
-        onClick={[Function]}
-      />
-    </div>
-    <button
-      className="btn btn-icon"
-      onClick={[Function]}
-      type="button"
-    >
-      <svg
-        className="mdi-icon icon-inline"
-        fill="currentColor"
-        height={24}
-        viewBox="0 0 24 24"
-        width={24}
+        className="alert bg-transparent border "
       >
-        <path
-          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-        />
-      </svg>
-    </button>
+        <Markdown
+          dangerousInnerHTML="<p>a</p>
+"
+          history="[History]"
+        >
+          <div
+            className="markdown"
+            dangerouslySetInnerHTML={
+              Object {
+                "__html": "<p>a</p>
+",
+              }
+            }
+            onClick={[Function]}
+          />
+        </Markdown>
+      </div>
+    </NoticeAlert>
+    <NoticeAlert
+      history="[History]"
+      key="1"
+      notice={
+        Object {
+          "dismissible": true,
+          "location": "home",
+          "message": "a",
+        }
+      }
+    >
+      <DismissibleAlert
+        className="bg-transparent border "
+        partialStorageKey="notice.a"
+      >
+        <div
+          className="alert dismissible-alert bg-transparent border "
+        >
+          <div
+            className="dismissible-alert__content"
+          >
+            <Markdown
+              dangerousInnerHTML="<p>a</p>
+"
+              history="[History]"
+            >
+              <div
+                className="markdown"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "<p>a</p>
+",
+                  }
+                }
+                onClick={[Function]}
+              />
+            </Markdown>
+          </div>
+          <button
+            className="btn btn-icon"
+            onClick={[Function]}
+            type="button"
+          >
+            <Memo(CloseIcon)
+              className="icon-inline"
+            >
+              <svg
+                className="mdi-icon icon-inline"
+                fill="currentColor"
+                height={24}
+                viewBox="0 0 24 24"
+                width={24}
+              >
+                <path
+                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                />
+              </svg>
+            </Memo(CloseIcon)>
+          </button>
+        </div>
+      </DismissibleAlert>
+    </NoticeAlert>
   </div>
-</div>
+</Notices>
 `;

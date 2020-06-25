@@ -1,10 +1,10 @@
 import React from 'react'
 import * as H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import renderer, { act } from 'react-test-renderer'
 import { SiteAdminProductSubscriptionPage } from './SiteAdminProductSubscriptionPage'
 import { of } from 'rxjs'
 import { MemoryRouter } from 'react-router'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 
@@ -23,7 +23,7 @@ const location = H.createLocation('/')
 
 describe('SiteAdminProductSubscriptionPage', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = mount(
             <MemoryRouter>
                 <SiteAdminProductSubscriptionPage
                     match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
@@ -63,7 +63,6 @@ describe('SiteAdminProductSubscriptionPage', () => {
                 />
             </MemoryRouter>
         )
-        act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 })

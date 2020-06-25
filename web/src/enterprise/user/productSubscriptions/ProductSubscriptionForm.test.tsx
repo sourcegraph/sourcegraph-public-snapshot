@@ -1,8 +1,8 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { ProductSubscriptionForm } from './ProductSubscriptionForm'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'
+import { mount } from 'enzyme'
 
 jest.mock('../../dotcom/billing/StripeWrapper', () => ({
     StripeWrapper: ({
@@ -32,64 +32,58 @@ describe('ProductSubscriptionForm', () => {
     test('new subscription for anonymous viewer (no account)', () => {
         const history = createMemoryHistory()
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <ProductSubscriptionForm
-                            accountID={null}
-                            subscriptionID={null}
-                            onSubmit={() => undefined}
-                            submissionState={undefined}
-                            primaryButtonText="Submit"
-                            isLightTheme={false}
-                            history={history}
-                        />
-                    </Router>
-                )
-                .toJSON()
+            mount(
+                <Router history={history}>
+                    <ProductSubscriptionForm
+                        accountID={null}
+                        subscriptionID={null}
+                        onSubmit={() => undefined}
+                        submissionState={undefined}
+                        primaryButtonText="Submit"
+                        isLightTheme={false}
+                        history={history}
+                    />
+                </Router>
+            )
         ).toMatchSnapshot()
     })
 
     test('new subscription for existing account', () => {
         const history = createMemoryHistory()
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <ProductSubscriptionForm
-                            accountID="a"
-                            subscriptionID={null}
-                            onSubmit={() => undefined}
-                            submissionState={undefined}
-                            primaryButtonText="Submit"
-                            isLightTheme={false}
-                            history={history}
-                        />
-                    </Router>
-                )
-                .toJSON()
+            mount(
+                <Router history={history}>
+                    <ProductSubscriptionForm
+                        accountID="a"
+                        subscriptionID={null}
+                        onSubmit={() => undefined}
+                        submissionState={undefined}
+                        primaryButtonText="Submit"
+                        isLightTheme={false}
+                        history={history}
+                    />
+                </Router>
+            )
         ).toMatchSnapshot()
     })
 
     test('edit existing subscription', () => {
         const history = createMemoryHistory()
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <ProductSubscriptionForm
-                            accountID="a"
-                            subscriptionID="s"
-                            initialValue={{ userCount: 123, billingPlanID: 'p' }}
-                            onSubmit={() => undefined}
-                            submissionState={undefined}
-                            primaryButtonText="Submit"
-                            isLightTheme={false}
-                            history={history}
-                        />
-                    </Router>
-                )
-                .toJSON()
+            mount(
+                <Router history={history}>
+                    <ProductSubscriptionForm
+                        accountID="a"
+                        subscriptionID="s"
+                        initialValue={{ userCount: 123, billingPlanID: 'p' }}
+                        onSubmit={() => undefined}
+                        submissionState={undefined}
+                        primaryButtonText="Submit"
+                        isLightTheme={false}
+                        history={history}
+                    />
+                </Router>
+            )
         ).toMatchSnapshot()
     })
 })

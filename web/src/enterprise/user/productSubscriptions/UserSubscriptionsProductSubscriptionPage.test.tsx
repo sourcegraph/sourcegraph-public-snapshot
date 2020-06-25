@@ -1,10 +1,10 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import renderer, { act } from 'react-test-renderer'
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 import { of } from 'rxjs'
 import { MemoryRouter } from 'react-router'
 import { createMemoryHistory } from 'history'
+import { mount } from 'enzyme'
 
 jest.mock('./BackToAllSubscriptionsLink', () => ({
     BackToAllSubscriptionsLink: 'BackToAllSubscriptionsLink',
@@ -28,21 +28,21 @@ jest.mock('../../../tracking/eventLogger', () => ({
 
 describe('UserSubscriptionsProductSubscriptionPage', () => {
     test('renders', () => {
-        const component = renderer.create(
-            <MemoryRouter>
-                <UserSubscriptionsProductSubscriptionPage
-                    user={{ settingsURL: '/u' }}
-                    match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
-                    _queryProductSubscription={() =>
-                        of<GQL.IProductSubscription>({
-                            __typename: 'ProductSubscription',
-                        } as GQL.IProductSubscription)
-                    }
-                    history={createMemoryHistory()}
-                />
-            </MemoryRouter>
-        )
-        act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(
+            mount(
+                <MemoryRouter>
+                    <UserSubscriptionsProductSubscriptionPage
+                        user={{ settingsURL: '/u' }}
+                        match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
+                        _queryProductSubscription={() =>
+                            of<GQL.IProductSubscription>({
+                                __typename: 'ProductSubscription',
+                            } as GQL.IProductSubscription)
+                        }
+                        history={createMemoryHistory()}
+                    />
+                </MemoryRouter>
+            )
+        ).toMatchSnapshot()
     })
 })

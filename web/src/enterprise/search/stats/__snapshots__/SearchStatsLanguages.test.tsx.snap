@@ -1,159 +1,290 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SearchStatsLanguages renders 1`] = `
-<div
-  className="card mb-3"
->
-  <h4
-    className="card-header"
+<MemoryRouter>
+  <Router
+    history="[History]"
   >
-    Languages
-  </h4>
-  <div
-    className="d-flex"
-  >
-    <div
-      className="flex-0 border-right"
-    >
-      <table
-        className="search-stats-page__table table mb-0 border-top-0"
-      >
-        <thead>
-          <tr
-            className="small"
-          >
-            <th
-              className="border-top-0"
-            >
-              <span
-                className="sr-only"
-              >
-                Language
-              </span>
-            </th>
-            <th
-              className="border-top-0"
-            >
-              Lines
-            </th>
-            <th
-              className="border-top-0"
-            >
-              <span
-                className="sr-only"
-              >
-                Percent
-              </span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              <a
-                href="/search?q=abc+lang:a&patternType=literal"
-                onClick={[Function]}
-              >
-                A
-              </a>
-            </td>
-            <td>
-              100
-            </td>
-            <td>
-              50%
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a
-                href="/search?q=abc+lang:b&patternType=literal"
-                onClick={[Function]}
-              >
-                B
-              </a>
-            </td>
-            <td>
-              50
-            </td>
-            <td>
-              25%
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a
-                href="/search?q=abc+lang:c&patternType=literal"
-                onClick={[Function]}
-              >
-                C
-              </a>
-            </td>
-            <td>
-              10
-            </td>
-            <td>
-              5%
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <a
-                href="/search?q=abc+lang:d&patternType=literal"
-                onClick={[Function]}
-              >
-                D
-              </a>
-            </td>
-            <td>
-              5
-            </td>
-            <td>
-              3%
-            </td>
-          </tr>
-          <tr>
-            <td>
-              Unknown
-            </td>
-            <td>
-              35
-            </td>
-            <td>
-              18%
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div
-      className="flex-1 mx-4"
+    <SearchStatsLanguages
+      query="abc"
+      stats={
+        Object {
+          "__typename": "SearchResultsStats",
+          "approximateResultCount": "123",
+          "languages": Array [
+            Object {
+              "__typename": "LanguageStatistics",
+              "name": "A",
+              "totalBytes": 0,
+              "totalLines": 100,
+            },
+            Object {
+              "__typename": "LanguageStatistics",
+              "name": "B",
+              "totalBytes": 0,
+              "totalLines": 50,
+            },
+            Object {
+              "__typename": "LanguageStatistics",
+              "name": "C",
+              "totalBytes": 0,
+              "totalLines": 10,
+            },
+            Object {
+              "__typename": "LanguageStatistics",
+              "name": "D",
+              "totalBytes": 0,
+              "totalLines": 5,
+            },
+            Object {
+              "__typename": "LanguageStatistics",
+              "name": "",
+              "totalBytes": 0,
+              "totalLines": 35,
+            },
+          ],
+          "sparkline": Array [],
+        }
+      }
     >
       <div
-        className="recharts-responsive-container"
-        style={
-          Object {
-            "height": 600,
-            "maxHeight": undefined,
-            "minHeight": undefined,
-            "minWidth": undefined,
-            "width": "100%",
-          }
-        }
+        className="card mb-3"
       >
+        <h4
+          className="card-header"
+        >
+          Languages
+        </h4>
         <div
-          style={
-            Object {
-              "display": "none",
-              "height": 0,
-              "position": "absolute",
-              "visibility": "hidden",
-              "width": 0,
-            }
-          }
-        />
+          className="d-flex"
+        >
+          <div
+            className="flex-0 border-right"
+          >
+            <table
+              className="search-stats-page__table table mb-0 border-top-0"
+            >
+              <thead>
+                <tr
+                  className="small"
+                >
+                  <th
+                    className="border-top-0"
+                  >
+                    <span
+                      className="sr-only"
+                    >
+                      Language
+                    </span>
+                  </th>
+                  <th
+                    className="border-top-0"
+                  >
+                    Lines
+                  </th>
+                  <th
+                    className="border-top-0"
+                  >
+                    <span
+                      className="sr-only"
+                    >
+                      Percent
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  key="A"
+                >
+                  <td>
+                    <Link
+                      to="/search?q=abc+lang:a&patternType=literal"
+                    >
+                      <LinkAnchor
+                        href="/search?q=abc+lang:a&patternType=literal"
+                        navigate={[Function]}
+                      >
+                        <a
+                          href="/search?q=abc+lang:a&patternType=literal"
+                          onClick={[Function]}
+                        >
+                          A
+                        </a>
+                      </LinkAnchor>
+                    </Link>
+                  </td>
+                  <td>
+                    100
+                  </td>
+                  <td>
+                    50%
+                  </td>
+                </tr>
+                <tr
+                  key="B"
+                >
+                  <td>
+                    <Link
+                      to="/search?q=abc+lang:b&patternType=literal"
+                    >
+                      <LinkAnchor
+                        href="/search?q=abc+lang:b&patternType=literal"
+                        navigate={[Function]}
+                      >
+                        <a
+                          href="/search?q=abc+lang:b&patternType=literal"
+                          onClick={[Function]}
+                        >
+                          B
+                        </a>
+                      </LinkAnchor>
+                    </Link>
+                  </td>
+                  <td>
+                    50
+                  </td>
+                  <td>
+                    25%
+                  </td>
+                </tr>
+                <tr
+                  key="C"
+                >
+                  <td>
+                    <Link
+                      to="/search?q=abc+lang:c&patternType=literal"
+                    >
+                      <LinkAnchor
+                        href="/search?q=abc+lang:c&patternType=literal"
+                        navigate={[Function]}
+                      >
+                        <a
+                          href="/search?q=abc+lang:c&patternType=literal"
+                          onClick={[Function]}
+                        >
+                          C
+                        </a>
+                      </LinkAnchor>
+                    </Link>
+                  </td>
+                  <td>
+                    10
+                  </td>
+                  <td>
+                    5%
+                  </td>
+                </tr>
+                <tr
+                  key="D"
+                >
+                  <td>
+                    <Link
+                      to="/search?q=abc+lang:d&patternType=literal"
+                    >
+                      <LinkAnchor
+                        href="/search?q=abc+lang:d&patternType=literal"
+                        navigate={[Function]}
+                      >
+                        <a
+                          href="/search?q=abc+lang:d&patternType=literal"
+                          onClick={[Function]}
+                        >
+                          D
+                        </a>
+                      </LinkAnchor>
+                    </Link>
+                  </td>
+                  <td>
+                    5
+                  </td>
+                  <td>
+                    3%
+                  </td>
+                </tr>
+                <tr
+                  key="4"
+                >
+                  <td>
+                    Unknown
+                  </td>
+                  <td>
+                    35
+                  </td>
+                  <td>
+                    18%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div
+            className="flex-1 mx-4"
+          >
+            <ResponsiveContainer
+              debounce={0}
+              height={600}
+              width="100%"
+            >
+              <div
+                className="recharts-responsive-container"
+                style={
+                  Object {
+                    "height": 600,
+                    "maxHeight": undefined,
+                    "minHeight": undefined,
+                    "minWidth": undefined,
+                    "width": "100%",
+                  }
+                }
+              >
+                <PieChart
+                  barCategoryGap="10%"
+                  barGap={4}
+                  cx="50%"
+                  cy="50%"
+                  endAngle={360}
+                  height={600}
+                  innerRadius={0}
+                  layout="centric"
+                  margin={
+                    Object {
+                      "left": 60,
+                      "right": 60,
+                    }
+                  }
+                  outerRadius="80%"
+                  reverseStackOrder={false}
+                  stackOffset="none"
+                  startAngle={0}
+                  width={0}
+                />
+                <ResizeDetector
+                  handleHeight={true}
+                  handleWidth={true}
+                  onResize={[Function]}
+                  refreshRate={1000}
+                  resizableElementId=""
+                  skipOnMount={false}
+                >
+                  <div
+                    style={
+                      Object {
+                        "display": "none",
+                        "height": 0,
+                        "position": "absolute",
+                        "visibility": "hidden",
+                        "width": 0,
+                      }
+                    }
+                  />
+                </ResizeDetector>
+              </div>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
+    </SearchStatsLanguages>
+  </Router>
+</MemoryRouter>
 `;

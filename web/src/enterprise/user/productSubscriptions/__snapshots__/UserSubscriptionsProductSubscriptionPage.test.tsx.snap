@@ -1,64 +1,93 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
-<div
-  className="user-subscriptions-product-subscription-page"
->
-  <div
-    className="d-flex align-items-center justify-content-between"
+<MemoryRouter>
+  <Router
+    history="[History]"
   >
-    <BackToAllSubscriptionsLink
+    <UserSubscriptionsProductSubscriptionPage
+      _queryProductSubscription={[Function]}
+      history="[History]"
+      match={
+        Object {
+          "isExact": true,
+          "params": Object {
+            "subscriptionUUID": "s",
+          },
+          "path": "/p",
+          "url": "/p",
+        }
+      }
       user={
         Object {
           "settingsURL": "/u",
         }
       }
-    />
-  </div>
-  <h2>
-    Subscription 
-  </h2>
-  <div
-    className="card mt-3"
-  >
-    <div
-      className="card-header"
     >
-      Billing
-    </div>
-    <div
-      className="card-body"
-    >
-      <span
-        className="text-muted "
+      <div
+        className="user-subscriptions-product-subscription-page"
       >
-        No billing information is associated with this subscription.
-         
-        <a
-          href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
+        <PageTitle
+          title="Subscription"
+        />
+        <div
+          className="d-flex align-items-center justify-content-between"
         >
-          Contact sales
-        </a>
-         
-        for help.
-      </span>
-    </div>
-  </div>
-  <div
-    className="card mt-3"
-  >
-    <div
-      className="card-header"
-    >
-      History
-    </div>
-    <ProductSubscriptionHistory
-      productSubscription={
-        Object {
-          "__typename": "ProductSubscription",
-        }
-      }
-    />
-  </div>
-</div>
+          <BackToAllSubscriptionsLink
+            user={
+              Object {
+                "settingsURL": "/u",
+              }
+            }
+          />
+        </div>
+        <h2>
+          Subscription 
+        </h2>
+        <div
+          className="card mt-3"
+        >
+          <div
+            className="card-header"
+          >
+            Billing
+          </div>
+          <div
+            className="card-body"
+          >
+            <span
+              className="text-muted "
+            >
+              No billing information is associated with this subscription.
+               
+              <a
+                href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
+              >
+                Contact sales
+              </a>
+               
+              for help.
+            </span>
+          </div>
+        </div>
+        <div
+          className="card mt-3"
+        >
+          <div
+            className="card-header"
+          >
+            History
+          </div>
+          <ProductSubscriptionHistory
+            productSubscription={
+              Object {
+                "__typename": "ProductSubscription",
+              }
+            }
+          />
+        </div>
+      </div>
+    </UserSubscriptionsProductSubscriptionPage>
+  </Router>
+</MemoryRouter>
 `;

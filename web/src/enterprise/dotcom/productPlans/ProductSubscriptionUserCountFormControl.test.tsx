@@ -1,11 +1,11 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { ProductSubscriptionUserCountFormControl } from './ProductSubscriptionUserCountFormControl'
+import { mount } from 'enzyme'
 
 describe('ProductSubscriptionUserCountFormControl', () => {
     test('renders', () => {
         expect(
-            renderer.create(<ProductSubscriptionUserCountFormControl value={123} onChange={() => undefined} />).toJSON()
+            mount(<ProductSubscriptionUserCountFormControl value={123} onChange={() => undefined} />)
         ).toMatchSnapshot()
     })
 })

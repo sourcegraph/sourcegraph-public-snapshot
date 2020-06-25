@@ -1,6 +1,6 @@
 import React from 'react'
-import renderer, { act } from 'react-test-renderer'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/KeyIcon', () => 'KeyIcon')
 jest.mock('mdi-react/InformationIcon', () => 'InformationIcon')
@@ -8,7 +8,7 @@ jest.mock('../../../components/CopyableText', () => ({ CopyableText: 'CopyableTe
 
 describe('UserProductSubscriptionStatus', () => {
     test('toggle', () => {
-        const component = renderer.create(
+        const component = mount(
             <UserProductSubscriptionStatus
                 subscriptionName="L-123"
                 productNameWithBrand="P"
@@ -17,10 +17,10 @@ describe('UserProductSubscriptionStatus', () => {
                 licenseKey="lk"
             />
         )
-        expect(component.toJSON()).toMatchSnapshot('license key hidden')
+        expect(component).toMatchSnapshot('license key hidden')
 
         // Click "Reveal license key" button.
-        act(() => component.root.findByType('button').props.onClick())
-        expect(component.toJSON()).toMatchSnapshot('license key revealed')
+        component.find('button').simulate('click')
+        expect(component).toMatchSnapshot('license key revealed')
     })
 })

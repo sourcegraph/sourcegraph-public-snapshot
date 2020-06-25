@@ -1,14 +1,14 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import renderer, { act } from 'react-test-renderer'
 import * as H from 'history'
 import { SearchStatsPage } from './SearchStatsPage'
 import { of } from 'rxjs'
 import { MemoryRouter } from 'react-router'
+import { mount } from 'enzyme'
 
 describe('SearchStatsPage', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = mount(
             <MemoryRouter>
                 <SearchStatsPage
                     location={H.createLocation({ pathname: '/stats', search: 'q=abc' })}
@@ -29,17 +29,13 @@ describe('SearchStatsPage', () => {
                         })
                     }
                 />
-            </MemoryRouter>,
-            {
-                createNodeMock: () => ({ parentElement: document.implementation.createHTMLDocument().body }),
-            }
+            </MemoryRouter>
         )
-        act(() => undefined) // wait for _querySearchResultsStats to emit
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     test('limitHit', () => {
-        const component = renderer.create(
+        const component = mount(
             <MemoryRouter>
                 <SearchStatsPage
                     location={H.createLocation({ pathname: '/stats', search: 'q=abc' })}
@@ -56,12 +52,8 @@ describe('SearchStatsPage', () => {
                         })
                     }
                 />
-            </MemoryRouter>,
-            {
-                createNodeMock: () => ({ parentElement: document.implementation.createHTMLDocument().body }),
-            }
+            </MemoryRouter>
         )
-        act(() => undefined) // wait for _querySearchResultsStats to emit
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 })

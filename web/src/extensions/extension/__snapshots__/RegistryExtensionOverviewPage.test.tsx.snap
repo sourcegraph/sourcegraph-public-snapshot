@@ -1,144 +1,268 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`RegistryExtensionOverviewPage renders 1`] = `
-<div
-  className="registry-extension-overview-page d-flex flex-wrap"
+<Router
+  history="[History]"
 >
-  <div
-    className="registry-extension-overview-page__readme mr-3"
-  >
-    <div
-      className="markdown"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p><strong>A</strong></p>
-",
-        }
+  <RegistryExtensionOverviewPage
+    eventLogger={
+      Object {
+        "logViewEvent": [Function],
       }
-      onClick={[Function]}
-    />
-  </div>
-  <aside
-    className="registry-extension-overview-page__sidebar"
+    }
+    extension={
+      Object {
+        "id": "x",
+        "manifest": Object {
+          "activationEvents": Array [
+            "*",
+          ],
+          "categories": Array [
+            "Programming languages",
+            "Other",
+          ],
+          "readme": "**A**",
+          "repository": Object {
+            "type": "git",
+            "url": "https://github.com/foo/bar",
+          },
+          "tags": Array [
+            "T1",
+            "T2",
+          ],
+          "url": "https://example.com",
+        },
+        "rawManifest": "{}",
+      }
+    }
+    history="[History]"
   >
     <div
-      className="mb-3"
+      className="registry-extension-overview-page d-flex flex-wrap"
     >
-      <h3
-        className="mb-0"
+      <PageTitle
+        title="x"
+      />
+      <div
+        className="registry-extension-overview-page__readme mr-3"
       >
-        Categories
-      </h3>
-      <ul
-        className="list-inline registry-extension-overview-page__categories"
-      >
-        <li
-          className="list-inline-item mb-2 small"
+        <ExtensionReadme
+          extension={
+            Object {
+              "id": "x",
+              "manifest": Object {
+                "activationEvents": Array [
+                  "*",
+                ],
+                "categories": Array [
+                  "Programming languages",
+                  "Other",
+                ],
+                "readme": "**A**",
+                "repository": Object {
+                  "type": "git",
+                  "url": "https://github.com/foo/bar",
+                },
+                "tags": Array [
+                  "T1",
+                  "T2",
+                ],
+                "url": "https://example.com",
+              },
+              "rawManifest": "{}",
+            }
+          }
+          history="[History]"
         >
-          <a
-            className="rounded border p-1"
-            href="/extensions?query=category%3AOther"
-            onClick={[Function]}
+          <Markdown
+            dangerousInnerHTML="<p><strong>A</strong></p>
+"
+            history="[History]"
           >
-            Other
-          </a>
-        </li>
-        <li
-          className="list-inline-item mb-2 small"
-        >
-          <a
-            className="rounded border p-1"
-            href="/extensions?query=category%3A%22Programming+languages%22"
-            onClick={[Function]}
-          >
-            Programming languages
-          </a>
-        </li>
-      </ul>
-    </div>
-    <div
-      className="mb-3"
-    >
-      <h3
-        className="mb-0"
-      >
-        Tags
-      </h3>
-      <ul
-        className="list-inline registry-extension-overview-page__tags"
-      >
-        <li
-          className="list-inline-item mb-2 small"
-        >
-          <a
-            className="rounded border p-1"
-            href="/extensions?query=tag%3AT1"
-            onClick={[Function]}
-          >
-            T1
-          </a>
-        </li>
-        <li
-          className="list-inline-item mb-2 small"
-        >
-          <a
-            className="rounded border p-1"
-            href="/extensions?query=tag%3AT2"
-            onClick={[Function]}
-          >
-            T2
-          </a>
-        </li>
-      </ul>
-    </div>
-    <small
-      className="text-muted"
-    >
-      <dl
-        className="border-top pt-2"
-      >
-        <dt
-          className="border-top pt-2"
-        >
-          Extension ID
-        </dt>
-        <dd>
-          x
-        </dd>
-        <dt
-          className="border-top pt-2"
-        >
-          Resources
-        </dt>
-        <dd
-          className="border-bottom pb-2"
-        >
-          <a
-            className="d-block"
-            href="https://example.com"
-            rel="nofollow noopener noreferrer"
-            target="_blank"
-          >
-            Source code (JavaScript)
-          </a>
-          <div
-            className="d-flex"
-          >
-            <GithubIcon
-              className="icon-inline mr-1"
+            <div
+              className="markdown"
+              dangerouslySetInnerHTML={
+                Object {
+                  "__html": "<p><strong>A</strong></p>
+",
+                }
+              }
+              onClick={[Function]}
             />
-            <a
-              className="d-block"
-              href="https://github.com/foo/bar"
-              rel="nofollow noreferrer noopener"
-              target="_blank"
+          </Markdown>
+        </ExtensionReadme>
+      </div>
+      <aside
+        className="registry-extension-overview-page__sidebar"
+      >
+        <div
+          className="mb-3"
+        >
+          <h3
+            className="mb-0"
+          >
+            Categories
+          </h3>
+          <ul
+            className="list-inline registry-extension-overview-page__categories"
+          >
+            <li
+              className="list-inline-item mb-2 small"
+              key="0"
             >
-              Repository
-            </a>
-          </div>
-        </dd>
-      </dl>
-    </small>
-  </aside>
-</div>
+              <Link
+                className="rounded border p-1"
+                to="/extensions?query=category%3AOther"
+              >
+                <LinkAnchor
+                  className="rounded border p-1"
+                  href="/extensions?query=category%3AOther"
+                  navigate={[Function]}
+                >
+                  <a
+                    className="rounded border p-1"
+                    href="/extensions?query=category%3AOther"
+                    onClick={[Function]}
+                  >
+                    Other
+                  </a>
+                </LinkAnchor>
+              </Link>
+            </li>
+            <li
+              className="list-inline-item mb-2 small"
+              key="1"
+            >
+              <Link
+                className="rounded border p-1"
+                to="/extensions?query=category%3A%22Programming+languages%22"
+              >
+                <LinkAnchor
+                  className="rounded border p-1"
+                  href="/extensions?query=category%3A%22Programming+languages%22"
+                  navigate={[Function]}
+                >
+                  <a
+                    className="rounded border p-1"
+                    href="/extensions?query=category%3A%22Programming+languages%22"
+                    onClick={[Function]}
+                  >
+                    Programming languages
+                  </a>
+                </LinkAnchor>
+              </Link>
+            </li>
+          </ul>
+        </div>
+        <div
+          className="mb-3"
+        >
+          <h3
+            className="mb-0"
+          >
+            Tags
+          </h3>
+          <ul
+            className="list-inline registry-extension-overview-page__tags"
+          >
+            <li
+              className="list-inline-item mb-2 small"
+              key="0"
+            >
+              <Link
+                className="rounded border p-1"
+                to="/extensions?query=tag%3AT1"
+              >
+                <LinkAnchor
+                  className="rounded border p-1"
+                  href="/extensions?query=tag%3AT1"
+                  navigate={[Function]}
+                >
+                  <a
+                    className="rounded border p-1"
+                    href="/extensions?query=tag%3AT1"
+                    onClick={[Function]}
+                  >
+                    T1
+                  </a>
+                </LinkAnchor>
+              </Link>
+            </li>
+            <li
+              className="list-inline-item mb-2 small"
+              key="1"
+            >
+              <Link
+                className="rounded border p-1"
+                to="/extensions?query=tag%3AT2"
+              >
+                <LinkAnchor
+                  className="rounded border p-1"
+                  href="/extensions?query=tag%3AT2"
+                  navigate={[Function]}
+                >
+                  <a
+                    className="rounded border p-1"
+                    href="/extensions?query=tag%3AT2"
+                    onClick={[Function]}
+                  >
+                    T2
+                  </a>
+                </LinkAnchor>
+              </Link>
+            </li>
+          </ul>
+        </div>
+        <small
+          className="text-muted"
+        >
+          <dl
+            className="border-top pt-2"
+          >
+            <dt
+              className="border-top pt-2"
+            >
+              Extension ID
+            </dt>
+            <dd>
+              x
+            </dd>
+            <dt
+              className="border-top pt-2"
+            >
+              Resources
+            </dt>
+            <dd
+              className="border-bottom pb-2"
+            >
+              <a
+                className="d-block"
+                href="https://example.com"
+                rel="nofollow noopener noreferrer"
+                target="_blank"
+              >
+                Source code (JavaScript)
+              </a>
+              <div
+                className="d-flex"
+              >
+                <GithubIcon
+                  className="icon-inline mr-1"
+                />
+                <a
+                  className="d-block"
+                  href="https://github.com/foo/bar"
+                  rel="nofollow noreferrer noopener"
+                  target="_blank"
+                >
+                  Repository
+                </a>
+              </div>
+            </dd>
+          </dl>
+        </small>
+      </aside>
+    </div>
+  </RegistryExtensionOverviewPage>
+</Router>
 `;

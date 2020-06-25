@@ -1,11 +1,11 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { SearchStatsLanguages, summarizeSearchResultsStatsLanguages } from './SearchStatsLanguages'
 import { MemoryRouter } from 'react-router'
+import { mount } from 'enzyme'
 
 describe('SearchStatsLanguages', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = mount(
             <MemoryRouter>
                 <SearchStatsLanguages
                     query="abc"
@@ -22,12 +22,9 @@ describe('SearchStatsLanguages', () => {
                         ],
                     }}
                 />
-            </MemoryRouter>,
-            {
-                createNodeMock: () => ({ parentElement: document.implementation.createHTMLDocument().body }),
-            }
+            </MemoryRouter>
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 })
 

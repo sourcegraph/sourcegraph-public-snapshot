@@ -1,132 +1,188 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`NewProductSubscriptionPaymentSection downgrade to existing subscription 1`] = `
-<div
-  className="new-product-subscription-payment-section"
+<NewProductSubscriptionPaymentSection
+  _queryPreviewProductSubscriptionInvoice={[Function]}
+  accountID="a"
+  onValidityChange={[Function]}
+  productSubscription={
+    Object {
+      "billingPlanID": "p",
+      "userCount": 123,
+    }
+  }
+  subscriptionID="s"
 >
   <div
-    className="form-text mb-2"
+    className="new-product-subscription-payment-section"
   >
-    <ProductSubscriptionBeforeAfterInvoiceItem
-      afterInvoiceItem={
-        Object {
-          "__typename": "ProductSubscriptionInvoiceItem",
-          "expiresAt": "2021-01-01",
-          "plan": Object {},
-          "userCount": 456,
-        }
-      }
-      beforeInvoiceItem={
-        Object {
-          "__typename": "ProductSubscriptionInvoiceItem",
-          "expiresAt": "2020-01-01",
-          "plan": Object {},
-          "userCount": 123,
-        }
-      }
-      className="mb-2"
-    />
     <div
-      className="alert alert-danger mb-2"
+      className="form-text mb-2"
     >
-      Self-service downgrades are not yet supported.
-       
-      <a
-        href="mailto:sales@sourcegraph.com?subject=Downgrade%20subscription%20s"
+      <ProductSubscriptionBeforeAfterInvoiceItem
+        afterInvoiceItem={
+          Object {
+            "__typename": "ProductSubscriptionInvoiceItem",
+            "expiresAt": "2021-01-01",
+            "plan": Object {},
+            "userCount": 456,
+          }
+        }
+        beforeInvoiceItem={
+          Object {
+            "__typename": "ProductSubscriptionInvoiceItem",
+            "expiresAt": "2020-01-01",
+            "plan": Object {},
+            "userCount": 123,
+          }
+        }
+        className="mb-2"
+      />
+      <div
+        className="alert alert-danger mb-2"
       >
-        Contact sales
-      </a>
-       
-      for help.
+        Self-service downgrades are not yet supported.
+         
+        <a
+          href="mailto:sales@sourcegraph.com?subject=Downgrade%20subscription%20s"
+        >
+          Contact sales
+        </a>
+         
+        for help.
+      </div>
     </div>
   </div>
-</div>
+</NewProductSubscriptionPaymentSection>
 `;
 
 exports[`NewProductSubscriptionPaymentSection new subscription 1`] = `
-<div
-  className="new-product-subscription-payment-section"
+<NewProductSubscriptionPaymentSection
+  _queryPreviewProductSubscriptionInvoice={[Function]}
+  accountID={null}
+  onValidityChange={[Function]}
+  productSubscription={
+    Object {
+      "billingPlanID": "p",
+      "userCount": 123,
+    }
+  }
+  subscriptionID={null}
 >
   <div
-    className="form-text mb-2"
+    className="new-product-subscription-payment-section"
   >
-    Total: $
-    123.45
-     for
-     
-    14 years
-     (
-    123 users
-    )
     <div
-      className="loading-spinner icon-inline invisible"
-    />
+      className="form-text mb-2"
+    >
+      Total: $
+      123.45
+       for
+       
+      14 years
+       (
+      123 users
+      )
+      <LoadingSpinner
+        className="icon-inline invisible"
+      >
+        <div
+          className="loading-spinner icon-inline invisible"
+        />
+      </LoadingSpinner>
+    </div>
   </div>
-</div>
+</NewProductSubscriptionPaymentSection>
 `;
 
 exports[`NewProductSubscriptionPaymentSection no change to existing subscription 1`] = `
-<div
-  className="new-product-subscription-payment-section"
+<NewProductSubscriptionPaymentSection
+  _queryPreviewProductSubscriptionInvoice={[Function]}
+  accountID="a"
+  onValidityChange={[Function]}
+  productSubscription={
+    Object {
+      "billingPlanID": "p",
+      "userCount": 123,
+    }
+  }
+  subscriptionID="s"
 >
   <div
-    className="form-text mb-2"
+    className="new-product-subscription-payment-section"
   >
-    <ProductSubscriptionBeforeAfterInvoiceItem
-      afterInvoiceItem={
-        Object {
-          "__typename": "ProductSubscriptionInvoiceItem",
-          "expiresAt": "2020-01-01",
-          "plan": Object {},
-          "userCount": 123,
+    <div
+      className="form-text mb-2"
+    >
+      <ProductSubscriptionBeforeAfterInvoiceItem
+        afterInvoiceItem={
+          Object {
+            "__typename": "ProductSubscriptionInvoiceItem",
+            "expiresAt": "2020-01-01",
+            "plan": Object {},
+            "userCount": 123,
+          }
         }
-      }
-      beforeInvoiceItem={
-        Object {
-          "__typename": "ProductSubscriptionInvoiceItem",
-          "expiresAt": "2020-01-01",
-          "plan": Object {},
-          "userCount": 123,
+        beforeInvoiceItem={
+          Object {
+            "__typename": "ProductSubscriptionInvoiceItem",
+            "expiresAt": "2020-01-01",
+            "plan": Object {},
+            "userCount": 123,
+          }
         }
-      }
-      className="mb-2"
-    />
+        className="mb-2"
+      />
+    </div>
   </div>
-</div>
+</NewProductSubscriptionPaymentSection>
 `;
 
 exports[`NewProductSubscriptionPaymentSection valid change to existing subscription 1`] = `
-<div
-  className="new-product-subscription-payment-section"
+<NewProductSubscriptionPaymentSection
+  _queryPreviewProductSubscriptionInvoice={[Function]}
+  accountID="a"
+  onValidityChange={[Function]}
+  productSubscription={
+    Object {
+      "billingPlanID": "p",
+      "userCount": 123,
+    }
+  }
+  subscriptionID="s"
 >
   <div
-    className="form-text mb-2"
+    className="new-product-subscription-payment-section"
   >
-    <ProductSubscriptionBeforeAfterInvoiceItem
-      afterInvoiceItem={
-        Object {
-          "__typename": "ProductSubscriptionInvoiceItem",
-          "expiresAt": "2021-01-01",
-          "plan": Object {},
-          "userCount": 456,
-        }
-      }
-      beforeInvoiceItem={
-        Object {
-          "__typename": "ProductSubscriptionInvoiceItem",
-          "expiresAt": "2020-01-01",
-          "plan": Object {},
-          "userCount": 123,
-        }
-      }
-      className="mb-2"
-    />
     <div
-      className="mb-2"
+      className="form-text mb-2"
     >
-      Amount due: $
-      234.56
+      <ProductSubscriptionBeforeAfterInvoiceItem
+        afterInvoiceItem={
+          Object {
+            "__typename": "ProductSubscriptionInvoiceItem",
+            "expiresAt": "2021-01-01",
+            "plan": Object {},
+            "userCount": 456,
+          }
+        }
+        beforeInvoiceItem={
+          Object {
+            "__typename": "ProductSubscriptionInvoiceItem",
+            "expiresAt": "2020-01-01",
+            "plan": Object {},
+            "userCount": 123,
+          }
+        }
+        className="mb-2"
+      />
+      <div
+        className="mb-2"
+      >
+        Amount due: $
+        234.56
+      </div>
     </div>
   </div>
-</div>
+</NewProductSubscriptionPaymentSection>
 `;

@@ -1,7 +1,6 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId, noop, isEmpty } from 'lodash'
-import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
@@ -34,6 +33,7 @@ import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import { MockIntersectionObserver } from './MockIntersectionObserver'
 import { pretendRemote } from '../../../../../shared/src/api/util'
 import { FlatExtHostAPI } from '../../../../../shared/src/api/contract'
+import { Json } from 'enzyme-to-json'
 
 const RENDER = sinon.spy()
 
@@ -45,7 +45,7 @@ const notificationClassNames = {
     [NotificationType.Error]: 'error',
 }
 
-const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
+const elementRenderedAtMount = (mount: Element): Json | undefined => {
     const call = RENDER.args.find(call => call[1] === mount)
     return call?.[0]
 }

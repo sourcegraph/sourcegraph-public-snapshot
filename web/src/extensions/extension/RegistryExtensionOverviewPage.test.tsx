@@ -5,6 +5,7 @@ import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 import { PageTitle } from '../../components/PageTitle'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/GithubIcon', () => 'GithubIcon')
 
@@ -15,31 +16,29 @@ describe('RegistryExtensionOverviewPage', () => {
     test('renders', () => {
         const history = createMemoryHistory()
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <RegistryExtensionOverviewPage
-                            eventLogger={{ logViewEvent: noop }}
-                            extension={{
-                                id: 'x',
-                                rawManifest: '{}',
-                                manifest: {
-                                    url: 'https://example.com',
-                                    activationEvents: ['*'],
-                                    categories: ['Programming languages', 'Other'],
-                                    tags: ['T1', 'T2'],
-                                    readme: '**A**',
-                                    repository: {
-                                        url: 'https://github.com/foo/bar',
-                                        type: 'git',
-                                    },
+            mount(
+                <Router history={history}>
+                    <RegistryExtensionOverviewPage
+                        eventLogger={{ logViewEvent: noop }}
+                        extension={{
+                            id: 'x',
+                            rawManifest: '{}',
+                            manifest: {
+                                url: 'https://example.com',
+                                activationEvents: ['*'],
+                                categories: ['Programming languages', 'Other'],
+                                tags: ['T1', 'T2'],
+                                readme: '**A**',
+                                repository: {
+                                    url: 'https://github.com/foo/bar',
+                                    type: 'git',
                                 },
-                            }}
-                            history={history}
-                        />
-                    </Router>
-                )
-                .toJSON()
+                            },
+                        }}
+                        history={history}
+                    />
+                </Router>
+            )
         ).toMatchSnapshot()
     })
 
