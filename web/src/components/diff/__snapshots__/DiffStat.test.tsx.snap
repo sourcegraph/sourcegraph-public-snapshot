@@ -1,74 +1,97 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`DiffStat expandedCounts 1`] = `
-<div
-  className="diff-stat "
-  data-tooltip="1 addition, 2 changes, 3 deletions"
+<DiffStat
+  added={1}
+  changed={2}
+  deleted={3}
+  expandedCounts={true}
 >
-  <span
-    className="diff-stat__total font-weight-bold"
+  <div
+    className="diff-stat "
+    data-tooltip="1 addition, 2 changes, 3 deletions"
   >
     <span
-      className="diff-stat__text-added mr-1"
+      className="diff-stat__total font-weight-bold"
     >
-      +
-      1
+      <span
+        className="diff-stat__text-added mr-1"
+      >
+        +
+        1
+      </span>
+      <span
+        className="diff-stat__text-changed mr-1"
+      >
+        •
+        2
+      </span>
+      <span
+        className="diff-stat__text-deleted mr-1"
+      >
+        −
+        3
+      </span>
     </span>
-    <span
-      className="diff-stat__text-changed mr-1"
-    >
-      •
-      2
-    </span>
-    <span
-      className="diff-stat__text-deleted mr-1"
-    >
-      −
-      3
-    </span>
-  </span>
-  <div
-    className="diff-stat__square diff-stat__added"
-  />
-  <div
-    className="diff-stat__square diff-stat__changed"
-  />
-  <div
-    className="diff-stat__square diff-stat__deleted"
-  />
-  <div
-    className="diff-stat__square diff-stat__deleted"
-  />
-  <div
-    className="diff-stat__square diff-stat__deleted"
-  />
-</div>
+    <div
+      className="diff-stat__square diff-stat__added"
+      key="0"
+    />
+    <div
+      className="diff-stat__square diff-stat__changed"
+      key="1"
+    />
+    <div
+      className="diff-stat__square diff-stat__deleted"
+      key="2"
+    />
+    <div
+      className="diff-stat__square diff-stat__deleted"
+      key="3"
+    />
+    <div
+      className="diff-stat__square diff-stat__deleted"
+      key="4"
+    />
+  </div>
+</DiffStat>
 `;
 
 exports[`DiffStat standard 1`] = `
-<div
-  className="diff-stat "
-  data-tooltip="1 addition, 2 changes, 3 deletions"
+<DiffStat
+  added={1}
+  changed={2}
+  deleted={3}
 >
-  <small
-    className="diff-stat__total"
+  <div
+    className="diff-stat "
+    data-tooltip="1 addition, 2 changes, 3 deletions"
   >
-    8
-  </small>
-  <div
-    className="diff-stat__square diff-stat__added"
-  />
-  <div
-    className="diff-stat__square diff-stat__changed"
-  />
-  <div
-    className="diff-stat__square diff-stat__deleted"
-  />
-  <div
-    className="diff-stat__square diff-stat__deleted"
-  />
-  <div
-    className="diff-stat__square diff-stat__deleted"
-  />
-</div>
+    <small
+      className="diff-stat__total"
+    >
+      8
+    </small>
+    <div
+      className="diff-stat__square diff-stat__added"
+      key="0"
+    />
+    <div
+      className="diff-stat__square diff-stat__changed"
+      key="1"
+    />
+    <div
+      className="diff-stat__square diff-stat__deleted"
+      key="2"
+    />
+    <div
+      className="diff-stat__square diff-stat__deleted"
+      key="3"
+    />
+    <div
+      className="diff-stat__square diff-stat__deleted"
+      key="4"
+    />
+  </div>
+</DiffStat>
 `;

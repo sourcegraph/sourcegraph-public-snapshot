@@ -1,25 +1,61 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`BrandLogo renders dark custom branding logo 1`] = `
-<img
-  src="l"
-/>
+<BrandLogo
+  assetsRoot="/assets"
+  branding={
+    Object {
+      "brandName": "b",
+      "dark": Object {
+        "logo": "l",
+      },
+    }
+  }
+  isLightTheme={false}
+>
+  <img
+    src="l"
+  />
+</BrandLogo>
 `;
 
 exports[`BrandLogo renders dark sourcegraph logo 1`] = `
-<img
-  src="/assets/img/sourcegraph-head-logo.svg"
-/>
+<BrandLogo
+  assetsRoot="/assets"
+  isLightTheme={false}
+>
+  <img
+    src="/assets/img/sourcegraph-head-logo.svg"
+  />
+</BrandLogo>
 `;
 
 exports[`BrandLogo renders light custom branding logo 1`] = `
-<img
-  src="l"
-/>
+<BrandLogo
+  assetsRoot="/assets"
+  branding={
+    Object {
+      "brandName": "b",
+      "light": Object {
+        "logo": "l",
+      },
+    }
+  }
+  isLightTheme={true}
+>
+  <img
+    src="l"
+  />
+</BrandLogo>
 `;
 
 exports[`BrandLogo renders light sourcegraph logo 1`] = `
-<img
-  src="/assets/img/sourcegraph-light-head-logo.svg"
-/>
+<BrandLogo
+  assetsRoot="/assets"
+  isLightTheme={true}
+>
+  <img
+    src="/assets/img/sourcegraph-light-head-logo.svg"
+  />
+</BrandLogo>
 `;

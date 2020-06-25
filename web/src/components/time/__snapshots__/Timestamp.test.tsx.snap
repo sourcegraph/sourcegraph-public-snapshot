@@ -1,19 +1,28 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Timestamp mocked current time 1`] = `
-<span
-  className="timestamp"
-  data-tooltip="2006-01-02"
+<Timestamp
+  date="2006-01-02"
 >
-  about 22 hours ago
-</span>
+  <span
+    className="timestamp"
+    data-tooltip="2006-01-02"
+  >
+    about 22 hours ago
+  </span>
+</Timestamp>
 `;
 
 exports[`Timestamp noAbout 1`] = `
-<span
-  className="timestamp"
-  data-tooltip="2006-01-02"
+<Timestamp
+  date="2006-01-02"
+  noAbout={true}
 >
-  22 hours ago
-</span>
+  <span
+    className="timestamp"
+    data-tooltip="2006-01-02"
+  >
+    22 hours ago
+  </span>
+</Timestamp>
 `;
