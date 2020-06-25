@@ -1,79 +1,45 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ViewPage renders view 1`] = `
-<div>
-  <h1>
-    t
-  </h1>
-  <div
-    className="view-content"
-  >
-    <div
-      className="view-content__markdown mb-1 markdown"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p><strong>a</strong></p>
-",
-        }
-      }
-      onClick={[Function]}
+<ViewPage
+  _getView={[Function]}
+  caseSensitive={false}
+  copyQueryButton={false}
+  extensionsController={
+    Object {
+      "services": Object {
+        "contribution": Object {
+          "getContributions": [Function],
+        },
+      },
+    }
+  }
+  extraPath=""
+  history="[History]"
+  location="[Location path=/]"
+  patternType="literal"
+  setCaseSensitivity={[Function]}
+  setPatternType={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
+  viewID="v"
+>
+  <div>
+    <PageTitle
+      title="t"
     />
-    *b*
-    <div
-      className="view-content__markdown mb-1 markdown"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p><em>c</em></p>
-",
-        }
-      }
-      onClick={[Function]}
-    />
-    <QueryInputInViewContent
+    <h1>
+      t
+    </h1>
+    <ViewContent
       caseSensitive={false}
       copyQueryButton={false}
-      history={
-        Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        }
-      }
-      implicitQueryPrefix="x"
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      history="[History]"
+      location="[Location path=/]"
       patternType="literal"
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
@@ -83,24 +49,158 @@ exports[`ViewPage renders view 1`] = `
           "subjects": Array [],
         }
       }
-    />
+      viewContent={
+        Array [
+          Object {
+            "kind": "markdown",
+            "value": "**a**",
+          },
+          Object {
+            "kind": "plaintext",
+            "value": "*b*",
+          },
+          Object {
+            "value": "*c*",
+          },
+          Object {
+            "component": "QueryInput",
+            "props": Object {
+              "implicitQueryPrefix": "x",
+            },
+          },
+        ]
+      }
+    >
+      <div
+        className="view-content"
+      >
+        <Markdown
+          className="view-content__markdown mb-1"
+          dangerousInnerHTML="<p><strong>a</strong></p>
+"
+          history="[History]"
+        >
+          <div
+            className="view-content__markdown mb-1 markdown"
+            dangerouslySetInnerHTML={
+              Object {
+                "__html": "<p><strong>a</strong></p>
+",
+              }
+            }
+            onClick={[Function]}
+          />
+        </Markdown>
+        *b*
+        <Markdown
+          className="view-content__markdown mb-1"
+          dangerousInnerHTML="<p><em>c</em></p>
+"
+          history="[History]"
+        >
+          <div
+            className="view-content__markdown mb-1 markdown"
+            dangerouslySetInnerHTML={
+              Object {
+                "__html": "<p><em>c</em></p>
+",
+              }
+            }
+            onClick={[Function]}
+          />
+        </Markdown>
+        <QueryInputInViewContent
+          caseSensitive={false}
+          copyQueryButton={false}
+          history="[History]"
+          implicitQueryPrefix="x"
+          key="3"
+          location="[Location path=/]"
+          patternType="literal"
+          setCaseSensitivity={[Function]}
+          setPatternType={[Function]}
+          settingsCascade={
+            Object {
+              "final": Object {},
+              "subjects": Array [],
+            }
+          }
+        />
+      </div>
+    </ViewContent>
   </div>
-</div>
+</ViewPage>
 `;
 
 exports[`ViewPage view is loading 1`] = `
-<LoadingSpinner
-  className="icon-inline"
-/>
+<ViewPage
+  _getView={[Function]}
+  caseSensitive={false}
+  copyQueryButton={false}
+  extensionsController={
+    Object {
+      "services": Object {
+        "contribution": Object {
+          "getContributions": [Function],
+        },
+      },
+    }
+  }
+  extraPath=""
+  history="[History]"
+  location="[Location path=/]"
+  patternType="literal"
+  setCaseSensitivity={[Function]}
+  setPatternType={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
+  viewID="v"
+>
+  <LoadingSpinner
+    className="icon-inline"
+  />
+</ViewPage>
 `;
 
 exports[`ViewPage view not found 1`] = `
-<div
-  className="alert alert-danger"
+<ViewPage
+  _getView={[Function]}
+  caseSensitive={false}
+  copyQueryButton={false}
+  extensionsController={
+    Object {
+      "services": Object {
+        "contribution": Object {
+          "getContributions": [Function],
+        },
+      },
+    }
+  }
+  extraPath=""
+  history="[History]"
+  location="[Location path=/]"
+  patternType="literal"
+  setCaseSensitivity={[Function]}
+  setPatternType={[Function]}
+  settingsCascade={
+    Object {
+      "final": Object {},
+      "subjects": Array [],
+    }
+  }
+  viewID="v"
 >
-  View not found: 
-  <code>
-    v
-  </code>
-</div>
+  <div
+    className="alert alert-danger"
+  >
+    View not found: 
+    <code>
+      v
+    </code>
+  </div>
+</ViewPage>
 `;

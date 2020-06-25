@@ -1,20 +1,71 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`PersonLink no user account 1`] = `
-<span
-  className="a "
-  data-tooltip="alice@example.com"
+<PersonLink
+  className="a"
+  person={
+    Object {
+      "displayName": "alice",
+      "email": "alice@example.com",
+      "user": null,
+    }
+  }
+  userClassName="b"
 >
-  alice
-</span>
+  <LinkOrSpan
+    className="a "
+    data-tooltip="alice@example.com"
+  >
+    <span
+      className="a "
+      data-tooltip="alice@example.com"
+    >
+      alice
+    </span>
+  </LinkOrSpan>
+</PersonLink>
 `;
 
 exports[`PersonLink with user account 1`] = `
-<a
-  className="a b"
-  data-tooltip="Alice Smith <alice@example.com>"
-  href="u"
->
-  alice
-</a>
+<MemoryRouter>
+  <Router
+    history="[History]"
+  >
+    <PersonLink
+      className="a"
+      person={
+        Object {
+          "displayName": "Alice",
+          "email": "alice@example.com",
+          "user": Object {
+            "displayName": "Alice Smith",
+            "url": "u",
+            "username": "alice",
+          },
+        }
+      }
+      userClassName="b"
+    >
+      <LinkOrSpan
+        className="a b"
+        data-tooltip="Alice Smith <alice@example.com>"
+        to="u"
+      >
+        <AnchorLink
+          className="a b"
+          data-tooltip="Alice Smith <alice@example.com>"
+          to="u"
+        >
+          <a
+            className="a b"
+            data-tooltip="Alice Smith <alice@example.com>"
+            href="u"
+          >
+            alice
+          </a>
+        </AnchorLink>
+      </LinkOrSpan>
+    </PersonLink>
+  </Router>
+</MemoryRouter>
 `;

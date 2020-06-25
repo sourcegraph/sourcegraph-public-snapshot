@@ -1,51 +1,191 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`GlobalNavbar hideGlobalSearchInput 1`] = `
-<div
-  className="global-navbar global-navbar--bg border-bottom py-1"
+<GlobalNavbar
+  authenticatedUser={null}
+  availableVersionContexts={Array []}
+  caseSensitive={false}
+  copyQueryButton={false}
+  extensionsController={Object {}}
+  filtersInQuery={Object {}}
+  hideGlobalSearchInput={true}
+  hideNavLinks={true}
+  history="[History]"
+  interactiveSearchMode={false}
+  isLightTheme={true}
+  isSearchRelatedPage={true}
+  isSourcegraphDotCom={false}
+  keyboardShortcuts={Array []}
+  location="[Location path=/]"
+  lowProfile={false}
+  navbarSearchQueryState={
+    Object {
+      "cursorPosition": 0,
+      "query": "q",
+    }
+  }
+  onFiltersInQueryChange={[Function]}
+  onNavbarQueryChange={[Function]}
+  onThemePreferenceChange={[Function]}
+  patternType="literal"
+  platformContext={Object {}}
+  setCaseSensitivity={[Function]}
+  setPatternType={[Function]}
+  setVersionContext={[Function]}
+  settingsCascade={
+    Object {
+      "final": null,
+      "subjects": null,
+    }
+  }
+  showCampaigns={false}
+  smartSearchField={false}
+  splitSearchModes={false}
+  telemetryService={Object {}}
+  themePreference="light"
+  toggleSearchMode={[Function]}
 >
   <div
-    className="global-navbar__logo-link global-navbar__logo-animated"
+    className="global-navbar global-navbar--bg border-bottom py-1"
   >
-    <img
-      className="global-navbar__logo"
-      src="/.assets/img/sourcegraph-mark.svg"
-    />
-  </div>
-  <div
-    className="nav-item flex-1"
-  >
-    <a
-      className="nav-link"
-      to="/search"
+    <div
+      className="global-navbar__logo-link global-navbar__logo-animated"
     >
-      Search
-    </a>
+      <img
+        className="global-navbar__logo"
+        src="/.assets/img/sourcegraph-mark.svg"
+      />
+    </div>
+    <div
+      className="nav-item flex-1"
+    >
+      <Component
+        className="nav-link"
+        to="/search"
+      >
+        <a
+          className="nav-link"
+          to="/search"
+        >
+          Search
+        </a>
+      </Component>
+    </div>
   </div>
-</div>
+</GlobalNavbar>
 `;
 
 exports[`GlobalNavbar lowProfile 1`] = `
-<div
-  className="global-navbar  py-1"
+<GlobalNavbar
+  authenticatedUser={null}
+  availableVersionContexts={Array []}
+  caseSensitive={false}
+  copyQueryButton={false}
+  extensionsController={Object {}}
+  filtersInQuery={Object {}}
+  hideGlobalSearchInput={false}
+  hideNavLinks={true}
+  history="[History]"
+  interactiveSearchMode={false}
+  isLightTheme={true}
+  isSearchRelatedPage={true}
+  isSourcegraphDotCom={false}
+  keyboardShortcuts={Array []}
+  location="[Location path=/]"
+  lowProfile={true}
+  navbarSearchQueryState={
+    Object {
+      "cursorPosition": 0,
+      "query": "q",
+    }
+  }
+  onFiltersInQueryChange={[Function]}
+  onNavbarQueryChange={[Function]}
+  onThemePreferenceChange={[Function]}
+  patternType="literal"
+  platformContext={Object {}}
+  setCaseSensitivity={[Function]}
+  setPatternType={[Function]}
+  setVersionContext={[Function]}
+  settingsCascade={
+    Object {
+      "final": null,
+      "subjects": null,
+    }
+  }
+  showCampaigns={false}
+  smartSearchField={false}
+  splitSearchModes={false}
+  telemetryService={Object {}}
+  themePreference="light"
+  toggleSearchMode={[Function]}
 >
   <div
-    className="flex-1"
-  />
-</div>
+    className="global-navbar  py-1"
+  >
+    <div
+      className="flex-1"
+    />
+  </div>
+</GlobalNavbar>
 `;
 
 exports[`GlobalNavbar normal 1`] = `
-<div
-  className="global-navbar global-navbar--bg border-bottom py-1"
+<GlobalNavbar
+  authenticatedUser={null}
+  availableVersionContexts={Array []}
+  caseSensitive={false}
+  copyQueryButton={false}
+  extensionsController={Object {}}
+  filtersInQuery={Object {}}
+  hideGlobalSearchInput={false}
+  hideNavLinks={true}
+  history="[History]"
+  interactiveSearchMode={false}
+  isLightTheme={true}
+  isSearchRelatedPage={true}
+  isSourcegraphDotCom={false}
+  keyboardShortcuts={Array []}
+  location="[Location path=/]"
+  lowProfile={false}
+  navbarSearchQueryState={
+    Object {
+      "cursorPosition": 0,
+      "query": "q",
+    }
+  }
+  onFiltersInQueryChange={[Function]}
+  onNavbarQueryChange={[Function]}
+  onThemePreferenceChange={[Function]}
+  patternType="literal"
+  platformContext={Object {}}
+  setCaseSensitivity={[Function]}
+  setPatternType={[Function]}
+  setVersionContext={[Function]}
+  settingsCascade={
+    Object {
+      "final": null,
+      "subjects": null,
+    }
+  }
+  showCampaigns={false}
+  smartSearchField={false}
+  splitSearchModes={false}
+  telemetryService={Object {}}
+  themePreference="light"
+  toggleSearchMode={[Function]}
 >
   <div
-    className="global-navbar__logo-link global-navbar__logo-animated"
+    className="global-navbar global-navbar--bg border-bottom py-1"
   >
-    <img
-      className="global-navbar__logo"
-      src="/.assets/img/sourcegraph-mark.svg"
-    />
+    <div
+      className="global-navbar__logo-link global-navbar__logo-animated"
+    >
+      <img
+        className="global-navbar__logo"
+        src="/.assets/img/sourcegraph-mark.svg"
+      />
+    </div>
   </div>
-</div>
+</GlobalNavbar>
 `;

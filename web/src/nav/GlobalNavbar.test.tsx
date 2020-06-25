@@ -1,11 +1,11 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { GlobalNavbar } from './GlobalNavbar'
 import { createLocation, createMemoryHistory } from 'history'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+import { mount } from 'enzyme'
 
 const PROPS: GlobalNavbar['props'] = {
     authenticatedUser: null,
@@ -29,7 +29,7 @@ const PROPS: GlobalNavbar['props'] = {
     settingsCascade: NOOP_SETTINGS_CASCADE,
     showCampaigns: false,
     telemetryService: {} as any,
-    hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
+    hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer and enzyme
     filtersInQuery: {} as any,
     splitSearchModes: false,
     interactiveSearchMode: false,
@@ -47,11 +47,10 @@ describe('GlobalNavbar', () => {
     setLinkComponent(props => <a {...props} />)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
-    test('normal', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())
+    test('normal', () => expect(mount(<GlobalNavbar {...PROPS} />)).toMatchSnapshot())
 
-    test('lowProfile', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} lowProfile={true} />).toJSON()).toMatchSnapshot())
+    test('lowProfile', () => expect(mount(<GlobalNavbar {...PROPS} lowProfile={true} />)).toMatchSnapshot())
 
     test('hideGlobalSearchInput', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} hideGlobalSearchInput={true} />).toJSON()).toMatchSnapshot())
+        expect(mount(<GlobalNavbar {...PROPS} hideGlobalSearchInput={true} />)).toMatchSnapshot())
 })

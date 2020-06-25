@@ -1,33 +1,29 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { SiteAdminCustomerBillingLink } from './SiteAdminCustomerBillingLink'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/ExternalLinkIcon', () => 'ExternalLinkIcon')
 
 describe('SiteAdminCustomerBillingLink', () => {
     test('linked billing account', () => {
         expect(
-            renderer
-                .create(
-                    <SiteAdminCustomerBillingLink
-                        customer={{ id: 'u', urlForSiteAdminBilling: 'https://example.com' }}
-                        onDidUpdate={() => undefined}
-                    />
-                )
-                .toJSON()
+            mount(
+                <SiteAdminCustomerBillingLink
+                    customer={{ id: 'u', urlForSiteAdminBilling: 'https://example.com' }}
+                    onDidUpdate={() => undefined}
+                />
+            )
         ).toMatchSnapshot()
     })
 
     test('no linked billing account', () => {
         expect(
-            renderer
-                .create(
-                    <SiteAdminCustomerBillingLink
-                        customer={{ id: 'u', urlForSiteAdminBilling: null }}
-                        onDidUpdate={() => undefined}
-                    />
-                )
-                .toJSON()
+            mount(
+                <SiteAdminCustomerBillingLink
+                    customer={{ id: 'u', urlForSiteAdminBilling: null }}
+                    onDidUpdate={() => undefined}
+                />
+            )
         ).toMatchSnapshot()
     })
 })
