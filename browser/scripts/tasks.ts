@@ -54,6 +54,7 @@ function copyExtensionAssets(toDirectory: string): void {
     shelljs.cp('build/dist/js/background.bundle.js', `${toDirectory}/js`)
     shelljs.cp('build/dist/js/inject.bundle.js', `${toDirectory}/js`)
     shelljs.cp('build/dist/js/options.bundle.js', `${toDirectory}/js`)
+    shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', `${toDirectory}/js`)
     shelljs.cp('build/dist/css/style.bundle.css', `${toDirectory}/css`)
     shelljs.cp('build/dist/css/options-style.bundle.css', `${toDirectory}/css`)
     shelljs.cp('build/dist/css/options-style.bundle.css', `${toDirectory}/css`)
