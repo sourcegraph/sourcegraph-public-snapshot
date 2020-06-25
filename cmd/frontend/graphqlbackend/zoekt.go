@@ -266,7 +266,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
-	baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: repo.Name(), RawQuery: "?" + url.QueryEscape(inputRev)}}
+	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
 	commit := &GitCommitResolver{
 		repoResolver: repo,
 		oid:          GitObjectID(file.Version),
