@@ -18,7 +18,8 @@ function maskProps(props: Json['props'], key = '', levelsDeep = 5): unknown {
     }
     if (props instanceof Subject) {
         return '[Subject]'
-    } else if (props instanceof Observable) {
+    }
+    if (props instanceof Observable) {
         return '[Observable]'
     }
 
