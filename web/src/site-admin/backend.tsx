@@ -446,9 +446,7 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
             const finalSettings = parseJSONC(data.viewerSettings.final)
             return {
                 site:
-                    data.site &&
-                    data.site.configuration &&
-                    data.site.configuration.effectiveContents &&
+                    data.site?.configuration?.effectiveContents &&
                     parseJSONC(data.site.configuration.effectiveContents),
                 externalServices,
                 settings: {

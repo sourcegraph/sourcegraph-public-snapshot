@@ -282,21 +282,24 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 		optsSafe: true,
 	}
 
-	changesetDiffs := &changesetDiffsConnectionResolver{changesetsConnection}
-	repoComparisons, err := changesetDiffs.Nodes(ctx)
+	changesets, err := changesetsConnection.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	totalStat := &graphqlbackend.DiffStat{}
-
-	for _, repoComp := range repoComparisons {
-		fileDiffs := repoComp.FileDiffs(&graphqlbackend.FileDiffsConnectionArgs{})
-		s, err := fileDiffs.DiffStat(ctx)
-		if err != nil {
-			return nil, err
+	for _, cs := range changesets {
+		// Not being able to convert is OK; it just means there's a hidden
+		// changeset that we can't use the stats from.
+		if external, ok := cs.ToExternalChangeset(); ok && external != nil {
+			stat, err := external.DiffStat(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if stat != nil {
+				totalStat.AddDiffStat(stat)
+			}
 		}
-		totalStat.AddDiffStat(s)
 	}
 
 	// We don't have a patch set, so we don't have patches and can return

@@ -15,7 +15,6 @@ import { NotificationsService } from './services/notifications'
 import { PanelViewProviderRegistry } from './services/panelViews'
 import { createViewService } from './services/viewService'
 import { createWorkspaceService } from './services/workspaceService'
-import { Observable } from 'rxjs'
 
 /**
  * Services is a container for all services used by the client application.
@@ -52,7 +51,6 @@ export class Services {
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
-    public readonly queryTransformer: { transformQuery?: (query: string) => Observable<string> } = {}
     public readonly panelViews = new PanelViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly view = createViewService()

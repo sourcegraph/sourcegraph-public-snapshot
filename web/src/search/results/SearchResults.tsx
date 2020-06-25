@@ -35,10 +35,11 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
-import { Services } from '../../../../shared/src/api/client/services'
+import { Remote } from 'comlink'
+import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
 
 export interface SearchResultsProps
-    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         SettingsCascadeProps,
         TelemetryProps,
@@ -58,7 +59,7 @@ export interface SearchResultsProps
         version: string,
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
-        services: Services
+        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
@@ -154,11 +155,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 ? { mode: this.props.interactiveSearchMode ? 'interactive' : 'plain' }
                                 : {}),
                         })
-                        if (
-                            query_data.query &&
-                            query_data.query.field_type &&
-                            query_data.query.field_type.value_diff > 0
-                        ) {
+                        if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
@@ -179,7 +176,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),
-                                    this.props.extensionsController.services
+                                    this.props.extensionsController.extHostAPI
                                 )
                                 .pipe(
                                     // Log telemetry
@@ -293,7 +290,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
-        const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
+        const extensionFilters = this.state.contributions?.searchFilters
 
         const quickLinks =
             (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []

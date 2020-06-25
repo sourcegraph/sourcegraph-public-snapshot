@@ -129,7 +129,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             if (this.props.range) {
                 url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
             } else if (this.props.position) {
-                url += '#L' + this.props.position.line
+                url += `#L${this.props.position.line}`
             }
         }
 

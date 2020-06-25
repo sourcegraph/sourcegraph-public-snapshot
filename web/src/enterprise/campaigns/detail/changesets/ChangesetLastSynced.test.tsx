@@ -5,7 +5,7 @@ import { mount } from 'enzyme'
 
 describe('ChangesetLastSynced', () => {
     for (const viewerCanAdminister of [false, true]) {
-        describe('ViewerCanAdminister: ' + viewerCanAdminister, () => {
+        describe(`ViewerCanAdminister: ${viewerCanAdminister}`, () => {
             test('renders not scheduled', () => {
                 expect(
                     mount(

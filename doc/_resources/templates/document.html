@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.16.2"}} {{$previousReleaseVersion := "3.16"}} {{$currentReleaseRevspec := "v3.17.0"}} {{$currentReleaseVersion := "3.17"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.16.2"}} {{$previousReleaseVersion := "3.16"}} {{$currentReleaseRevspec := "v3.17.1"}} {{$currentReleaseVersion := "3.17"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -102,6 +102,7 @@
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/user/search/queries">Search query syntax</a></li>
+                                    <li><a href="/user/search/language">Search query language</a></li>
                                     <li><a href="/user/search/structural">Structural search <span class="badge badge-primary">new</span></a></li>
                                     <li><a href="/user/search/examples">Search examples</a></li>
                                     <li><a href="/user/search/scopes">Search scopes</a></li>

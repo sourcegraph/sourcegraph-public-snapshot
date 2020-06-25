@@ -103,6 +103,11 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                         ],
                       },
                     },
+                    "diffStat": Object {
+                      "added": 100,
+                      "changed": 200,
+                      "deleted": 100,
+                    },
                     "externalID": "123",
                     "externalURL": Object {
                       "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",

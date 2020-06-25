@@ -111,7 +111,7 @@ function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement
                 // Ignore hidden elements
                 continue
             }
-            if (element.textContent && element.textContent.match(regexp)) {
+            if (element.textContent?.match(regexp)) {
                 return element
             }
         }
@@ -317,10 +317,10 @@ export class Driver {
         await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
         })
-        await this.page.evaluate(selector => {
+        await this.page.evaluate((selector: string) => {
             const element = document.querySelector<HTMLElement>(selector)
             if (!element) {
-                throw new Error('Could not find element to click on for selector ' + selector)
+                throw new Error(`Could not find element to click on for selector ${selector}`)
             }
             element.click()
         }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)

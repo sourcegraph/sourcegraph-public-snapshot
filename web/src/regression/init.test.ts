@@ -46,7 +46,7 @@ describe('Initialize new instance', () => {
         await retry(
             async () => {
                 await driver.page.reload()
-                await driver.findElementWithText('Configure external services', { wait: { timeout: 5 * 1000 } })
+                await driver.findElementWithText('Connect a code host', { wait: { timeout: 5 * 1000 } })
                 await delay(1000)
             },
             { retries: 10 }

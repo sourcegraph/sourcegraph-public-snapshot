@@ -8,6 +8,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -45,10 +46,12 @@ func NewCachedLocationResolver() *CachedLocationResolver {
 	}
 }
 
-// Repository resolves the repository with the given identifier.
+// Repository resolves the repository with the given identifier. This method may return a nil resolver
+// if the repository is not known by gitserver - this happens if there is exists still a bundle for a
+// repo that has since been deleted.
 func (r *CachedLocationResolver) Repository(ctx context.Context, id api.RepoID) (*gql.RepositoryResolver, error) {
 	cachedRepositoryResolver, err := r.cachedRepository(ctx, id)
-	if err != nil {
+	if err != nil || cachedRepositoryResolver == nil {
 		return nil, err
 	}
 	return cachedRepositoryResolver.resolver, nil
@@ -101,7 +104,14 @@ func (r *CachedLocationResolver) cachedRepository(ctx context.Context, id api.Re
 	if err != nil {
 		return nil, err
 	}
-	cachedResolver := &cachedRepositoryResolver{resolver: resolver, children: map[string]*cachedCommitResolver{}}
+
+	// Ensure value written to the cache is nil and not a nil resolver wrapped
+	// in a non-nil cached commit resolver. Otherwise, a subsequent resolution
+	// of a path may result in a nil dereference.
+	var cachedResolver *cachedRepositoryResolver
+	if resolver != nil {
+		cachedResolver = &cachedRepositoryResolver{resolver: resolver, children: map[string]*cachedCommitResolver{}}
+	}
 	r.children[id] = cachedResolver
 	return cachedResolver, nil
 }
@@ -113,7 +123,7 @@ func (r *CachedLocationResolver) cachedRepository(ctx context.Context, id api.Re
 // See https://en.wikipedia.org/wiki/Double-checked_locking.
 func (r *CachedLocationResolver) cachedCommit(ctx context.Context, id api.RepoID, commit string) (*cachedCommitResolver, error) {
 	parentResolver, err := r.cachedRepository(ctx, id)
-	if err != nil {
+	if err != nil || parentResolver == nil {
 		return nil, err
 	}
 
@@ -138,8 +148,9 @@ func (r *CachedLocationResolver) cachedCommit(ctx context.Context, id api.RepoID
 	if err != nil {
 		return nil, err
 	}
-	// No path can be resolved without - ensure value written to the cache is
-	// nil and not a nil resolver wrapped in a non-nil cached commit resolver.
+	// Ensure value written to the cache is nil and not a nil resolver wrapped
+	// in a non-nil cached commit resolver. Otherwise, a subsequent resolution
+	// of a path may result in a nil dereference.
 	var cachedResolver *cachedCommitResolver
 	if resolver != nil {
 		cachedResolver = &cachedCommitResolver{resolver: resolver, children: map[string]*gql.GitTreeEntryResolver{}}
@@ -184,11 +195,16 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 	return resolver, nil
 }
 
-// Repository resolves the repository with the given identifier. This method must be called only when
-// constructing a resolver to populate the cache.
+// Repository resolves the repository with the given identifier. This method may return a nil resolver
+// if the repository is not known by gitserver - this happens if there is exists still a bundle for a
+// repo that has since been deleted. This method must be called only when constructing a resolver to
+// populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*gql.RepositoryResolver, error) {
 	repo, err := backend.Repos.Get(ctx, id)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
