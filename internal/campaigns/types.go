@@ -1437,3 +1437,75 @@ func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
 }
+
+// ****************************
+// TODO: NEW CAMPAIGNS WORKFLOW BELOW
+// ****************************
+
+type CampaignSpec struct {
+	ID     int64
+	RandID string
+
+	RawSpec string
+	Spec    CampaignSpecFields
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	UserID int32
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a CampaignSpec.
+func (cs *CampaignSpec) Clone() *CampaignSpec {
+	cc := *cs
+	return &cc
+}
+
+type CampaignSpecFields struct {
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	ChangesetTemplate ChangesetTemplate `json:"changeset_template"`
+}
+
+type ChangesetTemplate struct {
+	Title     string `json:"title"`
+	Body      string `json:"body"`
+	Branch    string `json:"branch"`
+	Commit    string `json:"commit"`
+	Published bool   `json:"published"`
+}
+
+type CommitTemplate struct {
+	Message string `json:"message"`
+}
+
+type ChangesetSpec struct {
+	ID     int64
+	RandID string
+
+	RawSpec string
+	Spec    ChangesetSpecFields
+
+	CampaignSpecID int64
+	RepoID         api.RepoID
+	UserID         int32
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a ChangesetSpec.
+func (cs *ChangesetSpec) Clone() *ChangesetSpec {
+	cc := *cs
+	return &cc
+}
+
+type ChangesetSpecFields struct {
+	RepoID  api.RepoID   `json:"repo_id"`
+	Rev     api.CommitID `json:"rev"`
+	BaseRef string       `json:"base_ref"`
+	Diff    string       `json:"diff"`
+}
