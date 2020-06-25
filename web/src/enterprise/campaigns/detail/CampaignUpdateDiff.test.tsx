@@ -1,6 +1,5 @@
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { of } from 'rxjs'
 import { CampaignUpdateDiff, calculateChangesetDiff } from './CampaignUpdateDiff'
 import {
@@ -51,44 +50,42 @@ describe('CampaignUpdateDiff', () => {
             )
         ).toMatchSnapshot()
     })
-    test('renders', done => {
+    test('renders', () => {
         const history = H.createMemoryHistory({ keyLength: 0 })
         const location = H.createLocation(
             '/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?patchSet=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D'
         )
-        const rendered = renderer.create(
-            <CampaignUpdateDiff
-                isLightTheme={true}
-                history={history}
-                location={location}
-                campaign={{
-                    id: 'somecampaign',
-                    changesets: { totalCount: 1 },
-                    patches: { totalCount: 1 },
-                    viewerCanAdminister: true,
-                }}
-                patchSet={{ id: 'someothercampaign', patches: { totalCount: 1 } }}
-                _queryChangesets={() =>
-                    of({
-                        nodes: [{ __typename: 'ExternalChangeset', id: '1', repository: { id: 'match1' } }],
-                    }) as any
-                }
-                _queryPatchesFromCampaign={() =>
-                    of({
-                        nodes: [{ __typename: 'Patch', id: '1', repository: { id: 'match1' } }],
-                    }) as any
-                }
-                _queryPatchesFromPatchSet={() =>
-                    of({
-                        nodes: [{ __typename: 'Patch', id: '2', repository: { id: 'match1' } }],
-                    }) as any
-                }
-            />
-        )
-        setTimeout(() => {
-            expect(rendered.toJSON()).toMatchSnapshot()
-            done()
-        })
+        expect(
+            mount(
+                <CampaignUpdateDiff
+                    isLightTheme={true}
+                    history={history}
+                    location={location}
+                    campaign={{
+                        id: 'somecampaign',
+                        changesets: { totalCount: 1 },
+                        patches: { totalCount: 1 },
+                        viewerCanAdminister: true,
+                    }}
+                    patchSet={{ id: 'someothercampaign', patches: { totalCount: 1 } }}
+                    _queryChangesets={() =>
+                        of({
+                            nodes: [{ __typename: 'ExternalChangeset', id: '1', repository: { id: 'match1' } }],
+                        }) as any
+                    }
+                    _queryPatchesFromCampaign={() =>
+                        of({
+                            nodes: [{ __typename: 'Patch', id: '1', repository: { id: 'match1' } }],
+                        }) as any
+                    }
+                    _queryPatchesFromPatchSet={() =>
+                        of({
+                            nodes: [{ __typename: 'Patch', id: '2', repository: { id: 'match1' } }],
+                        }) as any
+                    }
+                />
+            )
+        ).toMatchSnapshot()
     })
     describe('calculateChangesetDiff', () => {
         type PatchInput =
