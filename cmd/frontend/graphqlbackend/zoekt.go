@@ -511,18 +511,6 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		return zoektSingleIndexedRepo(ctx, z, revs[0], filter)
 	}
 
-	count := 0
-	for _, r := range revs {
-		if len(r.Revs) > 0 && r.Revs[0].RevSpec == "" {
-			count++
-		}
-	}
-
-	// Return early if we don't need to querying zoekt
-	if count == 0 {
-		return nil, revs, nil
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	set, err := z.ListAll(ctx)
@@ -530,8 +518,10 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		return nil, nil, err
 	}
 
-	indexed = make([]*search.RepositoryRevisions, 0, count)
-	unindexed = make([]*search.RepositoryRevisions, 0, len(revs)-count)
+	// PERF: If len(revs) is large, we expect to be doing an indexed
+	// search. So set indexed to the max size it can be to avoid growing.
+	indexed = make([]*search.RepositoryRevisions, 0, len(revs))
+	unindexed = make([]*search.RepositoryRevisions, 0)
 
 	for _, rev := range revs {
 		if len(rev.RevSpecs()) >= 2 || len(rev.RevSpecs()) != len(rev.Revs) {
