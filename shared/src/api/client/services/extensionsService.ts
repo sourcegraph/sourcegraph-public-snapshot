@@ -16,9 +16,6 @@ import { ModelService } from './modelService'
 import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
 import { fromFetch } from '../../../graphql/fromFetch'
-import { getInlineExtensions } from './get-inline-extensions'
-import { isFirefox } from '../../../../../browser/src/shared/util/context'
-import { isExtension } from '../../../../../browser/src/shared/context'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -54,7 +51,8 @@ const getConfiguredSideloadedExtension = (baseUrl: string): Observable<Configure
         )
     )
 
-interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension' | 'settings'> {
+export interface PartialContext
+    extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension' | 'settings'> {
     sideloadedExtensionURL: Subscribable<string | null>
 }
 
@@ -225,36 +223,4 @@ function extensionsWithMatchedActivationEvent(
         }
         return false
     })
-}
-
-/**
- * Manages the set of inline (bundled) extensions that are loaded. Only applicable to the Firefox browser addon.
- *
- * The inline extensions service loads extesions directly from the addon and does not load any code remotely.
- */
-class InlineExtensionsService implements IExtensionsService {
-    public get activeExtensions(): Subscribable<ExecutableExtension[]> {
-        return getInlineExtensions()
-    }
-}
-
-/**
- * Determine if inline extensions should be loaded.
- *
- * This requires the browser extension to be built with inline extensions enabled.
- * At build time this is determined by `shouldBuildWithInlineExtensions`.
- */
-const shouldUseInlineExtensions = (): boolean => isExtension && isFirefox()
-
-export function createExtensionsService(
-    platformContext: PartialContext,
-    modelService: Pick<ModelService, 'activeLanguages'>
-): IExtensionsService {
-    // On Firefox extension, use the inline extensions service.
-    if (shouldUseInlineExtensions()) {
-        return new InlineExtensionsService()
-    }
-
-    // On all other platforms, use the standard extensions service.
-    return new ExtensionsService(platformContext, modelService)
 }
