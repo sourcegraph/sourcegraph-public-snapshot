@@ -215,9 +215,6 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		if !isSymbol {
 			lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 		} else {
-			// Symbol search returns a resolver so we need to pass in some
-			// extra stuff. This is a sign that we can probably restructure
-			// resolvers to avoid this.
 			symbols = zoektFileMatchToSymbolResults(repoResolvers[repoRev.Repo.Name], inputRev, &file)
 		}
 
@@ -266,12 +263,16 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 }
 
 func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
+	// Symbol search returns a resolver so we need to pass in some
+	// extra stuff. This is a sign that we can probably restructure
+	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: repo.Name(), RawQuery: "?" + url.QueryEscape(inputRev)}}
 	commit := &GitCommitResolver{
 		repoResolver: repo,
 		oid:          GitObjectID(file.Version),
 		inputRev:     &inputRev,
 	}
+	lang := strings.ToLower(file.Language)
 
 	symbols := make([]*searchSymbolResult, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
@@ -293,7 +294,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					Path:       file.FileName,
 					Line:       l.LineNumber,
 				},
-				lang:    strings.ToLower(file.Language),
+				lang:    lang,
 				baseURI: baseURI,
 				commit:  commit,
 			})
