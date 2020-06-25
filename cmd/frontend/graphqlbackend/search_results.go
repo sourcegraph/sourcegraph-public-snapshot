@@ -764,12 +764,7 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // The returned scopeParameters are then used to limit the query to that list of files.
 // If scopeParameters already contains a file field, it is returned as is.
 func setResultSetInScopeParameters(scopeParameters []query.Node, subset []SearchResultResolver) []query.Node {
-	var found bool
-	query.VisitField(scopeParameters, "file", func(value string, negated bool) {
-		found = true
-	})
-
-	if found {
+	if query.FieldExists(scopeParameters, "file") {
 		return scopeParameters
 	}
 

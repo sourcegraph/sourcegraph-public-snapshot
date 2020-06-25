@@ -117,3 +117,15 @@ func VisitField(nodes []Node, field string, callback func(value string, negated 
 	visitor := &FieldVisitor{callback: callback, field: field}
 	visitor.VisitNodes(visitor, nodes)
 }
+
+// FieldExists returns true as soon as it has found a parameter node that
+// matches the given field.
+func FieldExists(nodes []Node, field string) bool {
+	return exists(nodes, func(node Node) bool {
+		if p, ok := node.(Parameter); ok {
+			return p.Field == field
+		}
+
+		return false
+	})
+}

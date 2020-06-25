@@ -11,7 +11,6 @@ import (
 
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
-	found := false
 	for _, node := range nodes {
 		if fn(node) {
 			return true
@@ -20,7 +19,7 @@ func exists(nodes []Node, fn func(node Node) bool) bool {
 			return exists(operator.Operands, fn)
 		}
 	}
-	return found
+	return false
 }
 
 // forAll traverses every node in nodes and returns whether all nodes satisfy fn.
