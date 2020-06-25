@@ -1,7 +1,8 @@
-package internal
+package util
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -18,8 +19,8 @@ type GraphQLError struct {
 	Message string `json:"message"`
 }
 
-// graphQL performs GraphQL query on the frontend.
-func graphQL(baseURL, token, query string, variables map[string]interface{}, target interface{}) error {
+// QueryGraphQL performs GraphQL query on the frontend.
+func QueryGraphQL(ctx context.Context, endpoint, token, query string, variables map[string]interface{}, target interface{}) error {
 	body, err := json.Marshal(map[string]interface{}{
 		"query":     query,
 		"variables": variables,
@@ -28,25 +29,27 @@ func graphQL(baseURL, token, query string, variables map[string]interface{}, tar
 		return err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql", baseURL), bytes.NewReader(body))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql", endpoint), bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
 
+	// Note: We do not use req.Context(ctx) here as it causes the frontend
+	// to output long error logs, which is very noisy under high concurrency.
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d\n%s\n", resp.StatusCode, contents)
 	}
 
 	var errorPayload ErrorPayload
