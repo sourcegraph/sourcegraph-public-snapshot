@@ -1467,7 +1467,7 @@ func (cs *CampaignSpec) Clone() *CampaignSpec {
 type CampaignSpecFields struct {
 	Name              string            `json:"name"`
 	Description       string            `json:"description"`
-	ChangesetTemplate ChangesetTemplate `json:"changeset_template"`
+	ChangesetTemplate ChangesetTemplate `json:"changesetTemplate"`
 }
 
 type ChangesetTemplate struct {
@@ -1504,8 +1504,8 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 }
 
 type ChangesetSpecFields struct {
-	RepoID  api.RepoID   `json:"repo_id"`
+	RepoID  api.RepoID   `json:"repoID"`
 	Rev     api.CommitID `json:"rev"`
-	BaseRef string       `json:"base_ref"`
+	BaseRef string       `json:"baseRef"`
 	Diff    string       `json:"diff"`
 }

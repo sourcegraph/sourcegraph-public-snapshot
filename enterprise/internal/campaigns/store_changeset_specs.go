@@ -3,12 +3,10 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -33,16 +31,11 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 	if err != nil {
 		return err
 	}
-	err = s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanChangesetSpec(c, sc)
 		return c.ID, 1, err
 	})
-
-	if err, ok := err.(*pq.Error); ok {
-		fmt.Printf("q: %s,\nargs: %s\n,pq error: %#v\n", q.Query(sqlf.PostgresBindVar), q.Args(), err)
-	}
-
-	return err
 }
 
 var createChangesetSpecQueryFmtstr = `

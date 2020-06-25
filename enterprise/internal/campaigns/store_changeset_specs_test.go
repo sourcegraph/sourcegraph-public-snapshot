@@ -17,9 +17,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(changesetSpecs); i++ {
 			c := &cmpgn.ChangesetSpec{
-				RawSpec: `{"repo_id": "abc", "rev": "d34db33f"}`,
-				Spec:    cmpgn.ChangesetSpecFields{},
-
+				RawSpec:        `{"repoID": "abc", "rev": "d34db33f"}`,
+				Spec:           cmpgn.ChangesetSpecFields{},
 				UserID:         int32(i + 1234),
 				RepoID:         api.RepoID(i + 5678),
 				CampaignSpecID: int64(i + 910),

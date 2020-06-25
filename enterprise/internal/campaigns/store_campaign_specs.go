@@ -24,6 +24,8 @@ const campaignSpecInsertCols = `
   created_at,
   updated_at
 `
+const campaignSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
+
 const campaignSpecCols = `
   id,` + campaignSpecInsertCols
 
@@ -48,7 +50,7 @@ func (s *Store) CreateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 var createCampaignSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_campaign_specs.go:CreateCampaignSpec
 INSERT INTO campaign_specs (` + campaignSpecInsertCols + `)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+VALUES ` + campaignSpecInsertColsFmt + `
 RETURNING` + campaignSpecCols + `;`
 
 func (s *Store) createCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query, error) {
@@ -100,7 +102,7 @@ func (s *Store) UpdateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 var updateCampaignSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_campaign_specs.go:UpdateCampaignSpec
 UPDATE campaign_specs
-SET (` + campaignSpecInsertCols + `) = (%s, %s, %s, %s, %s, %s, %s, %s)
+SET (` + campaignSpecInsertCols + `) = ` + campaignSpecInsertColsFmt + `
 WHERE id = %s
 RETURNING ` + campaignSpecCols
 
