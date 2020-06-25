@@ -62,6 +62,12 @@ function copyExtensionAssets(toDirectory: string): void {
     shelljs.cp('build/dist/options.html', toDirectory)
 }
 
+/**
+ * When building with inline (bundled) Sourcegraph extensions, copy the built Sourcegraph extensions into the output.
+ * They will be available as `web_accessible_resources`.
+ *
+ * The pre-requisite step is to first clone, build, and copy into `build/extensions`.
+ */
 function copyInlineExtensions(toDirectory: string): void {
     shelljs.cp('-R', 'build/extensions', toDirectory)
 }
@@ -101,6 +107,8 @@ function writeSchema(environment: BuildEnv, browser: Browser, writeDirectory: st
 
 const version = utcVersion()
 
+const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
+
 function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
     const manifest = {
         ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLOCKLIST[browser]]),
@@ -115,7 +123,9 @@ function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: 
     if (browser === 'firefox') {
         manifest.permissions!.push('<all_urls>')
         delete manifest.storage
+    }
 
+    if (shouldBuildWithInlineExtensions(browser)) {
         // Add the inline extensions to web accessible resources
         manifest.web_accessible_resources = manifest.web_accessible_resources || []
         manifest.web_accessible_resources.push('extensions/*')
@@ -153,7 +163,7 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
             signale.await(`Building the ${title} ${environment} bundle`)
 
             copyExtensionAssets(buildDirectory)
-            if (browser === 'firefox') {
+            if (shouldBuildWithInlineExtensions(browser)) {
                 copyInlineExtensions(buildDirectory)
             }
 

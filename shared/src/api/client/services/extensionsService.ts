@@ -238,12 +238,20 @@ class InlineExtensionsService implements IExtensionsService {
     }
 }
 
+/**
+ * Determine if inline extensions should be loaded.
+ *
+ * This requires the browser extension to be built with inline extensions enabled.
+ * At build time this is determined by `shouldBuildWithInlineExtensions`.
+ */
+const shouldUseInlineExtensions = (): boolean => isExtension && isFirefox()
+
 export function createExtensionsService(
     platformContext: PartialContext,
     modelService: Pick<ModelService, 'activeLanguages'>
 ): IExtensionsService {
     // On Firefox extension, use the inline extensions service.
-    if (isExtension && isFirefox()) {
+    if (shouldUseInlineExtensions()) {
         return new InlineExtensionsService()
     }
 
