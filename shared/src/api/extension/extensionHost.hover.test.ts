@@ -231,14 +231,11 @@ describe('getHover from ExtensionHost API', () => {
             const { exposedToMain, languages } = initNewExtensionAPI(noopMain, emptySettings, documents)
 
             const hovers = new Subject<Hover>()
-            // let calledTimes = 0
 
             languages.registerHoverProvider([{ pattern: '*.ts' }], {
-                provideHover: () => {
-                    // calledTimes++
-                    return hovers
-                },
+                provideHover: () => hovers,
             })
+
             const results: any[] = []
             exposedToMain
                 .getHover({ position: { line: 1, character: 2 }, textDocument: { uri: typescriptFileUri } })
@@ -272,7 +269,7 @@ describe('getHover from ExtensionHost API', () => {
 
             let counter = 0
             languages.registerHoverProvider([{ pattern: '*.ts' }], {
-                provideHover: () => textHover('a' + ++counter),
+                provideHover: () => textHover(`a${++counter}`),
             })
 
             const results: any[] = []
@@ -302,7 +299,7 @@ describe('getHover from ExtensionHost API', () => {
 
             let counter = 0
             languages.registerHoverProvider([{ pattern: '*.ts' }], {
-                provideHover: () => textHover('a' + ++counter),
+                provideHover: () => textHover(`a${++counter}`),
             })
 
             const subscription = languages.registerHoverProvider([{ pattern: '*.ts' }], {
