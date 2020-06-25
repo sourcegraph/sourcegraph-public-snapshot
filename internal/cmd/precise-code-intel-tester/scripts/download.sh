@@ -2,7 +2,7 @@
 
 set -eu
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-DATADIR=$(realpath './internal/cmd/precise-code-intel-test/testdata')
+DATADIR=$(realpath './internal/cmd/precise-code-intel-tester/testdata')
 INDEXDIR="${DATADIR}/indexes"
 
 # Ensure target dir exists

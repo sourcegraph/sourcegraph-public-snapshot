@@ -2,7 +2,7 @@
 
 set -eu
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-SCRIPTDIR=$(realpath './internal/cmd/precise-code-intel-test/scripts')
+SCRIPTDIR=$(realpath './internal/cmd/precise-code-intel-tester/scripts')
 
 declare -A REVS=(
   [etcd]='1044a8b07c56f3d32a1f3fe91c8ec849a8b17b5e dfb0a405096af39e694a501de5b0a46962b3050e fb77f9b1d56391318823c434f586ffe371750321'
