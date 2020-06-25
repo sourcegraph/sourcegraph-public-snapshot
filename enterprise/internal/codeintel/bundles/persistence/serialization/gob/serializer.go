@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/gob"
 	"io"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
@@ -16,48 +17,56 @@ func init() {
 	gob.Register(&types.Location{})
 }
 
-type gobSerializer struct{}
+type gobSerializer struct {
+	readers *sync.Pool
+	writers *sync.Pool
+}
 
 var _ serialization.Serializer = &gobSerializer{}
 
 func New() serialization.Serializer {
-	return &gobSerializer{}
+	return &gobSerializer{
+		readers: &sync.Pool{New: func() interface{} { return new(gzip.Reader) }},
+		writers: &sync.Pool{New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, gzip.BestCompression); return w }},
+	}
 }
 
 // MarshalDocumentData transforms document data into a string of bytes writable to disk.
-func (*gobSerializer) MarshalDocumentData(document types.DocumentData) ([]byte, error) {
+func (s *gobSerializer) MarshalDocumentData(document types.DocumentData) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(&document); err != nil {
 		return nil, err
 	}
 
-	return compress(&buf)
+	return s.compress(&buf)
 }
 
 // MarshalResultChunkData transforms result chunk data into a string of bytes writable to disk.
-func (*gobSerializer) MarshalResultChunkData(resultChunks types.ResultChunkData) ([]byte, error) {
+func (s *gobSerializer) MarshalResultChunkData(resultChunks types.ResultChunkData) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(&resultChunks); err != nil {
 		return nil, err
 	}
 
-	return compress(&buf)
+	return s.compress(&buf)
 }
 
 // MarshalLocations transforms a slice of locations into a string of bytes writable to disk.
-func (*gobSerializer) MarshalLocations(locations []types.Location) ([]byte, error) {
+func (s *gobSerializer) MarshalLocations(locations []types.Location) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(&locations); err != nil {
 		return nil, err
 	}
 
-	return compress(&buf)
+	return s.compress(&buf)
 }
 
 // UnmarshalDocumentData is the inverse of MarshalDocumentData.
-func (*gobSerializer) UnmarshalDocumentData(data []byte) (document types.DocumentData, err error) {
-	r, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
+func (s *gobSerializer) UnmarshalDocumentData(data []byte) (document types.DocumentData, err error) {
+	r := s.readers.Get().(*gzip.Reader)
+	defer s.readers.Put(r)
+
+	if err := r.Reset(bytes.NewReader(data)); err != nil {
 		return types.DocumentData{}, err
 	}
 
@@ -66,9 +75,11 @@ func (*gobSerializer) UnmarshalDocumentData(data []byte) (document types.Documen
 }
 
 // UnmarshalResultChunkData is the inverse of MarshalResultChunkData.
-func (*gobSerializer) UnmarshalResultChunkData(data []byte) (resultChunk types.ResultChunkData, err error) {
-	r, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
+func (s *gobSerializer) UnmarshalResultChunkData(data []byte) (resultChunk types.ResultChunkData, err error) {
+	r := s.readers.Get().(*gzip.Reader)
+	defer s.readers.Put(r)
+
+	if err := r.Reset(bytes.NewReader(data)); err != nil {
 		return types.ResultChunkData{}, err
 	}
 
@@ -77,9 +88,11 @@ func (*gobSerializer) UnmarshalResultChunkData(data []byte) (resultChunk types.R
 }
 
 // UnmarshalLocations is the inverse of MarshalLocations.
-func (*gobSerializer) UnmarshalLocations(data []byte) (locations []types.Location, err error) {
-	r, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
+func (s *gobSerializer) UnmarshalLocations(data []byte) (locations []types.Location, err error) {
+	r := s.readers.Get().(*gzip.Reader)
+	defer s.readers.Put(r)
+
+	if err := r.Reset(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
 
@@ -88,18 +101,19 @@ func (*gobSerializer) UnmarshalLocations(data []byte) (locations []types.Locatio
 }
 
 // compress gzips the bytes in the given reader.
-func compress(r io.Reader) ([]byte, error) {
+func (s *gobSerializer) compress(r io.Reader) ([]byte, error) {
+	w := s.writers.Get().(*gzip.Writer)
+	defer s.writers.Put(w)
+
 	var buf bytes.Buffer
-	gzipWriter, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
-	if err != nil {
+	w.Reset(&buf)
+
+	if _, err := io.Copy(w, r); err != nil {
+		w.Close()
 		return nil, err
 	}
 
-	if _, err := io.Copy(gzipWriter, r); err != nil {
-		return nil, err
-	}
-
-	if err := gzipWriter.Close(); err != nil {
+	if err := w.Close(); err != nil {
 		return nil, err
 	}
 
