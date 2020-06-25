@@ -872,6 +872,12 @@ type ExternalChangeset implements Node & Changeset {
     # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
     diff: RepositoryComparison
 
+    # The diffstat of this changeset, or null if the changeset is closed
+    # (without merging) or is already merged. This data is also available
+    # indirectly through the diff field above, but if only the diffStat is
+    # required, this field is cheaper to access.
+    diffStat: DiffStat
+
     # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
     # checks have been configured.
     checkState: ChangesetCheckState

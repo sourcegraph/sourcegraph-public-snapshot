@@ -3,10 +3,12 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -174,11 +176,84 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	}
 }
 
+func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
+	for name, tc := range map[string]struct {
+		listChangesets func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
+		wantError      bool
+		wantIDs        []int64
+	}{
+		"ListChangesets error": {
+			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+				return nil, 0, errors.New("hello!")
+			},
+			wantError: true,
+		},
+		"empty list": {
+			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+				return []*campaigns.Changeset{}, 0, nil
+			},
+		},
+		"non-empty list": {
+			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+				return []*campaigns.Changeset{
+					{ID: 1},
+					{ID: 2},
+				}, 0, nil
+			},
+			wantIDs: []int64{1, 2},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var wg sync.WaitGroup
+
+			syncer := &ChangesetSyncer{
+				SyncStore:      MockSyncStore{listChangesets: tc.listChangesets},
+				priorityNotify: make(chan []int64),
+			}
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				var (
+					ids  []int64
+					seen bool
+				)
+
+				for ids = range syncer.priorityNotify {
+					if seen {
+						t.Error("received more than one message on priorityNotify")
+					}
+					seen = true
+				}
+
+				if diff := cmp.Diff(ids, tc.wantIDs); diff != "" {
+					t.Errorf("invalid IDs received on the priorityNotify channel: have %+v; want %+v", ids, tc.wantIDs)
+				}
+			}()
+
+			err := syncer.prioritizeChangesetsWithoutDiffStats(context.Background())
+			if tc.wantError && err == nil {
+				t.Error("expected an error; got nil")
+			} else if !tc.wantError && err != nil {
+				t.Errorf("got unexpected error: %+v", err)
+			}
+
+			// We have to wait for the goroutine to exit lest we fail after this
+			// function is complete.
+			close(syncer.priorityNotify)
+			wg.Wait()
+		})
+	}
+}
+
 func TestSyncerRun(t *testing.T) {
 	t.Run("Sync due", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
 		store := MockSyncStore{
+			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+				return nil, 0, nil
+			},
 			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{
 					{
@@ -212,6 +287,7 @@ func TestSyncerRun(t *testing.T) {
 		defer cancel()
 		now := time.Now()
 		store := MockSyncStore{
+			listChangesets: mockListChangesets,
 			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{
 					{
@@ -243,6 +319,7 @@ func TestSyncerRun(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
+			listChangesets: mockListChangesets,
 			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{}, nil
 			},
@@ -369,6 +446,7 @@ func TestSyncRegistry(t *testing.T) {
 	}
 
 	syncStore := MockSyncStore{
+		listChangesets: mockListChangesets,
 		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
 			return []campaigns.ChangesetSyncData{
 				{
@@ -506,4 +584,8 @@ func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.Stor
 
 func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
 	return m.listRepos(ctx, args)
+}
+
+func mockListChangesets(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+	return nil, 0, nil
 }

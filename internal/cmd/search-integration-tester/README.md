@@ -18,6 +18,13 @@ Simply make sure these repos exist on your instance (In `Site Admin` -> `Manage 
   ],
 ```
 
+And set the following environment variables:
+
+```
+	endpoint  = env.Get("ENDPOINT", "http://127.0.0.1:3080", "Sourcegraph frontend endpoint")
+	token     = env.Get("ACCESS_TOKEN", "", "Access token") // The access token configured in the instance site admin.
+```
+
 ## Running
 
 Simply run

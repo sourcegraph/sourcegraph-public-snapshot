@@ -35,10 +35,11 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
-import { Services } from '../../../../shared/src/api/client/services'
+import { Remote } from 'comlink'
+import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
 
 export interface SearchResultsProps
-    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         SettingsCascadeProps,
         TelemetryProps,
@@ -58,7 +59,7 @@ export interface SearchResultsProps
         version: string,
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
-        services: Services
+        extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
@@ -175,7 +176,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),
-                                    this.props.extensionsController.services
+                                    this.props.extensionsController.extHostAPI
                                 )
                                 .pipe(
                                     // Log telemetry

@@ -129,6 +129,10 @@ Foreign-key constraints:
  external_check_state  | text                     | 
  created_by_campaign   | boolean                  | not null default false
  added_to_campaign     | boolean                  | not null default false
+ diff_stat_added       | integer                  | 
+ diff_stat_changed     | integer                  | 
+ diff_stat_deleted     | integer                  | 
+ sync_state            | jsonb                    | not null default '{}'::jsonb
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)

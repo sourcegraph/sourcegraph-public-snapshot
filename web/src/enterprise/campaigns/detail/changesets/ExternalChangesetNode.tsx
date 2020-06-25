@@ -120,7 +120,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 </div>
             </div>
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
-                {node.diff?.fileDiffs && <DiffStat {...node.diff.fileDiffs.diffStat} expandedCounts={true} />}
+                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 <ReviewStateIcon
