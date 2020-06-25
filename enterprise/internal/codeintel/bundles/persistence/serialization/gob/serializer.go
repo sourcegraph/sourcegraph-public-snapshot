@@ -2,12 +2,10 @@ package gob
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/gob"
 	"io"
 	"sync"
-
-	"compress/gzip"
-	// "github.com/klauspost/compress/gzip"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
@@ -30,7 +28,7 @@ var _ serialization.Serializer = &gobSerializer{}
 func New() serialization.Serializer {
 	return &gobSerializer{
 		readers: sync.Pool{New: func() interface{} { return new(gzip.Reader) }},
-		writers: sync.Pool{New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, gzip.BestCompression); return w }},
+		writers: sync.Pool{New: func() interface{} { return gzip.NewWriter(nil) }},
 	}
 }
 
