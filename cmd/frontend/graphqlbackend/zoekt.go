@@ -205,54 +205,22 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
 		inputRev := repoRev.RevSpecs()[0]
-		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
-		lines := make([]*lineMatch, 0, len(file.LineMatches))
-		symbols := []*searchSymbolResult{}
-		var matchCount int
-		var commit *GitCommitResolver
-		for _, l := range file.LineMatches {
-			if !l.FileName {
-				if len(l.LineFragments) > maxLineFragmentMatches {
-					l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
-				}
-				offsets := make([][2]int32, len(l.LineFragments))
-				for k, m := range l.LineFragments {
-					offset := utf8.RuneCount(l.Line[:m.LineOffset])
-					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-					offsets[k] = [2]int32{int32(offset), int32(length)}
-					if isSymbol && m.SymbolInfo != nil {
-						if commit == nil {
-							commit = &GitCommitResolver{
-								repoResolver: repoResolvers[repoRev.Repo.Name],
-								oid:          GitObjectID(file.Version),
-								inputRev:     &inputRev,
-							}
-						}
-						symbols = append(symbols, &searchSymbolResult{
-							symbol: protocol.Symbol{
-								Name:       m.SymbolInfo.Sym,
-								Kind:       m.SymbolInfo.Kind,
-								Parent:     m.SymbolInfo.Parent,
-								ParentKind: m.SymbolInfo.ParentKind,
-								Path:       file.FileName,
-								Line:       l.LineNumber,
-							},
-							lang:    strings.ToLower(file.Language),
-							baseURI: baseURI,
-							commit:  commit,
-						})
-					}
-				}
-				if !isSymbol {
-					matchCount += len(offsets)
-					lines = append(lines, &lineMatch{
-						JPreview:          string(l.Line),
-						JLineNumber:       int32(l.LineNumber - 1),
-						JOffsetAndLengths: offsets,
-					})
-				}
-			}
+
+		// symbols is set in symbols search, lines in text search.
+		var (
+			symbols    []*searchSymbolResult
+			lines      []*lineMatch
+			matchCount int
+		)
+		if !isSymbol {
+			lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
+		} else {
+			// Symbol search returns a resolver so we need to pass in some
+			// extra stuff. This is a sign that we can probably restructure
+			// resolvers to avoid this.
+			symbols = zoektFileMatchToSymbolResults(repoResolvers[repoRev.Repo.Name], inputRev, &file)
 		}
+
 		matches[i] = &FileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
@@ -266,6 +234,73 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	}
 
 	return matches, limitHit, reposLimitHit, nil
+}
+
+func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*lineMatch, int) {
+	var matchCount int
+	lines := make([]*lineMatch, 0, len(file.LineMatches))
+
+	for _, l := range file.LineMatches {
+		if l.FileName {
+			continue
+		}
+
+		if len(l.LineFragments) > maxLineFragmentMatches {
+			l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
+		}
+		offsets := make([][2]int32, len(l.LineFragments))
+		for k, m := range l.LineFragments {
+			offset := utf8.RuneCount(l.Line[:m.LineOffset])
+			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
+			offsets[k] = [2]int32{int32(offset), int32(length)}
+		}
+		matchCount += len(offsets)
+		lines = append(lines, &lineMatch{
+			JPreview:          string(l.Line),
+			JLineNumber:       int32(l.LineNumber - 1),
+			JOffsetAndLengths: offsets,
+		})
+	}
+
+	return lines, matchCount
+}
+
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
+	baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: repo.Name(), RawQuery: "?" + url.QueryEscape(inputRev)}}
+	commit := &GitCommitResolver{
+		repoResolver: repo,
+		oid:          GitObjectID(file.Version),
+		inputRev:     &inputRev,
+	}
+
+	symbols := make([]*searchSymbolResult, 0, len(file.LineMatches))
+	for _, l := range file.LineMatches {
+		if l.FileName {
+			continue
+		}
+
+		for _, m := range l.LineFragments {
+			if m.SymbolInfo == nil {
+				continue
+			}
+
+			symbols = append(symbols, &searchSymbolResult{
+				symbol: protocol.Symbol{
+					Name:       m.SymbolInfo.Sym,
+					Kind:       m.SymbolInfo.Kind,
+					Parent:     m.SymbolInfo.Parent,
+					ParentKind: m.SymbolInfo.ParentKind,
+					Path:       file.FileName,
+					Line:       l.LineNumber,
+				},
+				lang:    strings.ToLower(file.Language),
+				baseURI: baseURI,
+				commit:  commit,
+			})
+		}
+	}
+
+	return symbols
 }
 
 // createNewRepoSetWithRepoHasFileInputs mutates repoSet such that it accounts
