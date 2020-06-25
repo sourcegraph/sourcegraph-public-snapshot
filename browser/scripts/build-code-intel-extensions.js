@@ -1,5 +1,6 @@
 const shelljs = require('shelljs')
 const path = require('path')
+// eslint-disable-next-line id-length
 const os = require('os')
 const signale = require('signale')
 
