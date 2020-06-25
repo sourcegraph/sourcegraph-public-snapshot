@@ -1,10 +1,10 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { RepoFileLink } from './RepoFileLink'
+import { mount } from 'enzyme'
 
 describe('RepoFileLink', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = mount(
             <RepoFileLink
                 repoName="example.com/my/repo"
                 repoURL="https://example.com"
@@ -12,6 +12,6 @@ describe('RepoFileLink', () => {
                 fileURL="https://example.com/file"
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 })

@@ -1,21 +1,34 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`RepoFileLink renders 1`] = `
-Array [
-  <a
-    href="https://example.com"
+<RepoFileLink
+  filePath="my/file"
+  fileURL="https://example.com/file"
+  repoName="example.com/my/repo"
+  repoURL="https://example.com"
+>
+  <AnchorLink
+    to="https://example.com"
   >
-    my/repo
-  </a>,
-  " ›",
-  " ",
-  <a
-    href="/file?subtree=true"
+    <a
+      href="https://example.com"
+    >
+      my/repo
+    </a>
+  </AnchorLink>
+   ›
+   
+  <AnchorLink
+    to="/file?subtree=true"
   >
-    my/
-    <strong>
-      file
-    </strong>
-  </a>,
-]
+    <a
+      href="/file?subtree=true"
+    >
+      my/
+      <strong>
+        file
+      </strong>
+    </a>
+  </AnchorLink>
+</RepoFileLink>
 `;

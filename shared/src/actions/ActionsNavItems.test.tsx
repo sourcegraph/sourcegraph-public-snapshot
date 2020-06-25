@@ -1,11 +1,11 @@
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionsNavItems } from './ActionsNavItems'
 import { ContributableMenu } from '../api/protocol'
 import { of, NEVER } from 'rxjs'
 import { Services } from '../api/client/services'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 
@@ -17,7 +17,7 @@ describe('ActionItem', () => {
     )
 
     test('Renders contributed action items', () => {
-        const component = renderer.create(
+        const component = mount(
             <ActionsNavItems
                 menu={ContributableMenu.EditorTitle}
                 location={location}
@@ -51,6 +51,6 @@ describe('ActionItem', () => {
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 })

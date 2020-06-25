@@ -1,16 +1,78 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ActionItem Renders contributed action items 1`] = `
-Array [
-  " ",
+<ActionsNavItems
+  extensionsController={
+    Object {
+      "executeCommand": [Function],
+      "services": Object {
+        "contribution": Object {
+          "getContributions": [Function],
+        },
+      },
+    }
+  }
+  location="[Location path=https://github.com/sourcegraph/sourcegraph/pull/5287/files#diff-eb9883bb910397a210512a13fd7384ac]"
+  menu="editor/title"
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  telemetryService={
+    Object {
+      "log": [Function],
+    }
+  }
+>
+   
   <li>
-    <span
-      className="action-item actions-nav-items__action-item action-item--variant-action-item"
-      data-tooltip="This is Action A"
+    <ActionItem
+      action={
+        Object {
+          "actionItem": Object {
+            "description": "This is Action A",
+            "label": "Action A",
+          },
+          "id": "a",
+        }
+      }
+      className="actions-nav-items__action-item"
+      extensionsController={
+        Object {
+          "executeCommand": [Function],
+          "services": Object {
+            "contribution": Object {
+              "getContributions": [Function],
+            },
+          },
+        }
+      }
+      key="a"
+      location="[Location path=https://github.com/sourcegraph/sourcegraph/pull/5287/files#diff-eb9883bb910397a210512a13fd7384ac]"
+      menu="editor/title"
+      platformContext={
+        Object {
+          "forceUpdateTooltip": [Function],
+          "settings": "[Observable]",
+        }
+      }
+      telemetryService={
+        Object {
+          "log": [Function],
+        }
+      }
+      variant="actionItem"
     >
-       
-      Action A
-    </span>
-  </li>,
-]
+      <span
+        className="action-item actions-nav-items__action-item action-item--variant-action-item"
+        data-tooltip="This is Action A"
+      >
+         
+        Action A
+      </span>
+    </ActionItem>
+  </li>
+</ActionsNavItems>
 `;

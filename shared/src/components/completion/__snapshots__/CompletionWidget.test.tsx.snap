@@ -1,45 +1,134 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CompletionWidgetDropdown simple 1`] = `
-Object {
-  "children": <div
-    className="completion-widget__container widget-container-class-name"
-    style={
-      Object {
-        "left": 1,
-        "top": 1,
-      }
-    }
-  >
-    <CompletionWidgetDropdown
-      completionListOrError={
+<CompletionWidget
+  completionListOrError={
+    Object {
+      "items": Array [
         Object {
-          "items": Array [
-            Object {
-              "label": "a",
-            },
-            Object {
-              "label": "b",
-            },
-          ],
+          "label": "a",
+        },
+        Object {
+          "label": "b",
+        },
+      ],
+    }
+  }
+  listClassName="list-class-name"
+  listItemClassName="list-item-class-name"
+  loadingClassName="loading-class-name"
+  noResultsClassName="no-results-class-name"
+  onSelectItem={[Function]}
+  selectedListItemClassName="selected-list-item-class-name"
+  textArea={<textarea />}
+  widgetClassName="widget-class-name"
+  widgetContainerClassName="widget-container-class-name"
+>
+  <div
+    className="completion-widget widget-class-name"
+  >
+    <div
+      className="completion-widget__container widget-container-class-name"
+      style={
+        Object {
+          "left": 1,
+          "top": 1,
         }
       }
-      highlightedIndex={0}
-      listClassName="list-class-name"
-      listItemClassName="list-item-class-name"
-      loadingClassName="loading-class-name"
-      noResultsClassName="no-results-class-name"
-      onClickOutside={[Function]}
-      onDownshiftStateChange={[Function]}
-      onItemSelected={[Function]}
-      onSelectItem={[Function]}
-      selectedItem={null}
-      selectedListItemClassName="selected-list-item-class-name"
-      textArea={<textarea />}
-      widgetClassName="widget-class-name"
-      widgetContainerClassName="widget-container-class-name"
-    />
-  </div>,
-  "className": "completion-widget widget-class-name",
-}
+    >
+      <CompletionWidgetDropdown
+        completionListOrError={
+          Object {
+            "items": Array [
+              Object {
+                "label": "a",
+              },
+              Object {
+                "label": "b",
+              },
+            ],
+          }
+        }
+        highlightedIndex={0}
+        listClassName="list-class-name"
+        listItemClassName="list-item-class-name"
+        loadingClassName="loading-class-name"
+        noResultsClassName="no-results-class-name"
+        onClickOutside={[Function]}
+        onDownshiftStateChange={[Function]}
+        onItemSelected={[Function]}
+        onSelectItem={[Function]}
+        selectedItem={null}
+        selectedListItemClassName="selected-list-item-class-name"
+        textArea={<textarea />}
+        widgetClassName="widget-class-name"
+        widgetContainerClassName="widget-container-class-name"
+      >
+        <Downshift
+          defaultHighlightedIndex={null}
+          defaultIsOpen={false}
+          environment={[Window]}
+          getA11yStatusMessage={[Function]}
+          highlightedIndex={0}
+          initialHighlightedIndex={0}
+          isOpen={true}
+          itemToString={[Function]}
+          onChange={[Function]}
+          onInputValueChange={[Function]}
+          onOuterClick={[Function]}
+          onSelect={[Function]}
+          onStateChange={[Function]}
+          onUserAction={[Function]}
+          scrollIntoView={[Function]}
+          selectedItem={null}
+          selectedItemChanged={[Function]}
+          stateReducer={[Function]}
+          suppressRefError={false}
+        >
+          <ul
+            aria-expanded={true}
+            aria-haspopup="listbox"
+            aria-labelledby="downshift-0-label"
+            aria-owns="downshift-0-menu"
+            className="completion-widget-dropdown list-class-name"
+            role="combobox"
+          >
+            <li
+              aria-selected={true}
+              className="selected-list-item-class-name list-item-class-name"
+              id="downshift-0-item-0"
+              key="0"
+              onClick={[Function]}
+              onMouseDown={[Function]}
+              onMouseMove={[Function]}
+              role="option"
+            >
+              <div
+                className="completion-widget-dropdown__item-text"
+              >
+                a
+              </div>
+            </li>
+            <li
+              aria-selected={false}
+              className=" list-item-class-name"
+              id="downshift-0-item-1"
+              key="1"
+              onClick={[Function]}
+              onMouseDown={[Function]}
+              onMouseMove={[Function]}
+              role="option"
+            >
+              <div
+                className="completion-widget-dropdown__item-text"
+              >
+                b
+              </div>
+            </li>
+          </ul>
+        </Downshift>
+      </CompletionWidgetDropdown>
+    </div>
+  </div>
+</CompletionWidget>
 `;

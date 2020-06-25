@@ -7,7 +7,6 @@ import { Location } from '@sourcegraph/extension-api-types'
 import H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { concat, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
 import { createContextService } from '../../api/client/context/contextService'
@@ -17,6 +16,7 @@ import { Controller } from '../../extensions/controller'
 import { SettingsCascadeOrError } from '../../settings/settings'
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/SourceRepositoryIcon', () => 'SourceRepositoryIcon')
 
@@ -59,26 +59,21 @@ describe('<HierarchicalLocationsView />', () => {
 
     test('shows a spinner before any locations emissions', () => {
         const { props } = getProps()
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
     })
 
     test('shows a spinner if locations emits empty and is not complete', () => {
         const { props } = getProps()
         expect(
-            renderer
-                .create(
-                    <HierarchicalLocationsView
-                        {...props}
-                        locations={concat(of({ isLoading: true, result: [] }), NEVER)}
-                    />
-                )
-                .toJSON()
+            mount(
+                <HierarchicalLocationsView {...props} locations={concat(of({ isLoading: true, result: [] }), NEVER)} />
+            )
         ).toMatchSnapshot()
     })
 
     test("registers a 'Group by file' contribution", () => {
         const { props, services } = getProps()
-        renderer.create(<HierarchicalLocationsView {...props} />)
+        mount(<HierarchicalLocationsView {...props} />)
         expect(services.contribution.registerContributions.called).toBe(true)
         const expected: ContributionsEntry = {
             contributions: {
@@ -122,7 +117,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations,
         }
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
     })
 
     test('displays partial locations before complete', () => {
@@ -130,7 +125,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations: concat(of({ isLoading: false, result: [SAMPLE_LOCATION] }), NEVER),
         }
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
     })
 
     test('displays multiple locations grouped by file', () => {
@@ -211,6 +206,6 @@ describe('<HierarchicalLocationsView />', () => {
             },
             locations: of({ isLoading: false, result: locations }),
         }
-        expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
     })
 })

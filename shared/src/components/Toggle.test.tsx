@@ -1,30 +1,26 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { Toggle } from './Toggle'
+import { mount } from 'enzyme'
 
 describe('Toggle', () => {
     test('value is false', () => {
-        const component = renderer.create(<Toggle value={false} />)
-        const tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        const component = mount(<Toggle value={false} />)
+        expect(component).toMatchSnapshot()
     })
 
     test('value is true', () => {
-        const component = renderer.create(<Toggle value={true} />)
-        const tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        const component = mount(<Toggle value={true} />)
+        expect(component).toMatchSnapshot()
     })
 
     test('disabled', () => {
-        const component = renderer.create(<Toggle disabled={true} />)
-        let tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        const component = mount(<Toggle disabled={true} />)
+        expect(component).toMatchSnapshot()
 
         // Clicking while disabled is a noop.
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        component.simulate('click')
+        expect(component).toMatchSnapshot()
     })
 
-    test('className', () => expect(renderer.create(<Toggle className="c" />).toJSON()).toMatchSnapshot())
+    test('className', () => expect(mount(<Toggle className="c" />)).toMatchSnapshot())
 })
