@@ -198,7 +198,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(newLogger("serve: "), *globalAddr, repoDir, globalRecurse)
+			return serveRepos(newLogger("serve: "), *globalAddr, repoDir, *globalRecurse)
 		},
 	}
 
@@ -246,7 +246,7 @@ See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/exampl
 
 			go func() {
 				logger := newLogger("serve: ")
-				if err := serveRepos(logger, *globalAddr, s.Destination, globalRecurse); err != nil {
+				if err := serveRepos(logger, *globalAddr, s.Destination, *globalRecurse); err != nil {
 					log.Fatal(err)
 				}
 			}()
