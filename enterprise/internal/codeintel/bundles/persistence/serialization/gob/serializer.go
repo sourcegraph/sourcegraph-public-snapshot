@@ -6,6 +6,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/klauspost/compress/gzip"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
@@ -27,7 +28,7 @@ var _ serialization.Serializer = &gobSerializer{}
 func New() serialization.Serializer {
 	return &gobSerializer{
 		readers: &sync.Pool{New: func() interface{} { return new(gzip.Reader) }},
-		writers: &sync.Pool{New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, gzip.BestCompression); return w }},
+		writers: &sync.Pool{New: func() interface{} { return gzip.NewWriter(nil) }},
 	}
 }
 
@@ -63,44 +64,27 @@ func (s *gobSerializer) MarshalLocations(locations []types.Location) ([]byte, er
 
 // UnmarshalDocumentData is the inverse of MarshalDocumentData.
 func (s *gobSerializer) UnmarshalDocumentData(data []byte) (document types.DocumentData, err error) {
-	r := s.readers.Get().(*gzip.Reader)
-	defer s.readers.Put(r)
-
-	if err := r.Reset(bytes.NewReader(data)); err != nil {
-		return types.DocumentData{}, err
-	}
-
-	err = gob.NewDecoder(r).Decode(&document)
+	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&document) })
 	return document, err
 }
 
 // UnmarshalResultChunkData is the inverse of MarshalResultChunkData.
 func (s *gobSerializer) UnmarshalResultChunkData(data []byte) (resultChunk types.ResultChunkData, err error) {
-	r := s.readers.Get().(*gzip.Reader)
-	defer s.readers.Put(r)
-
-	if err := r.Reset(bytes.NewReader(data)); err != nil {
-		return types.ResultChunkData{}, err
-	}
-
-	err = gob.NewDecoder(r).Decode(&resultChunk)
+	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&resultChunk) })
 	return resultChunk, err
 }
 
 // UnmarshalLocations is the inverse of MarshalLocations.
 func (s *gobSerializer) UnmarshalLocations(data []byte) (locations []types.Location, err error) {
-	r := s.readers.Get().(*gzip.Reader)
-	defer s.readers.Put(r)
-
-	if err := r.Reset(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-
-	err = gob.NewDecoder(r).Decode(&locations)
+	err = s.withDecoder(data, func(decoder *gob.Decoder) error { return decoder.Decode(&locations) })
 	return locations, err
 }
 
-// compress gzips the bytes in the given reader.
+//
+//
+//
+
+// TODO
 func (s *gobSerializer) compress(r io.Reader) ([]byte, error) {
 	w := s.writers.Get().(*gzip.Writer)
 	defer s.writers.Put(w)
@@ -118,4 +102,21 @@ func (s *gobSerializer) compress(r io.Reader) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// TODO
+func (s *gobSerializer) withDecoder(data []byte, f func(decoder *gob.Decoder) error) (err error) {
+	r := s.readers.Get().(*gzip.Reader)
+	defer s.readers.Put(r)
+
+	if err := r.Reset(bytes.NewReader(data)); err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := r.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
+
+	return f(gob.NewDecoder(r))
 }
