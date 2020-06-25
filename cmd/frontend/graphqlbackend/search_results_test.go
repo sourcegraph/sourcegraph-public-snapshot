@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -1127,82 +1126,4 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
 		}
 	})
-}
-
-func TestEvaluateAnd(t *testing.T) {
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
-	db.Mocks.Repos.Count = func(ctx context.Context, opt db.ReposListOptions) (int, error) {
-		return 2, nil
-	}
-	db.Mocks.Repos.List = func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
-		return []*types.Repo{
-			{ID: 1, Name: "github.com/sourcegraph/fooer"},
-			{ID: 2, Name: "github.com/sourcegraph/barer"},
-		}, nil
-	}
-
-	q, _ := query.ProcessAndOr("foo AND bar AND baz", query.SearchTypeRegex)
-	scopeParameters, pattern, err := query.PartitionSearchPattern(q.(*query.AndOrQuery).Query)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	zoektFileMatches := []zoekt.FileMatch{
-		{
-			FileName:   "foo.md",
-			Repository: "github.com/sourcegraph/fooer",
-			LineMatches: []zoekt.LineMatch{
-				{
-					LineStart: 0,
-					LineEnd:   10,
-				},
-			},
-		},
-		{
-			FileName:   "bar.md",
-			Repository: "github.com/sourcegraph/barer",
-			LineMatches: []zoekt.LineMatch{
-				{
-					LineStart: 20,
-					LineEnd:   30,
-				},
-			},
-		},
-	}
-
-	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			searchFn: func(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-				t.Log(q)
-				t.Log(opts)
-				return &zoekt.SearchResult{Files: zoektFileMatches}, nil
-			},
-		},
-		DisableCache: true,
-	}
-
-	sr := searchResolver{
-		query: q,
-		zoekt: z,
-	}
-
-	res, err := sr.evaluateAnd(context.TODO(), scopeParameters, pattern.(query.Operator).Operands)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := SearchResultsResolver{
-		SearchResults: []SearchResultResolver{
-			&FileMatchResolver{
-				JPath: "foo.md",
-			},
-			&FileMatchResolver{
-				JPath: "bar.md",
-			},
-		},
-	}
-
-	assertEqual(t, res, &expected)
 }

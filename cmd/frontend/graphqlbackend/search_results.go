@@ -768,23 +768,33 @@ func setResultSetInScopeParameters(scopeParameters []query.Node, subset []Search
 		return scopeParameters
 	}
 
-	var fileSet strings.Builder
-	i := 0
+	// store unique files
+	files := make(map[string]struct{})
 	for _, r := range subset {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			if fileSet.Len() != 0 {
-				fileSet.WriteByte('|')
+			if _, ok := files[fileMatch.JPath]; !ok {
+				files[fileMatch.JPath] = struct{}{}
 			}
-
-			fileSet.WriteString(fmt.Sprintf("^%s$", regexp.QuoteMeta(fileMatch.JPath)))
-			i++
 		}
 	}
 
-	return append(scopeParameters, query.Parameter{
-		Field: "file",
-		Value: fileSet.String(),
-	})
+	// build the file regex
+	var fileSet strings.Builder
+	for f := range files {
+		if fileSet.Len() != 0 {
+			fileSet.WriteByte('|')
+		}
+
+		fileSet.WriteString(fmt.Sprintf("^%s$", regexp.QuoteMeta(f)))
+	}
+	if fileSet.Len() != 0 {
+		scopeParameters = append(scopeParameters, query.Parameter{
+			Field: "file",
+			Value: fileSet.String(),
+		})
+	}
+
+	return scopeParameters
 }
 
 // evaluateAnd collects results for each expression and uses the previous result
@@ -852,7 +862,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters, opera
 		}
 
 		// if the result is not empty we need to limit the query to a subset of files
-		curScopeParameters = setResultSetInScopeParameters(curScopeParameters, result.SearchResults)
+		curScopeParameters = setResultSetInScopeParameters(scopeParameters, result.SearchResults)
 
 		exhausted = !result.limitHit
 		for _, term := range operands[1:] {
@@ -863,7 +873,6 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters, opera
 			if newResult != nil {
 				exhausted = exhausted && !newResult.limitHit
 				if len(newResult.SearchResults) == 0 {
-					result = nil
 					break
 				}
 				// because evaluation looks into files returned by previous
@@ -874,7 +883,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters, opera
 				result = intersect(result, newResult)
 
 				// update the list of files to search into
-				curScopeParameters = setResultSetInScopeParameters(scopeParameters, result.SearchResults)
+				curScopeParameters = setResultSetInScopeParameters(curScopeParameters, result.SearchResults)
 			}
 		}
 
