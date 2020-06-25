@@ -29,6 +29,10 @@ import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
 import { submitSearch } from '../search/helpers'
 import * as GQL from '../../../shared/src/graphql/schema'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import BitbucketIcon from 'mdi-react/BitbucketIcon'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -57,6 +61,21 @@ interface Props
     showCampaigns: boolean
 }
 
+enum CodeHosts {
+    GITHUB = 'github',
+    GITLAB = 'gitlab',
+    BITBUCKET = 'bitbucket',
+}
+
+interface RepositoryType {
+    name: string
+    codehost: CodeHosts
+}
+
+interface ExampleQuery {
+    title: string
+    exampleQuery: string
+}
 export const Python2To3: React.FunctionComponent<Props> = (props: Props) => {
     useEffect(() => eventLogger.logViewEvent('Python2To3RepoGroup'))
 
@@ -78,10 +97,43 @@ export const Python2To3: React.FunctionComponent<Props> = (props: Props) => {
         [props, userQueryState.query]
     )
 
+    const repositories: RepositoryType[] = [
+        { name: 'github.com/sourcegraph/sourcegraph', codehost: CodeHosts.GITHUB },
+        { name: 'github.com/test/test', codehost: CodeHosts.GITHUB },
+        { name: 'github.com/test/test', codehost: CodeHosts.GITHUB },
+        { name: 'github.com/sourcegraph/src-cli', codehost: CodeHosts.GITHUB },
+    ]
+
+    const examples: ExampleQuery[] = [
+        {
+            title: 'Python 2 imports',
+            exampleQuery: 'repogroup:refactor-python2-to-3 "from :[package.] import :[function.]”',
+        },
+        { title: 'Python 3 imports', exampleQuery: 'repogroup:refactor-python2-to-3 from B.w+ import w+' },
+        { title: 'Python 2 prints', exampleQuery: 'repogroup:refactor-python2-to-3 \'print ":[string]"\'' },
+        { title: 'Python 3 prints', exampleQuery: 'repogroup:refactor-python2-to-3 \'print ":[string]"\'' },
+        {
+            title: 'Python 2 integer conversion',
+            exampleQuery: 'repogroup:refactor-python2-to-3 float(:[arg]) / float(:[arg])',
+        },
+        {
+            title: 'Python 3 integer conversion',
+            exampleQuery: 'repogroup:refactor-python2-to-3 lang:python \\sint\\(-*\\d+\\)',
+        },
+    ]
+
+    const repogroupName = 'repogroup:refactor-python-2-to-3'
+
     return (
         <div className="repogroup-page">
             <PageTitle title="Python 2 to 3 migration" />
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
+            <div className="repogroup-page__subheading">
+                <span className="text-monospace">
+                    <span className="repogroup-page__repogroup-text">repogroup:</span>
+                    {repogroupName}
+                </span>
+            </div>
             <div className="repogroup-page__container">
                 <div className="d-flex flex-row flex-shrink-past-contents">
                     <>
@@ -135,9 +187,80 @@ export const Python2To3: React.FunctionComponent<Props> = (props: Props) => {
                 </div>
             </div>
             <div className="repogroup-page__content">
-                <div>test</div>
-                <div>
-                    <div className="repogroup-page__repo-card card">Repositories</div>
+                <div className="repogroup-page__column">
+                    <p className="mb-4">
+                        This repository group contains python 2 and 3 repositories and corresponding search examples.
+                        The search examples will help you find code that requires refactoring and review example Python
+                        3 syntax.
+                    </p>
+                    {examples.map(example => (
+                        <>
+                            <h3 className="mb-3">{example.title}</h3>
+                            <div className="d-flex mb-4">
+                                <div className="repogroup-page__example-bar form-control">{example.exampleQuery}</div>
+                                <div className="search-button d-flex">
+                                    <button
+                                        className="btn btn-primary search-button__btn e2e-search-button btn-secondary"
+                                        type="submit"
+                                        aria-label="Search"
+                                    >
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    ))}
+                </div>
+                <div className="repogroup-page__column">
+                    <div className="repogroup-page__repo-card card">
+                        <h2 className="font-weight-normal">
+                            <SourceRepositoryIcon className="icon-inline" />
+                            Repositories
+                        </h2>
+                        <p className="mb-1">
+                            Using the syntax{' '}
+                            <span className="text-monospace">
+                                <span className="repogroup-page__repogroup-text">repogroup:</span>python-2-to-migration
+                            </span>{' '}
+                            in a query will search these repositories:
+                        </p>
+                        <div className="repogroup-page__repo-list row">
+                            <div className="col-lg-6">
+                                {repositories.slice(0, Math.ceil(repositories.length / 2)).map(repo => (
+                                    <li className="repogroup-page__repo-item list-unstyled mb-3" key={repo.name}>
+                                        {repo.codehost === CodeHosts.GITHUB && (
+                                            <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
+                                        )}
+                                        {repo.codehost === CodeHosts.GITLAB && (
+                                            <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
+                                        )}
+                                        {repo.codehost === CodeHosts.BITBUCKET && (
+                                            <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
+                                        )}
+                                        {repo.name}
+                                    </li>
+                                ))}
+                            </div>
+                            <div className="col-lg-6">
+                                {repositories
+                                    .slice(Math.ceil(repositories.length / 2), repositories.length)
+                                    .map(repo => (
+                                        <li className="repogroup-page__repo-item list-unstyled mb-3" key={repo.name}>
+                                            {repo.codehost === CodeHosts.GITHUB && (
+                                                <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
+                                            )}
+                                            {repo.codehost === CodeHosts.GITLAB && (
+                                                <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
+                                            )}
+                                            {repo.codehost === CodeHosts.BITBUCKET && (
+                                                <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
+                                            )}
+                                            {repo.name}
+                                        </li>
+                                    ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

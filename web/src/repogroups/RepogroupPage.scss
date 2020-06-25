@@ -19,9 +19,38 @@
     &__content {
         display: grid;
         grid-template-columns: 7fr 5fr;
+        width: 100%;
+        padding: 2rem;
     }
 
     &__repo-card {
-        padding: 3rem;
+        padding: 1rem;
+    }
+
+    &__column {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    &__repogroup-text {
+        color: #1c7cd6;
+    }
+
+    &__subheading {
+        margin-top: 1.5rem;
+    }
+
+    &__repo-list-icon {
+        margin-right: 0.5rem;
+    }
+
+    &__example-bar {
+        width: fit-content;
+    }
+
+    &__repo-item {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
