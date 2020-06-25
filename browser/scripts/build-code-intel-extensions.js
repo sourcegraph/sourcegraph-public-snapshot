@@ -1,10 +1,13 @@
 const shelljs = require('shelljs')
 const path = require('path')
 const os = require('os')
+const signale = require('signale')
 
 const extensionName = 'template'
 
 const toDirectory = path.join(process.cwd(), 'build')
+
+signale.await('Building extensions for Firefox addon')
 
 const temporaryCloneDirectory = path.join(os.tmpdir(), 'code-intel-extensions')
 shelljs.mkdir('-p', temporaryCloneDirectory)
@@ -27,3 +30,5 @@ shelljs.cp(
   `${temporaryCloneDirectory}/code-intel-extensions/extensions/${extensionName}/package.json`,
   `${toDirectory}/extensions/${extensionName}`
 )
+
+signale.success('Done building extensions')
