@@ -89,7 +89,7 @@ require (
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.21.0+incompatible
-	github.com/klauspost/compress v1.10.8
+	github.com/klauspost/compress v1.10.8 // indirect
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.7
