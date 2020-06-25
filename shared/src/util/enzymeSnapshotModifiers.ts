@@ -2,32 +2,43 @@
 // These are used in share/dev/enzymeSerializer.js
 
 import { Json } from 'enzyme-to-json'
-import { Subject, Observable } from 'rxjs'
 import * as H from 'history'
 import { isPlainObject } from 'lodash'
+import { Observable, Subject } from 'rxjs'
 
-function maskProps(props: Record<string, any>, levelsDeep = 3): void {
-    if (props.history) {
-        props.history = '[History]'
+function maskProps(props: Json['props'], key = '', levelsDeep = 5): unknown {
+    if (!props || levelsDeep <= 0) {
+        return props
     }
-    if (props.location) {
-        props.location = `[Location path=${H.createPath(props.location as H.Location)}]`
+    if (key === 'history') {
+        return '[History]'
+    }
+    if (key === 'location') {
+        return `[Location path=${H.createPath(props as H.Location)}]`
+    }
+    if (props instanceof Subject) {
+        return '[Subject]'
+    } else if (props instanceof Observable) {
+        return '[Observable]'
     }
 
-    for (const property of Object.keys(props)) {
-        if (props[property] instanceof Subject) {
-            props[property] = '[Subject]'
-        } else if (props[property] instanceof Observable) {
-            props[property] = '[Observable]'
-        } else if (levelsDeep > 0 && isPlainObject(props[property])) {
-            maskProps(props[property], levelsDeep - 1)
-        }
+    if (Array.isArray(props)) {
+        return props.map(item => maskProps(item, '', levelsDeep - 1))
     }
+    if (isPlainObject(props)) {
+        return Object.fromEntries(
+            Object.entries(props).map(([key, value]) => [key, maskProps(value, key, levelsDeep - 1)])
+        )
+    }
+    return props
 }
 
 export function replaceVerboseObjects(json: Json): Json {
     if (json.props) {
-        maskProps(json.props)
+        return {
+            ...json,
+            props: maskProps(json.props) as Json['props'],
+        }
     }
 
     return json
