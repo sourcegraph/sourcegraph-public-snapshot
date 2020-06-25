@@ -1,11 +1,10 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { fuzzyMatches, HighlightedMatches, Span } from './HighlightedMatches'
+import { mount } from 'enzyme'
 
 describe('Markdown', () => {
     test('render', () => {
-        const component = renderer.create(<HighlightedMatches text="abcabcabc" pattern="aab" />)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(mount(<HighlightedMatches text="abcabcabc" pattern="aab" />)).toMatchSnapshot()
     })
 })
 

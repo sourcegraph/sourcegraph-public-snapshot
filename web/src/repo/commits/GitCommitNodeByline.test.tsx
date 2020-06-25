@@ -1,6 +1,6 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
+import { mount } from 'enzyme'
 
 const FIXTURE_SIGNATURE_1 = {
     date: '1990-01-01',
@@ -30,58 +30,46 @@ const FIXTURE_SIGNATURE_2 = {
 
 describe('GitCommitNodeByline', () => {
     test('author', () =>
-        expect(
-            renderer.create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).toJSON()
-        ).toMatchSnapshot())
+        expect(mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />)).toMatchSnapshot())
 
     test('different author and committer', () =>
         expect(
-            renderer
-                .create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
-                .toJSON()
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
         ).toMatchSnapshot())
 
     test('author (compact)', () =>
-        expect(
-            renderer.create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).toJSON()
-        ).toMatchSnapshot())
+        expect(mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />)).toMatchSnapshot())
 
     test('different author and committer (compact)', () =>
         expect(
-            renderer
-                .create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
-                .toJSON()
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
         ).toMatchSnapshot())
 
     test('same author and committer', () =>
         expect(
-            renderer
-                .create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_1} />)
-                .toJSON()
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_1} />)
         ).toMatchSnapshot())
 
     test('omit GitHub committer', () =>
         expect(
-            renderer
-                .create(
-                    <GitCommitNodeByline
-                        author={FIXTURE_SIGNATURE_1}
-                        committer={{
-                            date: '1992-01-01',
-                            person: {
-                                name: 'GitHub',
-                                email: 'noreply@github.com',
-                                displayName: 'GitHub',
-                                avatarURL: 'http://example.com/github.png',
-                                user: {
-                                    username: 'gitUserName',
-                                    displayName: 'Alice',
-                                    url: 'https://example.com',
-                                },
+            mount(
+                <GitCommitNodeByline
+                    author={FIXTURE_SIGNATURE_1}
+                    committer={{
+                        date: '1992-01-01',
+                        person: {
+                            name: 'GitHub',
+                            email: 'noreply@github.com',
+                            displayName: 'GitHub',
+                            avatarURL: 'http://example.com/github.png',
+                            user: {
+                                username: 'gitUserName',
+                                displayName: 'Alice',
+                                url: 'https://example.com',
                             },
-                        }}
-                    />
-                )
-                .toJSON()
+                        },
+                    }}
+                />
+            )
         ).toMatchSnapshot())
 })

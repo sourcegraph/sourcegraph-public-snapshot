@@ -1,11 +1,9 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { Timestamp } from './Timestamp'
+import { mount } from 'enzyme'
 
 describe('Timestamp', () => {
-    test('mocked current time', () =>
-        expect(renderer.create(<Timestamp date="2006-01-02" />).toJSON()).toMatchSnapshot())
+    test('mocked current time', () => expect(mount(<Timestamp date="2006-01-02" />)).toMatchSnapshot())
 
-    test('noAbout', () =>
-        expect(renderer.create(<Timestamp date="2006-01-02" noAbout={true} />).toJSON()).toMatchSnapshot())
+    test('noAbout', () => expect(mount(<Timestamp date="2006-01-02" noAbout={true} />)).toMatchSnapshot())
 })

@@ -1,6 +1,6 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { ErrorBoundary } from './ErrorBoundary'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/ErrorIcon', () => 'ErrorIcon')
 jest.mock('mdi-react/ReloadIcon', () => 'ReloadIcon')
@@ -17,34 +17,28 @@ const ThrowChunkError: React.FunctionComponent = () => {
 describe('ErrorBoundary', () => {
     test('passes through if non-error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <ThrowError />
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            mount(
+                <ErrorBoundary location={null}>
+                    <ThrowError />
+                </ErrorBoundary>
+            )
         ).toMatchSnapshot())
 
     test('renders error page if error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <span>hello</span>
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            mount(
+                <ErrorBoundary location={null}>
+                    <span>hello</span>
+                </ErrorBoundary>
+            )
         ).toMatchSnapshot())
 
     test('renders reload page if chunk error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <ThrowChunkError />
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            mount(
+                <ErrorBoundary location={null}>
+                    <ThrowChunkError />
+                </ErrorBoundary>
+            )
         ).toMatchSnapshot())
 })

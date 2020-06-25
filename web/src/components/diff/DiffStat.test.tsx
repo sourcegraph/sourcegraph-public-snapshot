@@ -1,13 +1,10 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { DiffStat } from './DiffStat'
+import { mount } from 'enzyme'
 
 describe('DiffStat', () => {
-    test('standard', () =>
-        expect(renderer.create(<DiffStat added={1} changed={2} deleted={3} />).toJSON()).toMatchSnapshot())
+    test('standard', () => expect(mount(<DiffStat added={1} changed={2} deleted={3} />)).toMatchSnapshot())
 
     test('expandedCounts', () =>
-        expect(
-            renderer.create(<DiffStat added={1} changed={2} deleted={3} expandedCounts={true} />).toJSON()
-        ).toMatchSnapshot())
+        expect(mount(<DiffStat added={1} changed={2} deleted={3} expandedCounts={true} />)).toMatchSnapshot())
 })

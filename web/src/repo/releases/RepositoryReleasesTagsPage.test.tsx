@@ -1,23 +1,22 @@
 import React from 'react'
-import { createRenderer } from 'react-test-renderer/shallow'
 import * as H from 'history'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
-import { IRepository, IGitRef } from '../../../../shared/src/graphql/schema'
 import { of } from 'rxjs'
+import { shallow } from 'enzyme'
 
 describe('RepositoryReleasesTagsPage', () => {
     const history = H.createMemoryHistory()
     test('renders', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <RepositoryReleasesTagsPage
                     history={history}
                     location={history.location}
-                    repo={{ id: '123' } as IRepository}
+                    repo={{ id: '123' }}
                     queryGitReferences={() =>
                         of({
                             totalCount: 0,
-                            nodes: [] as IGitRef[],
+                            nodes: [],
                             __typename: 'GitRefConnection',
                             pageInfo: { __typename: 'PageInfo', endCursor: '', hasNextPage: false },
                         })

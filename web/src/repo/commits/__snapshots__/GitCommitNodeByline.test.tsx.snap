@@ -1,197 +1,659 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`GitCommitNodeByline author (compact) 1`] = `
-<small
-  className="git-commit-node-byline git-commit-node-byline--no-committer "
+<GitCommitNodeByline
+  author={
+    Object {
+      "date": "1990-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/alice.png",
+        "displayName": "Alice Zhao",
+        "email": "alice@example.com",
+        "name": "Alice Zhao",
+        "user": null,
+      },
+    }
+  }
+  committer={null}
 >
-  <img
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="Alice Zhao"
-    src="http://example.com/alice.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
+  <small
+    className="git-commit-node-byline git-commit-node-byline--no-committer "
   >
-    Alice Zhao
-  </span>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1990-01-01"
-  >
-    about 16 years ago
-  </span>
-</small>
+    <UserAvatar
+      className="icon-inline mr-1"
+      data-tooltip="Alice Zhao"
+      user={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline mr-1"
+        data-tooltip="Alice Zhao"
+        src="http://example.com/alice.png"
+      />
+    </UserAvatar>
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="alice@example.com"
+      >
+        <span
+          className="font-weight-bold "
+          data-tooltip="alice@example.com"
+        >
+          Alice Zhao
+        </span>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    committed 
+    <Timestamp
+      date="1990-01-01"
+    >
+      <span
+        className="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </Timestamp>
+  </small>
+</GitCommitNodeByline>
 `;
 
 exports[`GitCommitNodeByline author 1`] = `
-<small
-  className="git-commit-node-byline git-commit-node-byline--no-committer "
+<GitCommitNodeByline
+  author={
+    Object {
+      "date": "1990-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/alice.png",
+        "displayName": "Alice Zhao",
+        "email": "alice@example.com",
+        "name": "Alice Zhao",
+        "user": null,
+      },
+    }
+  }
+  committer={null}
 >
-  <img
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="Alice Zhao"
-    src="http://example.com/alice.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
+  <small
+    className="git-commit-node-byline git-commit-node-byline--no-committer "
   >
-    Alice Zhao
-  </span>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1990-01-01"
-  >
-    about 16 years ago
-  </span>
-</small>
+    <UserAvatar
+      className="icon-inline mr-1"
+      data-tooltip="Alice Zhao"
+      user={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline mr-1"
+        data-tooltip="Alice Zhao"
+        src="http://example.com/alice.png"
+      />
+    </UserAvatar>
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="alice@example.com"
+      >
+        <span
+          className="font-weight-bold "
+          data-tooltip="alice@example.com"
+        >
+          Alice Zhao
+        </span>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    committed 
+    <Timestamp
+      date="1990-01-01"
+    >
+      <span
+        className="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </Timestamp>
+  </small>
+</GitCommitNodeByline>
 `;
 
 exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
-<small
-  className="git-commit-node-byline git-commit-node-byline--has-committer "
+<GitCommitNodeByline
+  author={
+    Object {
+      "date": "1990-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/alice.png",
+        "displayName": "Alice Zhao",
+        "email": "alice@example.com",
+        "name": "Alice Zhao",
+        "user": null,
+      },
+    }
+  }
+  committer={
+    Object {
+      "date": "1991-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/bob.png",
+        "displayName": "Bob Yang",
+        "email": "bob@example.com",
+        "name": "Bob Yang",
+        "user": Object {
+          "displayName": "Bob Yang",
+          "url": "https://example.com/bobyang",
+          "username": "bYang",
+        },
+      },
+    }
+  }
 >
-  <img
-    className="user-avatar icon-inline"
-    data-tooltip="Alice Zhao (author)"
-    src="http://example.com/alice.png"
-  />
-   
-  <img
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="bYang (committer)"
-    src="http://example.com/bob.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
+  <small
+    className="git-commit-node-byline git-commit-node-byline--has-committer "
   >
-    Alice Zhao
-  </span>
-   
-  authored
-   and
-   
-  <a
-    className="font-weight-bold "
-    data-tooltip="Bob Yang <bob@example.com>"
-    href="https://example.com/bobyang"
-  >
-    bYang
-  </a>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1991-01-01"
-  >
-    about 15 years ago
-  </span>
-</small>
+    <UserAvatar
+      className="icon-inline"
+      data-tooltip="Alice Zhao (author)"
+      user={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline"
+        data-tooltip="Alice Zhao (author)"
+        src="http://example.com/alice.png"
+      />
+    </UserAvatar>
+     
+    <UserAvatar
+      className="icon-inline mr-1"
+      data-tooltip="bYang (committer)"
+      user={
+        Object {
+          "avatarURL": "http://example.com/bob.png",
+          "displayName": "Bob Yang",
+          "email": "bob@example.com",
+          "name": "Bob Yang",
+          "user": Object {
+            "displayName": "Bob Yang",
+            "url": "https://example.com/bobyang",
+            "username": "bYang",
+          },
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline mr-1"
+        data-tooltip="bYang (committer)"
+        src="http://example.com/bob.png"
+      />
+    </UserAvatar>
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="alice@example.com"
+      >
+        <span
+          className="font-weight-bold "
+          data-tooltip="alice@example.com"
+        >
+          Alice Zhao
+        </span>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    authored
+     and
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/bob.png",
+          "displayName": "Bob Yang",
+          "email": "bob@example.com",
+          "name": "Bob Yang",
+          "user": Object {
+            "displayName": "Bob Yang",
+            "url": "https://example.com/bobyang",
+            "username": "bYang",
+          },
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="Bob Yang <bob@example.com>"
+        to="https://example.com/bobyang"
+      >
+        <AnchorLink
+          className="font-weight-bold "
+          data-tooltip="Bob Yang <bob@example.com>"
+          to="https://example.com/bobyang"
+        >
+          <a
+            className="font-weight-bold "
+            data-tooltip="Bob Yang <bob@example.com>"
+            href="https://example.com/bobyang"
+          >
+            bYang
+          </a>
+        </AnchorLink>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    committed 
+    <Timestamp
+      date="1991-01-01"
+    >
+      <span
+        className="timestamp"
+        data-tooltip="1991-01-01"
+      >
+        about 15 years ago
+      </span>
+    </Timestamp>
+  </small>
+</GitCommitNodeByline>
 `;
 
 exports[`GitCommitNodeByline different author and committer 1`] = `
-<small
-  className="git-commit-node-byline git-commit-node-byline--has-committer "
+<GitCommitNodeByline
+  author={
+    Object {
+      "date": "1990-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/alice.png",
+        "displayName": "Alice Zhao",
+        "email": "alice@example.com",
+        "name": "Alice Zhao",
+        "user": null,
+      },
+    }
+  }
+  committer={
+    Object {
+      "date": "1991-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/bob.png",
+        "displayName": "Bob Yang",
+        "email": "bob@example.com",
+        "name": "Bob Yang",
+        "user": Object {
+          "displayName": "Bob Yang",
+          "url": "https://example.com/bobyang",
+          "username": "bYang",
+        },
+      },
+    }
+  }
 >
-  <img
-    className="user-avatar icon-inline"
-    data-tooltip="Alice Zhao (author)"
-    src="http://example.com/alice.png"
-  />
-   
-  <img
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="bYang (committer)"
-    src="http://example.com/bob.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
+  <small
+    className="git-commit-node-byline git-commit-node-byline--has-committer "
   >
-    Alice Zhao
-  </span>
-   
-  authored
-   and
-   
-  <a
-    className="font-weight-bold "
-    data-tooltip="Bob Yang <bob@example.com>"
-    href="https://example.com/bobyang"
-  >
-    bYang
-  </a>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1991-01-01"
-  >
-    about 15 years ago
-  </span>
-</small>
+    <UserAvatar
+      className="icon-inline"
+      data-tooltip="Alice Zhao (author)"
+      user={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline"
+        data-tooltip="Alice Zhao (author)"
+        src="http://example.com/alice.png"
+      />
+    </UserAvatar>
+     
+    <UserAvatar
+      className="icon-inline mr-1"
+      data-tooltip="bYang (committer)"
+      user={
+        Object {
+          "avatarURL": "http://example.com/bob.png",
+          "displayName": "Bob Yang",
+          "email": "bob@example.com",
+          "name": "Bob Yang",
+          "user": Object {
+            "displayName": "Bob Yang",
+            "url": "https://example.com/bobyang",
+            "username": "bYang",
+          },
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline mr-1"
+        data-tooltip="bYang (committer)"
+        src="http://example.com/bob.png"
+      />
+    </UserAvatar>
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="alice@example.com"
+      >
+        <span
+          className="font-weight-bold "
+          data-tooltip="alice@example.com"
+        >
+          Alice Zhao
+        </span>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    authored
+     and
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/bob.png",
+          "displayName": "Bob Yang",
+          "email": "bob@example.com",
+          "name": "Bob Yang",
+          "user": Object {
+            "displayName": "Bob Yang",
+            "url": "https://example.com/bobyang",
+            "username": "bYang",
+          },
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="Bob Yang <bob@example.com>"
+        to="https://example.com/bobyang"
+      >
+        <AnchorLink
+          className="font-weight-bold "
+          data-tooltip="Bob Yang <bob@example.com>"
+          to="https://example.com/bobyang"
+        >
+          <a
+            className="font-weight-bold "
+            data-tooltip="Bob Yang <bob@example.com>"
+            href="https://example.com/bobyang"
+          >
+            bYang
+          </a>
+        </AnchorLink>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    committed 
+    <Timestamp
+      date="1991-01-01"
+    >
+      <span
+        className="timestamp"
+        data-tooltip="1991-01-01"
+      >
+        about 15 years ago
+      </span>
+    </Timestamp>
+  </small>
+</GitCommitNodeByline>
 `;
 
 exports[`GitCommitNodeByline omit GitHub committer 1`] = `
-<small
-  className="git-commit-node-byline git-commit-node-byline--no-committer "
+<GitCommitNodeByline
+  author={
+    Object {
+      "date": "1990-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/alice.png",
+        "displayName": "Alice Zhao",
+        "email": "alice@example.com",
+        "name": "Alice Zhao",
+        "user": null,
+      },
+    }
+  }
+  committer={
+    Object {
+      "date": "1992-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/github.png",
+        "displayName": "GitHub",
+        "email": "noreply@github.com",
+        "name": "GitHub",
+        "user": Object {
+          "displayName": "Alice",
+          "url": "https://example.com",
+          "username": "gitUserName",
+        },
+      },
+    }
+  }
 >
-  <img
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="Alice Zhao"
-    src="http://example.com/alice.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
+  <small
+    className="git-commit-node-byline git-commit-node-byline--no-committer "
   >
-    Alice Zhao
-  </span>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1990-01-01"
-  >
-    about 16 years ago
-  </span>
-</small>
+    <UserAvatar
+      className="icon-inline mr-1"
+      data-tooltip="Alice Zhao"
+      user={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline mr-1"
+        data-tooltip="Alice Zhao"
+        src="http://example.com/alice.png"
+      />
+    </UserAvatar>
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="alice@example.com"
+      >
+        <span
+          className="font-weight-bold "
+          data-tooltip="alice@example.com"
+        >
+          Alice Zhao
+        </span>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    committed 
+    <Timestamp
+      date="1990-01-01"
+    >
+      <span
+        className="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </Timestamp>
+  </small>
+</GitCommitNodeByline>
 `;
 
 exports[`GitCommitNodeByline same author and committer 1`] = `
-<small
-  className="git-commit-node-byline git-commit-node-byline--no-committer "
+<GitCommitNodeByline
+  author={
+    Object {
+      "date": "1990-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/alice.png",
+        "displayName": "Alice Zhao",
+        "email": "alice@example.com",
+        "name": "Alice Zhao",
+        "user": null,
+      },
+    }
+  }
+  committer={
+    Object {
+      "date": "1990-01-01",
+      "person": Object {
+        "avatarURL": "http://example.com/alice.png",
+        "displayName": "Alice Zhao",
+        "email": "alice@example.com",
+        "name": "Alice Zhao",
+        "user": null,
+      },
+    }
+  }
 >
-  <img
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="Alice Zhao"
-    src="http://example.com/alice.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
+  <small
+    className="git-commit-node-byline git-commit-node-byline--no-committer "
   >
-    Alice Zhao
-  </span>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1990-01-01"
-  >
-    about 16 years ago
-  </span>
-</small>
+    <UserAvatar
+      className="icon-inline mr-1"
+      data-tooltip="Alice Zhao"
+      user={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <img
+        className="user-avatar icon-inline mr-1"
+        data-tooltip="Alice Zhao"
+        src="http://example.com/alice.png"
+      />
+    </UserAvatar>
+     
+    <PersonLink
+      className="font-weight-bold"
+      person={
+        Object {
+          "avatarURL": "http://example.com/alice.png",
+          "displayName": "Alice Zhao",
+          "email": "alice@example.com",
+          "name": "Alice Zhao",
+          "user": null,
+        }
+      }
+    >
+      <LinkOrSpan
+        className="font-weight-bold "
+        data-tooltip="alice@example.com"
+      >
+        <span
+          className="font-weight-bold "
+          data-tooltip="alice@example.com"
+        >
+          Alice Zhao
+        </span>
+      </LinkOrSpan>
+    </PersonLink>
+     
+    committed 
+    <Timestamp
+      date="1990-01-01"
+    >
+      <span
+        className="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </Timestamp>
+  </small>
+</GitCommitNodeByline>
 `;

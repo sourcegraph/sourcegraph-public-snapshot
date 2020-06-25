@@ -1,65 +1,122 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ExtensionCard renders 1`] = `
-<div
-  className="d-flex"
+<ExtensionCard
+  node={
+    Object {
+      "id": "x/y",
+      "manifest": Object {
+        "activationEvents": Array [
+          "*",
+        ],
+        "description": "d",
+        "icon": "data:image/png,abcd",
+        "url": "https://example.com",
+      },
+      "registryExtension": Object {
+        "extensionIDWithoutRegistry": "x/y",
+        "id": "abcd1234",
+        "isWorkInProgress": false,
+        "url": "extensions/x/y",
+        "viewerCanAdminister": false,
+      },
+    }
+  }
+  platformContext={Object {}}
+  settingsCascade={
+    Object {
+      "final": null,
+      "subjects": null,
+    }
+  }
+  subject={
+    Object {
+      "id": "u",
+      "viewerCanAdminister": false,
+    }
+  }
 >
   <div
-    className="extension-card card"
+    className="d-flex"
   >
     <div
-      className="card-body extension-card__body d-flex flex-column position-relative"
-      onClick={[Function]}
+      className="extension-card card"
     >
       <div
-        className="d-flex"
+        className="card-body extension-card__body d-flex flex-column position-relative"
+        onClick={[Function]}
       >
-        <img
-          className="extension-card__icon mr-2"
-          src="data:image/png,abcd"
-        />
         <div
-          className="text-truncate w-100"
+          className="d-flex"
         >
+          <img
+            className="extension-card__icon mr-2"
+            src="data:image/png,abcd"
+          />
           <div
-            className="d-flex align-items-center"
-          >
-            <h4
-              className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1"
-            >
-              <a
-                className="stretched-link"
-                href="extensions/x/y"
-              >
-                <span
-                  className="text-muted"
-                >
-                  x
-                  /
-                </span>
-                <strong>
-                  y
-                </strong>
-              </a>
-            </h4>
-            <span
-              className="text-muted small"
-            >
-              Disabled
-            </span>
-          </div>
-          <div
-            className="mt-1"
+            className="text-truncate w-100"
           >
             <div
-              className="text-muted text-truncate"
+              className="d-flex align-items-center"
             >
-              d
+              <h4
+                className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1"
+              >
+                <LinkOrSpan
+                  className="stretched-link"
+                  to="extensions/x/y"
+                >
+                  <AnchorLink
+                    className="stretched-link"
+                    to="extensions/x/y"
+                  >
+                    <a
+                      className="stretched-link"
+                      href="extensions/x/y"
+                    >
+                      <Path
+                        path="x/y"
+                      >
+                        <span
+                          className="text-muted"
+                        >
+                          x
+                          /
+                        </span>
+                        <strong>
+                          y
+                        </strong>
+                      </Path>
+                    </a>
+                  </AnchorLink>
+                </LinkOrSpan>
+              </h4>
+              <ExtensionConfigurationState
+                className="small"
+                enabledIconOnly={true}
+                isAdded={false}
+                isEnabled={false}
+              >
+                <span
+                  className="text-muted small"
+                >
+                  Disabled
+                </span>
+              </ExtensionConfigurationState>
+            </div>
+            <div
+              className="mt-1"
+            >
+              <div
+                className="text-muted text-truncate"
+              >
+                d
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
+</ExtensionCard>
 `;

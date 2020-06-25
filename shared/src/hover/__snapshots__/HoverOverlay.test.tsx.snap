@@ -147,7 +147,45 @@ exports[`HoverOverlay actions and hover present 1`] = `
 </div>
 `;
 
-exports[`HoverOverlay actions and hover undefined 1`] = `null`;
+exports[`HoverOverlay actions and hover undefined 1`] = `
+<HoverOverlay
+  extensionsController={
+    Object {
+      "executeCommand": [Function],
+    }
+  }
+  hoveredToken={
+    Object {
+      "character": 2,
+      "commitID": "c",
+      "filePath": "f",
+      "line": 1,
+      "repoName": "r",
+      "revision": "v",
+    }
+  }
+  isLightTheme={false}
+  location="[Location path=/]"
+  overlayPosition={
+    Object {
+      "left": 0,
+      "top": 0,
+    }
+  }
+  platformContext={
+    Object {
+      "forceUpdateTooltip": [Function],
+      "settings": "[Observable]",
+    }
+  }
+  showCloseButton={false}
+  telemetryService={
+    Object {
+      "log": [Function],
+    }
+  }
+/>
+`;
 
 exports[`HoverOverlay actions empty 1`] = `
 <div

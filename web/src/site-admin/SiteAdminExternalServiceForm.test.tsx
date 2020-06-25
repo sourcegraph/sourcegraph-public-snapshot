@@ -4,10 +4,10 @@ jest.mock('../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
 
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { mount } from 'enzyme'
 
 describe('<SiteAdminExternalServiceForm />', () => {
     const baseProps = {
@@ -20,48 +20,51 @@ describe('<SiteAdminExternalServiceForm />', () => {
     }
 
     test('create GitHub', () => {
-        const component = renderer.create(
-            <SiteAdminExternalServiceForm
-                {...baseProps}
-                input={{
-                    kind: ExternalServiceKind.GITHUB,
-                    displayName: 'GitHub',
-                    config: '{}',
-                }}
-                mode="create"
-                loading={false}
-            />
-        )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(
+            mount(
+                <SiteAdminExternalServiceForm
+                    {...baseProps}
+                    input={{
+                        kind: ExternalServiceKind.GITHUB,
+                        displayName: 'GitHub',
+                        config: '{}',
+                    }}
+                    mode="create"
+                    loading={false}
+                />
+            )
+        ).toMatchSnapshot()
     })
     test('edit GitHub', () => {
-        const component = renderer.create(
-            <SiteAdminExternalServiceForm
-                {...baseProps}
-                input={{
-                    kind: ExternalServiceKind.GITHUB,
-                    displayName: 'GitHub',
-                    config: '{}',
-                }}
-                mode="create"
-                loading={false}
-            />
-        )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(
+            mount(
+                <SiteAdminExternalServiceForm
+                    {...baseProps}
+                    input={{
+                        kind: ExternalServiceKind.GITHUB,
+                        displayName: 'GitHub',
+                        config: '{}',
+                    }}
+                    mode="create"
+                    loading={false}
+                />
+            )
+        ).toMatchSnapshot()
     })
     test('edit GitHub, loading', () => {
-        const component = renderer.create(
-            <SiteAdminExternalServiceForm
-                {...baseProps}
-                input={{
-                    kind: ExternalServiceKind.GITHUB,
-                    displayName: 'GitHub',
-                    config: '{}',
-                }}
-                mode="create"
-                loading={true}
-            />
-        )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(
+            mount(
+                <SiteAdminExternalServiceForm
+                    {...baseProps}
+                    input={{
+                        kind: ExternalServiceKind.GITHUB,
+                        displayName: 'GitHub',
+                        config: '{}',
+                    }}
+                    mode="create"
+                    loading={true}
+                />
+            )
+        ).toMatchSnapshot()
     })
 })

@@ -1,10 +1,26 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`UserAvatar no avatar URL 1`] = `null`;
+exports[`UserAvatar no avatar URL 1`] = `
+<UserAvatar
+  user={
+    Object {
+      "avatarURL": null,
+    }
+  }
+/>
+`;
 
 exports[`UserAvatar with avatar URL 1`] = `
-<img
-  className="user-avatar "
-  src="u"
-/>
+<UserAvatar
+  user={
+    Object {
+      "avatarURL": "u",
+    }
+  }
+>
+  <img
+    className="user-avatar "
+    src="u"
+  />
+</UserAvatar>
 `;

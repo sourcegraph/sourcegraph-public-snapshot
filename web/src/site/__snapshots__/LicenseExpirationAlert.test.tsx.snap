@@ -1,129 +1,175 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`LicenseExpirationAlert.test.tsx expired 1`] = `
-<div
-  className="alert dismissible-alert alert alert-warning align-items-center "
+<LicenseExpirationAlert
+  daysLeft={0}
+  expiresAt={2005-10-02T22:04:05.000Z}
 >
-  <div
-    className="dismissible-alert__content"
+  <DismissibleAlert
+    className="alert alert-warning align-items-center "
+    partialStorageKey="licenseExpiring.0"
   >
-    <svg
-      className="mdi-icon icon-inline mr-2 flex-shrink-0"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
+    <div
+      className="alert dismissible-alert alert alert-warning align-items-center "
     >
-      <path
-        d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"
-      />
-    </svg>
-    Your Sourcegraph license
-     
-    expired 3 months ago
-    . 
-    <a
-      className="site-alert__link"
-      href="/site-admin/license"
-    >
-      <span
-        className="underline"
+      <div
+        className="dismissible-alert__content"
       >
-        Renew now
-      </span>
-    </a>
-     or 
-    <a
-      className="site-alert__link"
-      href="https://about.sourcegraph.com/contact"
-    >
-      <span
-        className="underline"
+        <Memo(WarningIcon)
+          className="icon-inline mr-2 flex-shrink-0"
+        >
+          <svg
+            className="mdi-icon icon-inline mr-2 flex-shrink-0"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"
+            />
+          </svg>
+        </Memo(WarningIcon)>
+        Your Sourcegraph license
+         
+        expired 3 months ago
+        . 
+        <AnchorLink
+          className="site-alert__link"
+          to="/site-admin/license"
+        >
+          <a
+            className="site-alert__link"
+            href="/site-admin/license"
+          >
+            <span
+              className="underline"
+            >
+              Renew now
+            </span>
+          </a>
+        </AnchorLink>
+         or 
+        <a
+          className="site-alert__link"
+          href="https://about.sourcegraph.com/contact"
+        >
+          <span
+            className="underline"
+          >
+            contact Sourcegraph
+          </span>
+        </a>
+      </div>
+      <button
+        className="btn btn-icon"
+        onClick={[Function]}
+        type="button"
       >
-        contact Sourcegraph
-      </span>
-    </a>
-  </div>
-  <button
-    className="btn btn-icon"
-    onClick={[Function]}
-    type="button"
-  >
-    <svg
-      className="mdi-icon icon-inline"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-      />
-    </svg>
-  </button>
-</div>
+        <Memo(CloseIcon)
+          className="icon-inline"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </Memo(CloseIcon)>
+      </button>
+    </div>
+  </DismissibleAlert>
+</LicenseExpirationAlert>
 `;
 
 exports[`LicenseExpirationAlert.test.tsx expiring soon 1`] = `
-<div
-  className="alert dismissible-alert alert alert-warning align-items-center "
+<LicenseExpirationAlert
+  daysLeft={3}
+  expiresAt={2006-01-05T22:04:05.000Z}
 >
-  <div
-    className="dismissible-alert__content"
+  <DismissibleAlert
+    className="alert alert-warning align-items-center "
+    partialStorageKey="licenseExpiring.3"
   >
-    <svg
-      className="mdi-icon icon-inline mr-2 flex-shrink-0"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
+    <div
+      className="alert dismissible-alert alert alert-warning align-items-center "
     >
-      <path
-        d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"
-      />
-    </svg>
-    Your Sourcegraph license
-     
-    will expire in 3 days
-    . 
-    <a
-      className="site-alert__link"
-      href="/site-admin/license"
-    >
-      <span
-        className="underline"
+      <div
+        className="dismissible-alert__content"
       >
-        Renew now
-      </span>
-    </a>
-     or 
-    <a
-      className="site-alert__link"
-      href="https://about.sourcegraph.com/contact"
-    >
-      <span
-        className="underline"
+        <Memo(WarningIcon)
+          className="icon-inline mr-2 flex-shrink-0"
+        >
+          <svg
+            className="mdi-icon icon-inline mr-2 flex-shrink-0"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"
+            />
+          </svg>
+        </Memo(WarningIcon)>
+        Your Sourcegraph license
+         
+        will expire in 3 days
+        . 
+        <AnchorLink
+          className="site-alert__link"
+          to="/site-admin/license"
+        >
+          <a
+            className="site-alert__link"
+            href="/site-admin/license"
+          >
+            <span
+              className="underline"
+            >
+              Renew now
+            </span>
+          </a>
+        </AnchorLink>
+         or 
+        <a
+          className="site-alert__link"
+          href="https://about.sourcegraph.com/contact"
+        >
+          <span
+            className="underline"
+          >
+            contact Sourcegraph
+          </span>
+        </a>
+      </div>
+      <button
+        className="btn btn-icon"
+        onClick={[Function]}
+        type="button"
       >
-        contact Sourcegraph
-      </span>
-    </a>
-  </div>
-  <button
-    className="btn btn-icon"
-    onClick={[Function]}
-    type="button"
-  >
-    <svg
-      className="mdi-icon icon-inline"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-      />
-    </svg>
-  </button>
-</div>
+        <Memo(CloseIcon)
+          className="icon-inline"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </Memo(CloseIcon)>
+      </button>
+    </div>
+  </DismissibleAlert>
+</LicenseExpirationAlert>
 `;

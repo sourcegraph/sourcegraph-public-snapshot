@@ -1,8 +1,8 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { SiteInitPage } from './SiteInitPage'
 import { MemoryRouter, Redirect } from 'react-router'
 import { createMemoryHistory } from 'history'
+import { mount } from 'enzyme'
 
 describe('SiteInitPage', () => {
     const origContext = window.context
@@ -14,7 +14,7 @@ describe('SiteInitPage', () => {
     })
 
     test('site already initialized', () => {
-        const component = renderer.create(
+        const component = mount(
             <MemoryRouter>
                 <SiteInitPage
                     isLightTheme={true}
@@ -24,36 +24,32 @@ describe('SiteInitPage', () => {
                 />
             </MemoryRouter>
         )
-        const redirect = component.root.findByType(Redirect)
+        const redirect = component.find(Redirect)
         expect(redirect).toBeDefined()
-        expect(redirect.props.to).toEqual('/search')
+        expect(redirect.props().to).toEqual('/search')
     })
 
     test('unexpected authed user', () =>
         expect(
-            renderer
-                .create(
-                    <SiteInitPage
-                        isLightTheme={true}
-                        needsSiteInit={true}
-                        authenticatedUser={{ username: 'alice' }}
-                        history={createMemoryHistory()}
-                    />
-                )
-                .toJSON()
+            mount(
+                <SiteInitPage
+                    isLightTheme={true}
+                    needsSiteInit={true}
+                    authenticatedUser={{ username: 'alice' }}
+                    history={createMemoryHistory()}
+                />
+            )
         ).toMatchSnapshot())
 
     test('normal', () =>
         expect(
-            renderer
-                .create(
-                    <SiteInitPage
-                        isLightTheme={true}
-                        needsSiteInit={true}
-                        authenticatedUser={null}
-                        history={createMemoryHistory()}
-                    />
-                )
-                .toJSON()
+            mount(
+                <SiteInitPage
+                    isLightTheme={true}
+                    needsSiteInit={true}
+                    authenticatedUser={null}
+                    history={createMemoryHistory()}
+                />
+            )
         ).toMatchSnapshot())
 })

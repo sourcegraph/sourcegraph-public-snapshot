@@ -1,11 +1,11 @@
 import { noop } from 'lodash'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import sinon from 'sinon'
 
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/SettingsOutlineIcon', () => 'SettingsOutlineIcon')
 
@@ -27,12 +27,12 @@ describe('OptionsMenu', () => {
     }
 
     test('renders a default state', () => {
-        expect(renderer.create(<OptionsMenu {...stubs} />)).toMatchSnapshot()
+        expect(mount(<OptionsMenu {...stubs} />)).toMatchSnapshot()
     })
 
     test('renders the current tab permissions alert', () => {
         expect(
-            renderer.create(
+            mount(
                 <OptionsMenu
                     {...stubs}
                     currentTabStatus={{ host: 'gitlab.com', protocol: 'http', hasPermissions: false }}
@@ -43,7 +43,7 @@ describe('OptionsMenu', () => {
 
     test("doesn't render the permissions alert on chrome://extensions", () => {
         expect(
-            renderer.create(
+            mount(
                 <OptionsMenu
                     {...stubs}
                     currentTabStatus={{ host: 'extensions', protocol: 'chrome:', hasPermissions: false }}
@@ -54,7 +54,7 @@ describe('OptionsMenu', () => {
 
     test("doesn't render the permissions alert on chrome://newtab", () => {
         expect(
-            renderer.create(
+            mount(
                 <OptionsMenu
                     {...stubs}
                     currentTabStatus={{ host: 'newtab', protocol: 'chrome:', hasPermissions: false }}
@@ -65,7 +65,7 @@ describe('OptionsMenu', () => {
 
     test("doesn't render the permissions alert on about://addons", () => {
         expect(
-            renderer.create(
+            mount(
                 <OptionsMenu
                     {...stubs}
                     currentTabStatus={{ host: 'addons', protocol: 'about:', hasPermissions: false }}
@@ -90,7 +90,7 @@ describe('OptionsMenu', () => {
 
     test('renders the feature flags', () => {
         expect(
-            renderer.create(
+            mount(
                 <OptionsMenu
                     {...stubs}
                     isSettingsOpen={true}

@@ -2,14 +2,13 @@ import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { DiffHunk } from './DiffHunk'
+import { mount } from 'enzyme'
 
 describe('DiffHunk', () => {
     const history = H.createMemoryHistory()
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const hunk = {
         oldRange: { startLine: 159, lines: 7 },
         oldNoNewlineAt: false,
@@ -66,19 +65,17 @@ describe('DiffHunk', () => {
 
     it('renders a unified diff view for the given diff hunk', () => {
         expect(
-            renderer
-                .create(
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={{ head: new Map(), base: new Map() }}
-                        lineNumbers={true}
-                        isLightTheme={true}
-                        fileDiffAnchor="anchor_"
-                        history={history}
-                        location={H.createLocation('/testdiff', history.location)}
-                    />
-                )
-                .toJSON()
+            mount(
+                <DiffHunk
+                    hunk={hunk}
+                    decorations={{ head: new Map(), base: new Map() }}
+                    lineNumbers={true}
+                    isLightTheme={true}
+                    fileDiffAnchor="anchor_"
+                    history={history}
+                    location={H.createLocation('/testdiff', history.location)}
+                />
+            )
         ).toMatchSnapshot()
     })
 
@@ -123,37 +120,33 @@ describe('DiffHunk', () => {
 
     it('renders decorations if given', () => {
         expect(
-            renderer
-                .create(
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={decorations}
-                        lineNumbers={true}
-                        isLightTheme={true}
-                        fileDiffAnchor="anchor_"
-                        history={history}
-                        location={H.createLocation('/testdiff', history.location)}
-                    />
-                )
-                .toJSON()
+            mount(
+                <DiffHunk
+                    hunk={hunk}
+                    decorations={decorations}
+                    lineNumbers={true}
+                    isLightTheme={true}
+                    fileDiffAnchor="anchor_"
+                    history={history}
+                    location={H.createLocation('/testdiff', history.location)}
+                />
+            )
         ).toMatchSnapshot()
     })
 
     it('renders dark theme decorations if dark theme is active', () => {
         expect(
-            renderer
-                .create(
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={decorations}
-                        lineNumbers={true}
-                        isLightTheme={false}
-                        fileDiffAnchor="anchor_"
-                        history={history}
-                        location={H.createLocation('/testdiff', history.location)}
-                    />
-                )
-                .toJSON()
+            mount(
+                <DiffHunk
+                    hunk={hunk}
+                    decorations={decorations}
+                    lineNumbers={true}
+                    isLightTheme={false}
+                    fileDiffAnchor="anchor_"
+                    history={history}
+                    location={H.createLocation('/testdiff', history.location)}
+                />
+            )
         ).toMatchSnapshot()
     })
 })

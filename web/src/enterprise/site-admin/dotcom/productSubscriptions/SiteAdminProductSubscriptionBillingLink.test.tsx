@@ -1,33 +1,29 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
+import { mount } from 'enzyme'
 
 jest.mock('mdi-react/ExternalLinkIcon', () => 'ExternalLinkIcon')
 
 describe('SiteAdminProductSubscriptionBillingLink', () => {
     test('linked billing', () => {
         expect(
-            renderer
-                .create(
-                    <SiteAdminProductSubscriptionBillingLink
-                        productSubscription={{ id: 'u', urlForSiteAdminBilling: 'https://example.com' }}
-                        onDidUpdate={() => undefined}
-                    />
-                )
-                .toJSON()
+            mount(
+                <SiteAdminProductSubscriptionBillingLink
+                    productSubscription={{ id: 'u', urlForSiteAdminBilling: 'https://example.com' }}
+                    onDidUpdate={() => undefined}
+                />
+            )
         ).toMatchSnapshot()
     })
 
     test('no linked billing', () => {
         expect(
-            renderer
-                .create(
-                    <SiteAdminProductSubscriptionBillingLink
-                        productSubscription={{ id: 'u', urlForSiteAdminBilling: null }}
-                        onDidUpdate={() => undefined}
-                    />
-                )
-                .toJSON()
+            mount(
+                <SiteAdminProductSubscriptionBillingLink
+                    productSubscription={{ id: 'u', urlForSiteAdminBilling: null }}
+                    onDidUpdate={() => undefined}
+                />
+            )
         ).toMatchSnapshot()
     })
 })

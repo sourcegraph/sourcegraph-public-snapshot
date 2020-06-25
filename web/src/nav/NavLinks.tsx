@@ -113,17 +113,15 @@ export class NavLinks extends React.PureComponent<Props> {
                         </li>
                     </>
                 )}
-                {!this.props.isSourcegraphDotCom &&
-                    this.props.authenticatedUser &&
-                    this.props.authenticatedUser.siteAdmin && (
-                        <li className="nav-item">
-                            <StatusMessagesNavItem
-                                fetchMessages={fetchAllStatusMessages}
-                                isSiteAdmin={this.props.authenticatedUser.siteAdmin}
-                                history={this.props.history}
-                            />
-                        </li>
-                    )}
+                {!this.props.isSourcegraphDotCom && this.props.authenticatedUser?.siteAdmin && (
+                    <li className="nav-item">
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchAllStatusMessages}
+                            isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                            history={this.props.history}
+                        />
+                    </li>
+                )}
                 <li className="nav-item">
                     <WebCommandListPopoverButton
                         {...this.props}

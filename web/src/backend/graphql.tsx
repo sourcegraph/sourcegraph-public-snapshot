@@ -3,7 +3,7 @@ import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../
 import * as GQL from '../../../shared/src/graphql/schema'
 
 const getHeaders = (): { [header: string]: string } => ({
-    ...window.context.xhrHeaders,
+    ...window.context?.xhrHeaders,
     Accept: 'application/json',
     'Content-Type': 'application/json',
     'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',

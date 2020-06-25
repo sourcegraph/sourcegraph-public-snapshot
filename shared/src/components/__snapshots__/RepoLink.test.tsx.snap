@@ -1,24 +1,37 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`RepoLink renders a fragment when "to" is null 1`] = `
-Array [
-  " ",
-  "my/",
-  <strong>
-    repo
-  </strong>,
-]
-`;
-
-exports[`RepoLink renders a link when "to" is set 1`] = `
-<a
-  className=""
-  href="http://example.com"
+<RepoLink
+  repoName="my/repo"
+  to={null}
 >
    
   my/
   <strong>
     repo
   </strong>
-</a>
+</RepoLink>
+`;
+
+exports[`RepoLink renders a link when "to" is set 1`] = `
+<RepoLink
+  repoName="my/repo"
+  to="http://example.com"
+>
+  <AnchorLink
+    className=""
+    to="http://example.com"
+  >
+    <a
+      className=""
+      href="http://example.com"
+    >
+       
+      my/
+      <strong>
+        repo
+      </strong>
+    </a>
+  </AnchorLink>
+</RepoLink>
 `;
