@@ -495,10 +495,10 @@ func (s *ObservedStore) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool
 }
 
 // FindClosestDumps calls into the inner store and registers the observed results.
-func (s *ObservedStore) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (dumps []Dump, err error) {
+func (s *ObservedStore) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (dumps []Dump, err error) {
 	ctx, endObservation := s.findClosestDumpsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
-	return s.store.FindClosestDumps(ctx, repositoryID, commit, file, indexer)
+	return s.store.FindClosestDumps(ctx, repositoryID, commit, path, rootMustEnclosePath, indexer)
 }
 
 // DeleteOldestDump calls into the inner store and registers the observed results.

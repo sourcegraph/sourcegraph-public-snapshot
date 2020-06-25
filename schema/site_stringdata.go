@@ -88,7 +88,7 @@ const SiteSchemaJSON = `{
           "description": "Interpret a search input query as an and/or query.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "bitbucketServerFastPerm": {
           "description": "DEPRECATED: Configure in Bitbucket Server config.",
@@ -97,7 +97,7 @@ const SiteSchemaJSON = `{
           "default": "disabled"
         },
         "searchMultipleRevisionsPerRepository": {
-          "description": "Enables searching multiple revisions of the same repository (using ` + "`" + `repo:myrepo@branch1:branch2` + "`" + `).",
+          "description": "DEPRECATED. Always on. Will be removed in 3.19.",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -171,7 +171,7 @@ const SiteSchemaJSON = `{
                 "description": "Name of the version context, it must be unique.",
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 14
+                "maxLength": 50
               },
               "revisions": {
                 "description": "List of repositories of the version context",
@@ -635,7 +635,8 @@ const SiteSchemaJSON = `{
             "oneOf": [
               { "$ref": "#/definitions/GrafanaNotifierSlack" },
               { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierWebhook" }
+              { "$ref": "#/definitions/GrafanaNotifierWebhook" },
+              { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
@@ -999,7 +1000,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierSlack": {
-      "description": "Slack notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#slack",
+      "description": "Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -1046,7 +1047,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierPagerduty": {
-      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#pagerduty",
+      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty",
       "type": "object",
       "required": ["type", "integrationKey"],
       "properties": {
@@ -1065,7 +1066,7 @@ const SiteSchemaJSON = `{
       }
     },
     "GrafanaNotifierWebhook": {
-      "description": "Webhook notifier - see https://grafana.com/docs/grafana/v6.7/alerting/notifications/#webhook",
+      "description": "Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook",
       "type": "object",
       "required": ["type", "url"],
       "properties": {
@@ -1076,6 +1077,20 @@ const SiteSchemaJSON = `{
         "url": { "type": "string" },
         "username": { "type": "string" },
         "password": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierOpsGenie": {
+      "description": "OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration",
+      "type": "object",
+      "required": ["type", "apiKey", "apiUrl"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "opsgenie"
+        },
+        "apiKey": { "type": "string" },
+        "apiUrl": { "type": "string" },
+        "autoClose": { "type": "boolean" }
       }
     }
   }

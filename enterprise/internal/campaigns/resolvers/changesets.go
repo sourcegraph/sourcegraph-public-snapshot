@@ -406,6 +406,13 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 	})
 }
 
+func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	if stat := r.Changeset.DiffStat(); stat != nil {
+		return graphqlbackend.NewDiffStat(*stat), nil
+	}
+	return nil, nil
+}
+
 func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
 	name, err := r.Changeset.HeadRef()
 	if err != nil {

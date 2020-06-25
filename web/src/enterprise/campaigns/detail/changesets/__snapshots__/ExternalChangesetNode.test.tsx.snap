@@ -101,6 +101,11 @@ Object {
                         ],
                       },
                     },
+                    "diffStat": Object {
+                      "added": 100,
+                      "changed": 200,
+                      "deleted": 100,
+                    },
                     "externalID": "123",
                     "externalURL": Object {
                       "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",

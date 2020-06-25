@@ -52,7 +52,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                             <FilterChip
                                 query={navbarSearchQuery}
                                 onFilterChosen={onFilterClick}
-                                key={filter.name + filter.value}
+                                key={String(filter.name) + filter.value}
                                 value={filter.value}
                                 name={filter.name}
                             />

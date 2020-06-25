@@ -175,8 +175,7 @@ func Validate(input conftypes.RawUnified) (problems Problems, err error) {
 	problems = append(problems, NewSiteProblems(siteProblems...)...)
 
 	customProblems, err := validateCustomRaw(conftypes.RawUnified{
-		Critical: string(jsonc.Normalize(input.Critical)),
-		Site:     string(jsonc.Normalize(input.Site)),
+		Site: string(jsonc.Normalize(input.Site)),
 	})
 	if err != nil {
 		return nil, err

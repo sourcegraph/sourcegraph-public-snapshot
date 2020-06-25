@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -1156,7 +1157,7 @@ func TestService(t *testing.T) {
 		}
 		t.Cleanup(func() { db.MockAuthzFilter = nil })
 
-		fakeSource := &FakeChangesetSource{Err: nil}
+		fakeSource := &ct.FakeChangesetSource{Err: nil}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 		svc := NewServiceWithClock(store, cf, clock)
@@ -1301,8 +1302,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 	tests := []struct {
 		name string
 
-		campaignIsManual bool
-		campaignIsClosed bool
+		campaignWithoutPatchSet bool
+		campaignIsClosed        bool
 
 		// Repositories for which we had Patches attached to the old PatchSet
 		oldPatches repoNames
@@ -1333,9 +1334,9 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name:             "manual campaign, no new patch set, name update",
-			campaignIsManual: true,
-			updateName:       true,
+			name:                    "campaign without patchset, no new patch set, name update",
+			campaignWithoutPatchSet: true,
+			updateName:              true,
 		},
 		{
 			name:           "1 unmodified",
@@ -1447,16 +1448,16 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			wantUnmodified: repoNames{"repo-0"},
 		},
 		{
-			name:             "update plan on manual campaign",
-			updatePatchSet:   true,
-			campaignIsManual: true,
+			name:                    "set patchset on campaign without patchset",
+			updatePatchSet:          true,
+			campaignWithoutPatchSet: true,
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: ErrManualCampaignUpdatePatchIllegal.Error(),
+			wantErr: "",
 		},
 		{
-			name:             "update plan on closed campaign",
+			name:             "update patchset on closed campaign",
 			updatePatchSet:   true,
 			campaignIsClosed: true,
 			oldPatches:       repoNames{"repo-0"},
@@ -1539,7 +1540,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 
 			patchesByID = make(map[int64]*campaigns.Patch)
 
-			if tt.campaignIsManual {
+			if tt.campaignWithoutPatchSet {
 				campaign = testCampaign(user.ID, 0)
 			} else {
 				patchSet := &campaigns.PatchSet{UserID: user.ID}
@@ -1579,7 +1580,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !tt.campaignIsManual {
+			if !tt.campaignWithoutPatchSet {
 				for _, p := range patchesByID {
 					if err := svc.EnqueueChangesetJobForPatch(ctx, p.ID); err != nil {
 						t.Fatal(err)
@@ -1787,7 +1788,10 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			for _, j := range append(wantUnmodifiedChangesetJobs, wantModifiedChangesetJobs...) {
 				wantAttachedChangesetIDs = append(wantAttachedChangesetIDs, j.ChangesetID)
 			}
-			changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: wantAttachedChangesetIDs})
+			changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{
+				CampaignID: campaign.ID,
+				IDs:        wantAttachedChangesetIDs,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

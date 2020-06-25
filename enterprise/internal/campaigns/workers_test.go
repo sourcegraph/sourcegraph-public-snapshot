@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -114,9 +115,9 @@ func TestExecChangesetJob(t *testing.T) {
 				}
 			}
 
-			gitClient := &FakeGitserverClient{Response: headRef, ResponseErr: nil}
+			gitClient := &ct.FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
-			sourcer := repos.NewFakeSourcer(nil, &FakeChangesetSource{
+			sourcer := repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{
 				Svc:             extSvc,
 				Err:             nil,
 				ChangesetExists: tc.existsOnCodehost,

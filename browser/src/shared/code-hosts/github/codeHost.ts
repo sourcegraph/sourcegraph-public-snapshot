@@ -404,7 +404,7 @@ export const githubCodeHost: CodeHost = {
 
         // Go to blob URL
         const fragment = target.position
-            ? `#L${target.position.line}${target.position.character ? ':' + target.position.character : ''}`
+            ? `#L${target.position.line}${target.position.character ? `:${target.position.character}` : ''}`
             : ''
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },

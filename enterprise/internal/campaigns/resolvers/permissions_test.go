@@ -485,6 +485,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				HeadRefOid: changesetHeadRefOid,
 			},
 		}
+		c.SetDiffStat(changesetDiffStat.ToDiffStat())
 		if err := store.CreateChangesets(ctx, c); err != nil {
 			t.Fatal(err)
 		}
@@ -523,8 +524,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		AuthorID:        userID,
 		NamespaceUserID: userID,
 		// We attach the two changesets to the campaign
-		// Note: we are mixing a "manual" and "non-manual" campaign here, but
-		// that shouldn't matter for the purposes of this test.
 		ChangesetIDs: changesetIDs,
 	}
 	if err := store.CreateCampaign(ctx, campaign); err != nil {

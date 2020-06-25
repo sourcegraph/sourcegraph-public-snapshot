@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -94,8 +95,6 @@ const (
 // A worker continuously dequeues repos and sends updates to gitserver, but its concurrency
 // is limited by the gitMaxConcurrentClones site configuration.
 type updateScheduler struct {
-	mu sync.Mutex
-
 	updateQueue *updateQueue
 	schedule    *schedule
 }
@@ -226,11 +225,25 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 	return limiter
 }
 
-// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
+// UpdateFromDiff updates the scheduled and queued repos from the given sync
+// diff.
+//
+// We upsert all repos that exist to the scheduler. This is so the
+// scheduler can track the repositories and periodically update
+// them.
+//
+// Items on the update queue will be cloned/fetched as soon as
+// possible. We treat repos differently depending on which part of the
+// diff they are:
+//
+//
+//   Deleted    - remove from scheduler and queue.
+//   Added      - new repo, enqueue for asap clone.
+//   Modified   - likely new url or name. May also be a sign of new
+//                commits. Enqueue for asap clone (or fetch).
+//   Unmodified - we likely already have this cloned. Just rely on
+//                the scheduler and do not enqueue.
 func (s *updateScheduler) UpdateFromDiff(diff Diff) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	for _, r := range diff.Deleted {
 		s.remove(r)
 	}
@@ -256,6 +269,21 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	schedKnownRepos.Set(float64(known))
 }
 
+// SetCloned will ensure only repos in names are treated as cloned. All other
+// repositories in the scheduler will be marked as uncloned.
+//
+// This method should be called periodically with the list of all repositories
+// cloned on gitserver. This ensures the scheduler treats uncloned
+// repositories with a higher priority.
+func (s *updateScheduler) SetCloned(names []string) {
+	s.schedule.setCloned(names)
+}
+
+// upsert adds r to the scheduler for periodic updates. If r.ID is already in
+// the scheduler, then the fields are updated (upsert).
+//
+// If enqueue is true then r is also enqueued to the update queue for a git
+// fetch/clone soon.
 func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
 	repo := configuredRepo2FromRepo(r)
 
@@ -604,6 +632,41 @@ func (s *schedule) upsert(repo configuredRepo2) (updated bool) {
 	s.rescheduleTimer()
 
 	return false
+}
+
+func (s *schedule) setCloned(names []string) {
+	// Set of names created outside of lock for fast checking.
+	cloned := make(map[string]struct{}, len(names))
+	for _, n := range names {
+		cloned[strings.ToLower(n)] = struct{}{}
+	}
+
+	// All non-cloned repos will be due for cloning as if they are newly added
+	// repos.
+	notClonedDue := timeNow().Add(minDelay)
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Iterate over all repos in the scheduler. If it isn't in cloned bump it
+	// up the queue. Note: we iterate over index because we will be mutating
+	// heap.
+	rescheduleTimer := false
+	for _, repoUpdate := range s.index {
+		if _, ok := cloned[strings.ToLower(string(repoUpdate.Repo.Name))]; ok {
+			continue
+		}
+		if repoUpdate.Due.After(notClonedDue) {
+			repoUpdate.Due = notClonedDue
+			heap.Fix(s, repoUpdate.Index)
+			rescheduleTimer = true
+		}
+	}
+
+	// We updated the queue, inform the scheduler loop.
+	if rescheduleTimer {
+		s.rescheduleTimer()
+	}
 }
 
 // updateInterval updates the update interval of a repo in the schedule.

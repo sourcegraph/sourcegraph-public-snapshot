@@ -1,6 +1,9 @@
 package apitest
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+import (
+	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+)
 
 type GitTarget struct {
 	OID            string
@@ -22,6 +25,10 @@ type GitRef struct {
 type DiffRange struct{ StartLine, Lines int }
 
 type DiffStat struct{ Added, Deleted, Changed int32 }
+
+func (ds DiffStat) ToDiffStat() *diff.Stat {
+	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted, Changed: ds.Changed}
+}
 
 type FileDiffHunk struct {
 	Body, Section      string

@@ -9,6 +9,7 @@ import { SettingsCascade, SettingsCascadeOrError, SettingsCascadeProps } from '.
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { eventLogger } from '../tracking/eventLogger'
 import { isExtensionAdded } from './extension/extension'
+import { property } from '../../../shared/src/util/types'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     /** The extension that this element is for. */
@@ -113,13 +114,14 @@ function confirmAddExtension(extensionID: string): boolean {
 /** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
 function extractErrors(settingsCascade: SettingsCascadeOrError): SettingsCascade | ErrorLike {
     if (settingsCascade.subjects === null) {
-        return new Error('Subjects was ' + settingsCascade.subjects)
+        return new Error('Subjects was null')
     }
     if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
-        return new Error('Merged was ' + settingsCascade.final)
+        return new Error(`Merged was ${String(settingsCascade.final)}`)
     }
-    if (settingsCascade.subjects.find(isErrorLike)) {
-        return new Error('One of the subjects was ' + settingsCascade.subjects.find(isErrorLike))
+    const found = settingsCascade.subjects.find(property('settings', isErrorLike))
+    if (found) {
+        return new Error(`One of the subjects was ${found.settings.message}`)
     }
     return settingsCascade as SettingsCascade
 }

@@ -173,7 +173,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
 
                 lineClasses.push({ line: index + 1, className: 'hunk-header', url: toPrettyBlobURL(rhsContext) })
             } else {
-                if (rhsContext.position && rhsContext.position.line) {
+                if (rhsContext.position?.line) {
                     if (!line.startsWith('+')) {
                         lhsContext.position.line++
                     }

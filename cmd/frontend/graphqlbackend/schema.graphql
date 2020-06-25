@@ -51,9 +51,9 @@ type Mutation {
     ): PatchSet!
     # Updates a campaign. Updating is not allowed when any of the following are true:
     #
-    # - The campaign has already been closed.
-    # - A plan is added to a manual campaign.
-    # - A non-manual campaign has a changeset that is not published (or is being published).
+    # - The campaign has been closed.
+    # - A campaign has one or more patches that are being published.
+    # - The new patch set contains no patches.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retry publishing all changesets in the campaign that could not be
     # successfully created on the code host. Retrying will clear the errors
@@ -478,11 +478,12 @@ input CreateCampaignInput {
     # attribute is specified.
     branch: String
 
-    # An optional reference to a patchset that was created before this mutation. If null, existing
-    # changesets can be added manually. If set, no changesets can be added manually; they will be
-    # created. based on the patches belonging to the patchset. An error will be returned if the
-    # patchset has expired. Using a patchset to create or update a campaign will retain it for the
-    # lifetime of the campaign and prevent it from expiring.
+    # An optional reference to a patchset that was created before this
+    # mutation. If null, existing changesets can be added manually. If set,
+    # they will be created based on the patches belonging to the patchset. An
+    # error will be returned if the patchset has expired. Using a patchset to
+    # create or update a campaign will retain it for the lifetime of the
+    # campaign and prevent it from expiring.
     patchSet: ID
 }
 
@@ -877,6 +878,12 @@ type ExternalChangeset implements Node & Changeset {
 
     # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
     diff: RepositoryComparison
+
+    # The diffstat of this changeset, or null if the changeset is closed
+    # (without merging) or is already merged. This data is also available
+    # indirectly through the diff field above, but if only the diffStat is
+    # required, this field is cheaper to access.
+    diffStat: DiffStat
 
     # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
     # checks have been configured.
@@ -3487,8 +3494,6 @@ type Site implements SettingsSubject {
     siteID: String!
     # The site's configuration. Only visible to site admins.
     configuration: SiteConfiguration!
-    # The site's critical configuration. Only visible to site admins.
-    criticalConfiguration: CriticalConfiguration!
     # The site's latest site-wide settings (which are the second-lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
@@ -3593,14 +3598,6 @@ type SiteConfiguration {
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
-}
-
-# The critical configuration for a site.
-type CriticalConfiguration {
-    # The unique identifier of this site configuration version.
-    id: Int!
-    # The effective configuration JSON.
-    effectiveContents: JSONCString!
 }
 
 # Information about software updates for Sourcegraph.

@@ -100,13 +100,13 @@ describe('e2e test suite', () => {
             })
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             await driver.page.waitForSelector('.e2e-global-alert .notices .global-alerts__alert', { visible: true })
-            await driver.page.evaluate(message => {
+            await driver.page.evaluate((message: string) => {
                 const element = document.querySelector<HTMLElement>('.e2e-global-alert .notices .global-alerts__alert')
                 if (!element) {
                     throw new Error('No .e2e-global-alert .notices .global-alerts__alert element found')
                 }
                 if (!element.textContent?.includes(message)) {
-                    throw new Error('Expected "' + message + '" message, but didn\'t find it')
+                    throw new Error(`Expected "${message}" message, but didn't find it`)
                 }
             }, message)
         })
@@ -115,7 +115,7 @@ describe('e2e test suite', () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/tokens/new')
             await driver.page.waitForSelector('.e2e-create-access-token-description')
 
-            const name = 'E2E Test ' + new Date().toISOString() + ' ' + random(1, 1e7)
+            const name = `E2E Test ${new Date().toISOString()} ${random(1, 1e7)}`
 
             await driver.replaceText({
                 selector: '.e2e-create-access-token-description',
@@ -131,7 +131,7 @@ describe('e2e test suite', () => {
                 })
             ).jsonValue()
 
-            const resp = await got.post('/.api/graphql', {
+            const resp = await got.post('.api/graphql', {
                 prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
@@ -450,18 +450,18 @@ describe('e2e test suite', () => {
             await driver.page.click(selector)
         }
 
-        // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
-        const getHoverContents = async (expectedCount = 1): Promise<string[]> => {
-            const selector =
-                expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : '.e2e-tooltip-content'
+        const getHoverContents = async (): Promise<string[]> => {
+            // Search for any child of e2e-tooltip-content: as e2e-tooltip-content has display: contents,
+            // it will never be detected as visible by waitForSelector(), but its children will.
+            const selector = '.e2e-tooltip-content *'
             await driver.page.waitForSelector(selector, { visible: true })
             return driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
                 [...document.querySelectorAll('.e2e-tooltip-content')].map(content => content.textContent || '')
             )
         }
-        const assertHoverContentContains = async (value: string, count?: number): Promise<void> => {
-            expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(value)]))
+        const assertHoverContentContains = async (value: string): Promise<void> => {
+            expect(await getHoverContents()).toEqual(expect.arrayContaining([expect.stringContaining(value)]))
         }
 
         const clickHoverJ2D = async (): Promise<void> => {

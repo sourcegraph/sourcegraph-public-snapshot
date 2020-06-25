@@ -29,6 +29,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c
+	github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac // indirect
 	github.com/efritz/go-mockgen v0.0.0-20200524175724-37e2c732ee40
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/ericchiang/k8s v1.2.0
@@ -57,7 +58,7 @@ require (
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
-	github.com/google/zoekt v0.0.0-20200602095749-1ba953d33f4f
+	github.com/google/zoekt v0.0.0-20200616181411-e6113752c10c
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.0
@@ -179,7 +180,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200611095618-60ff282a43e8
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200622101713-7b13614a083e
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

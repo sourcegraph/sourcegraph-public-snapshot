@@ -241,7 +241,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "set user permissions")
 	}
 
-	log15.Info("PermsSyncer.syncUserPerms.synced", "userID", userID)
+	log15.Debug("PermsSyncer.syncUserPerms.synced", "userID", userID)
 	return nil
 }
 
@@ -379,7 +379,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return errors.Wrap(err, "set repository pending permissions")
 	}
 
-	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name, "count", len(extAccountIDs))
+	log15.Debug("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name, "count", len(extAccountIDs))
 	return nil
 }
 

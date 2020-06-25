@@ -33,20 +33,24 @@ func Mock(mockVersion string) {
 	version = mockVersion
 }
 
+// MockTimeStamp is used by tests to mock the current build timestamp
+func MockTimestamp(mockTimestamp string) {
+	timestamp = mockTimestamp
+}
+
 // timestamp is the build timestamp configured at build time via ldflags like this:
 // -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$UNIX_SECONDS"
 var timestamp = devTimestamp
 
 // HowLongOutOfDate returns a time in months since this build of Sourcegraph was created. It is
 // based on a constant baked into the Go binary at build time.
-func HowLongOutOfDate() (int, error) {
+func HowLongOutOfDate(now time.Time) (int, error) {
 	buildUnixTimestamp, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("unable to parse version build timestamp: %w", err)
 	}
 	buildTime := time.Unix(buildUnixTimestamp, 0)
 
-	now := time.Now()
 	if buildTime.After(now) {
 		return 0, errors.New("version build timestamp is in the future")
 	}

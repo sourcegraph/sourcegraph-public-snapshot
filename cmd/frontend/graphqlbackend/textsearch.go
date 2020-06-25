@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 
@@ -35,6 +34,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
+
+const maxUnindexedRepoRevSearchesPerQuery = 200
 
 var (
 	// A global limiter on number of concurrent searcher searches.
@@ -521,6 +522,13 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			// default
 			if args.Zoekt.Enabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+
+				// Limit the number of unindexed repositories searched for a single query. Searching
+				// more than this will merely flood the system and network with requests that will timeout.
+				searcherRepos, common.missing = limitSearcherRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery)
+				if len(common.missing) > 0 {
+					tr.LazyPrintf("index:yes, limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+				}
 			}
 		case Only:
 			if !args.Zoekt.Enabled() {
@@ -618,10 +626,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
 			if err != nil {
 				return err
-			}
-
-			if len(revSpecs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
-				return errMultipleRevsNotSupported
 			}
 
 			for _, rev := range revSpecs {
@@ -786,6 +790,28 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	return flattened, common, nil
+}
+
+// limitSearcherRepos limits the number of repo@revs searched by the unindexed searcher codepath.
+// Sending many requests to searcher would otherwise cause a flood of system and network requests
+// that result in timeouts or long delays.
+//
+// It returns the new repositories destined for the unindexed searcher code path, and the
+// repositories that are limited / excluded.
+//
+// A slice to the input list is returned, it is not copied.
+func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (searcherRepos []*search.RepositoryRevisions, limitedSearcherRepos []*types.Repo) {
+	totalRepoRevs := 0
+	limitedRepos := 0
+	for _, repoRevs := range unindexed {
+		totalRepoRevs += len(repoRevs.Revs)
+		if totalRepoRevs > limit {
+			limitedSearcherRepos = append(limitedSearcherRepos, repoRevs.Repo)
+			limitedRepos++
+		}
+	}
+	searcherRepos = unindexed[:len(unindexed)-limitedRepos]
+	return
 }
 
 func flattenFileMatches(unflattened [][]*FileMatchResolver, fileMatchLimit int) []*FileMatchResolver {

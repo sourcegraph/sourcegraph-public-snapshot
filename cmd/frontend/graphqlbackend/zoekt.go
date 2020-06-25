@@ -86,10 +86,10 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 
 	// Tell zoekt which repos to search
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[api.RepoName]*search.RepositoryRevisions, len(repos))
+	repoMap := make(map[string]*search.RepositoryRevisions, len(repos))
 	for _, repoRev := range repos {
 		repoSet.Set[string(repoRev.Repo.Name)] = true
-		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
+		repoMap[string(repoRev.Repo.Name)] = repoRev
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol)
@@ -200,7 +200,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		repoRev := repoMap[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
@@ -209,6 +209,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
 		var matchCount int
+		var commit *GitCommitResolver
 		for _, l := range file.LineMatches {
 			if !l.FileName {
 				if len(l.LineFragments) > maxLineFragmentMatches {
@@ -220,12 +221,13 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
-						commit := &GitCommitResolver{
-							repoResolver: repoResolvers[repoRev.Repo.Name],
-							oid:          GitObjectID(file.Version),
-							inputRev:     &inputRev,
+						if commit == nil {
+							commit = &GitCommitResolver{
+								repoResolver: repoResolvers[repoRev.Repo.Name],
+								oid:          GitObjectID(file.Version),
+								inputRev:     &inputRev,
+							}
 						}
-
 						symbols = append(symbols, &searchSymbolResult{
 							symbol: protocol.Symbol{
 								Name:       m.SymbolInfo.Sym,
@@ -473,7 +475,7 @@ func zoektSingleIndexedRepo(ctx context.Context, z *searchbackend.Zoekt, rev *se
 		return nil, nil, err
 	}
 
-	repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
+	repo, ok := set[string(rev.Repo.Name)]
 	if !ok || (filter != nil && !filter(repo)) {
 		return indexed, append(unindexed, rev), nil
 	}
@@ -509,18 +511,6 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		return zoektSingleIndexedRepo(ctx, z, revs[0], filter)
 	}
 
-	count := 0
-	for _, r := range revs {
-		if len(r.Revs) > 0 && r.Revs[0].RevSpec == "" {
-			count++
-		}
-	}
-
-	// Return early if we don't need to querying zoekt
-	if count == 0 {
-		return nil, revs, nil
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	set, err := z.ListAll(ctx)
@@ -528,8 +518,10 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		return nil, nil, err
 	}
 
-	indexed = make([]*search.RepositoryRevisions, 0, count)
-	unindexed = make([]*search.RepositoryRevisions, 0, len(revs)-count)
+	// PERF: If len(revs) is large, we expect to be doing an indexed
+	// search. So set indexed to the max size it can be to avoid growing.
+	indexed = make([]*search.RepositoryRevisions, 0, len(revs))
+	unindexed = make([]*search.RepositoryRevisions, 0)
 
 	for _, rev := range revs {
 		if len(rev.RevSpecs()) >= 2 || len(rev.RevSpecs()) != len(rev.Revs) {
@@ -539,7 +531,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 			continue
 		}
 
-		repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
+		repo, ok := set[string(rev.Repo.Name)]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, rev)
 			continue

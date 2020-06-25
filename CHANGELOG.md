@@ -13,18 +13,58 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Previously this was only supported for diff and commit searches and only available via the experimental site setting `searchMultipleRevisionsPerRepository`.
+
+### Changed
+
+- Some monitoring alerts now have more useful descriptions. [#11542](https://github.com/sourcegraph/sourcegraph/pull/11542)
+
+### Fixed
+
+- The single-container `sourcegraph/server` image now correctly reports its version.
+- An issue where repositories would not clone and index in some edge cases where the clones were deleted or not successful on gitserver. [#11602](https://github.com/sourcegraph/sourcegraph/pull/11602)
+- An issue where the sourcegraph/server Jaeger config was invalid. [#11661](https://github.com/sourcegraph/sourcegraph/pull/11661)
+- An issue where valid search queries were improperly hinted as being invalid in the search field. [#11688](https://github.com/sourcegraph/sourcegraph/pull/11688)
+
+### Removed
+
+- Backwards compatibility for "critical configuration" (a type of configuration that was deprecated in December 2019) was removed. All critical configuration now belongs in site configuration.
+- Experimental feature setting `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }` will be removed in 3.19. It is now always on. Please remove references to it.
+
+## 3.17.1
+
+### Added
+
+- Improved search indexing metrics
+
+### Changed
+
+- Some monitoring alerts now have more useful descriptions. [#11542](https://github.com/sourcegraph/sourcegraph/pull/11542)
+
+### Fixed
+
+- The single-container `sourcegraph/server` image now correctly reports its version.
+- An issue where repositories would not clone and index in some edge cases where the clones were deleted or not successful on gitserver. [#11602](https://github.com/sourcegraph/sourcegraph/pull/11602)
+- An issue where the sourcegraph/server Jaeger config was invalid. [#11661](https://github.com/sourcegraph/sourcegraph/pull/11661)
+
+## 3.17.0
+
+### Added
+
 - The search results page now shows a small UI notification if either repository forks or archives are excluded, when `fork` or `archived` options are not explicitly set. [#10624](https://github.com/sourcegraph/sourcegraph/pull/10624)
 - Prometheus metric `src_gitserver_repos_removed_disk_pressure` which is incremented everytime we remove a repository due to disk pressure. [#10900](https://github.com/sourcegraph/sourcegraph/pull/10900)
 - `gitolite.exclude` setting in [Gitolite external service config](https://docs.sourcegraph.com/admin/external_service/gitolite#configuration) now supports a regular expression via the `pattern` field. This is consistent with how we exclude in other external services. Additionally this is a replacement for the deprecated `blacklist` configuration. [#11403](https://github.com/sourcegraph/sourcegraph/pull/11403)
 - Notifications about Sourcegraph being out of date will now be shown to site admins and users (depending on how out-of-date it is).
 - Alerts are now configured using `observability.alerts` in the site configuration, instead of via the Grafana web UI. This does not yet support all Grafana notification channel types, and is not yet supported on `sourcegraph/server` ([#11473](https://github.com/sourcegraph/sourcegraph/issues/11473)). For more details, please refer to the [Sourcegraph alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
 - Experimental basic support for detecting if your Sourcegraph instance is over or under-provisioned has been added through a set of dashboards and warning-level alerts based on container utilization.
+- Query [operators](https://docs.sourcegraph.com/user/search/queries#operators) `and` and `or` are now enabled by default in all search modes for searching file content. [#11521](https://github.com/sourcegraph/sourcegraph/pull/11521)
 
 ### Changed
 
 - Repository search within a version context will link to the revision in the version context. [#10860](https://github.com/sourcegraph/sourcegraph/pull/10860)
 - Background permissions syncing becomes the default method to sync permissions from code hosts. Please [read our documentation for things to keep in mind before upgrading](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing). [#10972](https://github.com/sourcegraph/sourcegraph/pull/10972)
 - The styling of the hover overlay was overhauled to never have badges or the close button overlap content while also always indicating whether the overlay is currently pinned. The styling on code hosts was also improved. [#10956](https://github.com/sourcegraph/sourcegraph/pull/10956)
+- Previously, it was required to quote most patterns in structural search. This is no longer a restriction and single and double quotes in structural search patterns are interpreted literally. Note: you may still use `content:"structural-pattern"` if the pattern without quotes conflicts with other syntax. [#11481](https://github.com/sourcegraph/sourcegraph/pull/11481)
 
 ### Fixed
 
@@ -36,6 +76,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The Site-admin > Pings page no longer incorrectly indicates that pings are disabled when they aren't. [#11229](https://github.com/sourcegraph/sourcegraph/pull/11229)
 - Match counts are now accurately reported for indexed search. [#11242](https://github.com/sourcegraph/sourcegraph/pull/11242)
 - When background permissions syncing is enabled, it is now possible to only enforce permissions for repositories from selected code hosts (instead of enforcing permissions for repositories from all code hosts). [#11336](https://github.com/sourcegraph/sourcegraph/pull/11336)
+- When more than 200+ repository revisions in a search are unindexed (very rare), the remaining repositories are reported as missing instead of Sourcegraph issuing e.g. several thousand unindexed search requests which causes system slowness and ultimately times out - ensuring searches are still fast even if there are indexing issues on a deployment of Sourcegraph. This does not apply if `index:no` is present in the query.
 
 ### Removed
 

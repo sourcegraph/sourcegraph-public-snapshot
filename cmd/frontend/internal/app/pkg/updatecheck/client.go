@@ -28,8 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
-// recorder records operational metrics for methods.
-var recorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck", metrics.WithLabels("method"))
+// metricsRecorder records operational metrics for methods.
+var metricsRecorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
 
 //
 var updateCheckHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
@@ -86,7 +86,7 @@ var baseURL = &url.URL{
 func recordOperation(method string) func(*error) {
 	start := time.Now()
 	return func(err *error) {
-		recorder.Observe(time.Since(start).Seconds(), 1, err, method)
+		metricsRecorder.Observe(time.Since(start).Seconds(), 1, err, method)
 	}
 }
 

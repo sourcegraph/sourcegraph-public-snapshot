@@ -466,6 +466,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		ExternalServiceType: extsvc.TypeGitHub,
 	}
 
+	var (
+		added   int32 = 77
+		deleted int32 = 88
+		changed int32 = 99
+	)
+
 	t.Run("Create", func(t *testing.T) {
 		var i int
 		for i = 0; i < cap(changesets); i++ {
@@ -482,6 +488,14 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ExternalState:       cmpgn.ChangesetStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
 				ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			}
+
+			// Only set the diff stats on a subset to make sure that
+			// we handle nil pointers correctly
+			if i != cap(changesets)-1 {
+				th.DiffStatAdded = &added
+				th.DiffStatChanged = &changed
+				th.DiffStatDeleted = &deleted
 			}
 
 			changesets = append(changesets, th)
@@ -755,6 +769,22 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if len(have) != 0 {
 				t.Fatalf("have %d changesets. want 0", len(changesets))
+			}
+		}
+
+		{
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{OnlyWithoutDiffStats: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := 1
+			if len(have) != want {
+				t.Fatalf("have %d changesets; want %d", len(have), want)
+			}
+
+			if have[0].ID != changesets[cap(changesets)-1].ID {
+				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], changesets[cap(changesets)-1])
 			}
 		}
 
@@ -1870,6 +1900,25 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 					}
 
 					cursor = next
+				}
+			}
+		})
+
+		t.Run("NoDiff", func(t *testing.T) {
+			ps, _, err := s.ListPatches(ctx, ListPatchesOpts{NoDiff: true})
+			if err != nil {
+				fmt.Printf("err=%T", err)
+				t.Fatal(err)
+			}
+
+			have, want := ps, patches
+			if len(have) != len(want) {
+				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+			}
+
+			for _, p := range ps {
+				if p.Diff != "" {
+					t.Fatalf("patch has non-blank diff: %+v", p)
 				}
 			}
 		})

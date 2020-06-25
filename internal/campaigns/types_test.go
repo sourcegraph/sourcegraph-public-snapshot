@@ -1,10 +1,13 @@
 package campaigns
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -294,5 +297,117 @@ func TestChangesetEvents(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
+	}
+}
+
+func TestChangesetDiffStat(t *testing.T) {
+	var (
+		added   int32 = 77
+		changed int32 = 88
+		deleted int32 = 99
+	)
+
+	for name, tc := range map[string]struct {
+		c    Changeset
+		want *diff.Stat
+	}{
+		"added missing": {
+			c: Changeset{
+				DiffStatAdded:   nil,
+				DiffStatChanged: &changed,
+				DiffStatDeleted: &deleted,
+			},
+			want: nil,
+		},
+		"changed missing": {
+			c: Changeset{
+				DiffStatAdded:   &added,
+				DiffStatChanged: nil,
+				DiffStatDeleted: &deleted,
+			},
+			want: nil,
+		},
+		"deleted missing": {
+			c: Changeset{
+				DiffStatAdded:   &added,
+				DiffStatChanged: &changed,
+				DiffStatDeleted: nil,
+			},
+			want: nil,
+		},
+		"all present": {
+			c: Changeset{
+				DiffStatAdded:   &added,
+				DiffStatChanged: &changed,
+				DiffStatDeleted: &deleted,
+			},
+			want: &diff.Stat{
+				Added:   added,
+				Changed: changed,
+				Deleted: deleted,
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have := tc.c.DiffStat()
+			if (tc.want == nil && have != nil) || (tc.want != nil && have == nil) {
+				t.Errorf("mismatched nils in diff stats: have %+v; want %+v", have, tc.want)
+			} else if tc.want != nil && have != nil {
+				if d := cmp.Diff(*have, *tc.want); d != "" {
+					t.Errorf("incorrect diff stat: %s", d)
+				}
+			}
+		})
+	}
+}
+
+type changesetSyncStateTestCase struct {
+	state [2]ChangesetSyncState
+	want  bool
+}
+
+func TestChangesetSyncStateEquals(t *testing.T) {
+	testCases := make(map[string]changesetSyncStateTestCase)
+
+	for baseName, basePairs := range map[string][2]string{
+		"base equal":     {"abc", "abc"},
+		"base different": {"abc", "def"},
+	} {
+		for headName, headPairs := range map[string][2]string{
+			"head equal":     {"abc", "abc"},
+			"head different": {"abc", "def"},
+		} {
+			for completeName, completePairs := range map[string][2]bool{
+				"complete both true":  {true, true},
+				"complete both false": {false, false},
+				"complete different":  {true, false},
+			} {
+				key := fmt.Sprintf("%s; %s; %s", baseName, headName, completeName)
+
+				testCases[key] = changesetSyncStateTestCase{
+					state: [2]ChangesetSyncState{
+						{
+							BaseRefOid: basePairs[0],
+							HeadRefOid: headPairs[0],
+							IsComplete: completePairs[0],
+						},
+						{
+							BaseRefOid: basePairs[1],
+							HeadRefOid: headPairs[1],
+							IsComplete: completePairs[1],
+						},
+					},
+					// This is icky, but works, and means we're not just
+					// repeating the implementation of Equals().
+					want: strings.HasPrefix(key, "base equal; head equal; complete both"),
+				}
+			}
+		}
+	}
+
+	for name, tc := range testCases {
+		if have := tc.state[0].Equals(&tc.state[1]); have != tc.want {
+			t.Errorf("%s: unexpected Equals result: have %v; want %v", name, have, tc.want)
+		}
 	}
 }

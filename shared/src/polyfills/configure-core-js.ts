@@ -1,4 +1,3 @@
-// @ts-expect-error
 import configure from 'core-js/configurator'
 
 configure({

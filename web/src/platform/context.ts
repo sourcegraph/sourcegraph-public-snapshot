@@ -60,7 +60,7 @@ export function createPlatformContext(): PlatformContext {
         },
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => createExtensionHost(),
+        createExtensionHost: () => Promise.resolve(createExtensionHost()),
         urlToFile: toPrettyWebBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,

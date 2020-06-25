@@ -211,9 +211,7 @@ describe('Search regression test suite', () => {
                 if (results.length === 0) {
                     return false
                 }
-                const hasExcludedRepo = results.some(
-                    element => element.textContent && element.textContent.includes('google')
-                )
+                const hasExcludedRepo = results.some(element => element.textContent?.includes('google'))
                 if (hasExcludedRepo) {
                     throw new Error('Results contain excluded repository')
                 }
@@ -467,7 +465,7 @@ describe('Search regression test suite', () => {
             this.timeout(2 * 1000)
             const response = await search(gqlClient, 'router index:no timeout:1ns', 'V2', GQL.SearchPatternType.literal)
             expect(response.results.matchCount).toBe(0)
-            expect(response.results.alert && response.results.alert.title).toBe('Timed out while searching')
+            expect(response.results.alert?.title).toBe('Timed out while searching')
         })
 
         test('Search repo group', async () => {

@@ -446,12 +446,12 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			switch page {
 			case 1:
 				return []*github.Collaborator{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
+					{DatabaseID: 57463526},
+					{DatabaseID: 67471},
 				}, true, nil
 			case 2:
 				return []*github.Collaborator{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
+					{DatabaseID: 187831},
 				}, false, nil
 			}
 
@@ -474,9 +474,9 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	}
 
 	wantAccountIDs := []extsvc.AccountID{
-		"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-		"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
-		"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+		"57463526",
+		"67471",
+		"187831",
 	}
 	if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
 		t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)

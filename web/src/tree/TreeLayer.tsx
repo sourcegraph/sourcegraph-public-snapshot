@@ -213,7 +213,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
 
         this.componentUpdates.next(this.props)
 
-        const isDirectory = this.props.entryInfo && this.props.entryInfo.isDirectory
+        const isDirectory = this.props.entryInfo?.isDirectory
         // When scrolling through the tree with the keyboard, if we hover a child tree node, prefetch its children.
         if (this.node === this.props.selectedNode && isDirectory && this.props.onHover) {
             this.props.onHover(this.node.path)

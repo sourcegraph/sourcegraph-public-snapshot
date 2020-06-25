@@ -41,7 +41,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		return []*git.LogCommitSearchResult{
 			{
 				Commit: git.Commit{ID: "c1", Author: gitSignatureWithDate},
-				Diff:   &git.Diff{Raw: "x"},
+				Diff:   &git.RawDiff{Raw: "x"},
 			},
 		}, true, nil
 	}
