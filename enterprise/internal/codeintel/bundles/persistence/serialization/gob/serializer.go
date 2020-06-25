@@ -6,8 +6,10 @@ import (
 	"io"
 	"sync"
 
+	"compress/gzip"
+	// "github.com/klauspost/compress/gzip"
+
 	"github.com/hashicorp/go-multierror"
-	"github.com/klauspost/compress/gzip"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/serialization"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
@@ -19,47 +21,32 @@ func init() {
 }
 
 type gobSerializer struct {
-	readers *sync.Pool
-	writers *sync.Pool
+	readers sync.Pool
+	writers sync.Pool
 }
 
 var _ serialization.Serializer = &gobSerializer{}
 
 func New() serialization.Serializer {
 	return &gobSerializer{
-		readers: &sync.Pool{New: func() interface{} { return new(gzip.Reader) }},
-		writers: &sync.Pool{New: func() interface{} { return gzip.NewWriter(nil) }},
+		readers: sync.Pool{New: func() interface{} { return new(gzip.Reader) }},
+		writers: sync.Pool{New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, gzip.BestCompression); return w }},
 	}
 }
 
 // MarshalDocumentData transforms document data into a string of bytes writable to disk.
 func (s *gobSerializer) MarshalDocumentData(document types.DocumentData) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(&document); err != nil {
-		return nil, err
-	}
-
-	return s.compress(&buf)
+	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&document) })
 }
 
 // MarshalResultChunkData transforms result chunk data into a string of bytes writable to disk.
 func (s *gobSerializer) MarshalResultChunkData(resultChunks types.ResultChunkData) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(&resultChunks); err != nil {
-		return nil, err
-	}
-
-	return s.compress(&buf)
+	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&resultChunks) })
 }
 
 // MarshalLocations transforms a slice of locations into a string of bytes writable to disk.
 func (s *gobSerializer) MarshalLocations(locations []types.Location) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(&locations); err != nil {
-		return nil, err
-	}
-
-	return s.compress(&buf)
+	return s.withEncoder(func(encoder *gob.Encoder) error { return encoder.Encode(&locations) })
 }
 
 // UnmarshalDocumentData is the inverse of MarshalDocumentData.
@@ -80,31 +67,30 @@ func (s *gobSerializer) UnmarshalLocations(data []byte) (locations []types.Locat
 	return locations, err
 }
 
-//
-//
-//
+// withEncoder creates a gob encoded, calls the given function with it, then compressed the encoded output.
+func (s *gobSerializer) withEncoder(f func(encoder *gob.Encoder) error) ([]byte, error) {
+	gzipWriter := s.writers.Get().(*gzip.Writer)
+	defer s.writers.Put(gzipWriter)
 
-// TODO
-func (s *gobSerializer) compress(r io.Reader) ([]byte, error) {
-	w := s.writers.Get().(*gzip.Writer)
-	defer s.writers.Put(w)
-
-	var buf bytes.Buffer
-	w.Reset(&buf)
-
-	if _, err := io.Copy(w, r); err != nil {
-		w.Close()
+	encodeBuf := new(bytes.Buffer)
+	if err := f(gob.NewEncoder(encodeBuf)); err != nil {
 		return nil, err
 	}
 
-	if err := w.Close(); err != nil {
+	compressBuf := new(bytes.Buffer)
+	gzipWriter.Reset(compressBuf)
+
+	if _, err := io.Copy(gzipWriter, encodeBuf); err != nil {
+		return nil, err
+	}
+	if err := gzipWriter.Close(); err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return compressBuf.Bytes(), nil
 }
 
-// TODO
+// withDecoder creates a gob decoder with the given encoded data and calls the given function with it.
 func (s *gobSerializer) withDecoder(data []byte, f func(decoder *gob.Decoder) error) (err error) {
 	r := s.readers.Get().(*gzip.Reader)
 	defer s.readers.Put(r)
