@@ -1,6 +1,7 @@
 package existence
 
 import (
+	"context"
 	"path/filepath"
 	"sort"
 )
@@ -8,18 +9,18 @@ import (
 type StringSet map[string]struct{}
 
 // GetChildrenFunc returns a map of directory contents for a set of directory names.
-type GetChildrenFunc func(dirnames []string) (map[string][]string, error)
+type GetChildrenFunc func(ctx context.Context, dirnames []string) (map[string][]string, error)
 
 // directoryContents takes in a list of files present in an LSIF index and constructs a mapping from
 // directory  names to sets containing that directory's contents. This function calls the given
 // GetChildrenFunc a minimal number of times (and with minimal argument lengths) by pruning missing
 // subtrees from subsequent request batches. This can save a lot of work for large uncommitted subtrees
 // (e.g. node_modules).
-func directoryContents(root string, paths []string, getChildren GetChildrenFunc) (map[string]StringSet, error) {
+func directoryContents(ctx context.Context, root string, paths []string, getChildren GetChildrenFunc) (map[string]StringSet, error) {
 	contents := map[string]StringSet{}
 
 	for batch := makeInitialRequestBatch(root, paths); len(batch) > 0; batch = batch.next(contents) {
-		batchResults, err := getChildren(batch.dirnames())
+		batchResults, err := getChildren(ctx, batch.dirnames())
 		if err != nil {
 			return nil, err
 		}

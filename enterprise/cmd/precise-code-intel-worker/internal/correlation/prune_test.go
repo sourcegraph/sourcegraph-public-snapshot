@@ -1,6 +1,7 @@
 package correlation
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -14,7 +15,7 @@ func TestPrune(t *testing.T) {
 		"root/sub": {"root/sub/baz.go"},
 	}
 
-	getChildren := func(dirnames []string) (map[string][]string, error) {
+	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		out := map[string][]string{}
 		for _, dirname := range dirnames {
 			out[dirname] = gitContentsOracle[dirname]
@@ -41,7 +42,7 @@ func TestPrune(t *testing.T) {
 		},
 	}
 
-	if err := prune(state, "root", getChildren); err != nil {
+	if err := prune(context.Background(), state, "root", getChildren); err != nil {
 		t.Fatalf("unexpected error pruning state: %s", err)
 	}
 

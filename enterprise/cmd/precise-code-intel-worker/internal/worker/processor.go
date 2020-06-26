@@ -84,7 +84,7 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 		tempDir,
 		upload.ID,
 		upload.Root,
-		func(dirnames []string) (map[string][]string, error) {
+		func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 			directoryChildren, err := p.gitserverClient.DirectoryChildren(ctx, store, upload.RepositoryID, upload.Commit, dirnames)
 			if err != nil {
 				return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
@@ -209,7 +209,7 @@ func isRepoCurrentlyCloning(ctx context.Context, repoID int, commit string) (boo
 
 // convert correlates the raw input data and commits the correlated data to disk.
 func convert(ctx context.Context, r io.Reader, tempDir string, dumpID int, root string, getChildren existence.GetChildrenFunc) ([]types.Package, []types.PackageReference, error) {
-	groupedBundleData, err := correlation.Correlate(r, dumpID, root, getChildren)
+	groupedBundleData, err := correlation.Correlate(ctx, r, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
