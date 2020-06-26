@@ -103,7 +103,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			otlog.Int("before-unindexed-repos", len(searcherRepos)),
 		)
 		switch parseYesNoOnly(index) {
-		case Yes, True:
+		case Yes:
 			// default
 			if args.Zoekt.Enabled() {
 				tr.LogFields(otlog.Int("indexed-repos", len(zoektRepos)), otlog.Int("unindexed-repos", len(searcherRepos)))
@@ -124,7 +124,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 				common.missing[i] = r.Repo
 			}
 			searcherRepos = nil
-		case No, False:
+		case No:
 			searcherRepos = append(searcherRepos, zoektRepos...)
 			zoektRepos = nil
 		default:
