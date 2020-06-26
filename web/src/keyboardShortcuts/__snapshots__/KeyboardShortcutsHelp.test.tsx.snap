@@ -1,39 +1,423 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`KeyboardShortcutsHelp  1`] = `
-<div
-  className="modal-body"
+<KeyboardShortcutsHelp
+  forceIsOpen={true}
+  keyboardShortcutForShow={
+    Object {
+      "id": "x",
+      "keybindings": Array [
+        Object {
+          "held": Array [
+            "Alt",
+          ],
+          "ordered": Array [
+            "x",
+          ],
+        },
+      ],
+      "title": "t",
+    }
+  }
+  keyboardShortcuts={
+    Array [
+      Object {
+        "id": "x",
+        "keybindings": Array [
+          Object {
+            "held": Array [
+              "Alt",
+            ],
+            "ordered": Array [
+              "x",
+            ],
+          },
+        ],
+        "title": "t",
+      },
+    ]
+  }
 >
-  <ul
-    className="list-group list-group-flush"
+  <Shortcut
+    held={
+      Array [
+        "Alt",
+      ]
+    }
+    key="0"
+    onMatch={[Function]}
+    ordered={
+      Array [
+        "x",
+      ]
+    }
   >
-    <li
-      className="list-group-item d-flex align-items-center justify-content-between"
+    <ShortcutConsumer
+      held={
+        Array [
+          "Alt",
+        ]
+      }
+      onMatch={[Function]}
+      ordered={
+        Array [
+          "x",
+        ]
+      }
+    />
+  </Shortcut>
+  <Modal
+    autoFocus={true}
+    backdrop={true}
+    backdropTransition={
+      Object {
+        "mountOnEnter": true,
+        "timeout": 150,
+      }
+    }
+    centered={true}
+    fade={false}
+    isOpen={true}
+    keyboard={true}
+    modalTransition={
+      Object {
+        "timeout": 300,
+      }
+    }
+    onClosed={[Function]}
+    onOpened={[Function]}
+    returnFocusAfterClose={true}
+    role="dialog"
+    scrollable={false}
+    toggle={[Function]}
+    unmountOnClose={true}
+    zIndex={1050}
+  >
+    <Portal
+      node={
+        <div
+          style="position: relative; z-index: 1050; display: block;"
+          tabindex="-1"
+        >
+          <div
+            class=""
+          >
+            <div
+              class="modal"
+              role="dialog"
+              style="display: block;"
+              tabindex="-1"
+            >
+              <div
+                class="modal-dialog modal-dialog-centered"
+                role="document"
+              >
+                <div
+                  class="modal-content"
+                >
+                  <div
+                    class="modal-header"
+                  >
+                    <h4
+                      class="modal-title"
+                    >
+                      Keyboard shortcuts
+                    </h4>
+                    <button
+                      aria-label="Close"
+                      class="btn btn-icon"
+                      data-dismiss="modal"
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                      >
+                        ×
+                      </span>
+                    </button>
+                  </div>
+                  <div
+                    class="modal-body"
+                  >
+                    <ul
+                      class="list-group list-group-flush"
+                    >
+                      <li
+                        class="list-group-item d-flex align-items-center justify-content-between"
+                      >
+                        t
+                        <span>
+                          <span>
+                            <kbd>
+                              Alt
+                            </kbd>
+                            <kbd>
+                              x
+                            </kbd>
+                          </span>
+                        </span>
+                      </li>
+                      <li
+                        class="list-group-item d-flex align-items-center justify-content-between"
+                      >
+                        Expand URL to its canonical form (on file or tree page)
+                        <span>
+                          <span>
+                            <kbd>
+                              y
+                            </kbd>
+                          </span>
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="modal-backdrop show"
+            />
+          </div>
+        </div>
+      }
     >
-      t
-      <span>
-        <span>
-          <kbd>
-            Alt
-          </kbd>
-          <kbd>
-            x
-          </kbd>
-        </span>
-      </span>
-    </li>
-    <li
-      className="list-group-item d-flex align-items-center justify-content-between"
-    >
-      Expand URL to its canonical form (on file or tree page)
-      <span>
-        <span>
-          <kbd>
-            y
-          </kbd>
-        </span>
-      </span>
-    </li>
-  </ul>
-</div>
+      <Portal
+        containerInfo={
+          <div
+            style="position: relative; z-index: 1050; display: block;"
+            tabindex="-1"
+          >
+            <div
+              class=""
+            >
+              <div
+                class="modal"
+                role="dialog"
+                style="display: block;"
+                tabindex="-1"
+              >
+                <div
+                  class="modal-dialog modal-dialog-centered"
+                  role="document"
+                >
+                  <div
+                    class="modal-content"
+                  >
+                    <div
+                      class="modal-header"
+                    >
+                      <h4
+                        class="modal-title"
+                      >
+                        Keyboard shortcuts
+                      </h4>
+                      <button
+                        aria-label="Close"
+                        class="btn btn-icon"
+                        data-dismiss="modal"
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                        >
+                          ×
+                        </span>
+                      </button>
+                    </div>
+                    <div
+                      class="modal-body"
+                    >
+                      <ul
+                        class="list-group list-group-flush"
+                      >
+                        <li
+                          class="list-group-item d-flex align-items-center justify-content-between"
+                        >
+                          t
+                          <span>
+                            <span>
+                              <kbd>
+                                Alt
+                              </kbd>
+                              <kbd>
+                                x
+                              </kbd>
+                            </span>
+                          </span>
+                        </li>
+                        <li
+                          class="list-group-item d-flex align-items-center justify-content-between"
+                        >
+                          Expand URL to its canonical form (on file or tree page)
+                          <span>
+                            <span>
+                              <kbd>
+                                y
+                              </kbd>
+                            </span>
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="modal-backdrop show"
+              />
+            </div>
+          </div>
+        }
+      >
+        <div
+          className=""
+        >
+          <Fade
+            appear={true}
+            baseClass=""
+            baseClassActive="show"
+            className="modal"
+            enter={true}
+            exit={true}
+            in={true}
+            mountOnEnter={false}
+            onClick={[Function]}
+            onEnter={[Function]}
+            onEntered={[Function]}
+            onEntering={[Function]}
+            onExit={[Function]}
+            onExited={[Function]}
+            onExiting={[Function]}
+            onKeyDown={[Function]}
+            onKeyUp={[Function]}
+            onMouseDown={[Function]}
+            role="dialog"
+            style={
+              Object {
+                "display": "block",
+              }
+            }
+            tabIndex="-1"
+            tag="div"
+            timeout={0}
+            unmountOnExit={false}
+          >
+            <Transition
+              appear={true}
+              enter={true}
+              exit={true}
+              in={true}
+              mountOnEnter={false}
+              onEnter={[Function]}
+              onEntered={[Function]}
+              onEntering={[Function]}
+              onExit={[Function]}
+              onExited={[Function]}
+              onExiting={[Function]}
+              timeout={0}
+              unmountOnExit={false}
+            >
+              <div
+                className="modal"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                onMouseDown={[Function]}
+                role="dialog"
+                style={
+                  Object {
+                    "display": "block",
+                  }
+                }
+                tabIndex="-1"
+              >
+                <div
+                  className="modal-dialog modal-dialog-centered"
+                  role="document"
+                >
+                  <div
+                    className="modal-content"
+                  >
+                    <div
+                      className="modal-header"
+                    >
+                      <h4
+                        className="modal-title"
+                      >
+                        Keyboard shortcuts
+                      </h4>
+                      <button
+                        aria-label="Close"
+                        className="btn btn-icon"
+                        data-dismiss="modal"
+                        onClick={[Function]}
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                        >
+                          ×
+                        </span>
+                      </button>
+                    </div>
+                    <div
+                      className="modal-body"
+                    >
+                      <ul
+                        className="list-group list-group-flush"
+                      >
+                        <li
+                          className="list-group-item d-flex align-items-center justify-content-between"
+                          key="x"
+                        >
+                          t
+                          <span>
+                            <span
+                              key="0"
+                            >
+                              <kbd
+                                key="0"
+                              >
+                                Alt
+                              </kbd>
+                              <kbd
+                                key="1"
+                              >
+                                x
+                              </kbd>
+                            </span>
+                          </span>
+                        </li>
+                        <li
+                          className="list-group-item d-flex align-items-center justify-content-between"
+                          key="canonicalURL"
+                        >
+                          Expand URL to its canonical form (on file or tree page)
+                          <span>
+                            <span
+                              key="0"
+                            >
+                              <kbd
+                                key="0"
+                              >
+                                y
+                              </kbd>
+                            </span>
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </Fade>
+          <div
+            className="modal-backdrop show"
+          />
+        </div>
+      </Portal>
+    </Portal>
+  </Modal>
+</KeyboardShortcutsHelp>
 `;

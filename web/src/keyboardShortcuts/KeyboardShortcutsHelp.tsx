@@ -7,6 +7,9 @@ import { KeyboardShortcutsProps } from './keyboardShortcuts'
 interface Props extends KeyboardShortcutsProps {
     /** The keyboard shortcut to show this modal. */
     keyboardShortcutForShow: KeyboardShortcut
+
+    /** Used for testing. */
+    forceIsOpen?: boolean
 }
 
 /**
@@ -24,8 +27,9 @@ const LEGACY_KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
 export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
     keyboardShortcutForShow,
     keyboardShortcuts,
+    forceIsOpen = false,
 }) => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(forceIsOpen)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
     return (

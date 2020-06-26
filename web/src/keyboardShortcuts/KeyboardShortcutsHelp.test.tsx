@@ -1,11 +1,10 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
-import { Modal } from 'reactstrap'
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp'
+import { mount } from 'enzyme'
 
 describe('KeyboardShortcutsHelp', () => {
     test('', () => {
-        const output = renderer.create(
+        const output = mount(
             <KeyboardShortcutsHelp
                 keyboardShortcuts={[
                     {
@@ -19,10 +18,9 @@ describe('KeyboardShortcutsHelp', () => {
                     title: 't',
                     keybindings: [{ held: ['Alt'], ordered: ['x'] }],
                 }}
+                forceIsOpen={true}
             />
         )
-        // Modal is hidden by default and uses portal, so we can't easily test its contents. Grab
-        // its inner .modal-body and snapshot that instead.
-        expect(renderer.create(output.root.findByType(Modal).props.children[1]).toJSON()).toMatchSnapshot()
+        expect(output).toMatchSnapshot()
     })
 })
