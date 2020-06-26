@@ -37,7 +37,7 @@ func makeCommit(i int) string {
 
 // getDumpVisibilities returns a map from dump identifiers to its visibility. Fails the test on error.
 func getDumpVisibilities(t *testing.T, db *sql.DB) map[int]bool {
-	visibilities, err := scanVisibilities(db.Query("SELECT id, visible_at_tip FROM lsif_dumps"))
+	visibilities, err := scanVisibilities(db.Query("SELECT id, visible_at_tip FROM lsif_dumps_with_repository_name"))
 	if err != nil {
 		t.Fatalf("unexpected error while scanning dump visibility: %s", err)
 	}
@@ -63,6 +63,9 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 		if upload.UploadedParts == nil {
 			upload.UploadedParts = []int{}
 		}
+
+		// Ensure we have a repo for the inner join in select queries
+		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName)
 
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_uploads (
@@ -119,6 +122,9 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.RepositoryID = 50
 		}
 
+		// Ensure we have a repo for the inner join in select queries
+		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
+
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_indexes (
 				id,
@@ -148,6 +154,23 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error while inserting index: %s", err)
 		}
+	}
+}
+
+// insertRepo creates a repository record with the given id and name. If there is already a repository
+// with the given identifier, nothing happens
+func insertRepo(t *testing.T, db *sql.DB, id int, name string) {
+	if name == "" {
+		name = fmt.Sprintf("n-%d", id)
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO repo (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING`,
+		id,
+		name,
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting repository: %s", err)
 	}
 }
 
