@@ -17,7 +17,7 @@ import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { Hover } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
-import { fromHoverMerged } from '../client/types/hover'
+import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly } from '../../util/types'
 
 /**
@@ -139,15 +139,12 @@ export const initNewExtensionAPI = (
         getHover: (textParameters: TextDocumentPositionParams) => {
             const document = textDocuments.get(textParameters.textDocument.uri)
 
-            return proxySubscribable(
-                callProviders(
-                    state.hoverProviders,
-                    document,
-                    provider => provider.provideHover(document, toPosition(textParameters.position)),
-                    (results: (typeof LOADING | Hover | null | undefined)[]) =>
-                        fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
-                )
-            )
+            const invokeProvider = (
+                provider: sourcegraph.HoverProvider
+            ): sourcegraph.ProviderResult<sourcegraph.Badged<Hover>> =>
+                provider.provideHover(document, toPosition(textParameters.position))
+
+            return proxySubscribable(callProviders(state.hoverProviders, document, invokeProvider, mergeHoverResults))
         },
     }
 
@@ -262,4 +259,8 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
             })),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
+}
+
+export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
+    return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
 }
