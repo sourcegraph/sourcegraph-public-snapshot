@@ -62,7 +62,6 @@ interface Campaign
         | 'branch'
         | 'hasUnpublishedPatches'
     > {
-    patchSet: Pick<GQL.IPatchSet, 'id'> | null
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
     patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
@@ -357,13 +356,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     // On update, check if an update is possible
-    if (!!campaign && !!patchSet) {
-        if (!campaign.patchSet?.id) {
-            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a patch set" />
-        }
-        if (campaign.closedAt) {
-            return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
-        }
+    if (!!campaign && !!patchSet && campaign.closedAt) {
+        return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
     }
 
     const author = campaign ? campaign.author : authenticatedUser
@@ -413,7 +407,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             />
                         )}
                         {/* Existing non-manual campaign, but not updating with a new set of patches */}
-                        {campaign && !!campaign.patchSet && !patchSet && (
+                        {campaign && !patchSet && (
                             <div className="card">
                                 <div className="card-body">
                                     <h3 className="card-title">Want to update the patches?</h3>
@@ -536,8 +530,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 </>
                             )}
 
-                            {/* Only campaigns that have no patch set can add changesets manually. */}
-                            {!campaign.patchSet && campaign.viewerCanAdminister && !campaign.closedAt && (
+                            {campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <>
                                     {totalChangesetCount === 0 && (
                                         <div className="mt-4 mb-2 alert alert-info e2e-campaign-get-started">

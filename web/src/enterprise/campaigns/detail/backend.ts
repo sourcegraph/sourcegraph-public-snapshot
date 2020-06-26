@@ -47,9 +47,6 @@ const campaignFragment = gql`
         patches {
             totalCount
         }
-        patchSet {
-            id
-        }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {
             date

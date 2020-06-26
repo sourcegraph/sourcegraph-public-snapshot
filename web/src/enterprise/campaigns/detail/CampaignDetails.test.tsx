@@ -90,7 +90,6 @@ describe('CampaignDetails', () => {
                     description: 'd',
                     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                     author: { username: 'alice' } as GQL.IUser,
-                    patchSet: { id: 'p' },
                     changesets: { totalCount: 2 },
                     patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
