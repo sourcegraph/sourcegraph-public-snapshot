@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -458,13 +459,10 @@ func computeDiffStat(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Rep
 		}
 
 		fs := file.Stat()
-		log15.Info("file diff", "file", file.NewName, "stat", fs)
 		stat.Added += fs.Added
 		stat.Changed += fs.Changed
 		stat.Deleted += fs.Deleted
 	}
-
-	log15.Info("total diff stat", "stat", stat)
 
 	return stat, nil
 }
@@ -519,7 +517,8 @@ func computeRev(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Repo, ge
 // changesetGitserverRepo looks up a gitserver.Repo based on the RepoID within a
 // changeset.
 func changesetGitserverRepo(ctx context.Context, c *cmpgn.Changeset) (*gitserver.Repo, error) {
-	repo, err := db.Repos.Get(ctx, c.RepoID)
+	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
+	repo, err := db.Repos.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
 	if err != nil {
 		return nil, err
 	}
