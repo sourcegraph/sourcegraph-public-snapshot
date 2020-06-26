@@ -464,7 +464,9 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTi
 // and the upload and index records for that repository being deleted.
 const DeletedRepositoryGracePeriod = time.Minute * 30
 
-// TODO - document
+// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
+// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
+// that were removed for that repository.
 func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are  completed or visible at tip.
