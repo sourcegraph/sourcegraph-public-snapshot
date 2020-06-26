@@ -6,7 +6,7 @@ import { mount } from 'enzyme'
 describe('ChangesetStateIcon', () => {
     for (const state of Object.values(ChangesetState)) {
         test(`renders ${state}`, () => {
-            expect(mount(<ChangesetStateIcon state={state} />)).toMatchSnapshot()
+            expect(mount(<ChangesetStateIcon state={state} />).children()).toMatchSnapshot()
         })
     }
 })

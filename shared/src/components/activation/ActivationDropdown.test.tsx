@@ -53,7 +53,7 @@ describe('ActivationDropdown', () => {
                     history={H.createMemoryHistory({ keyLength: 0 })}
                     alwaysShow={true}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

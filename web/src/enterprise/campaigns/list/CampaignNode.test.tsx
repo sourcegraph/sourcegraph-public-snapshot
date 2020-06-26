@@ -25,7 +25,9 @@ describe('CampaignNode', () => {
 
     test('open campaign', () => {
         expect(
-            mount(<CampaignNode node={node} now={parseISO('2019-01-01T23:15:01Z')} history={createMemoryHistory()} />)
+            mount(
+                <CampaignNode node={node} now={parseISO('2019-01-01T23:15:01Z')} history={createMemoryHistory()} />
+            ).children()
         ).toMatchSnapshot()
     })
     test('closed campaign', () => {
@@ -36,7 +38,7 @@ describe('CampaignNode', () => {
                     now={parseISO('2019-01-01T23:15:01Z')}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('campaign without description', () => {
@@ -51,7 +53,7 @@ describe('CampaignNode', () => {
                     now={parseISO('2019-01-01T23:15:01Z')}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('campaign selection mode', () => {
@@ -67,7 +69,7 @@ describe('CampaignNode', () => {
                     now={parseISO('2019-01-01T23:15:01Z')}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('campaign with mixed changeset states', () => {
@@ -83,7 +85,7 @@ describe('CampaignNode', () => {
                     now={parseISO('2019-01-01T23:15:01Z')}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

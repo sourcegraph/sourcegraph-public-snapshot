@@ -6,7 +6,9 @@ import { mount } from 'enzyme'
 describe('AddChangesetForm', () => {
     test('renders the form', () => {
         expect(
-            mount(<AddChangesetForm campaignID="123" onAdd={() => undefined} history={createMemoryHistory()} />)
+            mount(
+                <AddChangesetForm campaignID="123" onAdd={() => undefined} history={createMemoryHistory()} />
+            ).children()
         ).toMatchSnapshot()
     })
 })

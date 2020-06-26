@@ -1,149 +1,147 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ScopePage renders 1`] = `
-<MemoryRouter>
-  <Router
+<Router
+  history="[History]"
+>
+  <ScopePage
+    authenticatedUser={null}
+    caseSensitive={false}
+    copyQueryButton={false}
     history="[History]"
+    location="[Location path=/]"
+    match={
+      Object {
+        "isExact": true,
+        "params": Object {
+          "id": "my-scope-id",
+        },
+        "path": "/",
+        "url": "/",
+      }
+    }
+    onNavbarQueryChange={[Function]}
+    patternType="literal"
+    setCaseSensitivity={[Function]}
+    setPatternType={[Function]}
+    settingsCascade={
+      Object {
+        "final": Object {
+          "search.scopes": Array [
+            Object {
+              "description": "my description",
+              "id": "my-scope-id",
+              "value": "my-scope-value",
+            },
+          ],
+        },
+        "subjects": Array [],
+      }
+    }
   >
-    <ScopePage
-      authenticatedUser={null}
-      caseSensitive={false}
-      copyQueryButton={false}
-      history="[History]"
-      location="[Location path=/]"
-      match={
-        Object {
-          "isExact": true,
-          "params": Object {
-            "id": "my-scope-id",
-          },
-          "path": "/",
-          "url": "/",
-        }
-      }
-      onNavbarQueryChange={[Function]}
-      patternType="literal"
-      setCaseSensitivity={[Function]}
-      setPatternType={[Function]}
-      settingsCascade={
-        Object {
-          "final": Object {
-            "search.scopes": Array [
-              Object {
-                "description": "my description",
-                "id": "my-scope-id",
-                "value": "my-scope-value",
-              },
-            ],
-          },
-          "subjects": Array [],
-        }
-      }
+    <div
+      className="container mt-3"
     >
-      <div
-        className="container mt-3"
-      >
-        <PageTitle />
-        <header>
-          <h1 />
-          <Markdown
-            dangerousInnerHTML="<p>my description</p>
+      <PageTitle />
+      <header>
+        <h1 />
+        <Markdown
+          dangerousInnerHTML="<p>my description</p>
 "
-            history="[History]"
-          >
-            <div
-              className="markdown"
-              dangerouslySetInnerHTML={
-                Object {
-                  "__html": "<p>my description</p>
-",
-                }
-              }
-              onClick={[Function]}
-            />
-          </Markdown>
-        </header>
-        <section
-          className="mb-5"
+          history="[History]"
         >
-          <Form
-            className="d-flex"
+          <div
+            className="markdown"
+            dangerouslySetInnerHTML={
+              Object {
+                "__html": "<p>my description</p>
+",
+              }
+            }
+            onClick={[Function]}
+          />
+        </Markdown>
+      </header>
+      <section
+        className="mb-5"
+      >
+        <Form
+          className="d-flex"
+          onSubmit={[Function]}
+        >
+          <form
+            className="d-flex "
+            onInvalid={[Function]}
             onSubmit={[Function]}
           >
-            <form
-              className="d-flex "
-              onInvalid={[Function]}
-              onSubmit={[Function]}
-            >
-              <QueryInput
-                authenticatedUser={null}
-                autoFocus={true}
-                caseSensitive={false}
-                copyQueryButton={false}
-                history="[History]"
-                location="[Location path=/]"
-                match={
-                  Object {
-                    "isExact": true,
-                    "params": Object {
-                      "id": "my-scope-id",
-                    },
-                    "path": "/",
-                    "url": "/",
-                  }
+            <QueryInput
+              authenticatedUser={null}
+              autoFocus={true}
+              caseSensitive={false}
+              copyQueryButton={false}
+              history="[History]"
+              location="[Location path=/]"
+              match={
+                Object {
+                  "isExact": true,
+                  "params": Object {
+                    "id": "my-scope-id",
+                  },
+                  "path": "/",
+                  "url": "/",
                 }
-                onChange={[Function]}
-                patternType="literal"
-                placeholder="Search..."
-                prependQueryForSuggestions="my-scope-value"
-                setCaseSensitivity={[Function]}
-                setPatternType={[Function]}
-                settingsCascade={
-                  Object {
-                    "final": Object {
-                      "search.scopes": Array [
-                        Object {
-                          "description": "my description",
-                          "id": "my-scope-id",
-                          "value": "my-scope-value",
-                        },
-                      ],
-                    },
-                    "subjects": Array [],
-                  }
+              }
+              onChange={[Function]}
+              patternType="literal"
+              placeholder="Search..."
+              prependQueryForSuggestions="my-scope-value"
+              setCaseSensitivity={[Function]}
+              setPatternType={[Function]}
+              settingsCascade={
+                Object {
+                  "final": Object {
+                    "search.scopes": Array [
+                      Object {
+                        "description": "my description",
+                        "id": "my-scope-id",
+                        "value": "my-scope-value",
+                      },
+                    ],
+                  },
+                  "subjects": Array [],
                 }
-                value={
-                  Object {
-                    "cursorPosition": 0,
-                    "query": "",
-                  }
+              }
+              value={
+                Object {
+                  "cursorPosition": 0,
+                  "query": "",
                 }
-              />
-              <SearchButton />
-            </form>
-          </Form>
-          <div
-            className="d-flex align-items-center m-1 text-muted"
-          >
-            <span
-              className="mr-1"
-            >
-              Scope:
-            </span>
-            <code
-              className="border rounded p-1"
-            >
-              my-scope-value
-            </code>
-          </div>
-        </section>
+              }
+            />
+            <SearchButton />
+          </form>
+        </Form>
         <div
-          className="alert alert-warning"
+          className="d-flex align-items-center m-1 text-muted"
         >
-          No repositories in scope.
+          <span
+            className="mr-1"
+          >
+            Scope:
+          </span>
+          <code
+            className="border rounded p-1"
+          >
+            my-scope-value
+          </code>
         </div>
+      </section>
+      <div
+        className="alert alert-warning"
+      >
+        No repositories in scope.
       </div>
-    </ScopePage>
-  </Router>
-</MemoryRouter>
+    </div>
+  </ScopePage>
+</Router>
 `;

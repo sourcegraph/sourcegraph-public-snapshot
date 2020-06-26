@@ -22,6 +22,6 @@ describe('CompletionWidgetDropdown', () => {
                     noResultsClassName="no-results-class-name"
                     selectedListItemClassName="selected-list-item-class-name"
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 })

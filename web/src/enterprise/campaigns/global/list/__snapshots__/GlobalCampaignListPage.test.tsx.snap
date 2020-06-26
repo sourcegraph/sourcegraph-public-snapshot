@@ -1,16 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
-<GlobalCampaignListPage
-  authenticatedUser={
-    Object {
-      "siteAdmin": false,
-    }
-  }
-  history="[History]"
-  location="[Location path=/]"
-  queryCampaignsCount={[Function]}
->
+Array [
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -37,7 +28,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
         </a>
       </p>
     </div>
-  </div>
+  </div>,
   <div
     className="card mt-4 mb-4"
   >
@@ -72,21 +63,12 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
          with any questions or feedback!
       </p>
     </div>
-  </div>
-</GlobalCampaignListPage>
+  </div>,
+]
 `;
 
 exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
-<GlobalCampaignListPage
-  authenticatedUser={
-    Object {
-      "siteAdmin": false,
-    }
-  }
-  history="[History]"
-  location="[Location path=/]"
-  queryCampaignsCount={[Function]}
->
+Array [
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -113,7 +95,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
         </a>
       </p>
     </div>
-  </div>
+  </div>,
   <div
     className="card mt-4 mb-4"
   >
@@ -148,7 +130,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
          with any questions or feedback!
       </p>
     </div>
-  </div>
+  </div>,
   <FilteredConnection
     authenticatedUser={
       Object {
@@ -194,21 +176,12 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-  />
-</GlobalCampaignListPage>
+  />,
+]
 `;
 
 exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
-<GlobalCampaignListPage
-  authenticatedUser={
-    Object {
-      "siteAdmin": true,
-    }
-  }
-  history="[History]"
-  location="[Location path=/]"
-  queryCampaignsCount={[Function]}
->
+Array [
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -261,7 +234,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          New campaign
       </a>
     </AnchorLink>
-  </div>
+  </div>,
   <div
     className="card mt-4 mb-4"
   >
@@ -296,21 +269,12 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          with any questions or feedback!
       </p>
     </div>
-  </div>
-</GlobalCampaignListPage>
+  </div>,
+]
 `;
 
 exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
-<GlobalCampaignListPage
-  authenticatedUser={
-    Object {
-      "siteAdmin": true,
-    }
-  }
-  history="[History]"
-  location="[Location path=/]"
-  queryCampaignsCount={[Function]}
->
+Array [
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -363,7 +327,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          New campaign
       </a>
     </AnchorLink>
-  </div>
+  </div>,
   <div
     className="card mt-4 mb-4"
   >
@@ -398,7 +362,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          with any questions or feedback!
       </p>
     </div>
-  </div>
+  </div>,
   <FilteredConnection
     authenticatedUser={
       Object {
@@ -444,6 +408,6 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-  />
-</GlobalCampaignListPage>
+  />,
+]
 `;

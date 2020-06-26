@@ -33,7 +33,7 @@ describe('NewProductSubscriptionPaymentSection', () => {
                         })
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -66,7 +66,7 @@ describe('NewProductSubscriptionPaymentSection', () => {
                         })
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -99,7 +99,7 @@ describe('NewProductSubscriptionPaymentSection', () => {
                         })
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -132,7 +132,7 @@ describe('NewProductSubscriptionPaymentSection', () => {
                         })
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

@@ -13,7 +13,7 @@ describe.skip('withActivation', () => {
     const ComponentWithActivation = withActivation(Component)
 
     test('no user', () => {
-        expect(mount(<ComponentWithActivation authenticatedUser={null} />)).toMatchSnapshot()
+        expect(mount(<ComponentWithActivation authenticatedUser={null} />).children()).toMatchSnapshot()
     })
     test('user, admin', () => {
         const mockUser = {
@@ -22,7 +22,9 @@ describe.skip('withActivation', () => {
             email: 'user@me.com',
             siteAdmin: true,
         }
-        expect(mount(<ComponentWithActivation authenticatedUser={mockUser as GQL.IUser} />)).toMatchSnapshot()
+        expect(
+            mount(<ComponentWithActivation authenticatedUser={mockUser as GQL.IUser} />).children()
+        ).toMatchSnapshot()
     })
     test('user, non-admin', () => {
         const mockUser = {
@@ -31,6 +33,8 @@ describe.skip('withActivation', () => {
             email: 'user@me.com',
             siteAdmin: false,
         }
-        expect(mount(<ComponentWithActivation authenticatedUser={mockUser as GQL.IUser} />)).toMatchSnapshot()
+        expect(
+            mount(<ComponentWithActivation authenticatedUser={mockUser as GQL.IUser} />).children()
+        ).toMatchSnapshot()
     })
 })

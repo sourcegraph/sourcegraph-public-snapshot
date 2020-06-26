@@ -42,7 +42,7 @@ describe('UserSubscriptionsProductSubscriptionPage', () => {
                         history={createMemoryHistory()}
                     />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

@@ -1,1728 +1,1591 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<HierarchicalLocationsView /> displays a single location when complete 1`] = `
-<HierarchicalLocationsView
-  defaultGroup="git://github.com/foo/bar"
-  extensionsController={
-    Object {
-      "services": Object {
-        "context": Object {
-          "data": "[Subject]",
-          "updateContext": [Function],
-        },
-        "contribution": Object {
-          "registerContributions": [Function],
-        },
-      },
-    }
-  }
-  fetchHighlightedFileLines={[Function]}
-  isLightTheme={true}
-  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-  locations="[Observable]"
-  settingsCascade={
-    Object {
-      "final": null,
-      "subjects": null,
-    }
-  }
+<div
+  className="hierarchical-locations-wrapper"
 >
   <div
-    className="hierarchical-locations-wrapper"
+    className="hierarchical-locations-view "
   >
-    <div
-      className="hierarchical-locations-view "
-    >
-      <FileLocations
-        className="hierarchical-locations-view__content"
-        fetchHighlightedFileLines={[Function]}
-        icon="SourceRepositoryIcon"
-        isLightTheme={true}
-        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-        locations="[Observable]"
-        settingsCascade={
-          Object {
-            "final": null,
-            "subjects": null,
-          }
+    <FileLocations
+      className="hierarchical-locations-view__content"
+      fetchHighlightedFileLines={[Function]}
+      icon="SourceRepositoryIcon"
+      isLightTheme={true}
+      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+      locations="[Observable]"
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
         }
+      }
+    >
+      <div
+        className="file-locations hierarchical-locations-view__content"
       >
-        <div
-          className="file-locations hierarchical-locations-view__content"
-        >
-          <VirtualList
-            items={
-              Array [
-                <FileMatch
-                  expanded={true}
-                  fetchHighlightedFileLines={[Function]}
-                  icon="SourceRepositoryIcon"
-                  isLightTheme={true}
-                  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                  onSelect={[Function]}
-                  result={
-                    Object {
-                      "file": Object {
-                        "commit": Object {
-                          "oid": undefined,
-                        },
-                        "path": "",
-                        "url": "/github.com/foo/bar/-/blob/undefined",
+        <VirtualList
+          items={
+            Array [
+              <FileMatch
+                expanded={true}
+                fetchHighlightedFileLines={[Function]}
+                icon="SourceRepositoryIcon"
+                isLightTheme={true}
+                location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                onSelect={[Function]}
+                result={
+                  Object {
+                    "file": Object {
+                      "commit": Object {
+                        "oid": undefined,
                       },
-                      "limitHit": false,
-                      "lineMatches": Array [
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 1,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                      ],
-                      "repository": Object {
-                        "name": "github.com/foo/bar",
-                        "url": "/github.com/foo/bar",
-                      },
-                    }
-                  }
-                  settingsCascade={
-                    Object {
-                      "final": null,
-                      "subjects": null,
-                    }
-                  }
-                  showAllMatches={true}
-                />,
-              ]
-            }
-            itemsToShow={3}
-            onShowMoreItems={[Function]}
-          >
-            <div>
-              <VisibilitySensor
-                key="0"
-                onChange={[Function]}
-                partialVisibility={true}
-              >
-                <FileMatch
-                  expanded={true}
-                  fetchHighlightedFileLines={[Function]}
-                  icon="SourceRepositoryIcon"
-                  isLightTheme={true}
-                  key="0"
-                  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                  onSelect={[Function]}
-                  result={
-                    Object {
-                      "file": Object {
-                        "commit": Object {
-                          "oid": undefined,
-                        },
-                        "path": "",
-                        "url": "/github.com/foo/bar/-/blob/undefined",
-                      },
-                      "limitHit": false,
-                      "lineMatches": Array [
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 1,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                      ],
-                      "repository": Object {
-                        "name": "github.com/foo/bar",
-                        "url": "/github.com/foo/bar",
-                      },
-                    }
-                  }
-                  settingsCascade={
-                    Object {
-                      "final": null,
-                      "subjects": null,
-                    }
-                  }
-                  showAllMatches={true}
-                >
-                  <ResultContainer
-                    collapsible={true}
-                    defaultExpanded={true}
-                    expandedChildren={
-                      <FileMatchChildren
-                        allMatches={true}
-                        expanded={true}
-                        fetchHighlightedFileLines={[Function]}
-                        icon="SourceRepositoryIcon"
-                        isLightTheme={true}
-                        items={
+                      "path": "",
+                      "url": "/github.com/foo/bar/-/blob/undefined",
+                    },
+                    "limitHit": false,
+                    "lineMatches": Array [
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 1,
+                        "offsetAndLengths": Array [
                           Array [
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                    ],
+                    "repository": Object {
+                      "name": "github.com/foo/bar",
+                      "url": "/github.com/foo/bar",
+                    },
+                  }
+                }
+                settingsCascade={
+                  Object {
+                    "final": null,
+                    "subjects": null,
+                  }
+                }
+                showAllMatches={true}
+              />,
+            ]
+          }
+          itemsToShow={3}
+          onShowMoreItems={[Function]}
+        >
+          <div>
+            <VisibilitySensor
+              key="0"
+              onChange={[Function]}
+              partialVisibility={true}
+            >
+              <FileMatch
+                expanded={true}
+                fetchHighlightedFileLines={[Function]}
+                icon="SourceRepositoryIcon"
+                isLightTheme={true}
+                key="0"
+                location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                onSelect={[Function]}
+                result={
+                  Object {
+                    "file": Object {
+                      "commit": Object {
+                        "oid": undefined,
+                      },
+                      "path": "",
+                      "url": "/github.com/foo/bar/-/blob/undefined",
+                    },
+                    "limitHit": false,
+                    "lineMatches": Array [
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 1,
+                        "offsetAndLengths": Array [
+                          Array [
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                    ],
+                    "repository": Object {
+                      "name": "github.com/foo/bar",
+                      "url": "/github.com/foo/bar",
+                    },
+                  }
+                }
+                settingsCascade={
+                  Object {
+                    "final": null,
+                    "subjects": null,
+                  }
+                }
+                showAllMatches={true}
+              >
+                <ResultContainer
+                  collapsible={true}
+                  defaultExpanded={true}
+                  expandedChildren={
+                    <FileMatchChildren
+                      allMatches={true}
+                      expanded={true}
+                      fetchHighlightedFileLines={[Function]}
+                      icon="SourceRepositoryIcon"
+                      isLightTheme={true}
+                      items={
+                        Array [
+                          Object {
+                            "badge": undefined,
+                            "highlightRanges": Array [
+                              Object {
+                                "highlightLength": 10,
+                                "start": 0,
+                              },
+                            ],
+                            "line": 1,
+                            "preview": "",
+                          },
+                        ]
+                      }
+                      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                      onSelect={[Function]}
+                      result={
+                        Object {
+                          "file": Object {
+                            "commit": Object {
+                              "oid": undefined,
+                            },
+                            "path": "",
+                            "url": "/github.com/foo/bar/-/blob/undefined",
+                          },
+                          "limitHit": false,
+                          "lineMatches": Array [
                             Object {
                               "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
+                              "limitHit": false,
+                              "lineNumber": 1,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
                               ],
-                              "line": 1,
                               "preview": "",
                             },
-                          ]
+                          ],
+                          "repository": Object {
+                            "name": "github.com/foo/bar",
+                            "url": "/github.com/foo/bar",
+                          },
                         }
-                        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                        onSelect={[Function]}
-                        result={
-                          Object {
-                            "file": Object {
-                              "commit": Object {
-                                "oid": undefined,
-                              },
-                              "path": "",
-                              "url": "/github.com/foo/bar/-/blob/undefined",
-                            },
-                            "limitHit": false,
-                            "lineMatches": Array [
-                              Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 1,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
-                              },
-                            ],
-                            "repository": Object {
-                              "name": "github.com/foo/bar",
-                              "url": "/github.com/foo/bar",
-                            },
-                          }
+                      }
+                      settingsCascade={
+                        Object {
+                          "final": null,
+                          "subjects": null,
                         }
-                        settingsCascade={
-                          Object {
-                            "final": null,
-                            "subjects": null,
-                          }
-                        }
-                        showAllMatches={true}
-                        subsetMatches={10}
-                      />
-                    }
-                    icon="SourceRepositoryIcon"
-                    title={
-                      <RepoFileLink
-                        filePath=""
-                        fileURL="/github.com/foo/bar/-/blob/undefined"
-                        repoName="github.com/foo/bar"
-                        repoURL="/github.com/foo/bar"
-                      />
-                    }
+                      }
+                      showAllMatches={true}
+                      subsetMatches={10}
+                    />
+                  }
+                  icon="SourceRepositoryIcon"
+                  title={
+                    <RepoFileLink
+                      filePath=""
+                      fileURL="/github.com/foo/bar/-/blob/undefined"
+                      repoName="github.com/foo/bar"
+                      repoURL="/github.com/foo/bar"
+                    />
+                  }
+                >
+                  <div
+                    className="e2e-search-result result-container"
+                    data-testid="result-container"
                   >
                     <div
-                      className="e2e-search-result result-container"
-                      data-testid="result-container"
+                      className="result-container__header result-container__header--collapsible"
+                      onClick={[Function]}
                     >
+                      <SourceRepositoryIcon
+                        className="icon-inline"
+                      />
                       <div
-                        className="result-container__header result-container__header--collapsible"
-                        onClick={[Function]}
+                        className="result-container__header-title "
+                        data-testid="result-container-header"
                       >
-                        <SourceRepositoryIcon
-                          className="icon-inline"
-                        />
-                        <div
-                          className="result-container__header-title "
-                          data-testid="result-container-header"
+                        <span
+                          onClick={[Function]}
                         >
-                          <span
-                            onClick={[Function]}
-                          >
-                            <RepoFileLink
-                              filePath=""
-                              fileURL="/github.com/foo/bar/-/blob/undefined"
-                              repoName="github.com/foo/bar"
-                              repoURL="/github.com/foo/bar"
-                            >
-                              <AnchorLink
-                                to="/github.com/foo/bar"
-                              >
-                                <a
-                                  href="/github.com/foo/bar"
-                                >
-                                  foo/bar
-                                </a>
-                              </AnchorLink>
-                               ›
-                               
-                              <AnchorLink
-                                to="/github.com/foo/bar/-/blob/undefined?subtree=true"
-                              >
-                                <a
-                                  href="/github.com/foo/bar/-/blob/undefined?subtree=true"
-                                >
-                                  <strong />
-                                </a>
-                              </AnchorLink>
-                            </RepoFileLink>
-                          </span>
-                        </div>
-                        <small
-                          className="result-container__toggle-matches-container"
-                        >
-                          <Memo(ChevronDownIcon)
-                            className="icon-inline"
-                          >
-                            <svg
-                              className="mdi-icon icon-inline"
-                              fill="currentColor"
-                              height={24}
-                              viewBox="0 0 24 24"
-                              width={24}
-                            >
-                              <path
-                                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                              />
-                            </svg>
-                          </Memo(ChevronDownIcon)>
-                        </small>
-                      </div>
-                      <FileMatchChildren
-                        allMatches={true}
-                        expanded={true}
-                        fetchHighlightedFileLines={[Function]}
-                        icon="SourceRepositoryIcon"
-                        isLightTheme={true}
-                        items={
-                          Array [
-                            Object {
-                              "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
-                              ],
-                              "line": 1,
-                              "preview": "",
-                            },
-                          ]
-                        }
-                        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                        onSelect={[Function]}
-                        result={
-                          Object {
-                            "file": Object {
-                              "commit": Object {
-                                "oid": undefined,
-                              },
-                              "path": "",
-                              "url": "/github.com/foo/bar/-/blob/undefined",
-                            },
-                            "limitHit": false,
-                            "lineMatches": Array [
-                              Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 1,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
-                              },
-                            ],
-                            "repository": Object {
-                              "name": "github.com/foo/bar",
-                              "url": "/github.com/foo/bar",
-                            },
-                          }
-                        }
-                        settingsCascade={
-                          Object {
-                            "final": null,
-                            "subjects": null,
-                          }
-                        }
-                        showAllMatches={true}
-                        subsetMatches={10}
-                      >
-                        <div
-                          className="file-match-children"
-                        >
-                          <div
-                            className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
-                            key="linematch:/github.com/foo/bar/-/blob/undefined2:1"
+                          <RepoFileLink
+                            filePath=""
+                            fileURL="/github.com/foo/bar/-/blob/undefined"
+                            repoName="github.com/foo/bar"
+                            repoURL="/github.com/foo/bar"
                           >
                             <AnchorLink
-                              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                              onClick={[Function]}
-                              to="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                              to="/github.com/foo/bar"
                             >
                               <a
-                                className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                                href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
-                                onClick={[Function]}
+                                href="/github.com/foo/bar"
                               >
-                                <CodeExcerpt
-                                  className="file-match-children__item-code-excerpt"
-                                  context={1}
-                                  fetchHighlightedFileLines={[Function]}
-                                  filePath=""
-                                  highlightRanges={
-                                    Array [
-                                      Object {
-                                        "badge": undefined,
-                                        "character": 0,
-                                        "highlightLength": 10,
-                                        "line": 1,
-                                      },
-                                    ]
-                                  }
-                                  isLightTheme={true}
-                                  lastSubsetMatchLineNumber={1}
-                                  repoName="github.com/foo/bar"
-                                >
-                                  <VisibilitySensor
-                                    offset={
-                                      Object {
-                                        "bottom": -500,
-                                      }
-                                    }
-                                    onChange={[Function]}
-                                    partialVisibility={true}
-                                  >
-                                    <code
-                                      className="code-excerpt file-match-children__item-code-excerpt"
-                                    >
-                                      <table>
-                                        <tbody>
-                                          <tr
-                                            key="0"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              1
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                          <tr
-                                            key="1"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              2
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </code>
-                                  </VisibilitySensor>
-                                </CodeExcerpt>
+                                foo/bar
                               </a>
                             </AnchorLink>
-                            <div
-                              className="file-match-children__item-badge-row e2e-badge-row"
+                             ›
+                             
+                            <AnchorLink
+                              to="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                            >
+                              <a
+                                href="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                              >
+                                <strong />
+                              </a>
+                            </AnchorLink>
+                          </RepoFileLink>
+                        </span>
+                      </div>
+                      <small
+                        className="result-container__toggle-matches-container"
+                      >
+                        <Memo(ChevronDownIcon)
+                          className="icon-inline"
+                        >
+                          <svg
+                            className="mdi-icon icon-inline"
+                            fill="currentColor"
+                            height={24}
+                            viewBox="0 0 24 24"
+                            width={24}
+                          >
+                            <path
+                              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                             />
-                          </div>
-                        </div>
-                      </FileMatchChildren>
+                          </svg>
+                        </Memo(ChevronDownIcon)>
+                      </small>
                     </div>
-                  </ResultContainer>
-                </FileMatch>
-              </VisibilitySensor>
-            </div>
-          </VirtualList>
-        </div>
-      </FileLocations>
-    </div>
+                    <FileMatchChildren
+                      allMatches={true}
+                      expanded={true}
+                      fetchHighlightedFileLines={[Function]}
+                      icon="SourceRepositoryIcon"
+                      isLightTheme={true}
+                      items={
+                        Array [
+                          Object {
+                            "badge": undefined,
+                            "highlightRanges": Array [
+                              Object {
+                                "highlightLength": 10,
+                                "start": 0,
+                              },
+                            ],
+                            "line": 1,
+                            "preview": "",
+                          },
+                        ]
+                      }
+                      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                      onSelect={[Function]}
+                      result={
+                        Object {
+                          "file": Object {
+                            "commit": Object {
+                              "oid": undefined,
+                            },
+                            "path": "",
+                            "url": "/github.com/foo/bar/-/blob/undefined",
+                          },
+                          "limitHit": false,
+                          "lineMatches": Array [
+                            Object {
+                              "badge": undefined,
+                              "limitHit": false,
+                              "lineNumber": 1,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
+                              ],
+                              "preview": "",
+                            },
+                          ],
+                          "repository": Object {
+                            "name": "github.com/foo/bar",
+                            "url": "/github.com/foo/bar",
+                          },
+                        }
+                      }
+                      settingsCascade={
+                        Object {
+                          "final": null,
+                          "subjects": null,
+                        }
+                      }
+                      showAllMatches={true}
+                      subsetMatches={10}
+                    >
+                      <div
+                        className="file-match-children"
+                      >
+                        <div
+                          className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
+                          key="linematch:/github.com/foo/bar/-/blob/undefined2:1"
+                        >
+                          <AnchorLink
+                            className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                            onClick={[Function]}
+                            to="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                          >
+                            <a
+                              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                              href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                              onClick={[Function]}
+                            >
+                              <CodeExcerpt
+                                className="file-match-children__item-code-excerpt"
+                                context={1}
+                                fetchHighlightedFileLines={[Function]}
+                                filePath=""
+                                highlightRanges={
+                                  Array [
+                                    Object {
+                                      "badge": undefined,
+                                      "character": 0,
+                                      "highlightLength": 10,
+                                      "line": 1,
+                                    },
+                                  ]
+                                }
+                                isLightTheme={true}
+                                lastSubsetMatchLineNumber={1}
+                                repoName="github.com/foo/bar"
+                              >
+                                <VisibilitySensor
+                                  offset={
+                                    Object {
+                                      "bottom": -500,
+                                    }
+                                  }
+                                  onChange={[Function]}
+                                  partialVisibility={true}
+                                >
+                                  <code
+                                    className="code-excerpt file-match-children__item-code-excerpt"
+                                  >
+                                    <table>
+                                      <tbody>
+                                        <tr
+                                          key="0"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            1
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                        <tr
+                                          key="1"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            2
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </code>
+                                </VisibilitySensor>
+                              </CodeExcerpt>
+                            </a>
+                          </AnchorLink>
+                          <div
+                            className="file-match-children__item-badge-row e2e-badge-row"
+                          />
+                        </div>
+                      </div>
+                    </FileMatchChildren>
+                  </div>
+                </ResultContainer>
+              </FileMatch>
+            </VisibilitySensor>
+          </div>
+        </VirtualList>
+      </div>
+    </FileLocations>
   </div>
-</HierarchicalLocationsView>
+</div>
 `;
 
 exports[`<HierarchicalLocationsView /> displays multiple locations grouped by file 1`] = `
-<HierarchicalLocationsView
-  defaultGroup="git://github.com/foo/bar"
-  extensionsController={
-    Object {
-      "services": Object {
-        "context": Object {
-          "data": "[Subject]",
-          "updateContext": [Function],
-        },
-        "contribution": Object {
-          "registerContributions": [Function],
-        },
-      },
-    }
-  }
-  fetchHighlightedFileLines={[Function]}
-  isLightTheme={true}
-  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-  locations="[Observable]"
-  settingsCascade={
-    Object {
-      "final": Object {
-        "panel.locations.groupByFile": true,
-      },
-      "subjects": null,
-    }
-  }
+<div
+  className="hierarchical-locations-wrapper"
 >
   <div
-    className="hierarchical-locations-wrapper"
+    className="hierarchical-locations-view "
   >
-    <div
-      className="hierarchical-locations-view "
-    >
-      <Resizable
-        className="hierarchical-locations-view__resizable"
-        defaultSize={200}
-        element={
-          <div
-            className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list"
-          >
-            <span
-              className="list-group-item hierarchical-locations-view__item active"
-              onClick={[Function]}
-            >
-              <span
-                className="hierarchical-locations-view__item-name"
-                title="file1.txt"
-              >
-                <span
-                  className="hierarchical-locations-view__item-name-text"
-                >
-                  <RepoLink
-                    repoName="file1.txt"
-                    to={null}
-                  />
-                </span>
-              </span>
-              <span
-                className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
-              >
-                2
-              </span>
-            </span>
-            <span
-              className="list-group-item hierarchical-locations-view__item "
-              onClick={[Function]}
-            >
-              <span
-                className="hierarchical-locations-view__item-name"
-                title="file2.txt"
-              >
-                <span
-                  className="hierarchical-locations-view__item-name-text"
-                >
-                  <RepoLink
-                    repoName="file2.txt"
-                    to={null}
-                  />
-                </span>
-              </span>
-              <span
-                className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
-              >
-                3
-              </span>
-            </span>
-          </div>
-        }
-        handlePosition="right"
-        key="1"
-        storageKey="hierarchical-locations-view-resizable:file"
-      >
+    <Resizable
+      className="hierarchical-locations-view__resizable"
+      defaultSize={200}
+      element={
         <div
-          className="resizable resizable--right hierarchical-locations-view__resizable"
-          style={
-            Object {
-              "width": "200px",
-            }
-          }
+          className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list"
         >
-          <div
-            className="resizable__ghost "
-            onMouseMove={[Function]}
-            onMouseUp={[Function]}
-          />
-          <div
-            className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list"
+          <span
+            className="list-group-item hierarchical-locations-view__item active"
+            onClick={[Function]}
           >
             <span
-              className="list-group-item hierarchical-locations-view__item active"
-              key="0"
-              onClick={[Function]}
+              className="hierarchical-locations-view__item-name"
+              title="file1.txt"
             >
               <span
-                className="hierarchical-locations-view__item-name"
-                title="file1.txt"
+                className="hierarchical-locations-view__item-name-text"
               >
-                <span
-                  className="hierarchical-locations-view__item-name-text"
-                >
-                  <RepoLink
-                    repoName="file1.txt"
-                    to={null}
-                  >
-                     
-                    <strong>
-                      file1.txt
-                    </strong>
-                  </RepoLink>
-                </span>
-              </span>
-              <span
-                className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
-              >
-                2
+                <RepoLink
+                  repoName="file1.txt"
+                  to={null}
+                />
               </span>
             </span>
             <span
-              className="list-group-item hierarchical-locations-view__item "
-              key="1"
-              onClick={[Function]}
+              className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
+            >
+              2
+            </span>
+          </span>
+          <span
+            className="list-group-item hierarchical-locations-view__item "
+            onClick={[Function]}
+          >
+            <span
+              className="hierarchical-locations-view__item-name"
+              title="file2.txt"
             >
               <span
-                className="hierarchical-locations-view__item-name"
-                title="file2.txt"
+                className="hierarchical-locations-view__item-name-text"
               >
-                <span
-                  className="hierarchical-locations-view__item-name-text"
-                >
-                  <RepoLink
-                    repoName="file2.txt"
-                    to={null}
-                  >
-                     
-                    <strong>
-                      file2.txt
-                    </strong>
-                  </RepoLink>
-                </span>
-              </span>
-              <span
-                className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
-              >
-                3
+                <RepoLink
+                  repoName="file2.txt"
+                  to={null}
+                />
               </span>
             </span>
-          </div>
-          <div
-            className="resizable__handle resizable__handle--right "
-            onMouseDown={[Function]}
-          />
+            <span
+              className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
+            >
+              3
+            </span>
+          </span>
         </div>
-      </Resizable>
-      <FileLocations
-        className="hierarchical-locations-view__content"
-        fetchHighlightedFileLines={[Function]}
-        icon="SourceRepositoryIcon"
-        isLightTheme={true}
-        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-        locations="[Observable]"
-        settingsCascade={
+      }
+      handlePosition="right"
+      key="1"
+      storageKey="hierarchical-locations-view-resizable:file"
+    >
+      <div
+        className="resizable resizable--right hierarchical-locations-view__resizable"
+        style={
           Object {
-            "final": Object {
-              "panel.locations.groupByFile": true,
-            },
-            "subjects": null,
+            "width": "200px",
           }
         }
       >
         <div
-          className="file-locations hierarchical-locations-view__content"
+          className="resizable__ghost "
+          onMouseMove={[Function]}
+          onMouseUp={[Function]}
+        />
+        <div
+          className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list"
         >
-          <VirtualList
-            items={
-              Array [
-                <FileMatch
-                  expanded={true}
-                  fetchHighlightedFileLines={[Function]}
-                  icon="SourceRepositoryIcon"
-                  isLightTheme={true}
-                  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                  onSelect={[Function]}
-                  result={
-                    Object {
-                      "file": Object {
-                        "commit": Object {
-                          "oid": undefined,
-                        },
-                        "path": "file1.txt",
-                        "url": "/github.com/foo/bar/-/blob/file1.txt",
-                      },
-                      "limitHit": false,
-                      "lineMatches": Array [
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 1,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 3,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                      ],
-                      "repository": Object {
-                        "name": "github.com/foo/bar",
-                        "url": "/github.com/foo/bar",
-                      },
-                    }
-                  }
-                  settingsCascade={
-                    Object {
-                      "final": Object {
-                        "panel.locations.groupByFile": true,
-                      },
-                      "subjects": null,
-                    }
-                  }
-                  showAllMatches={true}
-                />,
-              ]
-            }
-            itemsToShow={3}
-            onShowMoreItems={[Function]}
+          <span
+            className="list-group-item hierarchical-locations-view__item active"
+            key="0"
+            onClick={[Function]}
           >
-            <div>
-              <VisibilitySensor
-                key="0"
-                onChange={[Function]}
-                partialVisibility={true}
+            <span
+              className="hierarchical-locations-view__item-name"
+              title="file1.txt"
+            >
+              <span
+                className="hierarchical-locations-view__item-name-text"
               >
-                <FileMatch
-                  expanded={true}
-                  fetchHighlightedFileLines={[Function]}
-                  icon="SourceRepositoryIcon"
-                  isLightTheme={true}
-                  key="0"
-                  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                  onSelect={[Function]}
-                  result={
-                    Object {
-                      "file": Object {
-                        "commit": Object {
-                          "oid": undefined,
-                        },
-                        "path": "file1.txt",
-                        "url": "/github.com/foo/bar/-/blob/file1.txt",
-                      },
-                      "limitHit": false,
-                      "lineMatches": Array [
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 1,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 3,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                      ],
-                      "repository": Object {
-                        "name": "github.com/foo/bar",
-                        "url": "/github.com/foo/bar",
-                      },
-                    }
-                  }
-                  settingsCascade={
-                    Object {
-                      "final": Object {
-                        "panel.locations.groupByFile": true,
-                      },
-                      "subjects": null,
-                    }
-                  }
-                  showAllMatches={true}
+                <RepoLink
+                  repoName="file1.txt"
+                  to={null}
                 >
-                  <ResultContainer
-                    collapsible={true}
-                    defaultExpanded={true}
-                    expandedChildren={
-                      <FileMatchChildren
-                        allMatches={true}
-                        expanded={true}
-                        fetchHighlightedFileLines={[Function]}
-                        icon="SourceRepositoryIcon"
-                        isLightTheme={true}
-                        items={
+                   
+                  <strong>
+                    file1.txt
+                  </strong>
+                </RepoLink>
+              </span>
+            </span>
+            <span
+              className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
+            >
+              2
+            </span>
+          </span>
+          <span
+            className="list-group-item hierarchical-locations-view__item "
+            key="1"
+            onClick={[Function]}
+          >
+            <span
+              className="hierarchical-locations-view__item-name"
+              title="file2.txt"
+            >
+              <span
+                className="hierarchical-locations-view__item-name-text"
+              >
+                <RepoLink
+                  repoName="file2.txt"
+                  to={null}
+                >
+                   
+                  <strong>
+                    file2.txt
+                  </strong>
+                </RepoLink>
+              </span>
+            </span>
+            <span
+              className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
+            >
+              3
+            </span>
+          </span>
+        </div>
+        <div
+          className="resizable__handle resizable__handle--right "
+          onMouseDown={[Function]}
+        />
+      </div>
+    </Resizable>
+    <FileLocations
+      className="hierarchical-locations-view__content"
+      fetchHighlightedFileLines={[Function]}
+      icon="SourceRepositoryIcon"
+      isLightTheme={true}
+      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+      locations="[Observable]"
+      settingsCascade={
+        Object {
+          "final": Object {
+            "panel.locations.groupByFile": true,
+          },
+          "subjects": null,
+        }
+      }
+    >
+      <div
+        className="file-locations hierarchical-locations-view__content"
+      >
+        <VirtualList
+          items={
+            Array [
+              <FileMatch
+                expanded={true}
+                fetchHighlightedFileLines={[Function]}
+                icon="SourceRepositoryIcon"
+                isLightTheme={true}
+                location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                onSelect={[Function]}
+                result={
+                  Object {
+                    "file": Object {
+                      "commit": Object {
+                        "oid": undefined,
+                      },
+                      "path": "file1.txt",
+                      "url": "/github.com/foo/bar/-/blob/file1.txt",
+                    },
+                    "limitHit": false,
+                    "lineMatches": Array [
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 1,
+                        "offsetAndLengths": Array [
                           Array [
-                            Object {
-                              "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
-                              ],
-                              "line": 1,
-                              "preview": "",
-                            },
-                            Object {
-                              "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
-                              ],
-                              "line": 3,
-                              "preview": "",
-                            },
-                          ]
-                        }
-                        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                        onSelect={[Function]}
-                        result={
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 3,
+                        "offsetAndLengths": Array [
+                          Array [
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                    ],
+                    "repository": Object {
+                      "name": "github.com/foo/bar",
+                      "url": "/github.com/foo/bar",
+                    },
+                  }
+                }
+                settingsCascade={
+                  Object {
+                    "final": Object {
+                      "panel.locations.groupByFile": true,
+                    },
+                    "subjects": null,
+                  }
+                }
+                showAllMatches={true}
+              />,
+            ]
+          }
+          itemsToShow={3}
+          onShowMoreItems={[Function]}
+        >
+          <div>
+            <VisibilitySensor
+              key="0"
+              onChange={[Function]}
+              partialVisibility={true}
+            >
+              <FileMatch
+                expanded={true}
+                fetchHighlightedFileLines={[Function]}
+                icon="SourceRepositoryIcon"
+                isLightTheme={true}
+                key="0"
+                location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                onSelect={[Function]}
+                result={
+                  Object {
+                    "file": Object {
+                      "commit": Object {
+                        "oid": undefined,
+                      },
+                      "path": "file1.txt",
+                      "url": "/github.com/foo/bar/-/blob/file1.txt",
+                    },
+                    "limitHit": false,
+                    "lineMatches": Array [
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 1,
+                        "offsetAndLengths": Array [
+                          Array [
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 3,
+                        "offsetAndLengths": Array [
+                          Array [
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                    ],
+                    "repository": Object {
+                      "name": "github.com/foo/bar",
+                      "url": "/github.com/foo/bar",
+                    },
+                  }
+                }
+                settingsCascade={
+                  Object {
+                    "final": Object {
+                      "panel.locations.groupByFile": true,
+                    },
+                    "subjects": null,
+                  }
+                }
+                showAllMatches={true}
+              >
+                <ResultContainer
+                  collapsible={true}
+                  defaultExpanded={true}
+                  expandedChildren={
+                    <FileMatchChildren
+                      allMatches={true}
+                      expanded={true}
+                      fetchHighlightedFileLines={[Function]}
+                      icon="SourceRepositoryIcon"
+                      isLightTheme={true}
+                      items={
+                        Array [
                           Object {
-                            "file": Object {
-                              "commit": Object {
-                                "oid": undefined,
-                              },
-                              "path": "file1.txt",
-                              "url": "/github.com/foo/bar/-/blob/file1.txt",
-                            },
-                            "limitHit": false,
-                            "lineMatches": Array [
+                            "badge": undefined,
+                            "highlightRanges": Array [
                               Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 1,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
-                              },
-                              Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 3,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
+                                "highlightLength": 10,
+                                "start": 0,
                               },
                             ],
-                            "repository": Object {
-                              "name": "github.com/foo/bar",
-                              "url": "/github.com/foo/bar",
-                            },
-                          }
-                        }
-                        settingsCascade={
+                            "line": 1,
+                            "preview": "",
+                          },
                           Object {
-                            "final": Object {
-                              "panel.locations.groupByFile": true,
+                            "badge": undefined,
+                            "highlightRanges": Array [
+                              Object {
+                                "highlightLength": 10,
+                                "start": 0,
+                              },
+                            ],
+                            "line": 3,
+                            "preview": "",
+                          },
+                        ]
+                      }
+                      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                      onSelect={[Function]}
+                      result={
+                        Object {
+                          "file": Object {
+                            "commit": Object {
+                              "oid": undefined,
                             },
-                            "subjects": null,
-                          }
+                            "path": "file1.txt",
+                            "url": "/github.com/foo/bar/-/blob/file1.txt",
+                          },
+                          "limitHit": false,
+                          "lineMatches": Array [
+                            Object {
+                              "badge": undefined,
+                              "limitHit": false,
+                              "lineNumber": 1,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
+                              ],
+                              "preview": "",
+                            },
+                            Object {
+                              "badge": undefined,
+                              "limitHit": false,
+                              "lineNumber": 3,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
+                              ],
+                              "preview": "",
+                            },
+                          ],
+                          "repository": Object {
+                            "name": "github.com/foo/bar",
+                            "url": "/github.com/foo/bar",
+                          },
                         }
-                        showAllMatches={true}
-                        subsetMatches={10}
-                      />
-                    }
-                    icon="SourceRepositoryIcon"
-                    title={
-                      <RepoFileLink
-                        filePath="file1.txt"
-                        fileURL="/github.com/foo/bar/-/blob/file1.txt"
-                        repoName="github.com/foo/bar"
-                        repoURL="/github.com/foo/bar"
-                      />
-                    }
+                      }
+                      settingsCascade={
+                        Object {
+                          "final": Object {
+                            "panel.locations.groupByFile": true,
+                          },
+                          "subjects": null,
+                        }
+                      }
+                      showAllMatches={true}
+                      subsetMatches={10}
+                    />
+                  }
+                  icon="SourceRepositoryIcon"
+                  title={
+                    <RepoFileLink
+                      filePath="file1.txt"
+                      fileURL="/github.com/foo/bar/-/blob/file1.txt"
+                      repoName="github.com/foo/bar"
+                      repoURL="/github.com/foo/bar"
+                    />
+                  }
+                >
+                  <div
+                    className="e2e-search-result result-container"
+                    data-testid="result-container"
                   >
                     <div
-                      className="e2e-search-result result-container"
-                      data-testid="result-container"
+                      className="result-container__header result-container__header--collapsible"
+                      onClick={[Function]}
                     >
+                      <SourceRepositoryIcon
+                        className="icon-inline"
+                      />
                       <div
-                        className="result-container__header result-container__header--collapsible"
-                        onClick={[Function]}
+                        className="result-container__header-title "
+                        data-testid="result-container-header"
                       >
-                        <SourceRepositoryIcon
-                          className="icon-inline"
-                        />
-                        <div
-                          className="result-container__header-title "
-                          data-testid="result-container-header"
+                        <span
+                          onClick={[Function]}
                         >
-                          <span
-                            onClick={[Function]}
-                          >
-                            <RepoFileLink
-                              filePath="file1.txt"
-                              fileURL="/github.com/foo/bar/-/blob/file1.txt"
-                              repoName="github.com/foo/bar"
-                              repoURL="/github.com/foo/bar"
-                            >
-                              <AnchorLink
-                                to="/github.com/foo/bar"
-                              >
-                                <a
-                                  href="/github.com/foo/bar"
-                                >
-                                  foo/bar
-                                </a>
-                              </AnchorLink>
-                               ›
-                               
-                              <AnchorLink
-                                to="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
-                              >
-                                <a
-                                  href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
-                                >
-                                  <strong>
-                                    file1.txt
-                                  </strong>
-                                </a>
-                              </AnchorLink>
-                            </RepoFileLink>
-                          </span>
-                        </div>
-                        <small
-                          className="result-container__toggle-matches-container"
-                        >
-                          <Memo(ChevronDownIcon)
-                            className="icon-inline"
-                          >
-                            <svg
-                              className="mdi-icon icon-inline"
-                              fill="currentColor"
-                              height={24}
-                              viewBox="0 0 24 24"
-                              width={24}
-                            >
-                              <path
-                                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                              />
-                            </svg>
-                          </Memo(ChevronDownIcon)>
-                        </small>
-                      </div>
-                      <FileMatchChildren
-                        allMatches={true}
-                        expanded={true}
-                        fetchHighlightedFileLines={[Function]}
-                        icon="SourceRepositoryIcon"
-                        isLightTheme={true}
-                        items={
-                          Array [
-                            Object {
-                              "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
-                              ],
-                              "line": 1,
-                              "preview": "",
-                            },
-                            Object {
-                              "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
-                              ],
-                              "line": 3,
-                              "preview": "",
-                            },
-                          ]
-                        }
-                        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                        onSelect={[Function]}
-                        result={
-                          Object {
-                            "file": Object {
-                              "commit": Object {
-                                "oid": undefined,
-                              },
-                              "path": "file1.txt",
-                              "url": "/github.com/foo/bar/-/blob/file1.txt",
-                            },
-                            "limitHit": false,
-                            "lineMatches": Array [
-                              Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 1,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
-                              },
-                              Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 3,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
-                              },
-                            ],
-                            "repository": Object {
-                              "name": "github.com/foo/bar",
-                              "url": "/github.com/foo/bar",
-                            },
-                          }
-                        }
-                        settingsCascade={
-                          Object {
-                            "final": Object {
-                              "panel.locations.groupByFile": true,
-                            },
-                            "subjects": null,
-                          }
-                        }
-                        showAllMatches={true}
-                        subsetMatches={10}
-                      >
-                        <div
-                          className="file-match-children"
-                        >
-                          <div
-                            className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
-                            key="linematch:/github.com/foo/bar/-/blob/file1.txt2:1"
+                          <RepoFileLink
+                            filePath="file1.txt"
+                            fileURL="/github.com/foo/bar/-/blob/file1.txt"
+                            repoName="github.com/foo/bar"
+                            repoURL="/github.com/foo/bar"
                           >
                             <AnchorLink
-                              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                              onClick={[Function]}
-                              to="/github.com/foo/bar/-/blob/file1.txt?subtree=true#L2:1"
+                              to="/github.com/foo/bar"
                             >
                               <a
-                                className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                                href="/github.com/foo/bar/-/blob/file1.txt?subtree=true#L2:1"
-                                onClick={[Function]}
+                                href="/github.com/foo/bar"
                               >
-                                <CodeExcerpt
-                                  className="file-match-children__item-code-excerpt"
-                                  context={1}
-                                  fetchHighlightedFileLines={[Function]}
-                                  filePath="file1.txt"
-                                  highlightRanges={
-                                    Array [
-                                      Object {
-                                        "badge": undefined,
-                                        "character": 0,
-                                        "highlightLength": 10,
-                                        "line": 1,
-                                      },
-                                      Object {
-                                        "badge": undefined,
-                                        "character": 0,
-                                        "highlightLength": 10,
-                                        "line": 3,
-                                      },
-                                    ]
-                                  }
-                                  isLightTheme={true}
-                                  lastSubsetMatchLineNumber={3}
-                                  repoName="github.com/foo/bar"
-                                >
-                                  <VisibilitySensor
-                                    offset={
-                                      Object {
-                                        "bottom": -500,
-                                      }
-                                    }
-                                    onChange={[Function]}
-                                    partialVisibility={true}
-                                  >
-                                    <code
-                                      className="code-excerpt file-match-children__item-code-excerpt"
-                                    >
-                                      <table>
-                                        <tbody>
-                                          <tr
-                                            key="0"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              1
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                          <tr
-                                            key="1"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              2
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                          <tr
-                                            key="2"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              3
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                          <tr
-                                            key="3"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              4
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </code>
-                                  </VisibilitySensor>
-                                </CodeExcerpt>
+                                foo/bar
                               </a>
                             </AnchorLink>
-                            <div
-                              className="file-match-children__item-badge-row e2e-badge-row"
+                             ›
+                             
+                            <AnchorLink
+                              to="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
+                            >
+                              <a
+                                href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
+                              >
+                                <strong>
+                                  file1.txt
+                                </strong>
+                              </a>
+                            </AnchorLink>
+                          </RepoFileLink>
+                        </span>
+                      </div>
+                      <small
+                        className="result-container__toggle-matches-container"
+                      >
+                        <Memo(ChevronDownIcon)
+                          className="icon-inline"
+                        >
+                          <svg
+                            className="mdi-icon icon-inline"
+                            fill="currentColor"
+                            height={24}
+                            viewBox="0 0 24 24"
+                            width={24}
+                          >
+                            <path
+                              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                             />
-                          </div>
-                        </div>
-                      </FileMatchChildren>
+                          </svg>
+                        </Memo(ChevronDownIcon)>
+                      </small>
                     </div>
-                  </ResultContainer>
-                </FileMatch>
-              </VisibilitySensor>
-            </div>
-          </VirtualList>
-        </div>
-      </FileLocations>
-    </div>
+                    <FileMatchChildren
+                      allMatches={true}
+                      expanded={true}
+                      fetchHighlightedFileLines={[Function]}
+                      icon="SourceRepositoryIcon"
+                      isLightTheme={true}
+                      items={
+                        Array [
+                          Object {
+                            "badge": undefined,
+                            "highlightRanges": Array [
+                              Object {
+                                "highlightLength": 10,
+                                "start": 0,
+                              },
+                            ],
+                            "line": 1,
+                            "preview": "",
+                          },
+                          Object {
+                            "badge": undefined,
+                            "highlightRanges": Array [
+                              Object {
+                                "highlightLength": 10,
+                                "start": 0,
+                              },
+                            ],
+                            "line": 3,
+                            "preview": "",
+                          },
+                        ]
+                      }
+                      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                      onSelect={[Function]}
+                      result={
+                        Object {
+                          "file": Object {
+                            "commit": Object {
+                              "oid": undefined,
+                            },
+                            "path": "file1.txt",
+                            "url": "/github.com/foo/bar/-/blob/file1.txt",
+                          },
+                          "limitHit": false,
+                          "lineMatches": Array [
+                            Object {
+                              "badge": undefined,
+                              "limitHit": false,
+                              "lineNumber": 1,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
+                              ],
+                              "preview": "",
+                            },
+                            Object {
+                              "badge": undefined,
+                              "limitHit": false,
+                              "lineNumber": 3,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
+                              ],
+                              "preview": "",
+                            },
+                          ],
+                          "repository": Object {
+                            "name": "github.com/foo/bar",
+                            "url": "/github.com/foo/bar",
+                          },
+                        }
+                      }
+                      settingsCascade={
+                        Object {
+                          "final": Object {
+                            "panel.locations.groupByFile": true,
+                          },
+                          "subjects": null,
+                        }
+                      }
+                      showAllMatches={true}
+                      subsetMatches={10}
+                    >
+                      <div
+                        className="file-match-children"
+                      >
+                        <div
+                          className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
+                          key="linematch:/github.com/foo/bar/-/blob/file1.txt2:1"
+                        >
+                          <AnchorLink
+                            className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                            onClick={[Function]}
+                            to="/github.com/foo/bar/-/blob/file1.txt?subtree=true#L2:1"
+                          >
+                            <a
+                              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                              href="/github.com/foo/bar/-/blob/file1.txt?subtree=true#L2:1"
+                              onClick={[Function]}
+                            >
+                              <CodeExcerpt
+                                className="file-match-children__item-code-excerpt"
+                                context={1}
+                                fetchHighlightedFileLines={[Function]}
+                                filePath="file1.txt"
+                                highlightRanges={
+                                  Array [
+                                    Object {
+                                      "badge": undefined,
+                                      "character": 0,
+                                      "highlightLength": 10,
+                                      "line": 1,
+                                    },
+                                    Object {
+                                      "badge": undefined,
+                                      "character": 0,
+                                      "highlightLength": 10,
+                                      "line": 3,
+                                    },
+                                  ]
+                                }
+                                isLightTheme={true}
+                                lastSubsetMatchLineNumber={3}
+                                repoName="github.com/foo/bar"
+                              >
+                                <VisibilitySensor
+                                  offset={
+                                    Object {
+                                      "bottom": -500,
+                                    }
+                                  }
+                                  onChange={[Function]}
+                                  partialVisibility={true}
+                                >
+                                  <code
+                                    className="code-excerpt file-match-children__item-code-excerpt"
+                                  >
+                                    <table>
+                                      <tbody>
+                                        <tr
+                                          key="0"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            1
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                        <tr
+                                          key="1"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            2
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                        <tr
+                                          key="2"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            3
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                        <tr
+                                          key="3"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            4
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </code>
+                                </VisibilitySensor>
+                              </CodeExcerpt>
+                            </a>
+                          </AnchorLink>
+                          <div
+                            className="file-match-children__item-badge-row e2e-badge-row"
+                          />
+                        </div>
+                      </div>
+                    </FileMatchChildren>
+                  </div>
+                </ResultContainer>
+              </FileMatch>
+            </VisibilitySensor>
+          </div>
+        </VirtualList>
+      </div>
+    </FileLocations>
   </div>
-</HierarchicalLocationsView>
+</div>
 `;
 
 exports[`<HierarchicalLocationsView /> displays partial locations before complete 1`] = `
-<HierarchicalLocationsView
-  defaultGroup="git://github.com/foo/bar"
-  extensionsController={
-    Object {
-      "services": Object {
-        "context": Object {
-          "data": "[Subject]",
-          "updateContext": [Function],
-        },
-        "contribution": Object {
-          "registerContributions": [Function],
-        },
-      },
-    }
-  }
-  fetchHighlightedFileLines={[Function]}
-  isLightTheme={true}
-  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-  locations="[Observable]"
-  settingsCascade={
-    Object {
-      "final": null,
-      "subjects": null,
-    }
-  }
+<div
+  className="hierarchical-locations-wrapper"
 >
   <div
-    className="hierarchical-locations-wrapper"
+    className="hierarchical-locations-view "
   >
-    <div
-      className="hierarchical-locations-view "
-    >
-      <FileLocations
-        className="hierarchical-locations-view__content"
-        fetchHighlightedFileLines={[Function]}
-        icon="SourceRepositoryIcon"
-        isLightTheme={true}
-        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-        locations="[Observable]"
-        settingsCascade={
-          Object {
-            "final": null,
-            "subjects": null,
-          }
+    <FileLocations
+      className="hierarchical-locations-view__content"
+      fetchHighlightedFileLines={[Function]}
+      icon="SourceRepositoryIcon"
+      isLightTheme={true}
+      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+      locations="[Observable]"
+      settingsCascade={
+        Object {
+          "final": null,
+          "subjects": null,
         }
+      }
+    >
+      <div
+        className="file-locations hierarchical-locations-view__content"
       >
-        <div
-          className="file-locations hierarchical-locations-view__content"
-        >
-          <VirtualList
-            items={
-              Array [
-                <FileMatch
-                  expanded={true}
-                  fetchHighlightedFileLines={[Function]}
-                  icon="SourceRepositoryIcon"
-                  isLightTheme={true}
-                  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                  onSelect={[Function]}
-                  result={
-                    Object {
-                      "file": Object {
-                        "commit": Object {
-                          "oid": undefined,
-                        },
-                        "path": "",
-                        "url": "/github.com/foo/bar/-/blob/undefined",
+        <VirtualList
+          items={
+            Array [
+              <FileMatch
+                expanded={true}
+                fetchHighlightedFileLines={[Function]}
+                icon="SourceRepositoryIcon"
+                isLightTheme={true}
+                location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                onSelect={[Function]}
+                result={
+                  Object {
+                    "file": Object {
+                      "commit": Object {
+                        "oid": undefined,
                       },
-                      "limitHit": false,
-                      "lineMatches": Array [
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 1,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                      ],
-                      "repository": Object {
-                        "name": "github.com/foo/bar",
-                        "url": "/github.com/foo/bar",
-                      },
-                    }
-                  }
-                  settingsCascade={
-                    Object {
-                      "final": null,
-                      "subjects": null,
-                    }
-                  }
-                  showAllMatches={true}
-                />,
-              ]
-            }
-            itemsToShow={3}
-            onShowMoreItems={[Function]}
-          >
-            <div>
-              <VisibilitySensor
-                key="0"
-                onChange={[Function]}
-                partialVisibility={true}
-              >
-                <FileMatch
-                  expanded={true}
-                  fetchHighlightedFileLines={[Function]}
-                  icon="SourceRepositoryIcon"
-                  isLightTheme={true}
-                  key="0"
-                  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                  onSelect={[Function]}
-                  result={
-                    Object {
-                      "file": Object {
-                        "commit": Object {
-                          "oid": undefined,
-                        },
-                        "path": "",
-                        "url": "/github.com/foo/bar/-/blob/undefined",
-                      },
-                      "limitHit": false,
-                      "lineMatches": Array [
-                        Object {
-                          "badge": undefined,
-                          "limitHit": false,
-                          "lineNumber": 1,
-                          "offsetAndLengths": Array [
-                            Array [
-                              0,
-                              10,
-                            ],
-                          ],
-                          "preview": "",
-                        },
-                      ],
-                      "repository": Object {
-                        "name": "github.com/foo/bar",
-                        "url": "/github.com/foo/bar",
-                      },
-                    }
-                  }
-                  settingsCascade={
-                    Object {
-                      "final": null,
-                      "subjects": null,
-                    }
-                  }
-                  showAllMatches={true}
-                >
-                  <ResultContainer
-                    collapsible={true}
-                    defaultExpanded={true}
-                    expandedChildren={
-                      <FileMatchChildren
-                        allMatches={true}
-                        expanded={true}
-                        fetchHighlightedFileLines={[Function]}
-                        icon="SourceRepositoryIcon"
-                        isLightTheme={true}
-                        items={
+                      "path": "",
+                      "url": "/github.com/foo/bar/-/blob/undefined",
+                    },
+                    "limitHit": false,
+                    "lineMatches": Array [
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 1,
+                        "offsetAndLengths": Array [
                           Array [
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                    ],
+                    "repository": Object {
+                      "name": "github.com/foo/bar",
+                      "url": "/github.com/foo/bar",
+                    },
+                  }
+                }
+                settingsCascade={
+                  Object {
+                    "final": null,
+                    "subjects": null,
+                  }
+                }
+                showAllMatches={true}
+              />,
+            ]
+          }
+          itemsToShow={3}
+          onShowMoreItems={[Function]}
+        >
+          <div>
+            <VisibilitySensor
+              key="0"
+              onChange={[Function]}
+              partialVisibility={true}
+            >
+              <FileMatch
+                expanded={true}
+                fetchHighlightedFileLines={[Function]}
+                icon="SourceRepositoryIcon"
+                isLightTheme={true}
+                key="0"
+                location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                onSelect={[Function]}
+                result={
+                  Object {
+                    "file": Object {
+                      "commit": Object {
+                        "oid": undefined,
+                      },
+                      "path": "",
+                      "url": "/github.com/foo/bar/-/blob/undefined",
+                    },
+                    "limitHit": false,
+                    "lineMatches": Array [
+                      Object {
+                        "badge": undefined,
+                        "limitHit": false,
+                        "lineNumber": 1,
+                        "offsetAndLengths": Array [
+                          Array [
+                            0,
+                            10,
+                          ],
+                        ],
+                        "preview": "",
+                      },
+                    ],
+                    "repository": Object {
+                      "name": "github.com/foo/bar",
+                      "url": "/github.com/foo/bar",
+                    },
+                  }
+                }
+                settingsCascade={
+                  Object {
+                    "final": null,
+                    "subjects": null,
+                  }
+                }
+                showAllMatches={true}
+              >
+                <ResultContainer
+                  collapsible={true}
+                  defaultExpanded={true}
+                  expandedChildren={
+                    <FileMatchChildren
+                      allMatches={true}
+                      expanded={true}
+                      fetchHighlightedFileLines={[Function]}
+                      icon="SourceRepositoryIcon"
+                      isLightTheme={true}
+                      items={
+                        Array [
+                          Object {
+                            "badge": undefined,
+                            "highlightRanges": Array [
+                              Object {
+                                "highlightLength": 10,
+                                "start": 0,
+                              },
+                            ],
+                            "line": 1,
+                            "preview": "",
+                          },
+                        ]
+                      }
+                      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                      onSelect={[Function]}
+                      result={
+                        Object {
+                          "file": Object {
+                            "commit": Object {
+                              "oid": undefined,
+                            },
+                            "path": "",
+                            "url": "/github.com/foo/bar/-/blob/undefined",
+                          },
+                          "limitHit": false,
+                          "lineMatches": Array [
                             Object {
                               "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
+                              "limitHit": false,
+                              "lineNumber": 1,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
                               ],
-                              "line": 1,
                               "preview": "",
                             },
-                          ]
+                          ],
+                          "repository": Object {
+                            "name": "github.com/foo/bar",
+                            "url": "/github.com/foo/bar",
+                          },
                         }
-                        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                        onSelect={[Function]}
-                        result={
-                          Object {
-                            "file": Object {
-                              "commit": Object {
-                                "oid": undefined,
-                              },
-                              "path": "",
-                              "url": "/github.com/foo/bar/-/blob/undefined",
-                            },
-                            "limitHit": false,
-                            "lineMatches": Array [
-                              Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 1,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
-                              },
-                            ],
-                            "repository": Object {
-                              "name": "github.com/foo/bar",
-                              "url": "/github.com/foo/bar",
-                            },
-                          }
+                      }
+                      settingsCascade={
+                        Object {
+                          "final": null,
+                          "subjects": null,
                         }
-                        settingsCascade={
-                          Object {
-                            "final": null,
-                            "subjects": null,
-                          }
-                        }
-                        showAllMatches={true}
-                        subsetMatches={10}
-                      />
-                    }
-                    icon="SourceRepositoryIcon"
-                    title={
-                      <RepoFileLink
-                        filePath=""
-                        fileURL="/github.com/foo/bar/-/blob/undefined"
-                        repoName="github.com/foo/bar"
-                        repoURL="/github.com/foo/bar"
-                      />
-                    }
+                      }
+                      showAllMatches={true}
+                      subsetMatches={10}
+                    />
+                  }
+                  icon="SourceRepositoryIcon"
+                  title={
+                    <RepoFileLink
+                      filePath=""
+                      fileURL="/github.com/foo/bar/-/blob/undefined"
+                      repoName="github.com/foo/bar"
+                      repoURL="/github.com/foo/bar"
+                    />
+                  }
+                >
+                  <div
+                    className="e2e-search-result result-container"
+                    data-testid="result-container"
                   >
                     <div
-                      className="e2e-search-result result-container"
-                      data-testid="result-container"
+                      className="result-container__header result-container__header--collapsible"
+                      onClick={[Function]}
                     >
+                      <SourceRepositoryIcon
+                        className="icon-inline"
+                      />
                       <div
-                        className="result-container__header result-container__header--collapsible"
-                        onClick={[Function]}
+                        className="result-container__header-title "
+                        data-testid="result-container-header"
                       >
-                        <SourceRepositoryIcon
-                          className="icon-inline"
-                        />
-                        <div
-                          className="result-container__header-title "
-                          data-testid="result-container-header"
+                        <span
+                          onClick={[Function]}
                         >
-                          <span
-                            onClick={[Function]}
-                          >
-                            <RepoFileLink
-                              filePath=""
-                              fileURL="/github.com/foo/bar/-/blob/undefined"
-                              repoName="github.com/foo/bar"
-                              repoURL="/github.com/foo/bar"
-                            >
-                              <AnchorLink
-                                to="/github.com/foo/bar"
-                              >
-                                <a
-                                  href="/github.com/foo/bar"
-                                >
-                                  foo/bar
-                                </a>
-                              </AnchorLink>
-                               ›
-                               
-                              <AnchorLink
-                                to="/github.com/foo/bar/-/blob/undefined?subtree=true"
-                              >
-                                <a
-                                  href="/github.com/foo/bar/-/blob/undefined?subtree=true"
-                                >
-                                  <strong />
-                                </a>
-                              </AnchorLink>
-                            </RepoFileLink>
-                          </span>
-                        </div>
-                        <small
-                          className="result-container__toggle-matches-container"
-                        >
-                          <Memo(ChevronDownIcon)
-                            className="icon-inline"
-                          >
-                            <svg
-                              className="mdi-icon icon-inline"
-                              fill="currentColor"
-                              height={24}
-                              viewBox="0 0 24 24"
-                              width={24}
-                            >
-                              <path
-                                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-                              />
-                            </svg>
-                          </Memo(ChevronDownIcon)>
-                        </small>
-                      </div>
-                      <FileMatchChildren
-                        allMatches={true}
-                        expanded={true}
-                        fetchHighlightedFileLines={[Function]}
-                        icon="SourceRepositoryIcon"
-                        isLightTheme={true}
-                        items={
-                          Array [
-                            Object {
-                              "badge": undefined,
-                              "highlightRanges": Array [
-                                Object {
-                                  "highlightLength": 10,
-                                  "start": 0,
-                                },
-                              ],
-                              "line": 1,
-                              "preview": "",
-                            },
-                          ]
-                        }
-                        location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-                        onSelect={[Function]}
-                        result={
-                          Object {
-                            "file": Object {
-                              "commit": Object {
-                                "oid": undefined,
-                              },
-                              "path": "",
-                              "url": "/github.com/foo/bar/-/blob/undefined",
-                            },
-                            "limitHit": false,
-                            "lineMatches": Array [
-                              Object {
-                                "badge": undefined,
-                                "limitHit": false,
-                                "lineNumber": 1,
-                                "offsetAndLengths": Array [
-                                  Array [
-                                    0,
-                                    10,
-                                  ],
-                                ],
-                                "preview": "",
-                              },
-                            ],
-                            "repository": Object {
-                              "name": "github.com/foo/bar",
-                              "url": "/github.com/foo/bar",
-                            },
-                          }
-                        }
-                        settingsCascade={
-                          Object {
-                            "final": null,
-                            "subjects": null,
-                          }
-                        }
-                        showAllMatches={true}
-                        subsetMatches={10}
-                      >
-                        <div
-                          className="file-match-children"
-                        >
-                          <div
-                            className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
-                            key="linematch:/github.com/foo/bar/-/blob/undefined2:1"
+                          <RepoFileLink
+                            filePath=""
+                            fileURL="/github.com/foo/bar/-/blob/undefined"
+                            repoName="github.com/foo/bar"
+                            repoURL="/github.com/foo/bar"
                           >
                             <AnchorLink
-                              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                              onClick={[Function]}
-                              to="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                              to="/github.com/foo/bar"
                             >
                               <a
-                                className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-                                href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
-                                onClick={[Function]}
+                                href="/github.com/foo/bar"
                               >
-                                <CodeExcerpt
-                                  className="file-match-children__item-code-excerpt"
-                                  context={1}
-                                  fetchHighlightedFileLines={[Function]}
-                                  filePath=""
-                                  highlightRanges={
-                                    Array [
-                                      Object {
-                                        "badge": undefined,
-                                        "character": 0,
-                                        "highlightLength": 10,
-                                        "line": 1,
-                                      },
-                                    ]
-                                  }
-                                  isLightTheme={true}
-                                  lastSubsetMatchLineNumber={1}
-                                  repoName="github.com/foo/bar"
-                                >
-                                  <VisibilitySensor
-                                    offset={
-                                      Object {
-                                        "bottom": -500,
-                                      }
-                                    }
-                                    onChange={[Function]}
-                                    partialVisibility={true}
-                                  >
-                                    <code
-                                      className="code-excerpt file-match-children__item-code-excerpt"
-                                    >
-                                      <table>
-                                        <tbody>
-                                          <tr
-                                            key="0"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              1
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                          <tr
-                                            key="1"
-                                          >
-                                            <td
-                                              className="line"
-                                            >
-                                              2
-                                            </td>
-                                            <td
-                                              className="code"
-                                            >
-                                               
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </code>
-                                  </VisibilitySensor>
-                                </CodeExcerpt>
+                                foo/bar
                               </a>
                             </AnchorLink>
-                            <div
-                              className="file-match-children__item-badge-row e2e-badge-row"
+                             ›
+                             
+                            <AnchorLink
+                              to="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                            >
+                              <a
+                                href="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                              >
+                                <strong />
+                              </a>
+                            </AnchorLink>
+                          </RepoFileLink>
+                        </span>
+                      </div>
+                      <small
+                        className="result-container__toggle-matches-container"
+                      >
+                        <Memo(ChevronDownIcon)
+                          className="icon-inline"
+                        >
+                          <svg
+                            className="mdi-icon icon-inline"
+                            fill="currentColor"
+                            height={24}
+                            viewBox="0 0 24 24"
+                            width={24}
+                          >
+                            <path
+                              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                             />
-                          </div>
-                        </div>
-                      </FileMatchChildren>
+                          </svg>
+                        </Memo(ChevronDownIcon)>
+                      </small>
                     </div>
-                  </ResultContainer>
-                </FileMatch>
-              </VisibilitySensor>
-            </div>
-          </VirtualList>
-        </div>
-      </FileLocations>
-    </div>
+                    <FileMatchChildren
+                      allMatches={true}
+                      expanded={true}
+                      fetchHighlightedFileLines={[Function]}
+                      icon="SourceRepositoryIcon"
+                      isLightTheme={true}
+                      items={
+                        Array [
+                          Object {
+                            "badge": undefined,
+                            "highlightRanges": Array [
+                              Object {
+                                "highlightLength": 10,
+                                "start": 0,
+                              },
+                            ],
+                            "line": 1,
+                            "preview": "",
+                          },
+                        ]
+                      }
+                      location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
+                      onSelect={[Function]}
+                      result={
+                        Object {
+                          "file": Object {
+                            "commit": Object {
+                              "oid": undefined,
+                            },
+                            "path": "",
+                            "url": "/github.com/foo/bar/-/blob/undefined",
+                          },
+                          "limitHit": false,
+                          "lineMatches": Array [
+                            Object {
+                              "badge": undefined,
+                              "limitHit": false,
+                              "lineNumber": 1,
+                              "offsetAndLengths": Array [
+                                Array [
+                                  0,
+                                  10,
+                                ],
+                              ],
+                              "preview": "",
+                            },
+                          ],
+                          "repository": Object {
+                            "name": "github.com/foo/bar",
+                            "url": "/github.com/foo/bar",
+                          },
+                        }
+                      }
+                      settingsCascade={
+                        Object {
+                          "final": null,
+                          "subjects": null,
+                        }
+                      }
+                      showAllMatches={true}
+                      subsetMatches={10}
+                    >
+                      <div
+                        className="file-match-children"
+                      >
+                        <div
+                          className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
+                          key="linematch:/github.com/foo/bar/-/blob/undefined2:1"
+                        >
+                          <AnchorLink
+                            className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                            onClick={[Function]}
+                            to="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                          >
+                            <a
+                              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                              href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                              onClick={[Function]}
+                            >
+                              <CodeExcerpt
+                                className="file-match-children__item-code-excerpt"
+                                context={1}
+                                fetchHighlightedFileLines={[Function]}
+                                filePath=""
+                                highlightRanges={
+                                  Array [
+                                    Object {
+                                      "badge": undefined,
+                                      "character": 0,
+                                      "highlightLength": 10,
+                                      "line": 1,
+                                    },
+                                  ]
+                                }
+                                isLightTheme={true}
+                                lastSubsetMatchLineNumber={1}
+                                repoName="github.com/foo/bar"
+                              >
+                                <VisibilitySensor
+                                  offset={
+                                    Object {
+                                      "bottom": -500,
+                                    }
+                                  }
+                                  onChange={[Function]}
+                                  partialVisibility={true}
+                                >
+                                  <code
+                                    className="code-excerpt file-match-children__item-code-excerpt"
+                                  >
+                                    <table>
+                                      <tbody>
+                                        <tr
+                                          key="0"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            1
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                        <tr
+                                          key="1"
+                                        >
+                                          <td
+                                            className="line"
+                                          >
+                                            2
+                                          </td>
+                                          <td
+                                            className="code"
+                                          >
+                                             
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </code>
+                                </VisibilitySensor>
+                              </CodeExcerpt>
+                            </a>
+                          </AnchorLink>
+                          <div
+                            className="file-match-children__item-badge-row e2e-badge-row"
+                          />
+                        </div>
+                      </div>
+                    </FileMatchChildren>
+                  </div>
+                </ResultContainer>
+              </FileMatch>
+            </VisibilitySensor>
+          </div>
+        </VirtualList>
+      </div>
+    </FileLocations>
   </div>
-</HierarchicalLocationsView>
+</div>
 `;
 
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
-<HierarchicalLocationsView
-  defaultGroup="git://github.com/foo/bar"
-  extensionsController={
-    Object {
-      "services": Object {
-        "context": Object {
-          "data": "[Subject]",
-          "updateContext": [Function],
-        },
-        "contribution": Object {
-          "registerContributions": [Function],
-        },
-      },
-    }
-  }
-  fetchHighlightedFileLines={[Function]}
-  isLightTheme={true}
-  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-  locations="[Observable]"
-  settingsCascade={
-    Object {
-      "final": null,
-      "subjects": null,
-    }
-  }
+<LoadingSpinner
+  className="icon-inline m-1 e2e-loading-spinner"
 >
-  <LoadingSpinner
-    className="icon-inline m-1 e2e-loading-spinner"
-  >
-    <div
-      className="loading-spinner icon-inline m-1 e2e-loading-spinner"
-    />
-  </LoadingSpinner>
-</HierarchicalLocationsView>
+  <div
+    className="loading-spinner icon-inline m-1 e2e-loading-spinner"
+  />
+</LoadingSpinner>
 `;
 
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
-<HierarchicalLocationsView
-  defaultGroup="git://github.com/foo/bar"
-  extensionsController={
-    Object {
-      "services": Object {
-        "context": Object {
-          "data": "[Subject]",
-          "updateContext": [Function],
-        },
-        "contribution": Object {
-          "registerContributions": [Function],
-        },
-      },
-    }
-  }
-  fetchHighlightedFileLines={[Function]}
-  isLightTheme={true}
-  location="[Location path=/github.com/sourcegraph/sourcegraph/-/blob/browser/src/libs/phabricator/index.tsx#L36:18&tab=references]"
-  locations="[Observable]"
-  settingsCascade={
-    Object {
-      "final": null,
-      "subjects": null,
-    }
-  }
+<LoadingSpinner
+  className="icon-inline m-1 e2e-loading-spinner"
 >
-  <LoadingSpinner
-    className="icon-inline m-1 e2e-loading-spinner"
-  >
-    <div
-      className="loading-spinner icon-inline m-1 e2e-loading-spinner"
-    />
-  </LoadingSpinner>
-</HierarchicalLocationsView>
+  <div
+    className="loading-spinner icon-inline m-1 e2e-loading-spinner"
+  />
+</LoadingSpinner>
 `;

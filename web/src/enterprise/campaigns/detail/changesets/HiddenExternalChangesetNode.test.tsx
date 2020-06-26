@@ -16,7 +16,7 @@ describe('HiddenExternalChangesetNode', () => {
                         updatedAt: new Date().toISOString(),
                     }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

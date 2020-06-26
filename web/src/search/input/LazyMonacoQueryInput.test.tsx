@@ -28,7 +28,7 @@ describe('PlainQueryInput', () => {
                     copyQueryButton={false}
                     versionContext={undefined}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('with query', () =>
@@ -52,6 +52,6 @@ describe('PlainQueryInput', () => {
                     copyQueryButton={false}
                     versionContext={undefined}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 })

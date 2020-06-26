@@ -21,7 +21,7 @@ describe('ErrorBoundary', () => {
                 <ErrorBoundary location={null}>
                     <ThrowError />
                 </ErrorBoundary>
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('renders error page if error', () =>
@@ -30,7 +30,7 @@ describe('ErrorBoundary', () => {
                 <ErrorBoundary location={null}>
                     <span>hello</span>
                 </ErrorBoundary>
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('renders reload page if chunk error', () =>
@@ -39,6 +39,6 @@ describe('ErrorBoundary', () => {
                 <ErrorBoundary location={null}>
                     <ThrowChunkError />
                 </ErrorBoundary>
-            )
+            ).children()
         ).toMatchSnapshot())
 })

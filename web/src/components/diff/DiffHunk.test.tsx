@@ -75,7 +75,7 @@ describe('DiffHunk', () => {
                     history={history}
                     location={H.createLocation('/testdiff', history.location)}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -130,7 +130,7 @@ describe('DiffHunk', () => {
                     history={history}
                     location={H.createLocation('/testdiff', history.location)}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -146,7 +146,7 @@ describe('DiffHunk', () => {
                     history={history}
                     location={H.createLocation('/testdiff', history.location)}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

@@ -32,7 +32,7 @@ describe('UserNavItem', () => {
                         showDotComMarketing={true}
                     />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

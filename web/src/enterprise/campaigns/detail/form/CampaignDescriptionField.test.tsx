@@ -4,5 +4,5 @@ import { mount } from 'enzyme'
 
 describe('CampaignDescriptionField', () => {
     test('renders', () =>
-        expect(mount(<CampaignDescriptionField value="a" onChange={() => undefined} />)).toMatchSnapshot())
+        expect(mount(<CampaignDescriptionField value="a" onChange={() => undefined} />).children()).toMatchSnapshot())
 })

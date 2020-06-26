@@ -12,7 +12,7 @@ describe('SiteAdminCustomerBillingLink', () => {
                     customer={{ id: 'u', urlForSiteAdminBilling: 'https://example.com' }}
                     onDidUpdate={() => undefined}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -23,7 +23,7 @@ describe('SiteAdminCustomerBillingLink', () => {
                     customer={{ id: 'u', urlForSiteAdminBilling: null }}
                     onDidUpdate={() => undefined}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

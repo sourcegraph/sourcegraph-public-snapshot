@@ -1,40 +1,34 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`LinkOrButton render a button when "to" is undefined 1`] = `
-<LinkOrButton>
+<a
+  className="nav-link"
+  href=""
+  onAuxClick={[Function]}
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+>
+  foo
+</a>
+`;
+
+exports[`LinkOrButton render a link when "to" is set 1`] = `
+<AnchorLink
+  className="nav-link"
+  onClick={[Function]}
+  onKeyPress={[Function]}
+  tabIndex={0}
+  to="http://example.com"
+>
   <a
     className="nav-link"
-    href=""
-    onAuxClick={[Function]}
+    href="http://example.com"
     onClick={[Function]}
     onKeyPress={[Function]}
     tabIndex={0}
   >
     foo
   </a>
-</LinkOrButton>
-`;
-
-exports[`LinkOrButton render a link when "to" is set 1`] = `
-<LinkOrButton
-  to="http://example.com"
->
-  <AnchorLink
-    className="nav-link"
-    onClick={[Function]}
-    onKeyPress={[Function]}
-    tabIndex={0}
-    to="http://example.com"
-  >
-    <a
-      className="nav-link"
-      href="http://example.com"
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      foo
-    </a>
-  </AnchorLink>
-</LinkOrButton>
+</AnchorLink>
 `;

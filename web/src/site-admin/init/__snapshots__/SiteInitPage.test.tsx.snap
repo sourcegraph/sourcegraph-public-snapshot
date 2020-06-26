@@ -1,188 +1,170 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SiteInitPage normal 1`] = `
-<SiteInitPage
-  authenticatedUser={null}
-  history="[History]"
-  isLightTheme={true}
-  needsSiteInit={true}
+<div
+  className="site-init-page"
 >
   <div
-    className="site-init-page"
+    className="site-init-page__content card"
   >
     <div
-      className="site-init-page__content card"
+      className="card-body p-4"
     >
-      <div
-        className="card-body p-4"
+      <BrandLogo
+        className="w-100 mb-3"
+        isLightTheme={true}
       >
-        <BrandLogo
+        <img
           className="w-100 mb-3"
-          isLightTheme={true}
+          src="/img/sourcegraph-light-head-logo.svg"
+        />
+      </BrandLogo>
+      <h2
+        className="site-init-page__header"
+      >
+        Welcome
+      </h2>
+      <p>
+        Create an admin account to start using Sourcegraph.
+      </p>
+      <SignUpForm
+        buttonLabel="Create admin account & continue"
+        className="w-100"
+        doSignUp={[Function]}
+        history="[History]"
+      >
+        <Form
+          className="signin-signup-form e2e-signup-form w-100"
+          onSubmit={[Function]}
         >
-          <img
-            className="w-100 mb-3"
-            src="/img/sourcegraph-light-head-logo.svg"
-          />
-        </BrandLogo>
-        <h2
-          className="site-init-page__header"
-        >
-          Welcome
-        </h2>
-        <p>
-          Create an admin account to start using Sourcegraph.
-        </p>
-        <SignUpForm
-          buttonLabel="Create admin account & continue"
-          className="w-100"
-          doSignUp={[Function]}
-          history="[History]"
-        >
-          <Form
-            className="signin-signup-form e2e-signup-form w-100"
+          <form
+            className="signin-signup-form e2e-signup-form w-100 "
+            onInvalid={[Function]}
             onSubmit={[Function]}
           >
-            <form
-              className="signin-signup-form e2e-signup-form w-100 "
-              onInvalid={[Function]}
-              onSubmit={[Function]}
+            <div
+              className="form-group"
             >
-              <div
-                className="form-group"
+              <EmailInput
+                autoFocus={true}
+                className="signin-signup-form__input"
+                disabled={false}
+                onChange={[Function]}
+                required={true}
+                value=""
               >
-                <EmailInput
+                <input
+                  autoComplete="email"
                   autoFocus={true}
-                  className="signin-signup-form__input"
+                  className="form-control signin-signup-form__input"
                   disabled={false}
+                  name="email"
                   onChange={[Function]}
+                  placeholder="Email"
                   required={true}
+                  spellCheck={false}
+                  type="email"
                   value=""
-                >
-                  <input
-                    autoComplete="email"
-                    autoFocus={true}
-                    className="form-control signin-signup-form__input"
-                    disabled={false}
-                    name="email"
-                    onChange={[Function]}
-                    placeholder="Email"
-                    required={true}
-                    spellCheck={false}
-                    type="email"
-                    value=""
-                  />
-                </EmailInput>
-              </div>
-              <div
-                className="form-group"
+                />
+              </EmailInput>
+            </div>
+            <div
+              className="form-group"
+            >
+              <UsernameInput
+                className="signin-signup-form__input"
+                disabled={false}
+                onChange={[Function]}
+                required={true}
+                value=""
               >
-                <UsernameInput
-                  className="signin-signup-form__input"
+                <input
+                  autoCapitalize="off"
+                  autoComplete="username"
+                  className="form-control signin-signup-form__input"
                   disabled={false}
+                  maxLength={255}
+                  name="username"
                   onChange={[Function]}
+                  pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
+                  placeholder="Username"
                   required={true}
+                  spellCheck={false}
+                  type="text"
                   value=""
-                >
-                  <input
-                    autoCapitalize="off"
-                    autoComplete="username"
-                    className="form-control signin-signup-form__input"
-                    disabled={false}
-                    maxLength={255}
-                    name="username"
-                    onChange={[Function]}
-                    pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
-                    placeholder="Username"
-                    required={true}
-                    spellCheck={false}
-                    type="text"
-                    value=""
-                  />
-                </UsernameInput>
-              </div>
-              <div
-                className="form-group"
+                />
+              </UsernameInput>
+            </div>
+            <div
+              className="form-group"
+            >
+              <PasswordInput
+                autoComplete="new-password"
+                className="signin-signup-form__input"
+                disabled={false}
+                onChange={[Function]}
+                required={true}
+                value=""
               >
-                <PasswordInput
+                <input
                   autoComplete="new-password"
-                  className="signin-signup-form__input"
+                  className="form-control signin-signup-form__input"
                   disabled={false}
+                  name="password"
                   onChange={[Function]}
+                  placeholder="Password"
                   required={true}
+                  type="password"
                   value=""
-                >
-                  <input
-                    autoComplete="new-password"
-                    className="form-control signin-signup-form__input"
-                    disabled={false}
-                    name="password"
-                    onChange={[Function]}
-                    placeholder="Password"
-                    required={true}
-                    type="password"
-                    value=""
-                  />
-                </PasswordInput>
-              </div>
-              <div
-                className="form-group mb-0"
+                />
+              </PasswordInput>
+            </div>
+            <div
+              className="form-group mb-0"
+            >
+              <button
+                className="btn btn-primary btn-block"
+                disabled={false}
+                type="submit"
               >
-                <button
-                  className="btn btn-primary btn-block"
-                  disabled={false}
-                  type="submit"
-                >
-                  Create admin account & continue
-                </button>
-              </div>
-            </form>
-          </Form>
-        </SignUpForm>
-      </div>
+                Create admin account & continue
+              </button>
+            </div>
+          </form>
+        </Form>
+      </SignUpForm>
     </div>
   </div>
-</SiteInitPage>
+</div>
 `;
 
 exports[`SiteInitPage unexpected authed user 1`] = `
-<SiteInitPage
-  authenticatedUser={
-    Object {
-      "username": "alice",
-    }
-  }
-  history="[History]"
-  isLightTheme={true}
-  needsSiteInit={true}
+<div
+  className="site-init-page"
 >
   <div
-    className="site-init-page"
+    className="site-init-page__content card"
   >
     <div
-      className="site-init-page__content card"
+      className="card-body p-4"
     >
-      <div
-        className="card-body p-4"
+      <BrandLogo
+        className="w-100 mb-3"
+        isLightTheme={true}
       >
-        <BrandLogo
+        <img
           className="w-100 mb-3"
-          isLightTheme={true}
-        >
-          <img
-            className="w-100 mb-3"
-            src="/img/sourcegraph-light-head-logo.svg"
-          />
-        </BrandLogo>
-        <p>
-          You're signed in as 
-          <strong>
-            alice
-          </strong>
-          . A site admin must initialize Sourcegraph before you can continue.
-        </p>
-      </div>
+          src="/img/sourcegraph-light-head-logo.svg"
+        />
+      </BrandLogo>
+      <p>
+        You're signed in as 
+        <strong>
+          alice
+        </strong>
+        . A site admin must initialize Sourcegraph before you can continue.
+      </p>
     </div>
   </div>
-</SiteInitPage>
+</div>
 `;

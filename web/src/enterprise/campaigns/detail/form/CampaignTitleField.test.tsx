@@ -3,5 +3,6 @@ import { CampaignTitleField } from './CampaignTitleField'
 import { mount } from 'enzyme'
 
 describe('CampaignTitleField', () => {
-    test('renders', () => expect(mount(<CampaignTitleField value="a" onChange={() => undefined} />)).toMatchSnapshot())
+    test('renders', () =>
+        expect(mount(<CampaignTitleField value="a" onChange={() => undefined} />).children()).toMatchSnapshot())
 })

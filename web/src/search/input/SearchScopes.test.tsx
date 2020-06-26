@@ -21,7 +21,7 @@ describe('SearchScopes', () => {
                 <MemoryRouter>
                     <SearchScopes {...BASE_PROPS} settingsCascade={{ final: {}, subjects: [] }} />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('with scopes', () => {
@@ -31,7 +31,7 @@ describe('SearchScopes', () => {
                 <MemoryRouter>
                     <SearchScopes {...BASE_PROPS} settingsCascade={{ final: settings, subjects: [] }} />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

@@ -50,6 +50,6 @@ describe('ProductPlanFormControl', () => {
                 history={createMemoryHistory()}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })

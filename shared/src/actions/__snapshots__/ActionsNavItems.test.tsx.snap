@@ -1,32 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ActionItem Renders contributed action items 1`] = `
-<ActionsNavItems
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-      "services": Object {
-        "contribution": Object {
-          "getContributions": [Function],
-        },
-      },
-    }
-  }
-  location="[Location path=https://github.com/sourcegraph/sourcegraph/pull/5287/files#diff-eb9883bb910397a210512a13fd7384ac]"
-  menu="editor/title"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
->
-   
+Array [
+  " ",
   <li>
     <ActionItem
       action={
@@ -73,6 +49,6 @@ exports[`ActionItem Renders contributed action items 1`] = `
         Action A
       </span>
     </ActionItem>
-  </li>
-</ActionsNavItems>
+  </li>,
+]
 `;

@@ -1,67 +1,94 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignUpdateDiff renders 1`] = `
-<CampaignUpdateDiff
-  _queryChangesets={[Function]}
-  _queryPatchesFromCampaign={[Function]}
-  _queryPatchesFromPatchSet={[Function]}
-  campaign={
-    Object {
-      "changesets": Object {
-        "totalCount": 1,
-      },
-      "id": "somecampaign",
-      "patches": Object {
-        "totalCount": 1,
-      },
-      "viewerCanAdminister": true,
+<div>
+  <h3
+    className="mt-4 mb-2"
+  >
+    Preview of changes
+  </h3>
+  <p>
+    Campaign currently has 
+    2
+     
+    changesets
+     (
+    1
+     published, 
+    1
+     
+    draft
+    ), after update it will have
+     
+    1
+     
+    changeset
+     (
+    1
+     published, 
+    0
+     
+    drafts
+    ):
+  </p>
+  <TabsWithLocalStorageViewStatePersistence
+    storageKey="campaignUpdateDiffTabs"
+    tabClassName="tab-bar__tab--h5like"
+    tabs={
+      Array [
+        Object {
+          "id": "added",
+          "label": <span>
+            To be created 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              0
+            </span>
+          </span>,
+        },
+        Object {
+          "id": "changed",
+          "label": <span>
+            To be updated 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              1
+            </span>
+          </span>,
+        },
+        Object {
+          "id": "unmodified",
+          "label": <span>
+            Unmodified 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              0
+            </span>
+          </span>,
+        },
+        Object {
+          "id": "deleted",
+          "label": <span>
+            To be closed 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              0
+            </span>
+          </span>,
+        },
+      ]
     }
-  }
-  history="[History]"
-  isLightTheme={true}
-  location="[Location path=/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?patchSet=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D]"
-  patchSet={
-    Object {
-      "id": "someothercampaign",
-      "patches": Object {
-        "totalCount": 1,
-      },
-    }
-  }
->
-  <div>
-    <h3
-      className="mt-4 mb-2"
-    >
-      Preview of changes
-    </h3>
-    <p>
-      Campaign currently has 
-      2
-       
-      changesets
-       (
-      1
-       published, 
-      1
-       
-      draft
-      ), after update it will have
-       
-      1
-       
-      changeset
-       (
-      1
-       published, 
-      0
-       
-      drafts
-      ):
-    </p>
-    <TabsWithLocalStorageViewStatePersistence
+  >
+    <Tabs
+      activeTab="added"
+      onSelectTab={[Function]}
       storageKey="campaignUpdateDiffTabs"
       tabClassName="tab-bar__tab--h5like"
+      tabComponent={[Function]}
       tabs={
         Array [
           Object {
@@ -111,70 +138,69 @@ exports[`CampaignUpdateDiff renders 1`] = `
         ]
       }
     >
-      <Tabs
-        activeTab="added"
-        onSelectTab={[Function]}
-        storageKey="campaignUpdateDiffTabs"
-        tabClassName="tab-bar__tab--h5like"
-        tabComponent={[Function]}
-        tabs={
-          Array [
-            Object {
-              "id": "added",
-              "label": <span>
-                To be created 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  0
-                </span>
-              </span>,
-            },
-            Object {
-              "id": "changed",
-              "label": <span>
-                To be updated 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  1
-                </span>
-              </span>,
-            },
-            Object {
-              "id": "unmodified",
-              "label": <span>
-                Unmodified 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  0
-                </span>
-              </span>,
-            },
-            Object {
-              "id": "deleted",
-              "label": <span>
-                To be closed 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  0
-                </span>
-              </span>,
-            },
-          ]
-        }
+      <div
+        className="tabs "
       >
-        <div
-          className="tabs "
+        <TabBar
+          activeTab="added"
+          tabClassName="tab-bar__tab--h5like"
+          tabComponent={[Function]}
+          tabs={
+            Array [
+              Object {
+                "id": "added",
+                "label": <span>
+                  To be created 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>,
+              },
+              Object {
+                "id": "changed",
+                "label": <span>
+                  To be updated 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    1
+                  </span>
+                </span>,
+              },
+              Object {
+                "id": "unmodified",
+                "label": <span>
+                  Unmodified 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>,
+              },
+              Object {
+                "id": "deleted",
+                "label": <span>
+                  To be closed 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>,
+              },
+            ]
+          }
         >
-          <TabBar
-            activeTab="added"
-            tabClassName="tab-bar__tab--h5like"
-            tabComponent={[Function]}
-            tabs={
-              Array [
+          <div
+            className="tab-bar "
+          >
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
+              key="added"
+              tab={
                 Object {
                   "id": "added",
                   "label": <span>
@@ -185,7 +211,29 @@ exports[`CampaignUpdateDiff renders 1`] = `
                       0
                     </span>
                   </span>,
-                },
+                }
+              }
+            >
+              <button
+                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
+                data-e2e-tab="added"
+                onClick={[Function]}
+                type="button"
+              >
+                <span>
+                  To be created 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>
+              </button>
+            </Component>
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+              key="changed"
+              tab={
                 Object {
                   "id": "changed",
                   "label": <span>
@@ -196,7 +244,29 @@ exports[`CampaignUpdateDiff renders 1`] = `
                       1
                     </span>
                   </span>,
-                },
+                }
+              }
+            >
+              <button
+                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+                data-e2e-tab="changed"
+                onClick={[Function]}
+                type="button"
+              >
+                <span>
+                  To be updated 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    1
+                  </span>
+                </span>
+              </button>
+            </Component>
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+              key="unmodified"
+              tab={
                 Object {
                   "id": "unmodified",
                   "label": <span>
@@ -207,7 +277,29 @@ exports[`CampaignUpdateDiff renders 1`] = `
                       0
                     </span>
                   </span>,
-                },
+                }
+              }
+            >
+              <button
+                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+                data-e2e-tab="unmodified"
+                onClick={[Function]}
+                type="button"
+              >
+                <span>
+                  Unmodified 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>
+              </button>
+            </Component>
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+              key="deleted"
+              tab={
                 Object {
                   "id": "deleted",
                   "label": <span>
@@ -218,246 +310,152 @@ exports[`CampaignUpdateDiff renders 1`] = `
                       0
                     </span>
                   </span>,
-                },
-              ]
-            }
-          >
-            <div
-              className="tab-bar "
+                }
+              }
             >
-              <Component
-                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-                key="added"
-                tab={
-                  Object {
-                    "id": "added",
-                    "label": <span>
-                      To be created 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        0
-                      </span>
-                    </span>,
-                  }
-                }
-              >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-                  data-e2e-tab="added"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    To be created 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      0
-                    </span>
-                  </span>
-                </button>
-              </Component>
-              <Component
+              <button
                 className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                key="changed"
-                tab={
-                  Object {
-                    "id": "changed",
-                    "label": <span>
-                      To be updated 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        1
-                      </span>
-                    </span>,
-                  }
-                }
+                data-e2e-tab="deleted"
+                onClick={[Function]}
+                type="button"
               >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="changed"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    To be updated 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      1
-                    </span>
+                <span>
+                  To be closed 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
                   </span>
-                </button>
-              </Component>
-              <Component
-                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                key="unmodified"
-                tab={
-                  Object {
-                    "id": "unmodified",
-                    "label": <span>
-                      Unmodified 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        0
-                      </span>
-                    </span>,
-                  }
-                }
-              >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="unmodified"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    Unmodified 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      0
-                    </span>
-                  </span>
-                </button>
-              </Component>
-              <Component
-                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                key="deleted"
-                tab={
-                  Object {
-                    "id": "deleted",
-                    "label": <span>
-                      To be closed 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        0
-                      </span>
-                    </span>,
-                  }
-                }
-              >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="deleted"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    To be closed 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      0
-                    </span>
-                  </span>
-                </button>
-              </Component>
-            </div>
-          </TabBar>
-          <div
-            className="pt-3"
-            key="added"
-          >
-            <span
-              className="text-muted"
-            >
-              No changesets
-            </span>
+                </span>
+              </button>
+            </Component>
           </div>
-        </div>
-      </Tabs>
-    </TabsWithLocalStorageViewStatePersistence>
-    <div
-      className="alert alert-info mt-2"
-    >
-      <Memo(AlertCircleIcon)
-        className="icon-inline"
-      >
-        <svg
-          className="mdi-icon icon-inline"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
+        </TabBar>
+        <div
+          className="pt-3"
+          key="added"
         >
-          <path
-            d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-          />
-        </svg>
-      </Memo(AlertCircleIcon)>
-       You are updating an existing campaign. By clicking 'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
-    </div>
+          <span
+            className="text-muted"
+          >
+            No changesets
+          </span>
+        </div>
+      </div>
+    </Tabs>
+  </TabsWithLocalStorageViewStatePersistence>
+  <div
+    className="alert alert-info mt-2"
+  >
+    <Memo(AlertCircleIcon)
+      className="icon-inline"
+    >
+      <svg
+        className="mdi-icon icon-inline"
+        fill="currentColor"
+        height={24}
+        viewBox="0 0 24 24"
+        width={24}
+      >
+        <path
+          d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+        />
+      </svg>
+    </Memo(AlertCircleIcon)>
+     You are updating an existing campaign. By clicking 'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
   </div>
-</CampaignUpdateDiff>
+</div>
 `;
 
 exports[`CampaignUpdateDiff renders a loader 1`] = `
-<CampaignUpdateDiff
-  _queryChangesets={[Function]}
-  _queryPatchesFromCampaign={[Function]}
-  _queryPatchesFromPatchSet={[Function]}
-  campaign={
-    Object {
-      "changesets": Object {
-        "totalCount": 1,
-      },
-      "id": "somecampaign",
-      "patches": Object {
-        "totalCount": 1,
-      },
-      "viewerCanAdminister": true,
+<div>
+  <h3
+    className="mt-4 mb-2"
+  >
+    Preview of changes
+  </h3>
+  <p>
+    Campaign currently has 
+    2
+     
+    changesets
+     (
+    1
+     published, 
+    1
+     
+    draft
+    ), after update it will have
+     
+    1
+     
+    changeset
+     (
+    1
+     published, 
+    0
+     
+    drafts
+    ):
+  </p>
+  <TabsWithLocalStorageViewStatePersistence
+    storageKey="campaignUpdateDiffTabs"
+    tabClassName="tab-bar__tab--h5like"
+    tabs={
+      Array [
+        Object {
+          "id": "added",
+          "label": <span>
+            To be created 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              0
+            </span>
+          </span>,
+        },
+        Object {
+          "id": "changed",
+          "label": <span>
+            To be updated 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              1
+            </span>
+          </span>,
+        },
+        Object {
+          "id": "unmodified",
+          "label": <span>
+            Unmodified 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              0
+            </span>
+          </span>,
+        },
+        Object {
+          "id": "deleted",
+          "label": <span>
+            To be closed 
+            <span
+              className="badge badge-secondary badge-pill"
+            >
+              0
+            </span>
+          </span>,
+        },
+      ]
     }
-  }
-  history="[History]"
-  isLightTheme={true}
-  location="[Location path=/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?patchSet=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D]"
-  patchSet={
-    Object {
-      "id": "someothercampaign",
-      "patches": Object {
-        "totalCount": 1,
-      },
-    }
-  }
->
-  <div>
-    <h3
-      className="mt-4 mb-2"
-    >
-      Preview of changes
-    </h3>
-    <p>
-      Campaign currently has 
-      2
-       
-      changesets
-       (
-      1
-       published, 
-      1
-       
-      draft
-      ), after update it will have
-       
-      1
-       
-      changeset
-       (
-      1
-       published, 
-      0
-       
-      drafts
-      ):
-    </p>
-    <TabsWithLocalStorageViewStatePersistence
+  >
+    <Tabs
+      activeTab="added"
+      onSelectTab={[Function]}
       storageKey="campaignUpdateDiffTabs"
       tabClassName="tab-bar__tab--h5like"
+      tabComponent={[Function]}
       tabs={
         Array [
           Object {
@@ -507,70 +505,69 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
         ]
       }
     >
-      <Tabs
-        activeTab="added"
-        onSelectTab={[Function]}
-        storageKey="campaignUpdateDiffTabs"
-        tabClassName="tab-bar__tab--h5like"
-        tabComponent={[Function]}
-        tabs={
-          Array [
-            Object {
-              "id": "added",
-              "label": <span>
-                To be created 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  0
-                </span>
-              </span>,
-            },
-            Object {
-              "id": "changed",
-              "label": <span>
-                To be updated 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  1
-                </span>
-              </span>,
-            },
-            Object {
-              "id": "unmodified",
-              "label": <span>
-                Unmodified 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  0
-                </span>
-              </span>,
-            },
-            Object {
-              "id": "deleted",
-              "label": <span>
-                To be closed 
-                <span
-                  className="badge badge-secondary badge-pill"
-                >
-                  0
-                </span>
-              </span>,
-            },
-          ]
-        }
+      <div
+        className="tabs "
       >
-        <div
-          className="tabs "
+        <TabBar
+          activeTab="added"
+          tabClassName="tab-bar__tab--h5like"
+          tabComponent={[Function]}
+          tabs={
+            Array [
+              Object {
+                "id": "added",
+                "label": <span>
+                  To be created 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>,
+              },
+              Object {
+                "id": "changed",
+                "label": <span>
+                  To be updated 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    1
+                  </span>
+                </span>,
+              },
+              Object {
+                "id": "unmodified",
+                "label": <span>
+                  Unmodified 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>,
+              },
+              Object {
+                "id": "deleted",
+                "label": <span>
+                  To be closed 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>,
+              },
+            ]
+          }
         >
-          <TabBar
-            activeTab="added"
-            tabClassName="tab-bar__tab--h5like"
-            tabComponent={[Function]}
-            tabs={
-              Array [
+          <div
+            className="tab-bar "
+          >
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
+              key="added"
+              tab={
                 Object {
                   "id": "added",
                   "label": <span>
@@ -581,7 +578,29 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
                       0
                     </span>
                   </span>,
-                },
+                }
+              }
+            >
+              <button
+                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
+                data-e2e-tab="added"
+                onClick={[Function]}
+                type="button"
+              >
+                <span>
+                  To be created 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>
+              </button>
+            </Component>
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+              key="changed"
+              tab={
                 Object {
                   "id": "changed",
                   "label": <span>
@@ -592,7 +611,29 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
                       1
                     </span>
                   </span>,
-                },
+                }
+              }
+            >
+              <button
+                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+                data-e2e-tab="changed"
+                onClick={[Function]}
+                type="button"
+              >
+                <span>
+                  To be updated 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    1
+                  </span>
+                </span>
+              </button>
+            </Component>
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+              key="unmodified"
+              tab={
                 Object {
                   "id": "unmodified",
                   "label": <span>
@@ -603,7 +644,29 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
                       0
                     </span>
                   </span>,
-                },
+                }
+              }
+            >
+              <button
+                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+                data-e2e-tab="unmodified"
+                onClick={[Function]}
+                type="button"
+              >
+                <span>
+                  Unmodified 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
+                  </span>
+                </span>
+              </button>
+            </Component>
+            <Component
+              className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+              key="deleted"
+              tab={
                 Object {
                   "id": "deleted",
                   "label": <span>
@@ -614,180 +677,59 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
                       0
                     </span>
                   </span>,
-                },
-              ]
-            }
-          >
-            <div
-              className="tab-bar "
+                }
+              }
             >
-              <Component
-                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-                key="added"
-                tab={
-                  Object {
-                    "id": "added",
-                    "label": <span>
-                      To be created 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        0
-                      </span>
-                    </span>,
-                  }
-                }
-              >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-                  data-e2e-tab="added"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    To be created 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      0
-                    </span>
-                  </span>
-                </button>
-              </Component>
-              <Component
+              <button
                 className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                key="changed"
-                tab={
-                  Object {
-                    "id": "changed",
-                    "label": <span>
-                      To be updated 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        1
-                      </span>
-                    </span>,
-                  }
-                }
+                data-e2e-tab="deleted"
+                onClick={[Function]}
+                type="button"
               >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="changed"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    To be updated 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      1
-                    </span>
+                <span>
+                  To be closed 
+                  <span
+                    className="badge badge-secondary badge-pill"
+                  >
+                    0
                   </span>
-                </button>
-              </Component>
-              <Component
-                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                key="unmodified"
-                tab={
-                  Object {
-                    "id": "unmodified",
-                    "label": <span>
-                      Unmodified 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        0
-                      </span>
-                    </span>,
-                  }
-                }
-              >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="unmodified"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    Unmodified 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      0
-                    </span>
-                  </span>
-                </button>
-              </Component>
-              <Component
-                className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                key="deleted"
-                tab={
-                  Object {
-                    "id": "deleted",
-                    "label": <span>
-                      To be closed 
-                      <span
-                        className="badge badge-secondary badge-pill"
-                      >
-                        0
-                      </span>
-                    </span>,
-                  }
-                }
-              >
-                <button
-                  className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="deleted"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  <span>
-                    To be closed 
-                    <span
-                      className="badge badge-secondary badge-pill"
-                    >
-                      0
-                    </span>
-                  </span>
-                </button>
-              </Component>
-            </div>
-          </TabBar>
-          <div
-            className="pt-3"
-            key="added"
-          >
-            <span
-              className="text-muted"
-            >
-              No changesets
-            </span>
+                </span>
+              </button>
+            </Component>
           </div>
-        </div>
-      </Tabs>
-    </TabsWithLocalStorageViewStatePersistence>
-    <div
-      className="alert alert-info mt-2"
-    >
-      <Memo(AlertCircleIcon)
-        className="icon-inline"
-      >
-        <svg
-          className="mdi-icon icon-inline"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
+        </TabBar>
+        <div
+          className="pt-3"
+          key="added"
         >
-          <path
-            d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-          />
-        </svg>
-      </Memo(AlertCircleIcon)>
-       You are updating an existing campaign. By clicking 'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
-    </div>
+          <span
+            className="text-muted"
+          >
+            No changesets
+          </span>
+        </div>
+      </div>
+    </Tabs>
+  </TabsWithLocalStorageViewStatePersistence>
+  <div
+    className="alert alert-info mt-2"
+  >
+    <Memo(AlertCircleIcon)
+      className="icon-inline"
+    >
+      <svg
+        className="mdi-icon icon-inline"
+        fill="currentColor"
+        height={24}
+        viewBox="0 0 24 24"
+        width={24}
+      >
+        <path
+          d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+        />
+      </svg>
+    </Memo(AlertCircleIcon)>
+     You are updating an existing campaign. By clicking 'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
   </div>
-</CampaignUpdateDiff>
+</div>
 `;

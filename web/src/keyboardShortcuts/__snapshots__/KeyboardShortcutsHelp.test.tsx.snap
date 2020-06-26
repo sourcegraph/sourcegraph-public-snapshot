@@ -1,43 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`KeyboardShortcutsHelp  1`] = `
-<KeyboardShortcutsHelp
-  forceIsOpen={true}
-  keyboardShortcutForShow={
-    Object {
-      "id": "x",
-      "keybindings": Array [
-        Object {
-          "held": Array [
-            "Alt",
-          ],
-          "ordered": Array [
-            "x",
-          ],
-        },
-      ],
-      "title": "t",
-    }
-  }
-  keyboardShortcuts={
-    Array [
-      Object {
-        "id": "x",
-        "keybindings": Array [
-          Object {
-            "held": Array [
-              "Alt",
-            ],
-            "ordered": Array [
-              "x",
-            ],
-          },
-        ],
-        "title": "t",
-      },
-    ]
-  }
->
+Array [
   <Shortcut
     held={
       Array [
@@ -65,7 +29,7 @@ exports[`KeyboardShortcutsHelp  1`] = `
         ]
       }
     />
-  </Shortcut>
+  </Shortcut>,
   <Modal
     autoFocus={true}
     backdrop={true}
@@ -418,6 +382,6 @@ exports[`KeyboardShortcutsHelp  1`] = `
         </div>
       </Portal>
     </Portal>
-  </Modal>
-</KeyboardShortcutsHelp>
+  </Modal>,
+]
 `;

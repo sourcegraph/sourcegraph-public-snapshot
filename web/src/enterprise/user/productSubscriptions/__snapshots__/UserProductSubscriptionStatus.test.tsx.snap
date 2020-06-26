@@ -1,99 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
-<UserProductSubscriptionStatus
-  expiresAt={23456}
-  licenseKey="lk"
-  productNameWithBrand="P"
-  subscriptionName="L-123"
-  userCount={123}
->
-  <ProductCertificate
-    footer={
-      <React.Fragment>
-        <div
-          className="card-footer d-flex align-items-center justify-content-between flex-wrap"
-        >
-          <button
-            className="btn btn-primary mr-4 my-1"
-            onClick={[Function]}
-            type="button"
-          >
-            <KeyIcon
-              className="icon-inline"
-            />
-             
-            Reveal
-             license key
-          </button>
-          <div
-            className="flex-fill"
-          />
-          <div
-            className="my-1"
-          />
-        </div>
-      </React.Fragment>
-    }
-    subtitle={
-      <React.Fragment>
-        123-user
-         license,
-         
-        <ExpirationDate
-          date={23456}
-          lowercase={true}
-          showPrefix={true}
-          showRelative={true}
-        />
-      </React.Fragment>
-    }
-    title="P"
-  >
-    <div
-      className="product-certificate e2e-product-certificate card "
-    >
-      <div
-        className="card-body d-flex align-items-center"
-      >
-        <img
-          className="product-certificate__logo mr-1 p-2"
-          src="/.assets/img/sourcegraph-mark.svg"
-        />
-        <div>
-          <h2
-            className="font-weight-normal mb-1"
-          >
-            P
-          </h2>
-          <h3
-            className="text-muted font-weight-normal"
-          >
-            123-user
-             license,
-             
-            <ExpirationDate
-              date={23456}
-              lowercase={true}
-              showPrefix={true}
-              showRelative={true}
-            >
-              <span>
-                expired on 
-                <span
-                  title="Jan 1, 1970, 12:00:23 AM"
-                >
-                  1970-01-01
-                </span>
-                 (36 years ago)
-              </span>
-            </ExpirationDate>
-          </h3>
-        </div>
-      </div>
-      <div
-        className="product-certificate__bg"
-      />
+<ProductCertificate
+  footer={
+    <React.Fragment>
       <div
         className="card-footer d-flex align-items-center justify-content-between flex-wrap"
       >
@@ -116,140 +26,97 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
           className="my-1"
         />
       </div>
+    </React.Fragment>
+  }
+  subtitle={
+    <React.Fragment>
+      123-user
+       license,
+       
+      <ExpirationDate
+        date={23456}
+        lowercase={true}
+        showPrefix={true}
+        showRelative={true}
+      />
+    </React.Fragment>
+  }
+  title="P"
+>
+  <div
+    className="product-certificate e2e-product-certificate card "
+  >
+    <div
+      className="card-body d-flex align-items-center"
+    >
+      <img
+        className="product-certificate__logo mr-1 p-2"
+        src="/.assets/img/sourcegraph-mark.svg"
+      />
+      <div>
+        <h2
+          className="font-weight-normal mb-1"
+        >
+          P
+        </h2>
+        <h3
+          className="text-muted font-weight-normal"
+        >
+          123-user
+           license,
+           
+          <ExpirationDate
+            date={23456}
+            lowercase={true}
+            showPrefix={true}
+            showRelative={true}
+          >
+            <span>
+              expired on 
+              <span
+                title="Jan 1, 1970, 12:00:23 AM"
+              >
+                1970-01-01
+              </span>
+               (36 years ago)
+            </span>
+          </ExpirationDate>
+        </h3>
+      </div>
     </div>
-  </ProductCertificate>
-</UserProductSubscriptionStatus>
+    <div
+      className="product-certificate__bg"
+    />
+    <div
+      className="card-footer d-flex align-items-center justify-content-between flex-wrap"
+    >
+      <button
+        className="btn btn-primary mr-4 my-1"
+        onClick={[Function]}
+        type="button"
+      >
+        <KeyIcon
+          className="icon-inline"
+        />
+         
+        Reveal
+         license key
+      </button>
+      <div
+        className="flex-fill"
+      />
+      <div
+        className="my-1"
+      />
+    </div>
+  </div>
+</ProductCertificate>
 `;
 
 exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
-<UserProductSubscriptionStatus
-  expiresAt={23456}
-  licenseKey="lk"
-  productNameWithBrand="P"
-  subscriptionName="L-123"
-  userCount={123}
->
-  <ProductCertificate
-    footer={
-      <React.Fragment>
-        <div
-          className="card-footer d-flex align-items-center justify-content-between flex-wrap"
-        >
-          <button
-            className="btn btn-primary mr-4 my-1"
-            onClick={[Function]}
-            type="button"
-          >
-            <KeyIcon
-              className="icon-inline"
-            />
-             
-            Hide
-             license key
-          </button>
-          <div
-            className="flex-fill"
-          />
-          <div
-            className="my-1"
-          />
-        </div>
-        <div
-          className="card-footer"
-        >
-          <h3>
-            License key
-          </h3>
-          <React.Fragment>
-            <CopyableText
-              className="d-block"
-              text="lk"
-            />
-            <small
-              className="mt-2 d-flex align-items-center"
-            >
-              <InformationIcon
-                className="icon-inline mr-1"
-              />
-               
-              <span>
-                Use this license key as the
-                 
-                <code>
-                  <strong>
-                    licenseKey
-                  </strong>
-                </code>
-                 
-                property value in Sourcegraph site configuration.
-              </span>
-            </small>
-            <LicenseGenerationKeyWarning
-              className="mb-0 mt-1"
-            />
-          </React.Fragment>
-        </div>
-      </React.Fragment>
-    }
-    subtitle={
-      <React.Fragment>
-        123-user
-         license,
-         
-        <ExpirationDate
-          date={23456}
-          lowercase={true}
-          showPrefix={true}
-          showRelative={true}
-        />
-      </React.Fragment>
-    }
-    title="P"
-  >
-    <div
-      className="product-certificate e2e-product-certificate card "
-    >
-      <div
-        className="card-body d-flex align-items-center"
-      >
-        <img
-          className="product-certificate__logo mr-1 p-2"
-          src="/.assets/img/sourcegraph-mark.svg"
-        />
-        <div>
-          <h2
-            className="font-weight-normal mb-1"
-          >
-            P
-          </h2>
-          <h3
-            className="text-muted font-weight-normal"
-          >
-            123-user
-             license,
-             
-            <ExpirationDate
-              date={23456}
-              lowercase={true}
-              showPrefix={true}
-              showRelative={true}
-            >
-              <span>
-                expired on 
-                <span
-                  title="Jan 1, 1970, 12:00:23 AM"
-                >
-                  1970-01-01
-                </span>
-                 (36 years ago)
-              </span>
-            </ExpirationDate>
-          </h3>
-        </div>
-      </div>
-      <div
-        className="product-certificate__bg"
-      />
+<ProductCertificate
+  footer={
+    <React.Fragment>
       <div
         className="card-footer d-flex align-items-center justify-content-between flex-wrap"
       >
@@ -278,34 +145,151 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
         <h3>
           License key
         </h3>
-        <CopyableText
-          className="d-block"
-          text="lk"
-        />
-        <small
-          className="mt-2 d-flex align-items-center"
-        >
-          <InformationIcon
-            className="icon-inline mr-1"
+        <React.Fragment>
+          <CopyableText
+            className="d-block"
+            text="lk"
           />
+          <small
+            className="mt-2 d-flex align-items-center"
+          >
+            <InformationIcon
+              className="icon-inline mr-1"
+            />
+             
+            <span>
+              Use this license key as the
+               
+              <code>
+                <strong>
+                  licenseKey
+                </strong>
+              </code>
+               
+              property value in Sourcegraph site configuration.
+            </span>
+          </small>
+          <LicenseGenerationKeyWarning
+            className="mb-0 mt-1"
+          />
+        </React.Fragment>
+      </div>
+    </React.Fragment>
+  }
+  subtitle={
+    <React.Fragment>
+      123-user
+       license,
+       
+      <ExpirationDate
+        date={23456}
+        lowercase={true}
+        showPrefix={true}
+        showRelative={true}
+      />
+    </React.Fragment>
+  }
+  title="P"
+>
+  <div
+    className="product-certificate e2e-product-certificate card "
+  >
+    <div
+      className="card-body d-flex align-items-center"
+    >
+      <img
+        className="product-certificate__logo mr-1 p-2"
+        src="/.assets/img/sourcegraph-mark.svg"
+      />
+      <div>
+        <h2
+          className="font-weight-normal mb-1"
+        >
+          P
+        </h2>
+        <h3
+          className="text-muted font-weight-normal"
+        >
+          123-user
+           license,
            
-          <span>
-            Use this license key as the
-             
-            <code>
-              <strong>
-                licenseKey
-              </strong>
-            </code>
-             
-            property value in Sourcegraph site configuration.
-          </span>
-        </small>
-        <LicenseGenerationKeyWarning
-          className="mb-0 mt-1"
-        />
+          <ExpirationDate
+            date={23456}
+            lowercase={true}
+            showPrefix={true}
+            showRelative={true}
+          >
+            <span>
+              expired on 
+              <span
+                title="Jan 1, 1970, 12:00:23 AM"
+              >
+                1970-01-01
+              </span>
+               (36 years ago)
+            </span>
+          </ExpirationDate>
+        </h3>
       </div>
     </div>
-  </ProductCertificate>
-</UserProductSubscriptionStatus>
+    <div
+      className="product-certificate__bg"
+    />
+    <div
+      className="card-footer d-flex align-items-center justify-content-between flex-wrap"
+    >
+      <button
+        className="btn btn-primary mr-4 my-1"
+        onClick={[Function]}
+        type="button"
+      >
+        <KeyIcon
+          className="icon-inline"
+        />
+         
+        Hide
+         license key
+      </button>
+      <div
+        className="flex-fill"
+      />
+      <div
+        className="my-1"
+      />
+    </div>
+    <div
+      className="card-footer"
+    >
+      <h3>
+        License key
+      </h3>
+      <CopyableText
+        className="d-block"
+        text="lk"
+      />
+      <small
+        className="mt-2 d-flex align-items-center"
+      >
+        <InformationIcon
+          className="icon-inline mr-1"
+        />
+         
+        <span>
+          Use this license key as the
+           
+          <code>
+            <strong>
+              licenseKey
+            </strong>
+          </code>
+           
+          property value in Sourcegraph site configuration.
+        </span>
+      </small>
+      <LicenseGenerationKeyWarning
+        className="mb-0 mt-1"
+      />
+    </div>
+  </div>
+</ProductCertificate>
 `;

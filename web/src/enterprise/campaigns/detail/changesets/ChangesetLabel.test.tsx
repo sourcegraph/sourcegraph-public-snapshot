@@ -14,7 +14,7 @@ describe('ChangesetLabel', () => {
                         color: 'acfc99',
                     }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('renders a dark label with white text', () => {
@@ -28,7 +28,7 @@ describe('ChangesetLabel', () => {
                         color: '330912',
                     }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

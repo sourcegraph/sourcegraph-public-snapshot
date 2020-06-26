@@ -21,7 +21,7 @@ describe('Notices', () => {
                     }}
                     history={H.createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('no notices', () =>
@@ -32,6 +32,6 @@ describe('Notices', () => {
                     history={H.createMemoryHistory()}
                     settingsCascade={{ subjects: [], final: { notices: null } }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 })

@@ -1,16 +1,12 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`AddChangesetForm renders the form 1`] = `
-<AddChangesetForm
-  campaignID="123"
-  history="[History]"
-  onAdd={[Function]}
->
+Array [
   <h3
     className="mb-2 mt-4"
   >
     Add changeset
-  </h3>
+  </h3>,
   <Form
     onSubmit={[Function]}
   >
@@ -86,6 +82,6 @@ exports[`AddChangesetForm renders the form 1`] = `
         Add changeset
       </button>
     </form>
-  </Form>
-</AddChangesetForm>
+  </Form>,
+]
 `;

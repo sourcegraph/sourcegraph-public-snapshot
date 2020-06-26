@@ -44,7 +44,7 @@ describe('ProductSubscriptionForm', () => {
                         history={history}
                     />
                 </Router>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -63,7 +63,7 @@ describe('ProductSubscriptionForm', () => {
                         history={history}
                     />
                 </Router>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -83,7 +83,7 @@ describe('ProductSubscriptionForm', () => {
                         history={history}
                     />
                 </Router>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

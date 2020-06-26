@@ -31,7 +31,7 @@ describe('SearchStatsPage', () => {
                 />
             </MemoryRouter>
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('limitHit', () => {
@@ -54,6 +54,6 @@ describe('SearchStatsPage', () => {
                 />
             </MemoryRouter>
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })

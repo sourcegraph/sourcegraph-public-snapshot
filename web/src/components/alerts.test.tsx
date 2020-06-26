@@ -8,7 +8,7 @@ jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
 describe('ErrorAlert', () => {
     it('should render an Error object as an alert', () => {
         expect(
-            mount(<ErrorAlert error={new Error('an error happened')} history={createMemoryHistory()} />)
+            mount(<ErrorAlert error={new Error('an error happened')} history={createMemoryHistory()} />).children()
         ).toMatchSnapshot()
     })
 
@@ -20,13 +20,15 @@ describe('ErrorAlert', () => {
                     prefix="An error happened"
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
     it('should omit the icon if icon={false}', () => {
         expect(
-            mount(<ErrorAlert error={new Error('an error happened')} icon={false} history={createMemoryHistory()} />)
+            mount(
+                <ErrorAlert error={new Error('an error happened')} icon={false} history={createMemoryHistory()} />
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -41,7 +43,7 @@ describe('ErrorAlert', () => {
                     }
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

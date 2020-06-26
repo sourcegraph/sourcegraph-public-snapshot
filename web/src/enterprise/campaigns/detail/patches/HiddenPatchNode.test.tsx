@@ -4,6 +4,6 @@ import { HiddenPatchNode } from './HiddenPatchNode'
 
 describe('HiddenPatchNode', () => {
     test('renders', () => {
-        expect(mount(<HiddenPatchNode />)).toMatchSnapshot()
+        expect(mount(<HiddenPatchNode />).children()).toMatchSnapshot()
     })
 })

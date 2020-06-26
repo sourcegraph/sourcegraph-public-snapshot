@@ -1,400 +1,117 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ActionItem "open" command renders as link 1`] = `
-<ActionItem
-  action={
-    Object {
-      "command": "open",
-      "commandArguments": Array [
-        "https://example.com/bar",
-      ],
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
+<LinkOrButton
+  className="action-item"
+  onSelect={[Function]}
+  to="https://example.com/bar"
 >
-  <LinkOrButton
+  <AnchorLink
     className="action-item"
-    onSelect={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
     to="https://example.com/bar"
   >
-    <AnchorLink
+    <a
       className="action-item"
+      href="https://example.com/bar"
       onClick={[Function]}
       onKeyPress={[Function]}
       tabIndex={0}
-      to="https://example.com/bar"
     >
-      <a
-        className="action-item"
-        href="https://example.com/bar"
-        onClick={[Function]}
-        onKeyPress={[Function]}
-        tabIndex={0}
-      >
-         
-        t
-         
-      </a>
-    </AnchorLink>
-  </LinkOrButton>
-</ActionItem>
+       
+      t
+       
+    </a>
+  </AnchorLink>
+</LinkOrButton>
 `;
 
 exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
-<ActionItem
-  action={
-    Object {
-      "command": "whatever",
-      "id": "c1",
-      "title": "primary",
-    }
-  }
-  altAction={
-    Object {
-      "command": "open",
-      "commandArguments": Array [
-        "https://other.com/foo",
-      ],
-      "id": "c2",
-      "title": "alt",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
+<LinkOrButton
+  className="action-item"
+  onSelect={[Function]}
+  rel="noopener noreferrer"
+  target="_blank"
+  to="https://other.com/foo"
 >
-  <LinkOrButton
+  <AnchorLink
     className="action-item"
-    onSelect={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
     rel="noopener noreferrer"
+    tabIndex={0}
     target="_blank"
     to="https://other.com/foo"
   >
-    <AnchorLink
+    <a
       className="action-item"
+      href="https://other.com/foo"
       onClick={[Function]}
       onKeyPress={[Function]}
       rel="noopener noreferrer"
       tabIndex={0}
       target="_blank"
-      to="https://other.com/foo"
     >
-      <a
-        className="action-item"
-        href="https://other.com/foo"
-        onClick={[Function]}
-        onKeyPress={[Function]}
-        rel="noopener noreferrer"
-        tabIndex={0}
-        target="_blank"
-      >
-         
-        primary
-         
-      </a>
-    </AnchorLink>
-  </LinkOrButton>
-</ActionItem>
+       
+      primary
+       
+    </a>
+  </AnchorLink>
+</LinkOrButton>
 `;
 
 exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
-<ActionItem
-  action={
-    Object {
-      "command": "open",
-      "commandArguments": Array [
-        "https://other.com/foo",
-      ],
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
+<LinkOrButton
+  className="action-item"
+  onSelect={[Function]}
+  rel="noopener noreferrer"
+  target="_blank"
+  to="https://other.com/foo"
 >
-  <LinkOrButton
+  <AnchorLink
     className="action-item"
-    onSelect={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
     rel="noopener noreferrer"
+    tabIndex={0}
     target="_blank"
     to="https://other.com/foo"
   >
-    <AnchorLink
+    <a
       className="action-item"
+      href="https://other.com/foo"
       onClick={[Function]}
       onKeyPress={[Function]}
       rel="noopener noreferrer"
       tabIndex={0}
       target="_blank"
-      to="https://other.com/foo"
     >
-      <a
-        className="action-item"
-        href="https://other.com/foo"
-        onClick={[Function]}
-        onKeyPress={[Function]}
-        rel="noopener noreferrer"
-        tabIndex={0}
-        target="_blank"
-      >
-         
-        t
-         
-        <OpenInNewIcon />
-      </a>
-    </AnchorLink>
-  </LinkOrButton>
-</ActionItem>
+       
+      t
+       
+      <OpenInNewIcon />
+    </a>
+  </AnchorLink>
+</LinkOrButton>
 `;
 
 exports[`ActionItem actionItem variant 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--variant-action-item"
+  data-tooltip="d"
+  onSelect={[Function]}
 >
-  <LinkOrButton
+  <a
+    aria-label="d"
     className="action-item action-item--variant-action-item"
     data-tooltip="d"
-    onSelect={[Function]}
-  >
-    <a
-      aria-label="d"
-      className="action-item action-item--variant-action-item"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
-`;
-
-exports[`ActionItem non-actionItem variant 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
->
-  <LinkOrButton
-    className="action-item"
-    data-tooltip="d"
-    onSelect={[Function]}
-  >
-    <a
-      aria-label="d"
-      className="action-item"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
-`;
-
-exports[`ActionItem non-pressed actionItem 1`] = `
-<ActionItem
-  action={
-    Object {
-      "actionItem": Object {
-        "label": "b",
-        "pressed": false,
-      },
-      "command": "c",
-      "id": "a",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
->
-  <LinkOrButton
-    className="action-item action-item--variant-action-item"
-    onSelect={[Function]}
-    pressed={false}
-  >
-    <a
-      aria-pressed={false}
-      className="action-item action-item--variant-action-item"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      role="button"
-      tabIndex={0}
-    >
-       
-      b
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
-`;
-
-exports[`ActionItem noop command 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
->
-  <span
-    className="action-item  "
-    data-tooltip="d"
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
   >
     <img
       src="u"
@@ -402,497 +119,303 @@ exports[`ActionItem noop command 1`] = `
      
     g: 
     t
-  </span>
-</ActionItem>
+     
+  </a>
+</LinkOrButton>
+`;
+
+exports[`ActionItem non-actionItem variant 1`] = `
+<LinkOrButton
+  className="action-item"
+  data-tooltip="d"
+  onSelect={[Function]}
+>
+  <a
+    aria-label="d"
+    className="action-item"
+    data-tooltip="d"
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
+  >
+    <img
+      src="u"
+    />
+     
+    g: 
+    t
+     
+  </a>
+</LinkOrButton>
+`;
+
+exports[`ActionItem non-pressed actionItem 1`] = `
+<LinkOrButton
+  className="action-item action-item--variant-action-item"
+  onSelect={[Function]}
+  pressed={false}
+>
+  <a
+    aria-pressed={false}
+    className="action-item action-item--variant-action-item"
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    role="button"
+    tabIndex={0}
+  >
+     
+    b
+     
+  </a>
+</LinkOrButton>
+`;
+
+exports[`ActionItem noop command 1`] = `
+<span
+  className="action-item  "
+  data-tooltip="d"
+>
+  <img
+    src="u"
+  />
+   
+  g: 
+  t
+</span>
 `;
 
 exports[`ActionItem pressed toggle actionItem 1`] = `
-<ActionItem
-  action={
-    Object {
-      "actionItem": Object {
-        "label": "b",
-        "pressed": true,
-      },
-      "command": "c",
-      "id": "a",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--variant-action-item action-item--pressed"
+  onSelect={[Function]}
+  pressed={true}
 >
-  <LinkOrButton
+  <a
+    aria-pressed={true}
     className="action-item action-item--variant-action-item action-item--pressed"
-    onSelect={[Function]}
-    pressed={true}
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    role="button"
+    tabIndex={0}
   >
-    <a
-      aria-pressed={true}
-      className="action-item action-item--variant-action-item action-item--pressed"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      role="button"
-      tabIndex={0}
-    >
-       
-      b
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
+     
+    b
+     
+  </a>
+</LinkOrButton>
 `;
 
 exports[`ActionItem run command 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  disabledDuringExecution={true}
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--variant-action-item"
+  data-tooltip="d"
+  disabled={true}
+  onSelect={[Function]}
 >
-  <LinkOrButton
-    className="action-item action-item--variant-action-item"
+  <a
+    aria-label="d"
+    className="action-item action-item--variant-action-item disabled"
     data-tooltip="d"
-    disabled={true}
-    onSelect={[Function]}
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
   >
-    <a
-      aria-label="d"
-      className="action-item action-item--variant-action-item disabled"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
+    <img
+      src="u"
+    />
+     
+    g: 
+    t
+     
+  </a>
+</LinkOrButton>
 `;
 
 exports[`ActionItem run command 2`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  disabledDuringExecution={true}
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--variant-action-item"
+  data-tooltip="d"
+  disabled={true}
+  onSelect={[Function]}
 >
-  <LinkOrButton
-    className="action-item action-item--variant-action-item"
+  <a
+    aria-label="d"
+    className="action-item action-item--variant-action-item disabled"
     data-tooltip="d"
-    disabled={true}
-    onSelect={[Function]}
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
   >
-    <a
-      aria-label="d"
-      className="action-item action-item--variant-action-item disabled"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
+    <img
+      src="u"
+    />
+     
+    g: 
+    t
+     
+  </a>
+</LinkOrButton>
 `;
 
 exports[`ActionItem run command with error 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  disabledDuringExecution={true}
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--variant-action-item"
+  data-tooltip="d"
+  disabled={true}
+  onSelect={[Function]}
 >
-  <LinkOrButton
-    className="action-item action-item--variant-action-item"
+  <a
+    aria-label="d"
+    className="action-item action-item--variant-action-item disabled"
     data-tooltip="d"
-    disabled={true}
-    onSelect={[Function]}
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
   >
-    <a
-      aria-label="d"
-      className="action-item action-item--variant-action-item disabled"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
+    <img
+      src="u"
+    />
+     
+    g: 
+    t
+     
+  </a>
+</LinkOrButton>
 `;
 
 exports[`ActionItem run command with error with showInlineError 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  showInlineError={true}
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--variant-action-item"
+  data-tooltip="d"
+  onSelect={[Function]}
 >
-  <LinkOrButton
+  <a
+    aria-label="d"
     className="action-item action-item--variant-action-item"
     data-tooltip="d"
-    onSelect={[Function]}
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
   >
-    <a
-      aria-label="d"
-      className="action-item action-item--variant-action-item"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
+    <img
+      src="u"
+    />
+     
+    g: 
+    t
+     
+  </a>
+</LinkOrButton>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  showLoadingSpinnerDuringExecution={true}
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--loading action-item--variant-action-item"
+  data-tooltip="d"
+  disabled={true}
+  onSelect={[Function]}
 >
-  <LinkOrButton
-    className="action-item action-item--loading action-item--variant-action-item"
+  <a
+    aria-label="d"
+    className="action-item action-item--loading action-item--variant-action-item disabled"
     data-tooltip="d"
-    disabled={true}
-    onSelect={[Function]}
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
   >
-    <a
-      aria-label="d"
-      className="action-item action-item--loading action-item--variant-action-item disabled"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
+    <img
+      src="u"
+    />
+     
+    g: 
+    t
+     
+    <div
+      className="action-item__loader"
     >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-      <div
-        className="action-item__loader"
-      >
-        <LoadingSpinner>
-          <div
-            className="loading-spinner "
-          />
-        </LoadingSpinner>
-      </div>
-    </a>
-  </LinkOrButton>
-</ActionItem>
+      <LoadingSpinner>
+        <div
+          className="loading-spinner "
+        />
+      </LoadingSpinner>
+    </div>
+  </a>
+</LinkOrButton>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  showLoadingSpinnerDuringExecution={true}
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  variant="actionItem"
+<LinkOrButton
+  className="action-item action-item--loading action-item--variant-action-item"
+  data-tooltip="d"
+  disabled={true}
+  onSelect={[Function]}
 >
-  <LinkOrButton
-    className="action-item action-item--loading action-item--variant-action-item"
+  <a
+    aria-label="d"
+    className="action-item action-item--loading action-item--variant-action-item disabled"
     data-tooltip="d"
-    disabled={true}
-    onSelect={[Function]}
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
   >
-    <a
-      aria-label="d"
-      className="action-item action-item--loading action-item--variant-action-item disabled"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
+    <img
+      src="u"
+    />
+     
+    g: 
+    t
+     
+    <div
+      className="action-item__loader"
     >
-      <img
-        src="u"
-      />
-       
-      g: 
-      t
-       
-      <div
-        className="action-item__loader"
-      >
-        <LoadingSpinner>
-          <div
-            className="loading-spinner "
-          />
-        </LoadingSpinner>
-      </div>
-    </a>
-  </LinkOrButton>
-</ActionItem>
+      <LoadingSpinner>
+        <div
+          className="loading-spinner "
+        />
+      </LoadingSpinner>
+    </div>
+  </a>
+</LinkOrButton>
 `;
 
 exports[`ActionItem title element 1`] = `
-<ActionItem
-  action={
-    Object {
-      "category": "g",
-      "command": "c",
-      "description": "d",
-      "iconURL": "u",
-      "id": "c",
-      "title": "t",
-    }
-  }
-  extensionsController={
-    Object {
-      "executeCommand": [Function],
-    }
-  }
-  location="[Location path=/]"
-  platformContext={
-    Object {
-      "forceUpdateTooltip": [Function],
-      "settings": "[Observable]",
-    }
-  }
-  telemetryService={
-    Object {
-      "log": [Function],
-    }
-  }
-  title={
+<LinkOrButton
+  className="action-item action-item--variant-action-item"
+  data-tooltip="d"
+  onSelect={[Function]}
+>
+  <a
+    aria-label="d"
+    className="action-item action-item--variant-action-item"
+    data-tooltip="d"
+    href=""
+    onAuxClick={[Function]}
+    onClick={[Function]}
+    onKeyPress={[Function]}
+    tabIndex={0}
+  >
     <span>
       t2
     </span>
-  }
-  variant="actionItem"
->
-  <LinkOrButton
-    className="action-item action-item--variant-action-item"
-    data-tooltip="d"
-    onSelect={[Function]}
-  >
-    <a
-      aria-label="d"
-      className="action-item action-item--variant-action-item"
-      data-tooltip="d"
-      href=""
-      onAuxClick={[Function]}
-      onClick={[Function]}
-      onKeyPress={[Function]}
-      tabIndex={0}
-    >
-      <span>
-        t2
-      </span>
-       
-    </a>
-  </LinkOrButton>
-</ActionItem>
+     
+  </a>
+</LinkOrButton>
 `;

@@ -23,34 +23,36 @@ describe('HoverOverlay', () => {
     })
 
     test('actions and hover undefined', () => {
-        expect(mount(<HoverOverlay {...commonProps} />)).toMatchSnapshot()
+        expect(mount(<HoverOverlay {...commonProps} />).children()).toMatchSnapshot()
     })
 
     test('actions loading', () => {
-        expect(mount(<HoverOverlay {...commonProps} actionsOrError="loading" />)).toMatchSnapshot()
+        expect(mount(<HoverOverlay {...commonProps} actionsOrError="loading" />).children()).toMatchSnapshot()
     })
 
     test('hover loading', () => {
-        expect(mount(<HoverOverlay {...commonProps} hoverOrError="loading" />)).toMatchSnapshot()
+        expect(mount(<HoverOverlay {...commonProps} hoverOrError="loading" />).children()).toMatchSnapshot()
     })
 
     test('actions and hover loading', () => {
         expect(
-            mount(<HoverOverlay {...commonProps} actionsOrError="loading" hoverOrError="loading" />)
+            mount(<HoverOverlay {...commonProps} actionsOrError="loading" hoverOrError="loading" />).children()
         ).toMatchSnapshot()
     })
 
     test('actions empty', () => {
         const component = mount(<HoverOverlay {...commonProps} actionsOrError={[]} />)
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('hover empty', () => {
-        expect(mount(<HoverOverlay {...commonProps} hoverOrError={null} />)).toMatchSnapshot()
+        expect(mount(<HoverOverlay {...commonProps} hoverOrError={null} />).children()).toMatchSnapshot()
     })
 
     test('actions and hover empty', () => {
-        expect(mount(<HoverOverlay {...commonProps} actionsOrError={[]} hoverOrError={null} />)).toMatchSnapshot()
+        expect(
+            mount(<HoverOverlay {...commonProps} actionsOrError={[]} hoverOrError={null} />).children()
+        ).toMatchSnapshot()
     })
 
     test('actions present', () => {
@@ -60,7 +62,7 @@ describe('HoverOverlay', () => {
                     {...commonProps}
                     actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' } }]}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -71,7 +73,7 @@ describe('HoverOverlay', () => {
                     {...commonProps}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -87,7 +89,7 @@ describe('HoverOverlay', () => {
                         ],
                     }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -99,7 +101,7 @@ describe('HoverOverlay', () => {
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -123,7 +125,7 @@ describe('HoverOverlay', () => {
                         ],
                     }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -135,7 +137,7 @@ describe('HoverOverlay', () => {
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
                     hoverOrError="loading"
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -147,18 +149,20 @@ describe('HoverOverlay', () => {
                     actionsOrError="loading"
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
     test('actions error', () => {
         expect(
-            shallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', name: 'c' }} />)
+            shallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', name: 'c' }} />).children()
         ).toMatchSnapshot()
     })
 
     test('hover error', () => {
-        expect(shallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', name: 'c' }} />)).toMatchSnapshot()
+        expect(
+            shallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', name: 'c' }} />).children()
+        ).toMatchSnapshot()
     })
 
     test('actions and hover error', () => {
@@ -169,7 +173,7 @@ describe('HoverOverlay', () => {
                     actionsOrError={{ message: 'm1', name: 'c1' }}
                     hoverOrError={{ message: 'm2', name: 'c2' }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -181,7 +185,7 @@ describe('HoverOverlay', () => {
                     actionsOrError={{ message: 'm', name: 'c' }}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -193,7 +197,7 @@ describe('HoverOverlay', () => {
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
                     hoverOrError={{ message: 'm', name: 'c' }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

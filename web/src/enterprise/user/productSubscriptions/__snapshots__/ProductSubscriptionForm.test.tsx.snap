@@ -1,11 +1,23 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ProductSubscriptionForm edit existing subscription 1`] = `
-<Router
+<ProductSubscriptionForm
+  accountID="a"
   history="[History]"
+  initialValue={
+    Object {
+      "billingPlanID": "p",
+      "userCount": 123,
+    }
+  }
+  isLightTheme={false}
+  onSubmit={[Function]}
+  primaryButtonText="Submit"
+  subscriptionID="s"
 >
-  <ProductSubscriptionForm
+  <StripeWrapper
     accountID="a"
+    component={[Function]}
     history="[History]"
     initialValue={
       Object {
@@ -18,9 +30,8 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
     primaryButtonText="Submit"
     subscriptionID="s"
   >
-    <StripeWrapper
+    <_ProductSubscriptionForm
       accountID="a"
-      component={[Function]}
       history="[History]"
       initialValue={
         Object {
@@ -31,83 +42,84 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
       isLightTheme={false}
       onSubmit={[Function]}
       primaryButtonText="Submit"
+      stripe={Object {}}
       subscriptionID="s"
     >
-      <_ProductSubscriptionForm
-        accountID="a"
-        history="[History]"
-        initialValue={
-          Object {
-            "billingPlanID": "p",
-            "userCount": 123,
-          }
-        }
-        isLightTheme={false}
-        onSubmit={[Function]}
-        primaryButtonText="Submit"
-        stripe={Object {}}
-        subscriptionID="s"
+      <div
+        className="product-subscription-form"
       >
-        <div
-          className="product-subscription-form"
+        <LicenseGenerationKeyWarning />
+        <Form
+          onSubmit={[Function]}
         >
-          <LicenseGenerationKeyWarning />
-          <Form
+          <form
+            className=" "
+            onInvalid={[Function]}
             onSubmit={[Function]}
           >
-            <form
-              className=" "
-              onInvalid={[Function]}
-              onSubmit={[Function]}
+            <div
+              className="row"
             >
               <div
-                className="row"
+                className="col-md-6"
               >
-                <div
-                  className="col-md-6"
+                <ProductSubscriptionUserCountFormControl
+                  onChange={[Function]}
+                  value={123}
+                />
+                <h4
+                  className="mt-2 mb-0"
                 >
-                  <ProductSubscriptionUserCountFormControl
-                    onChange={[Function]}
-                    value={123}
-                  />
-                  <h4
-                    className="mt-2 mb-0"
-                  >
-                    Plan
-                  </h4>
-                  <ProductPlanFormControl
-                    history="[History]"
-                    onChange={[Function]}
-                    value="p"
-                  />
-                </div>
-                <div
-                  className="col-md-6 mt-3 mt-md-0"
+                  Plan
+                </h4>
+                <ProductPlanFormControl
+                  history="[History]"
+                  onChange={[Function]}
+                  value="p"
+                />
+              </div>
+              <div
+                className="col-md-6 mt-3 mt-md-0"
+              >
+                <h3
+                  className="mt-2 mb-0"
                 >
-                  <h3
-                    className="mt-2 mb-0"
-                  >
-                    Billing
-                  </h3>
-                  <NewProductSubscriptionPaymentSection
-                    accountID="a"
-                    onValidityChange={[Function]}
-                    productSubscription={
-                      Object {
-                        "billingPlanID": "p",
-                        "userCount": 123,
-                      }
+                  Billing
+                </h3>
+                <NewProductSubscriptionPaymentSection
+                  accountID="a"
+                  onValidityChange={[Function]}
+                  productSubscription={
+                    Object {
+                      "billingPlanID": "p",
+                      "userCount": 123,
                     }
-                    subscriptionID="s"
-                  />
-                  <PaymentTokenFormControl
-                    disabled={true}
-                    isLightTheme={false}
+                  }
+                  subscriptionID="s"
+                />
+                <PaymentTokenFormControl
+                  disabled={true}
+                  isLightTheme={false}
+                >
+                  <div
+                    className="payment-token-form-control"
                   >
-                    <div
-                      className="payment-token-form-control"
+                    <PatchedCardElement
+                      className="payment-token-form-control__card payment-token-form-control__card--disabled"
+                      disabled={true}
+                      style={
+                        Object {
+                          "base": Object {
+                            ":-webkit-autofill": Object {
+                              "color": "white",
+                            },
+                            "color": "white",
+                            "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
+                          },
+                        }
+                      }
                     >
-                      <PatchedCardElement
+                      <CardElement
                         className="payment-token-form-control__card payment-token-form-control__card--disabled"
                         disabled={true}
                         style={
@@ -121,166 +133,162 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
                             },
                           }
                         }
-                      >
-                        <CardElement
-                          className="payment-token-form-control__card payment-token-form-control__card--disabled"
-                          disabled={true}
-                          style={
-                            Object {
-                              "base": Object {
-                                ":-webkit-autofill": Object {
-                                  "color": "white",
-                                },
-                                "color": "white",
-                                "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
-                              },
-                            }
-                          }
-                        />
-                      </PatchedCardElement>
-                    </div>
-                  </PaymentTokenFormControl>
-                  <div
-                    className="form-group mt-3"
-                  >
-                    <button
-                      className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
-                      disabled={true}
-                      type="submit"
-                    >
-                      Submit
-                    </button>
+                      />
+                    </PatchedCardElement>
                   </div>
+                </PaymentTokenFormControl>
+                <div
+                  className="form-group mt-3"
+                >
+                  <button
+                    className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
+                    disabled={true}
+                    type="submit"
+                  >
+                    Submit
+                  </button>
                 </div>
               </div>
-            </form>
-          </Form>
-        </div>
-      </_ProductSubscriptionForm>
-    </StripeWrapper>
-  </ProductSubscriptionForm>
-</Router>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </_ProductSubscriptionForm>
+  </StripeWrapper>
+</ProductSubscriptionForm>
 `;
 
 exports[`ProductSubscriptionForm new subscription for anonymous viewer (no account) 1`] = `
-<Router
+<ProductSubscriptionForm
+  accountID={null}
   history="[History]"
+  isLightTheme={false}
+  onSubmit={[Function]}
+  primaryButtonText="Submit"
+  subscriptionID={null}
 >
-  <ProductSubscriptionForm
+  <StripeWrapper
     accountID={null}
+    component={[Function]}
     history="[History]"
     isLightTheme={false}
     onSubmit={[Function]}
     primaryButtonText="Submit"
     subscriptionID={null}
   >
-    <StripeWrapper
+    <_ProductSubscriptionForm
       accountID={null}
-      component={[Function]}
       history="[History]"
       isLightTheme={false}
       onSubmit={[Function]}
       primaryButtonText="Submit"
+      stripe={Object {}}
       subscriptionID={null}
     >
-      <_ProductSubscriptionForm
-        accountID={null}
-        history="[History]"
-        isLightTheme={false}
-        onSubmit={[Function]}
-        primaryButtonText="Submit"
-        stripe={Object {}}
-        subscriptionID={null}
+      <div
+        className="product-subscription-form"
       >
-        <div
-          className="product-subscription-form"
+        <LicenseGenerationKeyWarning />
+        <Form
+          onSubmit={[Function]}
         >
-          <LicenseGenerationKeyWarning />
-          <Form
+          <form
+            className=" "
+            onInvalid={[Function]}
             onSubmit={[Function]}
           >
-            <form
-              className=" "
-              onInvalid={[Function]}
-              onSubmit={[Function]}
+            <div
+              className="row"
             >
               <div
-                className="row"
+                className="col-md-6"
               >
-                <div
-                  className="col-md-6"
+                <ProductSubscriptionUserCountFormControl
+                  onChange={[Function]}
+                />
+                <h4
+                  className="mt-2 mb-0"
                 >
-                  <ProductSubscriptionUserCountFormControl
-                    onChange={[Function]}
-                  />
-                  <h4
-                    className="mt-2 mb-0"
-                  >
-                    Plan
-                  </h4>
-                  <ProductPlanFormControl
-                    history="[History]"
-                    onChange={[Function]}
-                    value={null}
-                  />
-                </div>
-                <div
-                  className="col-md-6 mt-3 mt-md-0"
+                  Plan
+                </h4>
+                <ProductPlanFormControl
+                  history="[History]"
+                  onChange={[Function]}
+                  value={null}
+                />
+              </div>
+              <div
+                className="col-md-6 mt-3 mt-md-0"
+              >
+                <h3
+                  className="mt-2 mb-0"
                 >
-                  <h3
-                    className="mt-2 mb-0"
+                  Billing
+                </h3>
+                <NewProductSubscriptionPaymentSection
+                  accountID={null}
+                  onValidityChange={[Function]}
+                  productSubscription={null}
+                  subscriptionID={null}
+                />
+                <div
+                  className="form-group mt-3"
+                >
+                  <Link
+                    className="btn btn-lg btn-primary w-100 center"
+                    to="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
                   >
-                    Billing
-                  </h3>
-                  <NewProductSubscriptionPaymentSection
-                    accountID={null}
-                    onValidityChange={[Function]}
-                    productSubscription={null}
-                    subscriptionID={null}
-                  />
-                  <div
-                    className="form-group mt-3"
-                  >
-                    <Link
+                    <LinkAnchor
                       className="btn btn-lg btn-primary w-100 center"
-                      to="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
+                      href="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
+                      navigate={[Function]}
                     >
-                      <LinkAnchor
+                      <a
                         className="btn btn-lg btn-primary w-100 center"
                         href="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
-                        navigate={[Function]}
+                        onClick={[Function]}
                       >
-                        <a
-                          className="btn btn-lg btn-primary w-100 center"
-                          href="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
-                          onClick={[Function]}
-                        >
-                          Create account or sign in to continue
-                        </a>
-                      </LinkAnchor>
-                    </Link>
-                    <small
-                      className="form-text text-muted"
-                    >
-                      A user account on Sourcegraph.com is required to create a subscription so you can view the license key and invoice.
-                    </small>
-                    <hr
-                      className="my-3"
-                    />
-                    <small
-                      className="form-text text-muted"
-                    >
-                      Next, you'll enter payment information and buy the subscription.
-                    </small>
-                  </div>
-                  <PaymentTokenFormControl
-                    disabled={true}
-                    isLightTheme={false}
+                        Create account or sign in to continue
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                  <small
+                    className="form-text text-muted"
                   >
-                    <div
-                      className="payment-token-form-control"
+                    A user account on Sourcegraph.com is required to create a subscription so you can view the license key and invoice.
+                  </small>
+                  <hr
+                    className="my-3"
+                  />
+                  <small
+                    className="form-text text-muted"
+                  >
+                    Next, you'll enter payment information and buy the subscription.
+                  </small>
+                </div>
+                <PaymentTokenFormControl
+                  disabled={true}
+                  isLightTheme={false}
+                >
+                  <div
+                    className="payment-token-form-control"
+                  >
+                    <PatchedCardElement
+                      className="payment-token-form-control__card payment-token-form-control__card--disabled"
+                      disabled={true}
+                      style={
+                        Object {
+                          "base": Object {
+                            ":-webkit-autofill": Object {
+                              "color": "white",
+                            },
+                            "color": "white",
+                            "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
+                          },
+                        }
+                      }
                     >
-                      <PatchedCardElement
+                      <CardElement
                         className="payment-token-form-control__card payment-token-form-control__card--disabled"
                         disabled={true}
                         style={
@@ -294,131 +302,127 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
                             },
                           }
                         }
-                      >
-                        <CardElement
-                          className="payment-token-form-control__card payment-token-form-control__card--disabled"
-                          disabled={true}
-                          style={
-                            Object {
-                              "base": Object {
-                                ":-webkit-autofill": Object {
-                                  "color": "white",
-                                },
-                                "color": "white",
-                                "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
-                              },
-                            }
-                          }
-                        />
-                      </PatchedCardElement>
-                    </div>
-                  </PaymentTokenFormControl>
-                  <div
-                    className="form-group mt-3"
-                  >
-                    <button
-                      className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
-                      disabled={true}
-                      type="submit"
-                    >
-                      Submit
-                    </button>
+                      />
+                    </PatchedCardElement>
                   </div>
+                </PaymentTokenFormControl>
+                <div
+                  className="form-group mt-3"
+                >
+                  <button
+                    className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
+                    disabled={true}
+                    type="submit"
+                  >
+                    Submit
+                  </button>
                 </div>
               </div>
-            </form>
-          </Form>
-        </div>
-      </_ProductSubscriptionForm>
-    </StripeWrapper>
-  </ProductSubscriptionForm>
-</Router>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </_ProductSubscriptionForm>
+  </StripeWrapper>
+</ProductSubscriptionForm>
 `;
 
 exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
-<Router
+<ProductSubscriptionForm
+  accountID="a"
   history="[History]"
+  isLightTheme={false}
+  onSubmit={[Function]}
+  primaryButtonText="Submit"
+  subscriptionID={null}
 >
-  <ProductSubscriptionForm
+  <StripeWrapper
     accountID="a"
+    component={[Function]}
     history="[History]"
     isLightTheme={false}
     onSubmit={[Function]}
     primaryButtonText="Submit"
     subscriptionID={null}
   >
-    <StripeWrapper
+    <_ProductSubscriptionForm
       accountID="a"
-      component={[Function]}
       history="[History]"
       isLightTheme={false}
       onSubmit={[Function]}
       primaryButtonText="Submit"
+      stripe={Object {}}
       subscriptionID={null}
     >
-      <_ProductSubscriptionForm
-        accountID="a"
-        history="[History]"
-        isLightTheme={false}
-        onSubmit={[Function]}
-        primaryButtonText="Submit"
-        stripe={Object {}}
-        subscriptionID={null}
+      <div
+        className="product-subscription-form"
       >
-        <div
-          className="product-subscription-form"
+        <LicenseGenerationKeyWarning />
+        <Form
+          onSubmit={[Function]}
         >
-          <LicenseGenerationKeyWarning />
-          <Form
+          <form
+            className=" "
+            onInvalid={[Function]}
             onSubmit={[Function]}
           >
-            <form
-              className=" "
-              onInvalid={[Function]}
-              onSubmit={[Function]}
+            <div
+              className="row"
             >
               <div
-                className="row"
+                className="col-md-6"
               >
-                <div
-                  className="col-md-6"
+                <ProductSubscriptionUserCountFormControl
+                  onChange={[Function]}
+                />
+                <h4
+                  className="mt-2 mb-0"
                 >
-                  <ProductSubscriptionUserCountFormControl
-                    onChange={[Function]}
-                  />
-                  <h4
-                    className="mt-2 mb-0"
-                  >
-                    Plan
-                  </h4>
-                  <ProductPlanFormControl
-                    history="[History]"
-                    onChange={[Function]}
-                    value={null}
-                  />
-                </div>
-                <div
-                  className="col-md-6 mt-3 mt-md-0"
+                  Plan
+                </h4>
+                <ProductPlanFormControl
+                  history="[History]"
+                  onChange={[Function]}
+                  value={null}
+                />
+              </div>
+              <div
+                className="col-md-6 mt-3 mt-md-0"
+              >
+                <h3
+                  className="mt-2 mb-0"
                 >
-                  <h3
-                    className="mt-2 mb-0"
+                  Billing
+                </h3>
+                <NewProductSubscriptionPaymentSection
+                  accountID="a"
+                  onValidityChange={[Function]}
+                  productSubscription={null}
+                  subscriptionID={null}
+                />
+                <PaymentTokenFormControl
+                  disabled={true}
+                  isLightTheme={false}
+                >
+                  <div
+                    className="payment-token-form-control"
                   >
-                    Billing
-                  </h3>
-                  <NewProductSubscriptionPaymentSection
-                    accountID="a"
-                    onValidityChange={[Function]}
-                    productSubscription={null}
-                    subscriptionID={null}
-                  />
-                  <PaymentTokenFormControl
-                    disabled={true}
-                    isLightTheme={false}
-                  >
-                    <div
-                      className="payment-token-form-control"
+                    <PatchedCardElement
+                      className="payment-token-form-control__card payment-token-form-control__card--disabled"
+                      disabled={true}
+                      style={
+                        Object {
+                          "base": Object {
+                            ":-webkit-autofill": Object {
+                              "color": "white",
+                            },
+                            "color": "white",
+                            "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
+                          },
+                        }
+                      }
                     >
-                      <PatchedCardElement
+                      <CardElement
                         className="payment-token-form-control__card payment-token-form-control__card--disabled"
                         disabled={true}
                         style={
@@ -432,43 +436,27 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
                             },
                           }
                         }
-                      >
-                        <CardElement
-                          className="payment-token-form-control__card payment-token-form-control__card--disabled"
-                          disabled={true}
-                          style={
-                            Object {
-                              "base": Object {
-                                ":-webkit-autofill": Object {
-                                  "color": "white",
-                                },
-                                "color": "white",
-                                "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
-                              },
-                            }
-                          }
-                        />
-                      </PatchedCardElement>
-                    </div>
-                  </PaymentTokenFormControl>
-                  <div
-                    className="form-group mt-3"
-                  >
-                    <button
-                      className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
-                      disabled={true}
-                      type="submit"
-                    >
-                      Submit
-                    </button>
+                      />
+                    </PatchedCardElement>
                   </div>
+                </PaymentTokenFormControl>
+                <div
+                  className="form-group mt-3"
+                >
+                  <button
+                    className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
+                    disabled={true}
+                    type="submit"
+                  >
+                    Submit
+                  </button>
                 </div>
               </div>
-            </form>
-          </Form>
-        </div>
-      </_ProductSubscriptionForm>
-    </StripeWrapper>
-  </ProductSubscriptionForm>
-</Router>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </_ProductSubscriptionForm>
+  </StripeWrapper>
+</ProductSubscriptionForm>
 `;

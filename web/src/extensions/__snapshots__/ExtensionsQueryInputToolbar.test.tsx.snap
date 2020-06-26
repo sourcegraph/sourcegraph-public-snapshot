@@ -1,10 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ExtensionsQueryInputToolbar renders 1`] = `
-<ExtensionsQueryInputToolbar
-  onQueryChange={[Function]}
-  query="q"
->
+Array [
   <ButtonDropdown
     isOpen={false}
     toggle={[Function]}
@@ -200,8 +197,8 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
         </div>
       </Manager>
     </Dropdown>
-  </ButtonDropdown>
-   
+  </ButtonDropdown>,
+  " ",
   <ButtonDropdown
     isOpen={false}
     toggle={[Function]}
@@ -305,15 +302,12 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
         </div>
       </Manager>
     </Dropdown>
-  </ButtonDropdown>
-</ExtensionsQueryInputToolbar>
+  </ButtonDropdown>,
+]
 `;
 
 exports[`ExtensionsQueryInputToolbar shows category in query as selected 1`] = `
-<ExtensionsQueryInputToolbar
-  onQueryChange={[Function]}
-  query="category:\\"Programming languages\\""
->
+Array [
   <ButtonDropdown
     isOpen={false}
     toggle={[Function]}
@@ -508,8 +502,8 @@ exports[`ExtensionsQueryInputToolbar shows category in query as selected 1`] = `
         </div>
       </Manager>
     </Dropdown>
-  </ButtonDropdown>
-   
+  </ButtonDropdown>,
+  " ",
   <ButtonDropdown
     isOpen={false}
     toggle={[Function]}
@@ -613,6 +607,6 @@ exports[`ExtensionsQueryInputToolbar shows category in query as selected 1`] = `
         </div>
       </Manager>
     </Dropdown>
-  </ButtonDropdown>
-</ExtensionsQueryInputToolbar>
+  </ButtonDropdown>,
+]
 `;

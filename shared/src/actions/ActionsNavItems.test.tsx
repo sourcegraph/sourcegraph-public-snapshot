@@ -51,6 +51,6 @@ describe('ActionItem', () => {
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })

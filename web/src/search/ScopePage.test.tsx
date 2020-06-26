@@ -38,6 +38,6 @@ describe('ScopePage', () => {
                         versionContext={undefined}
                     />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot())
 })

@@ -63,6 +63,6 @@ describe('SiteAdminProductSubscriptionPage', () => {
                 />
             </MemoryRouter>
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })

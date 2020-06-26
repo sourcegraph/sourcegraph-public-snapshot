@@ -30,7 +30,7 @@ describe('ExtensionCard', () => {
                     settingsCascade={{ final: null, subjects: null }}
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

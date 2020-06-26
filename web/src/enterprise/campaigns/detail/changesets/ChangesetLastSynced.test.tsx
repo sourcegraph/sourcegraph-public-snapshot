@@ -18,7 +18,7 @@ describe('ChangesetLastSynced', () => {
                             viewerCanAdminister={viewerCanAdminister}
                             _now={new Date('2020-03-01')}
                         />
-                    )
+                    ).children()
                 ).toMatchSnapshot()
             })
             test('renders scheduled', () => {
@@ -33,7 +33,7 @@ describe('ChangesetLastSynced', () => {
                             viewerCanAdminister={viewerCanAdminister}
                             _now={new Date('2020-03-01')}
                         />
-                    )
+                    ).children()
                 ).toMatchSnapshot()
             })
         })

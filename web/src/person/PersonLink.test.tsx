@@ -12,7 +12,7 @@ describe('PersonLink', () => {
                     className="a"
                     userClassName="b"
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('with user account', () =>
@@ -29,6 +29,6 @@ describe('PersonLink', () => {
                         userClassName="b"
                     />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot())
 })

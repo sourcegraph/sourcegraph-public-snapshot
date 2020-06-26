@@ -36,7 +36,7 @@ describe('CampaignBurndownChart', () => {
                     history={history}
                     width={500}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('renders an alert when data for less than 2 days is present', () => {
@@ -60,7 +60,7 @@ describe('CampaignBurndownChart', () => {
                     history={history}
                     width={500}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('renders an alert when no datapoints are in a set of more than 1 day of data', () => {
@@ -95,7 +95,7 @@ describe('CampaignBurndownChart', () => {
                     history={history}
                     width={500}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

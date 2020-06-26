@@ -72,7 +72,7 @@ describe('SiteAdminOverviewPage', () => {
                         })
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -101,7 +101,7 @@ describe('SiteAdminOverviewPage', () => {
                         })
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('>= 2 users', () => {
@@ -139,6 +139,6 @@ describe('SiteAdminOverviewPage', () => {
             />
         )
         component.update()
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })

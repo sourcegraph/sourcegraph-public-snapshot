@@ -8,6 +8,6 @@ registerHighlightContributions()
 
 describe('CampaignCliHelp', () => {
     test('renders', () => {
-        expect(mount(<CampaignCliHelp className="test" />)).toMatchSnapshot()
+        expect(mount(<CampaignCliHelp className="test" />).children()).toMatchSnapshot()
     })
 })

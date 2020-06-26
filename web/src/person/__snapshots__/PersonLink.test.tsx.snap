@@ -1,71 +1,57 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`PersonLink no user account 1`] = `
-<PersonLink
-  className="a"
-  person={
-    Object {
-      "displayName": "alice",
-      "email": "alice@example.com",
-      "user": null,
-    }
-  }
-  userClassName="b"
+<LinkOrSpan
+  className="a "
+  data-tooltip="alice@example.com"
 >
-  <LinkOrSpan
+  <span
     className="a "
     data-tooltip="alice@example.com"
   >
-    <span
-      className="a "
-      data-tooltip="alice@example.com"
-    >
-      alice
-    </span>
-  </LinkOrSpan>
-</PersonLink>
+    alice
+  </span>
+</LinkOrSpan>
 `;
 
 exports[`PersonLink with user account 1`] = `
-<MemoryRouter>
-  <Router
-    history="[History]"
-  >
-    <PersonLink
-      className="a"
-      person={
-        Object {
-          "displayName": "Alice",
-          "email": "alice@example.com",
-          "user": Object {
-            "displayName": "Alice Smith",
-            "url": "u",
-            "username": "alice",
-          },
-        }
+<Router
+  history="[History]"
+>
+  <PersonLink
+    className="a"
+    person={
+      Object {
+        "displayName": "Alice",
+        "email": "alice@example.com",
+        "user": Object {
+          "displayName": "Alice Smith",
+          "url": "u",
+          "username": "alice",
+        },
       }
-      userClassName="b"
+    }
+    userClassName="b"
+  >
+    <LinkOrSpan
+      className="a b"
+      data-tooltip="Alice Smith <alice@example.com>"
+      to="u"
     >
-      <LinkOrSpan
+      <AnchorLink
         className="a b"
         data-tooltip="Alice Smith <alice@example.com>"
         to="u"
       >
-        <AnchorLink
+        <a
           className="a b"
           data-tooltip="Alice Smith <alice@example.com>"
-          to="u"
+          href="u"
         >
-          <a
-            className="a b"
-            data-tooltip="Alice Smith <alice@example.com>"
-            href="u"
-          >
-            alice
-          </a>
-        </AnchorLink>
-      </LinkOrSpan>
-    </PersonLink>
-  </Router>
-</MemoryRouter>
+          alice
+        </a>
+      </AnchorLink>
+    </LinkOrSpan>
+  </PersonLink>
+</Router>
 `;

@@ -30,24 +30,28 @@ const FIXTURE_SIGNATURE_2 = {
 
 describe('GitCommitNodeByline', () => {
     test('author', () =>
-        expect(mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />)).toMatchSnapshot())
+        expect(
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).children()
+        ).toMatchSnapshot())
 
     test('different author and committer', () =>
         expect(
-            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />).children()
         ).toMatchSnapshot())
 
     test('author (compact)', () =>
-        expect(mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />)).toMatchSnapshot())
+        expect(
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).children()
+        ).toMatchSnapshot())
 
     test('different author and committer (compact)', () =>
         expect(
-            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />).children()
         ).toMatchSnapshot())
 
     test('same author and committer', () =>
         expect(
-            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_1} />)
+            mount(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_1} />).children()
         ).toMatchSnapshot())
 
     test('omit GitHub committer', () =>
@@ -70,6 +74,6 @@ describe('GitCommitNodeByline', () => {
                         },
                     }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 })

@@ -6,7 +6,9 @@ import { mount } from 'enzyme'
 
 describe('ExtensionsQueryInputToolbar', () => {
     test('renders', () => {
-        expect(mount(<ExtensionsQueryInputToolbar query="q" onQueryChange={() => undefined} />)).toMatchSnapshot()
+        expect(
+            mount(<ExtensionsQueryInputToolbar query="q" onQueryChange={() => undefined} />).children()
+        ).toMatchSnapshot()
     })
 
     test('shows category in query as selected', () => {
@@ -16,7 +18,7 @@ describe('ExtensionsQueryInputToolbar', () => {
                     query={extensionsQuery({ category: EXTENSION_CATEGORIES[0] })}
                     onQueryChange={() => undefined}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

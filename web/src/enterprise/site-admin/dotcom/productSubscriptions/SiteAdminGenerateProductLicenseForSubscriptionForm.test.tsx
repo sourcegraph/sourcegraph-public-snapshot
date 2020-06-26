@@ -12,7 +12,7 @@ describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
                     onGenerate={() => undefined}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

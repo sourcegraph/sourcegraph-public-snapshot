@@ -20,14 +20,14 @@ const commonProps: VersionContextDropdownProps = {
 }
 describe('VersionContextDropdown', () => {
     it('renders the version context dropdown with no context selected', () => {
-        expect(mount(<VersionContextDropdown {...commonProps} />)).toMatchSnapshot()
+        expect(mount(<VersionContextDropdown {...commonProps} />).children()).toMatchSnapshot()
     })
 
     it('renders the expanded version context dropdown, with 3.15 selected and displayed first', () => {
         expect(
             mount(
                 <VersionContextDropdown {...commonProps} versionContext="3.15" alwaysExpanded={true} portal={false} />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

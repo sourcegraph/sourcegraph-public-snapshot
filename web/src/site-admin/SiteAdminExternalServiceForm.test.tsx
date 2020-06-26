@@ -32,7 +32,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
                     mode="create"
                     loading={false}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('edit GitHub', () => {
@@ -48,7 +48,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
                     mode="create"
                     loading={false}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('edit GitHub, loading', () => {
@@ -64,7 +64,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
                     mode="create"
                     loading={true}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

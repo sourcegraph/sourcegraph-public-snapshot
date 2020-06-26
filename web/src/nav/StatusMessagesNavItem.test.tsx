@@ -19,7 +19,7 @@ describe('StatusMessagesNavItem', () => {
                     isSiteAdmin={false}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -38,7 +38,7 @@ describe('StatusMessagesNavItem', () => {
                         isSiteAdmin={false}
                         history={createMemoryHistory()}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
 
@@ -50,7 +50,7 @@ describe('StatusMessagesNavItem', () => {
                         isSiteAdmin={true}
                         history={createMemoryHistory()}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
     })
@@ -81,7 +81,7 @@ describe('StatusMessagesNavItem', () => {
                         isSiteAdmin={false}
                         history={createMemoryHistory()}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
 
@@ -93,7 +93,7 @@ describe('StatusMessagesNavItem', () => {
                         isSiteAdmin={true}
                         history={createMemoryHistory()}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
     })
@@ -113,7 +113,7 @@ describe('StatusMessagesNavItem', () => {
                         isSiteAdmin={false}
                         history={createMemoryHistory()}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
 
@@ -125,7 +125,7 @@ describe('StatusMessagesNavItem', () => {
                         isSiteAdmin={true}
                         history={createMemoryHistory()}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
     })

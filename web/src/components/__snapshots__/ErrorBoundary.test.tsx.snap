@@ -1,12 +1,42 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ErrorBoundary passes through if non-error 1`] = `
-<ErrorBoundary
-  location={null}
+<HeroPage
+  icon="ErrorIcon"
+  subtitle={
+    <div
+      className="container"
+    >
+      <p>
+        Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
+      </p>
+      <p>
+        <code
+          className="text-wrap"
+        >
+          x
+        </code>
+      </p>
+    </div>
+  }
+  title="Error"
 >
-  <HeroPage
-    icon="ErrorIcon"
-    subtitle={
+  <div
+    className="hero-page "
+  >
+    <div
+      className="hero-page__icon"
+    >
+      <ErrorIcon />
+    </div>
+    <div
+      className="hero-page__title"
+    >
+      Error
+    </div>
+    <div
+      className="hero-page__subtitle"
+    >
       <div
         className="container"
       >
@@ -21,62 +51,54 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
           </code>
         </p>
       </div>
-    }
-    title="Error"
-  >
-    <div
-      className="hero-page "
-    >
-      <div
-        className="hero-page__icon"
-      >
-        <ErrorIcon />
-      </div>
-      <div
-        className="hero-page__title"
-      >
-        Error
-      </div>
-      <div
-        className="hero-page__subtitle"
-      >
-        <div
-          className="container"
-        >
-          <p>
-            Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
-          </p>
-          <p>
-            <code
-              className="text-wrap"
-            >
-              x
-            </code>
-          </p>
-        </div>
-      </div>
     </div>
-  </HeroPage>
-</ErrorBoundary>
+  </div>
+</HeroPage>
 `;
 
 exports[`ErrorBoundary renders error page if error 1`] = `
-<ErrorBoundary
-  location={null}
->
-  <span>
-    hello
-  </span>
-</ErrorBoundary>
+<span>
+  hello
+</span>
 `;
 
 exports[`ErrorBoundary renders reload page if chunk error 1`] = `
-<ErrorBoundary
-  location={null}
+<HeroPage
+  icon="ErrorIcon"
+  subtitle={
+    <div
+      className="container"
+    >
+      <p>
+        Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
+      </p>
+      <p>
+        <code
+          className="text-wrap"
+        >
+          Loading chunk 123 failed.
+        </code>
+      </p>
+    </div>
+  }
+  title="Error"
 >
-  <HeroPage
-    icon="ErrorIcon"
-    subtitle={
+  <div
+    className="hero-page "
+  >
+    <div
+      className="hero-page__icon"
+    >
+      <ErrorIcon />
+    </div>
+    <div
+      className="hero-page__title"
+    >
+      Error
+    </div>
+    <div
+      className="hero-page__subtitle"
+    >
       <div
         className="container"
       >
@@ -91,41 +113,7 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
           </code>
         </p>
       </div>
-    }
-    title="Error"
-  >
-    <div
-      className="hero-page "
-    >
-      <div
-        className="hero-page__icon"
-      >
-        <ErrorIcon />
-      </div>
-      <div
-        className="hero-page__title"
-      >
-        Error
-      </div>
-      <div
-        className="hero-page__subtitle"
-      >
-        <div
-          className="container"
-        >
-          <p>
-            Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
-          </p>
-          <p>
-            <code
-              className="text-wrap"
-            >
-              Loading chunk 123 failed.
-            </code>
-          </p>
-        </div>
-      </div>
     </div>
-  </HeroPage>
-</ErrorBoundary>
+  </div>
+</HeroPage>
 `;

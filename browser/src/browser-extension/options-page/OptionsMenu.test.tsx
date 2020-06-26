@@ -27,7 +27,7 @@ describe('OptionsMenu', () => {
     }
 
     test('renders a default state', () => {
-        expect(mount(<OptionsMenu {...stubs} />)).toMatchSnapshot()
+        expect(mount(<OptionsMenu {...stubs} />).children()).toMatchSnapshot()
     })
 
     test('renders the current tab permissions alert', () => {
@@ -37,7 +37,7 @@ describe('OptionsMenu', () => {
                     {...stubs}
                     currentTabStatus={{ host: 'gitlab.com', protocol: 'http', hasPermissions: false }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -48,7 +48,7 @@ describe('OptionsMenu', () => {
                     {...stubs}
                     currentTabStatus={{ host: 'extensions', protocol: 'chrome:', hasPermissions: false }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -59,7 +59,7 @@ describe('OptionsMenu', () => {
                     {...stubs}
                     currentTabStatus={{ host: 'newtab', protocol: 'chrome:', hasPermissions: false }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -70,7 +70,7 @@ describe('OptionsMenu', () => {
                     {...stubs}
                     currentTabStatus={{ host: 'addons', protocol: 'about:', hasPermissions: false }}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -99,7 +99,7 @@ describe('OptionsMenu', () => {
                         { key: 'bar', value: false },
                     ]}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 

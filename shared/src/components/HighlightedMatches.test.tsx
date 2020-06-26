@@ -4,7 +4,7 @@ import { mount } from 'enzyme'
 
 describe('Markdown', () => {
     test('render', () => {
-        expect(mount(<HighlightedMatches text="abcabcabc" pattern="aab" />)).toMatchSnapshot()
+        expect(mount(<HighlightedMatches text="abcabcabc" pattern="aab" />).children()).toMatchSnapshot()
     })
 })
 

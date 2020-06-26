@@ -26,12 +26,14 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
 describe('ViewPage', () => {
     test('view is loading', () => {
         expect(
-            mount(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(undefined)} />)
+            mount(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(undefined)} />).children()
         ).toMatchSnapshot()
     })
 
     test('view not found', () => {
-        expect(mount(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(null)} />)).toMatchSnapshot()
+        expect(
+            mount(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(null)} />).children()
+        ).toMatchSnapshot()
     })
 
     test('renders view', () => {
@@ -64,7 +66,7 @@ describe('ViewPage', () => {
                         })
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

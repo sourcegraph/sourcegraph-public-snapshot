@@ -37,7 +37,7 @@ describe('RegistryExtensionOverviewPage', () => {
                         history={history}
                     />
                 </Router>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 

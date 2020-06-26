@@ -22,7 +22,7 @@ describe('CompletionWidgetDropdown', () => {
                     widgetClassName="widget-class-name"
                     widgetContainerClassName="widget-container-class-name"
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

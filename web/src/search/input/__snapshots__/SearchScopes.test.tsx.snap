@@ -1,163 +1,159 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SearchScopes empty 1`] = `
-<MemoryRouter>
-  <Router
+<Router
+  history="[History]"
+>
+  <SearchScopes
+    authenticatedUser={Object {}}
     history="[History]"
-  >
-    <SearchScopes
-      authenticatedUser={Object {}}
-      history="[History]"
-      patternType="literal"
-      query="abc"
-      settingsCascade={
-        Object {
-          "final": Object {},
-          "subjects": Array [],
-        }
+    patternType="literal"
+    query="abc"
+    settingsCascade={
+      Object {
+        "final": Object {},
+        "subjects": Array [],
       }
+    }
+  >
+    <div
+      className="search-scopes__edit"
     >
-      <div
-        className="search-scopes__edit"
+      <NavLink
+        className="search-scopes__add-edit"
+        to="/settings"
       >
-        <NavLink
+        <Link
+          aria-current={null}
           className="search-scopes__add-edit"
-          to="/settings"
+          to={
+            Object {
+              "hash": "",
+              "key": null,
+              "pathname": "/settings",
+              "search": "",
+              "state": null,
+            }
+          }
         >
-          <Link
+          <LinkAnchor
             aria-current={null}
             className="search-scopes__add-edit"
-            to={
-              Object {
-                "hash": "",
-                "key": null,
-                "pathname": "/settings",
-                "search": "",
-                "state": null,
-              }
-            }
+            href="/settings"
+            navigate={[Function]}
           >
-            <LinkAnchor
+            <a
               aria-current={null}
               className="search-scopes__add-edit"
               href="/settings"
-              navigate={[Function]}
+              onClick={[Function]}
             >
-              <a
-                aria-current={null}
-                className="search-scopes__add-edit"
-                href="/settings"
-                onClick={[Function]}
+              <small
+                className="search-scopes__center"
               >
-                <small
-                  className="search-scopes__center"
+                <span
+                  className="search-scopes__add-scopes"
                 >
-                  <span
-                    className="search-scopes__add-scopes"
-                  >
-                    Add search scopes for quick filtering
-                  </span>
-                </small>
-              </a>
-            </LinkAnchor>
-          </Link>
-        </NavLink>
-      </div>
-    </SearchScopes>
-  </Router>
-</MemoryRouter>
+                  Add search scopes for quick filtering
+                </span>
+              </small>
+            </a>
+          </LinkAnchor>
+        </Link>
+      </NavLink>
+    </div>
+  </SearchScopes>
+</Router>
 `;
 
 exports[`SearchScopes with scopes 1`] = `
-<MemoryRouter>
-  <Router
+<Router
+  history="[History]"
+>
+  <SearchScopes
+    authenticatedUser={Object {}}
     history="[History]"
-  >
-    <SearchScopes
-      authenticatedUser={Object {}}
-      history="[History]"
-      patternType="literal"
-      query="abc"
-      settingsCascade={
-        Object {
-          "final": Object {
-            "search.scopes": Array [
-              Object {
-                "description": "d",
-                "id": "i",
-                "name": "n",
-                "value": "v",
-              },
-            ],
-          },
-          "subjects": Array [],
-        }
+    patternType="literal"
+    query="abc"
+    settingsCascade={
+      Object {
+        "final": Object {
+          "search.scopes": Array [
+            Object {
+              "description": "d",
+              "id": "i",
+              "name": "n",
+              "value": "v",
+            },
+          ],
+        },
+        "subjects": Array [],
       }
+    }
+  >
+    <FilterChip
+      key="0"
+      name="n"
+      onFilterChosen={[Function]}
+      query="abc"
+      value="v"
     >
-      <FilterChip
-        key="0"
-        name="n"
-        onFilterChosen={[Function]}
-        query="abc"
+      <button
+        className="btn btn-sm text-nowrap filter-chip "
+        data-testid="filter-chip"
+        onClick={[Function]}
+        onMouseDown={[Function]}
+        title="v"
+        type="button"
         value="v"
       >
-        <button
-          className="btn btn-sm text-nowrap filter-chip "
-          data-testid="filter-chip"
-          onClick={[Function]}
-          onMouseDown={[Function]}
-          title="v"
-          type="button"
-          value="v"
-        >
-          <div>
-            n
-          </div>
-        </button>
-      </FilterChip>
-      <div
-        className="search-scopes__edit"
+        <div>
+          n
+        </div>
+      </button>
+    </FilterChip>
+    <div
+      className="search-scopes__edit"
+    >
+      <NavLink
+        className="search-scopes__add-edit"
+        to="/settings"
       >
-        <NavLink
+        <Link
+          aria-current={null}
           className="search-scopes__add-edit"
-          to="/settings"
+          to={
+            Object {
+              "hash": "",
+              "key": null,
+              "pathname": "/settings",
+              "search": "",
+              "state": null,
+            }
+          }
         >
-          <Link
+          <LinkAnchor
             aria-current={null}
             className="search-scopes__add-edit"
-            to={
-              Object {
-                "hash": "",
-                "key": null,
-                "pathname": "/settings",
-                "search": "",
-                "state": null,
-              }
-            }
+            href="/settings"
+            navigate={[Function]}
           >
-            <LinkAnchor
+            <a
               aria-current={null}
               className="search-scopes__add-edit"
               href="/settings"
-              navigate={[Function]}
+              onClick={[Function]}
             >
-              <a
-                aria-current={null}
-                className="search-scopes__add-edit"
-                href="/settings"
-                onClick={[Function]}
+              <small
+                className="search-scopes__center"
               >
-                <small
-                  className="search-scopes__center"
-                >
-                  Edit
-                </small>
-              </a>
-            </LinkAnchor>
-          </Link>
-        </NavLink>
-      </div>
-    </SearchScopes>
-  </Router>
-</MemoryRouter>
+                Edit
+              </small>
+            </a>
+          </LinkAnchor>
+        </Link>
+      </NavLink>
+    </div>
+  </SearchScopes>
+</Router>
 `;

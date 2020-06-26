@@ -5,7 +5,7 @@ import { mount } from 'enzyme'
 describe('ProductSubscriptionUserCountFormControl', () => {
     test('renders', () => {
         expect(
-            mount(<ProductSubscriptionUserCountFormControl value={123} onChange={() => undefined} />)
+            mount(<ProductSubscriptionUserCountFormControl value={123} onChange={() => undefined} />).children()
         ).toMatchSnapshot()
     })
 })

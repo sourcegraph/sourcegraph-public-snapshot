@@ -12,6 +12,6 @@ describe('RepoFileLink', () => {
                 fileURL="https://example.com/file"
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })

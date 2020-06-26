@@ -47,10 +47,10 @@ describe('GlobalNavbar', () => {
     setLinkComponent(props => <a {...props} />)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
-    test('normal', () => expect(mount(<GlobalNavbar {...PROPS} />)).toMatchSnapshot())
+    test('normal', () => expect(mount(<GlobalNavbar {...PROPS} />).children()).toMatchSnapshot())
 
-    test('lowProfile', () => expect(mount(<GlobalNavbar {...PROPS} lowProfile={true} />)).toMatchSnapshot())
+    test('lowProfile', () => expect(mount(<GlobalNavbar {...PROPS} lowProfile={true} />).children()).toMatchSnapshot())
 
     test('hideGlobalSearchInput', () =>
-        expect(mount(<GlobalNavbar {...PROPS} hideGlobalSearchInput={true} />)).toMatchSnapshot())
+        expect(mount(<GlobalNavbar {...PROPS} hideGlobalSearchInput={true} />).children()).toMatchSnapshot())
 })

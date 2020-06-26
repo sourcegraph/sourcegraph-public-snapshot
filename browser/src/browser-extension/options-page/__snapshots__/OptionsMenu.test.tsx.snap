@@ -1,1078 +1,953 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`OptionsMenu doesn't render the permissions alert on about://addons 1`] = `
-<OptionsMenu
-  currentTabStatus={
-    Object {
-      "hasPermissions": false,
-      "host": "addons",
-      "protocol": "about:",
-    }
-  }
-  isActivated={true}
-  onSettingsClick={[Function]}
-  onToggleActivationClick={[Function]}
-  onURLChange={[Function]}
-  onURLSubmit={[Function]}
-  requestPermissions={[Function]}
-  sourcegraphURL="https://sourcegraph.com"
-  status="connected"
-  toggleFeatureFlag={[Function]}
-  urlHasPermissions={true}
-  version="0.0.0"
+<div
+  className="options-menu options-menu--full"
 >
-  <div
-    className="options-menu options-menu--full"
+  <OptionsHeader
+    className="options-menu__section"
+    isActivated={true}
+    onSettingsClick={[Function]}
+    onToggleActivationClick={[Function]}
+    urlHasPermissions={true}
+    version="0.0.0"
   >
-    <OptionsHeader
-      className="options-menu__section"
-      isActivated={true}
-      onSettingsClick={[Function]}
-      onToggleActivationClick={[Function]}
-      urlHasPermissions={true}
-      version="0.0.0"
+    <div
+      className="options-header options-menu__section"
     >
-      <div
-        className="options-header options-menu__section"
-      >
-        <div>
-          <img
-            className="options-header__logo"
-            src="/img/sourcegraph-logo.svg"
-          />
-          <div
-            className="options-header__version"
-          >
-            v
-            0.0.0
-          </div>
-        </div>
+      <div>
+        <img
+          className="options-header__logo"
+          src="/img/sourcegraph-logo.svg"
+        />
         <div
-          className="options-header__right"
+          className="options-header__version"
         >
-          <button
-            className="options-header__settings btn btn-icon"
-            onClick={[Function]}
-            type="button"
-          >
-            <SettingsOutlineIcon
-              className="icon-inline"
-            />
-          </button>
-          <Toggle
-            onToggle={[Function]}
-            title="Toggle to disable extension"
-            value={true}
-          >
-            <button
-              className="toggle  "
-              onClick={[Function]}
-              title="Toggle to disable extension"
-              type="button"
-              value={1}
-            >
-              <span
-                className="toggle__bar toggle__bar--active "
-              />
-              <span
-                className="toggle__knob toggle__knob--active "
-              />
-            </button>
-          </Toggle>
+          v
+          0.0.0
         </div>
       </div>
-    </OptionsHeader>
-    <ServerUrlForm
-      className="options-menu__section"
-      onChange={[Function]}
-      onSettingsClick={[Function]}
-      onSubmit={[Function]}
-      onToggleActivationClick={[Function]}
-      requestPermissions={[Function]}
-      status="connected"
-      urlHasPermissions={true}
-      value="https://sourcegraph.com"
-      version="0.0.0"
-    >
-      <form
-        className="server-url-form options-menu__section"
-        onSubmit={[Function]}
-      >
-        <label
-          htmlFor="sourcegraph-url"
-        >
-          Sourcegraph URL
-        </label>
-        <div
-          className="input-group"
-        >
-          <div
-            className="input-group-prepend"
-          >
-            <span
-              className="input-group-text"
-            >
-              <span>
-                <span
-                  className="server-url-form__status-indicator bg-success"
-                />
-                 
-                <span
-                  className="e2e-connection-status"
-                >
-                  Connected
-                </span>
-              </span>
-            </span>
-          </div>
-          <input
-            autoCapitalize="off"
-            autoCorrect="off"
-            className="form-control e2e-sourcegraph-url"
-            id="sourcegraph-url"
-            onChange={[Function]}
-            spellCheck={false}
-            type="text"
-            value="https://sourcegraph.com"
-          />
-        </div>
-      </form>
-    </ServerUrlForm>
-    <div
-      className="options-menu__section"
-    >
-      <p>
-        Learn more about privacy concerns, troubleshooting and extension features
-         
-        <a
-          href="https://docs.sourcegraph.com/integration/browser_extension"
-          target="blank"
-        >
-          here
-        </a>
-        .
-      </p>
-      <p>
-        Search open source software at
-         
-        <a
-          href="https://sourcegraph.com/search"
-          target="blank"
-        >
-          sourcegraph.com/search
-        </a>
-        .
-      </p>
-    </div>
-  </div>
-</OptionsMenu>
-`;
-
-exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions 1`] = `
-<OptionsMenu
-  currentTabStatus={
-    Object {
-      "hasPermissions": false,
-      "host": "extensions",
-      "protocol": "chrome:",
-    }
-  }
-  isActivated={true}
-  onSettingsClick={[Function]}
-  onToggleActivationClick={[Function]}
-  onURLChange={[Function]}
-  onURLSubmit={[Function]}
-  requestPermissions={[Function]}
-  sourcegraphURL="https://sourcegraph.com"
-  status="connected"
-  toggleFeatureFlag={[Function]}
-  urlHasPermissions={true}
-  version="0.0.0"
->
-  <div
-    className="options-menu options-menu--full"
-  >
-    <OptionsHeader
-      className="options-menu__section"
-      isActivated={true}
-      onSettingsClick={[Function]}
-      onToggleActivationClick={[Function]}
-      urlHasPermissions={true}
-      version="0.0.0"
-    >
       <div
-        className="options-header options-menu__section"
+        className="options-header__right"
       >
-        <div>
-          <img
-            className="options-header__logo"
-            src="/img/sourcegraph-logo.svg"
-          />
-          <div
-            className="options-header__version"
-          >
-            v
-            0.0.0
-          </div>
-        </div>
-        <div
-          className="options-header__right"
-        >
-          <button
-            className="options-header__settings btn btn-icon"
-            onClick={[Function]}
-            type="button"
-          >
-            <SettingsOutlineIcon
-              className="icon-inline"
-            />
-          </button>
-          <Toggle
-            onToggle={[Function]}
-            title="Toggle to disable extension"
-            value={true}
-          >
-            <button
-              className="toggle  "
-              onClick={[Function]}
-              title="Toggle to disable extension"
-              type="button"
-              value={1}
-            >
-              <span
-                className="toggle__bar toggle__bar--active "
-              />
-              <span
-                className="toggle__knob toggle__knob--active "
-              />
-            </button>
-          </Toggle>
-        </div>
-      </div>
-    </OptionsHeader>
-    <ServerUrlForm
-      className="options-menu__section"
-      onChange={[Function]}
-      onSettingsClick={[Function]}
-      onSubmit={[Function]}
-      onToggleActivationClick={[Function]}
-      requestPermissions={[Function]}
-      status="connected"
-      urlHasPermissions={true}
-      value="https://sourcegraph.com"
-      version="0.0.0"
-    >
-      <form
-        className="server-url-form options-menu__section"
-        onSubmit={[Function]}
-      >
-        <label
-          htmlFor="sourcegraph-url"
-        >
-          Sourcegraph URL
-        </label>
-        <div
-          className="input-group"
-        >
-          <div
-            className="input-group-prepend"
-          >
-            <span
-              className="input-group-text"
-            >
-              <span>
-                <span
-                  className="server-url-form__status-indicator bg-success"
-                />
-                 
-                <span
-                  className="e2e-connection-status"
-                >
-                  Connected
-                </span>
-              </span>
-            </span>
-          </div>
-          <input
-            autoCapitalize="off"
-            autoCorrect="off"
-            className="form-control e2e-sourcegraph-url"
-            id="sourcegraph-url"
-            onChange={[Function]}
-            spellCheck={false}
-            type="text"
-            value="https://sourcegraph.com"
-          />
-        </div>
-      </form>
-    </ServerUrlForm>
-    <div
-      className="options-menu__section"
-    >
-      <p>
-        Learn more about privacy concerns, troubleshooting and extension features
-         
-        <a
-          href="https://docs.sourcegraph.com/integration/browser_extension"
-          target="blank"
-        >
-          here
-        </a>
-        .
-      </p>
-      <p>
-        Search open source software at
-         
-        <a
-          href="https://sourcegraph.com/search"
-          target="blank"
-        >
-          sourcegraph.com/search
-        </a>
-        .
-      </p>
-    </div>
-  </div>
-</OptionsMenu>
-`;
-
-exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`] = `
-<OptionsMenu
-  currentTabStatus={
-    Object {
-      "hasPermissions": false,
-      "host": "newtab",
-      "protocol": "chrome:",
-    }
-  }
-  isActivated={true}
-  onSettingsClick={[Function]}
-  onToggleActivationClick={[Function]}
-  onURLChange={[Function]}
-  onURLSubmit={[Function]}
-  requestPermissions={[Function]}
-  sourcegraphURL="https://sourcegraph.com"
-  status="connected"
-  toggleFeatureFlag={[Function]}
-  urlHasPermissions={true}
-  version="0.0.0"
->
-  <div
-    className="options-menu options-menu--full"
-  >
-    <OptionsHeader
-      className="options-menu__section"
-      isActivated={true}
-      onSettingsClick={[Function]}
-      onToggleActivationClick={[Function]}
-      urlHasPermissions={true}
-      version="0.0.0"
-    >
-      <div
-        className="options-header options-menu__section"
-      >
-        <div>
-          <img
-            className="options-header__logo"
-            src="/img/sourcegraph-logo.svg"
-          />
-          <div
-            className="options-header__version"
-          >
-            v
-            0.0.0
-          </div>
-        </div>
-        <div
-          className="options-header__right"
-        >
-          <button
-            className="options-header__settings btn btn-icon"
-            onClick={[Function]}
-            type="button"
-          >
-            <SettingsOutlineIcon
-              className="icon-inline"
-            />
-          </button>
-          <Toggle
-            onToggle={[Function]}
-            title="Toggle to disable extension"
-            value={true}
-          >
-            <button
-              className="toggle  "
-              onClick={[Function]}
-              title="Toggle to disable extension"
-              type="button"
-              value={1}
-            >
-              <span
-                className="toggle__bar toggle__bar--active "
-              />
-              <span
-                className="toggle__knob toggle__knob--active "
-              />
-            </button>
-          </Toggle>
-        </div>
-      </div>
-    </OptionsHeader>
-    <ServerUrlForm
-      className="options-menu__section"
-      onChange={[Function]}
-      onSettingsClick={[Function]}
-      onSubmit={[Function]}
-      onToggleActivationClick={[Function]}
-      requestPermissions={[Function]}
-      status="connected"
-      urlHasPermissions={true}
-      value="https://sourcegraph.com"
-      version="0.0.0"
-    >
-      <form
-        className="server-url-form options-menu__section"
-        onSubmit={[Function]}
-      >
-        <label
-          htmlFor="sourcegraph-url"
-        >
-          Sourcegraph URL
-        </label>
-        <div
-          className="input-group"
-        >
-          <div
-            className="input-group-prepend"
-          >
-            <span
-              className="input-group-text"
-            >
-              <span>
-                <span
-                  className="server-url-form__status-indicator bg-success"
-                />
-                 
-                <span
-                  className="e2e-connection-status"
-                >
-                  Connected
-                </span>
-              </span>
-            </span>
-          </div>
-          <input
-            autoCapitalize="off"
-            autoCorrect="off"
-            className="form-control e2e-sourcegraph-url"
-            id="sourcegraph-url"
-            onChange={[Function]}
-            spellCheck={false}
-            type="text"
-            value="https://sourcegraph.com"
-          />
-        </div>
-      </form>
-    </ServerUrlForm>
-    <div
-      className="options-menu__section"
-    >
-      <p>
-        Learn more about privacy concerns, troubleshooting and extension features
-         
-        <a
-          href="https://docs.sourcegraph.com/integration/browser_extension"
-          target="blank"
-        >
-          here
-        </a>
-        .
-      </p>
-      <p>
-        Search open source software at
-         
-        <a
-          href="https://sourcegraph.com/search"
-          target="blank"
-        >
-          sourcegraph.com/search
-        </a>
-        .
-      </p>
-    </div>
-  </div>
-</OptionsMenu>
-`;
-
-exports[`OptionsMenu renders a default state 1`] = `
-<OptionsMenu
-  isActivated={true}
-  onSettingsClick={[Function]}
-  onToggleActivationClick={[Function]}
-  onURLChange={[Function]}
-  onURLSubmit={[Function]}
-  requestPermissions={[Function]}
-  sourcegraphURL="https://sourcegraph.com"
-  status="connected"
-  toggleFeatureFlag={[Function]}
-  urlHasPermissions={true}
-  version="0.0.0"
->
-  <div
-    className="options-menu options-menu--full"
-  >
-    <OptionsHeader
-      className="options-menu__section"
-      isActivated={true}
-      onSettingsClick={[Function]}
-      onToggleActivationClick={[Function]}
-      urlHasPermissions={true}
-      version="0.0.0"
-    >
-      <div
-        className="options-header options-menu__section"
-      >
-        <div>
-          <img
-            className="options-header__logo"
-            src="/img/sourcegraph-logo.svg"
-          />
-          <div
-            className="options-header__version"
-          >
-            v
-            0.0.0
-          </div>
-        </div>
-        <div
-          className="options-header__right"
-        >
-          <button
-            className="options-header__settings btn btn-icon"
-            onClick={[Function]}
-            type="button"
-          >
-            <SettingsOutlineIcon
-              className="icon-inline"
-            />
-          </button>
-          <Toggle
-            onToggle={[Function]}
-            title="Toggle to disable extension"
-            value={true}
-          >
-            <button
-              className="toggle  "
-              onClick={[Function]}
-              title="Toggle to disable extension"
-              type="button"
-              value={1}
-            >
-              <span
-                className="toggle__bar toggle__bar--active "
-              />
-              <span
-                className="toggle__knob toggle__knob--active "
-              />
-            </button>
-          </Toggle>
-        </div>
-      </div>
-    </OptionsHeader>
-    <ServerUrlForm
-      className="options-menu__section"
-      onChange={[Function]}
-      onSettingsClick={[Function]}
-      onSubmit={[Function]}
-      onToggleActivationClick={[Function]}
-      requestPermissions={[Function]}
-      status="connected"
-      urlHasPermissions={true}
-      value="https://sourcegraph.com"
-      version="0.0.0"
-    >
-      <form
-        className="server-url-form options-menu__section"
-        onSubmit={[Function]}
-      >
-        <label
-          htmlFor="sourcegraph-url"
-        >
-          Sourcegraph URL
-        </label>
-        <div
-          className="input-group"
-        >
-          <div
-            className="input-group-prepend"
-          >
-            <span
-              className="input-group-text"
-            >
-              <span>
-                <span
-                  className="server-url-form__status-indicator bg-success"
-                />
-                 
-                <span
-                  className="e2e-connection-status"
-                >
-                  Connected
-                </span>
-              </span>
-            </span>
-          </div>
-          <input
-            autoCapitalize="off"
-            autoCorrect="off"
-            className="form-control e2e-sourcegraph-url"
-            id="sourcegraph-url"
-            onChange={[Function]}
-            spellCheck={false}
-            type="text"
-            value="https://sourcegraph.com"
-          />
-        </div>
-      </form>
-    </ServerUrlForm>
-    <div
-      className="options-menu__section"
-    >
-      <p>
-        Learn more about privacy concerns, troubleshooting and extension features
-         
-        <a
-          href="https://docs.sourcegraph.com/integration/browser_extension"
-          target="blank"
-        >
-          here
-        </a>
-        .
-      </p>
-      <p>
-        Search open source software at
-         
-        <a
-          href="https://sourcegraph.com/search"
-          target="blank"
-        >
-          sourcegraph.com/search
-        </a>
-        .
-      </p>
-    </div>
-  </div>
-</OptionsMenu>
-`;
-
-exports[`OptionsMenu renders the current tab permissions alert 1`] = `
-<OptionsMenu
-  currentTabStatus={
-    Object {
-      "hasPermissions": false,
-      "host": "gitlab.com",
-      "protocol": "http",
-    }
-  }
-  isActivated={true}
-  onSettingsClick={[Function]}
-  onToggleActivationClick={[Function]}
-  onURLChange={[Function]}
-  onURLSubmit={[Function]}
-  requestPermissions={[Function]}
-  sourcegraphURL="https://sourcegraph.com"
-  status="connected"
-  toggleFeatureFlag={[Function]}
-  urlHasPermissions={true}
-  version="0.0.0"
->
-  <div
-    className="options-menu options-menu--full"
-  >
-    <OptionsHeader
-      className="options-menu__section"
-      isActivated={true}
-      onSettingsClick={[Function]}
-      onToggleActivationClick={[Function]}
-      urlHasPermissions={true}
-      version="0.0.0"
-    >
-      <div
-        className="options-header options-menu__section"
-      >
-        <div>
-          <img
-            className="options-header__logo"
-            src="/img/sourcegraph-logo.svg"
-          />
-          <div
-            className="options-header__version"
-          >
-            v
-            0.0.0
-          </div>
-        </div>
-        <div
-          className="options-header__right"
-        >
-          <button
-            className="options-header__settings btn btn-icon"
-            onClick={[Function]}
-            type="button"
-          >
-            <SettingsOutlineIcon
-              className="icon-inline"
-            />
-          </button>
-          <Toggle
-            onToggle={[Function]}
-            title="Toggle to disable extension"
-            value={true}
-          >
-            <button
-              className="toggle  "
-              onClick={[Function]}
-              title="Toggle to disable extension"
-              type="button"
-              value={1}
-            >
-              <span
-                className="toggle__bar toggle__bar--active "
-              />
-              <span
-                className="toggle__knob toggle__knob--active "
-              />
-            </button>
-          </Toggle>
-        </div>
-      </div>
-    </OptionsHeader>
-    <ServerUrlForm
-      className="options-menu__section"
-      onChange={[Function]}
-      onSettingsClick={[Function]}
-      onSubmit={[Function]}
-      onToggleActivationClick={[Function]}
-      requestPermissions={[Function]}
-      status="connected"
-      urlHasPermissions={true}
-      value="https://sourcegraph.com"
-      version="0.0.0"
-    >
-      <form
-        className="server-url-form options-menu__section"
-        onSubmit={[Function]}
-      >
-        <label
-          htmlFor="sourcegraph-url"
-        >
-          Sourcegraph URL
-        </label>
-        <div
-          className="input-group"
-        >
-          <div
-            className="input-group-prepend"
-          >
-            <span
-              className="input-group-text"
-            >
-              <span>
-                <span
-                  className="server-url-form__status-indicator bg-success"
-                />
-                 
-                <span
-                  className="e2e-connection-status"
-                >
-                  Connected
-                </span>
-              </span>
-            </span>
-          </div>
-          <input
-            autoCapitalize="off"
-            autoCorrect="off"
-            className="form-control e2e-sourcegraph-url"
-            id="sourcegraph-url"
-            onChange={[Function]}
-            spellCheck={false}
-            type="text"
-            value="https://sourcegraph.com"
-          />
-        </div>
-      </form>
-    </ServerUrlForm>
-    <div
-      className="options-menu__section"
-    >
-      <div
-        className="alert alert-info"
-      >
-        <p>
-          The Sourcegraph browser extension adds hover tooltips to code views on code hosts such as GitHub, GitLab, Bitbucket Server and Phabricator.
-        </p>
-        <p>
-          You must grant permissions to enable Sourcegraph on 
-          <strong>
-            gitlab.com
-          </strong>
-          .
-        </p>
         <button
-          className="btn btn-light request-permissions__test"
+          className="options-header__settings btn btn-icon"
           onClick={[Function]}
           type="button"
         >
-          Grant permissions
+          <SettingsOutlineIcon
+            className="icon-inline"
+          />
         </button>
+        <Toggle
+          onToggle={[Function]}
+          title="Toggle to disable extension"
+          value={true}
+        >
+          <button
+            className="toggle  "
+            onClick={[Function]}
+            title="Toggle to disable extension"
+            type="button"
+            value={1}
+          >
+            <span
+              className="toggle__bar toggle__bar--active "
+            />
+            <span
+              className="toggle__knob toggle__knob--active "
+            />
+          </button>
+        </Toggle>
       </div>
     </div>
+  </OptionsHeader>
+  <ServerUrlForm
+    className="options-menu__section"
+    onChange={[Function]}
+    onSettingsClick={[Function]}
+    onSubmit={[Function]}
+    onToggleActivationClick={[Function]}
+    requestPermissions={[Function]}
+    status="connected"
+    urlHasPermissions={true}
+    value="https://sourcegraph.com"
+    version="0.0.0"
+  >
+    <form
+      className="server-url-form options-menu__section"
+      onSubmit={[Function]}
+    >
+      <label
+        htmlFor="sourcegraph-url"
+      >
+        Sourcegraph URL
+      </label>
+      <div
+        className="input-group"
+      >
+        <div
+          className="input-group-prepend"
+        >
+          <span
+            className="input-group-text"
+          >
+            <span>
+              <span
+                className="server-url-form__status-indicator bg-success"
+              />
+               
+              <span
+                className="e2e-connection-status"
+              >
+                Connected
+              </span>
+            </span>
+          </span>
+        </div>
+        <input
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="form-control e2e-sourcegraph-url"
+          id="sourcegraph-url"
+          onChange={[Function]}
+          spellCheck={false}
+          type="text"
+          value="https://sourcegraph.com"
+        />
+      </div>
+    </form>
+  </ServerUrlForm>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
+</div>
+`;
+
+exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions 1`] = `
+<div
+  className="options-menu options-menu--full"
+>
+  <OptionsHeader
+    className="options-menu__section"
+    isActivated={true}
+    onSettingsClick={[Function]}
+    onToggleActivationClick={[Function]}
+    urlHasPermissions={true}
+    version="0.0.0"
+  >
     <div
-      className="options-menu__section"
+      className="options-header options-menu__section"
+    >
+      <div>
+        <img
+          className="options-header__logo"
+          src="/img/sourcegraph-logo.svg"
+        />
+        <div
+          className="options-header__version"
+        >
+          v
+          0.0.0
+        </div>
+      </div>
+      <div
+        className="options-header__right"
+      >
+        <button
+          className="options-header__settings btn btn-icon"
+          onClick={[Function]}
+          type="button"
+        >
+          <SettingsOutlineIcon
+            className="icon-inline"
+          />
+        </button>
+        <Toggle
+          onToggle={[Function]}
+          title="Toggle to disable extension"
+          value={true}
+        >
+          <button
+            className="toggle  "
+            onClick={[Function]}
+            title="Toggle to disable extension"
+            type="button"
+            value={1}
+          >
+            <span
+              className="toggle__bar toggle__bar--active "
+            />
+            <span
+              className="toggle__knob toggle__knob--active "
+            />
+          </button>
+        </Toggle>
+      </div>
+    </div>
+  </OptionsHeader>
+  <ServerUrlForm
+    className="options-menu__section"
+    onChange={[Function]}
+    onSettingsClick={[Function]}
+    onSubmit={[Function]}
+    onToggleActivationClick={[Function]}
+    requestPermissions={[Function]}
+    status="connected"
+    urlHasPermissions={true}
+    value="https://sourcegraph.com"
+    version="0.0.0"
+  >
+    <form
+      className="server-url-form options-menu__section"
+      onSubmit={[Function]}
+    >
+      <label
+        htmlFor="sourcegraph-url"
+      >
+        Sourcegraph URL
+      </label>
+      <div
+        className="input-group"
+      >
+        <div
+          className="input-group-prepend"
+        >
+          <span
+            className="input-group-text"
+          >
+            <span>
+              <span
+                className="server-url-form__status-indicator bg-success"
+              />
+               
+              <span
+                className="e2e-connection-status"
+              >
+                Connected
+              </span>
+            </span>
+          </span>
+        </div>
+        <input
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="form-control e2e-sourcegraph-url"
+          id="sourcegraph-url"
+          onChange={[Function]}
+          spellCheck={false}
+          type="text"
+          value="https://sourcegraph.com"
+        />
+      </div>
+    </form>
+  </ServerUrlForm>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
+</div>
+`;
+
+exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`] = `
+<div
+  className="options-menu options-menu--full"
+>
+  <OptionsHeader
+    className="options-menu__section"
+    isActivated={true}
+    onSettingsClick={[Function]}
+    onToggleActivationClick={[Function]}
+    urlHasPermissions={true}
+    version="0.0.0"
+  >
+    <div
+      className="options-header options-menu__section"
+    >
+      <div>
+        <img
+          className="options-header__logo"
+          src="/img/sourcegraph-logo.svg"
+        />
+        <div
+          className="options-header__version"
+        >
+          v
+          0.0.0
+        </div>
+      </div>
+      <div
+        className="options-header__right"
+      >
+        <button
+          className="options-header__settings btn btn-icon"
+          onClick={[Function]}
+          type="button"
+        >
+          <SettingsOutlineIcon
+            className="icon-inline"
+          />
+        </button>
+        <Toggle
+          onToggle={[Function]}
+          title="Toggle to disable extension"
+          value={true}
+        >
+          <button
+            className="toggle  "
+            onClick={[Function]}
+            title="Toggle to disable extension"
+            type="button"
+            value={1}
+          >
+            <span
+              className="toggle__bar toggle__bar--active "
+            />
+            <span
+              className="toggle__knob toggle__knob--active "
+            />
+          </button>
+        </Toggle>
+      </div>
+    </div>
+  </OptionsHeader>
+  <ServerUrlForm
+    className="options-menu__section"
+    onChange={[Function]}
+    onSettingsClick={[Function]}
+    onSubmit={[Function]}
+    onToggleActivationClick={[Function]}
+    requestPermissions={[Function]}
+    status="connected"
+    urlHasPermissions={true}
+    value="https://sourcegraph.com"
+    version="0.0.0"
+  >
+    <form
+      className="server-url-form options-menu__section"
+      onSubmit={[Function]}
+    >
+      <label
+        htmlFor="sourcegraph-url"
+      >
+        Sourcegraph URL
+      </label>
+      <div
+        className="input-group"
+      >
+        <div
+          className="input-group-prepend"
+        >
+          <span
+            className="input-group-text"
+          >
+            <span>
+              <span
+                className="server-url-form__status-indicator bg-success"
+              />
+               
+              <span
+                className="e2e-connection-status"
+              >
+                Connected
+              </span>
+            </span>
+          </span>
+        </div>
+        <input
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="form-control e2e-sourcegraph-url"
+          id="sourcegraph-url"
+          onChange={[Function]}
+          spellCheck={false}
+          type="text"
+          value="https://sourcegraph.com"
+        />
+      </div>
+    </form>
+  </ServerUrlForm>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
+</div>
+`;
+
+exports[`OptionsMenu renders a default state 1`] = `
+<div
+  className="options-menu options-menu--full"
+>
+  <OptionsHeader
+    className="options-menu__section"
+    isActivated={true}
+    onSettingsClick={[Function]}
+    onToggleActivationClick={[Function]}
+    urlHasPermissions={true}
+    version="0.0.0"
+  >
+    <div
+      className="options-header options-menu__section"
+    >
+      <div>
+        <img
+          className="options-header__logo"
+          src="/img/sourcegraph-logo.svg"
+        />
+        <div
+          className="options-header__version"
+        >
+          v
+          0.0.0
+        </div>
+      </div>
+      <div
+        className="options-header__right"
+      >
+        <button
+          className="options-header__settings btn btn-icon"
+          onClick={[Function]}
+          type="button"
+        >
+          <SettingsOutlineIcon
+            className="icon-inline"
+          />
+        </button>
+        <Toggle
+          onToggle={[Function]}
+          title="Toggle to disable extension"
+          value={true}
+        >
+          <button
+            className="toggle  "
+            onClick={[Function]}
+            title="Toggle to disable extension"
+            type="button"
+            value={1}
+          >
+            <span
+              className="toggle__bar toggle__bar--active "
+            />
+            <span
+              className="toggle__knob toggle__knob--active "
+            />
+          </button>
+        </Toggle>
+      </div>
+    </div>
+  </OptionsHeader>
+  <ServerUrlForm
+    className="options-menu__section"
+    onChange={[Function]}
+    onSettingsClick={[Function]}
+    onSubmit={[Function]}
+    onToggleActivationClick={[Function]}
+    requestPermissions={[Function]}
+    status="connected"
+    urlHasPermissions={true}
+    value="https://sourcegraph.com"
+    version="0.0.0"
+  >
+    <form
+      className="server-url-form options-menu__section"
+      onSubmit={[Function]}
+    >
+      <label
+        htmlFor="sourcegraph-url"
+      >
+        Sourcegraph URL
+      </label>
+      <div
+        className="input-group"
+      >
+        <div
+          className="input-group-prepend"
+        >
+          <span
+            className="input-group-text"
+          >
+            <span>
+              <span
+                className="server-url-form__status-indicator bg-success"
+              />
+               
+              <span
+                className="e2e-connection-status"
+              >
+                Connected
+              </span>
+            </span>
+          </span>
+        </div>
+        <input
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="form-control e2e-sourcegraph-url"
+          id="sourcegraph-url"
+          onChange={[Function]}
+          spellCheck={false}
+          type="text"
+          value="https://sourcegraph.com"
+        />
+      </div>
+    </form>
+  </ServerUrlForm>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
+</div>
+`;
+
+exports[`OptionsMenu renders the current tab permissions alert 1`] = `
+<div
+  className="options-menu options-menu--full"
+>
+  <OptionsHeader
+    className="options-menu__section"
+    isActivated={true}
+    onSettingsClick={[Function]}
+    onToggleActivationClick={[Function]}
+    urlHasPermissions={true}
+    version="0.0.0"
+  >
+    <div
+      className="options-header options-menu__section"
+    >
+      <div>
+        <img
+          className="options-header__logo"
+          src="/img/sourcegraph-logo.svg"
+        />
+        <div
+          className="options-header__version"
+        >
+          v
+          0.0.0
+        </div>
+      </div>
+      <div
+        className="options-header__right"
+      >
+        <button
+          className="options-header__settings btn btn-icon"
+          onClick={[Function]}
+          type="button"
+        >
+          <SettingsOutlineIcon
+            className="icon-inline"
+          />
+        </button>
+        <Toggle
+          onToggle={[Function]}
+          title="Toggle to disable extension"
+          value={true}
+        >
+          <button
+            className="toggle  "
+            onClick={[Function]}
+            title="Toggle to disable extension"
+            type="button"
+            value={1}
+          >
+            <span
+              className="toggle__bar toggle__bar--active "
+            />
+            <span
+              className="toggle__knob toggle__knob--active "
+            />
+          </button>
+        </Toggle>
+      </div>
+    </div>
+  </OptionsHeader>
+  <ServerUrlForm
+    className="options-menu__section"
+    onChange={[Function]}
+    onSettingsClick={[Function]}
+    onSubmit={[Function]}
+    onToggleActivationClick={[Function]}
+    requestPermissions={[Function]}
+    status="connected"
+    urlHasPermissions={true}
+    value="https://sourcegraph.com"
+    version="0.0.0"
+  >
+    <form
+      className="server-url-form options-menu__section"
+      onSubmit={[Function]}
+    >
+      <label
+        htmlFor="sourcegraph-url"
+      >
+        Sourcegraph URL
+      </label>
+      <div
+        className="input-group"
+      >
+        <div
+          className="input-group-prepend"
+        >
+          <span
+            className="input-group-text"
+          >
+            <span>
+              <span
+                className="server-url-form__status-indicator bg-success"
+              />
+               
+              <span
+                className="e2e-connection-status"
+              >
+                Connected
+              </span>
+            </span>
+          </span>
+        </div>
+        <input
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="form-control e2e-sourcegraph-url"
+          id="sourcegraph-url"
+          onChange={[Function]}
+          spellCheck={false}
+          type="text"
+          value="https://sourcegraph.com"
+        />
+      </div>
+    </form>
+  </ServerUrlForm>
+  <div
+    className="options-menu__section"
+  >
+    <div
+      className="alert alert-info"
     >
       <p>
-        Learn more about privacy concerns, troubleshooting and extension features
-         
-        <a
-          href="https://docs.sourcegraph.com/integration/browser_extension"
-          target="blank"
-        >
-          here
-        </a>
-        .
+        The Sourcegraph browser extension adds hover tooltips to code views on code hosts such as GitHub, GitLab, Bitbucket Server and Phabricator.
       </p>
       <p>
-        Search open source software at
-         
-        <a
-          href="https://sourcegraph.com/search"
-          target="blank"
-        >
-          sourcegraph.com/search
-        </a>
+        You must grant permissions to enable Sourcegraph on 
+        <strong>
+          gitlab.com
+        </strong>
         .
       </p>
+      <button
+        className="btn btn-light request-permissions__test"
+        onClick={[Function]}
+        type="button"
+      >
+        Grant permissions
+      </button>
     </div>
   </div>
-</OptionsMenu>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
+</div>
 `;
 
 exports[`OptionsMenu renders the feature flags 1`] = `
-<OptionsMenu
-  featureFlags={
-    Array [
-      Object {
-        "key": "foo",
-        "value": true,
-      },
-      Object {
-        "key": "bar",
-        "value": false,
-      },
-    ]
-  }
-  isActivated={true}
-  isSettingsOpen={true}
-  onSettingsClick={[Function]}
-  onToggleActivationClick={[Function]}
-  onURLChange={[Function]}
-  onURLSubmit={[Function]}
-  requestPermissions={[Function]}
-  sourcegraphURL="https://sourcegraph.com"
-  status="connected"
-  toggleFeatureFlag={[Function]}
-  urlHasPermissions={true}
-  version="0.0.0"
+<div
+  className="options-menu options-menu--full"
 >
-  <div
-    className="options-menu options-menu--full"
+  <OptionsHeader
+    className="options-menu__section"
+    isActivated={true}
+    onSettingsClick={[Function]}
+    onToggleActivationClick={[Function]}
+    urlHasPermissions={true}
+    version="0.0.0"
   >
-    <OptionsHeader
-      className="options-menu__section"
-      isActivated={true}
-      onSettingsClick={[Function]}
-      onToggleActivationClick={[Function]}
-      urlHasPermissions={true}
-      version="0.0.0"
+    <div
+      className="options-header options-menu__section"
     >
-      <div
-        className="options-header options-menu__section"
-      >
-        <div>
-          <img
-            className="options-header__logo"
-            src="/img/sourcegraph-logo.svg"
-          />
-          <div
-            className="options-header__version"
-          >
-            v
-            0.0.0
-          </div>
-        </div>
+      <div>
+        <img
+          className="options-header__logo"
+          src="/img/sourcegraph-logo.svg"
+        />
         <div
-          className="options-header__right"
+          className="options-header__version"
         >
-          <button
-            className="options-header__settings btn btn-icon"
-            onClick={[Function]}
-            type="button"
-          >
-            <SettingsOutlineIcon
-              className="icon-inline"
-            />
-          </button>
-          <Toggle
-            onToggle={[Function]}
-            title="Toggle to disable extension"
-            value={true}
-          >
-            <button
-              className="toggle  "
-              onClick={[Function]}
-              title="Toggle to disable extension"
-              type="button"
-              value={1}
-            >
-              <span
-                className="toggle__bar toggle__bar--active "
-              />
-              <span
-                className="toggle__knob toggle__knob--active "
-              />
-            </button>
-          </Toggle>
+          v
+          0.0.0
         </div>
       </div>
-    </OptionsHeader>
-    <ServerUrlForm
-      className="options-menu__section"
-      onChange={[Function]}
-      onSettingsClick={[Function]}
-      onSubmit={[Function]}
-      onToggleActivationClick={[Function]}
-      requestPermissions={[Function]}
-      status="connected"
-      urlHasPermissions={true}
-      value="https://sourcegraph.com"
-      version="0.0.0"
-    >
-      <form
-        className="server-url-form options-menu__section"
-        onSubmit={[Function]}
+      <div
+        className="options-header__right"
       >
-        <label
-          htmlFor="sourcegraph-url"
+        <button
+          className="options-header__settings btn btn-icon"
+          onClick={[Function]}
+          type="button"
         >
-          Sourcegraph URL
-        </label>
-        <div
-          className="input-group"
+          <SettingsOutlineIcon
+            className="icon-inline"
+          />
+        </button>
+        <Toggle
+          onToggle={[Function]}
+          title="Toggle to disable extension"
+          value={true}
         >
-          <div
-            className="input-group-prepend"
+          <button
+            className="toggle  "
+            onClick={[Function]}
+            title="Toggle to disable extension"
+            type="button"
+            value={1}
           >
             <span
-              className="input-group-text"
-            >
-              <span>
-                <span
-                  className="server-url-form__status-indicator bg-success"
-                />
-                 
-                <span
-                  className="e2e-connection-status"
-                >
-                  Connected
-                </span>
+              className="toggle__bar toggle__bar--active "
+            />
+            <span
+              className="toggle__knob toggle__knob--active "
+            />
+          </button>
+        </Toggle>
+      </div>
+    </div>
+  </OptionsHeader>
+  <ServerUrlForm
+    className="options-menu__section"
+    onChange={[Function]}
+    onSettingsClick={[Function]}
+    onSubmit={[Function]}
+    onToggleActivationClick={[Function]}
+    requestPermissions={[Function]}
+    status="connected"
+    urlHasPermissions={true}
+    value="https://sourcegraph.com"
+    version="0.0.0"
+  >
+    <form
+      className="server-url-form options-menu__section"
+      onSubmit={[Function]}
+    >
+      <label
+        htmlFor="sourcegraph-url"
+      >
+        Sourcegraph URL
+      </label>
+      <div
+        className="input-group"
+      >
+        <div
+          className="input-group-prepend"
+        >
+          <span
+            className="input-group-text"
+          >
+            <span>
+              <span
+                className="server-url-form__status-indicator bg-success"
+              />
+               
+              <span
+                className="e2e-connection-status"
+              >
+                Connected
               </span>
             </span>
-          </div>
+          </span>
+        </div>
+        <input
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="form-control e2e-sourcegraph-url"
+          id="sourcegraph-url"
+          onChange={[Function]}
+          spellCheck={false}
+          type="text"
+          value="https://sourcegraph.com"
+        />
+      </div>
+    </form>
+  </ServerUrlForm>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
+  <div
+    className="options-menu__section"
+  >
+    <label>
+      Configuration
+    </label>
+    <div>
+      <div
+        className="form-check"
+        key="foo"
+      >
+        <label
+          className="form-check-label"
+        >
           <input
-            autoCapitalize="off"
-            autoCorrect="off"
-            className="form-control e2e-sourcegraph-url"
-            id="sourcegraph-url"
+            checked={true}
+            className="form-check-input"
+            id="foo"
             onChange={[Function]}
-            spellCheck={false}
-            type="text"
-            value="https://sourcegraph.com"
+            type="checkbox"
           />
-        </div>
-      </form>
-    </ServerUrlForm>
-    <div
-      className="options-menu__section"
-    >
-      <p>
-        Learn more about privacy concerns, troubleshooting and extension features
-         
-        <a
-          href="https://docs.sourcegraph.com/integration/browser_extension"
-          target="blank"
+           
+          Foo
+        </label>
+      </div>
+      <div
+        className="form-check"
+        key="bar"
+      >
+        <label
+          className="form-check-label"
         >
-          here
-        </a>
-        .
-      </p>
-      <p>
-        Search open source software at
-         
-        <a
-          href="https://sourcegraph.com/search"
-          target="blank"
-        >
-          sourcegraph.com/search
-        </a>
-        .
-      </p>
-    </div>
-    <div
-      className="options-menu__section"
-    >
-      <label>
-        Configuration
-      </label>
-      <div>
-        <div
-          className="form-check"
-          key="foo"
-        >
-          <label
-            className="form-check-label"
-          >
-            <input
-              checked={true}
-              className="form-check-input"
-              id="foo"
-              onChange={[Function]}
-              type="checkbox"
-            />
-             
-            Foo
-          </label>
-        </div>
-        <div
-          className="form-check"
-          key="bar"
-        >
-          <label
-            className="form-check-label"
-          >
-            <input
-              checked={false}
-              className="form-check-input"
-              id="bar"
-              onChange={[Function]}
-              type="checkbox"
-            />
-             
-            Bar
-          </label>
-        </div>
+          <input
+            checked={false}
+            className="form-check-input"
+            id="bar"
+            onChange={[Function]}
+            type="checkbox"
+          />
+           
+          Bar
+        </label>
       </div>
     </div>
   </div>
-</OptionsMenu>
+</div>
 `;

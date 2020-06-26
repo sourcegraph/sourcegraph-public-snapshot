@@ -25,7 +25,7 @@ describe('ExtensionToggle', () => {
                     settingsCascade={{ final: { extensions: {} }, subjects: [SUBJECT] }}
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -37,7 +37,7 @@ describe('ExtensionToggle', () => {
                     settingsCascade={{ final: { extensions: { 'x/y': true } }, subjects: [SUBJECT] }}
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -49,7 +49,7 @@ describe('ExtensionToggle', () => {
                     settingsCascade={{ final: { extensions: { 'x/y': false } }, subjects: [SUBJECT] }}
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

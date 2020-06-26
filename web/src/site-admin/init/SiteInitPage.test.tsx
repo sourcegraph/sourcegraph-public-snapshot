@@ -38,7 +38,7 @@ describe('SiteInitPage', () => {
                     authenticatedUser={{ username: 'alice' }}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('normal', () =>
@@ -50,6 +50,6 @@ describe('SiteInitPage', () => {
                     authenticatedUser={null}
                     history={createMemoryHistory()}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 })

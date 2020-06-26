@@ -45,7 +45,7 @@ describe('UserSubscriptionsEditProductSubscriptionPage', () => {
                         }
                     />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

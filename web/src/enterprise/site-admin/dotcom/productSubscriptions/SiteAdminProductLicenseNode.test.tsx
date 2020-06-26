@@ -34,7 +34,7 @@ describe('SiteAdminProductLicenseNode', () => {
                         showSubscription={true}
                     />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -65,7 +65,7 @@ describe('SiteAdminProductLicenseNode', () => {
                         showSubscription={true}
                     />
                 </MemoryRouter>
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 })

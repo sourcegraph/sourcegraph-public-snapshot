@@ -17,10 +17,10 @@ describe('UserProductSubscriptionStatus', () => {
                 licenseKey="lk"
             />
         )
-        expect(component).toMatchSnapshot('license key hidden')
+        expect(component.children()).toMatchSnapshot('license key hidden')
 
         // Click "Reveal license key" button.
         component.find('button').simulate('click')
-        expect(component).toMatchSnapshot('license key revealed')
+        expect(component.children()).toMatchSnapshot('license key revealed')
     })
 })

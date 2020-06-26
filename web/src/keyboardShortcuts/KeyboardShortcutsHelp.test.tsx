@@ -21,6 +21,6 @@ describe('KeyboardShortcutsHelp', () => {
                 forceIsOpen={true}
             />
         )
-        expect(output).toMatchSnapshot()
+        expect(output.children()).toMatchSnapshot()
     })
 })

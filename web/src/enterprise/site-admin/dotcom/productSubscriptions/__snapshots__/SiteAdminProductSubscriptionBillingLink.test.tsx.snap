@@ -1,68 +1,48 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SiteAdminProductSubscriptionBillingLink linked billing 1`] = `
-<SiteAdminProductSubscriptionBillingLink
-  onDidUpdate={[Function]}
-  productSubscription={
-    Object {
-      "id": "u",
-      "urlForSiteAdminBilling": "https://example.com",
-    }
-  }
+<div
+  className="site-admin-product-subscription-billing-link"
 >
   <div
-    className="site-admin-product-subscription-billing-link"
+    className="d-flex align-items-center"
   >
-    <div
-      className="d-flex align-items-center"
+    <a
+      className="mr-2 d-flex align-items-center"
+      href="https://example.com"
     >
-      <a
-        className="mr-2 d-flex align-items-center"
-        href="https://example.com"
-      >
-        View billing subscription 
-        <ExternalLinkIcon
-          className="icon-inline ml-1"
-        />
-      </a>
-      <button
-        className="btn btn-secondary btn-sm"
-        disabled={false}
-        onClick={[Function]}
-        type="button"
-      >
-        Unlink
-      </button>
-    </div>
+      View billing subscription 
+      <ExternalLinkIcon
+        className="icon-inline ml-1"
+      />
+    </a>
+    <button
+      className="btn btn-secondary btn-sm"
+      disabled={false}
+      onClick={[Function]}
+      type="button"
+    >
+      Unlink
+    </button>
   </div>
-</SiteAdminProductSubscriptionBillingLink>
+</div>
 `;
 
 exports[`SiteAdminProductSubscriptionBillingLink no linked billing 1`] = `
-<SiteAdminProductSubscriptionBillingLink
-  onDidUpdate={[Function]}
-  productSubscription={
-    Object {
-      "id": "u",
-      "urlForSiteAdminBilling": null,
-    }
-  }
+<div
+  className="site-admin-product-subscription-billing-link"
 >
   <div
-    className="site-admin-product-subscription-billing-link"
+    className="d-flex align-items-center"
   >
-    <div
-      className="d-flex align-items-center"
+    <button
+      className="btn btn-secondary btn-sm"
+      disabled={false}
+      onClick={[Function]}
+      type="button"
     >
-      <button
-        className="btn btn-secondary btn-sm"
-        disabled={false}
-        onClick={[Function]}
-        type="button"
-      >
-        Link billing subscription
-      </button>
-    </div>
+      Link billing subscription
+    </button>
   </div>
-</SiteAdminProductSubscriptionBillingLink>
+</div>
 `;

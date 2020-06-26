@@ -47,7 +47,7 @@ describe('CampaignUpdateDiff', () => {
                         }) as any
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     test('renders', () => {
@@ -84,7 +84,7 @@ describe('CampaignUpdateDiff', () => {
                         }) as any
                     }
                 />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
     describe('calculateChangesetDiff', () => {

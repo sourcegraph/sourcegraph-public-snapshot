@@ -4,10 +4,10 @@ import { mount } from 'enzyme'
 
 describe('LinkOrSpan', () => {
     test('render a link when "to" is set', () => {
-        expect(mount(<LinkOrSpan to="http://example.com">foo</LinkOrSpan>)).toMatchSnapshot()
+        expect(mount(<LinkOrSpan to="http://example.com">foo</LinkOrSpan>).children()).toMatchSnapshot()
     })
 
     test('render a span when "to" is undefined', () => {
-        expect(mount(<LinkOrSpan to={undefined}>foo</LinkOrSpan>)).toMatchSnapshot()
+        expect(mount(<LinkOrSpan to={undefined}>foo</LinkOrSpan>).children()).toMatchSnapshot()
     })
 })

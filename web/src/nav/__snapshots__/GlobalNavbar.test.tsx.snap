@@ -1,191 +1,56 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`GlobalNavbar hideGlobalSearchInput 1`] = `
-<GlobalNavbar
-  authenticatedUser={null}
-  availableVersionContexts={Array []}
-  caseSensitive={false}
-  copyQueryButton={false}
-  extensionsController={Object {}}
-  filtersInQuery={Object {}}
-  hideGlobalSearchInput={true}
-  hideNavLinks={true}
-  history="[History]"
-  interactiveSearchMode={false}
-  isLightTheme={true}
-  isSearchRelatedPage={true}
-  isSourcegraphDotCom={false}
-  keyboardShortcuts={Array []}
-  location="[Location path=/]"
-  lowProfile={false}
-  navbarSearchQueryState={
-    Object {
-      "cursorPosition": 0,
-      "query": "q",
-    }
-  }
-  onFiltersInQueryChange={[Function]}
-  onNavbarQueryChange={[Function]}
-  onThemePreferenceChange={[Function]}
-  patternType="literal"
-  platformContext={Object {}}
-  setCaseSensitivity={[Function]}
-  setPatternType={[Function]}
-  setVersionContext={[Function]}
-  settingsCascade={
-    Object {
-      "final": null,
-      "subjects": null,
-    }
-  }
-  showCampaigns={false}
-  smartSearchField={false}
-  splitSearchModes={false}
-  telemetryService={Object {}}
-  themePreference="light"
-  toggleSearchMode={[Function]}
+<div
+  className="global-navbar global-navbar--bg border-bottom py-1"
 >
   <div
-    className="global-navbar global-navbar--bg border-bottom py-1"
+    className="global-navbar__logo-link global-navbar__logo-animated"
   >
-    <div
-      className="global-navbar__logo-link global-navbar__logo-animated"
+    <img
+      className="global-navbar__logo"
+      src="/.assets/img/sourcegraph-mark.svg"
+    />
+  </div>
+  <div
+    className="nav-item flex-1"
+  >
+    <Component
+      className="nav-link"
+      to="/search"
     >
-      <img
-        className="global-navbar__logo"
-        src="/.assets/img/sourcegraph-mark.svg"
-      />
-    </div>
-    <div
-      className="nav-item flex-1"
-    >
-      <Component
+      <a
         className="nav-link"
         to="/search"
       >
-        <a
-          className="nav-link"
-          to="/search"
-        >
-          Search
-        </a>
-      </Component>
-    </div>
+        Search
+      </a>
+    </Component>
   </div>
-</GlobalNavbar>
+</div>
 `;
 
 exports[`GlobalNavbar lowProfile 1`] = `
-<GlobalNavbar
-  authenticatedUser={null}
-  availableVersionContexts={Array []}
-  caseSensitive={false}
-  copyQueryButton={false}
-  extensionsController={Object {}}
-  filtersInQuery={Object {}}
-  hideGlobalSearchInput={false}
-  hideNavLinks={true}
-  history="[History]"
-  interactiveSearchMode={false}
-  isLightTheme={true}
-  isSearchRelatedPage={true}
-  isSourcegraphDotCom={false}
-  keyboardShortcuts={Array []}
-  location="[Location path=/]"
-  lowProfile={true}
-  navbarSearchQueryState={
-    Object {
-      "cursorPosition": 0,
-      "query": "q",
-    }
-  }
-  onFiltersInQueryChange={[Function]}
-  onNavbarQueryChange={[Function]}
-  onThemePreferenceChange={[Function]}
-  patternType="literal"
-  platformContext={Object {}}
-  setCaseSensitivity={[Function]}
-  setPatternType={[Function]}
-  setVersionContext={[Function]}
-  settingsCascade={
-    Object {
-      "final": null,
-      "subjects": null,
-    }
-  }
-  showCampaigns={false}
-  smartSearchField={false}
-  splitSearchModes={false}
-  telemetryService={Object {}}
-  themePreference="light"
-  toggleSearchMode={[Function]}
+<div
+  className="global-navbar  py-1"
 >
   <div
-    className="global-navbar  py-1"
-  >
-    <div
-      className="flex-1"
-    />
-  </div>
-</GlobalNavbar>
+    className="flex-1"
+  />
+</div>
 `;
 
 exports[`GlobalNavbar normal 1`] = `
-<GlobalNavbar
-  authenticatedUser={null}
-  availableVersionContexts={Array []}
-  caseSensitive={false}
-  copyQueryButton={false}
-  extensionsController={Object {}}
-  filtersInQuery={Object {}}
-  hideGlobalSearchInput={false}
-  hideNavLinks={true}
-  history="[History]"
-  interactiveSearchMode={false}
-  isLightTheme={true}
-  isSearchRelatedPage={true}
-  isSourcegraphDotCom={false}
-  keyboardShortcuts={Array []}
-  location="[Location path=/]"
-  lowProfile={false}
-  navbarSearchQueryState={
-    Object {
-      "cursorPosition": 0,
-      "query": "q",
-    }
-  }
-  onFiltersInQueryChange={[Function]}
-  onNavbarQueryChange={[Function]}
-  onThemePreferenceChange={[Function]}
-  patternType="literal"
-  platformContext={Object {}}
-  setCaseSensitivity={[Function]}
-  setPatternType={[Function]}
-  setVersionContext={[Function]}
-  settingsCascade={
-    Object {
-      "final": null,
-      "subjects": null,
-    }
-  }
-  showCampaigns={false}
-  smartSearchField={false}
-  splitSearchModes={false}
-  telemetryService={Object {}}
-  themePreference="light"
-  toggleSearchMode={[Function]}
+<div
+  className="global-navbar global-navbar--bg border-bottom py-1"
 >
   <div
-    className="global-navbar global-navbar--bg border-bottom py-1"
+    className="global-navbar__logo-link global-navbar__logo-animated"
   >
-    <div
-      className="global-navbar__logo-link global-navbar__logo-animated"
-    >
-      <img
-        className="global-navbar__logo"
-        src="/.assets/img/sourcegraph-mark.svg"
-      />
-    </div>
+    <img
+      className="global-navbar__logo"
+      src="/.assets/img/sourcegraph-mark.svg"
+    />
   </div>
-</GlobalNavbar>
+</div>
 `;

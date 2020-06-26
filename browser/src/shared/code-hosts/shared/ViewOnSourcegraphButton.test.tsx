@@ -17,7 +17,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={true}
                         minimalUI={false}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
 
@@ -32,7 +32,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={true}
                         minimalUI={true}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
 
@@ -51,7 +51,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={true}
                         minimalUI={false}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
     })
@@ -73,7 +73,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
 
@@ -93,7 +93,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
     })
@@ -118,7 +118,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                                     repoExistsOrError={new HTTPStatusError(new Response('', { status: 401 }))}
                                     minimalUI={minimalUI}
                                 />
-                            )
+                            ).children()
                         ).toMatchSnapshot()
                     })
                 })
@@ -142,7 +142,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                             repoExistsOrError={new Error('Something unknown happened!')}
                             minimalUI={false}
                         />
-                    )
+                    ).children()
                 ).toMatchSnapshot()
             })
         })

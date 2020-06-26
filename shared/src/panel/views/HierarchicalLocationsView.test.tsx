@@ -59,7 +59,7 @@ describe('<HierarchicalLocationsView />', () => {
 
     test('shows a spinner before any locations emissions', () => {
         const { props } = getProps()
-        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />).children()).toMatchSnapshot()
     })
 
     test('shows a spinner if locations emits empty and is not complete', () => {
@@ -67,7 +67,7 @@ describe('<HierarchicalLocationsView />', () => {
         expect(
             mount(
                 <HierarchicalLocationsView {...props} locations={concat(of({ isLoading: true, result: [] }), NEVER)} />
-            )
+            ).children()
         ).toMatchSnapshot()
     })
 
@@ -117,7 +117,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations,
         }
-        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />).children()).toMatchSnapshot()
     })
 
     test('displays partial locations before complete', () => {
@@ -125,7 +125,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations: concat(of({ isLoading: false, result: [SAMPLE_LOCATION] }), NEVER),
         }
-        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />).children()).toMatchSnapshot()
     })
 
     test('displays multiple locations grouped by file', () => {
@@ -206,6 +206,6 @@ describe('<HierarchicalLocationsView />', () => {
             },
             locations: of({ isLoading: false, result: locations }),
         }
-        expect(mount(<HierarchicalLocationsView {...props} />)).toMatchSnapshot()
+        expect(mount(<HierarchicalLocationsView {...props} />).children()).toMatchSnapshot()
     })
 })

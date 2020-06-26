@@ -1,293 +1,227 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<SiteAdminExternalServiceForm /> create GitHub 1`] = `
-<SiteAdminExternalServiceForm
-  editorActions={Array []}
-  history="[History]"
-  input={
-    Object {
-      "config": "{}",
-      "displayName": "GitHub",
-      "kind": "GITHUB",
-    }
-  }
-  isLightTheme={true}
-  jsonSchema={
-    Object {
-      "$id": "json-schema-id",
-    }
-  }
-  loading={false}
-  mode="create"
-  onChange={[Function]}
+<Form
+  className="external-service-form"
   onSubmit={[Function]}
 >
-  <Form
-    className="external-service-form"
+  <form
+    className="external-service-form "
+    onInvalid={[Function]}
     onSubmit={[Function]}
   >
-    <form
-      className="external-service-form "
-      onInvalid={[Function]}
-      onSubmit={[Function]}
+    <div
+      className="form-group"
     >
-      <div
-        className="form-group"
+      <label
+        className="font-weight-bold"
+        htmlFor="e2e-external-service-form-display-name"
       >
-        <label
-          className="font-weight-bold"
-          htmlFor="e2e-external-service-form-display-name"
-        >
-          Display name:
-        </label>
-        <input
-          autoComplete="off"
-          autoCorrect="off"
-          autoFocus={true}
-          className="form-control"
-          disabled={false}
-          id="e2e-external-service-form-display-name"
-          onChange={[Function]}
-          required={true}
-          spellCheck={false}
-          type="text"
-          value="GitHub"
-        />
-      </div>
-      <div
-        className="form-group"
-      >
-        <DynamicallyImportedMonacoSettingsEditor
-          actions={Array []}
-          canEdit={false}
-          className="e2e-external-service-editor"
-          height={350}
-          history="[History]"
-          isLightTheme={true}
-          jsonSchema={
-            Object {
-              "$id": "json-schema-id",
-            }
-          }
-          loading={false}
-          onChange={[Function]}
-          value="{}"
-        >
-          DynamicallyImportedMonacoSettingsEditor
-        </DynamicallyImportedMonacoSettingsEditor>
-        <p
-          className="form-text text-muted"
-        >
-          <small>
-            Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-          </small>
-        </p>
-      </div>
-      <button
-        className="btn btn-primary mb-3 e2e-add-external-service-button"
+        Display name:
+      </label>
+      <input
+        autoComplete="off"
+        autoCorrect="off"
+        autoFocus={true}
+        className="form-control"
         disabled={false}
-        type="submit"
+        id="e2e-external-service-form-display-name"
+        onChange={[Function]}
+        required={true}
+        spellCheck={false}
+        type="text"
+        value="GitHub"
+      />
+    </div>
+    <div
+      className="form-group"
+    >
+      <DynamicallyImportedMonacoSettingsEditor
+        actions={Array []}
+        canEdit={false}
+        className="e2e-external-service-editor"
+        height={350}
+        history="[History]"
+        isLightTheme={true}
+        jsonSchema={
+          Object {
+            "$id": "json-schema-id",
+          }
+        }
+        loading={false}
+        onChange={[Function]}
+        value="{}"
       >
-        Add repositories
-      </button>
-    </form>
-  </Form>
-</SiteAdminExternalServiceForm>
+        DynamicallyImportedMonacoSettingsEditor
+      </DynamicallyImportedMonacoSettingsEditor>
+      <p
+        className="form-text text-muted"
+      >
+        <small>
+          Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        </small>
+      </p>
+    </div>
+    <button
+      className="btn btn-primary mb-3 e2e-add-external-service-button"
+      disabled={false}
+      type="submit"
+    >
+      Add repositories
+    </button>
+  </form>
+</Form>
 `;
 
 exports[`<SiteAdminExternalServiceForm /> edit GitHub 1`] = `
-<SiteAdminExternalServiceForm
-  editorActions={Array []}
-  history="[History]"
-  input={
-    Object {
-      "config": "{}",
-      "displayName": "GitHub",
-      "kind": "GITHUB",
-    }
-  }
-  isLightTheme={true}
-  jsonSchema={
-    Object {
-      "$id": "json-schema-id",
-    }
-  }
-  loading={false}
-  mode="create"
-  onChange={[Function]}
+<Form
+  className="external-service-form"
   onSubmit={[Function]}
 >
-  <Form
-    className="external-service-form"
+  <form
+    className="external-service-form "
+    onInvalid={[Function]}
     onSubmit={[Function]}
   >
-    <form
-      className="external-service-form "
-      onInvalid={[Function]}
-      onSubmit={[Function]}
+    <div
+      className="form-group"
     >
-      <div
-        className="form-group"
+      <label
+        className="font-weight-bold"
+        htmlFor="e2e-external-service-form-display-name"
       >
-        <label
-          className="font-weight-bold"
-          htmlFor="e2e-external-service-form-display-name"
-        >
-          Display name:
-        </label>
-        <input
-          autoComplete="off"
-          autoCorrect="off"
-          autoFocus={true}
-          className="form-control"
-          disabled={false}
-          id="e2e-external-service-form-display-name"
-          onChange={[Function]}
-          required={true}
-          spellCheck={false}
-          type="text"
-          value="GitHub"
-        />
-      </div>
-      <div
-        className="form-group"
-      >
-        <DynamicallyImportedMonacoSettingsEditor
-          actions={Array []}
-          canEdit={false}
-          className="e2e-external-service-editor"
-          height={350}
-          history="[History]"
-          isLightTheme={true}
-          jsonSchema={
-            Object {
-              "$id": "json-schema-id",
-            }
-          }
-          loading={false}
-          onChange={[Function]}
-          value="{}"
-        >
-          DynamicallyImportedMonacoSettingsEditor
-        </DynamicallyImportedMonacoSettingsEditor>
-        <p
-          className="form-text text-muted"
-        >
-          <small>
-            Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-          </small>
-        </p>
-      </div>
-      <button
-        className="btn btn-primary mb-3 e2e-add-external-service-button"
+        Display name:
+      </label>
+      <input
+        autoComplete="off"
+        autoCorrect="off"
+        autoFocus={true}
+        className="form-control"
         disabled={false}
-        type="submit"
+        id="e2e-external-service-form-display-name"
+        onChange={[Function]}
+        required={true}
+        spellCheck={false}
+        type="text"
+        value="GitHub"
+      />
+    </div>
+    <div
+      className="form-group"
+    >
+      <DynamicallyImportedMonacoSettingsEditor
+        actions={Array []}
+        canEdit={false}
+        className="e2e-external-service-editor"
+        height={350}
+        history="[History]"
+        isLightTheme={true}
+        jsonSchema={
+          Object {
+            "$id": "json-schema-id",
+          }
+        }
+        loading={false}
+        onChange={[Function]}
+        value="{}"
       >
-        Add repositories
-      </button>
-    </form>
-  </Form>
-</SiteAdminExternalServiceForm>
+        DynamicallyImportedMonacoSettingsEditor
+      </DynamicallyImportedMonacoSettingsEditor>
+      <p
+        className="form-text text-muted"
+      >
+        <small>
+          Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        </small>
+      </p>
+    </div>
+    <button
+      className="btn btn-primary mb-3 e2e-add-external-service-button"
+      disabled={false}
+      type="submit"
+    >
+      Add repositories
+    </button>
+  </form>
+</Form>
 `;
 
 exports[`<SiteAdminExternalServiceForm /> edit GitHub, loading 1`] = `
-<SiteAdminExternalServiceForm
-  editorActions={Array []}
-  history="[History]"
-  input={
-    Object {
-      "config": "{}",
-      "displayName": "GitHub",
-      "kind": "GITHUB",
-    }
-  }
-  isLightTheme={true}
-  jsonSchema={
-    Object {
-      "$id": "json-schema-id",
-    }
-  }
-  loading={true}
-  mode="create"
-  onChange={[Function]}
+<Form
+  className="external-service-form"
   onSubmit={[Function]}
 >
-  <Form
-    className="external-service-form"
+  <form
+    className="external-service-form "
+    onInvalid={[Function]}
     onSubmit={[Function]}
   >
-    <form
-      className="external-service-form "
-      onInvalid={[Function]}
-      onSubmit={[Function]}
+    <div
+      className="form-group"
     >
-      <div
-        className="form-group"
+      <label
+        className="font-weight-bold"
+        htmlFor="e2e-external-service-form-display-name"
       >
-        <label
-          className="font-weight-bold"
-          htmlFor="e2e-external-service-form-display-name"
-        >
-          Display name:
-        </label>
-        <input
-          autoComplete="off"
-          autoCorrect="off"
-          autoFocus={true}
-          className="form-control"
-          disabled={true}
-          id="e2e-external-service-form-display-name"
-          onChange={[Function]}
-          required={true}
-          spellCheck={false}
-          type="text"
-          value="GitHub"
-        />
-      </div>
-      <div
-        className="form-group"
-      >
-        <DynamicallyImportedMonacoSettingsEditor
-          actions={Array []}
-          canEdit={false}
-          className="e2e-external-service-editor"
-          height={350}
-          history="[History]"
-          isLightTheme={true}
-          jsonSchema={
-            Object {
-              "$id": "json-schema-id",
-            }
-          }
-          loading={true}
-          onChange={[Function]}
-          value="{}"
-        >
-          DynamicallyImportedMonacoSettingsEditor
-        </DynamicallyImportedMonacoSettingsEditor>
-        <p
-          className="form-text text-muted"
-        >
-          <small>
-            Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-          </small>
-        </p>
-      </div>
-      <button
-        className="btn btn-primary mb-3 e2e-add-external-service-button"
+        Display name:
+      </label>
+      <input
+        autoComplete="off"
+        autoCorrect="off"
+        autoFocus={true}
+        className="form-control"
         disabled={true}
-        type="submit"
+        id="e2e-external-service-form-display-name"
+        onChange={[Function]}
+        required={true}
+        spellCheck={false}
+        type="text"
+        value="GitHub"
+      />
+    </div>
+    <div
+      className="form-group"
+    >
+      <DynamicallyImportedMonacoSettingsEditor
+        actions={Array []}
+        canEdit={false}
+        className="e2e-external-service-editor"
+        height={350}
+        history="[History]"
+        isLightTheme={true}
+        jsonSchema={
+          Object {
+            "$id": "json-schema-id",
+          }
+        }
+        loading={true}
+        onChange={[Function]}
+        value="{}"
       >
-        <LoadingSpinner
-          className="icon-inline"
-        >
-          <div
-            className="loading-spinner icon-inline"
-          />
-        </LoadingSpinner>
-        Add repositories
-      </button>
-    </form>
-  </Form>
-</SiteAdminExternalServiceForm>
+        DynamicallyImportedMonacoSettingsEditor
+      </DynamicallyImportedMonacoSettingsEditor>
+      <p
+        className="form-text text-muted"
+      >
+        <small>
+          Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        </small>
+      </p>
+    </div>
+    <button
+      className="btn btn-primary mb-3 e2e-add-external-service-button"
+      disabled={true}
+      type="submit"
+    >
+      <LoadingSpinner
+        className="icon-inline"
+      >
+        <div
+          className="loading-spinner icon-inline"
+        />
+      </LoadingSpinner>
+      Add repositories
+    </button>
+  </form>
+</Form>
 `;

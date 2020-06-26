@@ -4,6 +4,6 @@ import { mount } from 'enzyme'
 
 describe('CreateCampaign', () => {
     test('renders', () => {
-        expect(mount(<CreateCampaign />)).toMatchSnapshot()
+        expect(mount(<CreateCampaign />).children()).toMatchSnapshot()
     })
 })

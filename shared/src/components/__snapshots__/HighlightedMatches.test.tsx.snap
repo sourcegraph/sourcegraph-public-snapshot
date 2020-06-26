@@ -1,23 +1,18 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Markdown render 1`] = `
-<HighlightedMatches
-  pattern="aab"
-  text="abcabcabc"
->
-  <span>
-    <strong
-      key="0"
-    >
-      a
-    </strong>
-    bc
-    <strong
-      key="2"
-    >
-      ab
-    </strong>
-    cabc
-  </span>
-</HighlightedMatches>
+<span>
+  <strong
+    key="0"
+  >
+    a
+  </strong>
+  bc
+  <strong
+    key="2"
+  >
+    ab
+  </strong>
+  cabc
+</span>
 `;

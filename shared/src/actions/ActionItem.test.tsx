@@ -23,7 +23,7 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('actionItem variant', () => {
@@ -37,7 +37,7 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('noop command', () => {
@@ -50,7 +50,7 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('pressed toggle actionItem', () => {
@@ -64,7 +64,7 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('non-pressed actionItem', () => {
@@ -78,7 +78,7 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('title element', () => {
@@ -93,7 +93,7 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('run command', async () => {
@@ -111,13 +111,13 @@ describe('ActionItem', () => {
             />
         )
         component.simulate('click')
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
 
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
         await new Promise<void>(resolve => setTimeout(resolve))
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('run command with showLoadingSpinnerDuringExecution', async () => {
@@ -136,13 +136,13 @@ describe('ActionItem', () => {
         )
 
         component.simulate('click')
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
 
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
         await new Promise<void>(resolve => setTimeout(resolve))
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('run command with error', async () => {
@@ -165,7 +165,7 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         component.simulate('click')
         await new Promise<void>(resolve => setTimeout(resolve))
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     test('run command with error with showInlineError', async () => {
@@ -188,7 +188,7 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         component.simulate('click')
         await new Promise<void>(resolve => setTimeout(resolve))
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     describe('"open" command', () => {
@@ -204,7 +204,7 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component).toMatchSnapshot()
+            expect(component.children()).toMatchSnapshot()
         })
 
         it('renders as link with icon and opens a new tab for a different origin', () => {
@@ -219,7 +219,7 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component).toMatchSnapshot()
+            expect(component.children()).toMatchSnapshot()
         })
 
         it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
@@ -235,7 +235,7 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component).toMatchSnapshot()
+            expect(component.children()).toMatchSnapshot()
         })
     })
 })

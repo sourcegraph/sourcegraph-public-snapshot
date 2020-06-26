@@ -1,394 +1,390 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SiteAdminProductLicenseNode active 1`] = `
-<MemoryRouter>
-  <Router
-    history="[History]"
-  >
-    <SiteAdminProductLicenseNode
-      node={
-        Object {
-          "createdAt": "2020-01-01",
-          "id": "l1",
-          "info": Object {
-            "__typename": "ProductLicenseInfo",
-            "expiresAt": "2021-01-01",
-            "productNameWithBrand": "NB",
-            "tags": Array [
-              "a",
-            ],
-            "userCount": 123,
+<Router
+  history="[History]"
+>
+  <SiteAdminProductLicenseNode
+    node={
+      Object {
+        "createdAt": "2020-01-01",
+        "id": "l1",
+        "info": Object {
+          "__typename": "ProductLicenseInfo",
+          "expiresAt": "2021-01-01",
+          "productNameWithBrand": "NB",
+          "tags": Array [
+            "a",
+          ],
+          "userCount": 123,
+        },
+        "licenseKey": "lk1",
+        "subscription": Object {
+          "activeLicense": Object {
+            "id": "l1",
           },
-          "licenseKey": "lk1",
-          "subscription": Object {
-            "activeLicense": Object {
-              "id": "l1",
-            },
-            "name": "s",
-            "urlForSiteAdmin": "/s",
-          },
-        }
+          "name": "s",
+          "urlForSiteAdmin": "/s",
+        },
       }
-      showSubscription={true}
+    }
+    showSubscription={true}
+  >
+    <li
+      className="list-group-item py-2"
     >
-      <li
-        className="list-group-item py-2"
+      <div
+        className="d-flex align-items-center justify-content-between"
       >
         <div
-          className="d-flex align-items-center justify-content-between"
+          className="mr-3 text-truncate"
         >
-          <div
-            className="mr-3 text-truncate"
-          >
-            <strong>
-              License in
-               
-              <LinkOrSpan
+          <strong>
+            License in
+             
+            <LinkOrSpan
+              className="mr-3"
+              to="/s"
+            >
+              <AnchorLink
                 className="mr-3"
                 to="/s"
               >
-                <AnchorLink
+                <a
                   className="mr-3"
-                  to="/s"
+                  href="/s"
                 >
-                  <a
-                    className="mr-3"
-                    href="/s"
-                  >
-                    s
-                  </a>
-                </AnchorLink>
-              </LinkOrSpan>
-            </strong>
-            <span
-              className="mr-3"
-            >
-              <AccountName />
-            </span>
-          </div>
-          <div>
-            <ProductLicenseInfoDescription
-              className="mr-3"
-              licenseInfo={
-                Object {
-                  "__typename": "ProductLicenseInfo",
-                  "expiresAt": "2021-01-01",
-                  "productNameWithBrand": "NB",
-                  "tags": Array [
-                    "a",
-                  ],
-                  "userCount": 123,
-                }
-              }
-            >
-              <span
-                className="mr-3"
-                title="Tags: a"
-              >
-                NB
-                 (
-                123 users
-                )
-              </span>
-            </ProductLicenseInfoDescription>
-            <ProductLicenseValidity
-              className="d-inline-block mr-3"
-              licenseInfo={
-                Object {
-                  "__typename": "ProductLicenseInfo",
-                  "expiresAt": "2021-01-01",
-                  "productNameWithBrand": "NB",
-                  "tags": Array [
-                    "a",
-                  ],
-                  "userCount": 123,
-                }
-              }
-              primary={false}
-            >
-              <div
-                className="d-inline-block mr-3 "
-                data-tooltip="Jan 1, 2021, 12:00:00 AM"
-              >
-                <strong
-                  className="text-success"
-                >
-                  Valid
-                </strong>
-                 (
-                15 years remaining
-                )
-              </div>
-            </ProductLicenseValidity>
-            <span
-              className="text-muted"
-            >
-              Created 
-              <Timestamp
-                date="2020-01-01"
-              >
-                <span
-                  className="timestamp"
-                  data-tooltip="2020-01-01"
-                >
-                  in almost 14 years
-                </span>
-              </Timestamp>
-            </span>
-          </div>
+                  s
+                </a>
+              </AnchorLink>
+            </LinkOrSpan>
+          </strong>
+          <span
+            className="mr-3"
+          >
+            <AccountName />
+          </span>
         </div>
         <div>
-          Tags: 
-          <ProductLicenseTags
-            tags={
-              Array [
-                "a",
-              ]
+          <ProductLicenseInfoDescription
+            className="mr-3"
+            licenseInfo={
+              Object {
+                "__typename": "ProductLicenseInfo",
+                "expiresAt": "2021-01-01",
+                "productNameWithBrand": "NB",
+                "tags": Array [
+                  "a",
+                ],
+                "userCount": 123,
+              }
             }
           >
-            <div
-              className="mr-1 badge badge-secondary"
-              key="a"
+            <span
+              className="mr-3"
+              title="Tags: a"
             >
-              a
-            </div>
-          </ProductLicenseTags>
-        </div>
-        <CopyableText
-          className="mt-2 d-block"
-          text="lk1"
-        >
-          <div
-            className="copyable-text form-inline mt-2 d-block"
+              NB
+               (
+              123 users
+              )
+            </span>
+          </ProductLicenseInfoDescription>
+          <ProductLicenseValidity
+            className="d-inline-block mr-3"
+            licenseInfo={
+              Object {
+                "__typename": "ProductLicenseInfo",
+                "expiresAt": "2021-01-01",
+                "productNameWithBrand": "NB",
+                "tags": Array [
+                  "a",
+                ],
+                "userCount": 123,
+              }
+            }
+            primary={false}
           >
             <div
-              className="input-group"
+              className="d-inline-block mr-3 "
+              data-tooltip="Jan 1, 2021, 12:00:00 AM"
             >
-              <input
-                className="copyable-text__input form-control"
-                onClick={[Function]}
-                readOnly={true}
-                type="text"
-                value="lk1"
-              />
-              <div
-                className="input-group-append"
+              <strong
+                className="text-success"
               >
-                <button
-                  className="btn btn-secondary"
-                  disabled={false}
-                  onClick={[Function]}
-                  type="button"
+                Valid
+              </strong>
+               (
+              15 years remaining
+              )
+            </div>
+          </ProductLicenseValidity>
+          <span
+            className="text-muted"
+          >
+            Created 
+            <Timestamp
+              date="2020-01-01"
+            >
+              <span
+                className="timestamp"
+                data-tooltip="2020-01-01"
+              >
+                in almost 14 years
+              </span>
+            </Timestamp>
+          </span>
+        </div>
+      </div>
+      <div>
+        Tags: 
+        <ProductLicenseTags
+          tags={
+            Array [
+              "a",
+            ]
+          }
+        >
+          <div
+            className="mr-1 badge badge-secondary"
+            key="a"
+          >
+            a
+          </div>
+        </ProductLicenseTags>
+      </div>
+      <CopyableText
+        className="mt-2 d-block"
+        text="lk1"
+      >
+        <div
+          className="copyable-text form-inline mt-2 d-block"
+        >
+          <div
+            className="input-group"
+          >
+            <input
+              className="copyable-text__input form-control"
+              onClick={[Function]}
+              readOnly={true}
+              type="text"
+              value="lk1"
+            />
+            <div
+              className="input-group-append"
+            >
+              <button
+                className="btn btn-secondary"
+                disabled={false}
+                onClick={[Function]}
+                type="button"
+              >
+                <Memo(ContentCopyIcon)
+                  className="icon-inline"
                 >
-                  <Memo(ContentCopyIcon)
-                    className="icon-inline"
+                  <svg
+                    className="mdi-icon icon-inline"
+                    fill="currentColor"
+                    height={24}
+                    viewBox="0 0 24 24"
+                    width={24}
                   >
-                    <svg
-                      className="mdi-icon icon-inline"
-                      fill="currentColor"
-                      height={24}
-                      viewBox="0 0 24 24"
-                      width={24}
-                    >
-                      <path
-                        d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                      />
-                    </svg>
-                  </Memo(ContentCopyIcon)>
-                   
-                  Copy
-                </button>
-              </div>
+                    <path
+                      d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                    />
+                  </svg>
+                </Memo(ContentCopyIcon)>
+                 
+                Copy
+              </button>
             </div>
           </div>
-        </CopyableText>
-      </li>
-    </SiteAdminProductLicenseNode>
-  </Router>
-</MemoryRouter>
+        </div>
+      </CopyableText>
+    </li>
+  </SiteAdminProductLicenseNode>
+</Router>
 `;
 
 exports[`SiteAdminProductLicenseNode inactive 1`] = `
-<MemoryRouter>
-  <Router
-    history="[History]"
-  >
-    <SiteAdminProductLicenseNode
-      node={
-        Object {
-          "createdAt": "2020-01-01",
-          "id": "l1",
-          "info": Object {
-            "__typename": "ProductLicenseInfo",
-            "expiresAt": "2021-01-01",
-            "productNameWithBrand": "NB",
-            "tags": Array [
-              "a",
-            ],
-            "userCount": 123,
+<Router
+  history="[History]"
+>
+  <SiteAdminProductLicenseNode
+    node={
+      Object {
+        "createdAt": "2020-01-01",
+        "id": "l1",
+        "info": Object {
+          "__typename": "ProductLicenseInfo",
+          "expiresAt": "2021-01-01",
+          "productNameWithBrand": "NB",
+          "tags": Array [
+            "a",
+          ],
+          "userCount": 123,
+        },
+        "licenseKey": "lk1",
+        "subscription": Object {
+          "activeLicense": Object {
+            "id": "l0",
           },
-          "licenseKey": "lk1",
-          "subscription": Object {
-            "activeLicense": Object {
-              "id": "l0",
-            },
-            "name": "s",
-            "urlForSiteAdmin": "/s",
-          },
-        }
+          "name": "s",
+          "urlForSiteAdmin": "/s",
+        },
       }
-      showSubscription={true}
+    }
+    showSubscription={true}
+  >
+    <li
+      className="list-group-item py-2"
     >
-      <li
-        className="list-group-item py-2"
+      <div
+        className="d-flex align-items-center justify-content-between"
       >
         <div
-          className="d-flex align-items-center justify-content-between"
+          className="mr-3 text-truncate"
         >
-          <div
-            className="mr-3 text-truncate"
-          >
-            <strong>
-              License in
-               
-              <LinkOrSpan
+          <strong>
+            License in
+             
+            <LinkOrSpan
+              className="mr-3"
+              to="/s"
+            >
+              <AnchorLink
                 className="mr-3"
                 to="/s"
               >
-                <AnchorLink
+                <a
                   className="mr-3"
-                  to="/s"
+                  href="/s"
                 >
-                  <a
-                    className="mr-3"
-                    href="/s"
-                  >
-                    s
-                  </a>
-                </AnchorLink>
-              </LinkOrSpan>
-            </strong>
-            <span
-              className="mr-3"
-            >
-              <AccountName />
-            </span>
-          </div>
-          <div>
-            <ProductLicenseInfoDescription
-              className="mr-3"
-              licenseInfo={
-                Object {
-                  "__typename": "ProductLicenseInfo",
-                  "expiresAt": "2021-01-01",
-                  "productNameWithBrand": "NB",
-                  "tags": Array [
-                    "a",
-                  ],
-                  "userCount": 123,
-                }
-              }
-            >
-              <span
-                className="mr-3"
-                title="Tags: a"
-              >
-                NB
-                 (
-                123 users
-                )
-              </span>
-            </ProductLicenseInfoDescription>
-            <span
-              className="text-warning font-weight-bold mr-3"
-              data-tooltip="A newer license was generated for this subscription. This license should no longer be used."
-            >
-              Inactive
-            </span>
-            <span
-              className="text-muted"
-            >
-              Created 
-              <Timestamp
-                date="2020-01-01"
-              >
-                <span
-                  className="timestamp"
-                  data-tooltip="2020-01-01"
-                >
-                  in almost 14 years
-                </span>
-              </Timestamp>
-            </span>
-          </div>
+                  s
+                </a>
+              </AnchorLink>
+            </LinkOrSpan>
+          </strong>
+          <span
+            className="mr-3"
+          >
+            <AccountName />
+          </span>
         </div>
         <div>
-          Tags: 
-          <ProductLicenseTags
-            tags={
-              Array [
-                "a",
-              ]
+          <ProductLicenseInfoDescription
+            className="mr-3"
+            licenseInfo={
+              Object {
+                "__typename": "ProductLicenseInfo",
+                "expiresAt": "2021-01-01",
+                "productNameWithBrand": "NB",
+                "tags": Array [
+                  "a",
+                ],
+                "userCount": 123,
+              }
             }
           >
-            <div
-              className="mr-1 badge badge-secondary"
-              key="a"
+            <span
+              className="mr-3"
+              title="Tags: a"
             >
-              a
-            </div>
-          </ProductLicenseTags>
+              NB
+               (
+              123 users
+              )
+            </span>
+          </ProductLicenseInfoDescription>
+          <span
+            className="text-warning font-weight-bold mr-3"
+            data-tooltip="A newer license was generated for this subscription. This license should no longer be used."
+          >
+            Inactive
+          </span>
+          <span
+            className="text-muted"
+          >
+            Created 
+            <Timestamp
+              date="2020-01-01"
+            >
+              <span
+                className="timestamp"
+                data-tooltip="2020-01-01"
+              >
+                in almost 14 years
+              </span>
+            </Timestamp>
+          </span>
         </div>
-        <CopyableText
-          className="mt-2 d-block"
-          text="lk1"
+      </div>
+      <div>
+        Tags: 
+        <ProductLicenseTags
+          tags={
+            Array [
+              "a",
+            ]
+          }
         >
           <div
-            className="copyable-text form-inline mt-2 d-block"
+            className="mr-1 badge badge-secondary"
+            key="a"
           >
+            a
+          </div>
+        </ProductLicenseTags>
+      </div>
+      <CopyableText
+        className="mt-2 d-block"
+        text="lk1"
+      >
+        <div
+          className="copyable-text form-inline mt-2 d-block"
+        >
+          <div
+            className="input-group"
+          >
+            <input
+              className="copyable-text__input form-control"
+              onClick={[Function]}
+              readOnly={true}
+              type="text"
+              value="lk1"
+            />
             <div
-              className="input-group"
+              className="input-group-append"
             >
-              <input
-                className="copyable-text__input form-control"
+              <button
+                className="btn btn-secondary"
+                disabled={false}
                 onClick={[Function]}
-                readOnly={true}
-                type="text"
-                value="lk1"
-              />
-              <div
-                className="input-group-append"
+                type="button"
               >
-                <button
-                  className="btn btn-secondary"
-                  disabled={false}
-                  onClick={[Function]}
-                  type="button"
+                <Memo(ContentCopyIcon)
+                  className="icon-inline"
                 >
-                  <Memo(ContentCopyIcon)
-                    className="icon-inline"
+                  <svg
+                    className="mdi-icon icon-inline"
+                    fill="currentColor"
+                    height={24}
+                    viewBox="0 0 24 24"
+                    width={24}
                   >
-                    <svg
-                      className="mdi-icon icon-inline"
-                      fill="currentColor"
-                      height={24}
-                      viewBox="0 0 24 24"
-                      width={24}
-                    >
-                      <path
-                        d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                      />
-                    </svg>
-                  </Memo(ContentCopyIcon)>
-                   
-                  Copy
-                </button>
-              </div>
+                    <path
+                      d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                    />
+                  </svg>
+                </Memo(ContentCopyIcon)>
+                 
+                Copy
+              </button>
             </div>
           </div>
-        </CopyableText>
-      </li>
-    </SiteAdminProductLicenseNode>
-  </Router>
-</MemoryRouter>
+        </div>
+      </CopyableText>
+    </li>
+  </SiteAdminProductLicenseNode>
+</Router>
 `;

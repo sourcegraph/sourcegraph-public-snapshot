@@ -24,7 +24,7 @@ describe('SearchStatsLanguages', () => {
                 />
             </MemoryRouter>
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })
 

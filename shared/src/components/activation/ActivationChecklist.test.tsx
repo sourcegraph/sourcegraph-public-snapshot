@@ -10,7 +10,7 @@ describe('ActivationChecklist', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     test('render loading', () => {
         const component = mount(<ActivationChecklist steps={[]} history={H.createMemoryHistory({ keyLength: 0 })} />)
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
     test('render 0/1 complete', () => {
         {
@@ -27,7 +27,7 @@ describe('ActivationChecklist', () => {
                     history={history}
                 />
             )
-            expect(component).toMatchSnapshot()
+            expect(component.children()).toMatchSnapshot()
         }
         {
             const component = mount(
@@ -43,7 +43,7 @@ describe('ActivationChecklist', () => {
                     history={history}
                 />
             )
-            expect(component).toMatchSnapshot()
+            expect(component.children()).toMatchSnapshot()
         }
     })
     test('render 1/1 complete', () => {
@@ -60,6 +60,6 @@ describe('ActivationChecklist', () => {
                 history={H.createMemoryHistory({ keyLength: 0 })}
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })

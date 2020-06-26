@@ -1,155 +1,70 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ExtensionToggle extension disabled in settings 1`] = `
-<ExtensionToggle
-  extension={
-    Object {
-      "id": "x/y",
-    }
-  }
-  platformContext={Object {}}
-  settingsCascade={
-    Object {
-      "final": Object {
-        "extensions": Object {
-          "x/y": false,
-        },
-      },
-      "subjects": Array [
-        Object {
-          "lastID": null,
-          "settings": Object {},
-          "subject": Object {
-            "__typename": "User",
-            "id": "u",
-            "viewerCanAdminister": true,
-          },
-        },
-      ],
-    }
-  }
+<Toggle
+  onToggle={[Function]}
+  title="Click to enable"
+  value={false}
 >
-  <Toggle
-    onToggle={[Function]}
+  <button
+    className="toggle  "
+    onClick={[Function]}
     title="Click to enable"
-    value={false}
+    type="button"
+    value={0}
   >
-    <button
-      className="toggle  "
-      onClick={[Function]}
-      title="Click to enable"
-      type="button"
-      value={0}
-    >
-      <span
-        className="toggle__bar  "
-      />
-      <span
-        className="toggle__knob  "
-      />
-    </button>
-  </Toggle>
-</ExtensionToggle>
+    <span
+      className="toggle__bar  "
+    />
+    <span
+      className="toggle__knob  "
+    />
+  </button>
+</Toggle>
 `;
 
 exports[`ExtensionToggle extension enabled in settings 1`] = `
-<ExtensionToggle
-  extension={
-    Object {
-      "id": "x/y",
-    }
-  }
-  platformContext={Object {}}
-  settingsCascade={
-    Object {
-      "final": Object {
-        "extensions": Object {
-          "x/y": true,
-        },
-      },
-      "subjects": Array [
-        Object {
-          "lastID": null,
-          "settings": Object {},
-          "subject": Object {
-            "__typename": "User",
-            "id": "u",
-            "viewerCanAdminister": true,
-          },
-        },
-      ],
-    }
-  }
+<Toggle
+  onToggle={[Function]}
+  title="Click to enable"
+  value={true}
 >
-  <Toggle
-    onToggle={[Function]}
+  <button
+    className="toggle  "
+    onClick={[Function]}
     title="Click to enable"
-    value={true}
+    type="button"
+    value={1}
   >
-    <button
-      className="toggle  "
-      onClick={[Function]}
-      title="Click to enable"
-      type="button"
-      value={1}
-    >
-      <span
-        className="toggle__bar toggle__bar--active "
-      />
-      <span
-        className="toggle__knob toggle__knob--active "
-      />
-    </button>
-  </Toggle>
-</ExtensionToggle>
+    <span
+      className="toggle__bar toggle__bar--active "
+    />
+    <span
+      className="toggle__knob toggle__knob--active "
+    />
+  </button>
+</Toggle>
 `;
 
 exports[`ExtensionToggle extension not present in settings 1`] = `
-<ExtensionToggle
-  extension={
-    Object {
-      "id": "x/y",
-    }
-  }
-  platformContext={Object {}}
-  settingsCascade={
-    Object {
-      "final": Object {
-        "extensions": Object {},
-      },
-      "subjects": Array [
-        Object {
-          "lastID": null,
-          "settings": Object {},
-          "subject": Object {
-            "__typename": "User",
-            "id": "u",
-            "viewerCanAdminister": true,
-          },
-        },
-      ],
-    }
-  }
+<Toggle
+  onToggle={[Function]}
+  title="Click to enable"
+  value={false}
 >
-  <Toggle
-    onToggle={[Function]}
+  <button
+    className="toggle  "
+    onClick={[Function]}
     title="Click to enable"
-    value={false}
+    type="button"
+    value={0}
   >
-    <button
-      className="toggle  "
-      onClick={[Function]}
-      title="Click to enable"
-      type="button"
-      value={0}
-    >
-      <span
-        className="toggle__bar  "
-      />
-      <span
-        className="toggle__knob  "
-      />
-    </button>
-  </Toggle>
-</ExtensionToggle>
+    <span
+      className="toggle__bar  "
+    />
+    <span
+      className="toggle__knob  "
+    />
+  </button>
+</Toggle>
 `;

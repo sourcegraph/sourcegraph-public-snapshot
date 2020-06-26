@@ -22,7 +22,7 @@ describe('GlobalCampaignListPage', () => {
                         authenticatedUser={{ siteAdmin: true } as IUser}
                         queryCampaignsCount={() => of(totalCount)}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
         test(`renders for non-siteadmin and totalCount: ${totalCount}`, () => {
@@ -34,7 +34,7 @@ describe('GlobalCampaignListPage', () => {
                         authenticatedUser={{ siteAdmin: false } as IUser}
                         queryCampaignsCount={() => of(totalCount)}
                     />
-                )
+                ).children()
             ).toMatchSnapshot()
         })
     }

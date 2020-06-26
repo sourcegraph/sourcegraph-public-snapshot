@@ -1,79 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
-<DiffHunk
-  decorations={
-    Object {
-      "base": Map {},
-      "head": Map {},
-    }
-  }
-  fileDiffAnchor="anchor_"
-  history="[History]"
-  hunk={
-    Object {
-      "highlight": Object {
-        "__typename": "HighlightedDiffHunkBody",
-        "aborted": false,
-        "lines": Array [
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const subscriptions = new Subscription()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const decorationType = sourcegraph.app.createDecorationType()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const connection = await createConnection()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
-            "kind": "DELETED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        logger.log(\`WebSocket connection to language server opened\`)",
-            "kind": "ADDED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        subscriptions.add(",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "                    const method = LSP_TO_LOG_LEVEL[type]",
-            "kind": "UNCHANGED",
-          },
-        ],
-      },
-      "newRange": Object {
-        "lines": 7,
-        "startLine": 159,
-      },
-      "oldNoNewlineAt": false,
-      "oldRange": Object {
-        "lines": 7,
-        "startLine": 159,
-      },
-      "section": "export async function register({",
-    }
-  }
-  isLightTheme={true}
-  lineNumbers={true}
-  location="[Location path=/testdiff]"
->
+Array [
   <DiffBoundary
     contentClassName="diff-hunk__content"
     highlight={
@@ -165,7 +93,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </code>
       </td>
     </tr>
-  </DiffBoundary>
+  </DiffBoundary>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="0"
@@ -197,7 +125,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="1"
@@ -229,7 +157,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="2"
@@ -261,7 +189,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line  diff-hunk__line--deletion  "
     key="3"
@@ -289,7 +217,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line   diff-hunk__line--addition "
     key="4"
@@ -317,7 +245,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="5"
@@ -349,7 +277,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="6"
@@ -381,7 +309,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="7"
@@ -413,134 +341,12 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         }
       />
     </td>
-  </tr>
-</DiffHunk>
+  </tr>,
+]
 `;
 
 exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
-<DiffHunk
-  decorations={
-    Object {
-      "base": Map {
-        162 => Array [
-          Object {
-            "after": Object {
-              "backgroundColor": "black",
-              "contentText": "base content",
-              "hoverMessage": "base hover msg",
-            },
-            "backgroundColor": "blue",
-            "dark": Object {
-              "border": "1px blue solid",
-            },
-            "isWholeLine": true,
-            "range": Object {
-              "end": Object {
-                "character": 0,
-                "line": 161,
-              },
-              "start": Object {
-                "character": 0,
-                "line": 161,
-              },
-            },
-          },
-        ],
-      },
-      "head": Map {
-        159 => Array [
-          Object {
-            "after": Object {
-              "backgroundColor": "black",
-              "contentText": "head content",
-              "hoverMessage": "base hover msg",
-            },
-            "backgroundColor": "red",
-            "dark": Object {
-              "border": "1px blue solid",
-            },
-            "isWholeLine": true,
-            "range": Object {
-              "end": Object {
-                "character": 0,
-                "line": 158,
-              },
-              "start": Object {
-                "character": 0,
-                "line": 158,
-              },
-            },
-          },
-        ],
-      },
-    }
-  }
-  fileDiffAnchor="anchor_"
-  history="[History]"
-  hunk={
-    Object {
-      "highlight": Object {
-        "__typename": "HighlightedDiffHunkBody",
-        "aborted": false,
-        "lines": Array [
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const subscriptions = new Subscription()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const decorationType = sourcegraph.app.createDecorationType()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const connection = await createConnection()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
-            "kind": "DELETED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        logger.log(\`WebSocket connection to language server opened\`)",
-            "kind": "ADDED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        subscriptions.add(",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "                    const method = LSP_TO_LOG_LEVEL[type]",
-            "kind": "UNCHANGED",
-          },
-        ],
-      },
-      "newRange": Object {
-        "lines": 7,
-        "startLine": 159,
-      },
-      "oldNoNewlineAt": false,
-      "oldRange": Object {
-        "lines": 7,
-        "startLine": 159,
-      },
-      "section": "export async function register({",
-    }
-  }
-  isLightTheme={false}
-  lineNumbers={true}
-  location="[Location path=/testdiff]"
->
+Array [
   <DiffBoundary
     contentClassName="diff-hunk__content"
     highlight={
@@ -632,7 +438,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </code>
       </td>
     </tr>
-  </DiffBoundary>
+  </DiffBoundary>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="0"
@@ -690,7 +496,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </span>
       </LinkOrSpan>
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="1"
@@ -722,7 +528,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="2"
@@ -754,7 +560,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line  diff-hunk__line--deletion  "
     key="3"
@@ -808,7 +614,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </span>
       </LinkOrSpan>
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line   diff-hunk__line--addition "
     key="4"
@@ -836,7 +642,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="5"
@@ -868,7 +674,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="6"
@@ -900,7 +706,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="7"
@@ -932,134 +738,12 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         }
       />
     </td>
-  </tr>
-</DiffHunk>
+  </tr>,
+]
 `;
 
 exports[`DiffHunk renders decorations if given 1`] = `
-<DiffHunk
-  decorations={
-    Object {
-      "base": Map {
-        162 => Array [
-          Object {
-            "after": Object {
-              "backgroundColor": "black",
-              "contentText": "base content",
-              "hoverMessage": "base hover msg",
-            },
-            "backgroundColor": "blue",
-            "dark": Object {
-              "border": "1px blue solid",
-            },
-            "isWholeLine": true,
-            "range": Object {
-              "end": Object {
-                "character": 0,
-                "line": 161,
-              },
-              "start": Object {
-                "character": 0,
-                "line": 161,
-              },
-            },
-          },
-        ],
-      },
-      "head": Map {
-        159 => Array [
-          Object {
-            "after": Object {
-              "backgroundColor": "black",
-              "contentText": "head content",
-              "hoverMessage": "base hover msg",
-            },
-            "backgroundColor": "red",
-            "dark": Object {
-              "border": "1px blue solid",
-            },
-            "isWholeLine": true,
-            "range": Object {
-              "end": Object {
-                "character": 0,
-                "line": 158,
-              },
-              "start": Object {
-                "character": 0,
-                "line": 158,
-              },
-            },
-          },
-        ],
-      },
-    }
-  }
-  fileDiffAnchor="anchor_"
-  history="[History]"
-  hunk={
-    Object {
-      "highlight": Object {
-        "__typename": "HighlightedDiffHunkBody",
-        "aborted": false,
-        "lines": Array [
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const subscriptions = new Subscription()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const decorationType = sourcegraph.app.createDecorationType()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        const connection = await createConnection()",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
-            "kind": "DELETED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        logger.log(\`WebSocket connection to language server opened\`)",
-            "kind": "ADDED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "        subscriptions.add(",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
-            "kind": "UNCHANGED",
-          },
-          Object {
-            "__typename": "HighlightedDiffHunkLine",
-            "html": "                    const method = LSP_TO_LOG_LEVEL[type]",
-            "kind": "UNCHANGED",
-          },
-        ],
-      },
-      "newRange": Object {
-        "lines": 7,
-        "startLine": 159,
-      },
-      "oldNoNewlineAt": false,
-      "oldRange": Object {
-        "lines": 7,
-        "startLine": 159,
-      },
-      "section": "export async function register({",
-    }
-  }
-  isLightTheme={true}
-  lineNumbers={true}
-  location="[Location path=/testdiff]"
->
+Array [
   <DiffBoundary
     contentClassName="diff-hunk__content"
     highlight={
@@ -1151,7 +835,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </code>
       </td>
     </tr>
-  </DiffBoundary>
+  </DiffBoundary>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="0"
@@ -1208,7 +892,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </span>
       </LinkOrSpan>
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="1"
@@ -1240,7 +924,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="2"
@@ -1272,7 +956,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line  diff-hunk__line--deletion  "
     key="3"
@@ -1325,7 +1009,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </span>
       </LinkOrSpan>
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line   diff-hunk__line--addition "
     key="4"
@@ -1353,7 +1037,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="5"
@@ -1385,7 +1069,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="6"
@@ -1417,7 +1101,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         }
       />
     </td>
-  </tr>
+  </tr>,
   <tr
     className="diff-hunk__line diff-hunk__line--both   "
     key="7"
@@ -1449,6 +1133,6 @@ exports[`DiffHunk renders decorations if given 1`] = `
         }
       />
     </td>
-  </tr>
-</DiffHunk>
+  </tr>,
+]
 `;

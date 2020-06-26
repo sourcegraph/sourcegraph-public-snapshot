@@ -41,7 +41,7 @@ describe('CampaignDetails', () => {
                     platformContext={undefined as any}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
-            )
+            ).children()
         ).toMatchSnapshot())
 
     test('creation form given existing patch set', () => {
@@ -69,7 +69,7 @@ describe('CampaignDetails', () => {
                 }
             />
         )
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 
     const renderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
@@ -120,7 +120,7 @@ describe('CampaignDetails', () => {
     for (const viewerCanAdminister of [true, false]) {
         describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
             test('viewing existing', () => {
-                expect(mount(renderCampaignDetails({ viewerCanAdminister }))).toMatchSnapshot()
+                expect(mount(renderCampaignDetails({ viewerCanAdminister })).children()).toMatchSnapshot()
             })
         })
     }
@@ -129,6 +129,6 @@ describe('CampaignDetails', () => {
         const component = mount(renderCampaignDetails({ viewerCanAdminister: true }))
         component.find('#e2e-campaign-edit').simulate('click')
 
-        expect(component).toMatchSnapshot()
+        expect(component.children()).toMatchSnapshot()
     })
 })
