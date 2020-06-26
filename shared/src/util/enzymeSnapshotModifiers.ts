@@ -6,7 +6,7 @@ import * as H from 'history'
 import { isPlainObject } from 'lodash'
 import { Observable, Subject } from 'rxjs'
 
-function maskProps(props: Json['props'], key = '', seenProperties = new Set<unknown>()): unknown {
+function maskProps(props: Json['props'], key = '', seenProperties: ReadonlySet<unknown> = new Set()): unknown {
     if (!props) {
         return props
     }
