@@ -829,6 +829,53 @@ func TestDeleteUploadByIDUpdatesVisibility(t *testing.T) {
 	}
 }
 
+func TestDeleteUploadsWithoutRepository(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	var uploads []Upload
+	for i := 0; i < 25; i++ {
+		for j := 0; j < 10+i; j++ {
+			uploads = append(uploads, Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
+		}
+	}
+	insertUploads(t, dbconn.Global, uploads...)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
+	t3 := t1.Add(-DeletedRepositoryGracePeriod - time.Minute)
+
+	deletions := map[int]time.Time{
+		52: t2, 54: t2, 56: t2, // deleted too recently
+		61: t3, 63: t3, 65: t3, // deleted
+	}
+
+	for repositoryID, deletedAt := range deletions {
+		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
+
+		if _, err := dbconn.Global.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("Failed to update repository: %s", err)
+		}
+	}
+
+	ids, err := store.DeleteUploadsWithoutRepository(context.Background(), t1)
+	if err != nil {
+		t.Fatalf("unexpected error deleting uploads: %s", err)
+	}
+
+	expected := map[int]int{
+		61: 21,
+		63: 23,
+		65: 25,
+	}
+	if diff := cmp.Diff(expected, ids); diff != "" {
+		t.Errorf("unexpected ids (-want +got):\n%s", diff)
+	}
+}
+
 func TestResetStalled(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
