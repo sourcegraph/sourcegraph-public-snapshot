@@ -72,6 +72,8 @@
 // 1528395684_lsif_num_resets.up.sql (340B)
 // 1528395685_add_diffstat_fields_to_changesets.down.sql (264B)
 // 1528395685_add_diffstat_fields_to_changesets.up.sql (335B)
+// 1528395686_lsif_repository.down.sql (150B)
+// 1528395686_lsif_repository.up.sql (570B)
 
 package migrations
 
@@ -1580,6 +1582,46 @@ func _1528395685_add_diffstat_fields_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395686_lsif_repositoryDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\xf3\x74\x0d\x57\xc8\x29\xce\x4c\x8b\x4f\x29\xcd\x2d\x28\x8e\x2f\xcf\x2c\xc9\x88\x2f\x4a\x2d\xc8\x2f\xce\x2c\xc9\x2f\xaa\x8c\xcf\x4b\xcc\x4d\xb5\x46\x57\x5a\x5a\x90\x93\x9f\x98\x42\xa4\xe2\xcc\xbc\x94\xd4\x8a\x54\x5c\x8a\xb9\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xaf\x6c\xae\x29\x96\x00\x00\x00")
+
+func _1528395686_lsif_repositoryDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395686_lsif_repositoryDownSql,
+		"1528395686_lsif_repository.down.sql",
+	)
+}
+
+func _1528395686_lsif_repositoryDownSql() (*asset, error) {
+	bytes, err := _1528395686_lsif_repositoryDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395686_lsif_repository.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xba, 0x8b, 0x49, 0x99, 0xea, 0xae, 0x8a, 0x41, 0x32, 0xcf, 0x42, 0xb7, 0xcf, 0x55, 0x4d, 0xe3, 0x3a, 0xf6, 0x3c, 0xd7, 0x9f, 0x9b, 0xe4, 0x3f, 0x16, 0xb5, 0x78, 0xb2, 0x12, 0x8, 0x4e, 0xe8}}
+	return a, nil
+}
+
+var __1528395686_lsif_repositoryUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xb4\x8e\xbd\x4a\xc7\x30\x1c\x45\xf7\x3c\xc5\x9d\x45\xf2\x02\xc5\xa1\x96\x9f\x1a\x69\x13\x68\xab\x1d\x43\x20\x11\x03\xfd\x22\x1f\xa8\x6f\x2f\x84\x0e\x45\x1c\xfb\x9f\xef\xb9\x87\xf3\x48\xcf\x42\x56\x8c\x35\x3d\xd5\x23\xe1\x5d\xd0\x84\x39\xfa\x0f\x6d\xf3\xb2\x47\xfd\xe5\xd3\xa7\x0e\x6e\xdf\xa2\x4f\x5b\xf8\xd1\xab\x59\x1c\xea\x81\x01\xc0\x40\x2d\x35\x23\x32\xbf\xbb\x47\xe0\x65\x31\x11\x7f\xe1\xa7\x5e\x75\x27\x23\x72\xf9\xbe\x2a\x21\x0b\x8a\x00\x25\x11\xb8\xb7\x78\x40\xe6\xa7\xb7\xb7\x85\x9c\x5e\xa8\x27\x04\x6e\xdd\xec\x92\xb3\xda\x24\x88\x01\xf2\xad\x6d\xff\xab\xce\xfb\xbc\x19\x7b\x6d\xf7\xe1\xbc\x71\xb9\x5f\xad\xfb\x76\xd7\x96\x1f\xce\x8b\xcb\x55\xd7\x89\xb1\x62\xbf\x01\x00\x00\xff\xff\xc1\x80\xc1\x58\x3a\x02\x00\x00")
+
+func _1528395686_lsif_repositoryUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395686_lsif_repositoryUpSql,
+		"1528395686_lsif_repository.up.sql",
+	)
+}
+
+func _1528395686_lsif_repositoryUpSql() (*asset, error) {
+	bytes, err := _1528395686_lsif_repositoryUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395686_lsif_repository.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3a, 0x23, 0x96, 0xfc, 0xca, 0xcc, 0x52, 0x57, 0x7b, 0x68, 0xbc, 0xb2, 0xa1, 0x77, 0x34, 0xfa, 0xc4, 0x25, 0x59, 0x9d, 0xac, 0x95, 0xc4, 0xe4, 0xb5, 0xe0, 0x23, 0xce, 0x83, 0xca, 0xac, 0x7d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1743,6 +1785,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395684_lsif_num_resets.up.sql":                                       _1528395684_lsif_num_resetsUpSql,
 	"1528395685_add_diffstat_fields_to_changesets.down.sql":                   _1528395685_add_diffstat_fields_to_changesetsDownSql,
 	"1528395685_add_diffstat_fields_to_changesets.up.sql":                     _1528395685_add_diffstat_fields_to_changesetsUpSql,
+	"1528395686_lsif_repository.down.sql":                                     _1528395686_lsif_repositoryDownSql,
+	"1528395686_lsif_repository.up.sql":                                       _1528395686_lsif_repositoryUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1861,6 +1905,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395684_lsif_num_resets.up.sql":                                       {_1528395684_lsif_num_resetsUpSql, map[string]*bintree{}},
 	"1528395685_add_diffstat_fields_to_changesets.down.sql":                   {_1528395685_add_diffstat_fields_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395685_add_diffstat_fields_to_changesets.up.sql":                     {_1528395685_add_diffstat_fields_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395686_lsif_repository.down.sql":                                     {_1528395686_lsif_repositoryDownSql, map[string]*bintree{}},
+	"1528395686_lsif_repository.up.sql":                                       {_1528395686_lsif_repositoryUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
