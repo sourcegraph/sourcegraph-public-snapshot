@@ -161,12 +161,21 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 }
 
 type UpdateMergeRequestOpts struct {
-	TargetBranch string `json:"target_branch"`
-	Title        string `json:"title"`
-	Description  string `json:"description,omitempty"`
+	TargetBranch string                       `json:"target_branch"`
+	Title        string                       `json:"title"`
+	Description  string                       `json:"description,omitempty"`
+	StateEvent   UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
 	// TODO: other fields at
 	// https://docs.gitlab.com/ee/api/merge_requests.html#update-mr as needed.
 }
+
+type UpdateMergeRequestStateEvent string
+
+const (
+	UpdateMergeRequestStateEventClose     UpdateMergeRequestStateEvent = "close"
+	UpdateMergeRequestStateEventReopen    UpdateMergeRequestStateEvent = "reopen"
+	UpdateMergeRequestStateEventUnchanged UpdateMergeRequestStateEvent = ""
+)
 
 func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error) {
 	data, err := json.Marshal(opts)

@@ -339,7 +339,24 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 // the appropriate final state on the codehost (e.g. "declined" on Bitbucket
 // Server).
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
-	return errors.New("CloseChangeset is unimplemented")
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// Title and TargetBranch are required, even though we're not actually
+	// changing them.
+	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+		Title:        mr.Title,
+		TargetBranch: mr.TargetBranch,
+		StateEvent:   gitlab.UpdateMergeRequestStateEventClose,
+	})
+	if err != nil {
+		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	c.Changeset.Metadata = updated
+	return nil
 }
 
 // LoadChangesets loads the given Changesets from the sources and updates them.
