@@ -7,9 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/google/zoekt"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
@@ -24,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -68,25 +65,10 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	defer cancelAll()
 
 	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
-	var (
-		searcherRepos = args.Repos
-		zoektRepos    []*search.RepositoryRevisions
-	)
 
-	if args.Zoekt.Enabled() {
-		filter := func(repo *zoekt.Repository) bool {
-			return repo.HasSymbols
-		}
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
-		if err != nil {
-			// Don't hard fail if index is not available yet.
-			tr.LogFields(otlog.String("indexErr", err.Error()))
-			if ctx.Err() == nil {
-				log15.Warn("zoektIndexedRepos failed", "error", err)
-			}
-			common.indexUnavailable = true
-			err = nil
-		}
+	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	common.repos = make([]*types.Repo, len(args.Repos))
@@ -94,46 +76,21 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		common.repos[i] = repo.Repo
 	}
 
-	index, _ := args.Query.StringValues(query.FieldIndex)
-	if len(index) > 0 {
-		index := index[len(index)-1]
-		tr.LogFields(
-			otlog.String("index-field", index),
-			otlog.Int("before-indexed-repos", len(zoektRepos)),
-			otlog.Int("before-unindexed-repos", len(searcherRepos)),
-		)
-		switch parseYesNoOnly(index) {
-		case Yes:
-			// default
-			if args.Zoekt.Enabled() {
-				tr.LogFields(otlog.Int("indexed-repos", len(zoektRepos)), otlog.Int("unindexed-repos", len(searcherRepos)))
-
-				// Limit the number of unindexed repositories searched for a single query. Searching
-				// more than this will merely flood the system and network with requests that will timeout.
-				searcherRepos, common.missing = limitSearcherRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery)
-				if len(common.missing) > 0 {
-					tr.LazyPrintf("index:yes, limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
-				}
-			}
-		case Only:
-			if !args.Zoekt.Enabled() {
-				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
-			}
-			common.missing = make([]*types.Repo, len(searcherRepos))
-			for i, r := range searcherRepos {
-				common.missing[i] = r.Repo
-			}
-			searcherRepos = nil
-		case No:
-			searcherRepos = append(searcherRepos, zoektRepos...)
-			zoektRepos = nil
-		default:
-			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
+	var searcherRepos []*search.RepositoryRevisions
+	if indexed.DisableUnindexedSearch {
+		tr.LazyPrintf("disabling unindexed search")
+		common.missing = make([]*types.Repo, len(indexed.Unindexed))
+		for i, r := range indexed.Unindexed {
+			common.missing[i] = r.Repo
 		}
-		tr.LogFields(
-			otlog.Int("after-indexed-repos", len(zoektRepos)),
-			otlog.Int("after-unindexed-repos", len(searcherRepos)),
-		)
+	} else {
+		// Limit the number of unindexed repositories searched for a single
+		// query. Searching more than this will merely flood the system and
+		// network with requests that will timeout.
+		searcherRepos, common.missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
+		if len(common.missing) > 0 {
+			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+		}
 	}
 
 	var (
@@ -167,11 +124,11 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args, zoektRepos, true, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := indexed.Search(ctx)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
-			for _, repo := range zoektRepos {
+			for _, repo := range indexed.Repos {
 				common.searched = append(common.searched, repo.Repo)
 				common.indexed = append(common.indexed, repo.Repo)
 			}
