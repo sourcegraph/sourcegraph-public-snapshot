@@ -24,5 +24,3 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 ### Removed
-
-- Remove the `-endpoint` flag. [#225](https://github.com/sourcegraph/src-cli/pull/225)
