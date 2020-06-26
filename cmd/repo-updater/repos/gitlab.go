@@ -142,8 +142,8 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 	}
 }
 
-// authenticatedRemoteURL returns the GitLab projects's Git remote URL with the configured GitLab personal access
-// token inserted in the URL userinfo, for repositories needing authentication.
+// authenticatedRemoteURL returns the GitLab projects's Git remote URL with the
+// configured GitLab personal access token inserted in the URL userinfo.
 func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band

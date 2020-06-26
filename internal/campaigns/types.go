@@ -523,9 +523,7 @@ func (c *Changeset) state() (s ChangesetState, err error) {
 		switch m.State {
 		case gitlab.MergeRequestStateOpened:
 			s = ChangesetStateOpen
-		case gitlab.MergeRequestStateClosed:
-			s = ChangesetStateClosed
-		case gitlab.MergeRequestStateLocked:
+		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
 			s = ChangesetStateClosed
 		case gitlab.MergeRequestStateMerged:
 			s = ChangesetStateMerged
