@@ -5,7 +5,7 @@
 
 [![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg?logo=Google%20Chrome&logoColor=white)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome users](https://img.shields.io/chrome-web-store/users/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
-[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)\
+[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 
 ## Overview
 
@@ -153,3 +153,38 @@ To release the latest commit on master, ensure your master is up-to-date and run
 ```sh
 git push origin master:bext/release
 ```
+
+## Manual build of the browser extension
+
+This describes the manual build process to produce the packed extension (xpi/zip) from scratch from the source code.
+
+Requires `node` version specified in [`.nvmrc`](../.nvmrc). In the steps below we use [`nvm`](https://github.com/nvm-sh/nvm) to automatically select the node version.
+
+Tested on Ubuntu 20.04 and Mac OS 10.15.5.
+
+First, clone the repository.
+
+```sh
+git clone git@github.com:sourcegraph/sourcegraph
+```
+
+Use `nvm` to select the Node.js version specified in `.nvmrc`
+
+```sh
+nvm use
+```
+
+Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build from the `browser` directory.
+
+```sh
+yarn
+cd browser
+yarn build
+```
+
+The build step automatically pulls in [sourcegraph/code-intel-extensions](https://github.com/sourcegraph/code-intel-extensions) as a dependency.
+
+The output will be in `browser/build/bundles`:
+
+- Firefox add-on: `browser/build/bundles/firefox-bundle.xpi`
+- Chrome extension: `browser/build/bundles/chrome-bundle.zip`
