@@ -7,27 +7,28 @@ import (
 	"os"
 )
 
-const actionDefinitionTemplate = `{
-  "$schema": "https://raw.githubusercontent.com/sourcegraph/src-cli/master/schema/actions.schema.json",
-  "scopeQuery": "",
-  "steps": [
-  ]
-}
+const actionDefinitionTemplate = `scopeQuery: ""
+
+steps:
+  - type: command
+    args:
+    - echo
+    - Hello world
 `
 
 func init() {
 	usage := `
-Create an empty action definition in action.json (if not -o flag is given). This command is meant to help with creating action definitions to be used with 'src actions exec'.
+Create an empty action definition in action.yml (if no -o flag is given). This command is meant to help with creating action definitions to be used with 'src actions exec'.
 
 Examples:
 
-  Create a new action definition in action.json:
+  Create a new action definition in action.yml:
 
 		$ src actions create
 
-  Create a new action definition in ~/Documents/my-action.json:
+  Create a new action definition in ~/Documents/my-action.yml:
 
-		$ src actions create -o ~/Documents/my-action.json
+		$ src actions create -o ~/Documents/my-action.yml
 `
 
 	flagSet := flag.NewFlagSet("create", flag.ExitOnError)
@@ -38,7 +39,7 @@ Examples:
 	}
 
 	var (
-		fileFlag = flagSet.String("o", "action.json", "The destination file name. Default value is 'action.json'")
+		fileFlag = flagSet.String("o", "action.yml", "The destination file name. Default value is 'action.yml'")
 	)
 
 	handler := func(args []string) error {
