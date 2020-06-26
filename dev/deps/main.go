@@ -13,7 +13,7 @@ import (
 const concurrency = 50
 const ignoreDescendantImports = true
 const ignoreSiblingDescendantImports = true
-const Root = "github.com/sourcegraph/sourcegraph/enterprise/cmd"
+const root = "github.com/sourcegraph/sourcegraph/enterprise/cmd"
 
 func main() {
 	if err := mainErr(); err != nil {
