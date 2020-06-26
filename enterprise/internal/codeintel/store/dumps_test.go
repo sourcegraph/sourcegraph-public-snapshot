@@ -39,6 +39,7 @@ func TestGetDumpByID(t *testing.T) {
 		StartedAt:      &startedAt,
 		FinishedAt:     &finishedAt,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Indexer:        "lsif-go",
 	}
 
@@ -55,6 +56,7 @@ func TestGetDumpByID(t *testing.T) {
 		ProcessAfter:   expected.ProcessAfter,
 		NumResets:      expected.NumResets,
 		RepositoryID:   expected.RepositoryID,
+		RepositoryName: expected.RepositoryName,
 		Indexer:        expected.Indexer,
 	})
 
