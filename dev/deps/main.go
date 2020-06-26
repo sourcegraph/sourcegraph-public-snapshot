@@ -23,7 +23,7 @@ func main() {
 }
 
 func mainErr() error {
-	cmd := exec.Command("go", "list", fmt.Sprintf("%s/...", Root))
+	cmd := exec.Command("go", "list", fmt.Sprintf("%s/...", root))
 	out, err := cmd.Output()
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func mainErr() error {
 
 	var pkgs []string
 	for _, pkg := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		pkgs = append(pkgs, strings.TrimPrefix(strings.TrimPrefix(pkg, Root), "/"))
+		pkgs = append(pkgs, strings.TrimPrefix(strings.TrimPrefix(pkg, root), "/"))
 	}
 
 	imports, err := getAllImports(pkgs)
@@ -126,7 +126,7 @@ func getAllImports(pkgs []string) (map[string][]string, error) {
 	var wg sync.WaitGroup
 	pairs := make(chan pair, len(pkgs))
 
-	for i := 0; i < Concurrency; i++ {
+	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
 
 		go func() {
@@ -154,7 +154,7 @@ func getAllImports(pkgs []string) (map[string][]string, error) {
 }
 
 func getImports(pkg string) ([]string, error) {
-	cmd := exec.Command("go", "list", "-f", `{{ join .Imports "\n" }}`, fmt.Sprintf("%s/%s", Root, pkg))
+	cmd := exec.Command("go", "list", "-f", `{{ join .Imports "\n" }}`, fmt.Sprintf("%s/%s", root, pkg))
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -162,8 +162,8 @@ func getImports(pkg string) ([]string, error) {
 
 	var importPackages []string
 	for _, importPkg := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		if strings.HasPrefix(importPkg, Root) {
-			importPackages = append(importPackages, strings.TrimPrefix(importPkg, Root+"/"))
+		if strings.HasPrefix(importPkg, root) {
+			importPackages = append(importPackages, strings.TrimPrefix(importPkg, root+"/"))
 		}
 	}
 
@@ -251,14 +251,14 @@ var replacer = strings.NewReplacer("/", "_", "-", "_", ".", "_")
 
 func labelize(pkg string) string {
 	if pkg == "" {
-		pkg = Root
+		pkg = root
 	}
 	return filepath.Base(pkg)
 }
 
 func normalize(pkg string) string {
 	if pkg == "" {
-		pkg = Root
+		pkg = root
 	}
 	return replacer.Replace(pkg)
 }
