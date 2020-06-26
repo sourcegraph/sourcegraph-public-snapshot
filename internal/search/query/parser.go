@@ -31,7 +31,8 @@ func (Operator) node()  {}
 
 // An annotation stores information associated with a node.
 type Annotation struct {
-	Labels labels
+	Labels labels `json:"labels"`
+	Range  Range  `json:"range"`
 }
 
 // Pattern is a leaf node of expressions representing a search pattern fragment.
@@ -43,9 +44,10 @@ type Pattern struct {
 
 // Parameter is a leaf node of expressions representing a parameter of format "repo:foo".
 type Parameter struct {
-	Field   string `json:"field"`   // The repo part in repo:sourcegraph.
-	Value   string `json:"value"`   // The sourcegraph part in repo:sourcegraph.
-	Negated bool   `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
+	Field      string     `json:"field"`   // The repo part in repo:sourcegraph.
+	Value      string     `json:"value"`   // The sourcegraph part in repo:sourcegraph.
+	Negated    bool       `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
+	Annotation Annotation `json:"-"`
 }
 
 type operatorKind int
@@ -446,17 +448,24 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	if !isSet(p.heuristics, parensAsPatterns) || isSet(p.heuristics, allowDanglingParens) {
 		return Pattern{}, false
 	}
+	start := p.pos
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value, Annotation: Annotation{Labels: Literal | Quoted}}, true
+		return Pattern{
+			Value: value,
+			Annotation: Annotation{
+				Labels: Literal | Quoted,
+				Range:  newRange(start, p.pos),
+			},
+		}, true
 	}
 
-	start := p.pos
 	pieces, advance, ok := ScanSearchPatternHeuristic(p.buf[p.pos:])
 	end := start + advance
 	if !ok || len(p.buf[start:end]) == 0 || !isPureSearchPattern(p.buf[start:end]) || ContainsAndOrKeyword(string(p.buf[start:end])) {
 		// We tried validating the pattern but it is either unbalanced
 		// or malformed, empty, or an invalid and/or expression.
 		return Pattern{}, false
+
 	}
 	// The heuristic succeeds: we can process the string as a pure search pattern.
 	p.pos += advance
@@ -467,11 +476,24 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	}
 
 	if len(pieces) == 1 {
-		return Pattern{Value: pieces[0], Annotation: Annotation{Labels: labels}}, true
+		return Pattern{
+			Value: pieces[0],
+			Annotation: Annotation{
+				Labels: labels,
+				Range:  newRange(start, end),
+			},
+		}, true
 	}
+
 	patterns := []Node{}
 	for _, piece := range pieces {
-		patterns = append(patterns, Pattern{Value: piece, Annotation: Annotation{labels}})
+		patterns = append(patterns, Pattern{
+			Value: piece,
+			Annotation: Annotation{
+				Labels: labels,
+				Range:  newRange(start, end),
+			},
+		})
 	}
 	return Operator{Kind: Concat, Operands: patterns}, true
 }
@@ -596,10 +618,18 @@ func (p *parser) ParseFieldValue() (string, error) {
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern() Pattern {
+	start := p.pos
 	// If we can parse a well-delimited value, that takes precedence, and we
 	// denote it with Quoted set to true.
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: Literal | Quoted}}
+		return Pattern{
+			Value:   value,
+			Negated: false,
+			Annotation: Annotation{
+				Labels: Literal | Quoted,
+				Range:  newRange(start, p.pos),
+			},
+		}
 	}
 
 	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
@@ -609,7 +639,14 @@ func (p *parser) ParsePattern() Pattern {
 	}
 	p.pos += advance
 	// Invariant: the pattern can't be quoted since we checked for that.
-	return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: labels}} // FIXME: make literal?
+	return Pattern{
+		Value:   value,
+		Negated: false,
+		Annotation: Annotation{
+			Labels: labels,
+			Range:  newRange(start, p.pos),
+		},
+	}
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax
@@ -617,6 +654,7 @@ func (p *parser) ParsePattern() Pattern {
 // must match ^[a-zA-Z]+ and be allowed by allFields. Field may optionally
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
+	start := p.pos
 	field, advance := ScanField(p.buf[p.pos:])
 	if field == "" {
 		return Parameter{}, false, nil
@@ -637,7 +675,12 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 	if err != nil {
 		return Parameter{}, false, err
 	}
-	return Parameter{Field: field, Value: value, Negated: negated}, true, nil
+	return Parameter{
+		Field:      field,
+		Value:      value,
+		Negated:    negated,
+		Annotation: Annotation{Range: newRange(start, p.pos)},
+	}, true, nil
 }
 
 // partitionParameters constructs a parse tree to distinguish terms where
@@ -675,6 +718,7 @@ func partitionParameters(nodes []Node) []Node {
 // parseParameterParameterList scans for consecutive leaf nodes.
 func (p *parser) parseParameterList() ([]Node, error) {
 	var nodes []Node
+	start := p.pos
 loop:
 	for {
 		if err := p.skipSpaces(); err != nil {
@@ -707,7 +751,15 @@ loop:
 				// We parsed "()".
 				if isSet(p.heuristics, parensAsPatterns) {
 					// Interpret literally.
-					nodes = []Node{Pattern{Value: "()", Annotation: Annotation{Labels: Literal | HeuristicParensAsPatterns}}}
+					nodes = []Node{
+						Pattern{
+							Value: "()",
+							Annotation: Annotation{
+								Labels: Literal | HeuristicParensAsPatterns,
+								Range:  newRange(start, p.pos),
+							},
+						},
+					}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
 					nodes = []Node{Parameter{}}
