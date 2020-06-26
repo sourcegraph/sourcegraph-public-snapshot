@@ -35,6 +35,7 @@ require (
 	github.com/ericchiang/k8s v1.2.0
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
 	github.com/fatih/color v1.9.0
+	github.com/felixge/fgprof v0.9.0
 	github.com/felixge/httpsnoop v1.0.1
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
