@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -91,10 +92,9 @@ func mustInitializeStore() store.Store {
 		}
 	})
 
-	store, err := store.New(postgresDSN)
-	if err != nil {
-		log.Fatalf("failed to initialize store: %s", err)
+	if err := dbconn.ConnectToDB(postgresDSN); err != nil {
+		log.Fatalf("failed to connect to database: %s", err)
 	}
 
-	return store
+	return store.NewWithHandle(dbconn.Global)
 }

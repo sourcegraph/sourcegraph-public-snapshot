@@ -23,8 +23,8 @@ type MockProcessor struct {
 func NewMockProcessor() *MockProcessor {
 	return &MockProcessor{
 		ProcessFunc: &ProcessorProcessFunc{
-			defaultHook: func(context.Context, store.Store, store.Upload) error {
-				return nil
+			defaultHook: func(context.Context, store.Store, store.Upload) (bool, error) {
+				return false, nil
 			},
 		},
 	}
@@ -43,23 +43,23 @@ func NewMockProcessorFrom(i Processor) *MockProcessor {
 // ProcessorProcessFunc describes the behavior when the Process method of
 // the parent MockProcessor instance is invoked.
 type ProcessorProcessFunc struct {
-	defaultHook func(context.Context, store.Store, store.Upload) error
-	hooks       []func(context.Context, store.Store, store.Upload) error
+	defaultHook func(context.Context, store.Store, store.Upload) (bool, error)
+	hooks       []func(context.Context, store.Store, store.Upload) (bool, error)
 	history     []ProcessorProcessFuncCall
 	mutex       sync.Mutex
 }
 
 // Process delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockProcessor) Process(v0 context.Context, v1 store.Store, v2 store.Upload) error {
-	r0 := m.ProcessFunc.nextHook()(v0, v1, v2)
-	m.ProcessFunc.appendCall(ProcessorProcessFuncCall{v0, v1, v2, r0})
-	return r0
+func (m *MockProcessor) Process(v0 context.Context, v1 store.Store, v2 store.Upload) (bool, error) {
+	r0, r1 := m.ProcessFunc.nextHook()(v0, v1, v2)
+	m.ProcessFunc.appendCall(ProcessorProcessFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Process method of
 // the parent MockProcessor instance is invoked and the hook queue is empty.
-func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, store.Store, store.Upload) error) {
+func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, store.Store, store.Upload) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -67,7 +67,7 @@ func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, store.S
 // Process method of the parent MockProcessor instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, store.Store, store.Upload) error) {
+func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, store.Store, store.Upload) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -75,21 +75,21 @@ func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, store.Store, 
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ProcessorProcessFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, store.Upload) error {
-		return r0
+func (f *ProcessorProcessFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, store.Store, store.Upload) (bool, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ProcessorProcessFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, store.Store, store.Upload) error {
-		return r0
+func (f *ProcessorProcessFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, store.Store, store.Upload) (bool, error) {
+		return r0, r1
 	})
 }
 
-func (f *ProcessorProcessFunc) nextHook() func(context.Context, store.Store, store.Upload) error {
+func (f *ProcessorProcessFunc) nextHook() func(context.Context, store.Store, store.Upload) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -133,7 +133,10 @@ type ProcessorProcessFuncCall struct {
 	Arg2 store.Upload
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -145,5 +148,5 @@ func (c ProcessorProcessFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ProcessorProcessFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
