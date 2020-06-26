@@ -16,20 +16,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-func serveRepos(logger *log.Logger, addr, repoDir string) error {
-	ln, err := net.Listen("tcp", addr)
+type Serve struct {
+	Addr string
+	Root string
+	Info *log.Logger
+}
+
+func (s *Serve) Start() error {
+	ln, err := net.Listen("tcp", s.Addr)
 	if err != nil {
 		return errors.Wrap(err, "listen")
 	}
-	logger.Printf("listening on http://%s", ln.Addr())
-	h, err := reposHandler(logger, ln.Addr().String(), repoDir)
+
+	// Update Addr to what listener actually used.
+	s.Addr = ln.Addr().String()
+
+	s.Info.Printf("listening on http://%s", s.Addr)
+	h, err := s.handler()
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
 	}
-	s := &http.Server{
-		Handler: h,
-	}
-	if err := s.Serve(ln); err != nil {
+
+	if err := (&http.Server{Handler: h}).Serve(ln); err != nil {
 		return errors.Wrap(err, "serving")
 	}
 
@@ -55,9 +63,9 @@ type Repo struct {
 	URI  string
 }
 
-func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, error) {
-	logger.Printf("serving git repositories from %s", reposRoot)
-	configureRepos(logger, reposRoot)
+func (s *Serve) handler() (http.Handler, error) {
+	s.Info.Printf("serving git repositories from %s", s.Root)
+	s.configureRepos()
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
@@ -65,7 +73,7 @@ func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, err
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		err := indexHTML.Execute(w, map[string]interface{}{
-			"Explain": explainAddr(addr),
+			"Explain": explainAddr(s.Addr),
 			"Links": []string{
 				"/v1/list-repos",
 				"/repos/",
@@ -79,7 +87,7 @@ func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, err
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
 		var repos []Repo
 		var reposRootIsRepo bool
-		for _, name := range configureRepos(logger, reposRoot) {
+		for _, name := range s.configureRepos() {
 			if name == "." {
 				reposRootIsRepo = true
 			}
@@ -94,7 +102,7 @@ func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, err
 			// Update all names to be relative to the parent of
 			// reposRoot. This is to give a better name than "." for repos
 			// root
-			abs, err := filepath.Abs(reposRoot)
+			abs, err := filepath.Abs(s.Root)
 			if err != nil {
 				http.Error(w, "failed to get the absolute path of reposRoot: "+err.Error(), http.StatusInternalServerError)
 				return
@@ -117,11 +125,11 @@ func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, err
 		_ = enc.Encode(&resp)
 	})
 
-	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(reposRoot)})))
+	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(s.Root)})))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.URL.Path, "/.git/objects/") { // exclude noisy path
-			logger.Printf("%s %s", r.Method, r.URL.Path)
+			s.Info.Printf("%s %s", r.Method, r.URL.Path)
 		}
 		mux.ServeHTTP(w, r)
 	}), nil
@@ -151,12 +159,12 @@ func (d httpDir) Open(name string) (http.File, error) {
 // configureRepos finds all .git directories and configures them to be served.
 // It returns a slice of all the git directories it finds. The paths are
 // relative to root.
-func configureRepos(logger *log.Logger, root string) []string {
+func (s *Serve) configureRepos() []string {
 	var gitDirs []string
 
-	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
+	err := filepath.Walk(s.Root, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
-			logger.Printf("WARN: ignoring error searching %s: %v", path, fileErr)
+			s.Info.Printf("WARN: ignoring error searching %s: %v", path, fileErr)
 			return nil
 		}
 		if !fi.IsDir() {
@@ -178,16 +186,16 @@ func configureRepos(logger *log.Logger, root string) []string {
 			return nil
 		}
 
-		if err := configureOneRepo(logger, gitdir); err != nil {
-			logger.Printf("configuring repo at %s: %v", gitdir, err)
+		if err := configureOneRepo(s.Info, gitdir); err != nil {
+			s.Info.Printf("configuring repo at %s: %v", gitdir, err)
 			return nil
 		}
 
-		subpath, err := filepath.Rel(root, path)
+		subpath, err := filepath.Rel(s.Root, path)
 		if err != nil {
 			// According to WalkFunc docs, path is always filepath.Join(root,
 			// subpath). So Rel should always work.
-			logger.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
+			s.Info.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, s.Root, err)
 		}
 		gitDirs = append(gitDirs, filepath.ToSlash(subpath))
 

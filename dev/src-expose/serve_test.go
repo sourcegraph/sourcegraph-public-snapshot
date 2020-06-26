@@ -36,7 +36,11 @@ func TestReposHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			root := gitInitRepos(t, tc.repos...)
 
-			h, err := reposHandler(testLogger(t), testAddress, root)
+			h, err := (&Serve{
+				Info: testLogger(t),
+				Addr: testAddress,
+				Root: root,
+			}).handler()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -62,7 +66,11 @@ func TestReposHandler(t *testing.T) {
 			// This is the difference to above, we point our root at the git repo
 			root = filepath.Join(root, "project-root")
 
-			h, err := reposHandler(testLogger(t), testAddress, root)
+			h, err := (&Serve{
+				Info: testLogger(t),
+				Addr: testAddress,
+				Root: root,
+			}).handler()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,7 +177,10 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos := configureRepos(testLogger(t), root)
+	repos := (&Serve{
+		Info: testLogger(t),
+		Root: root,
+	}).configureRepos()
 	if len(repos) != 0 {
 		t.Fatalf("expected no repos, got %v", repos)
 	}
