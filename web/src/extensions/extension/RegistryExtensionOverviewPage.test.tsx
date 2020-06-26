@@ -1,6 +1,5 @@
 import { noop } from 'lodash'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 import { PageTitle } from '../../components/PageTitle'
 import { createMemoryHistory } from 'history'
@@ -45,7 +44,7 @@ describe('RegistryExtensionOverviewPage', () => {
     describe('categories', () => {
         test('filters out unrecognized categories', () => {
             const history = createMemoryHistory()
-            const output = renderer.create(
+            const output = mount(
                 <Router history={history}>
                     <RegistryExtensionOverviewPage
                         eventLogger={{ logViewEvent: noop }}
@@ -61,26 +60,12 @@ describe('RegistryExtensionOverviewPage', () => {
                         history={createMemoryHistory()}
                     />
                 </Router>
-            ).root
-            expect(
-                toText(
-                    output.findAll(({ props: { className } }) =>
-                        className?.includes('registry-extension-overview-page__categories')
-                    )
-                )
-            ).toEqual(['Other', 'Programming languages' /* no 'invalid' */])
+            )
+            const foundCategories: string[] = []
+            output.find('.list-inline-item').forEach(element => {
+                foundCategories.push(element.getDOMNode().textContent!)
+            })
+            expect(foundCategories).toEqual(['Other', 'Programming languages' /* no 'invalid' */])
         })
     })
 })
-
-function toText(values: (string | renderer.ReactTestInstance)[]): string[] {
-    const textNodes: string[] = []
-    for (const value of values) {
-        if (typeof value === 'string') {
-            textNodes.push(value)
-        } else {
-            textNodes.push(...toText(value.children))
-        }
-    }
-    return textNodes
-}
