@@ -1772,6 +1772,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = newAlert // takes higher precedence
 	}
 
+	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
+		alert = alertForStructuralSearchNotSet(r.originalQuery)
+	}
+
 	if len(missingRepoRevs) > 0 {
 		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
