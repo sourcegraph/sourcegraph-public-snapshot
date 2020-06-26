@@ -1,10 +1,10 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, of, Observable, from } from 'rxjs'
+import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
-import { switchMap, mergeMap, map } from 'rxjs/operators'
+import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
@@ -12,7 +12,13 @@ import { parseRepoURI } from '../../util/url'
 import { ExtensionDocuments } from './api/documents'
 import { toPosition } from './api/types'
 import { TextDocumentPositionParams } from '../protocol'
-import { ProvideTextDocumentHoverSignature, getHover } from './hover'
+// import { ProvideTextDocumentHoverSignature, getHover } from './hover'
+import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
+import { Hover } from '@sourcegraph/extension-api-types'
+import { isEqual } from 'lodash'
+import { fromHoverMerged } from '../client/types/hover'
+import { isNot, isExactly } from '../../util/types'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -29,12 +35,17 @@ export interface ExtState {
     queryTransformers: BehaviorSubject<sourcegraph.QueryTransformer[]>
 
     // Lang
-    hoverProviders: BehaviorSubject<RegisteredHoverProvider[]>
+    hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
 }
 
 interface RegisteredHoverProvider {
     selector: sourcegraph.DocumentSelector
     provider: sourcegraph.HoverProvider
+}
+
+export interface RegisteredProvider<T> {
+    selector: sourcegraph.DocumentSelector
+    provider: T
 }
 
 export interface InitResult {
@@ -128,15 +139,15 @@ export const initNewExtensionAPI = (
         getHover: (textParameters: TextDocumentPositionParams) => {
             const document = textDocuments.get(textParameters.textDocument.uri)
 
-            const matchedProviders = state.hoverProviders.pipe(
-                map(providers =>
-                    providersForDocument(textParameters.textDocument, providers, ({ selector }) => selector).map(
-                        ({ provider }): ProvideTextDocumentHoverSignature => parameters =>
-                            providerResultToObservable(provider.provideHover(document, toPosition(parameters.position)))
-                    )
+            return proxySubscribable(
+                callProviders(
+                    state.hoverProviders,
+                    document,
+                    provider => provider.provideHover(document, toPosition(textParameters.position)),
+                    (results: (typeof LOADING | Hover | null | undefined)[]) =>
+                        fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
                 )
             )
-            return proxySubscribable(getHover(matchedProviders, textParameters))
         },
     }
 
@@ -212,4 +223,43 @@ function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): so
     return {
         unsubscribe: () => behaviorSubject.next(behaviorSubject.value.filter(item => item !== value)),
     }
+}
+
+export function callProviders<TProvider, TProviderResult, TMergedResult>(
+    providersObservable: Observable<RegisteredProvider<TProvider>[]>,
+    document: TextDocumentIdentifier,
+    invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
+    mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult
+): Observable<MaybeLoadingResult<TMergedResult>> {
+    return providersObservable
+        .pipe(
+            map(providers => providersForDocument(document, providers, ({ selector }) => selector)),
+            switchMap(providers =>
+                combineLatestOrDefault(
+                    providers.map(provider =>
+                        concat(
+                            [LOADING],
+                            providerResultToObservable(invokeProvider(provider.provider)).pipe(
+                                defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
+                                catchError(error => {
+                                    const logErrors = true
+                                    if (logErrors) {
+                                        console.error('Provider errored:', error)
+                                    }
+                                    return [null]
+                                })
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        .pipe(
+            defaultIfEmpty<(typeof LOADING | TProviderResult | null | undefined)[]>([]),
+            map(results => ({
+                isLoading: results.some(hover => hover === LOADING),
+                result: mergeResult(results),
+            })),
+            distinctUntilChanged((a, b) => isEqual(a, b))
+        )
 }

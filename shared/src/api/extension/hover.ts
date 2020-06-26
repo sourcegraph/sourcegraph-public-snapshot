@@ -29,8 +29,6 @@ export function getHover(
                     concat(
                         [LOADING],
                         provider(parameters).pipe(
-                            // TODO I think this is not needed anymore
-                            // finallyReleaseProxy(),
                             defaultIfEmpty<typeof LOADING | Hover | null | undefined>(null),
                             catchError(error => {
                                 if (logErrors) {

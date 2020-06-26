@@ -384,25 +384,28 @@ function initCodeIntelligence({
             filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
-            combineLatest([
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHost =>
-                        wrapRemoteObservable(
-                            extensionHost.getHover(
-                                toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+            concat(
+                [{ isLoading: true, result: null }],
+                combineLatest([
+                    from(extensionsController.extHostAPI).pipe(
+                        switchMap(extensionHost =>
+                            wrapRemoteObservable(
+                                extensionHost.getHover(
+                                    toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                                )
                             )
                         )
+                    ),
+                    getActiveHoverAlerts(hoverAlerts),
+                ]).pipe(
+                    map(
+                        ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
+                            ExtensionHoverAlertType
+                        > | null> => ({
+                            isLoading,
+                            result: hoverMerged ? { ...hoverMerged, alerts } : null,
+                        })
                     )
-                ),
-                getActiveHoverAlerts(hoverAlerts),
-            ]).pipe(
-                map(
-                    ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
-                        ExtensionHoverAlertType
-                    > | null> => ({
-                        isLoading,
-                        result: hoverMerged ? { ...hoverMerged, alerts } : null,
-                    })
                 )
             ),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
