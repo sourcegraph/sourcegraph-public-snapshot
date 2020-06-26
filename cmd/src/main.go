@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const usageText = `src is a tool that provides access to Sourcegraph instances.

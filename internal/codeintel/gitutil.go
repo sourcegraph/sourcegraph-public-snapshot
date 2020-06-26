@@ -30,7 +30,7 @@ func parseRemote(remoteURL string) (string, error) {
 		}
 	}
 
-	// e.g.. https://github.com/sourcegraph/src-cli.git
+	// e.g., https://github.com/sourcegraph/src-cli.git
 	if url, err := url.Parse(remoteURL); err == nil {
 		return url.Hostname() + strings.TrimSuffix(url.Path, ".git"), nil
 	}
