@@ -1,10 +1,9 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { CampaignsDotComPage } from './CampaignsDotComPage'
+import { mount } from 'enzyme'
 
 describe('CampaignsDotComPage', () => {
     test('renders', () => {
-        const result = renderer.create(<CampaignsDotComPage />)
-        expect(result.toJSON()).toMatchSnapshot()
+        expect(mount(<CampaignsDotComPage />)).toMatchSnapshot()
     })
 })

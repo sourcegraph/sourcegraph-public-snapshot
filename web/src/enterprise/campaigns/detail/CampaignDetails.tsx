@@ -88,8 +88,6 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
     _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.ID) => Observable<Campaign | null>)
     /** For testing only. */
     _fetchPatchSetById?: typeof fetchPatchSetById | ((patchSet: GQL.ID) => Observable<PatchSet | null>)
-    /** For testing only. */
-    _noSubject?: boolean
 }
 
 /**
@@ -106,7 +104,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     telemetryService,
     _fetchCampaignById = fetchCampaignById,
     _fetchPatchSetById = fetchPatchSetById,
-    _noSubject = false,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
@@ -131,7 +128,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         let isFirstCampaignFetch = true
 
         // Fetch campaign if ID was given
-        const subscription = merge(of(undefined), _noSubject ? new Observable<void>() : campaignUpdates)
+        const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
                 switchMap(() =>
                     _fetchCampaignById(campaignID).pipe(
@@ -160,7 +157,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById, _noSubject])
+    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
 
     const [mode, setMode] = useState<CampaignUIMode>(campaignID ? 'viewing' : 'editing')
 

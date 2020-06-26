@@ -26,6 +26,6 @@ exports[`CampaignDiffStat for patch set 1`] = `
 </div>
 `;
 
-exports[`CampaignDiffStat hidden for empty campaign 1`] = `<React.Fragment />`;
+exports[`CampaignDiffStat hidden for empty campaign 1`] = `<Fragment />`;
 
-exports[`CampaignDiffStat hidden for empty patch set 1`] = `<React.Fragment />`;
+exports[`CampaignDiffStat hidden for empty patch set 1`] = `<Fragment />`;

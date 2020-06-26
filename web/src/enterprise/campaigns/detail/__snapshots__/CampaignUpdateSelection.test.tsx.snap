@@ -7,7 +7,7 @@ exports[`CampaignUpdateSelection redirects without URL param 1`] = `
 `;
 
 exports[`CampaignUpdateSelection renders with URL param 1`] = `
-<React.Fragment>
+<Fragment>
   <PageTitle
     title="Update campaign"
   />
@@ -20,80 +20,12 @@ exports[`CampaignUpdateSelection renders with URL param 1`] = `
   <FilteredConnection
     defaultFirst={20}
     hideSearch={true}
-    history={
-      Object {
-        "action": "POP",
-        "block": [Function],
-        "canGo": [Function],
-        "createHref": [Function],
-        "entries": Array [
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/campaigns/update",
-            "search": "?patchSet=123",
-            "state": undefined,
-          },
-        ],
-        "go": [Function],
-        "goBack": [Function],
-        "goForward": [Function],
-        "index": 0,
-        "length": 1,
-        "listen": [Function],
-        "location": Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/campaigns/update",
-          "search": "?patchSet=123",
-          "state": undefined,
-        },
-        "push": [Function],
-        "replace": [Function],
-      }
-    }
-    location={
-      Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/campaigns/update",
-        "search": "?patchSet=123",
-        "state": undefined,
-      }
-    }
+    history="[History]"
+    location="[Location path=/campaigns/update?patchSet=123]"
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
-        "history": Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/campaigns/update",
-              "search": "?patchSet=123",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/campaigns/update",
-            "search": "?patchSet=123",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        },
+        "history": "[History]",
         "selection": Object {
           "buttonLabel": "Preview",
           "enabled": true,
@@ -106,5 +38,5 @@ exports[`CampaignUpdateSelection renders with URL param 1`] = `
     queryConnection={[Function]}
     useURLQuery={false}
   />
-</React.Fragment>
+</Fragment>
 `;
