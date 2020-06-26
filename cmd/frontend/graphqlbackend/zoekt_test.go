@@ -1019,7 +1019,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 	}
 }
 
-func TestZoektSingleIndexedRepo(t *testing.T) {
+func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
@@ -1097,7 +1097,7 @@ func TestZoektSingleIndexedRepo(t *testing.T) {
 
 	for _, tt := range cases {
 		filter := func(*zoekt.Repository) bool { return true }
-		indexed, unindexed, err := zoektSingleIndexedRepo(context.Background(), z, repoRev(tt.rev), filter)
+		indexed, unindexed, err := zoektIndexedRepos(context.Background(), z, []*search.RepositoryRevisions{repoRev(tt.rev)}, filter)
 		if err != nil {
 			t.Fatal(err)
 		}

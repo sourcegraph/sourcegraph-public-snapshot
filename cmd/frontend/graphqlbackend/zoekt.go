@@ -494,59 +494,10 @@ func queryToZoektFileOnlyQueries(query *search.TextPatternInfo, listOfFilePaths 
 	return zoektQueries, nil
 }
 
-func zoektSingleIndexedRepo(ctx context.Context, z *searchbackend.Zoekt, rev *search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-	indexed = []*search.RepositoryRevisions{}
-	unindexed = []*search.RepositoryRevisions{}
-
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	if len(rev.RevSpecs()) >= 2 || len(rev.RevSpecs()) != len(rev.Revs) {
-		// Zoekt only indexes 1 rev per repository, so it will not have the full results for the
-		// query on repositories for which multiple revs are searched.
-		return indexed, append(unindexed, rev), nil
-	}
-
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	repo, ok := set[string(rev.Repo.Name)]
-	if !ok || (filter != nil && !filter(repo)) {
-		return indexed, append(unindexed, rev), nil
-	}
-
-	if len(rev.Revs) == 1 {
-		revSpecToSearch := rev.Revs[0].RevSpec
-		if len(revSpecToSearch) > 0 && len(revSpecToSearch) < 4 {
-			// revSpecToSearch is nonempty but shorter than the
-			// minimum 4 chars expected for a short SHA. It can't
-			// match a commit, maybe it refers to a one-character
-			// branch name.
-			return indexed, append(unindexed, rev), nil
-		}
-		if revSpecToSearch == "" || revSpecToSearch == "HEAD" {
-			return append(indexed, rev), unindexed, nil
-		}
-		for _, branch := range repo.Branches {
-			if branch.Name == revSpecToSearch || strings.HasPrefix(branch.Version, revSpecToSearch) {
-				return append(indexed, rev), unindexed, nil
-			}
-		}
-	}
-
-	return indexed, append(unindexed, rev), nil
-}
-
 // zoektIndexedRepos splits the input repo list into two parts: (1) the
 // repositories `indexed` by Zoekt and (2) the repositories that are
 // `unindexed`.
 func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-	if len(revs) == 1 {
-		// Classify indexed versus unindexed for the common case of a single revision
-		return zoektSingleIndexedRepo(ctx, z, revs[0], filter)
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	set, err := z.ListAll(ctx)
@@ -559,21 +510,51 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 	indexed = make([]*search.RepositoryRevisions, 0, len(revs))
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
-	for _, rev := range revs {
-		if len(rev.RevSpecs()) >= 2 || len(rev.RevSpecs()) != len(rev.Revs) {
-			// Zoekt only indexes 1 rev per repository, so it will not have the full results for the
-			// query on repositories for which multiple revs are searched.
-			unindexed = append(unindexed, rev)
-			continue
-		}
-
-		repo, ok := set[string(rev.Repo.Name)]
+	for _, reporev := range revs {
+		repo, ok := set[string(reporev.Repo.Name)]
 		if !ok || (filter != nil && !filter(repo)) {
-			unindexed = append(unindexed, rev)
+			unindexed = append(unindexed, reporev)
 			continue
 		}
 
-		indexed = append(indexed, rev)
+		revspecs := reporev.RevSpecs()
+
+		if len(revspecs) != len(reporev.Revs) {
+			// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
+			// search on it.
+			unindexed = append(unindexed, reporev)
+			continue
+		}
+
+		branches := make([]string, 0, len(revspecs))
+		for _, rev := range revspecs {
+			if rev == "" || rev == "HEAD" {
+				// Zoekt convention that first branch is HEAD
+				branches = append(branches, repo.Branches[0].Name)
+				continue
+			}
+
+			for _, branch := range repo.Branches {
+				if branch.Name == rev {
+					branches = append(branches, branch.Name)
+					break
+				}
+				// Check if rev is an abbrev commit SHA
+				if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
+					branches = append(branches, branch.Name)
+				}
+			}
+
+		}
+
+		// Only search zoekt if we can search all revisions on it.
+		if len(branches) == len(revspecs) {
+			// TODO we should return the list of branches to search. Maybe
+			// create the zoektquery.RepoBranches map here?
+			indexed = append(indexed, reporev)
+		} else {
+			unindexed = append(unindexed, reporev)
+		}
 	}
 
 	return indexed, unindexed, nil
