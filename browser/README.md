@@ -166,6 +166,7 @@ First, clone the repository.
 
 ```sh
 git clone git@github.com:sourcegraph/sourcegraph
+cd sourcegraph
 ```
 
 Use `nvm` to select the Node.js version specified in `.nvmrc`
