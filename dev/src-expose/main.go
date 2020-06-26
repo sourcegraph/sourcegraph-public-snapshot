@@ -114,7 +114,14 @@ func main() {
 
 	newLogger := func(prefix string) *log.Logger {
 		if *globalQuiet {
-			return log.New(ioutil.Discard, prefix, log.LstdFlags)
+			return log.New(ioutil.Discard, "", log.LstdFlags)
+		}
+		return log.New(os.Stderr, prefix, log.LstdFlags)
+	}
+
+	newVerbose := func(prefix string) *log.Logger {
+		if !*globalVerbose {
+			return log.New(ioutil.Discard, "", log.LstdFlags)
 		}
 		return log.New(os.Stderr, prefix, log.LstdFlags)
 	}
@@ -198,9 +205,10 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 			}
 
 			s := &Serve{
-				Addr: *globalAddr,
-				Root: repoDir,
-				Info: newLogger("serve: "),
+				Addr:  *globalAddr,
+				Root:  repoDir,
+				Info:  newLogger("serve: "),
+				Debug: newVerbose("DBUG serve: "),
 			}
 			return s.Start()
 		},
@@ -250,9 +258,10 @@ See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/exampl
 
 			go func() {
 				s := &Serve{
-					Addr: *globalAddr,
-					Root: s.Destination,
-					Info: newLogger("serve: "),
+					Addr:  *globalAddr,
+					Root:  s.Destination,
+					Info:  newLogger("serve: "),
+					Debug: newVerbose("DBUG serve: "),
 				}
 				if err := s.Start(); err != nil {
 					log.Fatal(err)

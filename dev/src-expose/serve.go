@@ -17,9 +17,10 @@ import (
 )
 
 type Serve struct {
-	Addr string
-	Root string
-	Info *log.Logger
+	Addr  string
+	Root  string
+	Info  *log.Logger
+	Debug *log.Logger
 }
 
 func (s *Serve) Start() error {
@@ -183,6 +184,7 @@ func (s *Serve) configureRepos() []string {
 		// will contain nil error. If it does, proceed to configure.
 		gitdir := filepath.Join(path, ".git")
 		if fi, err := os.Stat(gitdir); err != nil || !fi.IsDir() {
+			s.Debug.Print("not a repository root", path)
 			return nil
 		}
 

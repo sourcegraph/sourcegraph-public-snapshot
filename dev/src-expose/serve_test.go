@@ -19,6 +19,8 @@ import (
 
 const testAddress = "test.local:3939"
 
+var discardLogger = log.New(ioutil.Discard, "", log.LstdFlags)
+
 func TestReposHandler(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -37,9 +39,10 @@ func TestReposHandler(t *testing.T) {
 			root := gitInitRepos(t, tc.repos...)
 
 			h, err := (&Serve{
-				Info: testLogger(t),
-				Addr: testAddress,
-				Root: root,
+				Info:  testLogger(t),
+				Debug: discardLogger,
+				Addr:  testAddress,
+				Root:  root,
 			}).handler()
 			if err != nil {
 				t.Fatal(err)
@@ -67,9 +70,10 @@ func TestReposHandler(t *testing.T) {
 			root = filepath.Join(root, "project-root")
 
 			h, err := (&Serve{
-				Info: testLogger(t),
-				Addr: testAddress,
-				Root: root,
+				Info:  testLogger(t),
+				Debug: discardLogger,
+				Addr:  testAddress,
+				Root:  root,
 			}).handler()
 			if err != nil {
 				t.Fatal(err)
@@ -178,8 +182,9 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 	}
 
 	repos := (&Serve{
-		Info: testLogger(t),
-		Root: root,
+		Info:  testLogger(t),
+		Debug: discardLogger,
+		Root:  root,
 	}).configureRepos()
 	if len(repos) != 0 {
 		t.Fatalf("expected no repos, got %v", repos)
