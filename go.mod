@@ -101,6 +101,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
+	github.com/minio/simdjson-go v0.1.4
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c

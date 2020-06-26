@@ -10,7 +10,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif/jsonlines"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
 )
 
@@ -43,7 +42,7 @@ func Correlate(r io.Reader, dumpID int, root string, getChildren existence.GetCh
 // The data in the correlation state is neither canonicalized nor pruned.
 func correlateFromReader(r io.Reader, root string) (*State, error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := jsonlines.Read(ctx, r)
+	ch := lsif.Read(ctx, r)
 	defer func() {
 		// stop producer from reading more input on correlation error
 		cancel()

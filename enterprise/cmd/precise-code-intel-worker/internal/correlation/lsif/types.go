@@ -27,6 +27,13 @@ type Document struct {
 	Diagnostics datastructures.IDSet
 }
 
+func newDocument() Document {
+	return Document{
+		Contains:    datastructures.IDSet{},
+		Diagnostics: datastructures.IDSet{},
+	}
+}
+
 type Range struct {
 	StartLine          int
 	StartCharacter     int
@@ -36,6 +43,12 @@ type Range struct {
 	ReferenceResultID  string
 	HoverResultID      string
 	MonikerIDs         datastructures.IDSet
+}
+
+func newRange() Range {
+	return Range{
+		MonikerIDs: datastructures.IDSet{},
+	}
 }
 
 func (d Range) SetDefinitionResultID(id string) Range {
