@@ -51,8 +51,13 @@ const getConfiguredSideloadedExtension = (baseUrl: string): Observable<Configure
         )
     )
 
-interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension' | 'settings'> {
+export interface PartialContext
+    extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension' | 'settings'> {
     sideloadedExtensionURL: Subscribable<string | null>
+}
+
+export interface IExtensionsService {
+    activeExtensions: Subscribable<ExecutableExtension[]>
 }
 
 /**
@@ -61,7 +66,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
  * @internal This is an internal implementation detail and is different from the product feature called the
  * "extension registry" (where users can search for and enable extensions).
  */
-export class ExtensionsService {
+export class ExtensionsService implements IExtensionsService {
     constructor(
         private platformContext: PartialContext,
         private modelService: Pick<ModelService, 'activeLanguages'>,

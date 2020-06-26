@@ -9,6 +9,8 @@ import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStat
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { isObject } from 'lodash'
 import { hasProperty } from '../util/types'
+import { IExtensionsService } from '../api/client/services/extensionsService'
+import { ModelService } from '../api/client/services/modelService'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -191,6 +193,11 @@ export interface PlatformContext {
      * Optional because it's currently only used in the web app platform.
      */
     telemetryService?: TelemetryService
+
+    /**
+     * Creates an extensions service that provides the list of extensions to be activated.
+     */
+    createExtensionsService?(modelService: Pick<ModelService, 'activeLanguages'>): IExtensionsService
 }
 
 /**

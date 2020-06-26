@@ -241,6 +241,8 @@ async function main(): Promise<void> {
     console.log('Sourcegraph background page initialized')
 }
 
+const workerBundleURL = browser.runtime.getURL('js/extensionHostWorker.bundle.js')
+
 /**
  * Handle an incoming browser port pair coming from a content script.
  */
@@ -251,7 +253,7 @@ function handleBrowserPortPair(
     const subscriptions = new Subscription()
 
     console.log('Extension host client connected')
-    const { worker, clientEndpoints } = createExtensionHostWorker()
+    const { worker, clientEndpoints } = createExtensionHostWorker(workerBundleURL)
     subscriptions.add(() => worker.terminate())
 
     /** Forwards all messages between two endpoints (in one direction) */
