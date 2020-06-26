@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
-func TestRemoveProcessedRecordsWithoutBundleFile(t *testing.T) {
+func TestRemoveCompletedRecordsWithoutBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 
 	for _, id := range []int{1, 3, 5, 7, 9} {
@@ -33,8 +33,8 @@ func TestRemoveProcessedRecordsWithoutBundleFile(t *testing.T) {
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeProcessedRecordsWithoutBundleFile(); err != nil {
-		t.Fatalf("unexpected error removing processed uploads without bundle files: %s", err)
+	if err := j.removeCompletedRecordsWithoutBundleFile(); err != nil {
+		t.Fatalf("unexpected error removing completed uploads without bundle files: %s", err)
 	}
 
 	if len(mockStore.DeleteUploadByIDFunc.History()) != 5 {
@@ -69,7 +69,7 @@ func TestRemoveOldUploadingRecords(t *testing.T) {
 	}
 
 	if err := j.removeOldUploadingRecords(); err != nil {
-		t.Fatalf("unexpected error removing processed uploads without bundle files: %s", err)
+		t.Fatalf("unexpected error removing old records that have not finished uploading: %s", err)
 	}
 
 	if len(mockStore.DeleteUploadByIDFunc.History()) != 10 {

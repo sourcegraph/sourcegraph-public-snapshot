@@ -15,13 +15,13 @@ import (
 // GetUploadsBatchSize is the maximum number of uploads to request from the database at once.
 const GetUploadsBatchSize = 100
 
-// removeProcessedRecordsWithoutBundleFile removes all upload records in the
-// processed state that do not have a corresponding bundle file on disk.
-func (j *Janitor) removeProcessedRecordsWithoutBundleFile() error {
+// removeCompletedRecordsWithoutBundleFile removes all upload records in the
+// completed state that do not have a corresponding bundle file on disk.
+func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {
 	ctx := context.Background()
 
 	ids, err := j.getUploadIDs(ctx, store.GetUploadsOptions{
-		State: "processed",
+		State: "completed",
 	})
 	if err != nil {
 		return err
