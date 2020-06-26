@@ -6,14 +6,21 @@ import * as H from 'history'
 import { isPlainObject } from 'lodash'
 import { Observable, Subject } from 'rxjs'
 
-function maskProps(props: Json['props'], key = '', levelsDeep = 5): unknown {
-    if (!props || levelsDeep <= 0) {
+function maskProps(props: Json['props'], key = '', seenProperties = new Set<unknown>()): unknown {
+    if (!props) {
         return props
     }
+    if (typeof props === 'object' && props !== null) {
+        if (seenProperties.has(props)) {
+            return '[Cyclic structure]'
+        }
+    }
+    const treeSeenProperties = new Set(seenProperties)
+    treeSeenProperties.add(props)
     if (key === 'history') {
         return '[History]'
     }
-    if (key === 'location') {
+    if (key === 'location' && typeof props === 'object' && props !== null) {
         return `[Location path=${H.createPath(props as H.Location)}]`
     }
     if (props instanceof Subject) {
@@ -24,11 +31,11 @@ function maskProps(props: Json['props'], key = '', levelsDeep = 5): unknown {
     }
 
     if (Array.isArray(props)) {
-        return props.map(item => maskProps(item, '', levelsDeep - 1))
+        return props.map(item => maskProps(item, '', treeSeenProperties))
     }
     if (isPlainObject(props)) {
         return Object.fromEntries(
-            Object.entries(props).map(([key, value]) => [key, maskProps(value, key, levelsDeep - 1)])
+            Object.entries(props).map(([key, value]) => [key, maskProps(value, key, treeSeenProperties)])
         )
     }
     return props
