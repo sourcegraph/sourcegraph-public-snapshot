@@ -361,6 +361,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			syncerMetrics.behindSchedule.WithLabelValues(s.codeHostURL).Set(float64(behindSchedule))
 		case <-timerChan:
 			start := time.Now()
+			log15.Info("syncing changeset", "ID", next.changesetID)
 			err := s.syncFunc(ctx, next.changesetID)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
 			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())

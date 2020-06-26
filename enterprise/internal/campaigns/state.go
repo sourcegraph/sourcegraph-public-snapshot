@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -99,6 +100,19 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 
 	case *bitbucketserver.PullRequest:
 		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
+
+	case *gitlab.MergeRequest:
+		// TODO: implement webhook support
+		if m.Pipeline != nil {
+			switch m.Pipeline.Status {
+			case gitlab.PipelineStatusSuccess:
+				return cmpgn.ChangesetCheckStatePassed
+			case gitlab.PipelineStatusFailed:
+				return cmpgn.ChangesetCheckStateFailed
+			case gitlab.PipelineStatusPending:
+				return cmpgn.ChangesetCheckStatePending
+			}
+		}
 	}
 
 	return campaigns.ChangesetCheckStateUnknown
@@ -363,6 +377,18 @@ func computeSingleChangesetState(c *campaigns.Changeset) (s campaigns.ChangesetS
 		} else {
 			s = campaigns.ChangesetState(m.State)
 		}
+	case *gitlab.MergeRequest:
+		// TODO: implement webhook support
+		switch m.State {
+		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
+			s = cmpgn.ChangesetStateClosed
+		case gitlab.MergeRequestStateMerged:
+			s = cmpgn.ChangesetStateMerged
+		case gitlab.MergeRequestStateOpened:
+			s = cmpgn.ChangesetStateOpen
+		default:
+			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -399,6 +425,20 @@ func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.Chan
 				states[campaigns.ChangesetReviewStateApproved] = true
 			}
 		}
+
+	case *gitlab.MergeRequest:
+		// GitLab has an elaborate approvers workflow, but this doesn't map
+		// terribly closely to the GitHub/Bitbucket workflow: most notably,
+		// there's no analogue of the Changes Requested or Dismissed states.
+		// Instead, we'll use the heuristic of: if there are one or more
+		// approvals, but not a sufficient number, we'll call the MR Commented;
+		// if there are zero, we'll call it Pending.
+
+		// TODO: actually implement; this data is not available through GraphQL,
+		// and requires additional API calls to access on each MR. Need to
+		// figure out if we should do this via events or by stashing it in the
+		// metadata.
+
 	default:
 		return "", errors.New("unknown changeset type")
 	}

@@ -346,7 +346,27 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 // If a Changeset could not be found on the source, it's included in the
 // returned slice.
 func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
-	return errors.New("LoadChangesets is unimplemented")
+	// FIXME(aharvey): this is suboptimal, but GitLab doesn't have a REST API to
+	// provide full detail for more than one MR at a time. Need to investigate
+	// if the GraphQL API can do this.
+	for _, c := range cs {
+		project := c.Repo.Metadata.(*gitlab.Project)
+		iid, err := strconv.ParseInt(c.ExternalID, 10, 64)
+		if err != nil {
+			return errors.Wrapf(err, "parsing changeset external ID %s", c.ExternalID)
+		}
+
+		mr, err := s.client.GetMergeRequest(ctx, project, iid)
+		if err != nil {
+			return errors.Wrapf(err, "retrieving merge request %d", iid)
+		}
+
+		if err := c.SetMetadata(mr); err != nil {
+			return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
+		}
+	}
+
+	return nil
 }
 
 // UpdateChangeset can update Changesets.

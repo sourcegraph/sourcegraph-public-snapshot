@@ -15,10 +15,10 @@ import (
 type MergeRequestState string
 
 const (
-	MergeRequestStateOpened = "opened"
-	MergeRequestStateClosed = "closed"
-	MergeRequestStateLocked = "locked"
-	MergeRequestStateMerged = "merged"
+	MergeRequestStateOpened MergeRequestState = "opened"
+	MergeRequestStateClosed MergeRequestState = "closed"
+	MergeRequestStateLocked MergeRequestState = "locked"
+	MergeRequestStateMerged MergeRequestState = "merged"
 )
 
 type MergeRequest struct {
@@ -33,6 +33,7 @@ type MergeRequest struct {
 	MergedAt     *time.Time        `json:"merged_at"`
 	ClosedAt     *time.Time        `json:"closed_at"`
 	Labels       []string          `json:"labels"`
+	Pipeline     *Pipeline         `json:"pipeline"`
 	SourceBranch string            `json:"source_branch"`
 	TargetBranch string            `json:"target_branch"`
 	WebURL       string            `json:"web_url"`
@@ -46,6 +47,27 @@ type MergeRequest struct {
 	// TODO: other fields at
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
 }
+
+type Pipeline struct {
+	ID     int64          `json:"id"`
+	SHA    string         `json:"sha"`
+	Ref    string         `json:"ref"`
+	Status PipelineStatus `json:"status"`
+	WebURL string         `json:"web_url"`
+}
+
+type PipelineStatus string
+
+const (
+	PipelineStatusRunning  PipelineStatus = "running"
+	PipelineStatusPending  PipelineStatus = "pending"
+	PipelineStatusSuccess  PipelineStatus = "success"
+	PipelineStatusFailed   PipelineStatus = "failed"
+	PipelineStatusCanceled PipelineStatus = "canceled"
+	PipelineStatusSkipped  PipelineStatus = "skipped"
+	PipelineStatusCreated  PipelineStatus = "created"
+	PipelineStatusManual   PipelineStatus = "manual"
+)
 
 var (
 	ErrMergeRequestAlreadyExists = errors.New("merge request already exists")
