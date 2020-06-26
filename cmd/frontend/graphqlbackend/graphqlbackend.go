@@ -545,6 +545,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
+	case "CampaignSpec":
+		return r.CampaignSpecByID(ctx, id)
 	case "ExternalChangeset":
 		return r.ChangesetByID(ctx, id)
 	case "HiddenExternalChangeset":

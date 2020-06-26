@@ -792,6 +792,7 @@ func TestNullIDResilience(t *testing.T) {
 	ids := []graphql.ID{
 		campaigns.MarshalCampaignID(0),
 		marshalExternalChangesetID(0),
+		marshalCampaignSpecRandID(""),
 	}
 
 	for _, id := range ids {
