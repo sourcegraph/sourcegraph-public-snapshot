@@ -11,7 +11,7 @@ assignees: ''
 
 <!--
 Summarize:
-- What problems that the team is going to solve.
+- What problems the team is committed to solving.
 - Why those problems are important and how they connect back to OKRs.
 - How the team is going solve those problems.
 -->
