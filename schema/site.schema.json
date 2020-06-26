@@ -309,7 +309,7 @@
       "hide": true
     },
     "gitMaxConcurrentClones": {
-      "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
+      "description": "Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.",
       "type": "integer",
       "default": 5,
       "group": "External services"
