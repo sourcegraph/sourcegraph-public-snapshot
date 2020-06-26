@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue where repositories previously deleted on gitserver would not immediately reclone on system startup. [#11684](https://github.com/sourcegraph/sourcegraph/issues/11684)
 - An issue where the sourcegraph/server Jaeger config was invalid. [#11661](https://github.com/sourcegraph/sourcegraph/pull/11661)
 - An issue where valid search queries were improperly hinted as being invalid in the search field. [#11688](https://github.com/sourcegraph/sourcegraph/pull/11688)
+- Reduce frontend memory spikes by limiting the number of goroutines launched by our GraphQL resolvers. [#11736](https://github.com/sourcegraph/sourcegraph/pull/11736)
 
 ### Removed
 
