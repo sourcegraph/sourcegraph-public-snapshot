@@ -4,7 +4,6 @@ import { IExtensionsService, ExecutableExtension } from '../../../../shared/src/
 import { Subscribable, from } from 'rxjs'
 import { checkOk } from '../../../../shared/src/backend/fetch'
 import { ExtensionManifest } from '../../../../shared/src/extensions/extensionManifest'
-import { shareReplay } from 'rxjs/operators'
 
 /**
  * Determine if inline extensions should be loaded.
