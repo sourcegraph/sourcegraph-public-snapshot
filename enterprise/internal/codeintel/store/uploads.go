@@ -400,7 +400,7 @@ func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error
 // DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
 // the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 // commit on the default branch when invoked.
-func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (_ bool, err error) {
+func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (_ bool, err error) {
 	tx, started, err := s.transact(ctx)
 	if err != nil {
 		return false, err

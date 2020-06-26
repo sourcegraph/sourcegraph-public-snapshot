@@ -42,7 +42,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		return 0, nil, err
 	}
 
-	done := noopDoneFn
+	done := noopDoneFunc
 	if started {
 		done = tx.Done
 	}
@@ -55,7 +55,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		return 0, nil, done(err)
 	}
 	if len(visibleIDs) == 0 {
-		return 0, newReferencePager(noopPageFromOffsetFn, done), nil
+		return 0, newReferencePager(noopPageFromOffsetFunc, done), nil
 	}
 
 	conds := []*sqlf.Query{
@@ -96,7 +96,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		return 0, nil, err
 	}
 
-	done := noopDoneFn
+	done := noopDoneFunc
 	if started {
 		done = tx.Done
 	}
