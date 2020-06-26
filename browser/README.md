@@ -186,9 +186,10 @@ yarn build
 The build step automatically pulls in [sourcegraph/code-intel-extensions](https://github.com/sourcegraph/code-intel-extensions) as a dependency.
 
 The output will be in `browser/build`:
+
 - Firefox add-on:
-    - Packed: `browser/build/bundles/firefox-bundle.xpi`
-    - Unpacked: `browser/build/firefox`
+  - Packed: `browser/build/bundles/firefox-bundle.xpi`
+  - Unpacked: `browser/build/firefox`
 - Chrome extension: `browser/build/bundles/chrome-bundle.zip`
-    - Packed: `browser/build/bundles/chrome-bundle.zip`
-    - Unpacked: `browser/build/chrome`
+  - Packed: `browser/build/bundles/chrome-bundle.zip`
+  - Unpacked: `browser/build/chrome`
