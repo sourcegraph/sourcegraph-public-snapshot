@@ -371,5 +371,20 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 
 // UpdateChangeset can update Changesets.
 func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
-	return errors.New("UpdateChangeset is unimplemented")
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+		Title:        c.Title,
+		Description:  c.Body,
+		TargetBranch: git.AbbreviateRef(c.BaseRef),
+	})
+	if err != nil {
+		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	c.Changeset.Metadata = updated
+	return nil
 }

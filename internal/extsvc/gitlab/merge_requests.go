@@ -159,3 +159,30 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 
 	return c.GetMergeRequest(ctx, project, resp[0].IID)
 }
+
+type UpdateMergeRequestOpts struct {
+	TargetBranch string `json:"target_branch"`
+	Title        string `json:"title"`
+	Description  string `json:"description,omitempty"`
+	// TODO: other fields at
+	// https://docs.gitlab.com/ee/api/merge_requests.html#update-mr as needed.
+}
+
+func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error) {
+	data, err := json.Marshal(opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling options")
+	}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, mr.IID), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request to update a merge request")
+	}
+
+	resp := &MergeRequest{}
+	if _, _, err := c.do(ctx, req, resp); err != nil {
+		return nil, errors.Wrap(err, "sending request to update a merge request")
+	}
+
+	return resp, nil
+}
