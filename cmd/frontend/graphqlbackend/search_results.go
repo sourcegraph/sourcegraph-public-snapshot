@@ -797,6 +797,14 @@ func setResultSetInScopeParameters(scopeParameters []query.Node, subset []Search
 	return scopeParameters
 }
 
+func prettyPrint(nodes []query.Node) string {
+	var resultStr []string
+	for _, node := range nodes {
+		resultStr = append(resultStr, node.String())
+	}
+	return strings.Join(resultStr, " ")
+}
+
 // evaluateAnd collects results for each expression and uses the previous result
 // to limit the search scope of subsequent searches. Each subexpression is then
 // only limited to the files already found for previous operands. Because the
@@ -840,6 +848,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters, opera
 	tryCount := want * 1000     // Opportunistic approximation for the number of results to get for an intersection.
 	maxResultsForRetry := 20000 // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
 
+	repos, _, _, _, err := r.resolveRepositories(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	var exhausted bool
 	for {
 		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool) query.Node {
@@ -849,41 +862,48 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters, opera
 			return query.Parameter{Field: field, Value: value, Negated: negated}
 		})
 
-		// use a mutable copy of the scopeParameters in the rest of the loop
-		curScopeParameters := scopeParameters
+		for _, repo := range repos {
+			// use a mutable copy of the scopeParameters in the rest of the loop
+			curScopeParameters := scopeParameters
+			repoScopeParameters := curScopeParameters
 
-		result, err = r.evaluatePatternExpression(ctx, curScopeParameters, operands[0])
-		if err != nil {
-			return nil, err
-		}
+			// Negated repos are already computed, so changing repo is fine.
+			repoScopeParameters = query.MapField(curScopeParameters, "repo", func(value string, negated bool) query.Node {
+				// TODO revs
+				repoStr := string((*repo).Repo.Name)
+				return query.Parameter{Field: "repo", Value: repoStr, Negated: negated}
+			})
 
-		if result == nil || len(result.SearchResults) == 0 {
-			break
-		}
-
-		// if the result is not empty we need to limit the query to a subset of files
-		curScopeParameters = setResultSetInScopeParameters(scopeParameters, result.SearchResults)
-
-		exhausted = !result.limitHit
-		for _, term := range operands[1:] {
-			newResult, err = r.evaluatePatternExpression(ctx, curScopeParameters, term)
+			log15.Info("first repo", "query", prettyPrint(repoScopeParameters))
+			result, err = r.evaluatePatternExpression(ctx, curScopeParameters, operands[0])
 			if err != nil {
 				return nil, err
 			}
-			if newResult != nil {
-				exhausted = exhausted && !newResult.limitHit
-				if len(newResult.SearchResults) == 0 {
-					break
-				}
-				// because evaluation looks into files returned by previous
-				// searches instead of repo+file combination, new results
-				// may include false positives.
-				// to avoid that, intersect the new results with the previous ones to be
-				// certain no new files are added to the set.
-				result = intersect(result, newResult)
 
-				// update the list of files to search into
-				curScopeParameters = setResultSetInScopeParameters(curScopeParameters, result.SearchResults)
+			if result == nil || len(result.SearchResults) == 0 {
+				break
+			}
+
+			// if the result is not empty we need to limit the query to a subset of files
+			curScopeParameters = setResultSetInScopeParameters(repoScopeParameters, result.SearchResults)
+			log15.Info("new", "query", prettyPrint(curScopeParameters))
+
+			exhausted = !result.limitHit
+			for _, term := range operands[1:] {
+				newResult, err = r.evaluatePatternExpression(ctx, curScopeParameters, term)
+				if err != nil {
+					return nil, err
+				}
+				if newResult != nil {
+					exhausted = exhausted && !newResult.limitHit
+					if len(newResult.SearchResults) == 0 {
+						break
+					}
+					result = newResult
+
+					// update the list of files to search into
+					curScopeParameters = setResultSetInScopeParameters(curScopeParameters, result.SearchResults)
+				}
 			}
 		}
 
