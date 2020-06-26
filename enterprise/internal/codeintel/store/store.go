@@ -73,7 +73,7 @@ type Store interface {
 	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
 	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 	// commit on the default branch when invoked.
-	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
+	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (bool, error)
 
 	// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
@@ -190,8 +190,8 @@ type Store interface {
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
-// GetTipCommitFn returns the head commit for the given repository.
-type GetTipCommitFn func(ctx context.Context, repositoryID int) (string, error)
+// GetTipCommitFunc returns the head commit for the given repository.
+type GetTipCommitFunc func(ctx context.Context, repositoryID int) (string, error)
 
 type store struct {
 	db           dbutil.DB
