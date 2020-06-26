@@ -28,7 +28,6 @@ type ObservedStore struct {
 	getStatesOperation                 *observation.Operation
 	deleteUploadByIDOperation          *observation.Operation
 	resetStalledOperation              *observation.Operation
-	getDumpIDsOperation                *observation.Operation
 	getDumpByIDOperation               *observation.Operation
 	findClosestDumpsOperation          *observation.Operation
 	deleteOldestDumpOperation          *observation.Operation
@@ -149,11 +148,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 		resetStalledOperation: observationContext.Operation(observation.Op{
 			Name:         "store.ResetStalled",
 			MetricLabels: []string{"reset_stalled"},
-			Metrics:      metrics,
-		}),
-		getDumpIDsOperation: observationContext.Operation(observation.Op{
-			Name:         "store.GetDumpIDs",
-			MetricLabels: []string{"get_dump_ids"},
 			Metrics:      metrics,
 		}),
 		getDumpByIDOperation: observationContext.Operation(observation.Op{
@@ -318,7 +312,6 @@ func (s *ObservedStore) wrap(other Store) Store {
 		getStatesOperation:                 s.getStatesOperation,
 		deleteUploadByIDOperation:          s.deleteUploadByIDOperation,
 		resetStalledOperation:              s.resetStalledOperation,
-		getDumpIDsOperation:                s.getDumpIDsOperation,
 		getDumpByIDOperation:               s.getDumpByIDOperation,
 		findClosestDumpsOperation:          s.findClosestDumpsOperation,
 		deleteOldestDumpOperation:          s.deleteOldestDumpOperation,
@@ -478,13 +471,6 @@ func (s *ObservedStore) ResetStalled(ctx context.Context, now time.Time) (resetI
 	ctx, endObservation := s.resetStalledOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(resetIDs)+len(erroredIDs)), observation.Args{}) }()
 	return s.store.ResetStalled(ctx, now)
-}
-
-// GetDumpIDs calls into the inner store and registers the observed results.
-func (s *ObservedStore) GetDumpIDs(ctx context.Context) (ids []int, err error) {
-	ctx, endObservation := s.getDumpIDsOperation.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
-	return s.store.GetDumpIDs(ctx)
 }
 
 // GetDumpByID calls into the inner store and registers the observed results.

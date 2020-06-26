@@ -142,10 +142,11 @@ func TestGetUploads(t *testing.T) {
 	)
 
 	testCases := []struct {
-		state        string
-		term         string
-		visibleAtTip bool
-		expectedIDs  []int
+		state          string
+		term           string
+		visibleAtTip   bool
+		uploadedBefore *time.Time
+		expectedIDs    []int
 	}{
 		{expectedIDs: []int{1, 2, 3, 5, 6, 7, 8, 9, 10}},
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
@@ -154,10 +155,17 @@ func TestGetUploads(t *testing.T) {
 		{term: "333", expectedIDs: []int{1, 2, 3, 5}},        // searches commits and failure message
 		{term: "tsc", expectedIDs: []int{2, 5, 7, 8, 10}},    // searches indexer
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
+		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10}},
 	}
 
 	for _, testCase := range testCases {
-		name := fmt.Sprintf("state=%s term=%s visibleAtTip=%v", testCase.state, testCase.term, testCase.visibleAtTip)
+		name := fmt.Sprintf(
+			"state=%s term=%s visibleAtTip=%v uploadedBefore=%v",
+			testCase.state,
+			testCase.term,
+			testCase.visibleAtTip,
+			printableTime{testCase.uploadedBefore},
+		)
 
 		t.Run(name, func(t *testing.T) {
 			for lo := 0; lo < len(testCase.expectedIDs); lo++ {
@@ -167,12 +175,13 @@ func TestGetUploads(t *testing.T) {
 				}
 
 				uploads, totalCount, err := store.GetUploads(context.Background(), GetUploadsOptions{
-					RepositoryID: 50,
-					State:        testCase.state,
-					Term:         testCase.term,
-					VisibleAtTip: testCase.visibleAtTip,
-					Limit:        3,
-					Offset:       lo,
+					RepositoryID:   50,
+					State:          testCase.state,
+					Term:           testCase.term,
+					VisibleAtTip:   testCase.visibleAtTip,
+					UploadedBefore: testCase.uploadedBefore,
+					Limit:          3,
+					Offset:         lo,
 				})
 				if err != nil {
 					t.Fatalf("unexpected error getting uploads for repo: %s", err)

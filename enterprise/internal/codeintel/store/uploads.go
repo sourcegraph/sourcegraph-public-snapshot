@@ -163,12 +163,13 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 }
 
 type GetUploadsOptions struct {
-	RepositoryID int
-	State        string
-	Term         string
-	VisibleAtTip bool
-	Limit        int
-	Offset       int
+	RepositoryID   int
+	State          string
+	Term           string
+	VisibleAtTip   bool
+	UploadedBefore *time.Time
+	Limit          int
+	Offset         int
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -194,6 +195,9 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("u.visible_at_tip = true"))
+	}
+	if opts.UploadedBefore != nil {
+		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
 	}
 
 	if len(conds) == 0 {
