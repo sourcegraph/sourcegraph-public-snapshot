@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-const Concurrency = 50
+const concurrency = 50
 const ignoreDescendantImports = true
 const ignoreSiblingDescendantImports = true
 const Root = "github.com/sourcegraph/sourcegraph/enterprise/cmd"
