@@ -42,6 +42,7 @@ func main() {
 		indexMinimumSearchCount          = mustParseInt(rawIndexMinimumSearchCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_COUNT")
 		indexMinimumPreciseCount         = mustParseInt(rawIndexMinimumPreciseCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT")
 		indexMinimumSearchRatio          = mustParsePercent(rawIndexMinimumSearchRatio, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_RATIO")
+		disableJanitor                   = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 	)
 
 	observationContext := &observation.Context{
@@ -99,8 +100,13 @@ func main() {
 	go indexabilityUpdater.Start()
 	go scheduler.Start()
 	go indexer.Start()
-	go janitor.Run()
 	go debugserver.Start()
+
+	if !disableJanitor {
+		go janitor.Run()
+	} else {
+		log15.Warn("Janitor process is disabled.")
+	}
 
 	// Attempt to clean up after first shutdown signal
 	signals := make(chan os.Signal, 2)

@@ -21,6 +21,7 @@ var (
 	rawIndexMinimumSearchCount          = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_COUNT", "50", "Minimum number of search events to trigger indexing for a repo.")
 	rawIndexMinimumPreciseCount         = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT", "0", "Minimum number of precise events to trigger indexing for a repo.")
 	rawIndexMinimumSearchRatio          = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_RATIO", "50", "Minimum ratio of search events to total events to trigger indexing for a repo.")
+	rawDisableJanitor                   = env.Get("PRECISE_CODE_INTEL_DISABLE_JANITOR", "false", "Set to true to disable the janitor process during system migrations.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
@@ -61,4 +62,14 @@ func mustParseInterval(rawValue, name string) time.Duration {
 	}
 
 	return d
+}
+
+// mustParseBool returns the boolean version of the given raw value fatally logs on failure.
+func mustParseBool(rawValue, name string) bool {
+	v, err := strconv.ParseBool(rawValue)
+	if err != nil {
+		log.Fatalf("invalid bool %q for %s: %s", rawValue, name, err)
+	}
+
+	return v
 }
