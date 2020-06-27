@@ -9,13 +9,13 @@ type JanitorMetrics struct {
 
 func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 	indexRecordsRemoved := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_bundle_manager_janitor_upload_records_removed_total",
+		Name: "src_indexer_janitor_index_records_removed_total",
 		Help: "Total number of index records removed",
 	})
 	r.MustRegister(indexRecordsRemoved)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_bundle_manager_janitor_errors_total",
+		Name: "src_indexer_janitor_errors_total",
 		Help: "Total number of errors when running the janitor",
 	})
 	r.MustRegister(errors)

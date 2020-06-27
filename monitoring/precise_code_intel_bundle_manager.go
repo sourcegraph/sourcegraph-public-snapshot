@@ -122,8 +122,8 @@ func PreciseCodeIntelBundleManager() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "janitor_uploads_without_bundle_files",
-							Description:       "upload records removed (with no corresponding bundle file) every 5m",
+							Name:              "janitor_uploads_removed",
+							Description:       "upload records removed every 5m",
 							Query:             `sum(increase(src_bundle_manager_janitor_upload_records_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
