@@ -4,6 +4,16 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
+
+## v3.15.1 → v3.16.0 changes
+
+This release involves two steps:
+
+1. Change `3.15.1` image tags to `3.16.0`
+2. Update `prometheus/prometheus_targets.yml` [as shown here](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0#diff-1d4c5a677b37d150c65ea8356cad978a)
+
+Exact diff of changes to make: https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0
+
 ## v3.14.2 → v3.15.1 changes
 
 This release:
