@@ -733,7 +733,14 @@ func (c *Changeset) Labels() []ChangesetLabel {
 		}
 		return labels
 	case *gitlab.MergeRequest:
-		// TODO: retrieve other dimensions of labels
+		// Similarly to GitHub above, GitLab labels can have colors (foreground
+		// _and_ background, in fact) and descriptions. Unfortunately, the REST
+		// API only returns this level of detail on the list endpoint (with an
+		// option added in GitLab 12.7), and not when retrieving individual MRs.
+		//
+		// When our minimum GitLab version is 12.0, we should be able to switch
+		// to retrieving MRs via GraphQL, and then we can start retrieving
+		// richer label data.
 		labels := make([]ChangesetLabel, len(m.Labels))
 		for i, l := range m.Labels {
 			labels[i] = ChangesetLabel{Name: l}
