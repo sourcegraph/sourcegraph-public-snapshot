@@ -40,6 +40,7 @@ func main() {
 		maxUploadAge        = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
 		maxUploadPartAge    = mustParseInterval(rawMaxUploadPartAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE")
 		maxDatabasePartAge  = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
+		disableJanitor      = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
 	)
 
 	readerCache, err := sqlitereader.NewReaderCache(readerDataCacheSize)
@@ -73,8 +74,13 @@ func main() {
 	janitor := janitor.New(store, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
 	go server.Start()
-	go janitor.Run()
 	go debugserver.Start()
+
+	if !disableJanitor {
+		go janitor.Run()
+	} else {
+		log15.Warn("Janitor process is disabled.")
+	}
 
 	// Attempt to clean up after first shutdown signal
 	signals := make(chan os.Signal, 2)

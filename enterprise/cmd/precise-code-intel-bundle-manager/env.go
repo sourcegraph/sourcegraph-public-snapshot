@@ -16,6 +16,7 @@ var (
 	rawMaxUploadAge        = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_AGE", "24h", "The maximum time an upload can sit on disk.")
 	rawMaxUploadPartAge    = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE", "2h", "The maximum time an upload part file can sit on disk.")
 	rawMaxDatabasePartAge  = env.Get("PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE", "2h", "The maximum time a database part file can sit on disk.")
+	rawDisableJanitor      = env.Get("PRECISE_CODE_INTEL_DISABLE_JANITOR", "false", "Set to true to disable the janitor process during system migrations.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
@@ -56,4 +57,14 @@ func mustParseInterval(rawValue, name string) time.Duration {
 	}
 
 	return d
+}
+
+// mustParseBool returns the boolean version of the given raw value fatally logs on failure.
+func mustParseBool(rawValue, name string) bool {
+	v, err := strconv.ParseBool(rawValue)
+	if err != nil {
+		log.Fatalf("invalid bool %q for %s: %s", rawValue, name, err)
+	}
+
+	return v
 }

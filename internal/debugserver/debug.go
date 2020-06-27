@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/felixge/fgprof"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 
 	"golang.org/x/net/trace"
@@ -100,6 +101,7 @@ func Start(extra ...Endpoint) {
 	pp.Handle("/vars", http.HandlerFunc(expvarHandler))
 	pp.Handle("/gc", http.HandlerFunc(gcHandler))
 	pp.Handle("/freeosmemory", http.HandlerFunc(freeOSMemoryHandler))
+	pp.Handle("/debug/fgprof", fgprof.Handler())
 	pp.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
 	pp.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
 	pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))

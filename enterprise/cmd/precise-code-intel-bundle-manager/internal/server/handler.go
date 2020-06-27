@@ -317,12 +317,12 @@ func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type dbQueryHandlerFn func(ctx context.Context, db database.Database) (interface{}, error)
+type dbQueryHandlerFunc func(ctx context.Context, db database.Database) (interface{}, error)
 
 // dbQuery invokes the given handler with the database instance chosen from the
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be written to the body of a 500-level response.
-func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) {
+func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFunc) {
 	id := idFromRequest(r)
 
 	if err := s.dbQueryErr(w, r, handler); err != nil {
@@ -340,7 +340,7 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQuery
 // queryBundleErr invokes the given handler with the database instance chosen from the
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be returned.
-func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) (err error) {
+func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFunc) (err error) {
 	ctx := r.Context()
 	filename := paths.SQLiteDBFilename(s.bundleDir, idFromRequest(r))
 
