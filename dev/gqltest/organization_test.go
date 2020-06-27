@@ -1,4 +1,4 @@
-// +build e2e
+// +build gqltest
 
 package main
 
@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -138,7 +138,7 @@ func TestOrganization(t *testing.T) {
 
 		var lastOrgs []string
 		// Retry because the configuration update endpoint is eventually consistent
-		err = e2eutil.Retry(5*time.Second, func() error {
+		err = gqltestutil.Retry(5*time.Second, func() error {
 			// Create another test user (test-org-user-2) and the user should be added to
 			// the organization (e2e-test-org) automatically.
 			const testUsername2 = "test-org-user-2"
@@ -161,7 +161,7 @@ func TestOrganization(t *testing.T) {
 
 			wantOrgs := []string{testOrgName}
 			if cmp.Diff(wantOrgs, orgs) != "" {
-				return e2eutil.ErrContinueRetry
+				return gqltestutil.ErrContinueRetry
 			}
 			return nil
 		})

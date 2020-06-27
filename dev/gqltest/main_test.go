@@ -1,4 +1,4 @@
-// +build e2e
+// +build gqltest
 
 package main
 
@@ -12,7 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
 /*
@@ -20,7 +20,7 @@ import (
 			docker run --publish 7080:7080 --rm sourcegraph/server:insiders
 */
 
-var client *e2eutil.Client
+var client *gqltestutil.Client
 
 var (
 	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
@@ -36,19 +36,19 @@ func TestMain(m *testing.M) {
 
 	*baseURL = strings.TrimSuffix(*baseURL, "/")
 
-	needsSiteInit, err := e2eutil.NeedsSiteInit(*baseURL)
+	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)
 	}
 
 	if needsSiteInit {
-		client, err = e2eutil.SiteAdminInit(*baseURL, *email, *username, *password)
+		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
 		if err != nil {
 			log.Fatal("Failed to create site admin: ", err)
 		}
 		log.Println("Site admin has been created:", *username)
 	} else {
-		client, err = e2eutil.SignIn(*baseURL, *email, *password)
+		client, err = gqltestutil.SignIn(*baseURL, *email, *password)
 		if err != nil {
 			log.Fatal("Failed to sign in:", err)
 		}

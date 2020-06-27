@@ -1,4 +1,4 @@
-package e2eutil
+package gqltestutil
 
 import (
 	"time"
