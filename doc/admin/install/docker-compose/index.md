@@ -61,7 +61,7 @@ Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital
 
 ## Insiders build
 
-To test new development builds of Sourcegraph (triggered by commits to master), change all `index.docker.io/sourcegraph/*` Docker image semver tags in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to `insiders` (e.g., `index.docker.io/sourcegraph/frontend:1.2.3` to `index.docker.io/sourcegraph/frontend:1.2.3`).
+To test new development builds of Sourcegraph (triggered by commits to master), change all `index.docker.io/sourcegraph/*` Docker image semver tags in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to `insiders` (e.g., `index.docker.io/sourcegraph/frontend:1.2.3` to `index.docker.io/sourcegraph/frontend:insiders`).
 
 > WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config beforehand.
 
