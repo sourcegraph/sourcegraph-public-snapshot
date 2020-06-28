@@ -7,17 +7,19 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type Worker struct {
 	store        store.Store
 	processor    Processor
 	pollInterval time.Duration
-	metrics      WorkerMetrics
+	metrics      metrics.WorkerMetrics
 	done         chan struct{}
 	once         sync.Once
 }
@@ -27,11 +29,12 @@ func NewWorker(
 	bundleManagerClient bundles.BundleManagerClient,
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
-	metrics WorkerMetrics,
+	metrics metrics.WorkerMetrics,
 ) *Worker {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
+		metrics:             metrics,
 	}
 
 	return &Worker{
@@ -89,7 +92,8 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 
 	log15.Info("Dequeued upload for processing", "id", upload.ID)
 
-	if requeued, processErr := w.processor.Process(ctx, store, upload); processErr == nil {
+	// TODO - same for janitors/resetters
+	if requeued, processErr := w.processor.Process(ot.WithShouldTrace(ctx, true), store, upload); processErr == nil {
 		if requeued {
 			log15.Info("Requeueing upload", "id", upload.ID)
 		} else {
