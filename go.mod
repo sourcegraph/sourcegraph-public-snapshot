@@ -70,7 +70,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/gosimple/slug v1.9.0 // indirect
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20200610203821-a982d46f0598
+	github.com/grafana-tools/sdk v0.0.0-20200627094057-622ba1f937bb
 	github.com/graph-gophers/graphql-go v0.0.0-20200622220639-c1d9693c95a6
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -192,9 +192,6 @@ replace (
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
-
-// https://github.com/grafana-tools/sdk/pull/80
-replace github.com/grafana-tools/sdk => github.com/slimsag/sdk v0.0.0-20200402190125-fc52c0aed0b7
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
