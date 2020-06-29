@@ -450,11 +450,15 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return result, nil
 	}
 
-	var repo *repos.Repo
+	return s.remoteRepoSync(ctx, codehost, string(args.Repo))
+}
 
+func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (result *protocol.RepoLookupResult, err error) {
+	result = &protocol.RepoLookupResult{}
+	var repo *repos.Repo
 	switch codehost {
 	case extsvc.GitHubDotCom:
-		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
+		nameWithOwner := strings.TrimPrefix(remoteName, "github.com/")
 		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
 			if github.IsNotFound(err) {
@@ -473,7 +477,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 
 	case extsvc.GitLabDotCom:
-		projectWithNamespace := strings.TrimPrefix(string(args.Repo), "gitlab.com/")
+		projectWithNamespace := strings.TrimPrefix(remoteName, "gitlab.com/")
 		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
 		if err != nil {
 			if gitlab.IsNotFound(err) {
