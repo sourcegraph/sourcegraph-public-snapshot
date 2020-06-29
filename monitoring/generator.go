@@ -413,9 +413,9 @@ func (c *Container) dashboard() *sdk.Board {
 			Thresholds:  &[]string{"0.99999", "1"},
 			Type:        "string",
 			MappingType: 1,
-			ValueMaps: []sdk.ColumnStyleValueMap{
-				{Text: "false", Value: "0"},
-				{Text: "true", Value: "1"},
+			ValueMaps: []sdk.ValueMap{
+				{TextType: "false", Value: "0"},
+				{TextType: "true", Value: "1"},
 			},
 		},
 	}
