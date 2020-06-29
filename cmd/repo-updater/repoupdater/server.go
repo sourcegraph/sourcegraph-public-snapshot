@@ -425,7 +425,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	result = &protocol.RepoLookupResult{}
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 
 	if !s.SourcegraphDotComMode || codehost == nil {
@@ -437,8 +436,9 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 
 		if len(repos) != 1 {
-			result.ErrorNotFound = true
-			return result, nil
+			return &protocol.RepoLookupResult{
+				ErrorNotFound: true,
+			}, nil
 		}
 
 		repoInfo, err := newRepoInfo(repos[0])
@@ -446,32 +446,36 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 
-		result.Repo = repoInfo
-		return result, nil
+		return &protocol.RepoLookupResult{
+			Repo: repoInfo,
+		}, nil
 	}
 
 	return s.remoteRepoSync(ctx, codehost, string(args.Repo))
 }
 
-func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (result *protocol.RepoLookupResult, err error) {
-	result = &protocol.RepoLookupResult{}
+func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
 	var repo *repos.Repo
+	var err error
 	switch codehost {
 	case extsvc.GitHubDotCom:
 		nameWithOwner := strings.TrimPrefix(remoteName, "github.com/")
 		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
 			if github.IsNotFound(err) {
-				result.ErrorNotFound = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorNotFound: true,
+				}, nil
 			}
 			if isUnauthorized(err) {
-				result.ErrorUnauthorized = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorUnauthorized: true,
+				}, nil
 			}
 			if isTemporarilyUnavailable(err) {
-				result.ErrorTemporarilyUnavailable = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorTemporarilyUnavailable: true,
+				}, nil
 			}
 			return nil, err
 		}
@@ -481,12 +485,14 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
 		if err != nil {
 			if gitlab.IsNotFound(err) {
-				result.ErrorNotFound = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorNotFound: true,
+				}, nil
 			}
 			if isUnauthorized(err) {
-				result.ErrorUnauthorized = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorUnauthorized: true,
+				}, nil
 			}
 			return nil, err
 		}
@@ -502,8 +508,9 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 		return nil, err
 	}
 
-	result.Repo = repoInfo
-	return result, nil
+	return &protocol.RepoLookupResult{
+		Repo: repoInfo,
+	}, nil
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
