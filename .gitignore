@@ -93,7 +93,6 @@ cmd/src/debug
 cmd/gitserver/debug
 cmd/indexer/debug
 
-/dev/e2e/log.html
 /.gtm/
 
 # Web

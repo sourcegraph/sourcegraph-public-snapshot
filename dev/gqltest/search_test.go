@@ -1,4 +1,4 @@
-// +build e2e
+// +build gqltest
 
 package main
 
@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
 func TestSearch(t *testing.T) {
@@ -18,7 +18,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(e2eutil.AddExternalServiceInput{
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "e2e-test-github",
 		Config: mustMarshalJSONString(struct {
@@ -98,7 +98,7 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
-	t.Run("execute search with search operators", func(t *testing.T) {
+	t.Run("execute search with search parameters", func(t *testing.T) {
 		results, err := client.SearchFiles("repo:^github.com/sourcegraph/go-diff$ type:file file:.go -file:.md")
 		if err != nil {
 			t.Fatal(err)

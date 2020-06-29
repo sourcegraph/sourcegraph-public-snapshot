@@ -1,4 +1,4 @@
-// +build e2e
+// +build gqltest
 
 package main
 
@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
 func TestExternalService(t *testing.T) {
@@ -20,7 +20,7 @@ func TestExternalService(t *testing.T) {
 		const repo = "sourcegraph/go-blame" // Tiny repo, fast to clone
 		const slug = "github.com/" + repo
 		// Set up external service
-		esID, err := client.AddExternalService(e2eutil.AddExternalServiceInput{
+		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "e2e-test-github-repoPathPattern",
 			Config: mustMarshalJSONString(struct {
