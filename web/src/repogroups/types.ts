@@ -20,7 +20,7 @@ export interface RepogroupMetadata {
      */
     title: string
     /**
-     *  The name of the repogroup, as configured in settings. E.g. python2-to-3.
+     * The name of the repogroup, as configured in settings. E.g. python2-to-3.
      */
     name: string
     /**

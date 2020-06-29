@@ -81,7 +81,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
             // False positive
             // eslint-disable-next-line no-unused-expressions
             event?.preventDefault()
-            submitSearch({ ...props, query: userQueryState.query, source: 'home' })
+            submitSearch({ ...props, query: userQueryState.query, source: 'repogroupPage' })
         },
         [props, userQueryState.query]
     )
@@ -90,7 +90,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
         // eslint-disable-next-line no-unused-expressions
         event?.preventDefault()
         // TODO: update source
-        submitSearch({ ...props, query, source: 'home' })
+        submitSearch({ ...props, query, source: 'repogroupPage' })
     }
 
     return (
