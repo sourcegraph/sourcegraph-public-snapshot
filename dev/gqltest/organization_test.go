@@ -14,7 +14,7 @@ import (
 )
 
 func TestOrganization(t *testing.T) {
-	const testOrgName = "e2e-test-org"
+	const testOrgName = "gqltest-org"
 	orgID, err := client.CreateOrganization(testOrgName, testOrgName)
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +63,7 @@ func TestOrganization(t *testing.T) {
 			}
 		}
 
-		// Remove authenticate user (e2e-admin) from organization (e2e-test-org) should
+		// Remove authenticate user (gqltest-admin) from organization (gqltest-org) should
 		// no longer get cascaded settings from this organization.
 		err = client.RemoveUserFromOrganization(client.AuthenticatedUserID(), orgID)
 		if err != nil {
@@ -92,9 +92,9 @@ func TestOrganization(t *testing.T) {
 
 	// Docs: https://docs.sourcegraph.com/user/organizations
 	t.Run("auth.userOrgMap", func(t *testing.T) {
-		// Create a test user (test-org-user-1) without settings "auth.userOrgMap",
-		// the user should not be added to the organization (e2e-test-org) automatically.
-		const testUsername1 = "test-org-user-1"
+		// Create a test user (gqltest-org-user-1) without settings "auth.userOrgMap",
+		// the user should not be added to the organization (gqltest-org) automatically.
+		const testUsername1 = "gqltest-org-user-1"
 		testUserID1, err := client.CreateUser(testUsername1, testUsername1+"@sourcegraph.com")
 		if err != nil {
 			t.Fatal(err)
@@ -116,7 +116,7 @@ func TestOrganization(t *testing.T) {
 		}
 
 		// Update site configuration to set "auth.userOrgMap" which makes the new user join
-		// the organization (e2e-test-org) automatically.
+		// the organization (gqltest-org) automatically.
 		siteConfig, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
@@ -139,9 +139,9 @@ func TestOrganization(t *testing.T) {
 		var lastOrgs []string
 		// Retry because the configuration update endpoint is eventually consistent
 		err = gqltestutil.Retry(5*time.Second, func() error {
-			// Create another test user (test-org-user-2) and the user should be added to
-			// the organization (e2e-test-org) automatically.
-			const testUsername2 = "test-org-user-2"
+			// Create another test user (gqltest-org-user-2) and the user should be added to
+			// the organization (gqltest-org) automatically.
+			const testUsername2 = "gqltest-org-user-2"
 			testUserID2, err := client.CreateUser(testUsername2, testUsername2+"@sourcegraph.com")
 			if err != nil {
 				t.Fatal(err)

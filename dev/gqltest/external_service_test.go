@@ -22,7 +22,7 @@ func TestExternalService(t *testing.T) {
 		// Set up external service
 		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "e2e-test-github-repoPathPattern",
+			DisplayName: "gqltest-github-repoPathPattern",
 			Config: mustMarshalJSONString(struct {
 				URL                   string   `json:"url"`
 				Token                 string   `json:"token"`
