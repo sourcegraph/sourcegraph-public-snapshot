@@ -80,9 +80,9 @@ func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDif
 	return changes
 }
 
-// siteConfigSubscriber is a sidecar service that subscribes to Sourcegraph site configuration and
+// SiteConfigSubscriber is a sidecar service that subscribes to Sourcegraph site configuration and
 // applies relevant (subscribedSiteConfig) changes to Grafana.
-type siteConfigSubscriber struct {
+type SiteConfigSubscriber struct {
 	log          log15.Logger
 	alertmanager *amclient.Alertmanager
 
@@ -91,7 +91,7 @@ type siteConfigSubscriber struct {
 	problems conf.Problems // exported by handler
 }
 
-func NewSiteConfigSubscriber(ctx context.Context, logger log15.Logger, alertmanager *amclient.Alertmanager) (*siteConfigSubscriber, error) {
+func NewSiteConfigSubscriber(ctx context.Context, logger log15.Logger, alertmanager *amclient.Alertmanager) (*SiteConfigSubscriber, error) {
 	log := logger.New("logger", "config-subscriber")
 
 	log.Info("waiting for alertmanager")
@@ -99,7 +99,7 @@ func NewSiteConfigSubscriber(ctx context.Context, logger log15.Logger, alertmana
 		return nil, err
 	}
 	log.Debug("detected alertmanager ready")
-	subscriber := &siteConfigSubscriber{
+	subscriber := &SiteConfigSubscriber{
 		log:          log,
 		alertmanager: alertmanager,
 	}
@@ -125,7 +125,7 @@ func NewSiteConfigSubscriber(ctx context.Context, logger log15.Logger, alertmana
 	return subscriber, nil
 }
 
-func (c *siteConfigSubscriber) Handler() http.Handler {
+func (c *SiteConfigSubscriber) Handler() http.Handler {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		c.mux.RLock()
@@ -154,7 +154,7 @@ func (c *siteConfigSubscriber) Handler() http.Handler {
 	return handler
 }
 
-func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
+func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 	conf.Watch(func() {
 		c.mux.RLock()
 		newSiteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
@@ -176,7 +176,7 @@ func (c *siteConfigSubscriber) Subscribe(ctx context.Context) {
 
 // execDiffs updates grafanaAlertsSubscriber state and writes it to disk. It never returns an error,
 // instead all errors are reported as problems
-func (c *siteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscribedSiteConfig, diffs []siteConfigDiff) {
+func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscribedSiteConfig, diffs []siteConfigDiff) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 

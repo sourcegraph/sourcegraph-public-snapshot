@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
+// prom-wrapper configuration options
 var (
 	noConfig   = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
 	exportPort = env.Get("EXPORT_PORT", "3370", "port that should be used to reverse-proxy Prometheus and custom endpoints externally")
