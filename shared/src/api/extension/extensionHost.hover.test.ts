@@ -116,5 +116,4 @@ describe('getHover from ExtensionHost API', () => {
         })
     })
 
-    //
 })

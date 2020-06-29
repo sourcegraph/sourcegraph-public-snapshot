@@ -16,7 +16,7 @@ const getResultsFromProviders = (providersObservable: Observable<Provider[]>, do
         results => results
     )
 
-describe('bla', () => {
+describe('callProviders()', () => {
     const provide = (number: number | Observable<number>, pattern = '*.ts'): Provider => ({
         provider: number,
         selector: [{ pattern }],

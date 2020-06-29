@@ -138,13 +138,14 @@ export const initNewExtensionAPI = (
         // Language
         getHover: (textParameters: TextDocumentPositionParams) => {
             const document = textDocuments.get(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
 
             const invokeProvider = (
                 provider: sourcegraph.HoverProvider
             ): sourcegraph.ProviderResult<sourcegraph.Badged<Hover>> =>
-                provider.provideHover(document, toPosition(textParameters.position))
+                provider.provideHover(document, position)
 
-            return proxySubscribable(callProviders(state.hoverProviders, document, invokeProvider, mergeHoverResults))
+            return proxySubscribable(callProviders(state.hoverProviders, document, provider => provider.provideHover(document, position), mergeHoverResults))
         },
     }
 
