@@ -13,7 +13,8 @@ const getResultsFromProviders = (providersObservable: Observable<Provider[]>, do
         providersObservable,
         document,
         value => value,
-        results => results
+        results => results,
+        false // < -- logErrors
     )
 
 describe('callProviders()', () => {

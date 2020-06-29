@@ -37,11 +37,6 @@ export interface ExtState {
     hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
 }
 
-interface RegisteredHoverProvider {
-    selector: sourcegraph.DocumentSelector
-    provider: sourcegraph.HoverProvider
-}
-
 export interface RegisteredProvider<T> {
     selector: sourcegraph.DocumentSelector
     provider: T
@@ -82,7 +77,7 @@ export const initNewExtensionAPI = (
         versionContext: undefined,
         settings: initialSettings,
         queryTransformers: new BehaviorSubject<sourcegraph.QueryTransformer[]>([]),
-        hoverProviders: new BehaviorSubject<RegisteredHoverProvider[]>([]),
+        hoverProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -203,6 +198,14 @@ export const initNewExtensionAPI = (
 }
 
 // TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
+/**
+ * Filters a list of Providers (P type) based on their selectors and a document
+ *
+ * @param document to use for filtering
+ * @param entries array of providers (P[])
+ * @param selector a way to get a selector from a Provider
+ * @returns a filtered array of providers
+ */
 function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: P[],
@@ -216,6 +219,13 @@ function providersForDocument<P>(
     )
 }
 
+/**
+ * calls next() on behaviorSubject with a immutably added element ([...old, value])
+ *
+ * @param behaviorSubject subject that holds a collection
+ * @param value to add to a collection
+ * @returns Unsubscribable that will remove that element from the behaviorSubject.value and call next() again
+ */
 function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): sourcegraph.Unsubscribable {
     behaviorSubject.next([...behaviorSubject.value, value])
     return {
@@ -223,11 +233,28 @@ function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): so
     }
 }
 
+/**
+ * Helper function to abstract common logic of invoking language providers.
+ *
+ * 1. filters providers based on document
+ * 2. invokes filtered providers via invokeProvider function
+ * 3. adds [LOADING] state for each provider result stream
+ * 4. omits errors from provider results with potential logging
+ * 5. aggregates latests results from providers based on mergeResult function
+ *
+ * @param providersObservable observable of provider collection (expected to emit if a provider was added or removed)
+ * @param document used for filtering providers
+ * @param invokeProvider specifies how to get results from a provider (usually a closure over provider arguments)
+ * @param mergeResult specifies how providers results should be aggregated
+ * @param logErrors if console.error should be used for reporting errors from providers
+ * @returns observable of aggregated results from all providers based on mergeResults function
+ */
 export function callProviders<TProvider, TProviderResult, TMergedResult>(
     providersObservable: Observable<RegisteredProvider<TProvider>[]>,
     document: TextDocumentIdentifier,
     invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
-    mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult
+    mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
+    logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
     return providersObservable
         .pipe(
@@ -240,7 +267,6 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
                             providerResultToObservable(invokeProvider(provider.provider)).pipe(
                                 defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
                                 catchError(error => {
-                                    const logErrors = true
                                     if (logErrors) {
                                         console.error('Provider errored:', error)
                                     }
@@ -262,6 +288,12 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
         )
 }
 
+/**
+ * merges latests results from hover providers into a form that is convenient to show
+ *
+ * @param results latests results from hover providers
+ * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
+ */
 export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
     return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
 }
