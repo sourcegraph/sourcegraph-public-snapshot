@@ -425,35 +425,56 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
+	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+		Names: []string{string(args.Repo)},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// If we are sourcegraph.com we don't run a global Sync since there are
+	// too many repos. Instead we use an incremental approach where we check
+	// for changes everytime a user browses a repo. RepoLookup is the signal
+	// we rely on to check metadata.
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
-
-	if !s.SourcegraphDotComMode || codehost == nil {
-		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-			Names: []string{string(args.Repo)},
-		})
-		if err != nil {
-			return nil, err
+	if s.SourcegraphDotComMode && codehost != nil {
+		// TODO a queue with single flighting to speak to remote for args.Repo?
+		if len(repos) == 1 {
+			// We have (potentially stale) data we can return to the user right
+			// now. Do that rather than blocking.
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
+				_, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
+				if err != nil {
+					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+				}
+			}()
+		} else {
+			// Try and find this repo on the remote host. Block on the remote
+			// request.
+			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
 		}
+	}
 
-		if len(repos) != 1 {
-			return &protocol.RepoLookupResult{
-				ErrorNotFound: true,
-			}, nil
-		}
-
-		repoInfo, err := newRepoInfo(repos[0])
-		if err != nil {
-			return nil, err
-		}
-
+	if len(repos) != 1 {
 		return &protocol.RepoLookupResult{
-			Repo: repoInfo,
+			ErrorNotFound: true,
 		}, nil
 	}
 
-	return s.remoteRepoSync(ctx, codehost, string(args.Repo))
+	repoInfo, err := newRepoInfo(repos[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return &protocol.RepoLookupResult{
+		Repo: repoInfo,
+	}, nil
 }
 
+// remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
+// for remoteName on codehost.
 func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
 	var repo *repos.Repo
 	var err error
