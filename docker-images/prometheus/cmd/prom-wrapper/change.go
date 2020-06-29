@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	amconfig "github.com/prometheus/alertmanager/config"
+	"github.com/prometheus/common/model"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -41,12 +42,14 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		Routes: []*amconfig.Route{
 			{
 				Receiver: alertmanagerWarningReceiver,
+				GroupBy:  []model.LabelName{"description"},
 				Match: map[string]string{
-					"level": "critical",
+					"level": "warning",
 				},
 			},
 			{
 				Receiver: alertmanagerCriticalReceiver,
+				GroupBy:  []model.LabelName{"description"},
 				Match: map[string]string{
 					"level": "critical",
 				},
