@@ -97,7 +97,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
         <div className="repogroup-page">
             <PageTitle title="Python 2 to 3 migration" />
             <BrandLogo
-                className="search-page__logo"
+                className="repogroup-page__logo"
                 isLightTheme={props.isLightTheme}
                 customLogoUrl={
                     props.repogroupMetadata.customLogoUrl ? props.repogroupMetadata.customLogoUrl : undefined
@@ -105,7 +105,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
             />
             <div className="repogroup-page__subheading">
                 <span className="text-monospace">
-                    <span className="repogroup-page__repogroup-text">repogroup:</span>
+                    <span className="repogroup-page__keyword-text">repogroup:</span>
                     {props.repogroupMetadata.name}
                 </span>
             </div>
@@ -113,7 +113,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                 <div className="d-flex flex-row flex-shrink-past-contents">
                     <>
                         <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                            <div className="search-page__input-container">
+                            <div className="repogroup-page__input-container">
                                 {props.splitSearchModes && (
                                     <SearchModeToggle {...props} interactiveSearchMode={props.interactiveSearchMode} />
                                 )}
@@ -169,7 +169,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                             <h3 className="mb-3">{example.title}</h3>
                             <div className="d-flex mb-4">
                                 <div className="repogroup-page__example-bar form-control text-monospace">
-                                    <span className="repogroup-page__repogroup-text">repogroup:</span>
+                                    <span className="repogroup-page__keyword-text">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
                                 </div>
                                 <div className="search-button d-flex">
@@ -195,7 +195,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                         <p>
                             Using the syntax{' '}
                             <span className="text-monospace">
-                                <span className="repogroup-page__repogroup-text">repogroup:</span>
+                                <span className="repogroup-page__keyword-text">repogroup:</span>
                                 {props.repogroupMetadata.name}
                             </span>{' '}
                             in a query will search these repositories:

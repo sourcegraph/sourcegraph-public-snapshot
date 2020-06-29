@@ -54,8 +54,7 @@
     }
 
     &__repogroup-content {
-        width: 100%;
-        padding: 0 10%;
+        max-width: 80%;
     }
 
     &__repogroup-list {
@@ -75,7 +74,7 @@
 
     &__lang-list {
         display: grid;
-        grid-template-columns: repeat(2, minmax(max-content, 1fr));
+        grid-template-columns: repeat(2, minmax(min-content, 1fr));
         gap: $spacer * 0.75;
     }
 
@@ -83,6 +82,14 @@
         display: grid;
         grid-template-columns: 2fr 1fr 2fr;
         column-gap: 2rem;
+
+        &-header {
+            color: $gray-13;
+        }
+
+        &-subheading {
+            color: $gray-07;
+        }
     }
 }
 

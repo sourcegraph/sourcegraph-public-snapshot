@@ -233,9 +233,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             {props.isSourcegraphDotCom && (
                 <div className="search-page__repogroup-content mt-5">
                     <div className="d-flex align-items-baseline">
-                        <h3 className="mr-1">Search in repository groups</h3>
+                        <h3 className="search-page__help-content-header mr-1">Search in repository groups</h3>
                         <span className="text-monospace font-weight-normal">
-                            <span className="repogroup-page__repogroup-text">repogroup:</span>
+                            <span className="repogroup-page__keyword-text">repogroup:</span>
                             <i>name</i>
                         </span>
                     </div>
@@ -254,28 +254,45 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                     </div>
                     <div className="search-page__help-content mt-5">
                         <div>
-                            <h3>Example searches</h3>
-                            <div className="text-monospace">lang:javascript alert(:[variable])</div>{' '}
-                            <p>
-                                A collection of top react repositories, including, tooling, ui, testing and key
-                                components.
-                            </p>
-                            <div className="text-monospace">lang:javascript alert(:[variable])</div>
-                            <p>
-                                A collection of top react repositories, including, tooling, ui, testing and key
-                                components.
-                            </p>
-                            <div className="text-monospace">lang:javascript alert(:[variable])</div>{' '}
-                            <p>
-                                A collection of top react repositories, including, tooling, ui, testing and key
-                                components.
-                            </p>
+                            <h3 className="search-page__help-content-header">Example searches</h3>
+                            <ul className="list-group-flush p-0">
+                                <li className="list-group-item px-0 py-3">
+                                    <div className="text-monospace mb-1">
+                                        <span className="repogroup-page__keyword-text">lang:</span>javascript
+                                        alert(:[variable])
+                                    </div>{' '}
+                                    <div>
+                                        A collection of top react repositories, including, tooling, ui, testing and key
+                                        components.
+                                    </div>
+                                </li>
+                                <li className="list-group-item px-0 py-3">
+                                    <div className="text-monospace mb-1">
+                                        <span className="repogroup-page__keyword-text">lang:</span>javascript
+                                        alert(:[variable])
+                                    </div>{' '}
+                                    <div>
+                                        A collection of top react repositories, including, tooling, ui, testing and key
+                                        components.
+                                    </div>
+                                </li>
+                                <li className="list-group-item px-0 py-3">
+                                    <div className="text-monospace mb-1">
+                                        <span className="repogroup-page__keyword-text">lang:</span>javascript
+                                        alert(:[variable])
+                                    </div>{' '}
+                                    <div>
+                                        A collection of top react repositories, including, tooling, ui, testing and key
+                                        components.
+                                    </div>
+                                </li>
+                            </ul>
                         </div>
                         <div>
                             <div className="d-flex align-items-baseline">
-                                <h3 className="mr-1">Search a language</h3>
+                                <h3 className="search-page__help-content-header mr-1">Search a language</h3>
                                 <span className="text-monospace font-weight-normal">
-                                    <span className="repogroup-page__repogroup-text">lang:</span>
+                                    <span className="repogroup-page__keyword-text">lang:</span>
                                     <i>name</i>
                                 </span>
                             </div>
@@ -288,29 +305,31 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             </div>
                         </div>
                         <div>
-                            <h3>Search syntax</h3>
+                            <h3 className="search-page__help-content-header">Search syntax</h3>
                             <div className="search-page__lang-list">
                                 <dl>
-                                    <dt>Common search keywords</dt>
-                                    <dd className="text-monospace">repo: my/repo</dd>
+                                    <dt className="search-page__help-content-subheading">Common search keywords</dt>
+                                    <dd className="text-monospace">repo:my/repo</dd>
                                     <dd className="text-monospace">repo:github.com/myorg/</dd>
                                     <dd className="text-monospace">file:my/file</dd>
                                     <dd className="text-monospace">lang:javascript</dd>
                                 </dl>
                                 <dl>
-                                    <dt>Diff/commit search keywords:</dt>
+                                    <dt className="search-page__help-content-subheading">
+                                        Diff/commit search keywords:
+                                    </dt>
                                     <dd className="text-monospace">type:diff or type:commit</dd>
                                     <dd className="text-monospace">after:”2 weeks ago”</dd>
                                     <dd className="text-monospace">author:alice@example.com</dd>{' '}
                                     <dd className="text-monospace">repo:r@*refs/heads/ (all branches)</dd>
                                 </dl>
                                 <dl>
-                                    <dt>Finding matches</dt>
+                                    <dt className="search-page__help-content-subheading">Finding matches</dt>
                                     <dd className="text-monospace">Regexp: (read|write)File</dd>{' '}
                                     <dd className="text-monospace">Exact: “fs.open(f)”</dd>
                                 </dl>
                                 <dl>
-                                    <dt>Structural Searches</dt>
+                                    <dt className="search-page__help-content-subheading">Structural Searches</dt>
                                     <dd className="text-monospace">:[arg] matches arguments</dd>
                                 </dl>
                             </div>
