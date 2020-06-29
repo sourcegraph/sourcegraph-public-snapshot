@@ -72,8 +72,8 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
 
     /** The query cursor position and value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
-        query: '',
-        cursorPosition: 0,
+        query: repogroupQuery,
+        cursorPosition: repogroupQuery.length,
     })
 
     const onSubmit = React.useCallback(
@@ -81,9 +81,9 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
             // False positive
             // eslint-disable-next-line no-unused-expressions
             event?.preventDefault()
-            submitSearch({ ...props, query: `${repogroupQuery} ${userQueryState.query}`, source: 'home' })
+            submitSearch({ ...props, query: userQueryState.query, source: 'home' })
         },
-        [props, repogroupQuery, userQueryState.query]
+        [props, userQueryState.query]
     )
 
     const onSubmitExample = (query: string) => (event?: React.MouseEvent<HTMLButtonElement>): void => {

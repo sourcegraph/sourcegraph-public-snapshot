@@ -232,7 +232,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             </div>
             {props.isSourcegraphDotCom && (
                 <div className="search-page__repogroup-content mt-5">
-                    <div className="d-flex align-items-baseline">
+                    <div className="d-flex align-items-baseline mb-3">
                         <h3 className="search-page__help-content-header mr-1">Search in repository groups</h3>
                         <span className="text-monospace font-weight-normal">
                             <span className="repogroup-page__keyword-text">repogroup:</span>
