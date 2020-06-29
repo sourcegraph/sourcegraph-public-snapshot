@@ -753,12 +753,12 @@ type NotifierOpsGenie struct {
 	Type     string `json:"type"`
 }
 
-// NotifierPagerduty description: Pagerduty notifier
+// NotifierPagerduty description: PagerDuty notifier
 type NotifierPagerduty struct {
 	ApiUrl string `json:"apiUrl,omitempty"`
-	// RoutingKey description: Integration key for PagerDuty.
-	RoutingKey string `json:"routingKey,omitempty"`
-	// Severity description: Routing key for the Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
+	// RoutingKey description: Routing key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
+	RoutingKey string `json:"routingKey"`
+	// Severity description: Severity level for PagerDuty alert
 	Severity string `json:"severity,omitempty"`
 	Type     string `json:"type"`
 }
@@ -928,7 +928,7 @@ type SMTPServerConfig struct {
 	Domain string `json:"domain,omitempty"`
 	// Host description: The SMTP server host.
 	Host string `json:"host"`
-	// Password description: The username to use when communicating with the SMTP server.
+	// Password description: The password to use when communicating with the SMTP server.
 	Password string `json:"password,omitempty"`
 	// Port description: The SMTP server port.
 	Port int `json:"port"`

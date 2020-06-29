@@ -469,7 +469,7 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "password": {
-          "description": "The username to use when communicating with the SMTP server.",
+          "description": "The password to use when communicating with the SMTP server.",
           "type": "string"
         },
         "authentication": {
@@ -613,7 +613,7 @@ const SiteSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["level", "id", "notifier"],
+        "required": ["level", "notifier"],
         "properties": {
           "level": {
             "description": "Sourcegraph alert level to subscribe to notifications for.",
@@ -645,7 +645,6 @@ const SiteSchemaJSON = `{
           }
         },
         "default": {
-          "id": "",
           "level": "critical",
           "notifier": {
             "type": ""
@@ -1039,20 +1038,20 @@ const SiteSchemaJSON = `{
       }
     },
     "NotifierPagerduty": {
-      "description": "Pagerduty notifier",
+      "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "integrationKey"],
+      "required": ["type", "routingKey"],
       "properties": {
         "type": {
           "type": "string",
           "const": "pagerduty"
         },
         "routingKey": {
-          "description": "Integration key for PagerDuty.",
+          "description": "Routing key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview",
           "type": "string"
         },
         "severity": {
-          "description": "Routing key for the Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview",
+          "description": "Severity level for PagerDuty alert",
           "type": "string"
         },
         "apiUrl": { "type": "string" }

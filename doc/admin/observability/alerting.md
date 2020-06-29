@@ -9,9 +9,9 @@ prefers Grafana.)
 
 ### Sourcegraph 3.17+
 
-Visit your site configuration (e.g. https://sourcegraph.example.com/site-admin/configuration) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
+Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/configuration`) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
 
-Configured alerts will automatically create notifiers in Grafana and attach them to relevant alerts.
+Once configured, Sourcegraph alerts will automatically be routed to the appropriate notification channels by severity level.
 
 #### Examples
 
@@ -20,16 +20,11 @@ Configured alerts will automatically create notifiers in Grafana and attach them
 ```json
 "observability.alerts": [
   {
-    "id": "my-unique-alert",
     "level": "critical",
     "notifier": {
       "type": "slack",
       // Slack incoming webhook URL.
       "url": "https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx",
-      // Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer
-      // to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the
-      // overflow button on each user’s Slack profile).
-      "mentionUsers": "U0XXXXX,U0XXXXXX"
     }
   }
 ]
@@ -40,12 +35,11 @@ Configured alerts will automatically create notifiers in Grafana and attach them
 ```json
 "observability.alerts": [
   {
-    "id": "my-unique-alert",
     "level": "critical",
     "notifier": {
       "type": "pagerduty",
-      // Integration key for PagerDuty.
-      "integrationKey": "XXXXXXXX"
+      // Routing key for the PagerDuty Events API v2
+      "routingKey": "XXXXXXXX"
     }
   }
 ]
@@ -56,12 +50,27 @@ Configured alerts will automatically create notifiers in Grafana and attach them
 ```json
 "observability.alerts": [
   {
-    "id": "my-unique-alert",
     "level": "critical",
     "notifier": {
       "type": "webhook",
       // Webhook URL.
       "url": "https://my.webhook.url"
+    }
+  }
+]
+```
+
+#### Email
+
+Note that to receive email notifications, the `email.address` and `email.smtp` fields must be configured in site configuration.
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "webhook",
+      "address": "alerts@company.com"
     }
   }
 ]
