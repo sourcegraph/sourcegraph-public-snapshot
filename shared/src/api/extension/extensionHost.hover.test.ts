@@ -34,11 +34,13 @@ describe('mergeHoverResults', () => {
     it('merges Hovers with ranges', () => {
         const hover1: Hover = {
             contents: { value: 'c1' },
-            range: new Range(1, 2, 3, 4),
+            // TODO this is weird to cast to ranges
+            range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
         }
         const hover2: Hover = {
             contents: { value: 'c2' },
-            range: new Range(1, 2, 3, 4),
+            // TODO this is weird to cast to ranges
+            range: ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range,
         }
         const merged: HoverMerged = {
             contents: [
