@@ -41,7 +41,7 @@ func init() {
 }
 
 // This integration test performs a repository-centric permissions syncing against
-// https://github.com, then check if permissions are corrected granted for the test
+// https://github.com, then check if permissions are correctly granted for the test
 // user "sourcegraph-vcr-bob", who is a outside collaborator of the repository
 // "sourcegraph-vcr-repos/private-org-repo-1".
 //
