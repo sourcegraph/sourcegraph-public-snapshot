@@ -4,6 +4,8 @@ import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
 import { isErrorLike } from '../../shared/src/util/errors'
+import { RepogroupPage } from './repogroups/RepogroupPage'
+import { python2To3Metadata } from './repogroups/Python2To3'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -162,7 +164,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/refactor-python2-to-3',
-        render: lazyComponent(() => import('./repogroups/Python2To3'), 'Python2To3'),
+        render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
     },
     {
         path: '/:repoRevAndRest+',

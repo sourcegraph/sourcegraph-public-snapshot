@@ -68,6 +68,12 @@ interface Props
      */
     lowProfile: boolean
 
+    /**
+     * Whether to use the low-profile form of the navbar, but show the homepage logo. Used on repogroup pages.
+     * Must be used toogether with the lowProfile prop.
+     */
+    lowProfileWithLogo?: boolean
+
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
@@ -177,6 +183,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
                 {this.props.lowProfile ? (
                     <>
+                        {this.props.lowProfileWithLogo && <div className="nav-item flex-1">{logoLink}</div>}
                         <div className="flex-1" />
                         {!this.state.authRequired && !this.props.hideNavLinks && (
                             <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />

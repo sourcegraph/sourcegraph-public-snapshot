@@ -41,6 +41,8 @@ import { getViewsForContainer } from '../../../../shared/src/api/client/services
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
 import { EMPTY } from 'rxjs'
+import classNames from 'classnames'
+import { repogroupList } from '../../repogroups/RepogroupList'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -68,6 +70,30 @@ interface Props
     authRequired?: boolean
     showCampaigns: boolean
 }
+
+const languages: { name: string; filterName: string }[] = [
+    { name: 'C', filterName: 'c' },
+    { name: 'C++', filterName: 'cpp' },
+    { name: 'C#', filterName: 'csharp' },
+    { name: 'CSS', filterName: 'css' },
+    { name: 'Go', filterName: 'go' },
+    { name: 'Graphql', filterName: 'graphql' },
+    { name: 'Haskell', filterName: 'haskell' },
+    { name: 'Html', filterName: 'html' },
+    { name: 'Java', filterName: 'java' },
+    { name: 'Javascript', filterName: 'javascript' },
+    { name: 'Json', filterName: 'json' },
+    { name: 'Lua', filterName: 'lua' },
+    { name: 'Markdown', filterName: 'markdown' },
+    { name: 'Php', filterName: 'php' },
+    { name: 'Powershell', filterName: 'powershell' },
+    { name: 'Python', filterName: 'python' },
+    { name: 'R', filterName: 'r' },
+    { name: 'Ruby', filterName: 'ruby' },
+    { name: 'Sass', filterName: 'sass' },
+    { name: 'Swift', filterName: 'swift' },
+    { name: 'Typescript', filterName: 't  ypescript' },
+]
 
 /**
  * The search page
@@ -119,7 +145,11 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
         <div className="search-page">
             <PageTitle title={pageTitle} />
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
-            <div className="search-page__container">
+            <div
+                className={classNames('search-page__container', {
+                    'search-page__container--with-repogroups': props.isSourcegraphDotCom,
+                })}
+            >
                 <div className="d-flex flex-row flex-shrink-past-contents">
                     {props.splitSearchModes && props.interactiveSearchMode ? (
                         <InteractiveModeInput
@@ -200,6 +230,94 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                 </div>
                 {views && <ViewGrid {...props} className="mt-5" views={views} />}
             </div>
+            {props.isSourcegraphDotCom && (
+                <div className="search-page__repogroup-content mt-5">
+                    <div className="d-flex align-items-baseline">
+                        <h3 className="mr-1">Search in repository groups</h3>
+                        <span className="text-monospace font-weight-normal">
+                            <span className="repogroup-page__repogroup-text">repogroup:</span>
+                            <i>name</i>
+                        </span>
+                    </div>
+                    <div className="search-page__repogroup-list-cards">
+                        {repogroupList.map(repogroup => (
+                            <div className="d-flex" key={repogroup.name}>
+                                <img className="search-page__repogroup-list-icon mr-2" src={repogroup.homepageIcon} />
+                                <div className="d-flex flex-column">
+                                    <Link to={repogroup.url}>
+                                        <h3>{repogroup.title}</h3>
+                                    </Link>
+                                    <p>{repogroup.homepageDescription}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="search-page__help-content mt-5">
+                        <div>
+                            <h3>Example searches</h3>
+                            <div className="text-monospace">lang:javascript alert(:[variable])</div>{' '}
+                            <p>
+                                A collection of top react repositories, including, tooling, ui, testing and key
+                                components.
+                            </p>
+                            <div className="text-monospace">lang:javascript alert(:[variable])</div>
+                            <p>
+                                A collection of top react repositories, including, tooling, ui, testing and key
+                                components.
+                            </p>
+                            <div className="text-monospace">lang:javascript alert(:[variable])</div>{' '}
+                            <p>
+                                A collection of top react repositories, including, tooling, ui, testing and key
+                                components.
+                            </p>
+                        </div>
+                        <div>
+                            <div className="d-flex align-items-baseline">
+                                <h3 className="mr-1">Search a language</h3>
+                                <span className="text-monospace font-weight-normal">
+                                    <span className="repogroup-page__repogroup-text">lang:</span>
+                                    <i>name</i>
+                                </span>
+                            </div>
+                            <div className="search-page__lang-list">
+                                {languages.map(language => (
+                                    <Link to={`/search?q=lang:${language.filterName}`} key={language.name}>
+                                        {language.name}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <h3>Search syntax</h3>
+                            <div className="search-page__lang-list">
+                                <dl>
+                                    <dt>Common search keywords</dt>
+                                    <dd className="text-monospace">repo: my/repo</dd>
+                                    <dd className="text-monospace">repo:github.com/myorg/</dd>
+                                    <dd className="text-monospace">file:my/file</dd>
+                                    <dd className="text-monospace">lang:javascript</dd>
+                                </dl>
+                                <dl>
+                                    <dt>Diff/commit search keywords:</dt>
+                                    <dd className="text-monospace">type:diff or type:commit</dd>
+                                    <dd className="text-monospace">after:”2 weeks ago”</dd>
+                                    <dd className="text-monospace">author:alice@example.com</dd>{' '}
+                                    <dd className="text-monospace">repo:r@*refs/heads/ (all branches)</dd>
+                                </dl>
+                                <dl>
+                                    <dt>Finding matches</dt>
+                                    <dd className="text-monospace">Regexp: (read|write)File</dd>{' '}
+                                    <dd className="text-monospace">Exact: “fs.open(f)”</dd>
+                                </dl>
+                                <dl>
+                                    <dt>Structural Searches</dt>
+                                    <dd className="text-monospace">:[arg] matches arguments</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -36,6 +36,10 @@
                 opacity: 1;
             }
         }
+
+        &--with-repogroups {
+            flex-grow: 0;
+        }
     }
 
     &__input-container {
@@ -47,6 +51,38 @@
         width: 100%;
         display: block;
         margin: 0.5rem 0;
+    }
+
+    &__repogroup-content {
+        width: 100%;
+        padding: 0 10%;
+    }
+
+    &__repogroup-list {
+        &-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+            grid-auto-rows: minmax(4rem, auto);
+            gap: $spacer * 0.75;
+        }
+
+        &-icon {
+            width: 3rem;
+            height: 3rem;
+            object-fit: contain;
+        }
+    }
+
+    &__lang-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(max-content, 1fr));
+        gap: $spacer * 0.75;
+    }
+
+    &__help-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr 2fr;
+        column-gap: 2rem;
     }
 }
 

@@ -12,6 +12,12 @@ interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageEle
      * The assets root path. If not set, the global value from `window.context.assetsRoot` is used.
      */
     assetsRoot?: typeof window.context.assetsRoot
+
+    /**
+     * A url for a custom logo. This is passed in from parent components for changing the logo for individual pages.
+     * For changing the instance-wide default logo use the `branding` prop.
+     */
+    customLogoUrl?: string
 }
 
 /**
@@ -26,5 +32,5 @@ export const BrandLogo: React.FunctionComponent<Props> = ({
 }) => {
     const sourcegraphLogoUrl = `${assetsRoot}/img/sourcegraph${isLightTheme ? '-light' : ''}-head-logo.svg`
     const customBrandingLogoUrl = branding && branding[isLightTheme ? 'light' : 'dark']?.logo
-    return <img {...props} src={customBrandingLogoUrl || sourcegraphLogoUrl} />
+    return <img {...props} src={props.customLogoUrl || customBrandingLogoUrl || sourcegraphLogoUrl} />
 }

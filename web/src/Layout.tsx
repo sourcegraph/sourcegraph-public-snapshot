@@ -131,6 +131,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
+    const repogroupPages = ['/refactor-python2-to-3']
+    const isRepogroupPage = repogroupPages.includes(props.location.pathname)
+
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
@@ -162,7 +165,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}
-                    lowProfile={isSearchHomepage}
+                    lowProfile={isSearchHomepage || isRepogroupPage}
+                    lowProfileWithLogo={isRepogroupPage}
                     hideGlobalSearchInput={hideGlobalSearchInput}
                     hideNavLinks={false}
                 />
