@@ -9,8 +9,7 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          # deploy-sourcegraph-docker does not yet use prometheus alerts
-          # - alertmanager:9093
+            - localhost:9093 # started by prom-wrapper
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:

@@ -17,35 +17,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
 )
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 
 func init() {
-	// if Grafana is enabled, this warning renders problems with the Grafana deployment and configuration
-	// as reported by `grafana-wrapper` inside the sourcegraph/grafana container.
+	// if Prometheus is enabled, this warning renders problems with the Prometheus deployment and configuration
+	// as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container.
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if len(grafanaURLFromEnv) == 0 || len(c.ObservabilityAlerts) == 0 {
+		if len(prometheusutil.PrometheusURL) == 0 || len(c.ObservabilityAlerts) == 0 {
 			return
 		}
 
 		// see https://github.com/sourcegraph/sourcegraph/issues/11473
 		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
-			problems = append(problems, conf.NewSiteProblem("observability.alerts is not currently supported in sourcegraph/server deployments. Follow [this issue](https://github.com/sourcegraph/sourcegraph/issues/11473) for updates."))
+			problems = append(problems, conf.NewSiteProblem("`observability.alerts` is not currently supported in sourcegraph/server deployments. Follow [this issue](https://github.com/sourcegraph/sourcegraph/issues/11473) for updates."))
 			return
 		}
 
 		// set up request to fetch status from grafana-wrapper
-		grafanaURL, err := url.Parse(grafanaURLFromEnv)
+		promURL, err := url.Parse(prometheusutil.PrometheusURL)
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts are configured, but Grafana configuration is invalid: %v", err)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts` are configured, but Prometheus configuration is invalid: %v", err)))
 			return
 		}
-		grafanaURL.Path = "/grafana-wrapper/config-subscriber"
-		req, err := http.NewRequest("GET", grafanaURL.String(), nil)
+		promURL.Path = "/prom-wrapper/config-subscriber"
+		req, err := http.NewRequest("GET", promURL.String(), nil)
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: unable to fetch Grafana status: %v", err)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to fetch Prometheus status: %v", err)))
 			return
 		}
 
@@ -54,24 +55,24 @@ func init() {
 		defer cancel()
 		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: Grafana is unreachable: %v", err)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: %v", err)))
 			return
 		}
 		if resp.StatusCode != 200 {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: Grafana is unreachable: status code %d", resp.StatusCode)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: status code %d", resp.StatusCode)))
 			return
 		}
 
-		var grafanaStatus struct {
+		var promConfigStatus struct {
 			Problems conf.Problems `json:"problems"`
 		}
 		defer resp.Body.Close()
-		if err := json.NewDecoder(resp.Body).Decode(&grafanaStatus); err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("observability.alerts: unable to read Grafana status: %v", err)))
+		if err := json.NewDecoder(resp.Body).Decode(&promConfigStatus); err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to read Prometheus status: %v", err)))
 			return
 		}
 
-		return grafanaStatus.Problems
+		return promConfigStatus.Problems
 	})
 }
 

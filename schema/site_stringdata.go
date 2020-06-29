@@ -620,11 +620,6 @@ const SiteSchemaJSON = `{
             "type": "string",
             "enum": ["warning", "critical"]
           },
-          "id": {
-            "description": "Unique identifier for this alert.",
-            "type": "string",
-            "minLength": 1
-          },
           "notifier": {
             "type": "object",
             "properties": {
@@ -634,15 +629,19 @@ const SiteSchemaJSON = `{
               }
             },
             "oneOf": [
-              { "$ref": "#/definitions/GrafanaNotifierSlack" },
-              { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierWebhook" },
-              { "$ref": "#/definitions/GrafanaNotifierEmail" },
-              { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
+              { "$ref": "#/definitions/NotifierSlack" },
+              { "$ref": "#/definitions/NotifierPagerduty" },
+              { "$ref": "#/definitions/NotifierWebhook" },
+              { "$ref": "#/definitions/NotifierEmail" },
+              { "$ref": "#/definitions/NotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
             }
+          },
+          "sendResolved": {
+            "description": "Whether or not to notify about resolved alerts.",
+            "type": "boolean"
           }
         },
         "default": {
@@ -1008,8 +1007,8 @@ const SiteSchemaJSON = `{
         }
       }
     },
-    "GrafanaNotifierSlack": {
-      "description": "Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack",
+    "NotifierSlack": {
+      "description": "Slack notifier",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -1036,27 +1035,11 @@ const SiteSchemaJSON = `{
         "icon_url": {
           "description": "Provide a URL to an image to use as the icon for the bot’s message.",
           "type": "string"
-        },
-        "mentionUsers": {
-          "description": "Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).",
-          "type": "string"
-        },
-        "mentionGroups": {
-          "description": "Optionally mention one or more groups in the Slack notification sent by Grafana. You have to refer to groups, comma-separated, via their corresponding Slack IDs (which you can get from each group’s Slack profile URL).",
-          "type": "string"
-        },
-        "mentionChannel": {
-          "description": "Optionally mention either all channel members or just active ones.",
-          "type": "string"
-        },
-        "token": {
-          "description": "If provided, Grafana will upload the generated image via Slack’s file.upload API method, not the external image destination.",
-          "type": "string"
         }
       }
     },
-    "GrafanaNotifierPagerduty": {
-      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty",
+    "NotifierPagerduty": {
+      "description": "Pagerduty notifier",
       "type": "object",
       "required": ["type", "integrationKey"],
       "properties": {
@@ -1064,18 +1047,19 @@ const SiteSchemaJSON = `{
           "type": "string",
           "const": "pagerduty"
         },
-        "integrationKey": {
+        "routingKey": {
           "description": "Integration key for PagerDuty.",
           "type": "string"
         },
-        "autoResolve": {
-          "description": "Resolve incidents in PagerDuty once the alert goes back to ok",
-          "type": "boolean"
-        }
+        "severity": {
+          "description": "Routing key for the Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview",
+          "type": "string"
+        },
+        "apiUrl": { "type": "string" }
       }
     },
-    "GrafanaNotifierWebhook": {
-      "description": "Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook",
+    "NotifierWebhook": {
+      "description": "Webhook notifier",
       "type": "object",
       "required": ["type", "url"],
       "properties": {
@@ -1085,30 +1069,27 @@ const SiteSchemaJSON = `{
         },
         "url": { "type": "string" },
         "username": { "type": "string" },
-        "password": { "type": "string" }
+        "password": { "type": "string" },
+        "bearerToken": { "type": "string" }
       }
     },
-    "GrafanaNotifierEmail": {
-      "description": "Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/latest/alerting/notifications/#email",
+    "NotifierEmail": {
+      "description": "Email notifier",
       "type": "object",
-      "required": ["type", "addresses"],
+      "required": ["type", "address"],
       "properties": {
         "type": {
           "type": "string",
           "const": "email"
         },
-        "addresses": {
-          "description": "Email addresses to recipients. You can enter multiple email addresses using a “;” separator.",
+        "address": {
+          "description": "Address to send email to",
           "type": "string"
-        },
-        "singleEmail": {
-          "description": "Send a single email to all recipients.",
-          "type": "boolean"
         }
       }
     },
-    "GrafanaNotifierOpsGenie": {
-      "description": "OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration",
+    "NotifierOpsGenie": {
+      "description": "OpsGenie notifier",
       "type": "object",
       "required": ["type", "apiKey", "apiUrl"],
       "properties": {
@@ -1118,7 +1099,10 @@ const SiteSchemaJSON = `{
         },
         "apiKey": { "type": "string" },
         "apiUrl": { "type": "string" },
-        "autoClose": { "type": "boolean" }
+        "priority": {
+          "type": "string",
+          "enum": ["P1", "P2", "P3", "P4", "P5"]
+        }
       }
     }
   }
