@@ -24,6 +24,10 @@ var tests = []test{
 		Name:  `Global search, repo search by name, case yes, nonzero result`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ String case:yes count:1 stable:yes`,
 	},
+	{
+		Name:  `True is an alias for yes is when fork is set`,
+		Query: `fork:true repo:github\.com/rvantonderp/(beego-mux|sgtest-mux)`,
+	},
 	// Text search, focused to repo.
 	{
 		Name:  `Repo search, non-master branch, nonzero result`,
