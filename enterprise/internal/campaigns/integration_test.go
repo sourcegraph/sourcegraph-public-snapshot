@@ -31,6 +31,8 @@ func TestIntegration(t *testing.T) {
 		t.Run("PatchSets_DeleteExpired", storeTest(db, testStorePatchSetsDeleteExpired))
 		t.Run("Patches", storeTest(db, testStorePatches))
 		t.Run("ChangesetJobs", storeTest(db, testStoreChangesetJobs))
+		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
+		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
 	})
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
