@@ -21,7 +21,7 @@ scrape_configs:
   # Scrape prometheus itself for metrics.
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['localhost:9092']
 
   - job_name: 'sg'
     file_sd_configs:
