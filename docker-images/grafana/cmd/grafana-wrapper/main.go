@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"os/exec"
+	"os/signal"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/grafana-tools/sdk"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -29,9 +28,10 @@ func main() {
 	ctx := context.Background()
 
 	// spin up grafana
+	grafana := newGrafanaController(log, grafanaPort, grafanaCredentials)
 	grafanaErrs := make(chan error)
 	go func() {
-		grafanaErrs <- newGrafanaRunCmd().Run()
+		grafanaErrs <- grafana.RunServer()
 	}()
 
 	// router serves endpoints accessible from outside the container (defined by `exportPort`)
@@ -43,11 +43,10 @@ func main() {
 		log.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
 	} else {
 		log.Info("initializing configuration")
-		grafanaClient := sdk.NewClient(fmt.Sprintf("http://127.0.0.1:%s", grafanaPort), grafanaCredentials, http.DefaultClient)
 
 		// limit the amount of time we spend spinning up the subscriber before erroring
 		newSubscriberCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		config, err := newSiteConfigSubscriber(newSubscriberCtx, log, grafanaClient)
+		config, err := newSiteConfigSubscriber(newSubscriberCtx, log, grafana)
 		if err != nil {
 			log.Crit("failed to initialize configuration", "error", err)
 			os.Exit(1)
@@ -77,17 +76,12 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// wait for grafana to exit
-	err := <-grafanaErrs
-	if err != nil {
-		log.Crit("grafana exited", "error", err)
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			os.Exit(exitErr.ProcessState.ExitCode())
-		}
-		os.Exit(1)
-	} else {
-		log.Info("grafana exited")
-		os.Exit(0)
+	// block
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+	log.Info("received sigint - stopping")
+	if err := grafana.Stop(); err != nil {
+		log.Warn("failed to stop Grafana server", "error", err)
 	}
 }

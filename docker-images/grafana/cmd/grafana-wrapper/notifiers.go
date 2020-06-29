@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -12,11 +14,11 @@ func newAlertUID(alertType string, alert *schema.ObservabilityAlerts) string {
 	return fmt.Sprintf("src-%s-%v-%s", alert.Level, alertType, alert.Id)
 }
 
-func generateNotifiersConfig(current []*schema.ObservabilityAlerts, newAlerts []*schema.ObservabilityAlerts) ([]sdk.AlertNotification, error) {
+func newGrafanaNotifiersConfig(newAlerts []*schema.ObservabilityAlerts) ([]sdk.AlertNotification, error) {
 	// generate grafana notifiers
 	var newGrafanaAlerts []sdk.AlertNotification
 	for _, alert := range newAlerts {
-		alertType, fields, err := structToNotifierSettings(&alert.Notifier)
+		alertType, fields, err := notifierToGrafanaNotifierSettings(&alert.Notifier)
 		if err != nil {
 			return nil, fmt.Errorf("new notifier '%s' is invalid: %w", alert.Id, err)
 		}
@@ -31,9 +33,9 @@ func generateNotifiersConfig(current []*schema.ObservabilityAlerts, newAlerts []
 	return newGrafanaAlerts, nil
 }
 
-// structToNotifierSettings marshals the provided notifier and unmarshals it into a map
+// notifierToGrafanaNotifierSettings marshals the provided notifier and unmarshals it into a map
 // that corresponds with Grafana's notifier settings
-func structToNotifierSettings(n *schema.Notifier) (string, map[string]interface{}, error) {
+func notifierToGrafanaNotifierSettings(n *schema.Notifier) (string, map[string]interface{}, error) {
 	b, err := n.MarshalJSON()
 	if err != nil {
 		return "", nil, fmt.Errorf("invalid notifier: %w", err)
@@ -48,4 +50,20 @@ func structToNotifierSettings(n *schema.Notifier) (string, map[string]interface{
 	delete(fields, "type")
 
 	return alertType, fields, nil
+}
+
+// resetSrcNotifiers deletes all alert notifiers in Grafana's DB starting with the UID `"src-"`
+func resetSrcNotifiers(ctx context.Context, grafana *sdk.Client) error {
+	alerts, err := grafana.GetAllAlertNotifications(ctx)
+	if err != nil {
+		return err
+	}
+	for _, alert := range alerts {
+		if strings.HasPrefix(alert.UID, "src-") {
+			if err := grafana.DeleteAlertNotificationUID(ctx, alert.UID); err != nil {
+				return fmt.Errorf("failed to delete alert %q: %w", alert.UID, err)
+			}
+		}
+	}
+	return nil
 }

@@ -8,9 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGenerateNotifiersConfig(t *testing.T) {
+func TestNewGrafanaNotifiersConfig(t *testing.T) {
 	type args struct {
-		current   []*schema.ObservabilityAlerts
 		newAlerts []*schema.ObservabilityAlerts
 	}
 	tests := []struct {
@@ -22,7 +21,6 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 		{
 			name: "should convert Sourcegraph observability alert to Grafana notifier",
 			args: args{
-				current: nil,
 				newAlerts: []*schema.ObservabilityAlerts{
 					{
 						Id:    "test-alert",
@@ -48,13 +46,13 @@ func TestGenerateNotifiersConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			created, err := generateNotifiersConfig(tt.args.current, tt.args.newAlerts)
+			created, err := newGrafanaNotifiersConfig(tt.args.newAlerts)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("generateNotifiersConfig() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("newGrafanaNotifiersConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(tt.wantCreated, created); diff != "" {
-				t.Errorf("generateNotifiersConfig() created: %s", diff)
+				t.Errorf("newGrafanaNotifiersConfig() created: %s", diff)
 			}
 		})
 	}

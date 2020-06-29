@@ -631,6 +631,15 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
+// GrafanaNotifierEmail description: Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/latest/alerting/notifications/#email
+type GrafanaNotifierEmail struct {
+	// Addresses description: Email addresses to recipients. You can enter multiple email addresses using a “;” separator.
+	Addresses string `json:"addresses"`
+	// SingleEmail description: Send a single email to all recipients.
+	SingleEmail bool   `json:"singleEmail,omitempty"`
+	Type        string `json:"type"`
+}
+
 // GrafanaNotifierOpsGenie description: OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration
 type GrafanaNotifierOpsGenie struct {
 	ApiKey    string `json:"apiKey"`
@@ -742,6 +751,7 @@ type Notifier struct {
 	Slack     *GrafanaNotifierSlack
 	Pagerduty *GrafanaNotifierPagerduty
 	Webhook   *GrafanaNotifierWebhook
+	Email     *GrafanaNotifierEmail
 	Opsgenie  *GrafanaNotifierOpsGenie
 }
 
@@ -754,6 +764,9 @@ func (v Notifier) MarshalJSON() ([]byte, error) {
 	}
 	if v.Webhook != nil {
 		return json.Marshal(v.Webhook)
+	}
+	if v.Email != nil {
+		return json.Marshal(v.Email)
 	}
 	if v.Opsgenie != nil {
 		return json.Marshal(v.Opsgenie)
@@ -768,6 +781,8 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "email":
+		return json.Unmarshal(data, &v.Email)
 	case "opsgenie":
 		return json.Unmarshal(data, &v.Opsgenie)
 	case "pagerduty":
@@ -777,7 +792,7 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 	case "webhook":
 		return json.Unmarshal(data, &v.Webhook)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "opsgenie"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "email", "opsgenie"})
 }
 
 type OAuthIdentity struct {

@@ -617,25 +617,34 @@
           },
           "id": {
             "description": "Unique identifier for this alert.",
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "notifier": {
             "type": "object",
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["slack", "pagerduty", "webhook"]
+                "enum": ["slack", "pagerduty", "webhook", "email", "opsgenie"]
               }
             },
             "oneOf": [
               { "$ref": "#/definitions/GrafanaNotifierSlack" },
               { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
               { "$ref": "#/definitions/GrafanaNotifierWebhook" },
+              { "$ref": "#/definitions/GrafanaNotifierEmail" },
               { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
             }
+          }
+        },
+        "default": {
+          "id": "",
+          "level": "critical",
+          "notifier": {
+            "type": ""
           }
         }
       }
@@ -1072,6 +1081,25 @@
         "url": { "type": "string" },
         "username": { "type": "string" },
         "password": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierEmail": {
+      "description": "Email notifier (SMTP settings must be configured in Grafana beforehand) - see https://grafana.com/docs/grafana/latest/alerting/notifications/#email",
+      "type": "object",
+      "required": ["type", "addresses"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "email"
+        },
+        "addresses": {
+          "description": "Email addresses to recipients. You can enter multiple email addresses using a “;” separator.",
+          "type": "string"
+        },
+        "singleEmail": {
+          "description": "Send a single email to all recipients.",
+          "type": "boolean"
+        }
       }
     },
     "GrafanaNotifierOpsGenie": {
