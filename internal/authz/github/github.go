@@ -30,7 +30,7 @@ type Provider struct {
 
 func NewProvider(urn string, githubURL *url.URL, baseToken string, cacheTTL time.Duration, mockCache cache) *Provider {
 	apiURL, _ := github.APIRoot(githubURL)
-	client := &clientAdapter{Client: github.NewClient(apiURL, baseToken, nil)}
+	client := &ClientAdapter{Client: github.NewClient(apiURL, baseToken, nil)}
 
 	p := &Provider{
 		urn:      urn,
@@ -50,6 +50,11 @@ func NewProvider(urn string, githubURL *url.URL, baseToken string, cacheTTL time
 }
 
 var _ authz.Provider = (*Provider)(nil)
+
+// SetClient replaces the current client with the new one.
+func (p *Provider) SetClient(client client) {
+	p.client = client
+}
 
 // RepoPerms implements the authz.Provider interface.
 //
