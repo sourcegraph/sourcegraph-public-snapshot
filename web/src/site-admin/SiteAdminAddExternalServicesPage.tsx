@@ -80,7 +80,7 @@ export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = 
                             >
                                 code change campaigns
                             </a>
-                            , if you have enabled this feature
+                            , if you have enabled this feature.
                         </li>
                     </ul>
                     <div className="d-flex flex-row-reverse">
