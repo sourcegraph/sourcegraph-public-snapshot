@@ -20,22 +20,22 @@ func SubstituteAliases(nodes []Node) []Node {
 		"m":        FieldMessage,
 		"msg":      FieldMessage,
 	}
-	return MapParameter(nodes, func(field, value string, negated bool) Node {
+	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == "content" {
 			// The Quoted label is unset if content is specified.
-			return Pattern{Value: value, Negated: negated}
+			return Pattern{Value: value, Negated: negated, Annotation: annotation}
 		}
 		if canonical, ok := aliases[field]; ok {
 			field = canonical
 		}
-		return Parameter{Field: field, Value: value, Negated: negated}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
 }
 
 // LowercaseFieldNames performs strings.ToLower on every field name.
 func LowercaseFieldNames(nodes []Node) []Node {
-	return MapParameter(nodes, func(field, value string, negated bool) Node {
-		return Parameter{Field: strings.ToLower(field), Value: value, Negated: negated}
+	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+		return Parameter{Field: strings.ToLower(field), Value: value, Negated: negated, Annotation: annotation}
 	})
 }
 
