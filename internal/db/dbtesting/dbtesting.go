@@ -56,7 +56,7 @@ var (
 // set a name in this package's DBNameSuffix var that is unique among all other
 // test packages that call SetupGlobalTestDB, so that each package's
 // tests run in separate DBs and do not conflict.
-func SetupGlobalTestDB(t testing.TB) {
+func SetupGlobalTestDB(t testing.TB, truncateTables ...string) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
@@ -78,36 +78,42 @@ func SetupGlobalTestDB(t testing.TB) {
 		f()
 	}
 
-	emptyDBPreserveSchema(t, dbconn.Global)
+	emptyDBPreserveSchema(t, dbconn.Global, truncateTables...)
 }
 
-func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
+func emptyDBPreserveSchema(t testing.TB, d *sql.DB, truncateTables ...string) {
 	_, err := d.Exec(`SELECT * FROM schema_migrations`)
 	if err != nil {
 		t.Fatalf("Table schema_migrations not found: %v", err)
 	}
 
-	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'")
-	if err != nil {
-		t.Fatal(err)
-	}
 	var tables []string
-	for rows.Next() {
-		var table string
-		if err := rows.Scan(&table); err != nil {
+	if len(truncateTables) != 0 {
+		tables = truncateTables
+	} else {
+		rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'")
+		if err != nil {
 			t.Fatal(err)
 		}
-		tables = append(tables, table)
+		for rows.Next() {
+			var table string
+			if err := rows.Scan(&table); err != nil {
+				t.Fatal(err)
+			}
+			tables = append(tables, table)
+		}
+		if err := rows.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := rows.Err(); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if err := rows.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatal(err)
-	}
+
 	if testing.Verbose() {
-		t.Logf("Truncating all %d tables", len(tables))
+		t.Logf("Truncating %d tables", len(tables))
 	}
+
 	_, err = d.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
 	if err != nil {
 		t.Fatal(err)

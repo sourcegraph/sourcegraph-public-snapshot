@@ -32,7 +32,7 @@ func TestPatchSetResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDB(t, "patch_sets", "patches")
 	rcache.SetupForTest(t)
 
 	// For testing purposes they all share the same rev, across repos

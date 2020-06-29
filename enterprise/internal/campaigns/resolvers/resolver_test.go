@@ -41,7 +41,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDB(t, "repo", "access_tokens", "users", "campaigns", "changesets", "changeset_events", "changeset_jobs")
 	rcache.SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-campaigns")
