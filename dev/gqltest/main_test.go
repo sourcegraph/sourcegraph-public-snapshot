@@ -24,11 +24,11 @@ var client *gqltestutil.Client
 
 var (
 	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
-	email    = flag.String("email", "e2e@sourcegraph.com", "The email of the admin user")
-	username = flag.String("username", "e2e-admin", "The username of the admin user")
+	email    = flag.String("email", "gqltest@sourcegraph.com", "The email of the admin user")
+	username = flag.String("username", "gqltest-admin", "The username of the admin user")
 	password = flag.String("password", "supersecurepassword", "The password of the admin user")
 
-	githubToken = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
+	githubToken               = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
 )
 
 func TestMain(m *testing.M) {

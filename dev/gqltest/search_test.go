@@ -20,7 +20,7 @@ func TestSearch(t *testing.T) {
 	// Set up external service
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "e2e-test-github",
+		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
 			URL   string   `json:"url"`
 			Token string   `json:"token"`
