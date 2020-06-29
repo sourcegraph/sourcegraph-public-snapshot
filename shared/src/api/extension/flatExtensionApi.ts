@@ -12,7 +12,6 @@ import { parseRepoURI } from '../../util/url'
 import { ExtensionDocuments } from './api/documents'
 import { toPosition } from './api/types'
 import { TextDocumentPositionParams } from '../protocol'
-// import { ProvideTextDocumentHoverSignature, getHover } from './hover'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { Hover } from '@sourcegraph/extension-api-types'
@@ -140,12 +139,14 @@ export const initNewExtensionAPI = (
             const document = textDocuments.get(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
-            const invokeProvider = (
-                provider: sourcegraph.HoverProvider
-            ): sourcegraph.ProviderResult<sourcegraph.Badged<Hover>> =>
-                provider.provideHover(document, position)
-
-            return proxySubscribable(callProviders(state.hoverProviders, document, provider => provider.provideHover(document, position), mergeHoverResults))
+            return proxySubscribable(
+                callProviders(
+                    state.hoverProviders,
+                    document,
+                    provider => provider.provideHover(document, position),
+                    mergeHoverResults
+                )
+            )
         },
     }
 
@@ -201,8 +202,7 @@ export const initNewExtensionAPI = (
     }
 }
 
-// TODO probably worth separate test suit.home
-// maybe copy from registry.ts?
+// TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
 function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: P[],
