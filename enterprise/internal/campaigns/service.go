@@ -54,7 +54,7 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 
 	repoIDs := make([]api.RepoID, len(patches))
 	for i, patch := range patches {
-		repoIDs[i] = api.RepoID(patch.RepoID)
+		repoIDs[i] = patch.RepoID
 	}
 	// 🚨 SECURITY: We use db.Repos.GetByIDs to check for which the user has access.
 	repos, err := db.Repos.GetByIDs(ctx, repoIDs...)
@@ -79,12 +79,8 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 	}
 
 	for _, patch := range patches {
-		repo, ok := reposByID[patch.RepoID]
-		if !ok {
+		if _, ok := reposByID[patch.RepoID]; !ok {
 			return nil, &db.RepoNotFoundErr{ID: patch.RepoID}
-		}
-		if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
-			continue
 		}
 
 		patch.PatchSetID = patchSet.ID
@@ -165,6 +161,9 @@ var ErrNoPatches = errors.New("cannot create or update a Campaign without any ch
 // been published at the time of closing but its ChangesetJobs have not
 // finished execution.
 var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
+
+// ErrUnsupportedCodehost is returned by EnqueueChangesetJobForPatch if the target repo of a patch is an unsupported repo.
+var ErrUnsupportedCodehost = errors.New("cannot publish patch for unsupported codehost")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
@@ -586,6 +585,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		Limit:                   -1,
 		OnlyWithDiff:            true,
 		OnlyWithoutChangesetJob: campaign.ID,
+		OnlySupportedCodehosts:  true,
 		NoDiff:                  true,
 	})
 	if err != nil {
@@ -647,6 +647,13 @@ func (s *Service) EnqueueChangesetJobForPatch(ctx context.Context, patchID int64
 	job, err := s.store.GetPatch(ctx, GetPatchOpts{ID: patchID})
 	if err != nil {
 		return err
+	}
+	repo, err := db.Repos.Get(ctx, job.RepoID)
+	if err != nil {
+		return err
+	}
+	if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
+		return ErrUnsupportedCodehost
 	}
 
 	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{PatchSetID: job.PatchSetID})

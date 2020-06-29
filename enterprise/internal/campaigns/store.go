@@ -78,7 +78,11 @@ func (s *Store) ProcessPendingChangesetJobs(ctx context.Context, process func(ct
 		return false, errors.Wrap(err, "starting transaction")
 	}
 	defer tx.Done(&err)
-	q := sqlf.Sprintf(getPendingChangesetJobQuery)
+	supportedTypes := make([]*sqlf.Query, 0)
+	for t := range campaigns.SupportedExternalServices {
+		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", t))
+	}
+	q := sqlf.Sprintf(getPendingChangesetJobQuery, sqlf.Join(supportedTypes, ","))
 	var job campaigns.ChangesetJob
 	_, count, err := tx.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanChangesetJob(&job, sc)
@@ -101,7 +105,9 @@ const getPendingChangesetJobQuery = `
 UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
 	JOIN campaigns c ON c.id = j.campaign_id
-	WHERE j.started_at IS NULL AND c.patch_set_id IS NOT NULL
+	INNER JOIN patches p ON p.id = j.patch_id
+	INNER JOIN repo r ON r.id = p.repo_id
+	WHERE j.started_at IS NULL AND c.patch_set_id IS NOT NULL AND r.external_service_type IN (%s)
 	ORDER BY j.updated_at ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
@@ -2246,6 +2252,9 @@ type ListPatchesOpts struct {
 	// memory allocations that can be unnecessary if only the other columns are
 	// used.
 	NoDiff bool
+
+	// If this is set, only patches on supported codehosts are returned.
+	OnlySupportedCodehosts bool
 }
 
 // ListPatches lists Patches with the given filters.
@@ -2324,6 +2333,14 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 
 	if opts.OnlyWithoutDiffStats {
 		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
+	}
+
+	if opts.OnlySupportedCodehosts {
+		supportedTypes := make([]*sqlf.Query, 0)
+		for t := range campaigns.SupportedExternalServices {
+			supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", t))
+		}
+		preds = append(preds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ",")))
 	}
 
 	// To replace a field within a SELECT, we need to avoid extra escaping,

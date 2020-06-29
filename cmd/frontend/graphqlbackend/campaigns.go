@@ -319,6 +319,7 @@ type PatchResolver interface {
 	Diff() PatchResolver
 	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
 	PublicationEnqueued(ctx context.Context) (bool, error)
+	Publishable(ctx context.Context) (bool, error)
 }
 
 type ChangesetEventsConnectionResolver interface {

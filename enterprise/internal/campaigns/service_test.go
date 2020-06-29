@@ -257,6 +257,13 @@ func TestService(t *testing.T) {
 		rs = append(rs, r)
 	}
 
+	awsCodeCommitRepoID := 4
+	{
+		r := testRepo(awsCodeCommitRepoID, extsvc.TypeAWSCodeCommit)
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		rs = append(rs, r)
+	}
+
 	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
@@ -614,6 +621,15 @@ func TestService(t *testing.T) {
 		}
 		if !haveJob3.FinishedAt.IsZero() {
 			t.Errorf("unexpected changesetJob FinishedAt value: %v. want=%v", haveJob3.FinishedAt, time.Time{})
+		}
+
+		// Update repo to unsupported codehost type.
+		awsPatch := testPatch(patchSet.ID, rs[awsCodeCommitRepoID].ID, now)
+		if err := store.CreatePatch(ctx, awsPatch); err != nil {
+			t.Fatal(err)
+		}
+		if wantErr, haveErr := ErrUnsupportedCodehost, svc.EnqueueChangesetJobForPatch(ctx, awsPatch.ID); wantErr != haveErr {
+			t.Fatalf("got invalid error, want=%v have=%v", wantErr, haveErr)
 		}
 	})
 

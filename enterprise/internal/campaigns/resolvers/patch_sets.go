@@ -316,6 +316,14 @@ func (r *patchResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
 	return cj.FinishedAt.IsZero(), nil
 }
 
+func (r *patchResolver) Publishable(ctx context.Context) (bool, error) {
+	repo, _, err := r.computeRepoCommit(ctx)
+	if err != nil {
+		return false, err
+	}
+	return campaigns.IsRepoSupported(repo.ExternalRepo()), nil
+}
+
 func (r *patchResolver) Diff() graphqlbackend.PatchResolver {
 	return r
 }

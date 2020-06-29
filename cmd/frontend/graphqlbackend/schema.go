@@ -732,6 +732,9 @@ type Patch implements PatchInterface & Node {
     # - A campaign has been created with the patchset to which this patch belongs.
     # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
+
+    # True, when the code host of the associated repository is supported by campaigns.
+    publishable: Boolean!
 }
 
 # A hidden patch is a patch in a repository that the user does NOT have
