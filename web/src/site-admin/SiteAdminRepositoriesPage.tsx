@@ -142,7 +142,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = props =
             {showRepositoriesAddedBanner && (
                 <p className="alert alert-success">
                     Adding repositories. It may take a few moments to clone and index each repository. Repository
-                    statuses are displayed below
+                    statuses are displayed below.
                 </p>
             )}
             <h2>Repositories</h2>
