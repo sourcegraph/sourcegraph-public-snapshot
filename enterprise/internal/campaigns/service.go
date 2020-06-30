@@ -1149,7 +1149,13 @@ func computeCampaignUpdateDiff(
 		if group, ok := byRepoID[j.RepoID]; ok {
 			group.newPatch = j
 		} else {
-
+			repo, err := db.Repos.Get(ctx, j.RepoID)
+			if err != nil {
+				return nil, err
+			}
+			if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
+				continue
+			}
 			// If we have new Patches that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
 			diff.Create = append(diff.Create, &campaigns.ChangesetJob{
