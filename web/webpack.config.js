@@ -177,6 +177,10 @@ const config = {
         include: monacoEditorPaths,
         use: ['style-loader', 'css-loader'],
       },
+      {
+        loader: 'worker-loader',
+        options: { inline: true },
+      },
     ],
   },
 }

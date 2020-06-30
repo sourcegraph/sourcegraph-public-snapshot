@@ -1,4 +1,5 @@
-import ExtensionHostWorker from 'worker-loader?name=extensionHostWorker.bundle.js!./main.worker.ts'
+// eslint-disable-next-line import/extensions
+import ExtensionHostWorker from 'worker-loader!./main.worker.ts'
 import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 import { Subscription } from 'rxjs'
 

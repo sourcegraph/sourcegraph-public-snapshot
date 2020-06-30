@@ -87,6 +87,10 @@ const config: webpack.Configuration = {
                     },
                 ],
             },
+            {
+                loader: 'worker-loader',
+                options: { name: 'extensionHostWorker.bundle.js' },
+            },
         ],
     },
 }
