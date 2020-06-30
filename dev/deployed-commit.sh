@@ -1,21 +1,12 @@
 #!/bin/bash
 
 # This script determines the commit of sourcegraph/sourcegraph that is currently
-# running on sourcegraph.com.
+# running on sourcegraph.com. The returned version has one of the following
+# formats:
+#
+#   - v{semver}
+#   - {buildkite build num}_{date}_{abbreviated commit}
+#
+# In either case, the following cut will give us something parseable by rev-parse.
 
-set -e
-
-# Determine the image that is currently running in the k8s prod context. This will
-# return the last sourcegraph/frontend image sorted by age (i.e., the newest pod).
-IMAGE=$(
-  kubectl -n prod get pods -l app=sourcegraph-frontend --sort-by=.metadata.creationTimestamp -o jsonpath='{..image}' |
-    tr '[:space:]' '\n' |
-    grep index.docker.io/sourcegraph/frontend |
-    sort | uniq | tail -n1
-)
-
-# Pull image locally so wee can run inspect
-docker pull -q "${IMAGE}" >/dev/null
-
-# Extract rev from pulled image
-docker inspect "${IMAGE}" | jq -r '.[0].Config.Labels["org.opencontainers.image.revision"]'
+git rev-parse $(curl https://sourcegraph.com/__version | cut -d'_' -f3)
