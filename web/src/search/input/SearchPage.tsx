@@ -261,7 +261,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         <div>
                             <h3 className="search-page__help-content-header">Example searches</h3>
                             <ul className="list-group-flush p-0">
-                                <li className="list-group-item px-0 py-3">
+                                <li className="list-group-item px-0 pb-3">
                                     <Link
                                         to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=literal"
                                         className="text-monospace mb-1"
