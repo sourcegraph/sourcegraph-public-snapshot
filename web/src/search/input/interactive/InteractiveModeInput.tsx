@@ -63,6 +63,8 @@ interface InteractiveModeProps
 
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+
+    homepageMode?: boolean
 }
 
 interface InteractiveModeState {
@@ -193,8 +195,9 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     }
 
     public render(): JSX.Element | null {
-        const isSearchHomepage =
-            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search)
+        const homepageMode =
+            this.props.homepageMode ||
+            (this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search))
 
         let logoSource = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
@@ -217,8 +220,8 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         return (
             <div className="interactive-mode-input e2e-interactive-mode-input">
-                <div className={!isSearchHomepage ? 'interactive-mode-input__top-nav' : ''}>
-                    {!isSearchHomepage &&
+                <div className={!homepageMode ? 'interactive-mode-input__top-nav' : ''}>
+                    {!homepageMode &&
                         (this.props.authRequired ? (
                             <div className={logoLinkClassName}>{logo}</div>
                         ) : (
@@ -228,7 +231,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         ))}
                     <div
                         className={`d-none d-sm-flex flex-row ${
-                            !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
+                            !homepageMode ? 'interactive-mode-input__search-box-container' : ''
                         }`}
                     >
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
@@ -264,7 +267,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             </div>
                         </Form>
                     </div>
-                    {!this.props.authRequired && !isSearchHomepage && (
+                    {!this.props.authRequired && !homepageMode && (
                         <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                     )}
                 </div>
@@ -278,9 +281,9 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             onFilterDeleted={this.onFilterDeleted}
                             toggleFilterEditable={this.toggleFilterEditable}
                             toggleFilterNegated={this.toggleFilterNegated}
-                            isHomepage={isSearchHomepage}
+                            isHomepage={homepageMode}
                         />
-                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
+                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={homepageMode} />
                     </div>
                 )}
             </div>

@@ -35,6 +35,7 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata, RepositoryType, CodeHosts } from './types'
 import { RepogroupPageLogo } from './RepogroupPageLogo'
+import { InteractiveModeInput } from '../search/input/interactive/InteractiveModeInput'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -112,52 +113,66 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
             <div className="repogroup-page__container">
                 <div className="d-flex flex-row flex-shrink-past-contents">
                     <>
-                        <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                            <div className="repogroup-page__input-container">
-                                {props.splitSearchModes && (
-                                    <SearchModeToggle {...props} interactiveSearchMode={props.interactiveSearchMode} />
-                                )}
-                                <VersionContextDropdown
-                                    history={props.history}
-                                    caseSensitive={props.caseSensitive}
-                                    patternType={props.patternType}
-                                    navbarSearchQuery={userQueryState.query}
-                                    versionContext={props.versionContext}
-                                    setVersionContext={props.setVersionContext}
-                                    availableVersionContexts={props.availableVersionContexts}
-                                />
-                                {props.smartSearchField ? (
-                                    <LazyMonacoQueryInput
-                                        {...props}
-                                        hasGlobalQueryBehavior={true}
-                                        queryState={userQueryState}
-                                        onChange={setUserQueryState}
-                                        onSubmit={onSubmit}
-                                        autoFocus={true}
-                                    />
-                                ) : (
-                                    <QueryInput
-                                        {...props}
-                                        value={userQueryState}
-                                        onChange={setUserQueryState}
-                                        autoFocus="cursor-at-end"
-                                        hasGlobalQueryBehavior={true}
+                        {props.splitSearchModes && props.interactiveSearchMode ? (
+                            <InteractiveModeInput
+                                {...props}
+                                navbarSearchState={userQueryState}
+                                onNavbarQueryChange={setUserQueryState}
+                                toggleSearchMode={props.toggleSearchMode}
+                                lowProfile={false}
+                                homepageMode={true}
+                            />
+                        ) : (
+                            <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
+                                <div className="repogroup-page__input-container">
+                                    {props.splitSearchModes && (
+                                        <SearchModeToggle
+                                            {...props}
+                                            interactiveSearchMode={props.interactiveSearchMode}
+                                        />
+                                    )}
+                                    <VersionContextDropdown
+                                        history={props.history}
+                                        caseSensitive={props.caseSensitive}
                                         patternType={props.patternType}
-                                        setPatternType={props.setPatternType}
-                                        withSearchModeToggle={props.splitSearchModes}
-                                        keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                                        navbarSearchQuery={userQueryState.query}
+                                        versionContext={props.versionContext}
+                                        setVersionContext={props.setVersionContext}
+                                        availableVersionContexts={props.availableVersionContexts}
                                     />
-                                )}
-                                <SearchButton />
-                            </div>
-                            <div className="search-page__input-sub-container">
-                                {!props.splitSearchModes && (
-                                    <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
-                                        Query builder
-                                    </Link>
-                                )}
-                            </div>
-                        </Form>
+                                    {props.smartSearchField ? (
+                                        <LazyMonacoQueryInput
+                                            {...props}
+                                            hasGlobalQueryBehavior={true}
+                                            queryState={userQueryState}
+                                            onChange={setUserQueryState}
+                                            onSubmit={onSubmit}
+                                            autoFocus={true}
+                                        />
+                                    ) : (
+                                        <QueryInput
+                                            {...props}
+                                            value={userQueryState}
+                                            onChange={setUserQueryState}
+                                            autoFocus="cursor-at-end"
+                                            hasGlobalQueryBehavior={true}
+                                            patternType={props.patternType}
+                                            setPatternType={props.setPatternType}
+                                            withSearchModeToggle={props.splitSearchModes}
+                                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                                        />
+                                    )}
+                                    <SearchButton />
+                                </div>
+                                <div className="search-page__input-sub-container">
+                                    {!props.splitSearchModes && (
+                                        <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
+                                            Query builder
+                                        </Link>
+                                    )}
+                                </div>
+                            </Form>
+                        )}
                     </>
                 </div>
             </div>
