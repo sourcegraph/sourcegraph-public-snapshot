@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../components/PageTitle'
-import { BrandLogo } from '../components/branding/BrandLogo'
 import { Form } from 'reactstrap'
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { VersionContextDropdown } from '../nav/VersionContextDropdown'
@@ -11,7 +10,7 @@ import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR, KeyboardShortcutsProps } from '../ke
 import { SearchButton } from '../search/input/SearchButton'
 import { Link } from '../../../shared/src/components/Link'
 import { SettingsCascadeProps, Settings } from '../../../shared/src/settings/settings'
-
+import sanitizeHtml from 'sanitize-html'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
@@ -29,7 +28,7 @@ import { VersionContextProps } from '../../../shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
 import { submitSearch } from '../search/helpers'
 import * as GQL from '../../../shared/src/graphql/schema'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
@@ -188,7 +187,17 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                             <div className="d-flex mb-4">
                                 <div className="repogroup-page__example-bar form-control text-monospace">
                                     <span className="repogroup-page__keyword-text">repogroup:</span>
-                                    {props.repogroupMetadata.name} {example.exampleQuery}
+                                    {props.repogroupMetadata.name}{' '}
+                                    <span
+                                        dangerouslySetInnerHTML={{
+                                            __html: sanitizeHtml(example.exampleQuery, {
+                                                allowedTags: ['span'],
+                                                allowedClasses: {
+                                                    span: ['repogroup-page__keyword-text'],
+                                                },
+                                            }),
+                                        }}
+                                    />
                                 </div>
                                 <div className="d-flex">
                                     <button
@@ -207,7 +216,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                 <div className="repogroup-page__column">
                     <div className="repogroup-page__repo-card card">
                         <h2 className="font-weight-normal">
-                            <SourceRepositoryIcon className="icon-inline" />
+                            <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                             Repositories
                         </h2>
                         <p>
@@ -247,13 +256,19 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
 const RepoLink: React.FunctionComponent<{ repo: RepositoryType }> = props => (
     <li className="repogroup-page__repo-item list-unstyled mb-3" key={props.repo.name}>
         {props.repo.codehost === CodeHosts.GITHUB && (
-            <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
+            <a href={props.repo.name}>
+                <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
+            </a>
         )}
         {props.repo.codehost === CodeHosts.GITLAB && (
-            <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
+            <a href={props.repo.name}>
+                <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
+            </a>
         )}
         {props.repo.codehost === CodeHosts.BITBUCKET && (
-            <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
+            <a href={props.repo.name}>
+                <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
+            </a>
         )}
         <Link to={`/${props.repo.name}`}>{props.repo.name}</Link>
     </li>
