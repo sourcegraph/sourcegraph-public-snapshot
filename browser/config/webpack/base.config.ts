@@ -91,15 +91,15 @@ const config: webpack.Configuration = {
                 test: /main\.worker\.ts$/,
                 use: [
                     {
+                        loader: 'worker-loader',
+                        options: { name: 'extensionHostWorker.bundle.js' },
+                    },
+                    {
                         loader: 'babel-loader',
                         options: {
                             cacheDirectory: true,
                             configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
                         },
-                    },
-                    {
-                        loader: 'worker-loader',
-                        options: { name: 'extensionHostWorker.bundle.js' },
                     },
                 ],
             },
