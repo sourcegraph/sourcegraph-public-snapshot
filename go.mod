@@ -183,6 +183,8 @@ require (
 )
 
 replace (
+	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
+	github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200622101713-7b13614a083e
 
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
