@@ -11,6 +11,14 @@ const optionsEntry = '../../src/config/options.entry.js'
 const pageEntry = '../../src/config/page.entry.js'
 const extensionEntry = '../../src/config/extension.entry.js'
 
+const babelLoader = {
+    loader: 'babel-loader',
+    options: {
+        cacheDirectory: true,
+        configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
+    },
+}
+
 const config: webpack.Configuration = {
     entry: {
         // Browser extension
@@ -51,15 +59,7 @@ const config: webpack.Configuration = {
         rules: [
             {
                 test: /\.[jt]sx?$/,
-                use: [
-                    {
-                        loader: 'babel-loader',
-                        options: {
-                            cacheDirectory: true,
-                            configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
-                        },
-                    },
-                ],
+                use: [babelLoader],
             },
             {
                 // SCSS rule for our own styles and Bootstrap
@@ -94,13 +94,7 @@ const config: webpack.Configuration = {
                         loader: 'worker-loader',
                         options: { name: 'extensionHostWorker.bundle.js' },
                     },
-                    {
-                        loader: 'babel-loader',
-                        options: {
-                            cacheDirectory: true,
-                            configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
-                        },
-                    },
+                    babelLoader,
                 ],
             },
         ],
