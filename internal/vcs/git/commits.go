@@ -172,7 +172,8 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (co
 
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
-func runCommitLog(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*Commit, error) {
+// It is declared as a variable so that we can swap it out in tests
+var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*Commit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
