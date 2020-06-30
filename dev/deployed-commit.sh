@@ -14,7 +14,7 @@ IMAGE=$(
     sort | uniq | tail -n1
 )
 
-# Get image locally so we can inspect
+# Pull image locally so wee can run inspect
 docker pull -q "${IMAGE}" >/dev/null
 
 # Extract rev from pulled image
