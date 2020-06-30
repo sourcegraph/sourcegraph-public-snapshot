@@ -40,9 +40,6 @@ type processor struct {
 // process converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (p *processor) Process(ctx context.Context, store store.Store, upload store.Upload) (_ bool, err error) {
-	ctx, endOperation := p.metrics.ProcessOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
 	// Ensure that the repo and revision are resolvable. If the repo does not exist, or if the repo has finished
 	// cloning and the revision does not exist, then the upload will fail to process. If the repo is currently
 	// cloning, then we'll requeue the upload to be tried again later. This will not increase the reset count
