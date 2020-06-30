@@ -292,7 +292,7 @@
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
     "react-stripe-elements": "^6.1.2",
-    "react-textarea-autosize": "^7.1.2",
+    "react-textarea-autosize": "^8.2.0",
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.4.1",
     "recharts": "^1.8.5",
