@@ -7,6 +7,8 @@ declare module '*.css' {
     export default cssModule
 }
 
+type WebpackWorker = new () => Worker
+
 /**
  * Set by shared/dev/jest-environment.js
  */
