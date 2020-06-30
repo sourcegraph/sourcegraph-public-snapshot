@@ -1301,6 +1301,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
 	}
+	rs = append(rs, testRepo(len(rs), extsvc.TypeAWSCodeCommit))
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	err := reposStore.UpsertRepos(ctx, rs...)
@@ -1536,6 +1537,17 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			missingRepoPerms: repoNames{"repo-0"},
 			wantUnmodified:   repoNames{"repo-0"},
 			wantCreated:      repoNames{"repo-1"},
+		},
+		{
+			name:           "1 added on unsupported codehost",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0"},
+			newPatches: []newPatchSpec{
+				{repo: "repo-0"},
+				{repo: "repo-4"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    []string{},
 		},
 	}
 
