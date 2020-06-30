@@ -114,6 +114,10 @@ type MockStore struct {
 	// RequeueIndexFunc is an instance of a mock function object controlling
 	// the behavior of the method RequeueIndex.
 	RequeueIndexFunc *StoreRequeueIndexFunc
+	// ResetIndexableRepositoriesFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ResetIndexableRepositories.
+	ResetIndexableRepositoriesFunc *StoreResetIndexableRepositoriesFunc
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *StoreResetStalledFunc
@@ -320,6 +324,11 @@ func NewMockStore() *MockStore {
 				return nil
 			},
 		},
+		ResetIndexableRepositoriesFunc: &StoreResetIndexableRepositoriesFunc{
+			defaultHook: func(context.Context, time.Time) error {
+				return nil
+			},
+		},
 		ResetStalledFunc: &StoreResetStalledFunc{
 			defaultHook: func(context.Context, time.Time) ([]int, []int, error) {
 				return nil, nil, nil
@@ -361,7 +370,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		UpdateIndexableRepositoryFunc: &StoreUpdateIndexableRepositoryFunc{
-			defaultHook: func(context.Context, store.UpdateableIndexableRepository) error {
+			defaultHook: func(context.Context, store.UpdateableIndexableRepository, time.Time) error {
 				return nil
 			},
 		},
@@ -480,6 +489,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		RequeueIndexFunc: &StoreRequeueIndexFunc{
 			defaultHook: i.RequeueIndex,
+		},
+		ResetIndexableRepositoriesFunc: &StoreResetIndexableRepositoriesFunc{
+			defaultHook: i.ResetIndexableRepositories,
 		},
 		ResetStalledFunc: &StoreResetStalledFunc{
 			defaultHook: i.ResetStalled,
@@ -4141,6 +4153,115 @@ func (c StoreRequeueIndexFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// StoreResetIndexableRepositoriesFunc describes the behavior when the
+// ResetIndexableRepositories method of the parent MockStore instance is
+// invoked.
+type StoreResetIndexableRepositoriesFunc struct {
+	defaultHook func(context.Context, time.Time) error
+	hooks       []func(context.Context, time.Time) error
+	history     []StoreResetIndexableRepositoriesFuncCall
+	mutex       sync.Mutex
+}
+
+// ResetIndexableRepositories delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) ResetIndexableRepositories(v0 context.Context, v1 time.Time) error {
+	r0 := m.ResetIndexableRepositoriesFunc.nextHook()(v0, v1)
+	m.ResetIndexableRepositoriesFunc.appendCall(StoreResetIndexableRepositoriesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ResetIndexableRepositories method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreResetIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, time.Time) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResetIndexableRepositories method of the parent MockStore instance
+// inovkes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreResetIndexableRepositoriesFunc) PushHook(hook func(context.Context, time.Time) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreResetIndexableRepositoriesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreResetIndexableRepositoriesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, time.Time) error {
+		return r0
+	})
+}
+
+func (f *StoreResetIndexableRepositoriesFunc) nextHook() func(context.Context, time.Time) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreResetIndexableRepositoriesFunc) appendCall(r0 StoreResetIndexableRepositoriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreResetIndexableRepositoriesFuncCall
+// objects describing the invocations of this function.
+func (f *StoreResetIndexableRepositoriesFunc) History() []StoreResetIndexableRepositoriesFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreResetIndexableRepositoriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreResetIndexableRepositoriesFuncCall is an object that describes an
+// invocation of method ResetIndexableRepositories on an instance of
+// MockStore.
+type StoreResetIndexableRepositoriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreResetIndexableRepositoriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreResetIndexableRepositoriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // StoreResetStalledFunc describes the behavior when the ResetStalled method
 // of the parent MockStore instance is invoked.
 type StoreResetStalledFunc struct {
@@ -5029,24 +5150,24 @@ func (c StoreUpdateDumpsVisibleFromTipFuncCall) Results() []interface{} {
 // UpdateIndexableRepository method of the parent MockStore instance is
 // invoked.
 type StoreUpdateIndexableRepositoryFunc struct {
-	defaultHook func(context.Context, store.UpdateableIndexableRepository) error
-	hooks       []func(context.Context, store.UpdateableIndexableRepository) error
+	defaultHook func(context.Context, store.UpdateableIndexableRepository, time.Time) error
+	hooks       []func(context.Context, store.UpdateableIndexableRepository, time.Time) error
 	history     []StoreUpdateIndexableRepositoryFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateIndexableRepository delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UpdateIndexableRepository(v0 context.Context, v1 store.UpdateableIndexableRepository) error {
-	r0 := m.UpdateIndexableRepositoryFunc.nextHook()(v0, v1)
-	m.UpdateIndexableRepositoryFunc.appendCall(StoreUpdateIndexableRepositoryFuncCall{v0, v1, r0})
+func (m *MockStore) UpdateIndexableRepository(v0 context.Context, v1 store.UpdateableIndexableRepository, v2 time.Time) error {
+	r0 := m.UpdateIndexableRepositoryFunc.nextHook()(v0, v1, v2)
+	m.UpdateIndexableRepositoryFunc.appendCall(StoreUpdateIndexableRepositoryFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // UpdateIndexableRepository method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.Context, store.UpdateableIndexableRepository) error) {
+func (f *StoreUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.Context, store.UpdateableIndexableRepository, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -5054,7 +5175,7 @@ func (f *StoreUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.Co
 // UpdateIndexableRepository method of the parent MockStore instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context, store.UpdateableIndexableRepository) error) {
+func (f *StoreUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context, store.UpdateableIndexableRepository, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5063,7 +5184,7 @@ func (f *StoreUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreUpdateIndexableRepositoryFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, store.UpdateableIndexableRepository) error {
+	f.SetDefaultHook(func(context.Context, store.UpdateableIndexableRepository, time.Time) error {
 		return r0
 	})
 }
@@ -5071,12 +5192,12 @@ func (f *StoreUpdateIndexableRepositoryFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreUpdateIndexableRepositoryFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, store.UpdateableIndexableRepository) error {
+	f.PushHook(func(context.Context, store.UpdateableIndexableRepository, time.Time) error {
 		return r0
 	})
 }
 
-func (f *StoreUpdateIndexableRepositoryFunc) nextHook() func(context.Context, store.UpdateableIndexableRepository) error {
+func (f *StoreUpdateIndexableRepositoryFunc) nextHook() func(context.Context, store.UpdateableIndexableRepository, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5116,6 +5237,9 @@ type StoreUpdateIndexableRepositoryFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 store.UpdateableIndexableRepository
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -5124,7 +5248,7 @@ type StoreUpdateIndexableRepositoryFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreUpdateIndexableRepositoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
