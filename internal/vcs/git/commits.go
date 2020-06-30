@@ -49,6 +49,9 @@ type CommitsOptions struct {
 	// gitserver doesn't already contain a clone of the repository or if the
 	// commit must be fetched from the remote.
 	RemoteURLFunc func() (string, error)
+
+	// When true we opt out of attempting to fetch missing revisions
+	NoEnsureRevision bool
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -56,7 +59,7 @@ type CommitsOptions struct {
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {
+func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
 	}
@@ -65,7 +68,7 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 		return nil, err
 	}
 
-	commits, err := commitLog(ctx, repo, CommitsOptions{Range: string(id), N: 1, RemoteURLFunc: remoteURLFunc})
+	commits, err := commitLog(ctx, repo, CommitsOptions{Range: string(id), N: 1, RemoteURLFunc: remoteURLFunc, NoEnsureRevision: opt.NoEnsureRevision})
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +86,12 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {
+func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	return getCommit(ctx, repo, remoteURLFunc, id)
+	return getCommit(ctx, repo, remoteURLFunc, id, opt)
 }
 
 // Commits returns all commits matching the options.
@@ -152,7 +155,9 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (co
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
-	cmd.EnsureRevision = opt.Range
+	if !opt.NoEnsureRevision {
+		cmd.EnsureRevision = opt.Range
+	}
 	retryer := &commandRetryer{
 		cmd:           cmd,
 		remoteURLFunc: opt.RemoteURLFunc,

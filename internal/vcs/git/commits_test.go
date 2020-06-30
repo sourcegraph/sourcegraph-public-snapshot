@@ -39,7 +39,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commit, err := GetCommit(ctx, test.repo, nil, test.id)
+		commit, err := GetCommit(ctx, test.repo, nil, test.id, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -50,7 +50,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID); !gitserver.IsRevisionNotFound(err) {
+		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, ResolveRevisionOptions{}); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}

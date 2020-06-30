@@ -51,7 +51,7 @@ func (r *hunkResolver) Commit(ctx context.Context) (*GitCommitResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	commit, err := git.GetCommit(ctx, *cachedRepo, nil, r.hunk.CommitID)
+	commit, err := git.GetCommit(ctx, *cachedRepo, nil, r.hunk.CommitID, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
