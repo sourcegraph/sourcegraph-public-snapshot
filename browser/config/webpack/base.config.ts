@@ -19,6 +19,8 @@ const babelLoader = {
     },
 }
 
+const extensionHostWorker = /main\.worker\.ts$/
+
 const config: webpack.Configuration = {
     entry: {
         // Browser extension
@@ -59,6 +61,7 @@ const config: webpack.Configuration = {
         rules: [
             {
                 test: /\.[jt]sx?$/,
+                exclude: extensionHostWorker,
                 use: [babelLoader],
             },
             {
@@ -88,7 +91,7 @@ const config: webpack.Configuration = {
                 ],
             },
             {
-                test: /main\.worker\.ts$/,
+                test: extensionHostWorker,
                 use: [
                     {
                         loader: 'worker-loader',

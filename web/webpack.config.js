@@ -28,6 +28,8 @@ const babelLoader = {
   },
 }
 
+const extensionHostWorker = /main\.worker\.ts$/
+
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -122,6 +124,7 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         include: path.join(__dirname, 'src'),
+        exclude: extensionHostWorker,
         use: [
           ...(mode === 'production' ? ['thread-loader'] : []),
           {
@@ -177,7 +180,7 @@ const config = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /main\.worker\.ts$/,
+        test: extensionHostWorker,
         use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
       },
     ],
