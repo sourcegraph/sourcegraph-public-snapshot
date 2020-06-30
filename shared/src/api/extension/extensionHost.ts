@@ -140,10 +140,15 @@ function createExtensionAPI(
     const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
     const content = new ExtensionContent(proxy.content)
 
-    const { configuration, exposedToMain, workspace, state, commands, search } = initNewExtensionAPI(
-        proxy,
-        initData.initialSettings
-    )
+    const {
+        configuration,
+        exposedToMain,
+        workspace,
+        state,
+        commands,
+        search,
+        languages: { registerHoverProvider },
+    } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -210,8 +215,7 @@ function createExtensionAPI(
         configuration,
 
         languages: {
-            registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>
-                languageFeatures.registerHoverProvider(selector, provider),
+            registerHoverProvider,
 
             registerDefinitionProvider: (
                 selector: sourcegraph.DocumentSelector,

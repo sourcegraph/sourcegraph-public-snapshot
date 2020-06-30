@@ -1,6 +1,7 @@
 package existence
 
 import (
+	"context"
 	"path/filepath"
 )
 
@@ -12,8 +13,8 @@ type ExistenceChecker struct {
 // NewExistenceChecker constructs a map of directory contents from the given set of paths and the given
 // getChildren function pointer that determines which of the given paths exist in the git clone at the
 // target commit.
-func NewExistenceChecker(root string, paths []string, getChildren GetChildrenFunc) (*ExistenceChecker, error) {
-	directoryContents, err := directoryContents(root, paths, getChildren)
+func NewExistenceChecker(ctx context.Context, root string, paths []string, getChildren GetChildrenFunc) (*ExistenceChecker, error) {
+	directoryContents, err := directoryContents(ctx, root, paths, getChildren)
 	if err != nil {
 		return nil, err
 	}

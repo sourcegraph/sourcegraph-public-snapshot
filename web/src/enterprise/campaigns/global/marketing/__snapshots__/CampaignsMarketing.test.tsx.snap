@@ -1,7 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignsMarketing renders 1`] = `
-Array [
+<CampaignsMarketing
+  body={
+    <div>
+      MY CUSTOM CONTENT
+    </div>
+  }
+>
   <section
     className="mt-3 mb-5"
   >
@@ -32,10 +38,10 @@ Array [
         width="560"
       />
     </div>
-  </section>,
+  </section>
   <div>
     MY CUSTOM CONTENT
-  </div>,
+  </div>
   <section
     className="my-3"
   >
@@ -65,6 +71,6 @@ Array [
       </a>
       . We look forward to hearing from you!
     </p>
-  </section>,
-]
+  </section>
+</CampaignsMarketing>
 `;

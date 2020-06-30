@@ -21,6 +21,7 @@ type Index struct {
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
 	RepositoryID   int        `json:"repositoryId"`
+	RepositoryName string     `json:"repositoryName"`
 	Rank           *int       `json:"placeInQueue"`
 }
 
@@ -45,6 +46,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.ProcessAfter,
 			&index.NumResets,
 			&index.RepositoryID,
+			&index.RepositoryName,
 			&index.Rank,
 		); err != nil {
 			return nil, err
@@ -84,11 +86,12 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (Index, bool, error) {
 			u.process_after,
 			u.num_resets,
 			u.repository_id,
+			u.repository_name,
 			s.rank
-		FROM lsif_indexes u
+		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
 			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
-			FROM lsif_indexes r
+			FROM lsif_indexes_with_repository_name r
 			WHERE r.state = 'queued'
 		) s
 		ON u.id = s.id
@@ -132,7 +135,7 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 
 	count, _, err := scanFirstInt(tx.query(
 		ctx,
-		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes u WHERE %s`, sqlf.Join(conds, " AND ")),
+		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name u WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return nil, 0, err
@@ -152,11 +155,12 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.process_after,
 				u.num_resets,
 				u.repository_id,
+				u.repository_name,
 				s.rank
-			FROM lsif_indexes u
+			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
 				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.queued_at)) as rank
-				FROM lsif_indexes r
+				FROM lsif_indexes_with_repository_name r
 				WHERE r.state = 'queued'
 			) s
 			ON u.id = s.id
@@ -173,13 +177,15 @@ func (s *store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
 func makeIndexSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"commit",
-		"failure_message",
+		"(u.state)::text",
+		`u.repository_name`,
+		"u.commit",
+		"u.failure_message",
 	}
 
 	var termConds []*sqlf.Query
 	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf("u."+column+" LIKE %s", "%"+term+"%"))
+		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
 	}
 
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
@@ -189,7 +195,7 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
 	count, _, err := scanFirstInt(s.query(
 		ctx,
-		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes WHERE state = 'queued'`),
+		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name WHERE state = 'queued'`),
 	))
 
 	return count, err
@@ -199,9 +205,9 @@ func (s *store) IndexQueueSize(ctx context.Context) (int, error) {
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
 	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
 		SELECT COUNT(*) WHERE EXISTS (
-			SELECT id FROM lsif_uploads WHERE repository_id = %s AND commit = %s
+			SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s
 			UNION
-			SELECT id FROM lsif_indexes WHERE repository_id = %s AND commit = %s
+			SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
 		)
 	`, repositoryID, commit, repositoryID, commit)))
 
@@ -244,16 +250,17 @@ func (s *store) MarkIndexErrored(ctx context.Context, id int, failureMessage str
 }
 
 var indexColumnsWithNullRank = []*sqlf.Query{
-	sqlf.Sprintf("id"),
-	sqlf.Sprintf("commit"),
-	sqlf.Sprintf("queued_at"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
-	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("repository_id"),
+	sqlf.Sprintf("u.id"),
+	sqlf.Sprintf("u.commit"),
+	sqlf.Sprintf("u.queued_at"),
+	sqlf.Sprintf("u.state"),
+	sqlf.Sprintf("u.failure_message"),
+	sqlf.Sprintf("u.started_at"),
+	sqlf.Sprintf("u.finished_at"),
+	sqlf.Sprintf("u.process_after"),
+	sqlf.Sprintf("u.num_resets"),
+	sqlf.Sprintf("u.repository_id"),
+	sqlf.Sprintf(`u.repository_name`),
 	sqlf.Sprintf("NULL"),
 }
 
@@ -262,7 +269,14 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 // closed. If there is no such unlocked index, a zero-value index and nil store will be returned along with
 // a false valued flag. This method must not be called from within a transaction.
 func (s *store) DequeueIndex(ctx context.Context) (Index, Store, bool, error) {
-	index, tx, ok, err := s.dequeueRecord(ctx, "lsif_indexes", indexColumnsWithNullRank, sqlf.Sprintf("queued_at"), scanFirstIndexInterface)
+	index, tx, ok, err := s.dequeueRecord(
+		ctx,
+		"lsif_indexes_with_repository_name",
+		"lsif_indexes",
+		indexColumnsWithNullRank,
+		sqlf.Sprintf("queued_at"),
+		scanFirstIndexInterface,
+	)
 	if err != nil || !ok {
 		return Index{}, tx, ok, err
 	}
@@ -318,7 +332,7 @@ func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, 
 			UPDATE lsif_indexes u
 			SET state = 'queued', started_at = null, num_resets = num_resets + 1
 			WHERE id = ANY(
-				SELECT id FROM lsif_indexes
+				SELECT id FROM lsif_indexes_with_repository_name
 				WHERE
 					state = 'processing' AND
 					%s - started_at > (%s * interval '1 second') AND
@@ -338,7 +352,7 @@ func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, 
 			UPDATE lsif_indexes u
 			SET state = 'errored', finished_at = clock_timestamp(), failure_message = 'failed to process'
 			WHERE id = ANY(
-				SELECT id FROM lsif_indexes
+				SELECT id FROM lsif_indexes_with_repository_name
 				WHERE
 					state = 'processing' AND
 					%s - started_at > (%s * interval '1 second') AND

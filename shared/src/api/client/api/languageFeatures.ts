@@ -1,22 +1,15 @@
 import { Remote, ProxyMarked, proxyMarker } from 'comlink'
-import { Hover, Location } from '@sourcegraph/extension-api-types'
+import { Location } from '@sourcegraph/extension-api-types'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { ProvideCompletionItemSignature } from '../services/completion'
-import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { registerRemoteProvider } from './common'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyMarked {
-    $registerHoverProvider(
-        selector: DocumentSelector,
-        providerFunction: Remote<
-            ((params: TextDocumentPositionParams) => ProxySubscribable<Hover | null | undefined>) & ProxyMarked
-        >
-    ): Unsubscribable & ProxyMarked
     $registerDefinitionProvider(
         selector: DocumentSelector,
         providerFunction: Remote<((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyMarked>
@@ -49,10 +42,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
     public readonly [proxyMarker] = true
 
     constructor(
-        private hoverRegistry: FeatureProviderRegistry<
-            TextDocumentRegistrationOptions,
-            ProvideTextDocumentHoverSignature
-        >,
         private definitionRegistry: TextDocumentLocationProviderRegistry,
         private referencesRegistry: TextDocumentLocationProviderRegistry<ReferenceParams>,
         private locationRegistry: TextDocumentLocationProviderIDRegistry,
@@ -61,15 +50,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
             ProvideCompletionItemSignature
         >
     ) {}
-
-    public $registerHoverProvider(
-        documentSelector: DocumentSelector,
-        providerFunction: Remote<
-            ((params: TextDocumentPositionParams) => ProxySubscribable<Hover | null | undefined>) & ProxyMarked
-        >
-    ): Unsubscribable & ProxyMarked {
-        return registerRemoteProvider(this.hoverRegistry, { documentSelector }, providerFunction)
-    }
 
     public $registerDefinitionProvider(
         documentSelector: DocumentSelector,

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type UploadHandler struct {
@@ -323,8 +324,13 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 			return nil, false
 		}
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil, false
+		// If the repository is currently being cloned (which is most likely to happen on dotcom),
+		// then we want to continue to queue the LSIF upload record to unblock the client, then have
+		// the worker wait until the rev is resolvable before starting to process.
+		if !vcs.IsCloneInProgress(err) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, false
+		}
 	}
 
 	return repo, true

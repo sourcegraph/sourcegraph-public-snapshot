@@ -1,10 +1,9 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { CreateCampaign } from './CreateCampaign'
+import { mount } from 'enzyme'
 
 describe('CreateCampaign', () => {
     test('renders', () => {
-        const result = renderer.create(<CreateCampaign />)
-        expect(result.toJSON()).toMatchSnapshot()
+        expect(mount(<CreateCampaign />)).toMatchSnapshot()
     })
 })

@@ -40,6 +40,7 @@ func TestGetUploadByID(t *testing.T) {
 		StartedAt:      &startedAt,
 		FinishedAt:     nil,
 		RepositoryID:   123,
+		RepositoryName: "n-123",
 		Indexer:        "lsif-go",
 		NumParts:       1,
 		UploadedParts:  []int{},
@@ -132,9 +133,9 @@ func TestGetUploads(t *testing.T) {
 		Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
 		Upload{ID: 2, UploadedAt: t2, VisibleAtTip: true, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
-		Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51},
+		Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
 		Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", VisibleAtTip: true, State: "processing", Indexer: "lsif-tsc"},
-		Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing"},
+		Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
 		Upload{ID: 7, UploadedAt: t7, Root: "sub1/", VisibleAtTip: true, Indexer: "lsif-tsc"},
 		Upload{ID: 8, UploadedAt: t8, VisibleAtTip: true, Indexer: "lsif-tsc"},
 		Upload{ID: 9, UploadedAt: t9, State: "queued"},
@@ -142,37 +143,51 @@ func TestGetUploads(t *testing.T) {
 	)
 
 	testCases := []struct {
-		state        string
-		term         string
-		visibleAtTip bool
-		expectedIDs  []int
+		repositoryID   int
+		state          string
+		term           string
+		visibleAtTip   bool
+		uploadedBefore *time.Time
+		expectedIDs    []int
 	}{
-		{expectedIDs: []int{1, 2, 3, 5, 6, 7, 8, 9, 10}},
+		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
+		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10}},
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
 		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10}}, // searches root
 		{term: "003", expectedIDs: []int{1, 3, 5}},           // searches commits
 		{term: "333", expectedIDs: []int{1, 2, 3, 5}},        // searches commits and failure message
 		{term: "tsc", expectedIDs: []int{2, 5, 7, 8, 10}},    // searches indexer
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},     // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},              // search repo names
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
+		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10}},
 	}
 
 	for _, testCase := range testCases {
-		name := fmt.Sprintf("state=%s term=%s visibleAtTip=%v", testCase.state, testCase.term, testCase.visibleAtTip)
+		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
+			hi := lo + 3
+			if hi > len(testCase.expectedIDs) {
+				hi = len(testCase.expectedIDs)
+			}
 
-		t.Run(name, func(t *testing.T) {
-			for lo := 0; lo < len(testCase.expectedIDs); lo++ {
-				hi := lo + 3
-				if hi > len(testCase.expectedIDs) {
-					hi = len(testCase.expectedIDs)
-				}
+			name := fmt.Sprintf(
+				"repositoryID=%d state=%s term=%s visibleAtTip=%v offset=%d",
+				testCase.repositoryID,
+				testCase.state,
+				testCase.term,
+				testCase.visibleAtTip,
+				lo,
+			)
 
+			t.Run(name, func(t *testing.T) {
 				uploads, totalCount, err := store.GetUploads(context.Background(), GetUploadsOptions{
-					RepositoryID: 50,
-					State:        testCase.state,
-					Term:         testCase.term,
-					VisibleAtTip: testCase.visibleAtTip,
-					Limit:        3,
-					Offset:       lo,
+					RepositoryID:   testCase.repositoryID,
+					State:          testCase.state,
+					Term:           testCase.term,
+					VisibleAtTip:   testCase.visibleAtTip,
+					UploadedBefore: testCase.uploadedBefore,
+					Limit:          3,
+					Offset:         lo,
 				})
 				if err != nil {
 					t.Fatalf("unexpected error getting uploads for repo: %s", err)
@@ -189,8 +204,8 @@ func TestGetUploads(t *testing.T) {
 				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
 					t.Errorf("unexpected upload ids at offset %d (-want +got):\n%s", lo, diff)
 				}
-			}
-		})
+			})
+		}
 	}
 }
 
@@ -230,6 +245,8 @@ func TestInsertUploadUploading(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
+	insertRepo(t, dbconn.Global, 50, "")
+
 	id, err := store.InsertUpload(context.Background(), Upload{
 		Commit:       makeCommit(1),
 		Root:         "sub/",
@@ -253,6 +270,7 @@ func TestInsertUploadUploading(t *testing.T) {
 		StartedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Indexer:        "lsif-go",
 		NumParts:       3,
 		UploadedParts:  []int{},
@@ -279,6 +297,8 @@ func TestInsertUploadQueued(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := rawTestStore()
 
+	insertRepo(t, dbconn.Global, 50, "")
+
 	id, err := store.InsertUpload(context.Background(), Upload{
 		Commit:        makeCommit(1),
 		Root:          "sub/",
@@ -304,6 +324,7 @@ func TestInsertUploadQueued(t *testing.T) {
 		StartedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Indexer:        "lsif-go",
 		NumParts:       1,
 		UploadedParts:  []int{0},

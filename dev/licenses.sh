@@ -15,9 +15,20 @@ if [[ "${LICENSE_CHECK:-''}" == "true" ]]; then
   COMMAND="action_items"
 fi
 
+tmpdir=$(mktemp -d -t src-gocache.XXXXXXXX)
+export GOPATH=$tmpdir # stuff in cache causes strange things to happen
+echo "Using $(go env GOPATH) as GOPATH"
+function cleanup() {
+  go clean -modcache # need to remove modcache from tmpdir before we can remove
+  echo "Removing $tmpdir"
+  rm -rf "$tmpdir"
+}
+trap cleanup EXIT
+
 # prepare dependencies
-yarn --mutex network --frozen-lockfile
+go mod tidy
 go mod vendor # go mod download does not work with license_finder
+yarn --mutex network --frozen-lockfile
 
 # report license_finder configuration
 license_finder permitted_licenses list
@@ -27,4 +38,5 @@ license_finder ignored_dependencies list
 license_finder dependencies list
 
 # run license check
+echo "Running license_finder"
 license_finder ${COMMAND} --columns=package_manager name version licenses homepage approved

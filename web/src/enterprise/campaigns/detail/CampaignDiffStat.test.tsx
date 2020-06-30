@@ -1,11 +1,11 @@
 import React from 'react'
 import { CampaignDiffStat } from './CampaignDiffStat'
-import { createRenderer } from 'react-test-renderer/shallow'
+import { shallow } from 'enzyme'
 
 describe('CampaignDiffStat', () => {
     test('for campaign', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignDiffStat
                     campaign={{
                         diffStat: {
@@ -20,7 +20,7 @@ describe('CampaignDiffStat', () => {
         ).toMatchSnapshot())
     test('hidden for empty campaign', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignDiffStat
                     campaign={{
                         diffStat: {
@@ -35,7 +35,7 @@ describe('CampaignDiffStat', () => {
         ).toMatchSnapshot())
     test('for patch set', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignDiffStat
                     patchSet={{
                         diffStat: {
@@ -50,7 +50,7 @@ describe('CampaignDiffStat', () => {
         ).toMatchSnapshot())
     test('hidden for empty patch set', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignDiffStat
                     patchSet={{
                         diffStat: {

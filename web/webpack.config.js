@@ -20,6 +20,16 @@ const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 const isEnterpriseBuild = !!process.env.ENTERPRISE
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
+const babelLoader = {
+  loader: 'babel-loader',
+  options: {
+    cacheDirectory: true,
+    configFile: path.join(__dirname, 'babel.config.js'),
+  },
+}
+
+const extensionHostWorker = /main\.worker\.ts$/
+
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -114,6 +124,7 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         include: path.join(__dirname, 'src'),
+        exclude: extensionHostWorker,
         use: [
           ...(mode === 'production' ? ['thread-loader'] : []),
           {
@@ -136,17 +147,8 @@ const config = {
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: path.join(__dirname, 'src'),
-        use: [
-          ...(mode === 'production' ? ['thread-loader'] : []),
-          {
-            loader: 'babel-loader',
-            options: {
-              cacheDirectory: true,
-              configFile: path.join(__dirname, 'babel.config.js'),
-            },
-          },
-        ],
+        exclude: [path.join(__dirname, 'src'), extensionHostWorker],
+        use: [...(mode === 'production' ? ['thread-loader'] : []), babelLoader],
       },
       {
         test: /\.(sass|scss)$/,
@@ -176,6 +178,10 @@ const config = {
         test: /\.css$/,
         include: monacoEditorPaths,
         use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: extensionHostWorker,
+        use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
       },
     ],
   },

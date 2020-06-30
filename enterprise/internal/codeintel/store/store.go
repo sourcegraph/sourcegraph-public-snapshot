@@ -73,16 +73,13 @@ type Store interface {
 	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
 	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 	// commit on the default branch when invoked.
-	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
+	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (bool, error)
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
 	// UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
 	// identifiers.
 	ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error)
-
-	// GetDumpIDs returns all dump ids in chronological order.
-	GetDumpIDs(ctx context.Context) ([]int, error)
 
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)
@@ -183,8 +180,8 @@ type Store interface {
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
-// GetTipCommitFn returns the head commit for the given repository.
-type GetTipCommitFn func(ctx context.Context, repositoryID int) (string, error)
+// GetTipCommitFunc returns the head commit for the given repository.
+type GetTipCommitFunc func(ctx context.Context, repositoryID int) (string, error)
 
 type store struct {
 	db           dbutil.DB

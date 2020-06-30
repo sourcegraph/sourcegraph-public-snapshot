@@ -1,8 +1,8 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { CampaignDescriptionField } from './CampaignDescriptionField'
+import { mount } from 'enzyme'
 
 describe('CampaignDescriptionField', () => {
     test('renders', () =>
-        expect(renderer.create(<CampaignDescriptionField value="a" onChange={() => undefined} />)).toMatchSnapshot())
+        expect(mount(<CampaignDescriptionField value="a" onChange={() => undefined} />)).toMatchSnapshot())
 })

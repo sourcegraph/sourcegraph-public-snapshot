@@ -10,13 +10,17 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 func init() {
@@ -25,6 +29,8 @@ func init() {
 }
 
 func TestProcess(t *testing.T) {
+	setupRepoMocks(t)
+
 	upload := store.Upload{
 		ID:           42,
 		Root:         "root/",
@@ -68,12 +74,14 @@ func TestProcess(t *testing.T) {
 		gitserverClient:     gitserverClient,
 	}
 
-	err := processor.Process(context.Background(), mockStore, upload)
+	requeued, err := processor.Process(context.Background(), mockStore, upload)
 	if err != nil {
 		t.Fatalf("unexpected error processing upload: %s", err)
+	} else if requeued {
+		t.Errorf("unexpected requeue")
 	}
 
-	expectedPackages := []types.Package{
+	expectedPackages := []bundletypes.Package{
 		{DumpID: 42,
 			Scheme:  "scheme B",
 			Name:    "pkg B",
@@ -90,7 +98,7 @@ func TestProcess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating filter: %s", err)
 	}
-	expectedPackageReferences := []types.PackageReference{
+	expectedPackageReferences := []bundletypes.PackageReference{
 		{DumpID: 42,
 			Scheme:  "scheme A",
 			Name:    "pkg A",
@@ -145,6 +153,8 @@ func TestProcess(t *testing.T) {
 }
 
 func TestProcessError(t *testing.T) {
+	setupRepoMocks(t)
+
 	upload := store.Upload{
 		ID:           42,
 		Root:         "root/",
@@ -168,11 +178,13 @@ func TestProcessError(t *testing.T) {
 		gitserverClient:     gitserverClient,
 	}
 
-	err := processor.Process(context.Background(), mockStore, upload)
+	requeued, err := processor.Process(context.Background(), mockStore, upload)
 	if err == nil {
 		t.Fatalf("unexpected nil error processing upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
 		t.Fatalf("unexpected error: %s", err)
+	} else if requeued {
+		t.Errorf("unexpected requeue")
 	}
 
 	if len(mockStore.RollbackToSavepointFunc.History()) != 1 {
@@ -182,7 +194,52 @@ func TestProcessError(t *testing.T) {
 	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
 		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(mockStore.RollbackToSavepointFunc.History()))
 	}
+}
 
+func TestProcessCloneInProgress(t *testing.T) {
+	t.Cleanup(func() {
+		backend.Mocks.Repos.Get = nil
+		backend.Mocks.Repos.ResolveRev = nil
+	})
+
+	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+		if repoID != api.RepoID(50) {
+			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
+		}
+		return &types.Repo{ID: repoID}, nil
+	}
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return api.CommitID(""), &vcs.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
+	}
+
+	upload := store.Upload{
+		ID:           42,
+		Root:         "root/",
+		Commit:       makeCommit(1),
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+	}
+
+	mockStore := storemocks.NewMockStore()
+	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	gitserverClient := gitservermocks.NewMockClient()
+
+	processor := &processor{
+		bundleManagerClient: bundleManagerClient,
+		gitserverClient:     gitserverClient,
+	}
+
+	requeued, err := processor.Process(context.Background(), mockStore, upload)
+	if err != nil {
+		t.Fatalf("unexpected error processing upload: %s", err)
+	} else if !requeued {
+		t.Errorf("expected upload to be requeued")
+	}
+
+	if len(mockStore.RequeueFunc.History()) != 1 {
+		t.Errorf("unexpected number of RequeueFunc calls. want=%d have=%d", 1, len(mockStore.RequeueFunc.History()))
+	}
 }
 
 //
@@ -194,4 +251,25 @@ func makeCommit(i int) string {
 
 func copyTestDump(ctx context.Context, uploadID int) (io.ReadCloser, error) {
 	return os.Open("../../testdata/dump1.lsif")
+}
+
+func setupRepoMocks(t *testing.T) {
+	t.Cleanup(func() {
+		backend.Mocks.Repos.Get = nil
+		backend.Mocks.Repos.ResolveRev = nil
+	})
+
+	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+		if repoID != api.RepoID(50) {
+			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
+		}
+		return &types.Repo{ID: repoID}, nil
+	}
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		if rev != makeCommit(1) {
+			t.Errorf("unexpected commit. want=%s have=%s", makeCommit(1), rev)
+		}
+		return "", nil
+	}
 }
