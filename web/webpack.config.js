@@ -147,7 +147,7 @@ const config = {
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: path.join(__dirname, 'src'),
+        exclude: [path.join(__dirname, 'src'), extensionHostWorker],
         use: [...(mode === 'production' ? ['thread-loader'] : []), babelLoader],
       },
       {
