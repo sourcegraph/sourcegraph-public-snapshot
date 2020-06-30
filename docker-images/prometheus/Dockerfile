@@ -71,12 +71,16 @@ USER sourcegraph
 
 COPY --from=builder /generated/prometheus/* /sg_config_prometheus/
 COPY ./.bin/prom-wrapper /bin/prom-wrapper
+COPY ./prometheus.sh /prometheus.sh
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
-COPY config/alertmanager.yml /sg_config_prometheus/
+COPY --chown=sourcegraph config/alertmanager.yml /sg_config_prometheus/
 
 ENTRYPOINT ["/bin/prom-wrapper"]
 # Note that upstream's 'VOLUME' directive was deliberately removed. Including it makes it impossible
 # to chmod the directory to our 'sourcegraph' user.
 WORKDIR    /prometheus
+# Prometheus is reverse-proxied from 9092 to 9090
 EXPOSE     9090
+# Alertmanager is served on port 9093 - services should not need to access it directly, however
+EXPOSE     9093

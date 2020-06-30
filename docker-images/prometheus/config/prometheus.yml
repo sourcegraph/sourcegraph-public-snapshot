@@ -9,7 +9,7 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-            - localhost:9093 # started by prom-wrapper
+            - 127.0.0.1:9093 # started by prom-wrapper
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:
@@ -21,7 +21,10 @@ scrape_configs:
   # Scrape prometheus itself for metrics.
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9092']
+      - targets: ['127.0.0.1:9092']
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['127.0.0.1:9093']
 
   - job_name: 'sg'
     file_sd_configs:

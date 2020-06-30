@@ -12,7 +12,7 @@ import (
 )
 
 type ChangeContext struct {
-	AMConfig *amconfig.Config
+	AMConfig *amconfig.Config // refer to https://prometheus.io/docs/alerting/latest/configuration/
 }
 
 // ChangeResult indicates output from a Change
@@ -69,8 +69,10 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 	email := newConfig.Email
 	change.AMConfig.Global.SMTPFrom = email.Address
 	change.AMConfig.Global.SMTPHello = email.SMTP.Domain
-	change.AMConfig.Global.SMTPSmarthost.Host = email.SMTP.Host
-	change.AMConfig.Global.SMTPSmarthost.Port = strconv.Itoa(email.SMTP.Port)
+	change.AMConfig.Global.SMTPSmarthost = amconfig.HostPort{
+		Host: email.SMTP.Host,
+		Port: strconv.Itoa(email.SMTP.Port),
+	}
 	change.AMConfig.Global.SMTPAuthUsername = email.SMTP.Username
 	switch email.SMTP.Authentication {
 	case "PLAIN":

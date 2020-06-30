@@ -23,7 +23,7 @@ import (
 // prom-wrapper configuration options
 var (
 	noConfig   = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
-	exportPort = env.Get("EXPORT_PORT", "3370", "port that should be used to reverse-proxy Prometheus and custom endpoints externally")
+	exportPort = env.Get("EXPORT_PORT", "9090", "port that should be used to reverse-proxy Prometheus and custom endpoints externally")
 
 	prometheusPort = env.Get("PROMETHEUS_INTERNAL_PORT", "9092", "internal Prometheus port")
 
@@ -37,12 +37,12 @@ func main() {
 
 	// spin up prometheus and alertmanager
 	procErrs := make(chan error)
-	go runCmd(procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
+	go runCmd(log, procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
 	var promArgs []string
 	if len(os.Args) > 1 {
 		promArgs = os.Args[1:] // propagate args to prometheus
 	}
-	go runCmd(procErrs, NewPrometheusCmd(promArgs, prometheusPort))
+	go runCmd(log, procErrs, NewPrometheusCmd(promArgs, prometheusPort, exportPort))
 
 	// router serves endpoints accessible from outside the container (defined by `exportPort`)
 	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying Grafana, etc.
@@ -69,7 +69,7 @@ func main() {
 		cancel()
 
 		// watch for configuration updates in the background
-		config.Subscribe(ctx)
+		go config.Subscribe(ctx)
 
 		// serve subscriber status
 		router.PathPrefix("/prom-wrapper/config-subscriber").Handler(config.Handler())
@@ -93,15 +93,15 @@ func main() {
 
 	// wait until interrupt or error
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, os.Kill)
 	var exitCode int
 	select {
-	case <-c:
-		log.Info("received sigint - stopping")
-		exitCode = 130
+	case sig := <-c:
+		log.Info(fmt.Sprintf("stopping on signal %s", sig))
+		exitCode = 2
 	case err := <-procErrs:
 		if err != nil {
-			log.Error("process errored", "error", err)
+			log.Error("subprocess exited", "error", err)
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
 				exitCode = exitErr.ProcessState.ExitCode()

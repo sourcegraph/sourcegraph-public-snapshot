@@ -34,9 +34,6 @@ type subscribedSiteConfig struct {
 
 	Email    *siteEmailConfig
 	emailSum [32]byte
-
-	// flag to indicate this config is for container startup
-	isStartup bool
 }
 
 // newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
@@ -64,17 +61,16 @@ type siteConfigDiff struct {
 	Change Change
 }
 
-// Diff returns a set of changes to apply to Grafana. If the provided config has `isStartup: true`,
-// it is assumed that this diff is for initial Grafana startup.
+// Diff returns a set of changes to apply.
 func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDiff {
 	var changes []siteConfigDiff
 
-	if other.isStartup || !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
+	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
 		changes = append(changes, siteConfigDiff{Type: "alerts", Change: changeReceivers})
 	}
 
-	if other.isStartup || !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
-		changes = append(changes, siteConfigDiff{Type: "email", Change: changeReceivers})
+	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
+		changes = append(changes, siteConfigDiff{Type: "email", Change: changeSMTP})
 	}
 
 	return changes
@@ -99,30 +95,13 @@ func NewSiteConfigSubscriber(ctx context.Context, logger log15.Logger, alertmana
 		return nil, err
 	}
 	log.Debug("detected alertmanager ready")
-	subscriber := &SiteConfigSubscriber{
+
+	zeroConfig := newSubscribedSiteConfig(schema.SiteConfiguration{})
+	return &SiteConfigSubscriber{
 		log:          log,
 		alertmanager: alertmanager,
-	}
-
-	// Syncing relies on access to frontend, so wait until it is ready.
-	// If we fail to connect, just proceed with whatever config alertmanager
-	// picks up from disk by default
-	zeroConfig := newSubscribedSiteConfig(schema.SiteConfiguration{})
-	zeroConfig.isStartup = true
-	log.Info("waiting for frontend", "url", api.InternalClient.URL)
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		log.Error("unable to connect to frontend, proceeding with existing configuration",
-			"error", err)
-		subscriber.config = zeroConfig
-	} else {
-		log.Debug("detected frontend ready, loading configuration")
-
-		// Load initial alerts configuration
-		siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
-		subscriber.execDiffs(ctx, siteConfig, siteConfig.Diff(zeroConfig))
-	}
-
-	return subscriber, nil
+		config:       zeroConfig,
+	}, nil
 }
 
 func (c *SiteConfigSubscriber) Handler() http.Handler {
@@ -155,6 +134,27 @@ func (c *SiteConfigSubscriber) Handler() http.Handler {
 }
 
 func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
+	// Syncing relies on access to frontend, so wait until it is ready before subscribing.
+	// At this point, everything else should have started as normal, so it's safe to block
+	// here for however long is needed.
+	c.log.Info("waiting for frontend", "url", api.InternalClient.URL)
+	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+		c.log.Error("unable to connect to frontend, proceeding with existing configuration",
+			"error", err)
+	} else {
+		c.log.Debug("detected frontend ready, loading initial configuration")
+
+		// Load initial alerts configuration
+		siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
+		diffs := siteConfig.Diff(c.config)
+		if len(diffs) > 0 {
+			c.execDiffs(ctx, siteConfig, diffs)
+		} else {
+			c.log.Debug("no relevant configuration to init")
+		}
+	}
+
+	// Watch for future changes
 	conf.Watch(func() {
 		c.mux.RLock()
 		newSiteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
@@ -163,7 +163,7 @@ func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 
 		// ignore irrelevant changes
 		if len(diffs) == 0 {
-			c.log.Debug("config updated contained no relevant changes - ignoring")
+			c.log.Debug("config update contained no relevant changes - ignoring")
 			return
 		}
 
@@ -191,30 +191,33 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	}
 
 	// run changeset and aggregate results
+	changeContext := ChangeContext{
+		AMConfig: amConfig,
+	}
 	for _, diff := range diffs {
 		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.Change(ctx, c.log, ChangeContext{
-			AMConfig: amConfig,
-		}, newConfig)
+		result := diff.Change(ctx, c.log, changeContext, newConfig)
 		c.problems = append(c.problems, result.Problems...)
 	}
 
 	// persist configuration to disk
+	c.log.Debug("reloading with new configuration", "change_context", changeContext) // *amconfig.Config automatically removes secrets
 	updateProblem := conf.NewSiteProblem("`observability`: failed to update Alertmanager configuration, please refer to Prometheus logs for more details")
 	amConfigData, err := yaml.Marshal(amConfig)
 	if err != nil {
-		c.log.Error("failed to update Alertmanager configuration", "error", err)
+		c.log.Error("failed to generate Alertmanager configuration", "error", err)
 		c.problems = append(c.problems, updateProblem)
 		return
 	}
 	if err := ioutil.WriteFile(alertmanagerConfigPath, amConfigData, os.ModePerm); err != nil {
-		c.log.Error("failed to update Alertmanager configuration", "error", err)
+		c.log.Error("failed to write Alertmanager configuration", "error", err)
 		c.problems = append(c.problems, updateProblem)
 		return
 	}
 	if err := reloadAlertmanager(ctx); err != nil {
 		c.log.Error("failed to reload Alertmanager configuration", "error", err)
-		c.problems = append(c.problems, updateProblem)
+		// this error can include useful information relevant to configuration, so include it in problem
+		c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("`observability`: failed to update Alertmanager configuration: %v", err)))
 	}
 
 	// update state
