@@ -119,6 +119,60 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
+func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignSpecRandID, err := unmarshalCampaignSpecID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if campaignSpecRandID == "" {
+		return nil, nil
+	}
+
+	opts := ee.GetCampaignSpecOpts{RandID: campaignSpecRandID}
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, opts)
+	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &campaignSpecResolver{store: r.store, httpFactory: r.httpFactory, campaignSpec: campaignSpec}, nil
+}
+
+func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign.
+	if err := allowReadAccess(ctx); err != nil {
+		return nil, err
+	}
+
+	changesetSpecRandID, err := unmarshalChangesetSpecID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if changesetSpecRandID == "" {
+		return nil, nil
+	}
+
+	opts := ee.GetChangesetSpecOpts{RandID: changesetSpecRandID}
+	changesetSpec, err := r.store.GetChangesetSpec(ctx, opts)
+	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &changesetSpecResolver{store: r.store, httpFactory: r.httpFactory, changesetSpec: changesetSpec}, nil
+}
+
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("Namespace %s, CampaignSpec %s", args.Namespace, args.CampaignSpec))

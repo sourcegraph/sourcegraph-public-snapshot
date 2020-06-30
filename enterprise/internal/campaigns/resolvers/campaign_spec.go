@@ -1,52 +1,89 @@
 package resolvers
 
 import (
+	"context"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
+
+func marshalCampaignSpecRandID(id string) graphql.ID {
+	return relay.MarshalID("CampaignSpec", id)
+}
+
+func unmarshalCampaignSpecID(id graphql.ID) (campaignSpecRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &campaignSpecRandID)
+	return
+}
 
 var _ graphqlbackend.CampaignSpecResolver = &campaignSpecResolver{}
 
 type campaignSpecResolver struct {
+	store       *ee.Store
+	httpFactory *httpcli.Factory
+
+	campaignSpec *campaigns.CampaignSpec
 }
 
-func (r *campaignSpecResolver) ID() (graphql.ID, error) {
-	return "", errors.New("TODO: not implemented")
+func (r *campaignSpecResolver) ID() graphql.ID {
+	// 🚨 SECURITY: This needs to be the RandID! We can't expose the
+	// sequential, guessable ID.
+	return marshalCampaignSpecRandID(r.campaignSpec.RandID)
 }
 
 func (r *campaignSpecResolver) OriginalInput() (string, error) {
-	return "", errors.New("TODO: not implemented")
+	return r.campaignSpec.RawSpec, nil
 }
 
 func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
-	return graphqlbackend.JSONValue{}, errors.New("TODO: not implemented")
+	return graphqlbackend.JSONValue{Value: r.campaignSpec.Spec}, nil
 }
 
 func (r *campaignSpecResolver) ChangesetSpecs() ([]graphqlbackend.ChangesetSpecResolver, error) {
 	return []graphqlbackend.ChangesetSpecResolver{}, errors.New("TODO: not implemented")
 }
 
-func (r *campaignSpecResolver) Creator() (*graphqlbackend.UserResolver, error) {
-	return nil, errors.New("TODO: not implemented")
+func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.UserID)
 }
 
-func (r *campaignSpecResolver) Namespace() (*graphqlbackend.NamespaceResolver, error) {
-	return nil, errors.New("TODO: not implemented")
+func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+	var (
+		err error
+		n   = &graphqlbackend.NamespaceResolver{}
+	)
+
+	if r.campaignSpec.NamespaceUserID != 0 {
+		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.NamespaceUserID)
+	} else {
+		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.campaignSpec.NamespaceOrgID)
+	}
+
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+
+	return n, err
 }
 
 func (r *campaignSpecResolver) PreviewURL() (string, error) {
-	return "", errors.New("TODO: not implemented")
+	// TODO: this needs to take the namespace into account
+	return "/campaigns/new?spec=" + string(r.ID()), nil
 }
 
 func (r *campaignSpecResolver) CreatedAt() *graphqlbackend.DateTime {
-	// TODO: not implemented
-	return &graphqlbackend.DateTime{Time: time.Now()}
+	return &graphqlbackend.DateTime{Time: r.campaignSpec.CreatedAt}
 }
 
 func (r *campaignSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	// TODO: not implemented
-	return &graphqlbackend.DateTime{Time: time.Now()}
+	// TODO: This is a bogus value and needs to be implemented properly
+	expiresAt := r.campaignSpec.CreatedAt.Add(2 * time.Hour)
+	return &graphqlbackend.DateTime{Time: expiresAt}
 }

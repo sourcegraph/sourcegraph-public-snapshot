@@ -407,13 +407,13 @@ func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToChangesetSpec() (ChangesetSpecResolver, bool) {
-	n, ok := r.Node.(ChangesetSpecResolver)
+func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
+	n, ok := r.Node.(CampaignSpecResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
-	n, ok := r.Node.(CampaignSpecResolver)
+func (r *NodeResolver) ToChangesetSpec() (ChangesetSpecResolver, bool) {
+	n, ok := r.Node.(ChangesetSpecResolver)
 	return n, ok
 }
 
@@ -545,6 +545,10 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
+	case "CampaignSpec":
+		return r.CampaignSpecByID(ctx, id)
+	case "ChangesetSpec":
+		return r.ChangesetSpecByID(ctx, id)
 	case "ExternalChangeset":
 		return r.ChangesetByID(ctx, id)
 	case "HiddenExternalChangeset":
