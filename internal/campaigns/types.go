@@ -1553,7 +1553,8 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 }
 
 type ChangesetSpecFields struct {
-	RepoID  api.RepoID   `json:"repoID"`
+	// TODO: Is this a api.RepoID or a graphql.ID?
+	RepoID  graphql.ID   `json:"repoID"`
 	Rev     api.CommitID `json:"rev"`
 	BaseRef string       `json:"baseRef"`
 	Diff    string       `json:"diff"`

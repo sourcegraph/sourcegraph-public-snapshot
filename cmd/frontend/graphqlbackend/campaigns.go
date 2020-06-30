@@ -80,6 +80,7 @@ type CampaignsResolver interface {
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
+	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
 }
 
 type CampaignSpecResolver interface {
@@ -99,7 +100,7 @@ type CampaignSpecResolver interface {
 }
 
 type ChangesetSpecResolver interface {
-	ID() (graphql.ID, error)
+	ID() graphql.ID
 
 	// TODO: More fields, see PR
 	ExpiresAt() *DateTime
@@ -294,5 +295,9 @@ func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID
 }
 
 func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }

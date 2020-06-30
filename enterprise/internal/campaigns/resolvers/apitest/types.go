@@ -215,3 +215,10 @@ type CampaignSpec struct {
 	CreatedAt *graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 }
+
+type ChangesetSpec struct {
+	Typename string `json:"__typename"`
+	ID       string
+
+	ExpiresAt *graphqlbackend.DateTime
+}
