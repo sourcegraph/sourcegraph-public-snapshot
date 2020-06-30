@@ -7,19 +7,28 @@
     overflow: auto;
     padding-bottom: 4rem;
 
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: $gray-14;
+    }
+
     &__logo {
         width: 45px;
         height: 45px;
     }
 
     &__logo-container {
-        margin-top: 6rem;
+        margin-top: 4rem;
     }
 
     &__container {
         flex: 1 1 auto;
         flex-grow: 0;
-        margin-top: 4rem;
+        margin: 2rem;
         width: 49rem;
         max-width: 90%;
 
