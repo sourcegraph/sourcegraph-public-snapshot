@@ -693,6 +693,11 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
 	cmd.Dir = string(dir)
+	// dir (something like "foo/bar/.git") is a GIT_DIR. By setting that here
+	// we avoid git doing discovery of GIT_DIR. This has the benefit of when
+	// the disk gets in a weird state we don't have weird errors were git has
+	// crawled all the way up to root looking for GIT_DIR.
+	cmd.Env = append(os.Environ(), "GIT_DIR="+string(dir))
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
