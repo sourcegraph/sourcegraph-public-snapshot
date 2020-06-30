@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -109,8 +108,6 @@ INSERT INTO repo (id, name, description, language, fork, private,
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	permsStore := edb.NewPermsStore(dbconn.Global, clock)
 	syncer := NewPermsSyncer(reposStore, permsStore, clock, nil)
-	syncer.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-	syncer.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
 
 	err = syncer.syncRepoPerms(ctx, api.RepoID(1), true)
 	if err != nil {
