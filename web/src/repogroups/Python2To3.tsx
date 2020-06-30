@@ -26,7 +26,7 @@ export const python2To3Metadata: RepogroupMetadata = {
         },
         {
             title: 'Python 3 imports',
-            exampleQuery: '<span class="repogroup-page__keyword-text">repogroup:</span>test from B.w+ import w+',
+            exampleQuery: 'from B.w+ import w+',
             description: 'Python 3 imports test description',
         },
         { title: 'Python 2 prints', exampleQuery: '\'print ":[string]"\'' },
@@ -37,7 +37,7 @@ export const python2To3Metadata: RepogroupMetadata = {
         },
         {
             title: 'Python 3 integer conversion',
-            exampleQuery: 'lang:python \\sint\\(-*\\d+\\)',
+            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>python \\sint\\(-*\\d+\\)',
         },
     ],
     homepageDescription: 'Searches and suggestions to help migrate your code python3.',

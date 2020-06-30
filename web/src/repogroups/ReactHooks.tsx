@@ -15,32 +15,33 @@ export const reactHooks: RepogroupMetadata = {
     examples: [
         {
             title: 'useState imports regex search:',
-            exampleQuery: "repogroup:javascript-gh-100 import [^;]+useState[^;]+ from 'react'",
+            exampleQuery: "import [^;]+useState[^;]+ from 'react'",
         },
         {
             title: 'useState with objects as input parameters structural search:',
-            exampleQuery: 'repogroup:javascript-gh-100 useState({:[string]}) count:1000',
+            exampleQuery: 'useState({:[string]}) <span class="repogroup-page__keyword-text">count:</span>1000',
         },
         {
             title: 'useState with arrays as input parameters structural search:',
-            exampleQuery: 'repogroup:javascript-gh-100 useState([:[string]]) count:1000',
+            exampleQuery: 'useState([:[string]]) <span class="repogroup-page__keyword-text">count:</span>1000',
         },
         {
             title: 'useState with any type of input parameters structural search:',
-            exampleQuery: 'repogroup:javascript-gh-100 useState(:[string]) count:1000',
+            exampleQuery: 'useState(:[string]) <span class="repogroup-page__keyword-text">count:</span>1000',
         },
         {
             title: 'useState with any type of input parameters structural search for only typescript files:',
-            exampleQuery: 'repogroup:javascript-gh-100 useState(:[string]) count:1000 lang:typescript',
+            exampleQuery:
+                'useState(:[string]) <span class="repogroup-page__keyword-text">count:</span>1000 <span class="repogroup-page__keyword-text">lang:</span>typescript',
         },
         {
             title: 'useState with exactly two input params for structural search, should return a lot fewer results:',
-            exampleQuery: 'repogroup:javascript-gh-100 useState([:[1.], :[2.]]) count:1000',
+            exampleQuery: 'useState([:[1.], :[2.]]) <span class="repogroup-page__keyword-text">count:</span>1000',
         },
         {
             title: 'useState with two or more params in a specific file (need better eg here) with structural search:',
             exampleQuery:
-                'repogroup:javascript-gh-100 useState([:[1], :[2]]) count:1000 file:docs/src/pages/components/transfer-list/TransferList.js',
+                'useState([:[1], :[2]]) <span class="repogroup-page__keyword-text">count:</span>1000 <span class="repogroup-page__keyword-text">file:</span>docs/src/pages/components/transfer-list/TransferList.js',
         },
     ],
     homepageDescription: 'Examples of useState for ReactHooks.',
