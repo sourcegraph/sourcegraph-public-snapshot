@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	iauthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -51,7 +51,7 @@ func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, to
 		return nil, err
 	}
 
-	return NewProvider(urn, ghURL, token, ttl, nil), nil
+	return NewProvider(urn, ghURL, token, nil, ttl, nil), nil
 }
 
 // ValidateGitHubAuthz validates the authorization fields of the given GitHub external

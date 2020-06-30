@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -151,8 +150,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	permsStore := edb.NewPermsStore(nil, clock)
 	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
-	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
 
 	tests := []struct {
 		name     string
@@ -188,10 +185,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
-		s := NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
-		s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-		s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
-		return s
+		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
 	}
 
 	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {

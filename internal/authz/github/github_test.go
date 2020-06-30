@@ -182,7 +182,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 				return mockClient
 			}
 
-			p := NewProvider("", test.githubURL, "base-token", test.cacheTTL, make(authz.MockCache))
+			p := NewProvider("", test.githubURL, "base-token", nil, test.cacheTTL, make(authz.MockCache))
 			p.client = mockClient
 
 			for j := 0; j < 2; j++ { // run twice for cache coherency
@@ -243,7 +243,7 @@ func TestFetchUserRepos(t *testing.T) {
 		return mockClient
 	}
 
-	p := NewProvider("", mustURL(t, "https://github.com"), "base-token", 0, make(authz.MockCache))
+	p := NewProvider("", mustURL(t, "https://github.com"), "base-token", nil, 0, make(authz.MockCache))
 	p.client = mockClient
 
 	canAccess, isPublic, err := p.fetchUserRepos(context.Background(), ua("u0", "t0"), []string{
@@ -311,7 +311,7 @@ func rp(name, ghid, serviceID string) *types.Repo {
 
 func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
-		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", nil, 3*time.Hour, nil)
 		_, err := p.FetchUserPerms(context.Background(), nil)
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -321,7 +321,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the account", func(t *testing.T) {
-		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", nil, 3*time.Hour, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -338,7 +338,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("no token found in account data", func(t *testing.T) {
-		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", nil, 3*time.Hour, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -378,7 +378,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		return mockClient
 	}
 
-	p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+	p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", nil, 3*time.Hour, nil)
 	p.client = mockClient
 
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
@@ -413,7 +413,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", nil, 3*time.Hour, nil)
 		_, err := p.FetchRepoPerms(context.Background(), nil)
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -423,7 +423,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", nil, 3*time.Hour, nil)
 		_, err := p.FetchRepoPerms(context.Background(),
 			&extsvc.Repository{
 				URI: "gitlab.com/user/repo",
@@ -440,7 +440,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		}
 	})
 
-	p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+	p := NewProvider("", mustURL(t, "https://github.com"), "admin_token", nil, 3*time.Hour, nil)
 	p.client = &mockClient{
 		MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int) ([]*github.Collaborator, bool, error) {
 			switch page {
