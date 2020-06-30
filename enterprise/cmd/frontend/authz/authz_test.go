@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"

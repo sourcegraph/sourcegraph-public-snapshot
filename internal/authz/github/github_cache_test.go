@@ -28,7 +28,7 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 		return mockClient
 	}
 
-	p := NewProvider("", mustURL(t, "https://github.com"), "base-token", 3*time.Hour, make(authz.MockCache))
+	p := NewProvider("", mustURL(t, "https://github.com"), "base-token", nil, 3*time.Hour, make(authz.MockCache))
 	p.client = mockClient
 
 	ctx := context.Background()
