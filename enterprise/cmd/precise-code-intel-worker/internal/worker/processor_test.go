@@ -74,7 +74,7 @@ func TestProcess(t *testing.T) {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
-		metrics:           metrics.  NewWorkerMetrics(&observation.TestContext),
+		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	requeued, err := processor.Process(context.Background(), mockStore, upload)
@@ -179,7 +179,7 @@ func TestProcessError(t *testing.T) {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
-		metrics:           metrics.  NewWorkerMetrics(&observation.TestContext),
+		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	requeued, err := processor.Process(context.Background(), mockStore, upload)
@@ -232,7 +232,7 @@ func TestProcessCloneInProgress(t *testing.T) {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
-		metrics:           metrics.  NewWorkerMetrics(&observation.TestContext),
+		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	requeued, err := processor.Process(context.Background(), mockStore, upload)
