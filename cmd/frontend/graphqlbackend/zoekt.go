@@ -128,6 +128,10 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 }
 
 func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+	if len(s.Repos) == 0 {
+		return nil, false, nil, nil
+	}
+
 	switch s.typ {
 	case textRequest:
 		return zoektSearchHEAD(ctx, s.args, s.Repos, false, time.Since)
