@@ -1,5 +1,8 @@
-// eslint-disable-next-line import/extensions
-import ExtensionHostWorker from 'worker-loader!./main.worker.ts'
+/* eslint-disable import/extensions */
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import ExtensionHostWorker from './main.worker.ts'
+/* eslint-enable import/extensions */
 import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 import { Subscription } from 'rxjs'
 

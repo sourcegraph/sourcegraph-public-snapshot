@@ -88,8 +88,20 @@ const config: webpack.Configuration = {
                 ],
             },
             {
-                loader: 'worker-loader',
-                options: { name: 'extensionHostWorker.bundle.js' },
+                test: /main\.worker\.ts$/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            cacheDirectory: true,
+                            configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
+                        },
+                    },
+                    {
+                        loader: 'worker-loader',
+                        options: { name: 'extensionHostWorker.bundle.js' },
+                    },
+                ],
             },
         ],
     },

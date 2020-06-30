@@ -178,8 +178,17 @@ const config = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        loader: 'worker-loader',
-        options: { inline: true },
+        test: /main\.worker\.ts$/,
+        use: [
+          { loader: 'worker-loader', options: { inline: true } },
+          {
+            loader: 'babel-loader',
+            options: {
+              cacheDirectory: true,
+              configFile: path.join(__dirname, 'babel.config.js'),
+            },
+          },
+        ],
       },
     ],
   },
