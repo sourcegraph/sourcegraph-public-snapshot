@@ -104,7 +104,7 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	if err := checkSpecArgSafety(string(opt.Range)); err != nil {
+	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
 
@@ -176,8 +176,8 @@ func runCommitLog(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) (
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(stderr), string(opt.Range)) {
-			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: string(opt.Range)}
+		if isBadObjectErr(string(stderr), opt.Range) {
+			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: opt.Range}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}
@@ -198,7 +198,7 @@ func runCommitLog(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) (
 }
 
 func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
-	if err := checkSpecArgSafety(string(opt.Range)); err != nil {
+	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
 
