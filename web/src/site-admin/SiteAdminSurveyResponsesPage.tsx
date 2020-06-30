@@ -125,7 +125,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                         </strong>
                     </td>
                     <td>
-                        {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
+                        {this.props.node.usageStatistics?.lastActiveTime ? (
                             <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                         ) : (
                             '?'

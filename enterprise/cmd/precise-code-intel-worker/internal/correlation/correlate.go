@@ -16,7 +16,7 @@ import (
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
 // the same data canonicalized and pruned for storage.
-func Correlate(r io.Reader, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
+func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(r, root)
 	if err != nil {
@@ -27,7 +27,7 @@ func Correlate(r io.Reader, dumpID int, root string, getChildren existence.GetCh
 	canonicalize(state)
 
 	// Remove elements we don't need to store
-	if err := prune(state, root, getChildren); err != nil {
+	if err := prune(ctx, state, root, getChildren); err != nil {
 		return nil, err
 	}
 

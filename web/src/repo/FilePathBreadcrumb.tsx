@@ -28,7 +28,7 @@ const Breadcrumb: React.FunctionComponent<Props> = props => {
         )
         if (index < parts.length - 1) {
             spans.push(
-                <span key={'sep' + index} className="breadcrumb__separator">
+                <span key={`sep${index}`} className="breadcrumb__separator">
                     /
                 </span>
             )

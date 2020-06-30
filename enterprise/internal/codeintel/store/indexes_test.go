@@ -37,6 +37,7 @@ func TestGetIndexByID(t *testing.T) {
 		StartedAt:      &startedAt,
 		FinishedAt:     nil,
 		RepositoryID:   123,
+		RepositoryName: "n-123",
 		Rank:           nil,
 	}
 
@@ -126,9 +127,9 @@ func TestGetIndexes(t *testing.T) {
 		Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued"},
 		Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
 		Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued"},
-		Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51},
+		Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
 		Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing"},
-		Index{ID: 6, QueuedAt: t6, State: "processing"},
+		Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
 		Index{ID: 7, QueuedAt: t7},
 		Index{ID: 8, QueuedAt: t8},
 		Index{ID: 9, QueuedAt: t9, State: "queued"},
@@ -136,28 +137,38 @@ func TestGetIndexes(t *testing.T) {
 	)
 
 	testCases := []struct {
-		state       string
-		term        string
-		expectedIDs []int
+		repositoryID int
+		state        string
+		term         string
+		expectedIDs  []int
 	}{
-		{expectedIDs: []int{1, 2, 3, 5, 6, 7, 8, 9, 10}},
+		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
+		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10}},
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
-		{term: "003", expectedIDs: []int{1, 3, 5}},    // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}}, // searches commits and failure message
+		{term: "003", expectedIDs: []int{1, 3, 5}},       // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},    // searches commits and failure message
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}}, // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},          // search repo names
 	}
 
 	for _, testCase := range testCases {
-		name := fmt.Sprintf("state=%s term=%s", testCase.state, testCase.term)
+		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
+			hi := lo + 3
+			if hi > len(testCase.expectedIDs) {
+				hi = len(testCase.expectedIDs)
+			}
 
-		t.Run(name, func(t *testing.T) {
-			for lo := 0; lo < len(testCase.expectedIDs); lo++ {
-				hi := lo + 3
-				if hi > len(testCase.expectedIDs) {
-					hi = len(testCase.expectedIDs)
-				}
+			name := fmt.Sprintf(
+				"repositoryID=%d state=%s term=%s offset=%d",
+				testCase.repositoryID,
+				testCase.state,
+				testCase.term,
+				lo,
+			)
 
+			t.Run(name, func(t *testing.T) {
 				indexes, totalCount, err := store.GetIndexes(context.Background(), GetIndexesOptions{
-					RepositoryID: 50,
+					RepositoryID: testCase.repositoryID,
 					State:        testCase.state,
 					Term:         testCase.term,
 					Limit:        3,
@@ -178,8 +189,8 @@ func TestGetIndexes(t *testing.T) {
 				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
 					t.Errorf("unexpected index ids at offset %d (-want +got):\n%s", lo, diff)
 				}
-			}
-		})
+			})
+		}
 	}
 }
 
@@ -257,6 +268,8 @@ func TestInsertIndex(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := rawTestStore()
 
+	insertRepo(t, dbconn.Global, 50, "")
+
 	id, err := store.InsertIndex(context.Background(), Index{
 		Commit:       makeCommit(1),
 		State:        "queued",
@@ -276,6 +289,7 @@ func TestInsertIndex(t *testing.T) {
 		StartedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Rank:           &rank,
 	}
 

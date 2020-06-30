@@ -1,7 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
-Array [
+<GlobalCampaignListPage
+  authenticatedUser={
+    Object {
+      "siteAdmin": false,
+    }
+  }
+  history="[History]"
+  location="[Location path=/]"
+  queryCampaignsCount={[Function]}
+>
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -28,7 +37,7 @@ Array [
         </a>
       </p>
     </div>
-  </div>,
+  </div>
   <div
     className="card mt-4 mb-4"
   >
@@ -63,12 +72,21 @@ Array [
          with any questions or feedback!
       </p>
     </div>
-  </div>,
-]
+  </div>
+</GlobalCampaignListPage>
 `;
 
 exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
-Array [
+<GlobalCampaignListPage
+  authenticatedUser={
+    Object {
+      "siteAdmin": false,
+    }
+  }
+  history="[History]"
+  location="[Location path=/]"
+  queryCampaignsCount={[Function]}
+>
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -95,7 +113,7 @@ Array [
         </a>
       </p>
     </div>
-  </div>,
+  </div>
   <div
     className="card mt-4 mb-4"
   >
@@ -130,7 +148,7 @@ Array [
          with any questions or feedback!
       </p>
     </div>
-  </div>,
+  </div>
   <FilteredConnection
     authenticatedUser={
       Object {
@@ -165,91 +183,32 @@ Array [
       ]
     }
     hideSearch={true}
-    history={
-      Object {
-        "action": "POP",
-        "block": [Function],
-        "canGo": [Function],
-        "createHref": [Function],
-        "entries": Array [
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-        ],
-        "go": [Function],
-        "goBack": [Function],
-        "goForward": [Function],
-        "index": 0,
-        "length": 1,
-        "listen": [Function],
-        "location": Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-        "push": [Function],
-        "replace": [Function],
-      }
-    }
-    location={
-      Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      }
-    }
+    history="[History]"
+    location="[Location path=/]"
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
-        "history": Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        },
+        "history": "[History]",
       }
     }
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-  />,
-]
+  />
+</GlobalCampaignListPage>
 `;
 
 exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
-Array [
+<GlobalCampaignListPage
+  authenticatedUser={
+    Object {
+      "siteAdmin": true,
+    }
+  }
+  history="[History]"
+  location="[Location path=/]"
+  queryCampaignsCount={[Function]}
+>
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -276,24 +235,33 @@ Array [
         </a>
       </p>
     </div>
-    <a
+    <AnchorLink
       className="btn btn-primary ml-3"
-      href="/campaigns/create"
+      to="/campaigns/create"
     >
-      <svg
-        className="mdi-icon icon-inline"
-        fill="currentColor"
-        height={24}
-        viewBox="0 0 24 24"
-        width={24}
+      <a
+        className="btn btn-primary ml-3"
+        href="/campaigns/create"
       >
-        <path
-          d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
-        />
-      </svg>
-       New campaign
-    </a>
-  </div>,
+        <Memo(AddIcon)
+          className="icon-inline"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+            />
+          </svg>
+        </Memo(AddIcon)>
+         New campaign
+      </a>
+    </AnchorLink>
+  </div>
   <div
     className="card mt-4 mb-4"
   >
@@ -328,12 +296,21 @@ Array [
          with any questions or feedback!
       </p>
     </div>
-  </div>,
-]
+  </div>
+</GlobalCampaignListPage>
 `;
 
 exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
-Array [
+<GlobalCampaignListPage
+  authenticatedUser={
+    Object {
+      "siteAdmin": true,
+    }
+  }
+  history="[History]"
+  location="[Location path=/]"
+  queryCampaignsCount={[Function]}
+>
   <div
     className="d-flex justify-content-between align-items-end mb-3"
   >
@@ -360,24 +337,33 @@ Array [
         </a>
       </p>
     </div>
-    <a
+    <AnchorLink
       className="btn btn-primary ml-3"
-      href="/campaigns/create"
+      to="/campaigns/create"
     >
-      <svg
-        className="mdi-icon icon-inline"
-        fill="currentColor"
-        height={24}
-        viewBox="0 0 24 24"
-        width={24}
+      <a
+        className="btn btn-primary ml-3"
+        href="/campaigns/create"
       >
-        <path
-          d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
-        />
-      </svg>
-       New campaign
-    </a>
-  </div>,
+        <Memo(AddIcon)
+          className="icon-inline"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+            />
+          </svg>
+        </Memo(AddIcon)>
+         New campaign
+      </a>
+    </AnchorLink>
+  </div>
   <div
     className="card mt-4 mb-4"
   >
@@ -412,7 +398,7 @@ Array [
          with any questions or feedback!
       </p>
     </div>
-  </div>,
+  </div>
   <FilteredConnection
     authenticatedUser={
       Object {
@@ -447,85 +433,17 @@ Array [
       ]
     }
     hideSearch={true}
-    history={
-      Object {
-        "action": "POP",
-        "block": [Function],
-        "canGo": [Function],
-        "createHref": [Function],
-        "entries": Array [
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-        ],
-        "go": [Function],
-        "goBack": [Function],
-        "goForward": [Function],
-        "index": 0,
-        "length": 1,
-        "listen": [Function],
-        "location": Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-        "push": [Function],
-        "replace": [Function],
-      }
-    }
-    location={
-      Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      }
-    }
+    history="[History]"
+    location="[Location path=/]"
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
-        "history": Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        },
+        "history": "[History]",
       }
     }
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-  />,
-]
+  />
+</GlobalCampaignListPage>
 `;

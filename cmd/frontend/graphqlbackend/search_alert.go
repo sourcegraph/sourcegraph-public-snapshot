@@ -494,6 +494,18 @@ func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierr
 	return newMultiErr, alert
 }
 
+func alertForStructuralSearchNotSet(queryString string) *searchAlert {
+	return &searchAlert{
+		title:       "No results",
+		description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+		proposedQueries: []*searchQueryDescription{{
+			description: "Activate structural search",
+			query:       queryString,
+			patternType: query.SearchTypeStructural,
+		}},
+	}
+}
+
 func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {

@@ -15,7 +15,7 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
     let range: Range | undefined
     for (const result of values) {
         if (result) {
-            if (result.contents && result.contents.value) {
+            if (result.contents?.value) {
                 contents.push({
                     value: result.contents.value,
                     kind: result.contents.kind || MarkupKind.PlainText,

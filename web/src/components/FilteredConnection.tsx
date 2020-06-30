@@ -220,7 +220,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                         </small>
                     </p>
                 )
-            } else if (this.props.connection.pageInfo && this.props.connection.pageInfo.hasNextPage) {
+            } else if (this.props.connection.pageInfo?.hasNextPage) {
                 // No total count to show, but it will show a 'Show more' button.
             } else if (totalCount === 0) {
                 summary = this.props.emptyElement || (

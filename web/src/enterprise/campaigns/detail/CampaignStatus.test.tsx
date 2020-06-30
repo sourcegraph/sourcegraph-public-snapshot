@@ -1,8 +1,8 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignStatus } from './CampaignStatus'
-import { createRenderer } from 'react-test-renderer/shallow'
 import { createMemoryHistory } from 'history'
+import { shallow } from 'enzyme'
 
 const PROPS = {
     afterRetry: () => undefined,
@@ -28,7 +28,7 @@ describe('CampaignStatus', () => {
             describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
                 test('closed campaign', () =>
                     expect(
-                        createRenderer().render(
+                        shallow(
                             <CampaignStatus
                                 {...PROPS}
                                 campaign={{
@@ -47,7 +47,7 @@ describe('CampaignStatus', () => {
 
                 test('drafted campaign', () =>
                     expect(
-                        createRenderer().render(
+                        shallow(
                             <CampaignStatus
                                 {...PROPS}
                                 campaign={{
@@ -65,7 +65,7 @@ describe('CampaignStatus', () => {
 
                 test('drafted campaign, some published', () =>
                     expect(
-                        createRenderer().render(
+                        shallow(
                             <CampaignStatus
                                 {...PROPS}
                                 campaign={{
@@ -84,7 +84,7 @@ describe('CampaignStatus', () => {
 
                 test('campaign processing', () =>
                     expect(
-                        createRenderer().render(
+                        shallow(
                             <CampaignStatus
                                 {...PROPS}
                                 campaign={{
@@ -102,7 +102,7 @@ describe('CampaignStatus', () => {
 
                 test('campaign errored', () =>
                     expect(
-                        createRenderer().render(
+                        shallow(
                             <CampaignStatus
                                 {...PROPS}
                                 campaign={{

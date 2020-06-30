@@ -60,11 +60,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
           "Consumer": Object {
             "$$typeof": Symbol(react.context),
             "_calculateChangedBits": null,
-            "_context": [Circular],
+            "_context": "[Cyclic structure]",
           },
           "Provider": Object {
             "$$typeof": Symbol(react.provider),
-            "_context": [Circular],
+            "_context": "[Cyclic structure]",
           },
           "_calculateChangedBits": null,
           "_currentRenderer": Object {},
@@ -938,11 +938,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               "Consumer": Object {
                                 "$$typeof": Symbol(react.context),
                                 "_calculateChangedBits": null,
-                                "_context": [Circular],
+                                "_context": "[Cyclic structure]",
                               },
                               "Provider": Object {
                                 "$$typeof": Symbol(react.provider),
-                                "_context": [Circular],
+                                "_context": "[Cyclic structure]",
                               },
                               "_calculateChangedBits": null,
                               "_currentRenderer": Object {},

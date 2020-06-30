@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -1156,7 +1157,7 @@ func TestService(t *testing.T) {
 		}
 		t.Cleanup(func() { db.MockAuthzFilter = nil })
 
-		fakeSource := &FakeChangesetSource{Err: nil}
+		fakeSource := &ct.FakeChangesetSource{Err: nil}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 		svc := NewServiceWithClock(store, cf, clock)

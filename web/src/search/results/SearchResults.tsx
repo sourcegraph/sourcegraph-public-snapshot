@@ -155,11 +155,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 ? { mode: this.props.interactiveSearchMode ? 'interactive' : 'plain' }
                                 : {}),
                         })
-                        if (
-                            query_data.query &&
-                            query_data.query.field_type &&
-                            query_data.query.field_type.value_diff > 0
-                        ) {
+                        if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
@@ -294,7 +290,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
-        const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
+        const extensionFilters = this.state.contributions?.searchFilters
 
         const quickLinks =
             (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []

@@ -24,6 +24,10 @@ var tests = []test{
 		Name:  `Global search, repo search by name, case yes, nonzero result`,
 		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ String case:yes count:1 stable:yes`,
 	},
+	{
+		Name:  `True is an alias for yes when fork is set`,
+		Query: `fork:true repo:github\.com/rvantonderp/(beego-mux|sgtest-mux)`,
+	},
 	// Text search, focused to repo.
 	{
 		Name:  `Repo search, non-master branch, nonzero result`,
@@ -59,7 +63,7 @@ var tests = []test{
 	// Global simple text search.
 	{
 		Name:  `Global search, zero results`,
-		Query: `asdfalksd+jflaksjdfklas patterntype:literal`,
+		Query: `asdfalksd+jflaksjdfklas patterntype:literal -repo:sourcegraph`,
 	},
 	{
 		Name:  `Global search, double-quoted pattern, nonzero result`,
@@ -108,6 +112,10 @@ var tests = []test{
 	{
 		Name:  `Structural search quotes are interpreted literally`,
 		Query: `repo:^github\.com/rvantonderp/auth0-go-jwt-middleware$ file:^README\.md "This :[_] authenticated :[_]" patterntype:structural`,
+	},
+	{
+		Name:  `Alert to activate structural search mode`,
+		Query: `repo:^github\.com/rvantonderp/adjust-go-wrk$ patterntype:literal i can't :[believe] it's not butter`,
 	},
 	// Repo search (part 2).
 	{

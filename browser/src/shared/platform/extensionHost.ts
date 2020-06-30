@@ -57,10 +57,10 @@ function createInPageExtensionHost({
 }
 
 /**
- * Returns a promise of a communication channel to an extension host and a close callback
+ * Returns a promise of a communication channel to an extension host and a Subscription to cleanup
  *
  * When executing in-page (for example as a Phabricator plugin), this simply
- * creates an extension host worker and emits the returned EndpointPair + close callback.
+ * creates an extension host worker and emits the returned EndpointPair + Subscription to cleanup.
  *
  * When executing in the browser extension, we create pair of browser.runtime.Port objects,
  * named 'expose-{uuid}' and 'proxy-{uuid}', and return the ports wrapped using ${@link endpointFromPort}.

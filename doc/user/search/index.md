@@ -1,6 +1,6 @@
 # Code search
 
-> Reference the [**search query syntax**](queries.md) and see [search examples](examples.md) for inspiration.
+> → See the query [**syntax reference**](queries.md) and [**language reference**](language.md). See [search examples](examples.md) for inspiration.
 
 [A recently published research paper from Google](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43835.pdf) and a [Google developer survey](https://docs.google.com/document/d/1LQxLk4E3lrb3fIsVKlANu_pUjnILteoWMMNiJQmqNVU/edit#heading=h.xxziwxixfqq3) showed that 98% of developers consider their Sourcegraph-like internal code search tool to be critical, and developers use it on average for 5.3 sessions each day, primarily to (in order of frequency):
 
@@ -33,7 +33,7 @@ This document is for code search users. To get code search, [install Sourcegraph
 
 Sourcegraph code search performs full-text searches and supports both regular expression and exact queries. By default, Sourcegraph searches across all your repositories. Our search [query syntax](queries.md) allows for advanced queries, such as searching over any branch or commit, narrowing searches by programming language or file pattern, and more.
 
-See the [query syntax documentation](queries.md) for a comprehensive list of tokens.
+See the [query syntax](queries.md) and [query reference](language.md) documentation for a comprehensive overview of supported syntax.
 
 ### Language-aware structural code search
 
@@ -45,15 +45,15 @@ Search over commit diffs using `type:diff` to see how your codebase has changed 
 
 You can also search within commit diffs on multiple branches by specifying the branches in a `repo:` field after the `@` sign. After the `@`, separate Git refs with `:`, specify Git ref globs by prefixing them with `*`, and exclude commits reachable from a ref by prefixing it with `^`.
 
-Diff searches can be further narrowed down with filters such as author and time. See the [query syntax documentation](queries.md#diff-and-commit-searches-only) for a comprehensive list of supported tokens.
+Diff searches can be further narrowed down with parameters that filter by author and time. See the [query syntax documentation](queries.md#diff-and-commit-searches-only) for a comprehensive list of supported parameters.
 
 ### Commit message search
 
 Searching over commit messages is supported in Sourcegraph by adding `type:commit` to your search query.
 
-Separately, you can also use the `message:"any string"` token to filter `type:diff` searches for a given commit message.
+Separately, you can also use the `message:"any string"` parameter to filter `type:diff` searches for a given commit message.
 
-Commit message searches can be further narrowed down with filters such as author and time. See our [query syntax documentation](queries.md#diff-and-commit-searches-only) for a comprehensive list of supported tokens.
+Commit message searches can be further narrowed down with filters such as author and time. See our [query syntax documentation](queries.md#diff-and-commit-searches-only) for a comprehensive list of supported parameters.
 
 ### Symbol search
 

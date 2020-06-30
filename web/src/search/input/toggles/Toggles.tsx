@@ -48,10 +48,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         copyQueryButton,
     } = props
 
-    const structuralSearchDisabled =
-        window.context &&
-        window.context.experimentalFeatures &&
-        window.context.experimentalFeatures.structuralSearch === 'disabled'
+    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
 
     const submitOnToggle = useCallback(
         (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {

@@ -92,7 +92,7 @@
           "default": "disabled"
         },
         "searchMultipleRevisionsPerRepository": {
-          "description": "Enables searching multiple revisions of the same repository (using `repo:myrepo@branch1:branch2`).",
+          "description": "DEPRECATED. Always on. Will be removed in 3.19.",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -309,7 +309,7 @@
       "hide": true
     },
     "gitMaxConcurrentClones": {
-      "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
+      "description": "Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.",
       "type": "integer",
       "default": 5,
       "group": "External services"
@@ -630,7 +630,8 @@
             "oneOf": [
               { "$ref": "#/definitions/GrafanaNotifierSlack" },
               { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierWebhook" }
+              { "$ref": "#/definitions/GrafanaNotifierWebhook" },
+              { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
@@ -1071,6 +1072,20 @@
         "url": { "type": "string" },
         "username": { "type": "string" },
         "password": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierOpsGenie": {
+      "description": "OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration",
+      "type": "object",
+      "required": ["type", "apiKey", "apiUrl"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "opsgenie"
+        },
+        "apiKey": { "type": "string" },
+        "apiUrl": { "type": "string" },
+        "autoClose": { "type": "boolean" }
       }
     }
   }

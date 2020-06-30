@@ -95,8 +95,12 @@ func (j *Janitor) run() error {
 		return errors.Wrap(err, "janitor.freeSpace")
 	}
 
-	if err := j.removeProcessedUploadsWithoutBundleFile(); err != nil {
-		return errors.Wrap(err, "janitor.removeProcessedUploadsWithoutBundle")
+	if err := j.removeCompletedRecordsWithoutBundleFile(); err != nil {
+		return errors.Wrap(err, "janitor.removeCompletedRecordsWithoutBundleFile")
+	}
+
+	if err := j.removeOldUploadingRecords(); err != nil {
+		return errors.Wrap(err, "janitor.removeOldUploadingRecords")
 	}
 
 	return nil

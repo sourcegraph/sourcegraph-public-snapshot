@@ -126,7 +126,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                         <div className="progress mt-2 mb-1">
                             {/* we need to set the width to control the progress bar, so: */}
                             {/* eslint-disable-next-line react/forbid-dom-props */}
-                            <div className="progress-bar" style={{ width: progress + '%' }}>
+                            <div className="progress-bar" style={{ width: `${progress}%` }}>
                                 &nbsp;
                             </div>
                         </div>

@@ -2,7 +2,7 @@ import { Remote } from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
-import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
+import { ExecutableExtension, IExtensionsService } from '../services/extensionsService'
 
 /** @internal */
 export class ClientExtensions {
@@ -15,12 +15,15 @@ export class ClientExtensions {
      * @param extensions An observable that emits the set of extensions that should be activated
      * upon subscription and whenever it changes.
      */
-    constructor(private proxy: Remote<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
+    constructor(private proxy: Remote<ExtExtensionsAPI>, extensionRegistry: IExtensionsService) {
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
                 .pipe(startWith([] as ExecutableExtension[]), bufferCount(2, 1))
                 .subscribe(([oldExtensions, newExtensions]) => {
                     // Diff next state's activated extensions vs. current state's.
+                    if (!newExtensions) {
+                        newExtensions = oldExtensions
+                    }
                     const toActivate = [...newExtensions] // clone to avoid mutating state stored by bufferCount
                     const toDeactivate: ExecutableExtension[] = []
                     const next: ExecutableExtension[] = []
@@ -51,6 +54,7 @@ export class ClientExtensions {
 
                     // Activate extensions that haven't yet been activated.
                     for (const extension of toActivate) {
+                        console.log('Activating Sourcegraph extension:', extension.id)
                         this.proxy.$activateExtension(extension.id, extension.scriptURL).catch(error => {
                             console.error(`Error activating extension ${JSON.stringify(extension.id)}:`, error)
                         })

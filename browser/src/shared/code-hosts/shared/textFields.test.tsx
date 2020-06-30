@@ -8,6 +8,7 @@ import { Controller } from '../../../../../shared/src/extensions/controller'
 import { MutationRecordLike } from '../../util/dom'
 import { handleTextFields } from './textFields'
 import { pretendRemote, noopFlatExtensionHostAPI } from '../../../../../shared/src/api/util'
+import { FlatExtHostAPI } from '../../../../../shared/src/api/contract'
 
 jest.mock('uuid', () => ({
     v4: () => 'uuid',

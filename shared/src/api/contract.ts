@@ -29,6 +29,7 @@ export interface FlatExtHostAPI {
      */
     syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
 
+    // Workspace
     syncRoots: (roots: readonly clientType.WorkspaceRoot[]) => void
     syncVersionContext: (versionContext: string | undefined) => void
 

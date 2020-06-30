@@ -28,11 +28,10 @@ type AdjustedDiagnostic struct {
 	AdjustedRange  bundles.Range
 }
 
-// QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API.
-// This resolver consolidates the logic for bundle operations and is not itself concerned with
-// GraphQL/API specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a
-// symmetrics resolver in this package's graphql subpackage, which is exposed directly by the
-// API.
+// QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
+// resolver consolidates the logic for bundle operations and is not itself concerned with GraphQL/API
+// specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
+// in this package's graphql subpackage, which is exposed directly by the API.
 type QueryResolver interface {
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)

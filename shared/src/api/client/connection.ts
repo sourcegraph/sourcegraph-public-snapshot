@@ -108,7 +108,6 @@ export async function createExtensionHostClientConnection(
     subscription.add(clientCodeEditor)
 
     const clientLanguageFeatures = new ClientLanguageFeatures(
-        services.textDocumentHover,
         services.textDocumentDefinition,
         services.textDocumentReferences,
         services.textDocumentLocations,
@@ -121,12 +120,6 @@ export async function createExtensionHostClientConnection(
     const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
 
     subscription.add(apiSubscriptions)
-
-    // // TODO (simon) this is ugly mutation but not much can be done here
-    // // until we untangle the bootstrap sequence of the extension host
-    // services.queryTransformer.transformQuery = query => wrapRemoteObservable(proxy.transformSearchQuery(query))
-
-    // subscription.add(() => (services.queryTransformer.transformQuery = undefined))
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',

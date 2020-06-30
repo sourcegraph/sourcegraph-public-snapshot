@@ -1,21 +1,27 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from, concat, isObservable } from 'rxjs'
-
+import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
-import { syncSubscription, isPromiseLike } from '../util'
-import { switchMap, mergeMap, defaultIfEmpty, map, distinctUntilChanged, catchError } from 'rxjs/operators'
-import { proxySubscribable } from './api/common'
+import { syncSubscription } from '../util'
+import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
+import { proxySubscribable, providerResultToObservable } from './api/common'
+import { TextDocumentIdentifier, match } from '../client/types/textDocument'
+import { getModeFromPath } from '../../languages'
+import { parseRepoURI } from '../../util/url'
+import { ExtensionDocuments } from './api/documents'
+import { toPosition } from './api/types'
+import { TextDocumentPositionParams } from '../protocol'
+import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { LOADING } from '@sourcegraph/codeintellify'
-import { fromHoverMerged } from '../client/types/hover'
-import { isNot, isExactly } from '../../util/types'
+import { Hover } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
+import { fromHoverMerged, HoverMerged } from '../client/types/hover'
+import { isNot, isExactly } from '../../util/types'
 
 /**
  * Holds the entire state exposed to the extension host
- * as a single plain object
+ * as a single object
  */
 export interface ExtState {
     settings: Readonly<SettingsCascade<object>>
@@ -25,12 +31,15 @@ export interface ExtState {
     versionContext: string | undefined
 
     // Search
-    queryTransformers: sourcegraph.QueryTransformer[]
+    queryTransformers: BehaviorSubject<sourcegraph.QueryTransformer[]>
 
-    // languages
-    hoverProviders: sourcegraph.HoverProvider[]
-    definitionProviders: sourcegraph.DefinitionProvider[]
-    referenceProviders: sourcegraph.ReferenceProvider[]
+    // Lang
+    hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
+}
+
+export interface RegisteredProvider<T> {
+    selector: sourcegraph.DocumentSelector
+    provider: T
 }
 
 export interface InitResult {
@@ -41,7 +50,7 @@ export interface InitResult {
     state: Readonly<ExtState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
-    languages: typeof sourcegraph['languages']
+    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider'>
 }
 
 /**
@@ -60,16 +69,15 @@ export type PartialWorkspaceNamespace = Omit<
  */
 export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
-    initialSettings: Readonly<SettingsCascade<object>>
+    initialSettings: Readonly<SettingsCascade<object>>,
+    textDocuments: ExtensionDocuments
 ): InitResult => {
     const state: ExtState = {
         roots: [],
         versionContext: undefined,
         settings: initialSettings,
-        queryTransformers: [],
-        hoverProviders: [],
-        definitionProviders: [],
-        referenceProviders: [],
+        queryTransformers: new BehaviorSubject<sourcegraph.QueryTransformer[]>([]),
+        hoverProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -78,20 +86,6 @@ export const initNewExtensionAPI = (
     // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
     const rootChanges = new Subject<void>()
-
-    // Documents
-
-    // Search
-    const queryTransformersChanges = new ReplaySubject<sourcegraph.QueryTransformer[]>(1)
-    queryTransformersChanges.next([])
-
-    // Languages
-    const hoverProviderChanges = new ReplaySubject<sourcegraph.HoverProvider[]>(1)
-    hoverProviderChanges.next([])
-    const definitionProviderChanges = new ReplaySubject<sourcegraph.DefinitionProvider[]>(1)
-    definitionProviderChanges.next([])
-    const referenceProviderChanges = new ReplaySubject<sourcegraph.ReferenceProvider[]>(1)
-    referenceProviderChanges.next([])
 
     const versionContextChanges = new Subject<string | undefined>()
 
@@ -119,7 +113,7 @@ export const initNewExtensionAPI = (
             // in this case we need to reissue the transformation and emit the resulting value
             // we probably won't need an Observable if we somehow coordinate with extensions activation
             proxySubscribable(
-                queryTransformersChanges.pipe(
+                state.queryTransformers.pipe(
                     switchMap(transformers =>
                         transformers.reduce(
                             (currentQuery: Observable<string>, transformer) =>
@@ -135,46 +129,20 @@ export const initNewExtensionAPI = (
                 )
             ),
 
-        // Languages
-        getHover: ({ textDocument, position }) =>
-            proxySubscribable(
-                hoverProviderChanges.pipe(
-                    switchMap(providers =>
-                        combineLatestOrDefault(
-                            providers.map(provider => {
-                                // TODO textDocument needs to be a TextDocument instance
-                                const providerResult = provider.provideHover(textDocument, position)
-                                return isPromiseLike(providerResult) || isObservable(providerResult)
-                                    ? concat([LOADING], from(providerResult)).pipe(
-                                          defaultIfEmpty(null),
-                                          catchError(error => {
-                                              console.error('Hover provider errored:', error)
-                                              return [null]
-                                          })
-                                      )
-                                    : of(providerResult)
-                            })
-                        ).pipe(
-                            defaultIfEmpty<(typeof LOADING | sourcegraph.Hover | null | undefined)[]>([]),
-                            map(hoversFromProviders => ({
-                                isLoading: hoversFromProviders.some(hover => hover === LOADING),
-                                result: fromHoverMerged(hoversFromProviders.filter(isNot(isExactly(LOADING)))),
-                            })),
-                            distinctUntilChanged((a, b) => isEqual(a, b))
-                        )
-                    )
+        // Language
+        getHover: (textParameters: TextDocumentPositionParams) => {
+            const document = textDocuments.get(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                callProviders(
+                    state.hoverProviders,
+                    document,
+                    provider => provider.provideHover(document, position),
+                    mergeHoverResults
                 )
-            ),
-        getDefinitions: ({ textDocument, position }) =>
-            proxySubscribable(
-                // Do some stuff
-                definitionProviderChanges.pipe()
-            ),
-        getReferences: ({ textDocument, position }) =>
-            proxySubscribable(
-                // Do some stuff
-                definitionProviderChanges.pipe()
-            ),
+            )
+        },
     }
 
     // Configuration
@@ -205,67 +173,127 @@ export const initNewExtensionAPI = (
 
     // Search
     const search: typeof sourcegraph['search'] = {
-        registerQueryTransformer: transformer => {
-            state.queryTransformers = state.queryTransformers.concat(transformer)
-            queryTransformersChanges.next(state.queryTransformers)
-            return {
-                unsubscribe: () => {
-                    // eslint-disable-next-line id-length
-                    state.queryTransformers = state.queryTransformers.filter(t => t !== transformer)
-                    queryTransformersChanges.next(state.queryTransformers)
-                },
-            }
-        },
+        registerQueryTransformer: transformer => addWithRollback(state.queryTransformers, transformer),
     }
 
-    const languages: typeof sourcegraph['languages'] = {
-        registerHoverProvider: (selector, provider) => {
-            state.hoverProviders.push(provider)
-            hoverProviderChanges.next(state.hoverProviders)
-            return {
-                unsubscribe: () => {
-                    state.hoverProviders = state.hoverProviders.filter(
-                        registeredProvider => registeredProvider !== provider
-                    )
-                    hoverProviderChanges.next(state.hoverProviders)
-                },
-            }
-        },
-        registerDefinitionProvider: (selector, provider) => {
-            state.definitionProviders.push(provider)
-            definitionProviderChanges.next(state.definitionProviders)
-            return {
-                unsubscribe: () => {
-                    state.definitionProviders = state.definitionProviders.filter(
-                        registeredProvider => registeredProvider !== provider
-                    )
-                    definitionProviderChanges.next(state.definitionProviders)
-                },
-            }
-        },
-        registerReferenceProvider: (selector, provider) => {
-            state.referenceProviders.push(provider)
-            referenceProviderChanges.next(state.referenceProviders)
-            return {
-                unsubscribe: () => {
-                    state.referenceProviders = state.referenceProviders.filter(
-                        registeredProvider => registeredProvider !== provider
-                    )
-                    referenceProviderChanges.next(state.referenceProviders)
-                },
-            }
-        },
-    }
+    // Languages
+    const registerHoverProvider = (
+        selector: sourcegraph.DocumentSelector,
+        provider: sourcegraph.HoverProvider
+    ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider })
 
     return {
         exposedToMain,
         configuration: Object.assign(configChanges.asObservable(), {
             get: getConfiguration,
         }),
-        languages,
         workspace,
         state,
         commands,
         search,
+        languages: {
+            registerHoverProvider,
+        },
     }
+}
+
+// TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
+/**
+ * Filters a list of Providers (P type) based on their selectors and a document
+ *
+ * @param document to use for filtering
+ * @param entries array of providers (P[])
+ * @param selector a way to get a selector from a Provider
+ * @returns a filtered array of providers
+ */
+function providersForDocument<P>(
+    document: TextDocumentIdentifier,
+    entries: P[],
+    selector: (p: P) => sourcegraph.DocumentSelector
+): P[] {
+    return entries.filter(provider =>
+        match(selector(provider), {
+            uri: document.uri,
+            languageId: getModeFromPath(parseRepoURI(document.uri).filePath || ''),
+        })
+    )
+}
+
+/**
+ * calls next() on behaviorSubject with a immutably added element ([...old, value])
+ *
+ * @param behaviorSubject subject that holds a collection
+ * @param value to add to a collection
+ * @returns Unsubscribable that will remove that element from the behaviorSubject.value and call next() again
+ */
+function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): sourcegraph.Unsubscribable {
+    behaviorSubject.next([...behaviorSubject.value, value])
+    return {
+        unsubscribe: () => behaviorSubject.next(behaviorSubject.value.filter(item => item !== value)),
+    }
+}
+
+/**
+ * Helper function to abstract common logic of invoking language providers.
+ *
+ * 1. filters providers based on document
+ * 2. invokes filtered providers via invokeProvider function
+ * 3. adds [LOADING] state for each provider result stream
+ * 4. omits errors from provider results with potential logging
+ * 5. aggregates latests results from providers based on mergeResult function
+ *
+ * @param providersObservable observable of provider collection (expected to emit if a provider was added or removed)
+ * @param document used for filtering providers
+ * @param invokeProvider specifies how to get results from a provider (usually a closure over provider arguments)
+ * @param mergeResult specifies how providers results should be aggregated
+ * @param logErrors if console.error should be used for reporting errors from providers
+ * @returns observable of aggregated results from all providers based on mergeResults function
+ */
+export function callProviders<TProvider, TProviderResult, TMergedResult>(
+    providersObservable: Observable<RegisteredProvider<TProvider>[]>,
+    document: TextDocumentIdentifier,
+    invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
+    mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
+    logErrors: boolean = true
+): Observable<MaybeLoadingResult<TMergedResult>> {
+    return providersObservable
+        .pipe(
+            map(providers => providersForDocument(document, providers, ({ selector }) => selector)),
+            switchMap(providers =>
+                combineLatestOrDefault(
+                    providers.map(provider =>
+                        concat(
+                            [LOADING],
+                            providerResultToObservable(invokeProvider(provider.provider)).pipe(
+                                defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
+                                catchError(error => {
+                                    if (logErrors) {
+                                        console.error('Provider errored:', error)
+                                    }
+                                    return [null]
+                                })
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        .pipe(
+            defaultIfEmpty<(typeof LOADING | TProviderResult | null | undefined)[]>([]),
+            map(results => ({
+                isLoading: results.some(hover => hover === LOADING),
+                result: mergeResult(results),
+            })),
+            distinctUntilChanged((a, b) => isEqual(a, b))
+        )
+}
+
+/**
+ * merges latests results from hover providers into a form that is convenient to show
+ *
+ * @param results latests results from hover providers
+ * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
+ */
+export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
+    return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
 }

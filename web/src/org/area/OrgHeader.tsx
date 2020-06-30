@@ -44,7 +44,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({ org, navItems, match
                             )}
                         </ul>
                         <div className="flex-1" />
-                        {org.viewerPendingInvitation && org.viewerPendingInvitation.respondURL && (
+                        {org.viewerPendingInvitation?.respondURL && (
                             <div className="pb-1">
                                 <small className="mr-2">Join organization:</small>
                                 <Link to={org.viewerPendingInvitation.respondURL} className="btn btn-success btn-sm">

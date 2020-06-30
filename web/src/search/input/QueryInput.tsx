@@ -426,10 +426,9 @@ export class QueryInput extends React.Component<Props, State> {
                         )
                     }}
                 </Downshift>
-                {this.props.keyboardShortcutForFocus &&
-                    this.props.keyboardShortcutForFocus.keybindings.map((keybinding, index) => (
-                        <Shortcut key={index} {...keybinding} onMatch={this.focusInputAndPositionCursorAtEnd} />
-                    ))}
+                {this.props.keyboardShortcutForFocus?.keybindings.map((keybinding, index) => (
+                    <Shortcut key={index} {...keybinding} onMatch={this.focusInputAndPositionCursorAtEnd} />
+                ))}
             </>
         )
     }

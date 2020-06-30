@@ -1,10 +1,9 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { CampaignsMarketing } from './CampaignsMarketing'
+import { mount } from 'enzyme'
 
 describe('CampaignsMarketing', () => {
     test('renders', () => {
-        const result = renderer.create(<CampaignsMarketing body={<div>MY CUSTOM CONTENT</div>} />)
-        expect(result.toJSON()).toMatchSnapshot()
+        expect(mount(<CampaignsMarketing body={<div>MY CUSTOM CONTENT</div>} />)).toMatchSnapshot()
     })
 })

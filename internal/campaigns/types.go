@@ -360,6 +360,10 @@ type Changeset struct {
 	ExternalCheckState  ChangesetCheckState
 	CreatedByCampaign   bool
 	AddedToCampaign     bool
+	DiffStatAdded       *int32
+	DiffStatChanged     *int32
+	DiffStatDeleted     *int32
+	SyncState           ChangesetSyncState
 }
 
 // Clone returns a clone of a Changeset.
@@ -367,6 +371,37 @@ func (c *Changeset) Clone() *Changeset {
 	tt := *c
 	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
+}
+
+// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
+// DiffStatDeleted are set, or nil if one or more is not.
+func (c *Changeset) DiffStat() *diff.Stat {
+	if c.DiffStatAdded == nil || c.DiffStatChanged == nil || c.DiffStatDeleted == nil {
+		return nil
+	}
+
+	return &diff.Stat{
+		Added:   *c.DiffStatAdded,
+		Changed: *c.DiffStatChanged,
+		Deleted: *c.DiffStatDeleted,
+	}
+}
+
+func (c *Changeset) SetDiffStat(stat *diff.Stat) {
+	if stat == nil {
+		c.DiffStatAdded = nil
+		c.DiffStatChanged = nil
+		c.DiffStatDeleted = nil
+	} else {
+		added := stat.Added
+		c.DiffStatAdded = &added
+
+		changed := stat.Changed
+		c.DiffStatChanged = &changed
+
+		deleted := stat.Deleted
+		c.DiffStatDeleted = &deleted
+	}
 }
 
 func (c *Changeset) SetMetadata(meta interface{}) error {
@@ -658,6 +693,20 @@ func (c *Changeset) Labels() []ChangesetLabel {
 	default:
 		return []ChangesetLabel{}
 	}
+}
+
+type ChangesetSyncState struct {
+	BaseRefOid string
+	HeadRefOid string
+
+	// This is essentially the result of c.ExternalState != CampaignStateOpen
+	// the last time a sync occured. We use this to short circuit computing the
+	// sync state if the changeset remains closed.
+	IsComplete bool
+}
+
+func (state *ChangesetSyncState) Equals(old *ChangesetSyncState) bool {
+	return state.BaseRefOid == old.BaseRefOid && state.HeadRefOid == old.HeadRefOid && state.IsComplete == old.IsComplete
 }
 
 // A ChangesetEvent is an event that happened in the lifetime

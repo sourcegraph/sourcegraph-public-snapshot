@@ -8,8 +8,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
-// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps view) and stores
-// only processed records.
+// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
+// and stores only processed records.
 type Dump struct {
 	ID             int        `json:"id"`
 	Commit         string     `json:"commit"`
@@ -23,6 +23,7 @@ type Dump struct {
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
 	RepositoryID   int        `json:"repositoryId"`
+	RepositoryName string     `json:"repositoryName"`
 	Indexer        string     `json:"indexer"`
 }
 
@@ -49,6 +50,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 			&dump.ProcessAfter,
 			&dump.NumResets,
 			&dump.RepositoryID,
+			&dump.RepositoryName,
 			&dump.Indexer,
 		); err != nil {
 			return nil, err
@@ -69,11 +71,6 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 	return dumps[0], true, nil
 }
 
-// GetDumpIDs returns all dump ids in chronological order.
-func (s *store) GetDumpIDs(ctx context.Context) ([]int, error) {
-	return scanInts(s.query(ctx, sqlf.Sprintf(`SELECT d.id FROM lsif_dumps d ORDER BY uploaded_at`)))
-}
-
 // GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 	return scanFirstDump(s.query(ctx, sqlf.Sprintf(`
@@ -90,13 +87,16 @@ func (s *store) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.process_after,
 			d.num_resets,
 			d.repository_id,
+			d.repository_name,
 			d.indexer
-		FROM lsif_dumps d WHERE id = %s
+		FROM lsif_dumps_with_repository_name d WHERE d.id = %s
 	`, id)))
 }
 
-// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
-func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (_ []Dump, err error) {
+// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
+// optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
+// any dump with a root intersecting the given path is returned.
+func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
 	tx, started, err := s.transact(ctx)
 	if err != nil {
 		return nil, err
@@ -105,20 +105,29 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 		defer func() { err = tx.Done(err) }()
 	}
 
+	var cond *sqlf.Query
+	if rootMustEnclosePath {
+		// Ensure that the root is a prefix of the path
+		cond = sqlf.Sprintf(`%s LIKE (d.root || '%%%%')`, path)
+	} else {
+		// Ensure that the root is a prefix of the path or vice versa
+		cond = sqlf.Sprintf(`%s LIKE (d.root || '%%%%') OR d.root LIKE (%s || '%%%%')`, path, path)
+	}
+
 	ids, err := scanInts(tx.query(
 		ctx,
 		withBidirectionalLineage(`
 			SELECT d.dump_id FROM lineage_with_dumps d
-			WHERE %s LIKE (d.root || '%%%%') AND d.dump_id IN (SELECT * FROM visible_ids)
+			WHERE %s AND d.dump_id IN (SELECT * FROM visible_ids)
 			ORDER BY d.n
-		`, repositoryID, commit, file),
+		`, repositoryID, commit, cond),
 	))
 	if err != nil || len(ids) == 0 {
 		return nil, err
 	}
 
 	var conds []*sqlf.Query
-	conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(intsToQueries(ids), ", ")))
+	conds = append(conds, sqlf.Sprintf("d.id IN (%s)", sqlf.Join(intsToQueries(ids), ", ")))
 	if indexer != "" {
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
 	}
@@ -139,8 +148,9 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 				d.process_after,
 				d.num_resets,
 				d.repository_id,
+				d.repository_name,
 				d.indexer
-			FROM lsif_dumps d WHERE %s
+			FROM lsif_dumps_with_repository_name d WHERE %s
 		`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
@@ -172,7 +182,7 @@ func (s *store) DeleteOldestDump(ctx context.Context) (int, bool, error) {
 	return scanFirstInt(s.query(ctx, sqlf.Sprintf(`
 		DELETE FROM lsif_uploads
 		WHERE id IN (
-			SELECT id FROM lsif_dumps
+			SELECT id FROM lsif_dumps_with_repository_name
 			WHERE visible_at_tip = false
 			ORDER BY uploaded_at
 			LIMIT 1
@@ -183,7 +193,7 @@ func (s *store) DeleteOldestDump(ctx context.Context) (int, bool, error) {
 // UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
 func (s *store) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
 	return s.queryForEffect(ctx, withAncestorLineage(`
-		UPDATE lsif_dumps d
+		UPDATE lsif_uploads d
 		SET visible_at_tip = id IN (SELECT * from visible_ids)
 		WHERE d.repository_id = %s AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
 	`, repositoryID, tipCommit, repositoryID))

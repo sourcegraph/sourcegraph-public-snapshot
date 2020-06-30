@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 
@@ -519,7 +518,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	if len(index) > 0 {
 		index := index[len(index)-1]
 		switch parseYesNoOnly(index) {
-		case Yes, True:
+		case Yes:
 			// default
 			if args.Zoekt.Enabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
@@ -541,7 +540,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
-		case No, False:
+		case No:
 			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
 			searcherRepos = append(searcherRepos, zoektRepos...)
 			zoektRepos = nil
@@ -627,10 +626,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
 			if err != nil {
 				return err
-			}
-
-			if len(revSpecs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
-				return errMultipleRevsNotSupported
 			}
 
 			for _, rev := range revSpecs {

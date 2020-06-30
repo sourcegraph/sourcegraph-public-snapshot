@@ -4,12 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -32,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -278,13 +275,6 @@ func TestCampaigns(t *testing.T) {
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: args.Repo},
-		}, nil
-	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-
 	var result struct {
 		Changesets []apitest.Changeset
 	}
@@ -297,6 +287,12 @@ func TestCampaigns(t *testing.T) {
 		graphqlGithubRepoID, "999",
 		graphqlBBSRepoID, "2",
 	)
+
+	state := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
+		Name: api.RepoName(githubRepo.Name),
+		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
+	})
+	defer state.Unmock()
 
 	apitest.MustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment gitRef on GitRef {
@@ -601,9 +597,7 @@ func TestCampaigns(t *testing.T) {
 
 	{
 		have := addChangesetsResult.Campaign.DiffStat
-		// Expected DiffStat is zeros, because we don't return diffstats for
-		// closed changesets
-		want := apitest.DiffStat{Added: 0, Changed: 0, Deleted: 0}
+		want := apitest.DiffStat{Added: 2, Changed: 2, Deleted: 6}
 		if have != want {
 			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 		}
@@ -732,6 +726,12 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	mockState := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
+		Name: api.RepoName(githubRepo.Name),
+		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
+	})
+	defer mockState.Unmock()
 
 	err = ee.SyncChangesets(ctx, repoStore, store, cf, changesets...)
 	if err != nil {
@@ -1198,14 +1198,20 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitClient := &ee.FakeGitserverClient{Response: headRef, ResponseErr: nil}
+	gitClient := &ct.FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
-	sourcer := repos.NewFakeSourcer(nil, &ee.FakeChangesetSource{
+	sourcer := repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{
 		Svc:          ext,
 		WantHeadRef:  headRef,
 		WantBaseRef:  testBaseRef,
 		FakeMetadata: fakePR,
 	})
+
+	state := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
+		Name: api.RepoName(repo.Name),
+		VCS:  protocol.VCSInfo{URL: repo.URI},
+	})
+	defer state.Unmock()
 
 	job := changesetJobs[0]
 
@@ -1229,20 +1235,23 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatal("ChangesetJob.ChangesetID has not been updated")
 	}
 
+	cs, err := store.GetChangeset(ctx, ee.GetChangesetOpts{
+		ID: job.ChangesetID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cs.SetDiffStat(&diff.Stat{Added: 1, Changed: 1, Deleted: 3})
+	if err := store.UpdateChangesets(ctx, cs); err != nil {
+		t.Fatal(err)
+	}
+
 	// We need to setup these mocks because the GraphQL now needs to talk to
 	// gitserver to calculate the diff for a changeset.
 	git.Mocks.GetCommit = func(api.CommitID) (*git.Commit, error) {
 		return &git.Commit{ID: testBaseRevision}, nil
 	}
 	defer func() { git.Mocks.GetCommit = nil }()
-
-	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
-		if len(args) < 1 && args[0] != "diff" {
-			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
-		}
-		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
-	}
-	defer func() { git.Mocks.ExecReader = nil }()
 
 	var queryCampaignResponse struct{ Node apitest.Campaign }
 
@@ -1307,7 +1316,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatalf("campaign.Changesets.TotalCount is not 1: %d", campaign.Changesets.TotalCount)
 	}
 
-	if campaign.DiffStat.Changed != 2 {
+	if campaign.DiffStat.Changed != 1 {
 		t.Fatalf("diffstat is wrong: %+v", campaign.DiffStat)
 	}
 

@@ -129,7 +129,7 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         )}{' '}
                         <small className="text-muted">
                             {' '}
-                            &mdash; <em>{this.props.node.scopes && this.props.node.scopes.join(', ')}</em>
+                            &mdash; <em>{this.props.node.scopes?.join(', ')}</em>
                             <br />
                             {this.props.node.lastUsedAt ? (
                                 <>

@@ -120,10 +120,10 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	}
 
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[api.RepoName]*search.RepositoryRevisions, len(repos))
+	repoMap := make(map[string]*search.RepositoryRevisions, len(repos))
 	for _, repoRev := range repos {
 		repoSet.Set[string(repoRev.Repo.Name)] = true
-		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
+		repoMap[string(repoRev.Repo.Name)] = repoRev
 	}
 
 	k := zoektResultCountFactor(len(repos), args.PatternInfo)
@@ -233,7 +233,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		repoRev := repoMap[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}

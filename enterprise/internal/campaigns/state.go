@@ -1,22 +1,29 @@
 package campaigns
 
 import (
+	"context"
+	"io"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // SetDerivedState will update the external state fields on the Changeset based
-// on the current  state of the changeset and associated events.
-func SetDerivedState(c *cmpgn.Changeset, es []*cmpgn.ChangesetEvent) {
+// on the current state of the changeset and associated events.
+func SetDerivedState(ctx context.Context, c *cmpgn.Changeset, es []*cmpgn.ChangesetEvent) {
 	// Copy so that we can sort without mutating the argument
 	events := make(ChangesetEvents, len(es))
 	copy(events, es)
@@ -39,6 +46,48 @@ func SetDerivedState(c *cmpgn.Changeset, es []*cmpgn.ChangesetEvent) {
 		log15.Warn("Computing changeset review state", "err", err)
 	} else {
 		c.ExternalReviewState = state
+	}
+
+	// If the changeset was "complete" (that is, not open) the last time we
+	// synced, and it's still complete, then we don't need to do any further
+	// work: the diffstat should still be correct, and this way we don't need to
+	// rely on gitserver having the head OID still available.
+	if c.SyncState.IsComplete && c.ExternalState != cmpgn.ChangesetStateOpen {
+		return
+	}
+
+	// Some of the fields on changesets are dependent on the SyncState: this
+	// encapsulates fields that we want to cache based on our current
+	// understanding of the changeset's state on the external provider that are
+	// not part of the metadata that we get from the provider's API.
+	//
+	// To update this, first we need gitserver's view of the repo.
+	repo, err := changesetGitserverRepo(ctx, c)
+	if err != nil {
+		log15.Warn("Retrieving gitserver repo for changeset", "err", err)
+		return
+	}
+
+	// Now we can update the state. Since we'll want to only perform some
+	// actions based on how the state changes, we'll keep references to the old
+	// and new states for the duration of this function, although we'll update
+	// c.SyncState as soon as we can.
+	oldState := c.SyncState
+	newState, err := computeSyncState(ctx, c, *repo)
+	if err != nil {
+		log15.Warn("Computing sync state", "err", err)
+		return
+	}
+	c.SyncState = *newState
+
+	// Now we can update fields that are invalidated when the sync state
+	// changes.
+	if !oldState.Equals(newState) {
+		if stat, err := computeDiffStat(ctx, c, *repo); err != nil {
+			log15.Warn("Computing diffstat", "err", err)
+		} else {
+			c.SetDiffStat(stat)
+		}
 	}
 }
 
@@ -386,6 +435,94 @@ func computeReviewState(statesByAuthor map[string]campaigns.ChangesetReviewState
 		states[s] = true
 	}
 	return selectReviewState(states)
+}
+
+// computeDiffStat computes the up to date diffstat for the changeset, based on
+// the values in c.SyncState.
+func computeDiffStat(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Repo) (*diff.Stat, error) {
+	iter, err := git.Diff(ctx, git.DiffOptions{
+		Repo: repo,
+		Base: c.SyncState.BaseRefOid,
+		Head: c.SyncState.HeadRefOid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	stat := &diff.Stat{}
+	for {
+		file, err := iter.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+
+		fs := file.Stat()
+		stat.Added += fs.Added
+		stat.Changed += fs.Changed
+		stat.Deleted += fs.Deleted
+	}
+
+	return stat, nil
+}
+
+// computeSyncState computes the up to date sync state based on the changeset as
+// it currently exists on the external provider.
+func computeSyncState(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Repo) (*cmpgn.ChangesetSyncState, error) {
+	// If the changeset type can return the OIDs directly, then we can use that
+	// for the new state. Otherwise, we need to try to resolve the ref to a
+	// revision.
+	base, err := computeRev(ctx, c, repo, func(c *cmpgn.Changeset) (string, error) {
+		return c.BaseRefOid()
+	}, func(c *cmpgn.Changeset) (string, error) {
+		return c.BaseRef()
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	head, err := computeRev(ctx, c, repo, func(c *cmpgn.Changeset) (string, error) {
+		return c.HeadRefOid()
+	}, func(c *cmpgn.Changeset) (string, error) {
+		return c.HeadRef()
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &cmpgn.ChangesetSyncState{
+		BaseRefOid: base,
+		HeadRefOid: head,
+		IsComplete: c.ExternalState != cmpgn.ChangesetStateOpen,
+	}, nil
+}
+
+func computeRev(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Repo, getOid, getRef func(*cmpgn.Changeset) (string, error)) (string, error) {
+	if rev, err := getOid(c); err != nil {
+		return "", err
+	} else if rev != "" {
+		return rev, nil
+	}
+
+	ref, err := getRef(c)
+	if err != nil {
+		return "", err
+	}
+
+	rev, err := git.ResolveRevision(ctx, repo, nil, ref, nil)
+	return string(rev), err
+}
+
+// changesetGitserverRepo looks up a gitserver.Repo based on the RepoID within a
+// changeset.
+func changesetGitserverRepo(ctx context.Context, c *cmpgn.Changeset) (*gitserver.Repo, error) {
+	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
+	repo, err := db.Repos.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	return &gitserver.Repo{Name: repo.Name, URL: repo.URI}, nil
 }
 
 func unixMilliToTime(ms int64) time.Time {

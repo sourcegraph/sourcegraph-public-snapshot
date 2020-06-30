@@ -241,6 +241,8 @@ async function main(): Promise<void> {
     console.log('Sourcegraph background page initialized')
 }
 
+const workerBundleURL = browser.runtime.getURL('js/extensionHostWorker.bundle.js')
+
 /**
  * Handle an incoming browser port pair coming from a content script.
  */

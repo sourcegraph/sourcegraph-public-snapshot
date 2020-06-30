@@ -15,7 +15,7 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
 }> = ({ extension }) => (
     <div className="alert alert-info">
         This extension is not yet published.
-        {extension.registryExtension && extension.registryExtension.viewerCanAdminister && (
+        {extension.registryExtension?.viewerCanAdminister && (
             <>
                 <br />
                 <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
@@ -76,15 +76,14 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </button>
                         )}{' '}
-                        {this.props.extension.registryExtension &&
-                            this.props.extension.registryExtension.viewerCanAdminister && (
-                                <Link
-                                    className="btn btn-primary"
-                                    to={`${this.props.extension.registryExtension.url}/-/releases/new`}
-                                >
-                                    Publish new release
-                                </Link>
-                            )}
+                        {this.props.extension.registryExtension?.viewerCanAdminister && (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${this.props.extension.registryExtension.url}/-/releases/new`}
+                            >
+                                Publish new release
+                            </Link>
+                        )}
                     </div>
                 </div>
                 <div className="mt-2">

@@ -93,7 +93,6 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
 
-    // TODO (simon) do we need to handle unsub? I guess ports will be just garbage collected
     const { api } = await createExtensionHostClientConnection(
         Promise.resolve({
             ...clientEndpoints,
@@ -103,9 +102,6 @@ export async function integrationTestContext(
         initData,
         mocks
     )
-
-    // TODO
-    // eslint-disable-next-line no-unused-expressions
 
     const extensionAPI = await extensionHost.extensionAPI
     if (initModel.models) {

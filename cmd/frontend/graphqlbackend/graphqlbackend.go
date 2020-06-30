@@ -75,9 +75,11 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 		lvl = log15.Info
 	}
 	requestSource := sgtrace.RequestSource(ctx)
-	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
-	if !disableLog && requestName == "unknown" {
-		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
+
+	if !disableLog {
+		lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
+		if requestName == "unknown" {
+			log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
 QUERY
 -----
 %s
@@ -87,7 +89,9 @@ VARIABLES
 %v
 
 `, requestName, currentUserName, requestSource, queryString, variables)
+		}
 	}
+
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
 			finish(err)

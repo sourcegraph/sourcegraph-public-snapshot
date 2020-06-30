@@ -872,6 +872,12 @@ type ExternalChangeset implements Node & Changeset {
     # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
     diff: RepositoryComparison
 
+    # The diffstat of this changeset, or null if the changeset is closed
+    # (without merging) or is already merged. This data is also available
+    # indirectly through the diff field above, but if only the diffStat is
+    # required, this field is cheaper to access.
+    diffStat: DiffStat
+
     # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
     # checks have been configured.
     checkState: ChangesetCheckState
@@ -1299,7 +1305,8 @@ type Query {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifUploads(
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # commit, root, and indexer properties.
         query: String
 
         # The state of returned uploads.
@@ -1326,8 +1333,8 @@ type Query {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifIndexes(
-        # TODO(efritz) - update
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # and commit properties.
         query: String
 
         # The state of returned uploads.
@@ -1872,7 +1879,8 @@ type Repository implements Node & GenericSearchResultInterface {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifUploads(
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # commit, root, and indexer properties.
         query: String
 
         # The state of returned uploads.
@@ -1899,8 +1907,8 @@ type Repository implements Node & GenericSearchResultInterface {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifIndexes(
-        # TODO(efritz) - update
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # and commit properties.
         query: String
 
         # The state of returned uploads.
