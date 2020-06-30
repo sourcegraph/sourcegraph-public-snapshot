@@ -244,10 +244,15 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             <div className="d-flex" key={repogroup.name}>
                                 <img className="search-page__repogroup-list-icon mr-2" src={repogroup.homepageIcon} />
                                 <div className="d-flex flex-column">
-                                    <Link to={repogroup.url}>
-                                        <h3>{repogroup.title}</h3>
+                                    <Link
+                                        to={repogroup.url}
+                                        className="search-page__repogroup-listing-title search-page__web-link font-weight-bold"
+                                    >
+                                        {repogroup.title}
                                     </Link>
-                                    <p>{repogroup.homepageDescription}</p>
+                                    <p className="search-page__repogroup-listing-description">
+                                        {repogroup.homepageDescription}
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -293,12 +298,16 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 <h3 className="search-page__help-content-header mr-1">Search a language</h3>
                                 <span className="text-monospace font-weight-normal">
                                     <span className="repogroup-page__keyword-text">lang:</span>
-                                    <i>name</i>
+                                    <i className="repogroup-page__keyword-value-text">name</i>
                                 </span>
                             </div>
                             <div className="search-page__lang-list">
                                 {languages.map(language => (
-                                    <Link to={`/search?q=lang:${language.filterName}`} key={language.name}>
+                                    <Link
+                                        className="text-monospace search-page__web-link"
+                                        to={`/search?q=lang:${language.filterName}`}
+                                        key={language.name}
+                                    >
                                         {language.name}
                                     </Link>
                                 ))}

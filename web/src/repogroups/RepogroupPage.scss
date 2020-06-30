@@ -8,12 +8,12 @@
     padding-bottom: 4rem;
 
     &__logo {
-        flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        width: 20rem;
+        width: 45px;
+        height: 45px;
+    }
+
+    &__logo-container {
         margin-top: 6rem;
-        max-width: 90%;
     }
 
     &__container {
@@ -22,6 +22,7 @@
         margin-top: 4rem;
         width: 49rem;
         max-width: 90%;
+
         position: relative;
     }
 
@@ -33,8 +34,11 @@
     &__content {
         display: grid;
         grid-template-columns: 7fr 5fr;
-        max-width: 80%;
         padding: 2rem;
+
+        &-description {
+            max-width: 60rem;
+        }
     }
 
     &__repo-card {
@@ -57,11 +61,14 @@
 
     &__repo-list-icon {
         margin-right: 0.5rem;
+        fill: #cad2e2;
     }
 
     &__example-bar {
         width: fit-content;
         height: fit-content;
+        font-size: 12px;
+        background-color: transparent;
     }
 
     &__repo-item {
@@ -74,7 +81,8 @@
 .theme-light {
     .repogroup-page {
         &__repo-card {
-            background: $color-light-bg-2;
+            background: #f7fafd;
+            border-color: $color-light-border-2;
         }
     }
 }

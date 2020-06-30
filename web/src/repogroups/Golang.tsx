@@ -37,6 +37,5 @@ export const golang: RepogroupMetadata = {
         },
     ],
     homepageDescription: 'Interesting examples of Go.',
-    customLogoUrl: 'https://code.benco.io/icon-collection/logos/go-lang.svg',
     homepageIcon: 'https://code.benco.io/icon-collection/logos/go-lang.svg',
 }

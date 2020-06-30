@@ -34,6 +34,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata, RepositoryType, CodeHosts } from './types'
+import { RepogroupPageLogo } from './RepogroupPageLogo'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -96,12 +97,11 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
     return (
         <div className="repogroup-page">
             <PageTitle title={props.repogroupMetadata.title} />
-            <BrandLogo
+            <RepogroupPageLogo
                 className="repogroup-page__logo"
                 isLightTheme={props.isLightTheme}
-                customLogoUrl={
-                    props.repogroupMetadata.customLogoUrl ? props.repogroupMetadata.customLogoUrl : undefined
-                }
+                icon={props.repogroupMetadata.homepageIcon}
+                text={props.repogroupMetadata.title}
             />
             <div className="repogroup-page__subheading">
                 <span className="text-monospace">
@@ -163,7 +163,9 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
             </div>
             <div className="repogroup-page__content">
                 <div className="repogroup-page__column">
-                    <p className="h5 font-weight-normal mb-4">{props.repogroupMetadata.description}</p>
+                    <p className="repogroup-page__content-description h5 font-weight-normal mb-4">
+                        {props.repogroupMetadata.description}
+                    </p>
                     {props.repogroupMetadata.examples.map(example => (
                         <>
                             <h3 className="mb-3">{example.title}</h3>

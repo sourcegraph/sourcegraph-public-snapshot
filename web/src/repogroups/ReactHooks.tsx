@@ -44,6 +44,5 @@ export const reactHooks: RepogroupMetadata = {
         },
     ],
     homepageDescription: 'Examples of useState for ReactHooks.',
-    customLogoUrl: 'https://cdn4.iconfinder.com/data/icons/logos-3/600/React.js_logo-512.png',
     homepageIcon: 'https://cdn4.iconfinder.com/data/icons/logos-3/600/React.js_logo-512.png',
 }

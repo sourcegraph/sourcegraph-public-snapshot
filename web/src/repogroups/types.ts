@@ -11,16 +11,17 @@ export interface RepositoryType {
 
 export interface ExampleQuery {
     title: string
+    description?: string
     exampleQuery: string
 }
 
 export interface RepogroupMetadata {
     /**
-     * The title of the repogroup. This is displayed on the search homepage. E.g. Refactor python 2 to 3.
+     * The title of the repogroup. This is displayed on the search homepage, and is typically prose. E.g. Refactor python 2 to 3.
      */
     title: string
     /**
-     * The name of the repogroup, as configured in settings. E.g. python2-to-3.
+     * The name of the repogroup, must match the repogroup name as configured in settings. E.g. python2-to-3.
      */
     name: string
     /**
@@ -39,19 +40,12 @@ export interface RepogroupMetadata {
      * A description of the repogroup to be displayed on the page.
      */
     description: string
-
     /**
      * Base64 data uri to an icon.
      */
     homepageIcon: string
-
     /**
      * A description when displayed on the search homepage.
      */
     homepageDescription: string
-
-    /**
-     * A custom logo to be displayed above the search bar.
-     */
-    customLogoUrl?: string
 }
