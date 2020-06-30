@@ -1,27 +1,16 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
+import { BehaviorSubject, Subject, ReplaySubject, of, Observable, from } from 'rxjs'
+
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
-import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
-import { proxySubscribable, providerResultToObservable } from './api/common'
-import { TextDocumentIdentifier, match } from '../client/types/textDocument'
-import { getModeFromPath } from '../../languages'
-import { parseRepoURI } from '../../util/url'
-import { ExtensionDocuments } from './api/documents'
-import { toPosition } from './api/types'
-import { TextDocumentPositionParams } from '../protocol'
-import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { Hover } from '@sourcegraph/extension-api-types'
-import { isEqual } from 'lodash'
-import { fromHoverMerged, HoverMerged } from '../client/types/hover'
-import { isNot, isExactly } from '../../util/types'
+import { switchMap, mergeMap } from 'rxjs/operators'
+import { proxySubscribable } from './api/common'
 
 /**
  * Holds the entire state exposed to the extension host
- * as a single object
+ * as a single plain object
  */
 export interface ExtState {
     settings: Readonly<SettingsCascade<object>>
@@ -31,15 +20,7 @@ export interface ExtState {
     versionContext: string | undefined
 
     // Search
-    queryTransformers: BehaviorSubject<sourcegraph.QueryTransformer[]>
-
-    // Lang
-    hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
-}
-
-export interface RegisteredProvider<T> {
-    selector: sourcegraph.DocumentSelector
-    provider: T
+    queryTransformers: sourcegraph.QueryTransformer[]
 }
 
 export interface InitResult {
@@ -50,7 +31,6 @@ export interface InitResult {
     state: Readonly<ExtState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
-    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider'>
 }
 
 /**
@@ -69,16 +49,9 @@ export type PartialWorkspaceNamespace = Omit<
  */
 export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
-    initialSettings: Readonly<SettingsCascade<object>>,
-    textDocuments: ExtensionDocuments
+    initialSettings: Readonly<SettingsCascade<object>>
 ): InitResult => {
-    const state: ExtState = {
-        roots: [],
-        versionContext: undefined,
-        settings: initialSettings,
-        queryTransformers: new BehaviorSubject<sourcegraph.QueryTransformer[]>([]),
-        hoverProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
-    }
+    const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings, queryTransformers: [] }
 
     const configChanges = new BehaviorSubject<void>(undefined)
     // Most extensions never call `configuration.get()` synchronously in `activate()` to get
@@ -86,6 +59,8 @@ export const initNewExtensionAPI = (
     // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
 
     const rootChanges = new Subject<void>()
+    const queryTransformersChanges = new ReplaySubject<sourcegraph.QueryTransformer[]>(1)
+    queryTransformersChanges.next([])
 
     const versionContextChanges = new Subject<string | undefined>()
 
@@ -113,7 +88,7 @@ export const initNewExtensionAPI = (
             // in this case we need to reissue the transformation and emit the resulting value
             // we probably won't need an Observable if we somehow coordinate with extensions activation
             proxySubscribable(
-                state.queryTransformers.pipe(
+                queryTransformersChanges.pipe(
                     switchMap(transformers =>
                         transformers.reduce(
                             (currentQuery: Observable<string>, transformer) =>
@@ -128,21 +103,6 @@ export const initNewExtensionAPI = (
                     )
                 )
             ),
-
-        // Language
-        getHover: (textParameters: TextDocumentPositionParams) => {
-            const document = textDocuments.get(textParameters.textDocument.uri)
-            const position = toPosition(textParameters.position)
-
-            return proxySubscribable(
-                callProviders(
-                    state.hoverProviders,
-                    document,
-                    provider => provider.provideHover(document, position),
-                    mergeHoverResults
-                )
-            )
-        },
     }
 
     // Configuration
@@ -173,14 +133,18 @@ export const initNewExtensionAPI = (
 
     // Search
     const search: typeof sourcegraph['search'] = {
-        registerQueryTransformer: transformer => addWithRollback(state.queryTransformers, transformer),
+        registerQueryTransformer: transformer => {
+            state.queryTransformers = state.queryTransformers.concat(transformer)
+            queryTransformersChanges.next(state.queryTransformers)
+            return {
+                unsubscribe: () => {
+                    // eslint-disable-next-line id-length
+                    state.queryTransformers = state.queryTransformers.filter(t => t !== transformer)
+                    queryTransformersChanges.next(state.queryTransformers)
+                },
+            }
+        },
     }
-
-    // Languages
-    const registerHoverProvider = (
-        selector: sourcegraph.DocumentSelector,
-        provider: sourcegraph.HoverProvider
-    ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider })
 
     return {
         configuration: Object.assign(configChanges.asObservable(), {
@@ -191,109 +155,5 @@ export const initNewExtensionAPI = (
         state,
         commands,
         search,
-        languages: {
-            registerHoverProvider,
-        },
     }
-}
-
-// TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
-/**
- * Filters a list of Providers (P type) based on their selectors and a document
- *
- * @param document to use for filtering
- * @param entries array of providers (P[])
- * @param selector a way to get a selector from a Provider
- * @returns a filtered array of providers
- */
-function providersForDocument<P>(
-    document: TextDocumentIdentifier,
-    entries: P[],
-    selector: (p: P) => sourcegraph.DocumentSelector
-): P[] {
-    return entries.filter(provider =>
-        match(selector(provider), {
-            uri: document.uri,
-            languageId: getModeFromPath(parseRepoURI(document.uri).filePath || ''),
-        })
-    )
-}
-
-/**
- * calls next() on behaviorSubject with a immutably added element ([...old, value])
- *
- * @param behaviorSubject subject that holds a collection
- * @param value to add to a collection
- * @returns Unsubscribable that will remove that element from the behaviorSubject.value and call next() again
- */
-function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): sourcegraph.Unsubscribable {
-    behaviorSubject.next([...behaviorSubject.value, value])
-    return {
-        unsubscribe: () => behaviorSubject.next(behaviorSubject.value.filter(item => item !== value)),
-    }
-}
-
-/**
- * Helper function to abstract common logic of invoking language providers.
- *
- * 1. filters providers based on document
- * 2. invokes filtered providers via invokeProvider function
- * 3. adds [LOADING] state for each provider result stream
- * 4. omits errors from provider results with potential logging
- * 5. aggregates latests results from providers based on mergeResult function
- *
- * @param providersObservable observable of provider collection (expected to emit if a provider was added or removed)
- * @param document used for filtering providers
- * @param invokeProvider specifies how to get results from a provider (usually a closure over provider arguments)
- * @param mergeResult specifies how providers results should be aggregated
- * @param logErrors if console.error should be used for reporting errors from providers
- * @returns observable of aggregated results from all providers based on mergeResults function
- */
-export function callProviders<TProvider, TProviderResult, TMergedResult>(
-    providersObservable: Observable<RegisteredProvider<TProvider>[]>,
-    document: TextDocumentIdentifier,
-    invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
-    mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
-    logErrors: boolean = true
-): Observable<MaybeLoadingResult<TMergedResult>> {
-    return providersObservable
-        .pipe(
-            map(providers => providersForDocument(document, providers, ({ selector }) => selector)),
-            switchMap(providers =>
-                combineLatestOrDefault(
-                    providers.map(provider =>
-                        concat(
-                            [LOADING],
-                            providerResultToObservable(invokeProvider(provider.provider)).pipe(
-                                defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
-                                catchError(error => {
-                                    if (logErrors) {
-                                        console.error('Provider errored:', error)
-                                    }
-                                    return [null]
-                                })
-                            )
-                        )
-                    )
-                )
-            )
-        )
-        .pipe(
-            defaultIfEmpty<(typeof LOADING | TProviderResult | null | undefined)[]>([]),
-            map(results => ({
-                isLoading: results.some(hover => hover === LOADING),
-                result: mergeResult(results),
-            })),
-            distinctUntilChanged((a, b) => isEqual(a, b))
-        )
-}
-
-/**
- * merges latests results from hover providers into a form that is convenient to show
- *
- * @param results latests results from hover providers
- * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
- */
-export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
-    return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
 }

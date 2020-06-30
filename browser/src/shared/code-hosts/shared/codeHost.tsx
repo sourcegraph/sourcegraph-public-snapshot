@@ -112,7 +112,6 @@ import { NotificationType } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
-import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 
 registerHighlightContributions()
 
@@ -384,28 +383,19 @@ function initCodeIntelligence({
             filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
-            concat(
-                [{ isLoading: true, result: null }],
-                combineLatest([
-                    from(extensionsController.extHostAPI).pipe(
-                        switchMap(extensionHost =>
-                            wrapRemoteObservable(
-                                extensionHost.getHover(
-                                    toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                                )
-                            )
-                        )
-                    ),
-                    getActiveHoverAlerts(hoverAlerts),
-                ]).pipe(
-                    map(
-                        ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
-                            ExtensionHoverAlertType
-                        > | null> => ({
-                            isLoading,
-                            result: hoverMerged ? { ...hoverMerged, alerts } : null,
-                        })
-                    )
+            combineLatest([
+                extensionsController.services.textDocumentHover.getHover(
+                    toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                ),
+                getActiveHoverAlerts(hoverAlerts),
+            ]).pipe(
+                map(
+                    ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
+                        ExtensionHoverAlertType
+                    > | null> => ({
+                        isLoading,
+                        result: hoverMerged ? { ...hoverMerged, alerts } : null,
+                    })
                 )
             ),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
