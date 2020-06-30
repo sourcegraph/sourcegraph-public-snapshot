@@ -29,7 +29,7 @@ type UpdateableIndexableRepository struct {
 type IndexableRepositoryQueryOptions struct {
 	Limit                       int
 	MinimumSearchCount          int           // number of events needed to begin indexing
-	MinimumSearchRatio          float64       // ratio search/precise of events needed to begin indexing
+	MinimumSearchRatio          float64       // ratio of search/total events needed to begin indexing
 	MinimumPreciseCount         int           // number of events needed to continue indexing
 	MinimumTimeSinceLastEnqueue time.Duration // time between enqueues
 	now                         time.Time
