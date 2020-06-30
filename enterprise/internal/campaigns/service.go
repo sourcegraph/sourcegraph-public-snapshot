@@ -585,7 +585,6 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		Limit:                   -1,
 		OnlyWithDiff:            true,
 		OnlyWithoutChangesetJob: campaign.ID,
-		OnlySupportedCodehosts:  true,
 		NoDiff:                  true,
 	})
 	if err != nil {
@@ -615,12 +614,27 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		jobsByPatchID[j.PatchID] = j
 	}
 
+	reposByID := make(map[api.RepoID]*types.Repo)
+
 	for _, p := range patches {
 		if _, ok := jobsByPatchID[p.ID]; ok {
 			continue
 		}
 
 		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+			continue
+		}
+
+		if _, ok := reposByID[p.RepoID]; !ok {
+			repo, err := db.Repos.Get(ctx, p.RepoID)
+			if err != nil {
+				return nil, err
+			}
+			reposByID[p.RepoID] = repo
+		}
+
+		// Check if the repo is on a supported codehost.
+		if !campaigns.IsRepoSupported(&reposByID[p.RepoID].ExternalRepo) {
 			continue
 		}
 

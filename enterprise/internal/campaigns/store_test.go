@@ -1706,8 +1706,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 
 	repo := testRepo(1, extsvc.TypeGitHub)
 	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
-	unsupportedRepo := testRepo(3, extsvc.TypeAWSCodeCommit)
-	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo, unsupportedRepo); err != nil {
+	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2011,39 +2010,6 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 
 		if have, want := count, int64(len(patches)); have != want {
 			t.Fatalf("Invalid count retrieved: want=%d have=%d", want, have)
-		}
-	})
-
-	t.Run("Listing OnlySupportedCodehosts", func(t *testing.T) {
-		// Create patch to unsupported repo.
-		unsupportedRepoPatch := &cmpgn.Patch{
-			PatchSetID: 1000,
-			RepoID:     unsupportedRepo.ID,
-			Rev:        api.CommitID("deadbeef"),
-			BaseRef:    "master",
-			Diff:       "+ foobar - barfoo",
-		}
-		err = s.CreatePatch(ctx, unsupportedRepoPatch)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// List the patches and see what we get back.
-		listOpts := ListPatchesOpts{OnlySupportedCodehosts: true}
-		have, _, err := s.ListPatches(ctx, listOpts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		want := patches
-		if len(have) != len(want) {
-			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-		}
-
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-		}
-		if err := s.DeletePatch(ctx, unsupportedRepoPatch.ID); err != nil {
-			t.Fatal(err)
 		}
 	})
 
@@ -3375,57 +3341,6 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			rc := atomic.LoadInt64(&runCount)
 			if rc != 1 {
 				t.Errorf("Want %d, got %d", 1, rc)
-			}
-			if err := s.DeleteChangesetJob(ctx, job.ID); err != nil {
-				t.Fatal(err)
-			}
-		})
-
-		t.Run("GetPendingChangesetJobUnsupportedCodehost", func(t *testing.T) {
-			tx := dbtest.NewTx(t, db)
-			s := NewStoreWithClock(tx, clock)
-
-			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
-				return errors.New("rollback")
-			}
-
-			// Set repo type to AWS code commit, an unsupported codehost of campaigns.
-			awsRepo := &repos.Repo{
-				Name: "codecommit.aws/sourcegraph/changeset-job-test",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "external-id",
-					ServiceType: extsvc.TypeAWSCodeCommit,
-					ServiceID:   "https://github.com/",
-				},
-				Sources: map[string]*repos.SourceInfo{
-					"extsvc:github:4": {
-						ID:       "extsvc:awscodeCommit:7",
-						CloneURL: "https://secrettoken@codecommit.aws/sourcegraph/sourcegraph",
-					},
-				},
-			}
-			if err := reposStore.UpsertRepos(ctx, awsRepo); err != nil {
-				t.Fatal(err)
-			}
-			patch.RepoID = awsRepo.ID
-			if err := s.UpdatePatch(ctx, patch); err != nil {
-				t.Fatal(err)
-			}
-			job := &cmpgn.ChangesetJob{
-				CampaignID: campaign.ID,
-				PatchID:    patch.ID,
-			}
-			if err := s.CreateChangesetJob(ctx, job); err != nil {
-				t.Fatal(err)
-			}
-
-			ran, err := s.ProcessPendingChangesetJobs(ctx, process)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if ran {
-				// We shouldn't have any pending, supported job.
-				t.Fatalf("process function should not have run")
 			}
 		})
 	}
