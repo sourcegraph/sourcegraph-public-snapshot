@@ -30,7 +30,7 @@ export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = 
         },
         [setHasDismissedPrivacyWarning]
     )
-    const id = new URLSearchParams(props.history.location.search).get('id') ?? null
+    const id = new URLSearchParams(props.history.location.search).get('id')
     if (id) {
         const externalService = allExternalServices[id]
         if (externalService) {
