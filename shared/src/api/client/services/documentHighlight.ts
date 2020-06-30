@@ -1,43 +1,45 @@
 import { isEqual } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { CompletionList } from 'sourcegraph'
+import { DocumentHighlight } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../util/types'
 import { TextDocumentPositionParams } from '../../protocol'
 import { DocumentFeatureProviderRegistry } from './registry'
 
-export type ProvideCompletionItemSignature = (
+export type ProvideDocumentHighlightSignature = (
     params: TextDocumentPositionParams
-) => Observable<CompletionList | null | undefined>
+) => Observable<DocumentHighlight[] | null | undefined>
 
-/** Provides completions from all extensions. */
-export class CompletionItemProviderRegistry extends DocumentFeatureProviderRegistry<ProvideCompletionItemSignature> {
+/** Provides document highlights from all extensions. */
+export class DocumentHighlightProviderRegistry extends DocumentFeatureProviderRegistry<
+    ProvideDocumentHighlightSignature
+> {
     /**
      * Returns an observable that emits all providers' results whenever any of the last-emitted set
-     * of providers emits completions. If any provider emits an error, the error is logged and the
+     * of providers emits document highlights. If any provider emits an error, the error is logged and the
      * provider result is omitted from the emission of the observable (the observable does not emit
      * the error).
      */
-    public getCompletionItems(parameters: TextDocumentPositionParams): Observable<CompletionList | null> {
-        return getCompletionItems(this.providersForDocument(parameters.textDocument), parameters)
+    public getDocumentHighlights(parameters: TextDocumentPositionParams): Observable<DocumentHighlight[] | null> {
+        return getDocumentHighlights(this.providersForDocument(parameters.textDocument), parameters)
     }
 }
 
 /**
- * Returns an observable that emits all providers' completion items whenever any of the last-emitted
- * set of providers emits completion items. If any provider emits an error, the error is logged and
+ * Returns an observable that emits all providers' document highlights whenever any of the last-emitted
+ * set of providers emits document hovers. If any provider emits an error, the error is logged and
  * the provider is omitted from the emission of the observable (the observable does not emit the
  * error).
  *
- * Most callers should use {@link CompletionItemsProviderRegistry#getCompletionItems}, which uses
+ * Most callers should use {@link DocumentHighlightProviderRegistry#getDocumentHighlights}, which uses
  * the registered providers.
  */
-export function getCompletionItems(
-    providers: Observable<ProvideCompletionItemSignature[]>,
+export function getDocumentHighlights(
+    providers: Observable<ProvideDocumentHighlightSignature[]>,
     parameters: TextDocumentPositionParams,
     logErrors = true
-): Observable<CompletionList | null> {
+): Observable<DocumentHighlight[] | null> {
     return providers.pipe(
         switchMap(providers =>
             combineLatestOrDefault(
@@ -54,16 +56,16 @@ export function getCompletionItems(
                     )
                 )
             ).pipe(
-                map(mergeCompletionLists),
-                defaultIfEmpty<CompletionList | null>(null),
+                map(mergeDocumentHighlights),
+                defaultIfEmpty<DocumentHighlight[] | null>(null),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
         )
     )
 }
 
-function mergeCompletionLists(values: (CompletionList | null | undefined)[]): CompletionList | null {
-    const items = values.filter(isDefined).flatMap(({ items }) => items)
+function mergeDocumentHighlights(values: (DocumentHighlight[] | null | undefined)[]): DocumentHighlight[] | null {
+    const items = values.filter(isDefined).flatMap(items => items)
 
-    return items.length > 0 ? { items } : null
+    return items.length > 0 ? items : null
 }

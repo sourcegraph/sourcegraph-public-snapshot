@@ -181,6 +181,7 @@ function createExtensionAPI(
         Location,
         MarkupKind,
         NotificationType,
+        DocumentHighlightKind: sourcegraph.DocumentHighlightKind,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -252,6 +253,11 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.CompletionItemProvider
             ) => languageFeatures.registerCompletionItemProvider(selector, provider),
+
+            registerDocumentHighlightProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.DocumentHighlightProvider
+            ) => languageFeatures.registerDocumentHighlightProvider(selector, provider),
         },
 
         search,

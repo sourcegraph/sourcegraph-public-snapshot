@@ -137,7 +137,8 @@ export async function createExtensionHostClientConnection(
         services.textDocumentDefinition,
         services.textDocumentReferences,
         services.textDocumentLocations,
-        services.completionItems
+        services.completionItems,
+        services.documentHighlights
     )
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 

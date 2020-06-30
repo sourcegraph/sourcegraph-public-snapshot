@@ -1,9 +1,10 @@
 import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { Location } from '@sourcegraph/extension-api-types'
-import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
+import { CompletionList, DocumentHighlight, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { ProvideCompletionItemSignature } from '../services/completion'
+import { ProvideDocumentHighlightSignature } from '../services/documentHighlight'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { registerRemoteProvider } from './common'
@@ -35,6 +36,14 @@ export interface ClientLanguageFeaturesAPI extends ProxyMarked {
             ((params: TextDocumentPositionParams) => ProxySubscribable<CompletionList | null | undefined>) & ProxyMarked
         >
     ): Unsubscribable & ProxyMarked
+
+    $registerDocumentHighlightProvider(
+        selector: DocumentSelector,
+        providerFunction: Remote<
+            ((params: TextDocumentPositionParams) => ProxySubscribable<DocumentHighlight[] | null | undefined>) &
+                ProxyMarked
+        >
+    ): Unsubscribable & ProxyMarked
 }
 
 /** @internal */
@@ -48,6 +57,10 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         private completionItemsRegistry: FeatureProviderRegistry<
             TextDocumentRegistrationOptions,
             ProvideCompletionItemSignature
+        >,
+        private documentHighlightRegistry: FeatureProviderRegistry<
+            TextDocumentRegistrationOptions,
+            ProvideDocumentHighlightSignature
         >
     ) {}
 
@@ -80,5 +93,15 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         >
     ): Unsubscribable & ProxyMarked {
         return registerRemoteProvider(this.completionItemsRegistry, { documentSelector }, providerFunction)
+    }
+
+    public $registerDocumentHighlightProvider(
+        documentSelector: DocumentSelector,
+        providerFunction: Remote<
+            ((params: TextDocumentPositionParams) => ProxySubscribable<DocumentHighlight[] | null | undefined>) &
+                ProxyMarked
+        >
+    ): Unsubscribable & ProxyMarked {
+        return registerRemoteProvider(this.documentHighlightRegistry, { documentSelector }, providerFunction)
     }
 }

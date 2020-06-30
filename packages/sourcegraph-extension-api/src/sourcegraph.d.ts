@@ -1370,6 +1370,51 @@ declare module 'sourcegraph' {
         provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
     }
 
+    /**
+     * TODO - document
+     */
+    export interface DocumentHighlight {
+        /**
+         * TODO - document
+         */
+        range: Range
+
+        /**
+         * TODO - document
+         */
+        kind?: DocumentHighlightKind
+    }
+
+    /**
+     * TODO - document
+     */
+    export enum DocumentHighlightKind {
+        /**
+         * TODO - document
+         */
+        Text = 0,
+
+        /**
+         * TODO - document
+         */
+        Read = 1,
+
+        /**
+         * TODO - document
+         */
+        Write = 2,
+    }
+
+    /**
+     * TODO - document
+     */
+    export interface DocumentHighlightProvider {
+        /**
+         * TODO - document
+         */
+        provideDocumentHighlights(document: TextDocument, position: Position): ProviderResult<DocumentHighlight[]>
+    }
+
     export namespace languages {
         /**
          * Registers a hover provider, which returns a formatted hover message (intended for display in a tooltip)
@@ -1451,6 +1496,14 @@ declare module 'sourcegraph' {
         export function registerCompletionItemProvider(
             selector: DocumentSelector,
             provider: CompletionItemProvider
+        ): Unsubscribable
+
+        /**
+         * TODO - document
+         */
+        export function registerDocumentHighlightProvider(
+            selector: DocumentSelector,
+            provider: DocumentHighlightProvider
         ): Unsubscribable
     }
 
