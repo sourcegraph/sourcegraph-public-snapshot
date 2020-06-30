@@ -270,7 +270,7 @@ const RepoLink: React.FunctionComponent<{ repo: RepositoryType }> = props => (
                 <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
             </a>
         )}
-        <Link to={`/${props.repo.name}`} className="text-monospace">
+        <Link to={`/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
             {props.repo.name}
         </Link>
     </li>
