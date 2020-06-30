@@ -22,8 +22,13 @@ export const python2To3Metadata: RepogroupMetadata = {
         {
             title: 'Python 2 imports',
             exampleQuery: '"from :[package.] import :[function.]”',
+            description: 'Python 2 imports test description',
         },
-        { title: 'Python 3 imports', exampleQuery: 'from B.w+ import w+' },
+        {
+            title: 'Python 3 imports',
+            exampleQuery: 'from B.w+ import w+',
+            description: 'Python 3 imports test description',
+        },
         { title: 'Python 2 prints', exampleQuery: '\'print ":[string]"\'' },
         { title: 'Python 3 prints', exampleQuery: '\'print ":[string]"\'' },
         {

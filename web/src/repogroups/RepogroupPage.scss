@@ -76,6 +76,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+    &__example-search-button {
+        font-size: 12px;
+    }
 }
 
 .theme-light {

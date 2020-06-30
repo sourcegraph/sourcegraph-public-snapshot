@@ -169,14 +169,15 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                     {props.repogroupMetadata.examples.map(example => (
                         <>
                             <h3 className="mb-3">{example.title}</h3>
+                            <p>{example.description}</p>
                             <div className="d-flex mb-4">
                                 <div className="repogroup-page__example-bar form-control text-monospace">
                                     <span className="repogroup-page__keyword-text">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
                                 </div>
-                                <div className="search-button d-flex">
+                                <div className="d-flex">
                                     <button
-                                        className="btn btn-primary search-button__btn e2e-search-button btn-secondary"
+                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn e2e-search-button btn-secondary"
                                         type="button"
                                         aria-label="Search"
                                         onClick={onSubmitExample(`${repogroupQuery} ${example.exampleQuery}`)}
