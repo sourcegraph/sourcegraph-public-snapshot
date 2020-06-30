@@ -95,7 +95,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
 
     return (
         <div className="repogroup-page">
-            <PageTitle title="Python 2 to 3 migration" />
+            <PageTitle title={props.repogroupMetadata.title} />
             <BrandLogo
                 className="repogroup-page__logo"
                 isLightTheme={props.isLightTheme}
