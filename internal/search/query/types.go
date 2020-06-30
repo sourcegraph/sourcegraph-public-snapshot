@@ -203,10 +203,12 @@ func (q AndOrQuery) valueToTypedValue(field, value string, label labels) []*type
 		if isSet(label, Quoted) || isSet(label, HeuristicParensAsPatterns) || isSet(label, Literal) {
 			return []*types.Value{{String: &value}}
 		}
-		if regexp, err := regexp.Compile(value); err == nil {
+		if isSet(label, Regexp) {
+			// Invariant: every pattern labeled regex is valid.
+			regexp, _ := regexp.Compile(value)
 			return []*types.Value{{Regexp: regexp}}
 		}
-		// If the regexp does not compile, treat it as a string.
+		// Treat everything else literally.
 		return []*types.Value{{String: &value}}
 
 	case

@@ -473,6 +473,8 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	var labels labels
 	if !ContainsRegexpMetasyntax(string(p.buf[start:end])) {
 		labels = Literal | HeuristicParensAsPatterns
+	} else {
+		labels = Regexp
 	}
 
 	if len(pieces) == 1 {

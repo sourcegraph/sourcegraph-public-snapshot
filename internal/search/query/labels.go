@@ -25,6 +25,10 @@ var allLabels = map[labels]string{
 	HeuristicHoisted:          "HeuristicHoisted",
 }
 
+func (l labels) isSet(label labels) bool {
+	return l&label != 0
+}
+
 func Strings(labels labels) []string {
 	if labels == 0 {
 		return []string{"None"}
