@@ -69,8 +69,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	token := os.Getenv("GITHUB_TOKEN")
 	cli := extsvcGitHub.NewClient(uri, token, doer)
 
-	provider := authzGitHub.NewProvider("extsvc:github:1", uri, token, 3*time.Hour, nil)
-	provider.SetClient(&authzGitHub.ClientAdapter{Client: cli})
+	provider := authzGitHub.NewProvider("extsvc:github:1", uri, token, cli, 3*time.Hour, nil)
 
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)

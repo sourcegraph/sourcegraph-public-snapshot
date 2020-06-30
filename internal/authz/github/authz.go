@@ -51,7 +51,7 @@ func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, to
 		return nil, err
 	}
 
-	return NewProvider(urn, ghURL, token, ttl, nil), nil
+	return NewProvider(urn, ghURL, token, nil, ttl, nil), nil
 }
 
 // ValidateGitHubAuthz validates the authorization fields of the given GitHub external
