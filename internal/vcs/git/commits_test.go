@@ -57,7 +57,10 @@ func TestRepository_GetCommit(t *testing.T) {
 			return oldRunCommitLog(ctx, cmd, opt)
 		}
 
-		commit, err := GetCommit(ctx, test.repo, nil, test.id, ResolveRevisionOptions{NoEnsureRevision: test.noEnsureRevision})
+		resolveRevisionOptions := &ResolveRevisionOptions{
+			NoEnsureRevision: test.noEnsureRevision,
+		}
+		commit, err := GetCommit(ctx, test.repo, nil, test.id, resolveRevisionOptions)
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -68,7 +71,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, ResolveRevisionOptions{NoEnsureRevision: test.noEnsureRevision}); !gitserver.IsRevisionNotFound(err) {
+		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, resolveRevisionOptions); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 

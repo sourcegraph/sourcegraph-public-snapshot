@@ -197,7 +197,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		}
 		return grepo.URL, nil
 	}
-	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID, git.ResolveRevisionOptions{})
+	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID, nil)
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
