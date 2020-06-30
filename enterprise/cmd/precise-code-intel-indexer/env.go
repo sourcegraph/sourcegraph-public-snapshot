@@ -18,8 +18,8 @@ var (
 	rawIndexBatchSize                   = env.Get("PRECISE_CODE_INTEL_INDEX_BATCH_SIZE", "25", "Number of indexable repos to consider on each index scheduler update.")
 	rawIndexMinimumTimeSinceLastEnqueue = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_TIME_SINCE_LAST_ENQUEUE", "24h", "Interval between indexing runs of the same repo.")
 	rawIndexMinimumSearchCount          = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_COUNT", "50", "Minimum number of search events to trigger indexing for a repo.")
-	rawIndexMinimumPreciseCount         = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT", "1", "Minimum number of precise events to trigger indexing for a repo.")
 	rawIndexMinimumSearchRatio          = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_RATIO", "50", "Minimum ratio of search events to total events to trigger indexing for a repo.")
+	rawIndexMinimumPreciseCount         = env.Get("PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT", "1", "Minimum number of precise events to trigger indexing for a repo.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
