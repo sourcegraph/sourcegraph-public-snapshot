@@ -9,4 +9,5 @@
 #
 # In either case, the following cut will give us something parseable by rev-parse.
 
-git rev-parse "$(curl https://sourcegraph.com/__version | cut -d'_' -f3)"
+set -o pipefail
+git rev-parse "$(curl -sf https://sourcegraph.com/__version | cut -d'_' -f3)"
