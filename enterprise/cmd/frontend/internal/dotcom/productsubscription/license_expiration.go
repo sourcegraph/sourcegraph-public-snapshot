@@ -27,7 +27,11 @@ func StartCheckForUpcomingLicenseExpirations() {
 		panic("StartCheckForUpcomingLicenseExpirations called more than once")
 	}
 
-	client := slack.New(conf.Get().Dotcom.SlackLicenseExpirationWebhook)
+	dotcom := conf.Get().Dotcom
+	if dotcom == nil {
+		return
+	}
+	client := slack.New(dotcom.SlackLicenseExpirationWebhook)
 
 	t := time.NewTicker(1 * time.Hour)
 	for range t.C {

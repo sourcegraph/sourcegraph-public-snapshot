@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Some monitoring alerts now have more useful descriptions. [#11542](https://github.com/sourcegraph/sourcegraph/pull/11542)
+- Searching `fork:true` or `archived:true` has the same behaviour as searching `fork:yes` or `archived:yes` respectively. Previously it incorrectly had the same behaviour as `fork:only` and `archived:only` respectively. [#11740](https://github.com/sourcegraph/sourcegraph/pull/11740)
 
 ### Fixed
 
