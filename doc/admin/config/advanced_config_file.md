@@ -104,4 +104,111 @@ We're planning to improve this by having Sourcegraph notify you as a site admin 
 
 ## Kubernetes ConfigMap
 
-Currently, site admins are responsible for creating the ConfigMap resource that maps the above environment variables to files on the container disk. If you require assistance, please [contact us](mailto:support@sourcegraph.com).
+You can load these configuration files via a Kubernetes ConfigMap resource. To do so, create a `base/frontend/sourcegraph-frontend.ConfigMap.yaml` file with contents like this:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    description: Sourcegraph configuration files
+  labels:
+    deploy: sourcegraph
+  name: frontend-config-files
+data:
+  # IMPORTANT: see https://docs.sourcegraph.com/admin/config/advanced_config_file for details on how this works.
+
+  # Global user settings, see: https://docs.sourcegraph.com/admin/config/advanced_config_file#global-settings
+  global-settings.json: |
+    {
+        "search.scopes": [
+            {
+              "name": "Test code",
+              "value": "file:(test|spec)"
+            },
+            {
+              "name": "Non-test files",
+              "value": "-file:(test|spec)"
+            }
+        ],
+        "extensions": {
+          "sourcegraph/git-extras": true,
+        }
+      }
+
+  # Site configuration, see: https://docs.sourcegraph.com/admin/config/advanced_config_file#site-configuration
+  site.json: |
+    {
+      "auth.providers": [
+        {
+          "allowSignup": true,
+          "type": "builtin"
+        }
+      ],
+      "externalURL": "https://sourcegraph.example.com",
+      "licenseKey": "..."
+      }
+    }
+
+  # Code host configuration, see: https://docs.sourcegraph.com/admin/config/advanced_config_file#code-host-configuration
+  extsvc.json: |
+    {
+      "GITHUB": [
+        {
+          "url": "https://github.com",
+          "token": "...",
+          "repositoryQuery": [
+            "none"
+          ],
+        }
+      ]
+    }
+```
+
+To have Sourcegraph use this new ConfigMap, add the following environment variables to `base/frontend/sourcegraph-frontend.Deployment.yaml`:
+
+```
+        - name: SITE_CONFIG_FILE
+          value: /mnt/site.json
+        - name : GLOBAL_SETTINGS_FILE
+          value: /mnt/global-settings.json
+        - name : EXTSVC_CONFIG_FILE
+          value: /mnt/extsvc.json
+```
+
+And instruct Kubernetes to mount the ConfigMap file we created under `/mnt/` by adding the following in your `sourcegraph-frontend.Deployment.yaml` `volumeMounts` section:
+
+```
+        volumeMounts:
+        - mountPath: /mnt/site.json
+          name: config-volume
+          subPath: site.json
+        - mountPath: /mnt/global-settings.json
+          name: config-volume
+          subPath: global-settings.json
+        - mountPath: /mnt/extsvc.json
+          name: config-volume
+          subPath: extsvc.json
+```
+
+And similarly under the `volume` section:
+
+```
+      - name: config-volume
+        configMap:
+          name: frontend-config-files
+          defaultMode: 0644
+```
+
+Now upon re-running `kubectl-apply-all.sh` Kubernetes should mount your `ConfigMap` into the container as files on disk and you should see them:
+
+```
+$ kubectl exec -it sourcegraph-frontend-57dcb4d7db-6bclj -- ls /mnt/
+global-settings.json
+extsvc.json
+site.json
+```
+
+Similarly, because we set the environment variables to use those configuration files, the frontend should have loaded them into the database upon startup. You should now see Sourcegraph configured!
+
+If you encounter any issues, please [contact us](mailto:support@sourcegraph.com).
