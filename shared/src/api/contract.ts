@@ -8,6 +8,7 @@ import { TextDocumentPositionParams } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 import { ViewerData, ViewerId } from './viewerTypes'
+import { ConfiguredExtension } from '../extensions/extension'
 
 /**
  * A text model is a text document and associated metadata.
@@ -83,4 +84,7 @@ export interface MainThreadAPI {
         name: string,
         command: Remote<((...args: any) => any) & ProxyMarked>
     ) => Unsubscribable & ProxyMarked
+
+    getActiveExtensions: () => ProxySubscribable<ConfiguredExtension[]>
+    getScriptURLForExtension: (bundleURL: string) => Promise<string>
 }

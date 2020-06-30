@@ -1,6 +1,6 @@
 import * as comlink from 'comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
-import { Subscription, Unsubscribable } from 'rxjs'
+import { Subscription, Unsubscribable, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
@@ -10,7 +10,7 @@ import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtensionDocuments } from './api/documents'
-import { Extensions } from './api/extensions'
+import { handleExtensionActivation } from './api/extensions'
 import { ExtensionLanguageFeatures } from './api/languageFeatures'
 import { ExtensionViewsApi } from './api/views'
 import { ExtensionWindows } from './api/windows'
@@ -132,9 +132,6 @@ function createExtensionAPI(
     const context = new ExtensionContext(proxy.context)
     const documents = new ExtensionDocuments(sync)
 
-    const extensions = new Extensions()
-    subscription.add(extensions)
-
     const windows = new ExtensionWindows(proxy, documents)
     const views = new ExtensionViewsApi(proxy.views)
     const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
@@ -157,7 +154,6 @@ function createExtensionAPI(
         ping: () => 'pong',
 
         documents,
-        extensions,
         windows,
         ...exposedToMain,
     }
@@ -268,5 +264,8 @@ function createExtensionAPI(
             clientApplication: initData.clientApplication,
         },
     }
+
+    subscription.add(handleExtensionActivation(proxy, of(new Set())))
+
     return { extensionHostAPI, extensionAPI, subscription }
 }

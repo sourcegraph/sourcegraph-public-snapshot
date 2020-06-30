@@ -1,12 +1,13 @@
 import { Remote, proxy } from 'comlink'
 import { updateSettings } from './services/settings'
-import { Subscription, from } from 'rxjs'
+import { Subscription, from, of } from 'rxjs'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
 import { switchMap, concatMap } from 'rxjs/operators'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { ProxySubscription } from './api/common'
 import { Services } from './services'
+import { proxySubscribable } from '../extension/api/common'
 
 // for now it will partially mimic Services object but hopefully will be incrementally reworked in the process
 export type MainThreadAPIDependencies = Pick<Services, 'commands' | 'workspace'>
@@ -58,6 +59,8 @@ export const initMainThreadAPI = (
             subscription.add(new ProxySubscription(run))
             return proxy(subscription)
         },
+        getActiveExtensions: () => proxySubscribable(of([])),
+        getScriptURLForExtension: url => Promise.resolve(url),
     }
 
     return { api, subscription }

@@ -11,6 +11,7 @@ import { isObject } from 'lodash'
 import { hasProperty } from '../util/types'
 import { IExtensionsService } from '../api/client/services/extensionsService'
 import { ModelService } from '../api/client/services/modelService'
+import { ConfiguredExtension } from '../extensions/extension'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -135,7 +136,7 @@ export interface PlatformContext {
      * @returns A script URL suitable for passing to importScripts, typically either the original
      * https:// URL for the extension's bundle or a blob: URI for it.
      */
-    getScriptURLForExtension: (bundleURL: string) => string | Promise<string>
+    getScriptURLForExtension?: (bundleURL: string) => string | Promise<string>
 
     /**
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.
@@ -192,9 +193,9 @@ export interface PlatformContext {
     telemetryService?: TelemetryService
 
     /**
-     * Creates an extensions service that provides the list of extensions to be activated.
+     * The list of extensions to be activated.
      */
-    createExtensionsService?(modelService: Pick<ModelService, 'activeLanguages'>): IExtensionsService
+    enabledExtensions?: ConfiguredExtension[]
 }
 
 /**

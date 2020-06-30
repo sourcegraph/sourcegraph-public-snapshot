@@ -1,6 +1,6 @@
 import * as comlink from 'comlink'
-import { from, merge, Subject, Subscription, of } from 'rxjs'
-import { concatMap, first } from 'rxjs/operators'
+import { from, Subject, Subscription } from 'rxjs'
+import {  first } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
@@ -9,7 +9,6 @@ import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
 import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
-import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
@@ -20,8 +19,6 @@ import {
     ShowMessageRequestParams,
     ShowNotificationParams,
 } from './services/notifications'
-import { TextModelUpdate } from './services/modelService'
-import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
 import { initMainThreadAPI } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
@@ -113,7 +110,6 @@ export async function createExtensionHostClientConnection(
         services.textDocumentLocations,
         services.completionItems
     )
-    subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 
