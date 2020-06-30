@@ -656,7 +656,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Filter out one repository to make sure it's skipped
-		filteredOutPatch := patches[len(patches)-1]
+		filteredOutPatch := patches[len(patches)-2]
 		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			var filtered []*types.Repo
 			for _, r := range repos {
@@ -681,7 +681,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wantJobsCount := len(patches) - 1 // We filtered out one repository
+		wantJobsCount := len(patches) - 2 // We filtered out one repository, and one is unsupported.
 		if have, want := len(haveJobs), wantJobsCount; have != want {
 			t.Fatal("wrong number of changeset jobs created")
 		}
