@@ -7,7 +7,12 @@ declare module '*.css' {
     export default cssModule
 }
 
-type WebpackWorker = new () => Worker
+declare module '*.worker.ts' {
+    class WebpackWorker extends Worker {
+        constructor()
+    }
+    export default WebpackWorker
+}
 
 /**
  * Set by shared/dev/jest-environment.js

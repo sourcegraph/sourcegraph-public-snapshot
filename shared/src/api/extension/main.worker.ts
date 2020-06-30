@@ -38,7 +38,3 @@ async function extensionHostMain(): Promise<void> {
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 extensionHostMain()
-
-// This export will never be evaluated. It's needed to
-// allow importing this file, which will trigger webpack-loader.
-export default (Worker as any) as WebpackWorker
