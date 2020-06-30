@@ -31,6 +31,7 @@ func NewPrometheusCmd(promArgs []string, promPort, externalPort string) *exec.Cm
 func NewAlertmanagerCmd(configPath string) *exec.Cmd {
 	cmd := exec.Command("/bin/alertmanager",
 		fmt.Sprintf("--config.file=%s", configPath),
+		"--web.route-prefix=/alerts",
 		"--storage.path=/alertmanager")
 	cmd.Env = os.Environ()
 	cmd.Stderr = os.Stderr

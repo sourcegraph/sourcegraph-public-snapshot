@@ -55,7 +55,7 @@ func main() {
 		log.Info("initializing configuration")
 		alertmanager := amclient.NewHTTPClientWithConfig(nil, &amclient.TransportConfig{
 			Host:     fmt.Sprintf("127.0.0.1:%s", alertmanagerPort),
-			BasePath: "/api/v2",
+			BasePath: "/alerts/api/v2",
 			Schemes:  []string{"http"},
 		})
 
@@ -75,13 +75,22 @@ func main() {
 		router.PathPrefix("/prom-wrapper/config-subscriber").Handler(config.Handler())
 	}
 
-	// serve prometheus via reverse proxy - place last so other prefixes get served first
+	// serve alertmanager ui via reverse proxy
+	router.PathPrefix("/alerts").Handler(&httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = "http"
+			req.URL.Host = fmt.Sprintf(":%s", alertmanagerPort)
+		},
+	})
+
+	// serve prometheus by default via reverse proxy - place last so other prefixes get served first
 	router.PathPrefix("/").Handler(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
 			req.URL.Host = fmt.Sprintf(":%s", prometheusPort)
 		},
 	})
+
 	go func() {
 		log.Debug("serving endpoints and reverse proxy")
 		if err := http.ListenAndServe(fmt.Sprintf(":%s", exportPort), router); err != nil && !errors.Is(err, http.ErrServerClosed) {

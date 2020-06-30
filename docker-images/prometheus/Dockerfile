@@ -82,5 +82,3 @@ ENTRYPOINT ["/bin/prom-wrapper"]
 WORKDIR    /prometheus
 # Prometheus is reverse-proxied from 9092 to 9090
 EXPOSE     9090
-# Alertmanager is served on port 9093 - services should not need to access it directly, however
-EXPOSE     9093
