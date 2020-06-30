@@ -615,6 +615,15 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 	}
 
 	reposByID := make(map[api.RepoID]*types.Repo)
+	{
+		repos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range repos {
+			reposByID[r.ID] = r
+		}
+	}
 
 	for _, p := range patches {
 		if _, ok := jobsByPatchID[p.ID]; ok {
@@ -626,11 +635,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		}
 
 		if _, ok := reposByID[p.RepoID]; !ok {
-			repo, err := db.Repos.Get(ctx, p.RepoID)
-			if err != nil {
-				return nil, err
-			}
-			reposByID[p.RepoID] = repo
+			return nil, errors.Errorf("cannot find repo %d", p.RepoID)
 		}
 
 		// Check if the repo is on a supported codehost.
