@@ -233,8 +233,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
             {props.isSourcegraphDotCom && (
                 <div className="search-page__repogroup-content mt-5">
                     <div className="d-flex align-items-baseline mb-3">
-                        <h3 className="search-page__help-content-header mr-1">Search in repository groups</h3>
-                        <span className="text-monospace font-weight-normal">
+                        <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
+                        <span className="text-monospace font-weight-normal search-page__lang-ref">
                             <span className="repogroup-page__keyword-text">repogroup:</span>
                             <i>name</i>
                         </span>
@@ -304,8 +304,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         </div>
                         <div>
                             <div className="d-flex align-items-baseline">
-                                <h3 className="search-page__help-content-header mr-1">Search a language</h3>
-                                <span className="text-monospace font-weight-normal">
+                                <h3 className="search-page__help-content-header mr-2">Search a language</h3>
+                                <span className="text-monospace font-weight-normal search-page__lang-ref">
                                     <span className="repogroup-page__keyword-text">lang:</span>
                                     <i className="repogroup-page__keyword-value-text">name</i>
                                 </span>
