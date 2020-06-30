@@ -20,7 +20,7 @@ interface Props extends ThemeProps {
  */
 export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = props => {
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
-        'HAS_DISMISSED_CODEHOST_PRIVACY_WARNING',
+        'hasDismissedCodeHostPrivacyWarning',
         false
     )
     const dismissPrivacyWarning = useCallback(
