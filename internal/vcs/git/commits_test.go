@@ -28,19 +28,19 @@ func TestRepository_GetCommit(t *testing.T) {
 		repo             gitserver.Repo
 		id               api.CommitID
 		wantCommit       *Commit
-		NoEnsureRevision bool
+		noEnsureRevision bool
 	}{
 		"git cmd with NoEnsureRevision false": {
 			repo:             MakeGitRepository(t, gitCommands...),
 			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 			wantCommit:       wantGitCommit,
-			NoEnsureRevision: false,
+			noEnsureRevision: false,
 		},
 		"git cmd with NoEnsureRevision true": {
 			repo:             MakeGitRepository(t, gitCommands...),
 			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 			wantCommit:       wantGitCommit,
-			NoEnsureRevision: true,
+			noEnsureRevision: true,
 		},
 	}
 
@@ -57,7 +57,7 @@ func TestRepository_GetCommit(t *testing.T) {
 			return oldRunCommitLog(ctx, cmd, opt)
 		}
 
-		commit, err := GetCommit(ctx, test.repo, nil, test.id, ResolveRevisionOptions{NoEnsureRevision: test.NoEnsureRevision})
+		commit, err := GetCommit(ctx, test.repo, nil, test.id, ResolveRevisionOptions{NoEnsureRevision: test.noEnsureRevision})
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -68,12 +68,12 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, ResolveRevisionOptions{NoEnsureRevision: test.NoEnsureRevision}); !gitserver.IsRevisionNotFound(err) {
+		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, ResolveRevisionOptions{NoEnsureRevision: test.noEnsureRevision}); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 
-		if noEnsureRevision != test.NoEnsureRevision {
-			t.Fatalf("Expected %t, got %t", test.NoEnsureRevision, noEnsureRevision)
+		if noEnsureRevision != test.noEnsureRevision {
+			t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
 		}
 	}
 }
