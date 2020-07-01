@@ -684,6 +684,11 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		if err != nil {
 			return nil, nil, false, nil, errors.Wrap(err, "getting list of default repos")
 		}
+
+		// Search all default repos since indexed search is fast.
+		if len(defaultRepos) > maxRepoListSize {
+			maxRepoListSize = len(defaultRepos)
+		}
 	}
 
 	var repos []*types.Repo
