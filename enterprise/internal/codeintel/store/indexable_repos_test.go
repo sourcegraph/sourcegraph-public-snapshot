@@ -207,7 +207,7 @@ func TestResetIndexableRepositories(t *testing.T) {
 		}
 	}
 
-	err := store.ResetIndexableRepositories(context.Background(), t3)
+	err := store.ResetIndexableRepositories(context.Background(), t3.Add(time.Second))
 	if err != nil {
 		t.Fatalf("unexpected error while resetting indexable repositories: %s", err)
 	}

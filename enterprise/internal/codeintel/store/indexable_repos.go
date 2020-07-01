@@ -150,7 +150,7 @@ func (s *store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefor
 		`
 		UPDATE lsif_indexable_repositories
 		SET search_count = 0, precise_count = 0
-		WHERE last_updated_at <= %s
+		WHERE last_updated_at < %s
 	`,
 		lastUpdatedBefore,
 	))
