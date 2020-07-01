@@ -1,4 +1,5 @@
-import ExtensionHostWorker from 'worker-loader?name=extensionHostWorker.bundle.js!./main.worker.ts'
+// eslint-disable-next-line import/extensions
+import ExtensionHostWorker from './main.worker.ts'
 import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 import { Subscription } from 'rxjs'
 
@@ -8,9 +9,7 @@ import { Subscription } from 'rxjs'
  * If a `workerBundleURL` is provided, it is used to create a new Worker(), instead of using the ExtensionHostWorker
  * returned by worker-loader. This is useful to load the worker bundle from a different path.
  */
-export function createExtensionHostWorker(
-    workerBundleURL?: string
-): { worker: ExtensionHostWorker; clientEndpoints: EndpointPair } {
+export function createExtensionHostWorker(workerBundleURL?: string): { worker: Worker; clientEndpoints: EndpointPair } {
     const clientAPIChannel = new MessageChannel()
     const extensionHostAPIChannel = new MessageChannel()
     const worker = workerBundleURL ? new Worker(workerBundleURL) : new ExtensionHostWorker()

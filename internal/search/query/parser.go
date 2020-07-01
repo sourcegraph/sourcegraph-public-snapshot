@@ -643,7 +643,7 @@ func (p *parser) ParsePattern() Pattern {
 		Value:   value,
 		Negated: false,
 		Annotation: Annotation{
-			Labels: labels,
+			Labels: labels | Regexp,
 			Range:  newRange(start, p.pos),
 		},
 	}

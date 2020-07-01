@@ -17,15 +17,15 @@ type client interface {
 	WithToken(token string) client
 }
 
-var _ client = (*clientAdapter)(nil)
+var _ client = (*ClientAdapter)(nil)
 
-// clientAdapter is an adapter for GitHub API client.
-type clientAdapter struct {
+// ClientAdapter is an adapter for GitHub API client.
+type ClientAdapter struct {
 	*github.Client
 }
 
-func (c *clientAdapter) WithToken(token string) client {
-	return &clientAdapter{Client: c.Client.WithToken(token)}
+func (c *ClientAdapter) WithToken(token string) client {
+	return &ClientAdapter{Client: c.Client.WithToken(token)}
 }
 
 var _ client = (*mockClient)(nil)
