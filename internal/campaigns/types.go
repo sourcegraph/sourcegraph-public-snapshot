@@ -1544,8 +1544,6 @@ type ChangesetSpec struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
-
-	ReconciledAt time.Time
 }
 
 // Clone returns a clone of a ChangesetSpec.

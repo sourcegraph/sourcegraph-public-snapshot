@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -173,6 +174,34 @@ func (s *Service) CreateCampaignSpec(
 	}
 
 	return nil
+}
+
+// CreateChangesetSpec creates the ChangesetSpec.
+func (s *Service) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetSpec) (err error) {
+	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", c.UserID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := json.Unmarshal([]byte(c.RawSpec), &c.Spec); err != nil {
+		return err
+	}
+
+	// TODO: Validate that c.Spec is valid
+
+	c.RepoID, err = graphqlbackend.UnmarshalRepositoryID(c.Spec.RepoID)
+	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// the repository or not.
+	if _, err = db.Repos.Get(ctx, c.RepoID); err != nil {
+		return err
+	}
+
+	return s.store.CreateChangesetSpec(ctx, c)
 }
 
 // changesetSpecNotFoundErr is returned by CreateCampaignSpec if a

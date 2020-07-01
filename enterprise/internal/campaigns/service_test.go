@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -687,6 +688,53 @@ func TestService(t *testing.T) {
 			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
 
 			if err := svc.CreateCampaignSpec(ctx, spec, containsInvalidID); !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+		})
+	})
+
+	t.Run("CreateChangesetSpec", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		repo := rs[0]
+		rawSpec := ct.NewRawChangesetSpec(graphqlbackend.MarshalRepositoryID(repo.ID))
+
+		t.Run("success", func(t *testing.T) {
+			spec := &campaigns.ChangesetSpec{UserID: user.ID, RawSpec: rawSpec}
+			if err := svc.CreateChangesetSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			if spec.ID == 0 {
+				t.Fatalf("ChangesetSpec ID is 0")
+			}
+
+			var wantFields campaigns.ChangesetSpecFields
+			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			// Single repository filtered out by authzFilter
+			db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+				var filtered []*types.Repo
+				for _, r := range repos {
+					if r.ID == repo.ID {
+						continue
+					}
+					filtered = append(filtered, r)
+				}
+				return filtered, nil
+			}
+			t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+			spec := &campaigns.ChangesetSpec{UserID: user.ID, RawSpec: rawSpec}
+			if err := svc.CreateChangesetSpec(ctx, spec); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})

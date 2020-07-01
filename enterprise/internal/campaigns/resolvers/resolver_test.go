@@ -924,7 +924,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	want.CreatedAt = have.CreatedAt
 	want.ExpiresAt = have.ExpiresAt
 
-	if diff := cmp.Diff(want, response.CreateCampaignSpec); diff != "" {
+	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 }
@@ -952,6 +952,74 @@ mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
 	}
 
     createdAt
+    expiresAt
+  }
+}
+`
+
+func TestCreateChangesetSpec(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "create-changeset-spec", true)
+
+	store := ee.NewStore(dbconn.Global)
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+
+	}
+
+	input := map[string]interface{}{
+		"changesetSpec": ct.NewRawChangesetSpec(graphqlbackend.MarshalRepositoryID(repo.ID)),
+	}
+
+	var response struct{ CreateChangesetSpec apitest.ChangesetSpec }
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetSpec)
+
+	have := response.CreateChangesetSpec
+
+	want := apitest.ChangesetSpec{}
+	want.ID = have.ID
+	want.ExpiresAt = have.ExpiresAt
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	}
+
+	randID, err := unmarshalChangesetSpecID(graphql.ID(want.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cs, err := store.GetChangesetSpec(ctx, ee.GetChangesetSpecOpts{RandID: randID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if have, want := cs.RepoID, repo.ID; have != want {
+		t.Fatalf("wrong RepoID. want=%d, have=%d", want, have)
+	}
+}
+
+const mutationCreateChangesetSpec = `
+mutation($changesetSpec: String!){
+  createChangesetSpec(changesetSpec: $changesetSpec) {
+    id
     expiresAt
   }
 }

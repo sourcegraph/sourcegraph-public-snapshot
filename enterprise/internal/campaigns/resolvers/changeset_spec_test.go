@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -33,9 +34,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 	spec := &campaigns.ChangesetSpec{
+		RawSpec: ct.NewRawChangesetSpec(repoID),
 		Spec: campaigns.ChangesetSpecFields{
-			RepoID: graphqlbackend.MarshalRepositoryID(repo.ID),
+			RepoID: repoID,
 		},
 		RepoID: repo.ID,
 		UserID: userID,

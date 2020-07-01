@@ -281,7 +281,40 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 }
 
 func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend.CreateChangesetSpecArgs) (graphqlbackend.ChangesetSpecResolver, error) {
-	return nil, errors.New("TODO: not implemented")
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetSpec", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+
+	// 🚨 SECURITY: Only site admins may create campaign specs for now.
+	if !user.SiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
+	}
+
+	changesetSpec := &campaigns.ChangesetSpec{
+		RawSpec: args.ChangesetSpec,
+		UserID:  user.ID,
+	}
+
+	svc := ee.NewService(r.store, r.httpFactory)
+	if err = svc.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+		return nil, err
+	}
+
+	specResolver := &changesetSpecResolver{
+		store:         r.store,
+		httpFactory:   r.httpFactory,
+		changesetSpec: changesetSpec,
+	}
+
+	return specResolver, nil
 }
 
 func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.CampaignResolver, error) {
