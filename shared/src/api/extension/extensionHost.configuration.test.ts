@@ -3,14 +3,11 @@ import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsEdit } from '../client/services/settings'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
-import { ExtensionDocuments } from './api/documents'
 
 const initialSettings = (value: { a: string }): SettingsCascade<{ a: string }> => ({
     subjects: [],
     final: value,
 })
-
-const noopDocuments = new ExtensionDocuments(() => Promise.resolve())
 
 describe('ExtensionHost: Configuration', () => {
     describe('get()', () => {
@@ -18,7 +15,7 @@ describe('ExtensionHost: Configuration', () => {
             const {
                 configuration,
                 exposedToMain: { syncSettingsData },
-            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }), noopDocuments)
+            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }))
             syncSettingsData({ subjects: [], final: { a: 'b' } })
             syncSettingsData({ subjects: [], final: { a: 'c' } })
             expect(configuration.get<{ a: string }>().get('a')).toBe('c')
@@ -27,11 +24,7 @@ describe('ExtensionHost: Configuration', () => {
 
     describe('changes', () => {
         test('emits immediately on subscription', () => {
-            const { configuration } = initNewExtensionAPI(
-                pretendRemote(noopMainThreadAPI),
-                initialSettings({ a: 'a' }),
-                noopDocuments
-            )
+            const { configuration } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }))
             let calledTimes = 0
             configuration.subscribe(() => calledTimes++)
             expect(calledTimes).toBe(1)
@@ -41,7 +34,7 @@ describe('ExtensionHost: Configuration', () => {
             const {
                 configuration,
                 exposedToMain: { syncSettingsData },
-            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }), noopDocuments)
+            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'a' }))
             let calledTimes = 0
             configuration.subscribe(() => calledTimes++)
             syncSettingsData({ subjects: [], final: { a: 'b' } })
@@ -53,7 +46,7 @@ describe('ExtensionHost: Configuration', () => {
             const {
                 configuration,
                 exposedToMain: { syncSettingsData },
-            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'b' }), noopDocuments)
+            } = initNewExtensionAPI(pretendRemote(noopMainThreadAPI), initialSettings({ a: 'b' }))
             const config = configuration.get<{ a: string }>()
             expect(config.get('a')).toBe('b')
             syncSettingsData({ subjects: [], final: { a: 'c' } })
@@ -72,8 +65,7 @@ describe('ExtensionHost: Configuration', () => {
                         return Promise.resolve()
                     },
                 }),
-                initialSettings({ a: 'b' }),
-                noopDocuments
+                initialSettings({ a: 'b' })
             )
             const config = configuration.get<{ a: string }>()
             await config.update('a', 'aha!')

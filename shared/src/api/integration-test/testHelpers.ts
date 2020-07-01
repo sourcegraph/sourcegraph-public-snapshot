@@ -13,6 +13,7 @@ import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 import { FlatExtHostAPI } from '../contract'
 import { Remote } from 'comlink'
+import { ViewerId } from '../viewerTypes'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -71,6 +72,7 @@ export async function integrationTestContext(
     extensionAPI: typeof sourcegraph
     services: Services
     extensionHost: Remote<FlatExtHostAPI>
+    viewerIds: ViewerId[]
 }> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
@@ -93,7 +95,7 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
 
-    const { api } = await createExtensionHostClientConnection(
+    const { api: extensionHostAPI } = await createExtensionHostClientConnection(
         Promise.resolve({
             ...clientEndpoints,
             subscription: new Subscription(),
@@ -106,12 +108,10 @@ export async function integrationTestContext(
     const extensionAPI = await extensionHost.extensionAPI
     if (initModel.models) {
         for (const model of initModel.models) {
-            services.model.addModel(model)
+            await extensionHostAPI.addTextDocumentIfNotExists(model)
         }
     }
-    for (const editor of initModel.viewers) {
-        services.viewer.addViewer(editor)
-    }
+    const viewerIds = await Promise.all(initModel.viewers.map(viewer => extensionHostAPI.addViewerIfNotExists(viewer)))
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
@@ -135,7 +135,8 @@ export async function integrationTestContext(
     return {
         extensionAPI,
         services,
-        extensionHost: api,
+        extensionHost: extensionHostAPI,
+        viewerIds,
     }
 }
 
