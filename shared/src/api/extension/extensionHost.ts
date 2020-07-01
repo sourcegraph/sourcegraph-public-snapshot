@@ -33,6 +33,13 @@ export interface InitData {
     initialSettings: Readonly<SettingsCascade<object>>
 }
 
+// TODO - move this definition
+export const DocumentHighlightKind: typeof sourcegraph.DocumentHighlightKind = {
+    Text: 0,
+    Read: 1,
+    Write: 2,
+}
+
 /**
  * Starts the extension host, which runs extensions. It is a Web Worker or other similar isolated
  * JavaScript execution context. There is exactly 1 extension host, and it has zero or more
@@ -147,7 +154,7 @@ function createExtensionAPI(
         state,
         commands,
         search,
-        languages: { registerHoverProvider },
+        languages: { registerHoverProvider, registerDocumentHighlightProvider },
     } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
     // Expose the extension host API to the client (main thread)
@@ -181,7 +188,7 @@ function createExtensionAPI(
         Location,
         MarkupKind,
         NotificationType,
-        DocumentHighlightKind: sourcegraph.DocumentHighlightKind,
+        DocumentHighlightKind,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -217,6 +224,7 @@ function createExtensionAPI(
 
         languages: {
             registerHoverProvider,
+            registerDocumentHighlightProvider,
 
             registerDefinitionProvider: (
                 selector: sourcegraph.DocumentSelector,
@@ -253,11 +261,6 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.CompletionItemProvider
             ) => languageFeatures.registerCompletionItemProvider(selector, provider),
-
-            registerDocumentHighlightProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.DocumentHighlightProvider
-            ) => languageFeatures.registerDocumentHighlightProvider(selector, provider),
         },
 
         search,

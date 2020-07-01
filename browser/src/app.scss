@@ -33,6 +33,13 @@ $theme-colors-light: (
     background-color: rgba(255, 192, 120, 0.5);
 }
 
+.document-highlight,
+.document-highlight span,
+.document-highlight-sticky,
+.document-highlight-sticky span {
+    background-color: rgba(255, 192, 120, 1);
+}
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';

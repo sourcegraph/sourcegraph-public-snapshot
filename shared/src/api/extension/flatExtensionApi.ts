@@ -4,7 +4,7 @@ import * as sourcegraph from 'sourcegraph'
 import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
-import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged, tap } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
@@ -35,6 +35,7 @@ export interface ExtState {
 
     // Lang
     hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
+    documentHighlightProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -50,7 +51,7 @@ export interface InitResult {
     state: Readonly<ExtState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
-    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider'>
+    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider' | 'registerDocumentHighlightProvider'>
 }
 
 /**
@@ -78,6 +79,9 @@ export const initNewExtensionAPI = (
         settings: initialSettings,
         queryTransformers: new BehaviorSubject<sourcegraph.QueryTransformer[]>([]),
         hoverProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
+        documentHighlightProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>(
+            []
+        ),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -143,6 +147,19 @@ export const initNewExtensionAPI = (
                 )
             )
         },
+        getDocumentHighlights: (textParameters: TextDocumentPositionParams) => {
+            const document = textDocuments.get(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                callProviders(
+                    state.documentHighlightProviders,
+                    document,
+                    provider => provider.provideDocumentHighlights(document, position),
+                    mergeDocumentHighlightResults
+                )
+            )
+        },
     }
 
     // Configuration
@@ -181,6 +198,10 @@ export const initNewExtensionAPI = (
         selector: sourcegraph.DocumentSelector,
         provider: sourcegraph.HoverProvider
     ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider })
+    const registerDocumentHighlightProvider = (
+        selector: sourcegraph.DocumentSelector,
+        provider: sourcegraph.DocumentHighlightProvider
+    ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider })
 
     return {
         configuration: Object.assign(configChanges.asObservable(), {
@@ -193,6 +214,7 @@ export const initNewExtensionAPI = (
         search,
         languages: {
             registerHoverProvider,
+            registerDocumentHighlightProvider,
         },
     }
 }
@@ -296,4 +318,13 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
  */
 export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
     return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
+}
+
+/**
+ * TODO - document
+ */
+export function mergeDocumentHighlightResults(
+    results: (typeof LOADING | sourcegraph.DocumentHighlight[] | null | undefined)[]
+): sourcegraph.DocumentHighlight[] {
+    return results.filter(isNot(isExactly(LOADING))).flatMap(highlights => highlights || [])
 }

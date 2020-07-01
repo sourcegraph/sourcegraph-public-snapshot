@@ -408,6 +408,7 @@ function initCodeIntelligence({
                     )
                 )
             ),
+        getDocumentHighlights: () => from([{ isLoading: false, result: null }]), // TODO - implement me
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
         pinningEnabled: true,
         tokenize: codeHost.codeViewsRequireTokenization,

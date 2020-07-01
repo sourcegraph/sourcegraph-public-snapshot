@@ -2,7 +2,7 @@ import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable } from 'sourcegraph'
+import { Unsubscribable, DocumentHighlight } from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
 import { TextDocumentPositionParams } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -28,6 +28,9 @@ export interface FlatExtHostAPI {
 
     // Languages
     getHover: (parameters: TextDocumentPositionParams) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
+    getDocumentHighlights: (
+        parameters: TextDocumentPositionParams
+    ) => ProxySubscribable<MaybeLoadingResult<DocumentHighlight[] | null>>
 }
 
 /**

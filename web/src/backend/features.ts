@@ -5,6 +5,7 @@ import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevisionSpec } from '../../
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
+import { DocumentHighlight } from 'sourcegraph'
 
 /**
  * Fetches hover information for the given location.
@@ -22,6 +23,33 @@ export function getHover(
             switchMap(extensionHost =>
                 wrapRemoteObservable(
                     extensionHost.getHover({
+                        textDocument: {
+                            uri: `git://${context.repoName}?${context.commitID}#${context.filePath}`,
+                        },
+                        position: {
+                            character: context.position.character - 1,
+                            line: context.position.line - 1,
+                        },
+                    })
+                )
+            )
+        )
+    )
+}
+
+/**
+ * TODO - document
+ */
+export function getDocumentHighlights(
+    context: RepoSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec,
+    { extensionsController }: ExtensionsControllerProps
+): Observable<MaybeLoadingResult<DocumentHighlight[] | null>> {
+    return concat(
+        [{ isLoading: true, result: null }],
+        from(extensionsController.extHostAPI).pipe(
+            switchMap(extensionHost =>
+                wrapRemoteObservable(
+                    extensionHost.getDocumentHighlights({
                         textDocument: {
                             uri: `git://${context.repoName}?${context.commitID}#${context.filePath}`,
                         },
