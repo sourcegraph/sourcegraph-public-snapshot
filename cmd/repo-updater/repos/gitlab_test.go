@@ -216,7 +216,9 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 	}
 }
 
-func TestGitLabSource_CreateChangeset(t *testing.T) {
+// TestGitLabSource_ChangesetSource tests the various Changeset functions that
+// implement the ChangesetSource interface.
+func TestGitLabSource_ChangesetSource(t *testing.T) {
 	// Set up some common values for use in subtests.
 	c := &Changeset{
 		Changeset: &campaigns.Changeset{},
@@ -246,119 +248,121 @@ func TestGitLabSource_CreateChangeset(t *testing.T) {
 		}
 	}
 
-	testCreateParams := func(opts gitlab.CreateMergeRequestOpts) {
-		if want := "head"; opts.SourceBranch != want {
-			t.Errorf("unexpected SourceBranch: have %s; want %s", opts.SourceBranch, want)
+	t.Run("CreateChangeset", func(t *testing.T) {
+		testCreateParams := func(opts gitlab.CreateMergeRequestOpts) {
+			if want := "head"; opts.SourceBranch != want {
+				t.Errorf("unexpected SourceBranch: have %s; want %s", opts.SourceBranch, want)
+			}
+			if want := "base"; opts.TargetBranch != want {
+				t.Errorf("unexpected TargetBranch: have %s; want %s", opts.TargetBranch, want)
+			}
 		}
-		if want := "base"; opts.TargetBranch != want {
-			t.Errorf("unexpected TargetBranch: have %s; want %s", opts.TargetBranch, want)
-		}
-	}
 
-	t.Run("invalid metadata", func(t *testing.T) {
-		defer func() { _ = recover() }()
+		t.Run("invalid metadata", func(t *testing.T) {
+			defer func() { _ = recover() }()
 
-		_, _ = s.CreateChangeset(ctx, &Changeset{
-			Repo: &Repo{
-				Metadata: struct{}{},
-			},
+			_, _ = s.CreateChangeset(ctx, &Changeset{
+				Repo: &Repo{
+					Metadata: struct{}{},
+				},
+			})
+			t.Error("invalid metadata did not panic")
 		})
-		t.Error("invalid metadata did not panic")
-	})
 
-	t.Run("error from CreateMergeRequest", func(t *testing.T) {
-		inner := errors.New("foo")
-		gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-			testCommonParams(client, ctx, project)
-			testCreateParams(opts)
-			return nil, inner
-		}
-		defer func() {
-			gitlab.MockCreateMergeRequest = nil
-		}()
+		t.Run("error from CreateMergeRequest", func(t *testing.T) {
+			inner := errors.New("foo")
+			gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				testCommonParams(client, ctx, project)
+				testCreateParams(opts)
+				return nil, inner
+			}
+			defer func() {
+				gitlab.MockCreateMergeRequest = nil
+			}()
 
-		exists, have := s.CreateChangeset(ctx, c)
-		if exists {
-			t.Errorf("unexpected exists value: %v", exists)
-		}
-		if !errors.Is(have, inner) {
-			t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
-		}
-	})
+			exists, have := s.CreateChangeset(ctx, c)
+			if exists {
+				t.Errorf("unexpected exists value: %v", exists)
+			}
+			if !errors.Is(have, inner) {
+				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			}
+		})
 
-	t.Run("error from GetOpenMergeRequestByRefs", func(t *testing.T) {
-		inner := errors.New("foo")
-		gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-			testCommonParams(client, ctx, project)
-			testCreateParams(opts)
-			return nil, gitlab.ErrMergeRequestAlreadyExists
-		}
-		gitlab.MockGetOpenMergeRequestByRefs = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, source, target string) (*gitlab.MergeRequest, error) {
-			testCommonParams(client, ctx, project)
-			return nil, inner
-		}
-		defer func() {
-			gitlab.MockCreateMergeRequest = nil
-			gitlab.MockGetOpenMergeRequestByRefs = nil
-		}()
+		t.Run("error from GetOpenMergeRequestByRefs", func(t *testing.T) {
+			inner := errors.New("foo")
+			gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				testCommonParams(client, ctx, project)
+				testCreateParams(opts)
+				return nil, gitlab.ErrMergeRequestAlreadyExists
+			}
+			gitlab.MockGetOpenMergeRequestByRefs = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, source, target string) (*gitlab.MergeRequest, error) {
+				testCommonParams(client, ctx, project)
+				return nil, inner
+			}
+			defer func() {
+				gitlab.MockCreateMergeRequest = nil
+				gitlab.MockGetOpenMergeRequestByRefs = nil
+			}()
 
-		exists, have := s.CreateChangeset(ctx, c)
-		if !exists {
-			t.Errorf("unexpected exists value: %v", exists)
-		}
-		if !errors.Is(have, inner) {
-			t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
-		}
-	})
+			exists, have := s.CreateChangeset(ctx, c)
+			if !exists {
+				t.Errorf("unexpected exists value: %v", exists)
+			}
+			if !errors.Is(have, inner) {
+				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			}
+		})
 
-	t.Run("merge request already exists", func(t *testing.T) {
-		gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-			testCommonParams(client, ctx, project)
-			testCreateParams(opts)
-			return nil, gitlab.ErrMergeRequestAlreadyExists
-		}
-		gitlab.MockGetOpenMergeRequestByRefs = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, source, target string) (*gitlab.MergeRequest, error) {
-			testCommonParams(client, ctx, project)
-			return mr, nil
-		}
-		defer func() {
-			gitlab.MockCreateMergeRequest = nil
-			gitlab.MockGetOpenMergeRequestByRefs = nil
-		}()
+		t.Run("merge request already exists", func(t *testing.T) {
+			gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				testCommonParams(client, ctx, project)
+				testCreateParams(opts)
+				return nil, gitlab.ErrMergeRequestAlreadyExists
+			}
+			gitlab.MockGetOpenMergeRequestByRefs = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, source, target string) (*gitlab.MergeRequest, error) {
+				testCommonParams(client, ctx, project)
+				return mr, nil
+			}
+			defer func() {
+				gitlab.MockCreateMergeRequest = nil
+				gitlab.MockGetOpenMergeRequestByRefs = nil
+			}()
 
-		exists, err := s.CreateChangeset(ctx, c)
-		if !exists {
-			t.Errorf("unexpected exists value: %v", exists)
-		}
-		if err != nil {
-			t.Errorf("unexpected non-nil err: %+v", err)
-		}
+			exists, err := s.CreateChangeset(ctx, c)
+			if !exists {
+				t.Errorf("unexpected exists value: %v", exists)
+			}
+			if err != nil {
+				t.Errorf("unexpected non-nil err: %+v", err)
+			}
 
-		if c.Changeset.Metadata != mr {
-			t.Errorf("unexpected metadata: have %+v; want %+v", c.Changeset.Metadata, mr)
-		}
-	})
+			if c.Changeset.Metadata != mr {
+				t.Errorf("unexpected metadata: have %+v; want %+v", c.Changeset.Metadata, mr)
+			}
+		})
 
-	t.Run("merge request is new", func(t *testing.T) {
-		gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-			testCommonParams(client, ctx, project)
-			testCreateParams(opts)
-			return mr, nil
-		}
-		defer func() {
-			gitlab.MockCreateMergeRequest = nil
-		}()
+		t.Run("merge request is new", func(t *testing.T) {
+			gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+				testCommonParams(client, ctx, project)
+				testCreateParams(opts)
+				return mr, nil
+			}
+			defer func() {
+				gitlab.MockCreateMergeRequest = nil
+			}()
 
-		exists, err := s.CreateChangeset(ctx, c)
-		if exists {
-			t.Errorf("unexpected exists value: %v", exists)
-		}
-		if err != nil {
-			t.Errorf("unexpected non-nil err: %+v", err)
-		}
+			exists, err := s.CreateChangeset(ctx, c)
+			if exists {
+				t.Errorf("unexpected exists value: %v", exists)
+			}
+			if err != nil {
+				t.Errorf("unexpected non-nil err: %+v", err)
+			}
 
-		if c.Changeset.Metadata != mr {
-			t.Errorf("unexpected metadata: have %+v; want %+v", c.Changeset.Metadata, mr)
-		}
+			if c.Changeset.Metadata != mr {
+				t.Errorf("unexpected metadata: have %+v; want %+v", c.Changeset.Metadata, mr)
+			}
+		})
 	})
 }

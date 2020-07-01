@@ -355,13 +355,13 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.Wrap(err, "updating GitLab merge request")
 	}
 
-	c.Changeset.Metadata = updated
+	if err := c.SetMetadata(updated); err != nil {
+		return errors.Wrap(err, "setting changeset metadata")
+	}
 	return nil
 }
 
 // LoadChangesets loads the given Changesets from the sources and updates them.
-// If a Changeset could not be found on the source, it's included in the
-// returned slice.
 func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
 	// FIXME(aharvey): this is suboptimal, but GitLab doesn't have a REST API to
 	// provide full detail for more than one MR at a time. Need to investigate
