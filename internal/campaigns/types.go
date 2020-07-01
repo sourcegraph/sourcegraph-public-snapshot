@@ -1520,11 +1520,11 @@ type CampaignSpecFields struct {
 }
 
 type ChangesetTemplate struct {
-	Title     string `json:"title"`
-	Body      string `json:"body"`
-	Branch    string `json:"branch"`
-	Commit    string `json:"commit"`
-	Published bool   `json:"published"`
+	Title     string         `json:"title"`
+	Body      string         `json:"body"`
+	Branch    string         `json:"branch"`
+	Commit    CommitTemplate `json:"commit"`
+	Published bool           `json:"published"`
 }
 
 type CommitTemplate struct {

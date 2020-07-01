@@ -163,6 +163,35 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 				}
 			}
 		})
+
+		t.Run("WithRandIDs", func(t *testing.T) {
+			for _, c := range changesetSpecs {
+				opts := ListChangesetSpecsOpts{RandIDs: []string{c.RandID}}
+				have, _, err := s.ListChangesetSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := []*cmpgn.ChangesetSpec{c}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			opts := ListChangesetSpecsOpts{}
+			for _, c := range changesetSpecs {
+				opts.RandIDs = append(opts.RandIDs, c.RandID)
+			}
+
+			have, _, err := s.ListChangesetSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, changesetSpecs); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
