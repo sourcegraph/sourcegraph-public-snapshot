@@ -87,6 +87,10 @@ type CreateMergeRequestOpts struct {
 }
 
 func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts CreateMergeRequestOpts) (*MergeRequest, error) {
+	if MockCreateMergeRequest != nil {
+		return MockCreateMergeRequest(c, ctx, project, opts)
+	}
+
 	data, err := json.Marshal(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling options")
@@ -110,6 +114,10 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 }
 
 func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) (*MergeRequest, error) {
+	if MockGetMergeRequest != nil {
+		return MockGetMergeRequest(c, ctx, project, iid)
+	}
+
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, iid), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request to get a merge request")
@@ -124,6 +132,10 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 }
 
 func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project, source, target string) (*MergeRequest, error) {
+	if MockGetOpenMergeRequestByRefs != nil {
+		return MockGetOpenMergeRequestByRefs(c, ctx, project, source, target)
+	}
+
 	values := make(url.Values)
 	// Since we're only expecting one merge request, we don't need to enumerate
 	// the full list of merge requests if more than one matches: just the
@@ -180,6 +192,10 @@ const (
 )
 
 func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error) {
+	if MockUpdateMergeRequest != nil {
+		return MockUpdateMergeRequest(c, ctx, project, mr, opts)
+	}
+
 	data, err := json.Marshal(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling options")

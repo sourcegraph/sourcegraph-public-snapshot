@@ -16,3 +16,19 @@ var MockGetProject func(c *Client, ctx context.Context, op GetProjectOp) (*Proje
 
 // MockListTree, if non-nil, will be called instead of Client.ListTree
 var MockListTree func(c *Client, ctx context.Context, op ListTreeOp) ([]*Tree, error)
+
+// MockCreateMergeRequest, if non-nil, will be called instead of
+// Client.CreateMergeRequest
+var MockCreateMergeRequest func(c *Client, ctx context.Context, project *Project, opts CreateMergeRequestOpts) (*MergeRequest, error)
+
+// MockGetMergeRequest, if non-nil, will be called instead of
+// Client.GetMergeRequest
+var MockGetMergeRequest func(c *Client, ctx context.Context, project *Project, iid ID) (*MergeRequest, error)
+
+// MockGetOpenMergeRequestByRefs, if non-nil, will be called instead of
+// Client.GetOpenMergeRequestByRefs
+var MockGetOpenMergeRequestByRefs func(c *Client, ctx context.Context, project *Project, source, target string) (*MergeRequest, error)
+
+// MockUpdateMergeRequest, if non-nil, will be called instead of
+// Client.UpdateMergeRequest
+var MockUpdateMergeRequest func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error)
