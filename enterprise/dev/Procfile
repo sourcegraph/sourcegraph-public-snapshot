@@ -19,7 +19,7 @@ keycloak: ./dev/auth-provider/keycloak.sh
 jaeger: ./dev/jaeger.sh
 docsite: ./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080
 prometheus: ./dev/prometheus.sh
-grafana: ./dev/grafana.sh
+#grafana: ./dev/grafana.sh
 postgres_exporter: ./dev/postgres_exporter.sh
 
 # Additional enterprise services

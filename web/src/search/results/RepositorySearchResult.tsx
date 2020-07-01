@@ -4,6 +4,7 @@ import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { ResultContainer } from '../../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { eventLogger } from '../../tracking/eventLogger'
+import { StrengthBadge } from '../../enterprise/insights/StrengthBadge'
 
 interface Props {
     /**
@@ -34,7 +35,7 @@ export const RepositorySearchResult: React.FunctionComponent<Props> = (props: Pr
                 />
                 {/* eslint-enable react/jsx-no-bind */}
                 <span className="repository-search-result__spacer" />
-                <small>Repository name match</small>
+                <StrengthBadge value={undefined} what="Code" className="d-block ml-2" />s
             </>
         }
     />

@@ -14,6 +14,7 @@ import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
+import { StrengthBadge } from '../../enterprise/insights/StrengthBadge'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -123,14 +124,19 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
                     element={<RepoHeaderBreadcrumbNavItem key="commits">Commits</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact' | 'afterElement'>>
                     className="repository-commits-page__content"
                     listClassName="list-group list-group-flush"
                     noun="commit"
                     pluralNoun="commits"
                     queryConnection={this.queryCommits}
                     nodeComponent={GitCommitNode}
-                    nodeComponentProps={{ className: 'list-group-item' }}
+                    nodeComponentProps={{
+                        className: 'list-group-item',
+                        afterElement: (
+                            <StrengthBadge value={undefined} what="Commit" className="d-block ml-2 py-2 mb-2" />
+                        ),
+                    }}
                     defaultFirst={20}
                     autoFocus={true}
                     history={this.props.history}
