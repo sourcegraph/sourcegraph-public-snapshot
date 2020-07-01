@@ -42,5 +42,5 @@ function dispatchSourcegraphEvents(): void {
 
 export const checkIsSourcegraph = (sourcegraphServerUrl: string): boolean =>
     window.location.origin === sourcegraphServerUrl ||
-    /^https?:\/\/(www.)?sourcegraph.com/.test(location.href) ||
+    /^https?:\/\/(www\.)?sourcegraph\.com/.test(location.href) ||
     !!document.querySelector('#sourcegraph-chrome-webstore-item')
