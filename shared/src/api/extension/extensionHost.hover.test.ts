@@ -7,7 +7,6 @@ import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
 import { Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { ExtensionDocuments } from './api/documents'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
 
 describe('mergeHoverResults', () => {
