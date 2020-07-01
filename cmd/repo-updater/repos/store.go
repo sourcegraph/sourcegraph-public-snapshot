@@ -28,7 +28,7 @@ type Store interface {
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
-
+	SetClonedRepos(ctx context.Context, repoNames ...string) error
 	ListAllRepoNames(context.Context) ([]api.RepoName, error)
 }
 
@@ -433,6 +433,39 @@ ORDER BY id ASC LIMIT %s
 func listAllRepoNamesQuery(cursor, limit int64) *sqlf.Query {
 	return sqlf.Sprintf(listAllRepoNamesQueryFmtstr, cursor, limit)
 }
+
+// SetClonedRepos updates cloned status for all repositories.
+// All repositories whose name is in repoNames will have their cloned column set to true
+// and every other repository will have it set to false.
+func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	names := make([]*sqlf.Query, len(repoNames))
+	for i, v := range repoNames {
+		names[i] = sqlf.Sprintf("%s", v)
+	}
+	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Join(names, ","))
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+const setClonedReposQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
+UPDATE
+  repo
+SET cloned = false
+WHERE cloned
+AND id NOT IN(
+  UPDATE
+    repo
+  SET cloned = true
+  WHERE NOT cloned
+  AND name IN (%s)
+  RETURNING id
+)
+`
 
 // a paginatedQuery returns a query with the given pagination
 // parameters
