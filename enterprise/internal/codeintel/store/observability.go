@@ -43,6 +43,7 @@ type ObservedStore struct {
 	updateCommitsOperation                  *observation.Operation
 	indexableRepositoriesOperation          *observation.Operation
 	updateIndexableRepositoryOperation      *observation.Operation
+	resetIndexableRepositoriesOperation     *observation.Operation
 	getIndexByIDOperation                   *observation.Operation
 	getIndexesOperation                     *observation.Operation
 	indexQueueSizeOperation                 *observation.Operation
@@ -227,6 +228,11 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"update_indexable_repository"},
 			Metrics:      metrics,
 		}),
+		resetIndexableRepositoriesOperation: observationContext.Operation(observation.Op{
+			Name:         "store.ResetIndexableRepositories",
+			MetricLabels: []string{"reset_indexable_repositories"},
+			Metrics:      metrics,
+		}),
 		getIndexByIDOperation: observationContext.Operation(observation.Op{
 			Name:         "store.GetIndexByID",
 			MetricLabels: []string{"get_index_by_id"},
@@ -312,6 +318,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		rollbackToSavepointOperation:            s.rollbackToSavepointOperation,
 		doneOperation:                           s.doneOperation,
 		getUploadByIDOperation:                  s.getUploadByIDOperation,
+		deleteUploadsWithoutRepositoryOperation: s.deleteUploadsWithoutRepositoryOperation,
 		getUploadsOperation:                     s.getUploadsOperation,
 		queueSizeOperation:                      s.queueSizeOperation,
 		insertUploadOperation:                   s.insertUploadOperation,
@@ -323,7 +330,6 @@ func (s *ObservedStore) wrap(other Store) Store {
 		requeueOperation:                        s.requeueOperation,
 		getStatesOperation:                      s.getStatesOperation,
 		deleteUploadByIDOperation:               s.deleteUploadByIDOperation,
-		deleteUploadsWithoutRepositoryOperation: s.deleteUploadsWithoutRepositoryOperation,
 		resetStalledOperation:                   s.resetStalledOperation,
 		getDumpByIDOperation:                    s.getDumpByIDOperation,
 		findClosestDumpsOperation:               s.findClosestDumpsOperation,
@@ -339,6 +345,7 @@ func (s *ObservedStore) wrap(other Store) Store {
 		updateCommitsOperation:                  s.updateCommitsOperation,
 		indexableRepositoriesOperation:          s.indexableRepositoriesOperation,
 		updateIndexableRepositoryOperation:      s.updateIndexableRepositoryOperation,
+		resetIndexableRepositoriesOperation:     s.resetIndexableRepositoriesOperation,
 		getIndexByIDOperation:                   s.getIndexByIDOperation,
 		getIndexesOperation:                     s.getIndexesOperation,
 		indexQueueSizeOperation:                 s.indexQueueSizeOperation,
@@ -593,10 +600,17 @@ func (s *ObservedStore) IndexableRepositories(ctx context.Context, opts Indexabl
 }
 
 // UpdateIndexableRepository calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) (err error) {
+func (s *ObservedStore) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) (err error) {
 	ctx, endObservation := s.updateIndexableRepositoryOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.UpdateIndexableRepository(ctx, indexableRepository)
+	return s.store.UpdateIndexableRepository(ctx, indexableRepository, now)
+}
+
+// ResetIndexableRepositories calls into the inner store and registers the observed results.
+func (s *ObservedStore) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) (err error) {
+	ctx, endObservation := s.resetIndexableRepositoriesOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.ResetIndexableRepositories(ctx, lastUpdatedBefore)
 }
 
 // GetIndexByID calls into the inner store and registers the observed results.

@@ -128,12 +128,13 @@ func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository store.In
 		return errors.Wrap(err, "store.QueueIndex")
 	}
 
-	now := time.Now()
-
-	if err := tx.UpdateIndexableRepository(ctx, store.UpdateableIndexableRepository{
+	now := time.Now().UTC()
+	update := store.UpdateableIndexableRepository{
 		RepositoryID:        indexableRepository.RepositoryID,
 		LastIndexEnqueuedAt: &now,
-	}); err != nil {
+	}
+
+	if err := tx.UpdateIndexableRepository(ctx, update, now); err != nil {
 		return errors.Wrap(err, "store.UpdateIndexableRepository")
 	}
 

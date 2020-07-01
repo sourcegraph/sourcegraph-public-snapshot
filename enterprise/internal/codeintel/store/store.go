@@ -135,7 +135,11 @@ type Store interface {
 
 	// UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 	// already marked as indexable, a new record will be created.
-	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error
+	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error
+
+	// ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
+	// since lastUpdatedBefore.
+	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 
 	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
