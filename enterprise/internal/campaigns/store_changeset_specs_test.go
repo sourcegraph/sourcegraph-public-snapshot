@@ -74,26 +74,30 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("NoLimit", func(t *testing.T) {
-			opts := ListChangesetSpecsOpts{}
-
-			ts, next, err := s.ListChangesetSpecs(ctx, opts)
-			if err != nil {
-				t.Fatal(err)
+			opts := []ListChangesetSpecsOpts{
+				{},          // Empty limit should return default limit
+				{Limit: -1}, // -1 should return all entries
 			}
 
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-			}
+			for _, o := range opts {
+				ts, next, err := s.ListChangesetSpecs(ctx, o)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			have, want := ts, changesetSpecs
-			if len(have) != len(want) {
-				t.Fatalf("listed %d changesetSpecs, want: %d", len(have), len(want))
-			}
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
-			}
+				have, want := ts, changesetSpecs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d changesetSpecs, want: %d", len(have), len(want))
+				}
 
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
@@ -125,7 +129,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 					}
 				}
 			}
-
 		})
 
 		t.Run("WithLimitAndCursor", func(t *testing.T) {

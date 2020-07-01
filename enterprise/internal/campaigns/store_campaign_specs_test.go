@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
@@ -21,10 +22,12 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 					Name:        "Foobar",
 					Description: "My description",
 					ChangesetTemplate: cmpgn.ChangesetTemplate{
-						Title:     "Hello there",
-						Body:      "This is the body",
-						Branch:    "my-branch",
-						Commit:    "d34db33f",
+						Title:  "Hello there",
+						Body:   "This is the body",
+						Branch: "my-branch",
+						Commit: campaigns.CommitTemplate{
+							Message: "commit message",
+						},
 						Published: false,
 					},
 				},
@@ -83,24 +86,29 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("NoLimit", func(t *testing.T) {
-			opts := ListCampaignSpecsOpts{}
-
-			ts, next, err := s.ListCampaignSpecs(ctx, opts)
-			if err != nil {
-				t.Fatal(err)
+			opts := []ListCampaignSpecsOpts{
+				{},          // Empty limit should return default limit
+				{Limit: -1}, // -1 should return all entries
 			}
 
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-			}
+			for _, o := range opts {
+				ts, next, err := s.ListCampaignSpecs(ctx, o)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			have, want := ts, campaignSpecs
-			if len(have) != len(want) {
-				t.Fatalf("listed %d campaignSpecs, want: %d", len(have), len(want))
-			}
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				have, want := ts, campaignSpecs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignSpecs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
 			}
 
 		})

@@ -222,7 +222,62 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 }
 
 func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.CampaignSpecResolver, error) {
-	return nil, errors.New("TODO: not implemented")
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignSpec", fmt.Sprintf("Namespace %s, Spec %q", args.Namespace, args.CampaignSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+
+	// 🚨 SECURITY: Only site admins may create campaign specs for now.
+	if !user.SiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
+	}
+
+	campaignSpec := &campaigns.CampaignSpec{
+		RawSpec: args.CampaignSpec,
+		UserID:  user.ID,
+	}
+
+	switch relay.UnmarshalKind(args.Namespace) {
+	case "User":
+		err = relay.UnmarshalSpec(args.Namespace, &campaignSpec.NamespaceUserID)
+	case "Org":
+		err = relay.UnmarshalSpec(args.Namespace, &campaignSpec.NamespaceOrgID)
+	default:
+		err = errors.Errorf("Invalid namespace %q", args.Namespace)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	var changesetSpecRandIDs []string
+	for _, graphqlID := range args.ChangesetSpecs {
+		randID, err := unmarshalChangesetSpecID(graphqlID)
+		if err != nil {
+			return nil, err
+		}
+		changesetSpecRandIDs = append(changesetSpecRandIDs, randID)
+	}
+
+	svc := ee.NewService(r.store, r.httpFactory)
+	err = svc.CreateCampaignSpec(ctx, campaignSpec, changesetSpecRandIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	specResolver := &campaignSpecResolver{
+		store:        r.store,
+		httpFactory:  r.httpFactory,
+		campaignSpec: campaignSpec,
+	}
+
+	return specResolver, nil
 }
 
 func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend.CreateChangesetSpecArgs) (graphqlbackend.ChangesetSpecResolver, error) {

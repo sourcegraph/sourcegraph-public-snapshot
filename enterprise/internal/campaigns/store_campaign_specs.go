@@ -243,7 +243,6 @@ var listCampaignSpecsQueryFmtstr = `
 SELECT ` + campaignSpecCols + ` FROM campaign_specs
 WHERE %s
 ORDER BY id ASC
-LIMIT %s
 `
 
 func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
@@ -252,14 +251,18 @@ func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
 	}
 	opts.Limit++
 
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
 
 	return sqlf.Sprintf(
-		listCampaignSpecsQueryFmtstr,
+		listCampaignSpecsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
-		opts.Limit,
 	)
 }
 

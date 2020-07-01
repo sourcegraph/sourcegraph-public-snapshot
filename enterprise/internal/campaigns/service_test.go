@@ -3,10 +3,12 @@ package campaigns
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -597,6 +599,97 @@ func TestService(t *testing.T) {
 		if have, want := fakeSource.ClosedChangesets[0].RepoID, changeset1.RepoID; have != want {
 			t.Fatalf("wrong changesets closed. want=%d, have=%d", want, have)
 		}
+	})
+
+	t.Run("CreateCampaignSpec", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
+		changesetSpecRandIDs := make([]string, 0, len(rs))
+		for _, r := range rs {
+			cs := &campaigns.ChangesetSpec{RepoID: r.ID, UserID: user.ID}
+			if err := store.CreateChangesetSpec(ctx, cs); err != nil {
+				t.Fatal(err)
+			}
+			changesetSpecs = append(changesetSpecs, cs)
+			changesetSpecRandIDs = append(changesetSpecRandIDs, cs.RandID)
+		}
+
+		t.Run("success", func(t *testing.T) {
+			spec := &campaigns.CampaignSpec{
+				UserID:          user.ID,
+				NamespaceUserID: user.ID,
+				RawSpec:         ct.TestRawCampaignSpec,
+			}
+
+			if err := svc.CreateCampaignSpec(ctx, spec, changesetSpecRandIDs); err != nil {
+				t.Fatal(err)
+			}
+
+			if spec.ID == 0 {
+				t.Fatalf("CampaignSpec ID is 0")
+			}
+
+			var wantFields campaigns.CampaignSpecFields
+			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+
+			for _, cs := range changesetSpecs {
+				cs2, err := store.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: cs.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := cs2.CampaignSpecID, spec.ID; have != want {
+					t.Fatalf("changesetSpec has wrong CampaignSpecID. want=%d, have=%d", want, have)
+				}
+			}
+		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			// Single repository filtered out by authzFilter
+			db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+				var filtered []*types.Repo
+				for _, r := range repos {
+					if r.ID == changesetSpecs[0].RepoID {
+						continue
+					}
+					filtered = append(filtered, r)
+				}
+				return filtered, nil
+			}
+			t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+			spec := &campaigns.CampaignSpec{
+				UserID:          user.ID,
+				NamespaceUserID: user.ID,
+				RawSpec:         ct.TestRawCampaignSpec,
+			}
+
+			if err := svc.CreateCampaignSpec(ctx, spec, changesetSpecRandIDs); !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+
+		})
+
+		t.Run("invalid changesetspec id", func(t *testing.T) {
+			spec := &campaigns.CampaignSpec{
+				UserID:          user.ID,
+				NamespaceUserID: user.ID,
+				RawSpec:         ct.TestRawCampaignSpec,
+			}
+
+			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
+
+			if err := svc.CreateCampaignSpec(ctx, spec, containsInvalidID); !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+		})
 	})
 }
 

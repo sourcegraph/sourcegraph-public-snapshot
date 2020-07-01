@@ -1544,6 +1544,8 @@ type ChangesetSpec struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	ReconciledAt time.Time
 }
 
 // Clone returns a clone of a ChangesetSpec.
@@ -1553,7 +1555,6 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 }
 
 type ChangesetSpecFields struct {
-	// TODO: Is this a api.RepoID or a graphql.ID?
 	RepoID  graphql.ID   `json:"repoID"`
 	Rev     api.CommitID `json:"rev"`
 	BaseRef string       `json:"baseRef"`

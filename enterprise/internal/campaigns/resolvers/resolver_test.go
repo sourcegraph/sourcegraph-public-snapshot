@@ -843,3 +843,116 @@ func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.Bitbu
 
 	return repos
 }
+
+func TestCreateCampaignSpec(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "create-campaign-spec", true)
+
+	store := ee.NewStore(dbconn.Global)
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	changesetSpec := &campaigns.ChangesetSpec{
+		Spec: campaigns.ChangesetSpecFields{
+			RepoID: graphqlbackend.MarshalRepositoryID(repo.ID),
+		},
+		RepoID: repo.ID,
+		UserID: userID,
+	}
+	if err := store.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+
+	}
+
+	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	changesetSpecID := marshalChangesetSpecRandID(changesetSpec.RandID)
+	rawSpec := ct.TestRawCampaignSpec
+
+	input := map[string]interface{}{
+		"namespace":      userApiID,
+		"campaignSpec":   rawSpec,
+		"changesetSpecs": []graphql.ID{changesetSpecID},
+	}
+
+	var response struct{ CreateCampaignSpec apitest.CampaignSpec }
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaignSpec)
+
+	want := apitest.CampaignSpec{
+		OriginalInput: rawSpec,
+		ParsedInput: apitest.CampaignSpecParsedInput{
+			Name:        "The name",
+			Description: "My description",
+			ChangesetTemplate: apitest.ChangesetTemplate{
+				Title:  "Hello World",
+				Body:   "My first campaign!",
+				Branch: "hello-world",
+				Commit: apitest.CommitTemplate{
+					Message: "Append Hello World to all README.md files",
+				},
+				Published: false,
+			},
+		},
+		PreviewURL: "/campaigns/new?spec=",
+		Namespace:  apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
+		Creator:    apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
+		ChangesetSpecs: []apitest.ChangesetSpec{
+			{ID: string(changesetSpecID)},
+		},
+	}
+	have := response.CreateCampaignSpec
+
+	want.ID = have.ID
+	want.PreviewURL = want.PreviewURL + want.ID
+	want.CreatedAt = have.CreatedAt
+	want.ExpiresAt = have.ExpiresAt
+
+	if diff := cmp.Diff(want, response.CreateCampaignSpec); diff != "" {
+		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	}
+}
+
+const mutationCreateCampaignSpec = `
+fragment u on User { id, databaseID, siteAdmin }
+fragment o on Org  { id, name }
+
+mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
+  createCampaignSpec(namespace: $namespace, campaignSpec: $campaignSpec, changesetSpecs: $changesetSpecs) {
+    id
+    originalInput
+    parsedInput
+
+    creator  { ...u }
+    namespace {
+      ... on User { ...u }
+      ... on Org  { ...o }
+    }
+
+    previewURL
+
+	changesetSpecs {
+	  id
+	}
+
+    createdAt
+    expiresAt
+  }
+}
+`

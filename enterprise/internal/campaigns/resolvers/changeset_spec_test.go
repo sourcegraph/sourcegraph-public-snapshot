@@ -25,7 +25,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "campaign-spec-by-id", false)
+	userID := insertTestUser(t, dbconn.Global, "changeset-spec-by-id", false)
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
@@ -34,13 +34,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}
 
 	spec := &campaigns.ChangesetSpec{
-		ID:      0,
-		RawSpec: `{"name": "Foobar", "description": "My description"}`,
 		Spec: campaigns.ChangesetSpecFields{
-			RepoID:  graphqlbackend.MarshalRepositoryID(repo.ID),
-			Rev:     "d34db33f",
-			BaseRef: "refs/heads/master",
-			Diff:    "+-",
+			RepoID: graphqlbackend.MarshalRepositoryID(repo.ID),
 		},
 		RepoID: repo.ID,
 		UserID: userID,

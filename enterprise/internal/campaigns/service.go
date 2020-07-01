@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -101,6 +102,94 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) err
 
 	return nil
 }
+
+// CreateCampaignSpec creates the CampaignSpec.
+func (s *Service) CreateCampaignSpec(
+	ctx context.Context,
+	c *campaigns.CampaignSpec,
+	changesetSpecRandIDs []string,
+) (err error) {
+	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("User %d", c.UserID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := ListChangesetSpecsOpts{Limit: -1, RandIDs: changesetSpecRandIDs}
+	cs, _, err := s.store.ListChangesetSpecs(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(cs))
+	for _, c := range cs {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return err
+	}
+
+	byRandID := make(map[string]*campaigns.ChangesetSpec, len(cs))
+	for _, changesetSpec := range cs {
+		// 🚨 SECURITY: We return an error if the user doesn't have access to one
+		// of the repositories associated with a ChangesetSpec.
+		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
+			return &db.RepoNotFoundErr{ID: changesetSpec.RepoID}
+		}
+		byRandID[changesetSpec.RandID] = changesetSpec
+	}
+
+	// Check if a changesetSpec was not found
+	for _, randID := range changesetSpecRandIDs {
+		if _, ok := byRandID[randID]; !ok {
+			return &changesetSpecNotFoundErr{RandID: randID}
+		}
+	}
+
+	// TODO: Handle YAML
+	if err := json.Unmarshal([]byte(c.RawSpec), &c.Spec); err != nil {
+		return err
+	}
+	// TODO: Validate that c.Spec is valid
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	if err := tx.CreateCampaignSpec(ctx, c); err != nil {
+		return err
+	}
+
+	for _, changesetSpec := range cs {
+		changesetSpec.CampaignSpecID = c.ID
+
+		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// changesetSpecNotFoundErr is returned by CreateCampaignSpec if a
+// ChangesetSpec with the given RandID doesn't exist.
+// It fulfills the interface required by errcode.IsNotFound.
+type changesetSpecNotFoundErr struct {
+	RandID string
+}
+
+func (e *changesetSpecNotFoundErr) Error() string {
+	if e.RandID != "" {
+		return fmt.Sprintf("changesetSpec not found: id=%s", e.RandID)
+	}
+	return "changesetSpec not found"
+}
+
+func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
 // ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
 // PatchSetID was specified but the PatchSet does not have any

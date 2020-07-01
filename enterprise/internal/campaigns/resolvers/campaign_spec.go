@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -46,8 +45,23 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 	return graphqlbackend.JSONValue{Value: r.campaignSpec.Spec}, nil
 }
 
-func (r *campaignSpecResolver) ChangesetSpecs() ([]graphqlbackend.ChangesetSpecResolver, error) {
-	return []graphqlbackend.ChangesetSpecResolver{}, errors.New("TODO: not implemented")
+func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context) ([]graphqlbackend.ChangesetSpecResolver, error) {
+	opts := ee.ListChangesetSpecsOpts{Limit: -1, CampaignSpecID: r.campaignSpec.ID}
+	cs, _, err := r.store.ListChangesetSpecs(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(cs))
+	for _, c := range cs {
+		resolvers = append(resolvers, &changesetSpecResolver{
+			store:         r.store,
+			httpFactory:   r.httpFactory,
+			changesetSpec: c,
+		})
+	}
+
+	return resolvers, nil
 }
 
 func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {

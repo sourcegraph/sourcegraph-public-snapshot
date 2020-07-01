@@ -29,6 +29,9 @@ type changesetSpecResolver struct {
 	changesetSpec *campaigns.ChangesetSpec
 }
 
+// TODO: This is a hack, see docstring in graphqlbackend.ChangesetSpecResolver
+func (r *changesetSpecResolver) OnlyChangesetSpec() bool { return true }
+
 func (r *changesetSpecResolver) ID() graphql.ID {
 	// 🚨 SECURITY: This needs to be the RandID! We can't expose the
 	// sequential, guessable ID.

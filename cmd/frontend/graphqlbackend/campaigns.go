@@ -88,7 +88,7 @@ type CampaignSpecResolver interface {
 
 	OriginalInput() (string, error)
 	ParsedInput() (JSONValue, error)
-	ChangesetSpecs() ([]ChangesetSpecResolver, error)
+	ChangesetSpecs(context.Context) ([]ChangesetSpecResolver, error)
 
 	Creator(context.Context) (*UserResolver, error)
 	CreatedAt() *DateTime
@@ -104,6 +104,11 @@ type ChangesetSpecResolver interface {
 
 	// TODO: More fields, see PR
 	ExpiresAt() *DateTime
+
+	// TODO: This is a hack so that a CampaignSpecResolver cannot be cast into
+	// this interface in `(NodeResolver).ToChangesetSpec`
+	// This should be removed as soon as this resolver gets more methods.
+	OnlyChangesetSpec() bool
 }
 
 type CampaignDeltaResolver interface {

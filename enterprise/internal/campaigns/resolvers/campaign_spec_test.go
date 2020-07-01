@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -26,15 +27,17 @@ func TestCampaignSpecResolver(t *testing.T) {
 	userID := insertTestUser(t, dbconn.Global, "campaign-spec-by-id", false)
 
 	spec := &campaigns.CampaignSpec{
-		RawSpec: `{"name": "Foobar", "description": "My description"}`,
+		RawSpec: ct.TestRawCampaignSpec,
 		Spec: campaigns.CampaignSpecFields{
 			Name:        "Foobar",
 			Description: "My description",
 			ChangesetTemplate: campaigns.ChangesetTemplate{
-				Title:     "Hello there",
-				Body:      "This is the body",
-				Branch:    "my-branch",
-				Commit:    "d34db33f",
+				Title:  "Hello there",
+				Body:   "This is the body",
+				Branch: "my-branch",
+				Commit: campaigns.CommitTemplate{
+					Message: "Add hello world",
+				},
 				Published: false,
 			},
 		},
@@ -64,10 +67,12 @@ func TestCampaignSpecResolver(t *testing.T) {
 			Name:        spec.Spec.Name,
 			Description: spec.Spec.Description,
 			ChangesetTemplate: apitest.ChangesetTemplate{
-				Title:     spec.Spec.ChangesetTemplate.Title,
-				Body:      spec.Spec.ChangesetTemplate.Body,
-				Branch:    spec.Spec.ChangesetTemplate.Branch,
-				Commit:    spec.Spec.ChangesetTemplate.Commit,
+				Title:  spec.Spec.ChangesetTemplate.Title,
+				Body:   spec.Spec.ChangesetTemplate.Body,
+				Branch: spec.Spec.ChangesetTemplate.Branch,
+				Commit: apitest.CommitTemplate{
+					Message: spec.Spec.ChangesetTemplate.Commit.Message,
+				},
 				Published: spec.Spec.ChangesetTemplate.Published,
 			},
 		},

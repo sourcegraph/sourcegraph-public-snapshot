@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
@@ -237,7 +238,6 @@ var listChangesetSpecsQueryFmtstr = `
 SELECT ` + changesetSpecCols + ` FROM changeset_specs
 WHERE %s
 ORDER BY id ASC
-LIMIT %s
 `
 
 func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
@@ -245,6 +245,11 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 		opts.Limit = defaultListLimit
 	}
 	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
@@ -265,9 +270,8 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetSpecsQueryFmtstr,
+		listChangesetSpecsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
-		opts.Limit,
 	)
 }
 

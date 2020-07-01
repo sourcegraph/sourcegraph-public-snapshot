@@ -186,11 +186,15 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
+type CommitTemplate struct {
+	Message string
+}
+
 type ChangesetTemplate struct {
 	Title     string
 	Body      string
 	Branch    string
-	Commit    string
+	Commit    CommitTemplate
 	Published bool
 }
 
@@ -211,6 +215,8 @@ type CampaignSpec struct {
 
 	Namespace UserOrg
 	Creator   User
+
+	ChangesetSpecs []ChangesetSpec
 
 	CreatedAt *graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
