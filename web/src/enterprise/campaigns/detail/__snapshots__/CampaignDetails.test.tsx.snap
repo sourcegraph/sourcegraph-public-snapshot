@@ -290,7 +290,6 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
   <PatchSetPatches
     campaignUpdates="[Subject]"
     changesetUpdates="[Subject]"
-    enablePublishing={false}
     history="[History]"
     isLightTheme={true}
     location="[Location path=/?patchSet=p]"
