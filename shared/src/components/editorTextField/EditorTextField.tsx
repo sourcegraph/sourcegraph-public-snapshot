@@ -1,11 +1,10 @@
 import { isEqual } from 'lodash'
-import React, { createRef, TextareaHTMLAttributes, useEffect, useState } from 'react'
+import React from 'react'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { CodeEditorData, ViewerId, ViewerService, observeEditorAndModel } from '../../api/client/services/viewerService'
 import { ModelService, TextModel } from '../../api/client/services/modelService'
 import { offsetToPosition, positionToOffset } from '../../api/client/types/textDocument'
-import { ExtensionsControllerProps } from '../../extensions/controller'
 import { isDefined } from '../../util/types'
 
 /**
@@ -102,97 +101,4 @@ export const EditorTextFieldUtils = {
 
         return subscriptions
     },
-}
-
-interface Props
-    extends ExtensionsControllerProps,
-        Pick<
-            TextareaHTMLAttributes<HTMLTextAreaElement>,
-            'className' | 'placeholder' | 'autoFocus' | 'onKeyDown' | 'rows' | 'spellCheck' | 'disabled' | 'style'
-        > {
-    /**
-     * The ID of the editor that this component is backed by.
-     */
-    viewerId: ViewerId['viewerId']
-
-    /**
-     * The URI of the model that this component is backed by.
-     */
-    modelUri: TextModel['uri']
-
-    /**
-     * Called when the textarea value (editor model content) changes.
-     */
-    onValueChange?: (value: string) => void
-
-    /**
-     * A ref to the HTMLTextAreaElement.
-     */
-    textAreaRef?: React.RefObject<HTMLTextAreaElement>
-}
-
-/**
- * An HTML textarea that is backed by (and 2-way-synced with) a {@link sourcegraph.CodeEditor}.
- */
-export const EditorTextField: React.FunctionComponent<Props> = ({
-    viewerId,
-    modelUri,
-    onValueChange,
-    textAreaRef: _textAreaReference,
-    className,
-    extensionsController: {
-        services: { viewer: viewerService, model: modelService },
-    },
-    onKeyDown: parentOnKeyDown,
-    ...textAreaProps
-}: Props) => {
-    // The new, preferred React hooks API requires use of lambdas.
-    //
-
-    const textAreaReference = _textAreaReference || createRef<HTMLTextAreaElement>()
-
-    const [value, setValue] = useState<string>()
-    useEffect(() => {
-        const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
-            viewerService,
-            modelService,
-            { viewerId },
-            text => {
-                setValue(text)
-
-                // Forward changes.
-                if (onValueChange) {
-                    onValueChange(text)
-                }
-            },
-            textAreaReference
-        )
-        return () => subscription.unsubscribe()
-    }, [viewerId, viewerService, modelService, onValueChange, textAreaReference])
-
-    return (
-        <textarea
-            className={className}
-            value={value}
-            onInput={event => {
-                EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, event.currentTarget)
-                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, event.currentTarget)
-            }}
-            // Listen on keyup and keydown to get the cursor position when the cursor moves due to
-            // the arrow keys. For a single keypress, keyup is used. If the user holds down the
-            // arrow key, keydown lets us get the key repeat for (most) intermediate positions so we
-            // can be more responsive to user input instead of waiting for keyup.
-            onKeyDown={event => {
-                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, event.currentTarget)
-                if (parentOnKeyDown && !event.isPropagationStopped()) {
-                    parentOnKeyDown(event)
-                }
-            }}
-            onKeyUp={event => {
-                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, { viewerId }, event.currentTarget)
-            }}
-            ref={textAreaReference}
-            {...textAreaProps}
-        />
-    )
 }

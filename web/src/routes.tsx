@@ -145,10 +145,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         },
     },
     {
-        path: '/snippets',
-        render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
-    },
-    {
         path: '/insights',
         exact: true,
         render: lazyComponent(() => import('./insights/InsightsPage'), 'InsightsPage'),
