@@ -42,7 +42,7 @@ import { isErrorLike } from '../../../../shared/src/util/errors'
 import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
 import { EMPTY } from 'rxjs'
 import classNames from 'classnames'
-import { repogroupList } from '../../repogroups/RepogroupList'
+import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageConfig'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -70,30 +70,6 @@ interface Props
     authRequired?: boolean
     showCampaigns: boolean
 }
-
-const languages: { name: string; filterName: string }[] = [
-    { name: 'C', filterName: 'c' },
-    { name: 'C++', filterName: 'cpp' },
-    { name: 'C#', filterName: 'csharp' },
-    { name: 'CSS', filterName: 'css' },
-    { name: 'Go', filterName: 'go' },
-    { name: 'Graphql', filterName: 'graphql' },
-    { name: 'Haskell', filterName: 'haskell' },
-    { name: 'Html', filterName: 'html' },
-    { name: 'Java', filterName: 'java' },
-    { name: 'Javascript', filterName: 'javascript' },
-    { name: 'Json', filterName: 'json' },
-    { name: 'Lua', filterName: 'lua' },
-    { name: 'Markdown', filterName: 'markdown' },
-    { name: 'Php', filterName: 'php' },
-    { name: 'Powershell', filterName: 'powershell' },
-    { name: 'Python', filterName: 'python' },
-    { name: 'R', filterName: 'r' },
-    { name: 'Ruby', filterName: 'ruby' },
-    { name: 'Sass', filterName: 'sass' },
-    { name: 'Swift', filterName: 'swift' },
-    { name: 'Typescript', filterName: 't  ypescript' },
-]
 
 /**
  * The search page
@@ -311,7 +287,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </span>
                             </div>
                             <div className="search-page__lang-list">
-                                {languages.map(language => (
+                                {homepageLanguageList.map(language => (
                                     <Link
                                         className="text-monospace search-page__web-link"
                                         to={`/search?q=lang:${language.filterName}`}
