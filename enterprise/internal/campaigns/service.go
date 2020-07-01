@@ -1123,7 +1123,7 @@ func computeCampaignUpdateDiff(
 	}
 	// 🚨 SECURITY: Check which repositories the user has access to. If the
 	// user doesn't have access, don't create/delete/update anything.
-	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	accessibleRepos, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1133,20 +1133,17 @@ func computeCampaignUpdateDiff(
 		// return an error instead of skipping patches, so we don't end up with
 		// an unfixable state (i.e. unpublished patch + changeset for same
 		// repo).
-		if _, ok := accessibleRepoIDs[j.RepoID]; !ok {
+		repo, ok := accessibleRepos[j.RepoID]
+		if !ok {
 			return nil, &db.RepoNotFoundErr{ID: j.RepoID}
+		}
+		if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
+			continue
 		}
 
 		if group, ok := byRepoID[j.RepoID]; ok {
 			group.newPatch = j
 		} else {
-			repo, err := db.Repos.Get(ctx, j.RepoID)
-			if err != nil {
-				return nil, err
-			}
-			if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
-				continue
-			}
 			// If we have new Patches that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
 			diff.Create = append(diff.Create, &campaigns.ChangesetJob{
@@ -1159,7 +1156,7 @@ func computeCampaignUpdateDiff(
 	for repoID, group := range byRepoID {
 		// If the user is lacking permissions for this repository we don't
 		// delete/update the changeset.
-		if _, ok := accessibleRepoIDs[repoID]; !ok {
+		if _, ok := accessibleRepos[repoID]; !ok {
 			continue
 		}
 
