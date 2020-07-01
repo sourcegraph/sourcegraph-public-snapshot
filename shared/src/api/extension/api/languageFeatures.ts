@@ -9,7 +9,6 @@ import {
     Location,
     LocationProvider,
     ReferenceProvider,
-    DocumentHighlightProvider,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
@@ -88,26 +87,6 @@ export class ExtensionLanguageFeatures {
         )
         return syncSubscription(
             this.proxy.$registerCompletionItemProvider(fromDocumentSelector(selector), providerFunction)
-        )
-    }
-
-    public registerDocumentHighlightProvider(
-        selector: DocumentSelector,
-        provider: DocumentHighlightProvider
-    ): Unsubscribable {
-        const providerFunction: comlink.Local<
-            Parameters<ClientLanguageFeaturesAPI['$registerDocumentHighlightProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
-            toProxyableSubscribable(
-                provider.provideDocumentHighlights(
-                    await this.documents.getSync(textDocument.uri),
-                    toPosition(position)
-                ),
-                items => items
-            )
-        )
-        return syncSubscription(
-            this.proxy.$registerDocumentHighlightProvider(fromDocumentSelector(selector), providerFunction)
         )
     }
 }

@@ -3,7 +3,6 @@ import { ReferenceParams } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CommandRegistry } from './services/command'
 import { CompletionItemProviderRegistry } from './services/completion'
-import { DocumentHighlightProviderRegistry } from './services/documentHighlight'
 import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { createViewerService } from './services/viewerService'
@@ -59,6 +58,5 @@ export class Services {
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
-    public readonly documentHighlights = new DocumentHighlightProviderRegistry()
     public readonly view = createViewService()
 }
