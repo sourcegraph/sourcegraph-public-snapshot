@@ -46,6 +46,7 @@ export interface FlatExtHostAPI {
 
     // Used for BlobPanel
     getActiveCodeEditorPosition: () => ProxySubscribable<TextDocumentPositionParams | null>
+    getDecorations: (viewerId: ViewerId) => ProxySubscribable<clientType.TextDocumentDecoration[]>
 
     /**
      * Sets the selections for a CodeEditor.

@@ -144,7 +144,7 @@ function createExtensionAPI(
         commands,
         search,
         languages: { registerHoverProvider },
-    } = initNewExtensionAPI(proxy, initData.initialSettings, proxy.codeEditor)
+    } = initNewExtensionAPI(proxy, initData.initialSettings)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {

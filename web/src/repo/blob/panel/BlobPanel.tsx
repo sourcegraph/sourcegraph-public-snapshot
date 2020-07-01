@@ -3,7 +3,6 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Subject, Subscription, Observable, of } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/viewerService'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
     ProvidePanelViewSignature,
@@ -18,7 +17,7 @@ import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { wrapRemoteObservable, finallyReleaseProxy } from '../../../../../shared/src/api/client/api/common'
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import * as clientType from '@sourcegraph/extension-api-types'
@@ -97,7 +96,11 @@ export class BlobPanel extends React.PureComponent<Props> {
             registrationOptions: { id, container: ContributableViewContainer.Panel },
             provider: from(this.props.extensionsController.extensionHostAPI).pipe(
                 // Get TextDocumentPositionParams from selection of active viewer
-                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
+                switchMap(extensionHostAPI =>
+                    wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition(), this.subscriptions).pipe(
+                        finallyReleaseProxy()
+                    )
+                ),
                 map(textDocumentPositionParameters => {
                     if (!textDocumentPositionParameters) {
                         return null

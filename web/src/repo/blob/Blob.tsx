@@ -4,7 +4,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
-import { combineLatest, fromEvent, merge, Observable, Subject, Subscription, from } from 'rxjs'
+import { combineLatest, fromEvent, merge, Observable, Subject, Subscription, from, concat, of } from 'rxjs'
 import {
     catchError,
     distinctUntilChanged,
@@ -40,12 +40,14 @@ import {
     RevisionSpec,
     toPositionOrRangeHash,
     toURIWithPath,
+    makeRepoURI,
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
+import { wrapRemoteObservable, finallyReleaseProxy } from '../../../../shared/src/api/client/api/common'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
@@ -304,19 +306,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             })
         )
 
-        /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
-        const fileSpec: Observable<
-            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
-        > = this.componentUpdates.pipe(
-            map(props =>
-                pick(props, 'repoName', 'revision', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')
-            ),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
-            share()
-        )
-
         // Register a viewer in the extension API
-        const editor = from(props.extensionsController.extensionHostAPI).pipe(
+        const editorId = from(props.extensionsController.extensionHostAPI).pipe(
             mergeMap(async extensionHostAPI => {
                 const uri = toURIWithPath(props)
                 await extensionHostAPI.addTextDocumentIfNotExists({
@@ -334,11 +325,10 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 return editor
             })
         )
-        this.subscriptions.add(editor.subscribe())
 
         // Update selections as they change
         this.subscriptions.add(
-            combineLatest([editor, locationPositions])
+            combineLatest([editorId, locationPositions])
                 .pipe(
                     withLatestFrom(this.props.extensionsController.extensionHostAPI),
                     concatMap(async ([[editor, position], extensionHostAPI]) => {
@@ -349,21 +339,14 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         /** Decorations */
-        let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | null> = fileSpec.pipe(
-            switchMap(model => {
-                const modelChanged = !isEqual(model, lastModel)
-                lastModel = model // record so we can compute modelChanged
-
-                // Only clear decorations if the model changed. If only the extensions changed, keep
-                // the old decorations until the new ones are available, to avoid UI jitter.
-                return merge(
-                    modelChanged ? [null] : [],
-                    this.props.extensionsController.services.textDocumentDecoration.getDecorations({
-                        uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
-                    })
+        const decorations: Observable<TextDocumentDecoration[] | null> = editorId.pipe(
+            withLatestFrom(this.props.extensionsController.extensionHostAPI),
+            switchMap(([editorId, extensionHostAPI]) =>
+                concat(
+                    [null],
+                    wrapRemoteObservable(extensionHostAPI.getDecorations(editorId)).pipe(finallyReleaseProxy())
                 )
-            }),
+            ),
             share()
         )
         this.subscriptions.add(
@@ -377,12 +360,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(
             combineLatest([
                 decorations.pipe(
-                    map(decorations => decorations || []),
+                    map(decorations => decorations ?? []),
                     catchError(error => {
                         console.error(error)
 
                         // Treat decorations error as empty decorations.
-                        return [[] as TextDocumentDecoration[]]
+                        return of<TextDocumentDecoration[]>([])
                     })
                 ),
                 this.codeViewElements,

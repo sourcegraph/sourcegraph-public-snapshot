@@ -1,9 +1,8 @@
-import { Remote, ProxyMarked, proxyMarker } from 'comlink'
+import { ProxyMarked, proxyMarker } from 'comlink'
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Observable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { createDecorationType } from './decorations'
 import { ExtensionDocument } from './textDocument'
 import { CodeEditorData, ViewerId } from '../../viewerTypes'
@@ -33,11 +32,7 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
     /** The URI of this editor's document. */
     public readonly resource: string
 
-    constructor(
-        data: CodeEditorData & ViewerId,
-        private proxy: Remote<ClientCodeEditorAPI>,
-        public document: ExtensionDocument
-    ) {
+    constructor(data: CodeEditorData & ViewerId, public document: ExtensionDocument) {
         this.resource = data.resource
         this.viewerId = data.viewerId
         this.update(data)
@@ -55,6 +50,13 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         return this.selectionsChanges.value
     }
 
+    private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
+
+    private _mergedDecorations = new BehaviorSubject<clientType.TextDocumentDecoration[]>([])
+    public get mergedDecorations(): Observable<clientType.TextDocumentDecoration[]> {
+        return this._mergedDecorations
+    }
+
     public setDecorations(
         decorationType: sourcegraph.TextDocumentDecorationType | null,
         decorations: sourcegraph.TextDocumentDecoration[]
@@ -62,11 +64,10 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         // Backcompat: extensions developed against an older version of the API
         // may not supply a decorationType
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.proxy.$setDecorations(
-            this.resource,
-            decorationType.key,
-            decorations.map(fromTextDocumentDecoration).filter(decoration => !isDecorationEmpty(decoration))
+        // Replace previous decorations for this decorationType
+        this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
+        this._mergedDecorations.next(
+            [...this._decorationsByType.values()].flat().filter(decoration => !isDecorationEmpty(decoration))
         )
     }
 

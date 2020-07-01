@@ -4,7 +4,6 @@ import { createContextService } from './context/contextService'
 import { CommandRegistry } from './services/command'
 import { CompletionItemProviderRegistry } from './services/completion'
 import { ContributionRegistry } from './services/contribution'
-import { TextDocumentDecorationProviderRegistry } from './services/decoration'
 import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
 import { NotificationsService } from './services/notifications'
@@ -45,7 +44,6 @@ export class Services {
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
-    public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly view = createViewService()

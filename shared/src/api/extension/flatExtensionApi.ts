@@ -17,11 +17,10 @@ import { Hover } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly } from '../../util/types'
-import { ViewerUpdate, ViewerId, ExtensionViewer } from '../viewerTypes'
+import { ViewerId, ExtensionViewer } from '../viewerTypes'
 import { ReferenceCounter } from '../../util/ReferenceCounter'
 import { ExtensionDocument } from './api/textDocument'
 import { ExtensionCodeEditor } from './api/codeEditor'
-import { ClientCodeEditorAPI } from '../client/api/codeEditor'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
 
 /**
@@ -71,6 +70,15 @@ class ViewerNotFoundError extends Error {
     }
 }
 
+function assertViewerType<T extends ExtensionViewer['type']>(
+    viewer: ExtensionViewer,
+    type: T
+): asserts viewer is ExtensionViewer & { type: T } {
+    if (viewer.type !== type) {
+        throw new Error(`Viewer ID ${viewer.viewerId} is type ${viewer.type}, expected ${type}`)
+    }
+}
+
 /**
  * Holds internally ExtState and manages communication with the Client
  * Returns the initialized public extension API pieces ready for consumption and the internal extension host API ready to be exposed to the main thread
@@ -80,8 +88,7 @@ class ViewerNotFoundError extends Error {
  */
 export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
-    initialSettings: Readonly<SettingsCascade<object>>,
-    codeEditorAPI: Remote<ClientCodeEditorAPI>
+    initialSettings: Readonly<SettingsCascade<object>>
 ): InitResult => {
     const state: ExtState = {
         roots: [],
@@ -212,7 +219,7 @@ export const initNewExtensionAPI = (
             switch (viewerData.type) {
                 case 'CodeEditor': {
                     const textDocument = getTextDocument(viewerData.resource)
-                    viewComponent = new ExtensionCodeEditor({ ...viewerData, viewerId }, codeEditorAPI, textDocument)
+                    viewComponent = new ExtensionCodeEditor({ ...viewerData, viewerId }, textDocument)
                     break
                 }
                 case 'DirectoryViewer': {
@@ -271,10 +278,13 @@ export const initNewExtensionAPI = (
             ),
         setEditorSelections: ({ viewerId }, selections) => {
             const viewer = getViewer(viewerId)
-            if (viewer.type !== 'CodeEditor') {
-                throw new Error(`Editor ID ${viewerId} is type ${String(viewer.type)}, expected CodeEditor`)
-            }
+            assertViewerType(viewer, 'CodeEditor')
             viewer.update({ selections })
+        },
+        getDecorations: ({ viewerId }) => {
+            const viewer = getViewer(viewerId)
+            assertViewerType(viewer, 'CodeEditor')
+            return proxySubscribable(viewer.mergedDecorations)
         },
 
         // Text documents

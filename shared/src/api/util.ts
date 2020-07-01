@@ -104,6 +104,7 @@ export const noopFlatExtensionHostAPI: FlatExtHostAPI = {
     removeViewer: noop,
     setEditorSelections: noop,
     getActiveCodeEditorPosition: () => proxySubscribable(EMPTY),
+    getDecorations: () => proxySubscribable(of([])),
     // Languages
     getHover: () => proxySubscribable(of({ isLoading: false, result: null })),
     getDefinitions: () => proxySubscribable(of({ isLoading: false, result: [] })),
