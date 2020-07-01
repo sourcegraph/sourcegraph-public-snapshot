@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"math"
 	"net/url"
 	"regexp/syntax"
 	"strings"
@@ -256,15 +255,6 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		defer cancel()
 	}
 
-	// If the query has a `repohasfile` or `-repohasfile` flag, we want to construct a new reposet based
-	// on the values passed in to the flag.
-	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, repoSet)
-	if err != nil {
-		return nil, false, nil, err
-	}
-	finalQuery = zoektquery.NewAnd(newRepoSet, queryExceptRepos)
-	tr.LazyPrintf("after repohasfile filters: nRepos=%d query=%v", len(newRepoSet.Set), finalQuery)
-
 	t0 := time.Now()
 	resp, err := args.Zoekt.Client.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
@@ -427,86 +417,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	return symbols
 }
 
-// createNewRepoSetWithRepoHasFileInputs mutates repoSet such that it accounts
-// for the `repohasfile` and `-repohasfile` flags that may have been passed in
-// the query. As a convenience it returns the mutated RepoSet.
-func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.TextPatternInfo, searcher zoekt.Searcher, repoSet *zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
-	// Shortcut if we have no repos to search
-	if len(repoSet.Set) == 0 {
-		return repoSet, nil
-	}
-
-	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
-	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
-
-	// Construct queries which search for repos containing the files passed into `repohasfile`
-	filesToIncludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustInclude)
-	if err != nil {
-		return nil, err
-	}
-
-	newSearchOpts := zoekt.SearchOptions{
-		ShardMaxMatchCount:     1,
-		TotalMaxMatchCount:     math.MaxInt32,
-		ShardMaxImportantMatch: 1,
-		TotalMaxImportantMatch: math.MaxInt32,
-		MaxDocDisplayCount:     0,
-	}
-	newSearchOpts.SetDefaults()
-
-	if flagIsInQuery {
-		for _, q := range filesToIncludeQueries {
-			// Shortcut if we have no repos to search
-			if len(repoSet.Set) == 0 {
-				return repoSet, nil
-			}
-
-			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
-			includeResp, err := searcher.Search(ctx, zoektquery.NewAnd(repoSet, q), &newSearchOpts)
-			if err != nil {
-				return nil, errors.Wrapf(err, "searching for %v", q.String())
-			}
-
-			newRepoSet := make(map[string]bool, len(includeResp.RepoURLs))
-			for repoURL := range includeResp.RepoURLs {
-				newRepoSet[repoURL] = true
-			}
-
-			// We want repoSet = repoSet intersect newRepoSet. but newRepoSet
-			// is a subset, so we can just set repoSet = newRepoSet.
-			repoSet.Set = newRepoSet
-		}
-	}
-
-	// Construct queries which search for repos containing the files passed into `-repohasfile`
-	filesToExcludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustExclude)
-	if err != nil {
-		return nil, err
-	}
-
-	if negatedFlagIsInQuery {
-		for _, q := range filesToExcludeQueries {
-			// Shortcut if we have no repos to search
-			if len(repoSet.Set) == 0 {
-				return repoSet, nil
-			}
-
-			excludeResp, err := searcher.Search(ctx, zoektquery.NewAnd(repoSet, q), &newSearchOpts)
-			if err != nil {
-				return nil, err
-			}
-			for repoURL := range excludeResp.RepoURLs {
-				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
-				if repoSet.Set[repoURL] {
-					delete(repoSet.Set, repoURL)
-				}
-			}
-		}
-	}
-
-	return repoSet, nil
-}
-
 func noOpAnyChar(re *syntax.Regexp) {
 	if re.Op == syntax.OpAnyChar {
 		re.Op = syntax.OpAnyCharNotNL
@@ -593,6 +503,27 @@ func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery
 			return nil, err
 		}
 		and = append(and, &zoektquery.Not{Child: q})
+	}
+
+	// For conditionals that happen on a repo we can use type:repo queries. eg
+	// (type:repo file:foo) (type:repo file:bar) will match all repos which
+	// contain a filename matching "foo" and a filename matchinb "bar".
+	//
+	// Note: (type:repo file:foo file:bar) will only find repos with a
+	// filename containing both "foo" and "bar".
+	for _, p := range query.FilePatternsReposMustInclude {
+		q, err := fileRe(p, query.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q})
+	}
+	for _, p := range query.FilePatternsReposMustExclude {
+		q, err := fileRe(p, query.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Not{Child: &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q}})
 	}
 
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
