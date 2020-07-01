@@ -580,12 +580,15 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 				// Check if rev is an abbrev commit SHA
 				if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 					branches = append(branches, branch.Name)
+					break
 				}
 			}
 
 		}
 
-		// Only search zoekt if we can search all revisions on it.
+		// Only search zoekt if we can search all revisions on it. TODO see if
+		// anything breaks if we do split out the search. Educated guess: the
+		// lists of repos in searchResultsCommon may not like it.
 		if len(branches) == len(reporev.Revs) {
 			// TODO we should return the list of branches to search. Maybe
 			// create the zoektquery.RepoBranches map here?
