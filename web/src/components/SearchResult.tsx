@@ -8,6 +8,7 @@ import { SearchResultMatch } from './SearchResultMatch'
 import { ThemeProps } from '../../../shared/src/theme'
 import * as H from 'history'
 import { Markdown } from '../../../shared/src/components/Markdown'
+import { StrengthBadge } from '../enterprise/insights/StrengthBadge'
 
 export interface HighlightRange {
     /**
@@ -51,9 +52,11 @@ export class SearchResult extends React.Component<Props> {
                                 : renderMarkdown(this.props.result.detail.text)
                         }
                         history={this.props.history}
+                        className="d-none"
                     />
                 </>
             )}
+            <StrengthBadge value={undefined} what="Code" className="d-block ml-2" />
         </div>
     )
 

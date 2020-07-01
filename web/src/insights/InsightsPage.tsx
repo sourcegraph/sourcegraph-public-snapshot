@@ -28,9 +28,6 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
             <div className="d-flex align-items-center">
                 <h1 className="flex-grow-1 text-nowrap">
                     <InsightsIcon className="icon-inline" /> Insights{' '}
-                    <sup>
-                        <span className="badge badge-primary">prototype</span>
-                    </sup>
                 </h1>
                 {/* These buttons are just links until there is a proper configuration UI */}
                 <Link to="/user/settings" className="btn btn-secondary mr-1">
