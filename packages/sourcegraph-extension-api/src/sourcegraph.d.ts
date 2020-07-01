@@ -1371,46 +1371,46 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * TODO - document
+     * A document highlight is a range inside a text document which deserves special attention.
+     * Usually a document highlight is visualized by changing the background color of its range.
      */
     export interface DocumentHighlight {
         /**
-         * TODO - document
+         * The range this highlight applies to.
          */
         range: Range
 
         /**
-         * TODO - document
+         * The highlight kind, default is text.
          */
         kind?: DocumentHighlightKind
     }
 
     /**
-     * TODO - document
+     * A document highlight kind.
      */
     export enum DocumentHighlightKind {
-        /**
-         * TODO - document
-         */
         Text = 0,
-
-        /**
-         * TODO - document
-         */
         Read = 1,
-
-        /**
-         * TODO - document
-         */
         Write = 2,
     }
 
     /**
-     * TODO - document
+     * A document highlight provider provides ranges to highlight in the current document like all
+     * occurrences of a variable or all exit-points of a function.
+     *
+     * Providers are queried for document highlights on symbol hovers in any document matching
+     * the document selector specified at registration time.
      */
     export interface DocumentHighlightProvider {
         /**
-         * TODO - document
+         * Provide document highlights for the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         *
+         * @returns An array of document highlights, or a thenable that resolves to document highlights.
+         * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideDocumentHighlights(document: TextDocument, position: Position): ProviderResult<DocumentHighlight[]>
     }
@@ -1499,7 +1499,15 @@ declare module 'sourcegraph' {
         ): Unsubscribable
 
         /**
-         * TODO - document
+         * Registers a document highlight provider.
+         *
+         * Multiple providers can be registered with overlapping document selectors. In that case,
+         * providers are queried in parallel and the results are merged. A failing provider will not
+         * cause the whole operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider applies to.
+         * @param provider A document hover provider.
+         * @returns An unsubscribable to unregister this provider.
          */
         export function registerDocumentHighlightProvider(
             selector: DocumentSelector,

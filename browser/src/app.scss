@@ -34,9 +34,8 @@ $theme-colors-light: (
 }
 
 .document-highlight,
-.document-highlight span,
-.document-highlight-sticky,
-.document-highlight-sticky span {
+.document-highlight span {
+    // TODO - choose style (match with web/src/SourcegraphWebApp.scss)
     background-color: rgba(255, 192, 120, 1);
 }
 

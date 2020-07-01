@@ -5,6 +5,7 @@ import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
+import { DocumentHighlightKind } from '../client/services/documentHighlight'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
@@ -32,14 +33,6 @@ export interface InitData {
     /** fetched initial settings object */
     initialSettings: Readonly<SettingsCascade<object>>
 }
-
-// TODO - move this definition
-export const DocumentHighlightKind: typeof sourcegraph.DocumentHighlightKind = {
-    Text: 0,
-    Read: 1,
-    Write: 2,
-}
-
 /**
  * Starts the extension host, which runs extensions. It is a Web Worker or other similar isolated
  * JavaScript execution context. There is exactly 1 extension host, and it has zero or more

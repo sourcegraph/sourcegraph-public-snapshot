@@ -38,7 +38,10 @@ export function getHover(
 }
 
 /**
- * TODO - document
+ * Fetches document highlight information for the given location.
+ *
+ * @param context the location
+ * @returns document highlights for the location
  */
 export function getDocumentHighlights(
     context: RepoSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec,

@@ -165,33 +165,19 @@ body,
     }
 }
 
-//
-// TODO
-
-// Selection highlight is the background color for matched/highlighted tokens,
-// e.g. for search results, for identifying the token currently being hovered over,
-// or identifying the token the references panel is toggled for
+// Document highlight is the background color for tokens which are matched with
+// a result from a document highlight provider. e.g. for references of the token
+// currently being hovered over.
 .document-highlight {
+    // TODO - choose style (match with browser/src/app.scss)
     background-color: rgba(72, 217, 15, 0.5);
 }
-// Same as above, but indicates highlighting for a fixed hover (vs. e.g.
-// an ephemeral mouseover on some token).
-.document-highlight-sticky {
-    background-color: rgba(72, 217, 15, 0.5);
-}
-
 .theme-light {
     .document-highlight {
-        background-color: rgba(192, 255, 120, 0.5);
-    }
-
-    .document-highlight-sticky {
+        // TODO - choose style (match with browser/src/app.scss)
         background-color: rgba(192, 255, 120, 0.5);
     }
 }
-
-// TODO
-//
 
 .app {
     &__error {

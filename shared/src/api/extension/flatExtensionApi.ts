@@ -321,7 +321,10 @@ export function mergeHoverResults(results: (typeof LOADING | Hover | null | unde
 }
 
 /**
- * TODO - document
+ * merges latests results from document highlight providers into a form that is convenient to show
+ *
+ * @param results latests results from document highlight providers
+ * @returns a {@link DocumentHighlight} results if there are any actual document highlights or null in case of no results or loading
  */
 export function mergeDocumentHighlightResults(
     results: (typeof LOADING | sourcegraph.DocumentHighlight[] | null | undefined)[]
