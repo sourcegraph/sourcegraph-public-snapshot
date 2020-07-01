@@ -476,28 +476,7 @@ fragment repositoryFields on Repository {
 	for _, repo := range reposByID {
 		repos = append(repos, repo)
 	}
-	for _, r := range skipped {
-		logger.Infof("Skipping repository %s because we couldn't determine default branch.\n", r)
-	}
-	for _, r := range unsupported {
-		logger.Infof("# Skipping repository %s because it's on a not supported code host.\n", r)
-	}
-	matchesStr := fmt.Sprintf("%d repositories match.", len(repos))
-	unsupportedCount := len(unsupported)
-	if includeUnsupported {
-		if unsupportedCount > 0 {
-			matchesStr += fmt.Sprintf(" (Including %d on unsupported code hosts.)", unsupportedCount)
-		}
-	} else {
-		if unsupportedCount > 0 {
-			matchesStr += " (Some repositories were filtered out because their code host is not supported by campaigns. Use -include-unsupported to generate patches for them anyways.)"
-		}
-	}
-	logger.Infof("%s\n", matchesStr)
-
-	if len(repos) == 0 && !*verbose {
-		yellow.Fprintf(os.Stderr, "WARNING: No repositories matched by scopeQuery\n")
-	}
+	logger.RepoMatches(len(repos), skipped, unsupported)
 
 	if content, err := result.Data.Search.Results.Alert.Render(); err != nil {
 		yellow.Fprint(os.Stderr, err)

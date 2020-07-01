@@ -242,6 +242,38 @@ func (a *ActionLogger) DockerStepDone(repoName string, step int, elapsed time.Du
 	a.write(repoName, yellow, "%s Done. (%s)\n", boldBlack.Sprintf("[Step %d]", step), elapsed)
 }
 
+func (a *ActionLogger) RepoMatches(repoCount int, skipped, unsupported []string) {
+	for _, r := range skipped {
+		a.Infof("Skipping repository %s because we couldn't determine default branch.\n", r)
+	}
+	unsupportedCount := len(unsupported)
+	var matchesStr string
+	if repoCount == 1 {
+		matchesStr = fmt.Sprintf("%d repository matches the scopeQuery.", repoCount)
+	} else {
+		var warnStr string
+		if repoCount == 0 {
+			warnStr = "WARNING: "
+		}
+		matchesStr = fmt.Sprintf("%s%d repositories match the scopeQuery.", warnStr, repoCount)
+	}
+	if unsupportedCount > 0 {
+		matchesStr += fmt.Sprintf("\n\n%d repositories were filtered out because they are on a codehost not supported by campaigns. (use -include-unsupported to generate patches for them anyway):\n", unsupportedCount)
+		for i, repo := range unsupported {
+			matchesStr += color.HiYellowString("- %s\n", repo)
+			if i == 10 {
+				matchesStr += fmt.Sprintf("and %d more.\n", unsupportedCount-10)
+				break
+			}
+		}
+	}
+	color := yellow
+	if repoCount > 0 {
+		color = boldGreen
+	}
+	a.write("", color, "%s\n\n", matchesStr)
+}
+
 // write writes to the RepoWriter associated with the given repoName and logs the message using the log method.
 func (a *ActionLogger) write(repoName string, c *color.Color, format string, args ...interface{}) {
 	if w, ok := a.RepoWriter(repoName); ok {
@@ -255,7 +287,7 @@ func (a *ActionLogger) log(repoName string, c *color.Color, format string, args 
 	if len(repoName) > 0 {
 		format = fmt.Sprintf("%s -> %s", c.Sprint(repoName), format)
 	}
-	fmt.Fprintf(a.out, format, args...)
+	fmt.Fprintf(a.out, c.Sprintf(format, args...))
 }
 
 type progress struct {
