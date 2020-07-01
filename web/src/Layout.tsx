@@ -131,7 +131,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
-    const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks']
+    const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks', '/android']
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
     const needsSiteInit = window.context.needsSiteInit

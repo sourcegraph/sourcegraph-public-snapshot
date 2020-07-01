@@ -9,6 +9,7 @@ import { python2To3Metadata } from './repogroups/Python2To3'
 import { kubernetes } from './repogroups/Kubernetes'
 import { golang } from './repogroups/Golang'
 import { reactHooks } from './repogroups/ReactHooks'
+import { android } from './repogroups/Android'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -180,6 +181,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/react-hooks',
         render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
+    },
+    {
+        path: '/android',
+        render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
     },
     {
         path: '/:repoRevAndRest+',
