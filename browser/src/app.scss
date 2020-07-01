@@ -26,17 +26,19 @@ $theme-colors-light: (
     display: flex;
 }
 
+// Note that we define this before selection highlights so that it will override
+// the styles of symbol that has both classes applied.
+.sourcegraph-document-highlight,
+.sourcegraph-document-highlight span {
+    // TODO - choose style (match with web/src/SourcegraphWebApp.scss)
+    background-color: rgba(255, 192, 120, 1);
+}
+
 .selection-highlight,
 .selection-highlight span,
 .selection-highlight-sticky,
 .selection-highlight-sticky span {
     background-color: rgba(255, 192, 120, 0.5);
-}
-
-.document-highlight,
-.document-highlight span {
-    // TODO - choose style (match with web/src/SourcegraphWebApp.scss)
-    background-color: rgba(255, 192, 120, 1);
 }
 
 @import 'bootstrap/scss/functions';
