@@ -1843,6 +1843,8 @@ type Repository implements Node & GenericSearchResultInterface {
         base: String
         # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
         head: String
+        # Attempt to fetch missing revisions from remote if they are not found
+        fetchMissing: Boolean = true
     ): RepositoryComparison!
     # The repository's contributors.
     contributors(
