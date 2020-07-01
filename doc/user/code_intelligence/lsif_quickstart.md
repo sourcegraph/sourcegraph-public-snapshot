@@ -36,7 +36,7 @@ For all languages, the upload step is the same. Make sure the current working di
 
 ```console
 # for private instances
-$ src -endpoint=<your sourcegraph endpoint> lsif upload -file=<LSIF file (e.g. dump.lsif)>
+$ SRC_ENDPOINT=<your sourcegraph endpoint> src lsif upload -file=<LSIF file (e.g. dump.lsif)>
 # to upload to Sourcegraph.com
 $ src lsif upload -github-token=<your github token> -file=<LSIF file (e.g. dump.lsif)>
 ```
@@ -60,7 +60,7 @@ View processing status at <link to your Sourcegraph instance LSIF status>.
 Possible upload errors include:
 
 - Clone in progress: the instance doesn't have the necessary data to process your upload yet, retry in a few minutes
-- Unknown repository (404): check your `-endpoint` and make sure you can view the repository on your Sourcegraph instance
+- Unknown repository (404): check your `SRC_ENDPOINT` and make sure you can view the repository on your Sourcegraph instance
 - Invalid commit (404): try visiting the repository at that commit on your Sourcegraph instance to trigger an update
 - Invalid auth when using Sourcegraph.com or when [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) is `true` (401 for an invalid token or 404 if the repository cannot be found on GitHub.com): make sure your GitHub token is valid and that the repository is correct
 - Unexpected errors (500s): [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new)

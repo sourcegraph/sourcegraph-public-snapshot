@@ -270,7 +270,6 @@ func upload(ctx context.Context, name, rev string, limiter *util.Limiter) (strin
 	defer limiter.Release()
 
 	args := []string{
-		fmt.Sprintf("-endpoint=%s", endpoint),
 		"lsif",
 		"upload",
 		"-root=/",

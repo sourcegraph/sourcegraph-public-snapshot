@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	endpoint = env.Get("ENDPOINT", "http://127.0.0.1:3080", "Sourcegraph frontend endpoint")
+	endpoint = env.Get("SRC_ENDPOINT", "http://127.0.0.1:3080", "Sourcegraph frontend endpoint")
 	token    = env.Get("ACCESS_TOKEN", "", "Access token")
 
 	// Flags
