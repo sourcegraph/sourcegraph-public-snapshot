@@ -31,7 +31,7 @@ $theme-colors-light: (
 .sourcegraph-document-highlight,
 .sourcegraph-document-highlight span {
     // TODO - choose style (match with web/src/SourcegraphWebApp.scss)
-    background-color: rgba(255, 192, 120, 1);
+    background-color: rgba(192, 255, 120, 0.5);
 }
 
 .selection-highlight,
