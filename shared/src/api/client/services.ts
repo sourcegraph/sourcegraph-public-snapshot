@@ -2,7 +2,6 @@ import { PlatformContext } from '../../platform/context'
 import { ReferenceParams } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CommandRegistry } from './services/command'
-import { CompletionItemProviderRegistry } from './services/completion'
 import { ContributionRegistry } from './services/contribution'
 import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
@@ -45,6 +44,5 @@ export class Services {
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
-    public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly view = createViewService()
 }

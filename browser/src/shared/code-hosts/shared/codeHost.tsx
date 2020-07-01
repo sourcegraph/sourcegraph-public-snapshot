@@ -53,7 +53,6 @@ import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '../../../../../shared/src/commandPalette/CommandList'
-import { CompletionWidgetClassProps } from '../../../../../shared/src/components/completion/CompletionWidget'
 import { asObservable } from '../../../../../shared/src/util/rxjs/asObservable'
 import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../../shared/src/extensions/controller'
@@ -105,7 +104,6 @@ import {
     nativeTooltipsEnabledFromSettings,
     registerNativeTooltipContributions,
 } from './nativeTooltips'
-import { handleTextFields, TextField } from './textFields'
 import { delayUntilIntersecting, ViewResolver } from './views'
 
 import { IS_LIGHT_THEME } from './consts'
@@ -114,7 +112,6 @@ import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
-import { mapValues } from 'lodash'
 
 registerHighlightContributions()
 
@@ -195,11 +192,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     contentViewResolvers?: ViewResolver<ContentView>[]
 
     /**
-     * Resolve {@link TextField}s from the DOM.
-     */
-    textFieldResolvers?: ViewResolver<TextField>[]
-
-    /**
      * Resolves {@link NativeTooltip}s from the DOM.
      */
     nativeTooltipResolvers?: ViewResolver<NativeTooltip>[]
@@ -251,11 +243,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * CSS classes for the code view toolbar to customize styling
      */
     codeViewToolbarClassProps?: CodeViewToolbarClassProps
-
-    /**
-     * CSS classes for the completion widget to customize styling
-     */
-    completionWidgetClassProps?: CompletionWidgetClassProps
 
     /**
      * Whether or not code views need to be tokenized. Defaults to false.
@@ -1071,17 +1058,6 @@ export function handleCodeHost({
     subscriptions.add(
         handleContentViews(
             from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
-                switchMap(enabled => (enabled ? mutations : []))
-            ),
-            { extensionsController },
-            codeHost
-        )
-    )
-
-    // Show completions in text fields (feature-flagged).
-    subscriptions.add(
-        handleTextFields(
-            from(featureFlags.isEnabled('experimentalTextFieldCompletion')).pipe(
                 switchMap(enabled => (enabled ? mutations : []))
             ),
             { extensionsController },

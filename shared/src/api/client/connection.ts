@@ -103,8 +103,7 @@ export async function createExtensionHostClientConnection(
     const clientLanguageFeatures = new ClientLanguageFeatures(
         services.textDocumentDefinition,
         services.textDocumentReferences,
-        services.textDocumentLocations,
-        services.completionItems
+        services.textDocumentLocations
     )
 
     const clientContent = createClientContent(services.linkPreviews)

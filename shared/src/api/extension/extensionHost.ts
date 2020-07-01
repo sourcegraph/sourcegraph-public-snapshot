@@ -227,10 +227,12 @@ function createExtensionAPI(
                 provider: sourcegraph.LocationProvider
             ) => languageFeatures.registerLocationProvider(id, selector, provider),
 
-            registerCompletionItemProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.CompletionItemProvider
-            ) => languageFeatures.registerCompletionItemProvider(selector, provider),
+            registerCompletionItemProvider: () => {
+                console.warn(
+                    'sourcegraph.languages.registerCompletionProvider was removed for the time being. It has no effect.'
+                )
+                return { unsubscribe: () => undefined }
+            },
         },
 
         search,

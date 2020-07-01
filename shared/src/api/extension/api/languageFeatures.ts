@@ -2,14 +2,7 @@
 import * as comlink from 'comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
-import {
-    CompletionItemProvider,
-    DefinitionProvider,
-    DocumentSelector,
-    Location,
-    LocationProvider,
-    ReferenceProvider,
-} from 'sourcegraph'
+import { DefinitionProvider, DocumentSelector, Location, LocationProvider, ReferenceProvider } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { syncSubscription } from '../../util'
@@ -70,23 +63,6 @@ export class ExtensionLanguageFeatures {
                 fromDocumentSelector(selector),
                 comlink.proxy(providerFunction)
             )
-        )
-    }
-
-    public registerCompletionItemProvider(
-        selector: DocumentSelector,
-        provider: CompletionItemProvider
-    ): Unsubscribable {
-        const providerFunction: comlink.Local<
-            Parameters<ClientLanguageFeaturesAPI['$registerCompletionItemProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
-            toProxyableSubscribable(
-                provider.provideCompletionItems(await this.documents.getSync(textDocument.uri), toPosition(position)),
-                items => items
-            )
-        )
-        return syncSubscription(
-            this.proxy.$registerCompletionItemProvider(fromDocumentSelector(selector), providerFunction)
         )
     }
 }
