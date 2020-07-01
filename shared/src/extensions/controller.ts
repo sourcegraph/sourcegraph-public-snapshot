@@ -121,21 +121,6 @@ export function createController(context: PlatformContext): Controller {
         )
     )
 
-    // Debug helpers.
-    const DEBUG = true
-    if (DEBUG) {
-        // Debug helper: log editor changes.
-        const LOG_EDITORS = false
-        if (LOG_EDITORS) {
-            subscriptions.add(
-                services.viewer.viewerUpdates.subscribe(() => log('info', 'editors', services.viewer.viewers))
-            )
-        }
-
-        // Debug helpers: e.g., just run `sxservices` in devtools to get a reference to the services.
-        ;(window as any).sxservices = services
-    }
-
     return {
         notifications,
         services,
@@ -189,28 +174,4 @@ export function registerExtensionContributions(
         refCount()
     )
     return contributionRegistry.registerContributions({ contributions })
-}
-
-/** Prints a nicely formatted console log or error message. */
-function log(level: 'info' | 'error', subject: string, message: any, other?: { [name: string]: any }): void {
-    let log: typeof console.log
-    let color: string
-    let backgroundColor: string
-    if (level === 'info') {
-        log = console.log.bind(console)
-        color = '#000'
-        backgroundColor = '#eee'
-    } else {
-        log = console.error.bind(console)
-        color = 'white'
-        backgroundColor = 'red'
-    }
-    log(
-        '%c EXT %s %c',
-        `font-weight:bold;background-color:${backgroundColor};color:${color}`,
-        subject,
-        'font-weight:normal;background-color:unset',
-        message,
-        other || ''
-    )
 }

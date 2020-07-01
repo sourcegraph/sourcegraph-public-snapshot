@@ -38,6 +38,7 @@ const LOADING = 'loading' as const
  */
 export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWidgetProps> = ({
     extensionsController: {
+        extensionHostAPI,
         services: { viewer: viewerService, model: modelService, completionItems: completionItemsService },
     },
     viewerId,

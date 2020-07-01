@@ -103,7 +103,7 @@ export class ExtensionWindow implements sourcegraph.Window {
                             viewer = new ExtensionCodeEditor(
                                 { viewerId, ...viewerData },
                                 this.proxy.codeEditor,
-                                this.documents
+                                this.documents.get(viewerData.resource)
                             )
                             break
                         case 'DirectoryViewer':

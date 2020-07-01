@@ -95,20 +95,11 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.viewer.activeViewerUpdates).pipe(
-                map(activeEditor =>
-                    activeEditor && activeEditor.type === 'CodeEditor'
-                        ? {
-                              ...activeEditor,
-                              model: this.props.extensionsController.services.model.getPartialModel(
-                                  activeEditor.resource
-                              ),
-                          }
-                        : undefined
-                ),
-                map(activeEditor => {
-                    const parameters: TextDocumentPositionParams | null = getActiveCodeEditorPosition(activeEditor)
-                    if (!parameters) {
+            provider: from(this.props.extensionsController.extensionHostAPI).pipe(
+                // Get TextDocumentPositionParams from selection of active viewer
+                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
+                map(textDocumentPositionParameters => {
+                    if (!textDocumentPositionParameters) {
                         return null
                     }
                     return {
@@ -120,7 +111,10 @@ export class BlobPanel extends React.PureComponent<Props> {
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
                         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                        locationProvider: provideLocations({ ...parameters, ...extraParameters } as P).pipe(
+                        locationProvider: provideLocations({
+                            ...textDocumentPositionParameters,
+                            ...extraParameters,
+                        } as P).pipe(
                             tap(({ result: locations }) => {
                                 if (this.props.activation && id === 'references' && locations.length > 0) {
                                     this.props.activation.update({ FoundReferences: true })

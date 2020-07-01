@@ -1,12 +1,12 @@
-import { Remote } from 'comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditorData, ViewerId } from '../../client/services/viewerService'
 import { createDecorationType } from './decorations'
-import { ExtensionDocuments } from './documents'
+import { ExtensionDocument } from './textDocument'
+import { CodeEditorData, ViewerId } from '../../viewerTypes'
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
@@ -24,26 +24,28 @@ const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextD
     isEmptyObjectDeep(contents)
 
 /** @internal */
-export class ExtensionCodeEditor implements sourcegraph.CodeEditor {
+export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked {
+    public readonly [proxyMarker] = true
+
+    /** The internal ID of this code editor. */
+    public readonly viewerId: string
+
     /** The URI of this editor's document. */
-    private resource: string
+    public readonly resource: string
 
     constructor(
         data: CodeEditorData & ViewerId,
         private proxy: Remote<ClientCodeEditorAPI>,
-        private documents: ExtensionDocuments
+        public document: ExtensionDocument
     ) {
         this.resource = data.resource
+        this.viewerId = data.viewerId
         this.update(data)
     }
 
     public readonly selectionsChanges = new BehaviorSubject<sourcegraph.Selection[]>([])
 
     public readonly type = 'CodeEditor'
-
-    public get document(): sourcegraph.TextDocument {
-        return this.documents.get(this.resource)
-    }
 
     public get selection(): sourcegraph.Selection | null {
         return this.selectionsChanges.value.length > 0 ? this.selectionsChanges.value[0] : null

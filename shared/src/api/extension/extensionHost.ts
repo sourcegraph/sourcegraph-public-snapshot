@@ -141,11 +141,10 @@ function createExtensionAPI(
         configuration,
         exposedToMain,
         workspace,
-        state,
         commands,
         search,
         languages: { registerHoverProvider },
-    } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
+    } = initNewExtensionAPI(proxy, initData.initialSettings, proxy.codeEditor)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -190,23 +189,7 @@ function createExtensionAPI(
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
 
-        workspace: {
-            get textDocuments(): sourcegraph.TextDocument[] {
-                return documents.getAll()
-            },
-            onDidOpenTextDocument: documents.openedTextDocuments,
-            openedTextDocuments: documents.openedTextDocuments,
-            ...workspace,
-            // we use state here directly because of getters
-            // getter are not preserved as functions via {...obj} syntax
-            // thus expose state until we migrate documents to the new model according RFC 155
-            get roots() {
-                return state.roots
-            },
-            get versionContext() {
-                return state.versionContext
-            },
-        },
+        workspace,
 
         configuration,
 

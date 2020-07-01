@@ -7,8 +7,8 @@ import { ProxySubscribable } from './extension/api/common'
 import { TextDocumentPositionParams } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
-import { ViewerData, ViewerId } from './viewerTypes'
 import { ConfiguredExtension } from '../extensions/extension'
+import { ViewerData, ViewerId } from './viewerTypes'
 
 /**
  * A text model is a text document and associated metadata.
@@ -17,7 +17,7 @@ import { ConfiguredExtension } from '../extensions/extension'
  * window that the file is shown in. Things like the content and language are properties of the
  * model; things like decorations and the selection ranges are properties of the editor.
  */
-export interface TextModel extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
+export interface TextDocumentData extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -38,10 +38,14 @@ export interface FlatExtHostAPI {
     transformSearchQuery: (query: string) => ProxySubscribable<string>
 
     // Documents
-    addTextDocumentIfNotExists(model: TextModel): Pick<TextDocument, 'uri'>
+    addTextDocumentIfNotExists: (textDocumentData: TextDocumentData) => void
 
     // Viewers
-    addViewerIfNotExists(model: ViewerData): ViewerId
+
+    addViewerIfNotExists: (viewerData: ViewerData) => ViewerId
+
+    // Used for BlobPanel
+    getActiveCodeEditorPosition: () => ProxySubscribable<TextDocumentPositionParams | null>
 
     /**
      * Sets the selections for a CodeEditor.

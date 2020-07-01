@@ -1,9 +1,9 @@
 import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, proxy } from 'comlink'
-import { Subscription, of } from 'rxjs'
+import { Subscription, of, EMPTY } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty, keyExistsIn } from '../util/types'
 import { FlatExtHostAPI, MainThreadAPI } from './contract'
-import { noop } from 'lodash'
+import { noop, identity } from 'lodash'
 import { proxySubscribable } from './extension/api/common'
 
 /**
@@ -89,17 +89,30 @@ export const pretendRemote = <T extends object>(object: T): Remote<T> =>
         },
     }) as Remote<T>
 
+// TODO this object is better than just casting, but it is still not good.
+// Calling these function will never work as expected and the test needs to override the things actually used,
+// meaning it needs to have knowledge of the internals of what is being tested.
 export const noopFlatExtensionHostAPI: FlatExtHostAPI = {
     syncRoots: noop,
     syncVersionContext: noop,
     transformSearchQuery: (query: string) => proxySubscribable(of(query)),
     syncSettingsData: noop,
+    addTextDocumentIfNotExists: noop,
+    addViewerIfNotExists: () => {
+        throw new Error('Not implemented')
+    },
+    removeViewer: noop,
+    setEditorSelections: noop,
+    getActiveCodeEditorPosition: () => proxySubscribable(EMPTY),
+    // Languages
     getHover: () => proxySubscribable(of({ isLoading: false, result: null })),
     getDefinitions: () => proxySubscribable(of({ isLoading: false, result: [] })),
     getReferences: () => proxySubscribable(of({ isLoading: false, result: [] })),
 }
 
 export const noopMainThreadAPI: MainThreadAPI = {
+    getActiveExtensions: () => proxySubscribable(EMPTY),
+    getScriptURLForExtension: identity,
     applySettingsEdit: () => Promise.resolve(),
     executeCommand: () => Promise.resolve(),
     registerCommand: () => proxy(new Subscription()),

@@ -1,4 +1,8 @@
 import { Selection } from '@sourcegraph/extension-api-types'
+import { ExtensionCodeEditor } from './extension/api/codeEditor'
+import { ExtensionDirectoryViewer } from './extension/api/directoryViewer'
+
+export type ExtensionViewer = ExtensionCodeEditor | ExtensionDirectoryViewer
 
 export type Viewer = CodeEditor | DirectoryViewer
 export type ViewerData = CodeEditorData | DirectoryViewerData
@@ -42,25 +46,6 @@ export interface CodeEditor extends ViewerId, CodeEditorData {}
  * Describes a directory viewer that has been added to the {@link ViewerService}.
  */
 export interface DirectoryViewer extends ViewerId, DirectoryViewerData {}
-
-export type ViewerWithPartialModel = CodeEditorWithPartialModel | DirectoryViewer // Directories don't have a model
-
-/**
- * A code editor with a partial model.
- *
- * To get the editor's full model, look up the model in the {@link ModelService}.
- */
-export interface CodeEditorWithPartialModel extends CodeEditor {
-    model: PartialModel
-}
-
-/**
- * A code editor with its full model, including the model text.
- */
-export interface CodeEditorWithModel extends CodeEditor {
-    /** The code editor's model. */
-    model: TextModel
-}
 
 export type ViewerUpdate =
     | ({ type: 'added'; viewerData: ViewerData } & ViewerId)

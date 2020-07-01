@@ -2,7 +2,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Hover, Range } from 'sourcegraph'
 import { HoverMerged } from '../client/types/hover'
 import { initNewExtensionAPI, mergeHoverResults } from './flatExtensionApi'
-import { pretendRemote } from '../util'
+import { pretendRemote, noopMainThreadAPI } from '../util'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
 import { Observer } from 'rxjs'
@@ -56,7 +56,7 @@ describe('mergeHoverResults', () => {
 
 describe('getHover from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
-    const noopMain = pretendRemote<MainThreadAPI>({})
+    const noopMain = pretendRemote<MainThreadAPI>(noopMainThreadAPI)
     const emptySettings: SettingsCascade<object> = {
         subjects: [],
         final: {},

@@ -9,8 +9,6 @@ import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStat
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { isObject } from 'lodash'
 import { hasProperty } from '../util/types'
-import { IExtensionsService } from '../api/client/services/extensionsService'
-import { ModelService } from '../api/client/services/modelService'
 import { ConfiguredExtension } from '../extensions/extension'
 
 export interface EndpointPair {
