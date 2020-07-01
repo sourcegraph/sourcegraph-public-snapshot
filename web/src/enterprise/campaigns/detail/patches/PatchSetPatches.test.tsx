@@ -17,7 +17,6 @@ describe('PatchSetPatches', () => {
                     patchSet={{ id: 'test' }}
                     campaignUpdates={new Subject<void>()}
                     changesetUpdates={new Subject<void>()}
-                    enablePublishing={false}
                     queryPatches={() =>
                         of({
                             __typename: 'PatchConnection',

@@ -14,6 +14,7 @@ import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observer } from 'rxjs'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 export interface PatchNodeProps extends ThemeProps {
     node: IPatch
@@ -64,6 +65,14 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
                             <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                                 {node.repository.name}
                             </Link>
+                            {!node.publishable && (
+                                <small>
+                                    <InfoCircleOutlineIcon
+                                        className="icon-inline ml-1"
+                                        data-tooltip="Unsupported codehost"
+                                    />
+                                </small>
+                            )}
                         </strong>
                     </div>
                 </div>
@@ -77,7 +86,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
                     <button
                         type="button"
                         className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
-                        disabled={!isErrorLike(isPublishing) && !!isPublishing}
+                        disabled={!node.publishable || (!isErrorLike(isPublishing) && !!isPublishing)}
                         onClick={publishChangeset}
                     >
                         {!isErrorLike(isPublishing) && !!isPublishing && <LoadingSpinner className="icon-inline" />}{' '}

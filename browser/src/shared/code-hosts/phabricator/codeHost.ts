@@ -183,7 +183,7 @@ export const phabricatorCodeHost: CodeHost = {
     // and find a way to listen to changes (Phabricator does not emit popstate events).
     codeViewToolbarClassProps: {
         actionItemClass: 'button grey action-item--phabricator',
-        actionItemIconClass: 'action-item__icon--phabricator',
+        actionItemIconClass: 'icon--phabricator',
     },
     notificationClassNames: {
         [NotificationType.Log]: 'phui-info-view phui-info-severity-plain',

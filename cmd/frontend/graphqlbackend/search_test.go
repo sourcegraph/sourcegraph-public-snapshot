@@ -10,12 +10,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -310,21 +311,18 @@ func TestDefaultRepositories(t *testing.T) {
 			getRawDefaultRepos := func(ctx context.Context) ([]*types.Repo, error) {
 				return drs, nil
 			}
-			indexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-				for _, r := range drs {
-					r2 := &search.RepositoryRevisions{
-						Repo: r,
-					}
-					if tc.indexedRepoNames[string(r.Name)] {
-						indexed = append(indexed, r2)
-					} else {
-						unindexed = append(unindexed, r2)
-					}
-				}
-				return indexed, unindexed, nil
+
+			var indexed []*zoekt.RepoListEntry
+			for name := range tc.indexedRepoNames {
+				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
 			}
+			z := &searchbackend.Zoekt{
+				Client:       &fakeSearcher{repos: &zoekt.RepoList{Repos: indexed}},
+				DisableCache: true,
+			}
+
 			ctx := context.Background()
-			drs, err := defaultRepositories(ctx, getRawDefaultRepos, indexedRepos, tc.excludePatterns)
+			drs, err := defaultRepositories(ctx, getRawDefaultRepos, z, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}

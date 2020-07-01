@@ -401,8 +401,9 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 	}
 
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-		Base: &base,
-		Head: &head,
+		Base:         &base,
+		Head:         &head,
+		FetchMissing: true,
 	})
 }
 
