@@ -9,6 +9,7 @@ import (
 	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/common/model"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ChangeContext struct {
@@ -68,6 +69,11 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 
 	email := newConfig.Email
 	change.AMConfig.Global.SMTPFrom = email.Address
+
+	// assign zero-values to AMConfig SMTP fields if email.SMTP is nil
+	if email.SMTP == nil {
+		email.SMTP = &schema.SMTPServerConfig{}
+	}
 	change.AMConfig.Global.SMTPHello = email.SMTP.Domain
 	change.AMConfig.Global.SMTPSmarthost = amconfig.HostPort{
 		Host: email.SMTP.Host,
