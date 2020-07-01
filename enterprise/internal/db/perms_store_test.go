@@ -318,27 +318,27 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1),
+					IDs:    toBitmap(11),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 2),
+					IDs:    toBitmap(11, 22),
 				}, {
 					UserID: 3,
 					Perm:   authz.Read,
-					IDs:    toBitmap(3, 4),
+					IDs:    toBitmap(33, 44),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
-				1: {1},
-				2: {1, 2},
-				3: {3, 4},
+				1: {11},
+				2: {11, 22},
+				3: {33, 44},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {1, 2},
-				2: {2},
-				3: {3},
-				4: {3},
+				11: {1, 2},
+				22: {2},
+				33: {3},
+				44: {3},
 			},
 		},
 		{
@@ -347,29 +347,29 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1),
+					IDs:    toBitmap(11),
 				}, {
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(2, 3),
+					IDs:    toBitmap(22, 33),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 2),
+					IDs:    toBitmap(11, 22),
 				}, {
 					UserID: 2,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 3),
+					IDs:    toBitmap(11, 33),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
-				1: {2, 3},
-				2: {1, 3},
+				1: {22, 33},
+				2: {11, 33},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {2},
-				2: {1},
-				3: {1, 2},
+				11: {2},
+				22: {1},
+				33: {1, 2},
 			},
 		},
 		{
@@ -378,7 +378,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				{
 					UserID: 1,
 					Perm:   authz.Read,
-					IDs:    toBitmap(1, 2, 3),
+					IDs:    toBitmap(11, 22, 33),
 				}, {
 					UserID: 1,
 					Perm:   authz.Read,
@@ -389,9 +389,9 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				1: {},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {},
-				2: {},
-				3: {},
+				11: {},
+				22: {},
+				33: {},
 			},
 		},
 	}

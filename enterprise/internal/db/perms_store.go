@@ -173,45 +173,22 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	added := roaring.AndNot(p.IDs, oldIDs)
 	removed := roaring.AndNot(oldIDs, p.IDs)
 
-	// Load stored object IDs of both added and removed.
-	changedIDs := roaring.Or(added, removed).ToArray()
-
 	updatedAt := txs.clock()
-	if len(changedIDs) > 0 {
-		q := loadRepoPermissionsBatchQuery(changedIDs, p.Perm, "FOR UPDATE")
-		loadedIDs, err := txs.batchLoadIDs(ctx, q)
-		if err != nil {
-			return errors.Wrap(err, "batch load repo permissions")
-		}
 
-		// We have two sets of IDs that one needs to add, and the other needs to remove.
-		updatedPerms := make([]*authz.RepoPermissions, 0, len(changedIDs))
-		for _, id := range changedIDs {
-			repoID := int32(id)
-			userIDs := loadedIDs[repoID]
-			if userIDs == nil {
-				userIDs = roaring.NewBitmap()
-			}
-
-			switch {
-			case added.Contains(id):
-				userIDs.Add(uint32(p.UserID))
-			case removed.Contains(id):
-				userIDs.Remove(uint32(p.UserID))
-			}
-
-			updatedPerms = append(updatedPerms, &authz.RepoPermissions{
-				RepoID:    repoID,
-				Perm:      p.Perm,
-				UserIDs:   userIDs,
-				UpdatedAt: updatedAt,
-			})
-		}
-
-		if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
+	if added.GetCardinality() > 0 {
+		if q, err := upsertRepoPermissionsBatchQuery(added.ToArray(), p.Perm, []int32{p.UserID}, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
 			return errors.Wrap(err, "execute upsert repo permissions batch query")
+		}
+	}
+
+	if removed.GetCardinality() > 0 {
+		q := sqlf.Sprintf(`
+UPDATE repo_permissions SET user_ids = user_ids - %s::INT, updated_at = %s WHERE repo_id = ANY (%s) AND permission = %s;
+`, p.UserID, updatedAt.UTC(), pq.Array(removed.ToArray()), p.Perm.String())
+		if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute update removed repo permissions query")
 		}
 	}
 
@@ -449,9 +426,7 @@ DO UPDATE SET
 	), nil
 }
 
-// upsertRepoPermissionsQuery upserts single row of repository permissions,
-// it does the same thing as upsertRepoPermissionsBatchQuery but also updates
-// "synced_at" column to the value of p.SyncedAt field.
+// upsertRepoPermissionsQuery upserts single row of repository permissions.
 func upsertRepoPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/db/perms_store.go:upsertRepoPermissionsQuery
@@ -1035,7 +1010,7 @@ AND permission = %s
 	)
 }
 
-func upsertRepoPermissionsBatchQuery(ps ...*authz.RepoPermissions) (*sqlf.Query, error) {
+func upsertRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, userIDs []int32, updatedAt time.Time) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/db/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
@@ -1045,23 +1020,22 @@ VALUES
 ON CONFLICT ON CONSTRAINT
   repo_permissions_perm_unique
 DO UPDATE SET
-  user_ids = excluded.user_ids,
+  user_ids = UNIQ(SORT(repo_permissions.user_ids + excluded.user_ids)),
   updated_at = excluded.updated_at
 `
 
-	items := make([]*sqlf.Query, len(ps))
-	for i := range ps {
-		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrPermsUpdatedAtNotSet
-		}
+	if updatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	}
 
-		ps[i].UserIDs.RunOptimize()
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
-			ps[i].RepoID,
-			ps[i].Perm.String(),
-			pq.Array(ps[i].UserIDs.ToArray()),
-			ps[i].UpdatedAt.UTC(),
-		)
+	items := make([]*sqlf.Query, 0, len(repoIDs))
+	for _, repoID := range repoIDs {
+		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
+			repoID,
+			perm.String(),
+			pq.Array(userIDs),
+			updatedAt.UTC(),
+		))
 	}
 
 	return sqlf.Sprintf(
