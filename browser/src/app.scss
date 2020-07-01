@@ -30,15 +30,16 @@ $theme-colors-light: (
 // the styles of symbol that has both classes applied.
 .sourcegraph-document-highlight,
 .sourcegraph-document-highlight span {
-    // TODO - choose style (match with web/src/SourcegraphWebApp.scss)
-    background-color: rgba(192, 255, 120, 0.5);
+    color: rgb(38, 139, 210);
+    background-color: rgb(197, 255, 132);
 }
 
 .selection-highlight,
 .selection-highlight span,
 .selection-highlight-sticky,
 .selection-highlight-sticky span {
-    background-color: rgba(255, 192, 120, 0.5);
+    color: rgb(38, 139, 210);
+    background-color: rgb(182, 221, 138);
 }
 
 @import 'bootstrap/scss/functions';
