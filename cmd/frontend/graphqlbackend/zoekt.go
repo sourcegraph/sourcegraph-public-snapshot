@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -99,7 +98,9 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	// Consult Zoekt to find out which repository revisions can be searched.
-	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	indexedSet, err := args.Zoekt.ListAll(ctx)
 	if err != nil {
 		if ctx.Err() == nil {
 			// Only hard fail if the user specified index:only
@@ -115,6 +116,9 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			IndexUnavailable: true,
 		}, ctx.Err()
 	}
+
+	// Split based on indexed vs unindexed
+	zoektRepos, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
 
 	return &indexedSearchRequest{
 		args: args,
@@ -617,24 +621,17 @@ func queryToZoektFileOnlyQueries(query *search.TextPatternInfo, listOfFilePaths 
 	return zoektQueries, nil
 }
 
-// zoektIndexedRepos splits the input repo list into two parts: (1) the
-// repositories `indexed` by Zoekt and (2) the repositories that are
-// `unindexed`.
-func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
+// zoektIndexedRepos splits the revs into two parts: (1) the repository
+// revisions in indexedSet (indexed) and (2) the repositories that are
+// unindexed.
+func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = make([]*search.RepositoryRevisions, 0, len(revs))
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
 	for _, reporev := range revs {
-		repo, ok := set[string(reporev.Repo.Name)]
+		repo, ok := indexedSet[string(reporev.Repo.Name)]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, reporev)
 			continue
@@ -680,5 +677,5 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		}
 	}
 
-	return indexed, unindexed, nil
+	return indexed, unindexed
 }
