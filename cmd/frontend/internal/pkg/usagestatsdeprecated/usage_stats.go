@@ -11,6 +11,7 @@ import (
 	"context"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -204,10 +205,11 @@ func uniques(dayStart time.Time, period *UsageDuration) (*ActiveUsers, error) {
 			bid := id.([]byte)
 			sid := string(bid)
 			allUniqueUserIDs[sid] = true
-			if len(bid) != 36 { // id is a numerical Sourcegraph user id, not an anonymous user's UUID
-				registeredUserIDs[sid] = true
-			} else {
+			if strings.Contains(sid, "-") {
+				// Looks like an anonymous user's UUID not a numerical Sourcegraph user ID.
 				anonymousUserIDs[sid] = true
+			} else {
+				registeredUserIDs[sid] = true
 			}
 		}
 
