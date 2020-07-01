@@ -255,21 +255,17 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
 
 const RepoLink: React.FunctionComponent<{ repo: RepositoryType }> = props => (
     <li className="repogroup-page__repo-item list-unstyled mb-3" key={props.repo.name}>
-        {props.repo.codehost === CodeHosts.GITHUB && (
-            <a href={props.repo.name}>
+        <a href={`https://${props.repo.name}`} target="_blank" rel="noopener noreferrer">
+            {props.repo.codehost === CodeHosts.GITHUB && (
                 <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
-            </a>
-        )}
-        {props.repo.codehost === CodeHosts.GITLAB && (
-            <a href={props.repo.name}>
+            )}
+            {props.repo.codehost === CodeHosts.GITLAB && (
                 <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
-            </a>
-        )}
-        {props.repo.codehost === CodeHosts.BITBUCKET && (
-            <a href={props.repo.name}>
+            )}
+            {props.repo.codehost === CodeHosts.BITBUCKET && (
                 <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
-            </a>
-        )}
+            )}
+        </a>
         <Link to={`/${props.repo.name}`}>{props.repo.name}</Link>
     </li>
 )

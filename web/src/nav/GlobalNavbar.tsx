@@ -152,6 +152,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         let logoSource = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
+        const logoWithNameSource = '/.assets/img/sourcegraph-head-logo.svg'
+        const logoWithNameLightSource = '/.assets/img/sourcegraph-light-head-logo.svg'
 
         const branding = window.context ? window.context.branding : null
         if (branding) {
@@ -168,6 +170,15 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         }
 
         const logo = <img className="global-navbar__logo" src={logoSource} />
+        const logoWithNameLink = (
+            <Link to="/search">
+                <img
+                    className="global-navbar__logo-with-name pl-2"
+                    src={this.props.isLightTheme ? logoWithNameLightSource : logoWithNameSource}
+                />
+            </Link>
+        )
+
         const logoLink = !this.state.authRequired ? (
             <Link to="/search" className={logoLinkClassName}>
                 {logo}
@@ -183,7 +194,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
                 {this.props.lowProfile ? (
                     <>
-                        {this.props.lowProfileWithLogo && <div className="nav-item flex-1">{logoLink}</div>}
+                        {this.props.lowProfileWithLogo && <div className="nav-item flex-1">{logoWithNameLink}</div>}
                         <div className="flex-1" />
                         {!this.state.authRequired && !this.props.hideNavLinks && (
                             <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
