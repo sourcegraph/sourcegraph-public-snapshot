@@ -75,5 +75,12 @@ func NewHandler() http.Handler {
 	})))
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
 
+	rickRoll := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", http.StatusFound)
+	})
+	for _, p := range []string{"/.env", "/admin.php", "/wp-login.php", "/wp-admin"} {
+		m.Handle(p, rickRoll)
+	}
+
 	return m
 }
