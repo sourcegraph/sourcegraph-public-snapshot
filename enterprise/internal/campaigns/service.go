@@ -404,13 +404,13 @@ func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64,
 		return nil, err
 	}
 
-	accessibleRepoIDs, err := accessibleRepos(ctx, changesets.RepoIDs())
+	accessibleRepos, err := accessibleRepos(ctx, changesets.RepoIDs())
 	if err != nil {
 		return nil, err
 	}
 
 	for _, c := range changesets {
-		if _, ok := accessibleRepoIDs[c.RepoID]; !ok {
+		if _, ok := accessibleRepos[c.RepoID]; !ok {
 			return nil, &db.RepoNotFoundErr{ID: c.RepoID}
 		}
 
@@ -523,14 +523,14 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 		return nil, err
 	}
 
-	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	accessibleRepos, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	var resetPatchIDs []int64
 	for _, p := range patches {
-		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+		if _, ok := accessibleRepos[p.RepoID]; !ok {
 			continue
 		}
 
@@ -596,7 +596,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		repoIDs = append(repoIDs, p.RepoID)
 	}
 
-	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	accessibleRepos, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -614,32 +614,18 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		jobsByPatchID[j.PatchID] = j
 	}
 
-	reposByID := make(map[api.RepoID]*types.Repo)
-	{
-		repos, err := db.Repos.GetByIDs(ctx, repoIDs...)
-		if err != nil {
-			return nil, err
-		}
-		for _, r := range repos {
-			reposByID[r.ID] = r
-		}
-	}
-
 	for _, p := range patches {
 		if _, ok := jobsByPatchID[p.ID]; ok {
 			continue
 		}
 
-		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+		r, ok := accessibleRepos[p.RepoID]
+		if !ok {
 			continue
 		}
 
-		if _, ok := reposByID[p.RepoID]; !ok {
-			return nil, errors.Errorf("cannot find repo %d", p.RepoID)
-		}
-
 		// Check if the repo is on a supported codehost.
-		if !campaigns.IsRepoSupported(&reposByID[p.RepoID].ExternalRepo) {
+		if !campaigns.IsRepoSupported(&r.ExternalRepo) {
 			continue
 		}
 
@@ -1046,14 +1032,14 @@ func resetAccessibleChangesetJobs(ctx context.Context, tx *Store, campaign *camp
 		repoIDs = append(repoIDs, p.RepoID)
 	}
 
-	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	accessibleRepos, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
 		return err
 	}
 
 	var resetPatchIDs []int64
 	for _, p := range patches {
-		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+		if _, ok := accessibleRepos[p.RepoID]; !ok {
 			continue
 		}
 
@@ -1314,7 +1300,7 @@ func hasCampaignAdminPermissions(ctx context.Context, c *campaigns.Campaign) (bo
 // accessibleRepos collects the RepoIDs of the changesets and returns a set of
 // the api.RepoID for which the subset of repositories for which the actor in
 // ctx has read permissions.
-func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]struct{}, error) {
+func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]*types.Repo, error) {
 	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
 	// user doesn't have access to.
 	accessibleRepos, err := db.Repos.GetByIDs(ctx, ids...)
@@ -1322,9 +1308,9 @@ func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]stru
 		return nil, err
 	}
 
-	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	accessibleRepoIDs := make(map[api.RepoID]*types.Repo, len(accessibleRepos))
 	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = struct{}{}
+		accessibleRepoIDs[r.ID] = r
 	}
 
 	return accessibleRepoIDs, nil
