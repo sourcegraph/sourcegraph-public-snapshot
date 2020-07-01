@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React from 'react'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
@@ -23,13 +23,9 @@ export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = 
         'hasDismissedCodeHostPrivacyWarning',
         false
     )
-    const dismissPrivacyWarning = useCallback(
-        (event: React.MouseEvent<HTMLButtonElement>) => {
-            event.preventDefault()
-            setHasDismissedPrivacyWarning(true)
-        },
-        [setHasDismissedPrivacyWarning]
-    )
+    const dismissPrivacyWarning = (): void => {
+        setHasDismissedPrivacyWarning(true)
+    }
     const id = new URLSearchParams(props.history.location.search).get('id')
     if (id) {
         const externalService = allExternalServices[id]
@@ -83,7 +79,7 @@ export const SiteAdminAddExternalServicesPage: React.FunctionComponent<Props> = 
                             , if you have enabled this feature.
                         </li>
                     </ul>
-                    <div className="d-flex flex-row-reverse">
+                    <div className="d-flex justify-content-end">
                         <button className="btn btn-light" onClick={dismissPrivacyWarning} type="button">
                             Do not show this again
                         </button>
