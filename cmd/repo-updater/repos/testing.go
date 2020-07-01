@@ -105,6 +105,7 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		ListReposError:              s.ListReposError,
 		UpsertReposError:            s.UpsertReposError,
 		ListAllRepoNamesError:       s.ListAllRepoNamesError,
+		SetClonedReposError:         s.SetClonedReposError,
 
 		svcIDSeq:  s.svcIDSeq,
 		svcByID:   svcByID,
