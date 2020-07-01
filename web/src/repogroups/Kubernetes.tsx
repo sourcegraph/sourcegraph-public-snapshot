@@ -16,7 +16,8 @@ export const kubernetes: RepogroupMetadata = {
         {
             title:
                 'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.',
-            exampleQuery: 'file:pod.yaml content:"kind: ReplicationController"',
+            exampleQuery:
+                '<span class="repogroup-page__keyword-text">file:</span>pod.yaml <span class="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"',
         },
     ],
     homepageDescription: 'Search within the Kubernetes community.',

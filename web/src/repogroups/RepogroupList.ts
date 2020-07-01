@@ -1,4 +1,5 @@
 import { python2To3Metadata } from './Python2To3'
+import { android } from './Android'
 import { kubernetes } from './Kubernetes'
 import { golang } from './Golang'
 import { reactHooks } from './ReactHooks'
@@ -9,7 +10,7 @@ export const repogroupList: RepogroupMetadata[] = [
     kubernetes,
     golang,
     reactHooks,
-    python2To3Metadata,
+    android,
     python2To3Metadata,
     python2To3Metadata,
     python2To3Metadata,

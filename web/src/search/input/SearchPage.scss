@@ -84,11 +84,12 @@
         column-gap: 2rem;
 
         &-header {
-            color: $gray-13;
+            color: $gray-14;
         }
 
         &-subheading {
             color: $gray-07;
+            margin-bottom: 0.5rem;
         }
     }
 
@@ -104,11 +105,15 @@
 
     &__repogroup-listing-title {
         font-size: 14px;
-        line-height: 17px;
+        margin-bottom: 0.25rem;
     }
 
     &__repogroup-listing-description {
         font-size: 14px;
+    }
+
+    &__lang-ref {
+        font-size: 12px;
     }
 }
 
