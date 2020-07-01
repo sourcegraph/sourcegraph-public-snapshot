@@ -73,12 +73,12 @@ type FakeStore struct {
 	ListReposError              error // error to be returned in ListRepos
 	UpsertReposError            error // error to be returned in UpsertRepos
 	ListAllRepoNamesError       error // error to be returned in ListAllRepoNames
-
-	svcIDSeq  int64
-	repoIDSeq api.RepoID
-	svcByID   map[int64]*ExternalService
-	repoByID  map[api.RepoID]*Repo
-	parent    *FakeStore
+	SetClonedReposError         error // error to be returned in SetClonedRepos
+	svcIDSeq                    int64
+	repoIDSeq                   api.RepoID
+	svcByID                     map[int64]*ExternalService
+	repoByID                    map[api.RepoID]*Repo
+	parent                      *FakeStore
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -362,6 +362,32 @@ func (s *FakeStore) byExternalID(eid api.ExternalRepoSpec) (*Repo, bool) {
 		}
 	}
 	return nil, false
+}
+
+// SetClonedRepos sets the cloned field to true for all repos whose name is in the repoNames list
+// and sets it to false for all the other ones.
+func (s *FakeStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	if s.SetClonedReposError != nil {
+		return s.SetClonedReposError
+	}
+
+	for _, r := range s.repoByID {
+		if r.IsDeleted() {
+			continue
+		}
+
+		var found bool
+		for _, repoName := range repoNames {
+			if repoName == r.Name {
+				found = true
+				break
+			}
+		}
+
+		r.Cloned = found
+	}
+
+	return s.checkConstraints()
 }
 
 // checkConstraints ensures the FakeStore has not violated any constraints we
