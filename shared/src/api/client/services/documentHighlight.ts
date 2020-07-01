@@ -12,7 +12,6 @@ import { DocumentFeatureProviderRegistry } from './registry'
  * This is needed because if sourcegraph.DocumentHighlightKind enum values are referenced,
  * the `sourcegraph` module import at the top of the file is emitted in the generated code.
  */
-
 export const DocumentHighlightKind: typeof sourcegraph.DocumentHighlightKind = {
     Text: 0,
     Read: 1,
