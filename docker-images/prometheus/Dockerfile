@@ -72,6 +72,7 @@ USER sourcegraph
 COPY --from=builder /generated/prometheus/* /sg_config_prometheus/
 COPY ./.bin/prom-wrapper /bin/prom-wrapper
 COPY ./prometheus.sh /prometheus.sh
+COPY ./alertmanager.sh /alertmanager.sh
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 COPY --chown=sourcegraph config/alertmanager.yml /sg_config_prometheus/

@@ -63,7 +63,7 @@ func main() {
 		newSubscriberCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		config, err := NewSiteConfigSubscriber(newSubscriberCtx, log, alertmanager)
 		if err != nil {
-			log.Crit("failed to initialize configuration", "error", err)
+			log.Crit("failed to configuration subscriber", "error", err)
 			os.Exit(1)
 		}
 		cancel()
@@ -102,7 +102,7 @@ func main() {
 
 	// wait until interrupt or error
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt)
 	var exitCode int
 	select {
 	case sig := <-c:
@@ -110,7 +110,6 @@ func main() {
 		exitCode = 2
 	case err := <-procErrs:
 		if err != nil {
-			log.Error("subprocess exited", "error", err)
 			var exitErr *exec.ExitError
 			if errors.As(err, &exitErr) {
 				exitCode = exitErr.ProcessState.ExitCode()

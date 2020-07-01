@@ -11,7 +11,9 @@ import (
 func runCmd(log log15.Logger, errs chan<- error, cmd *exec.Cmd) {
 	log.Info(fmt.Sprintf("running: %+v", cmd.Args))
 	if err := cmd.Run(); err != nil {
-		errs <- fmt.Errorf("command %+v exited: %w", cmd.Args, err)
+		err := fmt.Errorf("command %+v exited: %w", cmd.Args, err)
+		log.Error(err.Error())
+		errs <- err
 	}
 }
 
