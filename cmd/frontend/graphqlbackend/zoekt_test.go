@@ -261,34 +261,22 @@ func TestZoektIndexedRepos(t *testing.T) {
 		"foo/multi-rev@a:b",
 	)
 
-	zoektRepoList := &zoekt.RepoList{
-		Repos: []*zoekt.RepoListEntry{
-			{
-				Repository: zoekt.Repository{
-					Name:     "foo/indexed-one",
-					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-				},
-			},
-			{
-				Repository: zoekt.Repository{
-					Name:     "foo/indexed-two",
-					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-				},
-			},
-			{
-				Repository: zoekt.Repository{
-					Name: "foo/indexed-three",
-					Branches: []zoekt.RepositoryBranch{
-						{Name: "HEAD", Version: "deadbeef"},
-						{Name: "foobar", Version: "deadcow"},
-					},
-				},
-			},
+	zoektRepos := map[string]*zoekt.Repository{}
+	for _, r := range []*zoekt.Repository{{
+		Name:     "foo/indexed-one",
+		Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+	}, {
+		Name:     "foo/indexed-two",
+		Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+	}, {
+		Name: "foo/indexed-three",
+		Branches: []zoekt.RepositoryBranch{
+			{Name: "HEAD", Version: "deadbeef"},
+			{Name: "foobar", Version: "deadcow"},
 		},
+	}} {
+		zoektRepos[r.Name] = r
 	}
-
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: zoektRepoList}}
-	ctx := context.Background()
 
 	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
 		var indexed []*search.RepositoryRevisions
@@ -326,10 +314,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, tc.repos, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
 			if !reflect.DeepEqual(tc.indexed, indexed) {
 				diff := cmp.Diff(tc.indexed, indexed)
@@ -345,7 +330,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 func Benchmark_zoektIndexedRepos(b *testing.B) {
 	repoNames := []string{}
-	zoektRepos := []*zoekt.RepoListEntry{}
+	zoektRepos := map[string]*zoekt.Repository{}
 
 	for i := 0; i < 10000; i++ {
 		indexedName := fmt.Sprintf("foo/indexed-%d@", i)
@@ -353,23 +338,20 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 
 		repoNames = append(repoNames, indexedName, unindexedName)
 
-		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
-			Repository: zoekt.Repository{
-				Name:     strings.TrimSuffix(indexedName, "@"),
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-			},
-		})
+		zoektName := strings.TrimSuffix(indexedName, "@")
+		zoektRepos[zoektName] = &zoekt.Repository{
+			Name:     zoektName,
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+		}
 	}
 
 	repos := makeRepositoryRevisions(repoNames...)
-	z := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{Repos: zoektRepos}}}
-	ctx := context.Background()
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_, _, _ = zoektIndexedRepos(ctx, z, repos, nil)
+		_, _ = zoektIndexedRepos(zoektRepos, repos, nil)
 	}
 }
 
@@ -1028,8 +1010,8 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 			},
 		}
 	}
-	zoektRepos := []*zoekt.RepoListEntry{{
-		Repository: zoekt.Repository{
+	zoektRepos := map[string]*zoekt.Repository{
+		"test/repo": {
 			Name: "test/repo",
 			Branches: []zoekt.RepositoryBranch{
 				{
@@ -1042,12 +1024,6 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 				},
 			},
 		},
-	}}
-	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos: &zoekt.RepoList{Repos: zoektRepos},
-		},
-		DisableCache: true,
 	}
 	cases := []struct {
 		rev           string
@@ -1096,11 +1072,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		filter := func(*zoekt.Repository) bool { return true }
-		indexed, unindexed, err := zoektIndexedRepos(context.Background(), z, []*search.RepositoryRevisions{repoRev(tt.rev)}, filter)
-		if err != nil {
-			t.Fatal(err)
-		}
+		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
 			Indexed:   indexed,
 			Unindexed: unindexed,
