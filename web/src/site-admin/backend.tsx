@@ -289,7 +289,12 @@ export function fetchUserUsageStatistics(args: {
  *
  * @returns Observable that emits the list of users and their usage data
  */
-export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics> {
+export function fetchSiteUsageStatistics(): Observable<
+    GQL.ISiteUsageStatistics & {
+        userCount: number
+        repositoryCount: number
+    }
+> {
     return queryGraphQL(gql`
         query SiteUsageStatistics {
             site {
@@ -314,10 +319,20 @@ export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics>
                     }
                 }
             }
+            users {
+                totalCount
+            }
+            repositories {
+                totalCount
+            }
         }
     `).pipe(
         map(dataOrThrowErrors),
-        map(data => data.site.usageStatistics)
+        map(({ site: { usageStatistics }, users, repositories }) => ({
+            ...usageStatistics,
+            userCount: users.totalCount,
+            repositoryCount: repositories.totalCount!,
+        }))
     )
 }
 

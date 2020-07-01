@@ -1,66 +1,23 @@
 import format from 'date-fns/format'
-import * as React from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Subscription } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { RadioButtons } from '../components/RadioButtons'
-import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
-
-interface ChartData {
-    label: string
-    dateFormat: string
-}
-
-type ChartOptions = Record<'daus' | 'waus' | 'maus', ChartData>
-
-const chartGeneratorOptions: ChartOptions = {
-    daus: { label: 'Daily unique users', dateFormat: 'E, MMM d' },
-    waus: { label: 'Weekly unique users', dateFormat: 'E, MMM d' },
-    maus: { label: 'Monthly unique users', dateFormat: 'MMMM yyyy' },
-}
-
-const CHART_ID_KEY = 'latest-usage-statistics-chart-id'
-
-interface UsageChartPageProps {
-    isLightTheme: boolean
-    stats: GQL.ISiteUsageStatistics
-    chartID: keyof ChartOptions
-    header?: JSX.Element
-    showLegend?: boolean
-}
-
-export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
-    <div className="site-admin-usage-statistics-page">
-        {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
-        <BarChart
-            showLabels={true}
-            showLegend={props.showLegend === undefined ? true : props.showLegend}
-            width={500}
-            height={200}
-            isLightTheme={props.isLightTheme}
-            data={props.stats[props.chartID].map(usagePeriod => ({
-                xLabel: format(
-                    Date.parse(usagePeriod.startTime) + 1000 * 60 * 60 * 24,
-                    chartGeneratorOptions[props.chartID].dateFormat
-                ),
-                yValues: {
-                    Registered: usagePeriod.registeredUserCount,
-                    Anonymous: usagePeriod.anonymousUserCount,
-                },
-            }))}
-        />
-        <small className="site-admin-usage-statistics-page__tz-note">
-            <i>GMT/UTC time</i>
-        </small>
-    </div>
-)
+import { useObservable } from '../../../shared/src/util/useObservable'
+import { catchError, startWith } from 'rxjs/operators'
+import { asError, isErrorLike } from '../../../shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { snakeCase } from 'lodash'
+import { Observable } from 'rxjs'
+import { ChartViewContent } from '../views/ChartViewContent'
+import { LineChartContent, BarChartContent } from 'sourcegraph'
+import { Tab, TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
+import { Timestamp } from '../components/time/Timestamp'
 
 interface UserUsageStatisticsHeaderFooterProps {
     nodes: GQL.IUser[]
@@ -182,119 +139,205 @@ export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<{}> {
-    isLightTheme: boolean
+export interface UsageStatistics extends GQL.ISiteUsageStatistics {
+    userCount: number
+    repositoryCount: number
 }
 
-interface SiteAdminUsageStatisticsPageState {
-    users?: GQL.IUserConnection
-    stats?: GQL.ISiteUsageStatistics
-    error?: Error
-    chartID: keyof ChartOptions
+interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<{}> {
+    isLightTheme: boolean
+    fetchSiteStatistics?: () => Observable<UsageStatistics>
+    fetchUserStatistics?: () => Observable<GQL.IUserConnection>
 }
+
+interface KPI {
+    label: string
+    value: string
+}
+
+const HighlightedKPIs: React.FunctionComponent<{ highlights: KPI[] }> = ({ highlights }) => (
+    <div className="site-admin-usage-statistics-page__kpi-container">
+        {highlights.map(({ label, value }) => (
+            <div className="site-admin-usage-statistics-page__kpi" key={snakeCase(label)}>
+                <span className="site-admin-usage-statistics-page__kpi-value">{value}</span>
+                <br />
+                <span className="site-admin-usage-statistics-page__kpi-label">{label}</span>
+            </div>
+        ))}
+    </div>
+)
+
+const getUsageKPIs = ({ waus, daus }: UsageStatistics): KPI[] => [
+    {
+        label: 'Total searches (last 90 days)',
+        value: waus.reduce((totalCount, { searchActionCount }) => totalCount + searchActionCount, 0).toLocaleString(),
+    },
+    {
+        label: 'Seaches per weekday',
+        value: Math.floor(
+            daus.reduce((totalCount, { searchActionCount }) => totalCount + searchActionCount, 0) / daus.length
+        ).toLocaleString(),
+    },
+    {
+        label: 'Code intel events per weekday',
+        value: Math.floor(
+            daus.reduce((totalCount, { codeIntelligenceActionCount }) => totalCount + codeIntelligenceActionCount, 0) /
+                daus.length
+        ).toLocaleString(),
+    },
+]
+
+const getUsageChartContent = ({ waus }: UsageStatistics): BarChartContent<GQL.ISiteUsagePeriod, 'startTime'> => ({
+    chart: 'bar',
+    data: waus.reverse().map(({ startTime, ...rest }) => ({
+        startTime: format(Date.parse(startTime) + 1000 * 60 * 60 * 24, 'MM/dd/yy'),
+        ...rest,
+    })),
+    series: [
+        {
+            dataKey: 'searchActionCount',
+            name: 'Search',
+            fill: 'var(--primary)',
+        },
+        {
+            dataKey: 'codeIntelligenceActionCount',
+            name: 'Code Intelligence',
+            fill: 'var(--secondary)',
+        },
+    ],
+    xAxis: {
+        dataKey: 'startTime',
+        type: 'category',
+    },
+})
+
+const getFeatureKPIs = ({ userCount, mergedCampaignChangesets, repositoryCount }: UsageStatistics): KPI[] => [
+    {
+        label: 'Repositories',
+        value: repositoryCount.toLocaleString(),
+    },
+    {
+        label: 'Campaign changesets merged',
+        value: mergedCampaignChangesets.toLocaleString(),
+    },
+    {
+        label: 'User accounts',
+        value: userCount.toLocaleString(),
+    },
+]
+
+const getFeatureChartContent = ({ waus }: UsageStatistics): LineChartContent<GQL.ISiteUsagePeriod, 'startTime'> => ({
+    chart: 'line',
+    data: waus.reverse().map(({ startTime, ...rest }) => ({
+        startTime: format(Date.parse(startTime) + 1000 * 60 * 60 * 24, 'E, MMM d'),
+        ...rest,
+    })),
+    series: [
+        {
+            dataKey: 'userCount',
+            name: 'Total',
+            stroke: 'var(--info)',
+        },
+        {
+            dataKey: 'integrationUserCount',
+            name: 'Code host integrations',
+            stroke: 'var(--success)',
+        },
+        {
+            dataKey: 'codeIntelligenceUserCount',
+            name: 'Code intelligence',
+            stroke: 'var(--warning)',
+        },
+        {
+            dataKey: 'searchUserCount',
+            name: 'Search',
+            stroke: 'var(--primary)',
+        },
+    ],
+    xAxis: {
+        dataKey: 'startTime',
+        type: 'category',
+    },
+})
 
 /**
  * A page displaying usage statistics for the site.
  */
-export class SiteAdminUsageStatisticsPage extends React.Component<
-    SiteAdminUsageStatisticsPageProps,
-    SiteAdminUsageStatisticsPageState
-> {
-    public state: SiteAdminUsageStatisticsPageState = {
-        chartID: this.loadLatestChartFromStorage(),
-    }
-
-    private subscriptions = new Subscription()
-
-    private loadLatestChartFromStorage(): keyof ChartOptions {
-        const latest = localStorage.getItem(CHART_ID_KEY)
-        return latest && latest in chartGeneratorOptions ? (latest as keyof ChartOptions) : 'daus'
-    }
-
-    public componentDidMount(): void {
+export const SiteAdminUsageStatisticsPage: React.FunctionComponent<SiteAdminUsageStatisticsPageProps> = ({
+    fetchSiteStatistics = fetchSiteUsageStatistics,
+    fetchUserStatistics = fetchUserUsageStatistics,
+    ...props
+}) => {
+    useEffect(() => {
         eventLogger.logViewEvent('SiteAdminUsageStatistics')
-
-        this.subscriptions.add(
-            fetchSiteUsageStatistics().subscribe(
-                stats => this.setState({ stats }),
-                error => this.setState({ error })
-            )
+    })
+    const statsOrError = useObservable(
+        useMemo(
+            () =>
+                fetchSiteStatistics().pipe(
+                    startWith('loading' as const),
+                    catchError(error => [asError(error)])
+                ),
+            [fetchSiteStatistics]
         )
+    )
+    if (!statsOrError) {
+        return null
     }
 
-    public componentDidUpdate(): void {
-        localStorage.setItem(CHART_ID_KEY, this.state.chartID)
-    }
+    const tabs = ['Usage', 'Features', 'Activity log'].map((label): Tab<string> => ({ label, id: snakeCase(label) }))
+    return (
+        <div className="site-admin-usage-statistics-page">
+            <PageTitle title="Usage statistics - Admin" />
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className="site-admin-usage-statistics-page">
-                <PageTitle title="Usage statistics - Admin" />
-                <h2>Usage statistics</h2>
-                {this.state.error && (
-                    <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
-                )}
-
-                <a
-                    href="/site-admin/usage-statistics/archive"
-                    className="btn btn-secondary"
-                    data-tooltip="Download usage stats archive"
-                    download="true"
-                >
-                    <FileDownloadIcon className="icon-inline" /> Download usage stats archive
-                </a>
-
-                {this.state.stats && (
-                    <>
-                        <RadioButtons
-                            nodes={Object.entries(chartGeneratorOptions).map(([key, { label }]) => ({
-                                label,
-                                id: key,
-                            }))}
-                            onChange={this.onChartIndexChange}
-                            selected={this.state.chartID}
-                        />
-                        <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
-                    </>
-                )}
-                <h3 className="mt-4">All registered users</h3>
-                {!this.state.error && (
-                    <FilteredUserConnection
-                        listComponent="table"
-                        className="table"
-                        hideSearch={false}
-                        filters={USER_ACTIVITY_FILTERS}
-                        noShowMore={false}
-                        noun="user"
-                        pluralNoun="users"
-                        queryConnection={fetchUserUsageStatistics}
-                        nodeComponent={UserUsageStatisticsNode}
-                        headComponent={UserUsageStatisticsHeader}
-                        footComponent={UserUsageStatisticsFooter}
-                        history={this.props.history}
-                        location={this.props.location}
-                    />
-                )}
-            </div>
-        )
-    }
-
-    private onChartIndexChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        switch (event.target.value as keyof ChartOptions) {
-            case 'daus':
-                eventLogger.log('DAUsChartSelected')
-                break
-            case 'waus':
-                eventLogger.log('WAUsChartSelected')
-                break
-            case 'maus':
-                eventLogger.log('MAUsChartSelected')
-                break
-        }
-        this.setState({ chartID: event.target.value as keyof ChartOptions })
-    }
+            {statsOrError === 'loading' ? (
+                <LoadingSpinner />
+            ) : isErrorLike(statsOrError) ? (
+                <ErrorAlert className="mb-3" error={statsOrError} history={props.history} />
+            ) : (
+                <>
+                    <TabsWithLocalStorageViewStatePersistence tabs={tabs} storageKey="activeUsageStatisticsTab">
+                        <div key="usage">
+                            <HighlightedKPIs highlights={getUsageKPIs(statsOrError)} />
+                            <h3>Total actions per week</h3>
+                            <div className="site-admin-usage-statistics-page__usage-chart">
+                                <ChartViewContent {...props} content={getUsageChartContent(statsOrError)} />
+                            </div>
+                        </div>
+                        <div key="features">
+                            <HighlightedKPIs highlights={getFeatureKPIs(statsOrError)} />
+                            <h3>Active users by feature</h3>
+                            <div className="site-admin-usage-statistics-page__usage-chart">
+                                <ChartViewContent {...props} content={getFeatureChartContent(statsOrError)} />
+                            </div>
+                        </div>
+                        <div key="activity_log">
+                            <h3 className="mt-4">All registered users</h3>
+                            <FilteredUserConnection
+                                {...props}
+                                listComponent="table"
+                                className="table"
+                                hideSearch={false}
+                                filters={USER_ACTIVITY_FILTERS}
+                                noShowMore={false}
+                                noun="user"
+                                pluralNoun="users"
+                                queryConnection={fetchUserStatistics}
+                                nodeComponent={UserUsageStatisticsNode}
+                                headComponent={UserUsageStatisticsHeader}
+                                footComponent={UserUsageStatisticsFooter}
+                            />
+                        </div>
+                    </TabsWithLocalStorageViewStatePersistence>
+                    <a
+                        href="/site-admin/usage-statistics/archive"
+                        data-tooltip="Download usage stats archive"
+                        download="true"
+                    >
+                        <FileDownloadIcon className="icon-inline" /> Download usage stats archive
+                    </a>
+                </>
+            )}
+        </div>
+    )
 }

@@ -66,6 +66,7 @@ describe('SiteAdminOverviewPage', () => {
                         daus: [],
                         waus: [],
                         maus: [],
+                        mergedCampaignChangesets: 0,
                     })
                 }
             />
@@ -98,6 +99,7 @@ describe('SiteAdminOverviewPage', () => {
                         daus: [],
                         waus: [],
                         maus: [],
+                        mergedCampaignChangesets: 0,
                     })
                 }
             />
@@ -115,6 +117,11 @@ describe('SiteAdminOverviewPage', () => {
             registeredUserCount: 8,
             anonymousUserCount: 2,
             integrationUserCount: 0,
+            integrationActionCount: 0,
+            searchActionCount: 0,
+            searchUserCount: 0,
+            codeIntelligenceActionCount: 0,
+            codeIntelligenceUserCount: 0,
             startTime: new Date().toISOString(),
             stages: undefined as any,
         }
@@ -138,6 +145,7 @@ describe('SiteAdminOverviewPage', () => {
                         daus: [],
                         waus: [usageStat, usageStat],
                         maus: [],
+                        mergedCampaignChangesets: 0,
                     })
                 }
             />

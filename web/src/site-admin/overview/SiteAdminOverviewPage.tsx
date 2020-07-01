@@ -13,12 +13,13 @@ import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UsageChart } from '../SiteAdminUsageStatisticsPage'
+import format from 'date-fns/format'
 import { ErrorAlert } from '../../components/alerts'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { ErrorLike, asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { Link } from '../../../../shared/src/components/Link'
+import { BarChart } from '../../components/d3/BarChart'
 
 interface Props extends ActivationProps, ThemeProps {
     history: H.History
@@ -219,26 +220,40 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                     titleAtStart={true}
                                 >
                                     {stats && (
-                                        <UsageChart
-                                            isLightTheme={isLightTheme}
-                                            stats={stats}
-                                            chartID="waus"
-                                            showLegend={false}
-                                            header={
-                                                <div className="site-admin-overview-page__detail-header">
-                                                    <h2>Weekly unique users</h2>
-                                                    <h3>
-                                                        <Link
-                                                            to="/site-admin/usage-statistics"
-                                                            className="btn btn-secondary"
-                                                        >
-                                                            View all usage statistics{' '}
-                                                            <OpenInNewIcon className="icon-inline" />
-                                                        </Link>
-                                                    </h3>
-                                                </div>
-                                            }
-                                        />
+                                        <div>
+                                            <div className="site-admin-overview-page__detail-header">
+                                                <h2>Weekly unique users</h2>
+                                                <h3>
+                                                    <Link
+                                                        to="/site-admin/usage-statistics"
+                                                        className="btn btn-secondary"
+                                                    >
+                                                        View all usage statistics{' '}
+                                                        <OpenInNewIcon className="icon-inline" />
+                                                    </Link>
+                                                </h3>
+                                            </div>
+                                            <BarChart
+                                                showLabels={true}
+                                                showLegend={false}
+                                                width={500}
+                                                height={200}
+                                                isLightTheme={isLightTheme}
+                                                data={stats.waus.map(usagePeriod => ({
+                                                    xLabel: format(
+                                                        Date.parse(usagePeriod.startTime) + 1000 * 60 * 60 * 24,
+                                                        'E, MMM d'
+                                                    ),
+                                                    yValues: {
+                                                        Registered: usagePeriod.registeredUserCount,
+                                                        Anonymous: usagePeriod.anonymousUserCount,
+                                                    },
+                                                }))}
+                                            />
+                                            <small className="site-admin-usage-statistics-page__tz-note">
+                                                <i>GMT/UTC time</i>
+                                            </small>
+                                        </div>
                                     )}
                                 </Collapsible>
                             ))}

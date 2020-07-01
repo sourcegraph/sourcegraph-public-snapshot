@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Previously this was only supported for diff and commit searches and only available via the experimental site setting `searchMultipleRevisionsPerRepository`.
 - The "Add repositories" page (/site-admin/external-services/new) now displays a dismissable notification explaining how and why we access code host data. [#11789](https://github.com/sourcegraph/sourcegraph/pull/11789).
+- More usage and engagement metrics are now shown in the site admin "Usage Stats" section (`/site-admin/usage-statistics`). [#11936](https://github.com/sourcegraph/sourcegraph/pull/11936)
 
 ### Changed
 

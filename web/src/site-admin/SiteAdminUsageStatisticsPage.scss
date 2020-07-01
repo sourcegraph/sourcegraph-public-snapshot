@@ -9,4 +9,35 @@
         display: block;
         text-align: center;
     }
+
+    &__kpi {
+        border: 1px solid $border-color;
+        padding: 2.5rem 1rem 1rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 30%;
+    }
+
+    &__kpi-value {
+        color: $primary;
+        font-size: 36px;
+    }
+
+    &__kpi-label {
+        color: $text-muted;
+    }
+
+    &__kpi-container {
+        display: flex;
+        justify-content: space-between;
+        margin: 2rem 0 2rem 0;
+    }
+
+    &__usage-chart {
+        height: 400px;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
 }
