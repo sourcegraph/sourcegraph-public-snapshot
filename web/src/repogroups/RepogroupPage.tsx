@@ -33,7 +33,6 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata, RepositoryType, CodeHosts } from './types'
-import { RepogroupPageLogo } from './RepogroupPageLogo'
 import { InteractiveModeInput } from '../search/input/interactive/InteractiveModeInput'
 
 interface Props
@@ -67,7 +66,7 @@ interface Props
 }
 
 export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
-    useEffect(() => eventLogger.logViewEvent('Python2To3RepoGroup'))
+    useEffect(() => eventLogger.logViewEvent(`Repogroup:${props.repogroupMetadata.name}`))
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
 
@@ -270,4 +269,20 @@ const RepoLink: React.FunctionComponent<{ repo: RepositoryType }> = props => (
             {props.repo.name}
         </Link>
     </li>
+)
+
+interface RepogroupPageLogoProps extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
+    icon: string
+    text: string
+}
+
+/**
+ * The Sourcegraph logo image. If a custom logo specified in the `branding` site configuration
+ * property, it is used instead.
+ */
+const RepogroupPageLogo: React.FunctionComponent<RepogroupPageLogoProps> = props => (
+    <div className="repogroup-page__logo-container d-flex align-items-center">
+        <img {...props} src={props.icon} />
+        <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>
+    </div>
 )
