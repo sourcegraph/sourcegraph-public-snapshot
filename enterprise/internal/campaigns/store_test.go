@@ -1407,25 +1407,28 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 		want := []cmpgn.ChangesetSyncData{
 			{
-				ChangesetID:        changesets[0].ID,
-				UpdatedAt:          clock.now(),
-				LatestEvent:        clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[0].ID,
+				UpdatedAt:             clock.now(),
+				LatestEvent:           clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 			{
-				ChangesetID:        changesets[1].ID,
-				UpdatedAt:          clock.now(),
-				LatestEvent:        clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[1].ID,
+				UpdatedAt:             clock.now(),
+				LatestEvent:           clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 			{
 				// No events
-				ChangesetID:        changesets[2].ID,
-				UpdatedAt:          clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[2].ID,
+				UpdatedAt:             clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {
@@ -1451,18 +1454,20 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 		want := []cmpgn.ChangesetSyncData{
 			{
-				ChangesetID:        changesets[1].ID,
-				UpdatedAt:          clock.now(),
-				LatestEvent:        clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[1].ID,
+				UpdatedAt:             clock.now(),
+				LatestEvent:           clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 			{
 				// No events
-				ChangesetID:        changesets[2].ID,
-				UpdatedAt:          clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[2].ID,
+				UpdatedAt:             clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {
@@ -1494,25 +1499,28 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 		want = []cmpgn.ChangesetSyncData{
 			{
-				ChangesetID:        changesets[0].ID,
-				UpdatedAt:          clock.now(),
-				LatestEvent:        clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[0].ID,
+				UpdatedAt:             clock.now(),
+				LatestEvent:           clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 			{
-				ChangesetID:        changesets[1].ID,
-				UpdatedAt:          clock.now(),
-				LatestEvent:        clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[1].ID,
+				UpdatedAt:             clock.now(),
+				LatestEvent:           clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 			{
 				// No events
-				ChangesetID:        changesets[2].ID,
-				UpdatedAt:          clock.now(),
-				ExternalUpdatedAt:  clock.now(),
-				ExternalServiceIDs: []int64{extSvcID},
+				ChangesetID:           changesets[2].ID,
+				UpdatedAt:             clock.now(),
+				ExternalUpdatedAt:     clock.now(),
+				ExternalServiceIDs:    []int64{extSvcID},
+				RepoExternalServiceID: "https://example.com/",
 			},
 		}
 		if diff := cmp.Diff(want, hs); diff != "" {

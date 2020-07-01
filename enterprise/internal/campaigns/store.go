@@ -634,6 +634,7 @@ func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
 		&dbutil.NullTime{Time: &h.LatestEvent},
 		&dbutil.NullTime{Time: &h.ExternalUpdatedAt},
 		&sources,
+		&h.RepoExternalServiceID,
 	)
 	if err != nil {
 		return err
@@ -659,7 +660,8 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
         changesets.updated_at,
         max(ce.updated_at) AS latest_event,
         changesets.external_updated_at,
-        r.sources
+        r.sources,
+        r.external_service_id
  FROM changesets
  LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
  JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT

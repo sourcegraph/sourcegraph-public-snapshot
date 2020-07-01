@@ -1472,6 +1472,9 @@ type ChangesetSyncData struct {
 	ExternalUpdatedAt time.Time
 	// ExternalServiceID is the ID of the external service to which the changeset belongs
 	ExternalServiceIDs []int64
+	// RepoExternalServiceID is the external_service_id in the repo table.
+	// It is the URL of the code host.
+	RepoExternalServiceID string
 }
 
 func MarshalCampaignID(id int64) graphql.ID {
