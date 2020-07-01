@@ -12,14 +12,141 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
+
+type indexedRequestType string
+
+const (
+	textRequest   indexedRequestType = "text"
+	symbolRequest indexedRequestType = "symbol"
+	fileRequest   indexedRequestType = "file"
+)
+
+// indexedSearchRequest is responsible for translating a Sourcegraph search
+// query into a Zoekt query and mapping the results from zoekt back to
+// Sourcegraph result types.
+type indexedSearchRequest struct {
+	// Repos is a slice of repository revisions that are indexed and will be
+	// searched by Zoekt.
+	Repos []*search.RepositoryRevisions
+
+	// Unindexed is a slice of repository revisions that can't be searched by
+	// Zoekt. The repository revisions should be searched by the searcher
+	// service.
+	//
+	// If IndexUnavailable is true or the query specifies index:no then all
+	// repository revisions will be listed. Otherwise it will just be
+	// repository revisions not indexed.
+	Unindexed []*search.RepositoryRevisions
+
+	// IndexUnavailable is true if zoekt is offline or disabled.
+	IndexUnavailable bool
+
+	// DisableUnindexedSearch is true if the query specified that only index
+	// search should be used.
+	DisableUnindexedSearch bool
+
+	// inputs
+	args *search.TextParameters
+	typ  indexedRequestType
+}
+
+func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
+	// Parse index:yes (default), index:only, and index:no in search query.
+	indexParam := Yes
+	if index, _ := args.Query.StringValues(query.FieldIndex); len(index) > 0 {
+		index := index[len(index)-1]
+		indexParam = parseYesNoOnly(index)
+		if indexParam == Invalid {
+			return nil, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
+		}
+	}
+
+	// If Zoekt is disabled just fallback to Unindexed.
+	if !args.Zoekt.Enabled() {
+		if indexParam == Only {
+			return nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", indexParam)
+		}
+
+		return &indexedSearchRequest{
+			Unindexed:        args.Repos,
+			IndexUnavailable: true,
+		}, nil
+	}
+
+	// Fallback to Unindexed if index:no
+	if indexParam == No {
+		return &indexedSearchRequest{
+			Unindexed: args.Repos,
+		}, nil
+	}
+
+	// Only include indexes with symbol information if a symbol request.
+	var filter func(repo *zoekt.Repository) bool
+	if typ == symbolRequest {
+		filter = func(repo *zoekt.Repository) bool {
+			return repo.HasSymbols
+		}
+	}
+
+	// Consult Zoekt to find out which repository revisions can be searched.
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	indexedSet, err := args.Zoekt.ListAll(ctx)
+	if err != nil {
+		if ctx.Err() == nil {
+			// Only hard fail if the user specified index:only
+			if indexParam == Only {
+				return nil, errors.New("index:only failed since indexed search is not available yet")
+			}
+
+			log15.Warn("zoektIndexedRepos failed", "error", err)
+		}
+
+		return &indexedSearchRequest{
+			Unindexed:        args.Repos,
+			IndexUnavailable: true,
+		}, ctx.Err()
+	}
+
+	// Split based on indexed vs unindexed
+	zoektRepos, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+
+	return &indexedSearchRequest{
+		args: args,
+		typ:  typ,
+
+		Repos:     zoektRepos,
+		Unindexed: searcherRepos,
+
+		DisableUnindexedSearch: indexParam == Only,
+	}, nil
+}
+
+func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+	if len(s.Repos) == 0 {
+		return nil, false, nil, nil
+	}
+
+	switch s.typ {
+	case textRequest:
+		return zoektSearchHEAD(ctx, s.args, s.Repos, false, time.Since)
+	case symbolRequest:
+		return zoektSearchHEAD(ctx, s.args, s.Repos, true, time.Since)
+	case fileRequest:
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.Repos, false, time.Since)
+	default:
+		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
+	}
+}
 
 func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	// If we're only searching a small number of repositories, return more comprehensive results. This is
@@ -494,24 +621,17 @@ func queryToZoektFileOnlyQueries(query *search.TextPatternInfo, listOfFilePaths 
 	return zoektQueries, nil
 }
 
-// zoektIndexedRepos splits the input repo list into two parts: (1) the
-// repositories `indexed` by Zoekt and (2) the repositories that are
-// `unindexed`.
-func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
+// zoektIndexedRepos splits the revs into two parts: (1) the repository
+// revisions in indexedSet (indexed) and (2) the repositories that are
+// unindexed.
+func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = make([]*search.RepositoryRevisions, 0, len(revs))
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
 	for _, reporev := range revs {
-		repo, ok := set[string(reporev.Repo.Name)]
+		repo, ok := indexedSet[string(reporev.Repo.Name)]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, reporev)
 			continue
@@ -557,5 +677,5 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		}
 	}
 
-	return indexed, unindexed, nil
+	return indexed, unindexed
 }

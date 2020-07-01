@@ -53,4 +53,4 @@ docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
   -v "${PROMETHEUS_DISK}":/prometheus \
   -v "${CONFIG_DIR}":/sg_prometheus_add_ons \
   -e PROMETHEUS_ADDITIONAL_FLAGS=--web.enable-lifecycle \
-  ${IMAGE} >"${PROMETHEUS_DISK}"/logs/prometheus.log 2>&1 || finish
+  ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1 || finish

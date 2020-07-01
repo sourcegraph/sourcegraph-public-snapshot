@@ -247,10 +247,11 @@ func (c *commandRetryer) run() error {
 	// First, we try executing the command but without any EnsureRevision or
 	// URL. The command most likely did not have either of these, but we zero
 	// them just to make the code flow here more straightforward.
-	cpy := *c.cmd
-	cpy.EnsureRevision = ""
-	cpy.Repo.URL = ""
+	oldEnsureRevision, oldRepoURL := c.cmd.EnsureRevision, c.cmd.Repo.URL
+	c.cmd.EnsureRevision, c.cmd.Repo.URL = "", ""
 	err := c.exec()
+	// Set them back to their original values
+	c.cmd.EnsureRevision, c.cmd.Repo.URL = oldEnsureRevision, oldRepoURL
 	if err == nil {
 		// We didn't encounter any error, so gitserver did not need to fetch
 		// the repository in order to fulfill the request.
@@ -279,6 +280,11 @@ func (c *commandRetryer) run() error {
 
 	// Determine the remote URL, if needed, then retry the command.
 	if c.cmd.Repo.URL == "" && c.remoteURLFunc != nil {
+		// We mutate the URL below, so ensure we set it back when done
+		defer func() {
+			c.cmd.Repo.URL = oldRepoURL
+		}()
+
 		// We do modify c.cmd here because the caller may want to reuse this
 		// information.
 		c.cmd.Repo.URL, err = c.remoteURLFunc()
@@ -286,7 +292,5 @@ func (c *commandRetryer) run() error {
 			return err
 		}
 	}
-	cpy.EnsureRevision = c.cmd.EnsureRevision
-	cpy.Repo.URL = c.cmd.Repo.URL
 	return c.exec()
 }

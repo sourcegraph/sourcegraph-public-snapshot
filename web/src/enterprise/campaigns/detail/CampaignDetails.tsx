@@ -583,8 +583,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         patchSet={patchSet!}
                                         campaignUpdates={campaignUpdates}
                                         changesetUpdates={changesetUpdates}
-                                        // No publishing allowed in create view.
-                                        enablePublishing={false}
                                         history={history}
                                         location={location}
                                         isLightTheme={isLightTheme}

@@ -331,6 +331,7 @@ export const queryPatchesFromCampaign = (
                                         name
                                         url
                                     }
+                                    publishable
                                     publicationEnqueued
                                     diff {
                                         fileDiffs {
@@ -383,6 +384,7 @@ export const queryPatchesFromPatchSet = (
                                         name
                                         url
                                     }
+                                    publishable
                                     publicationEnqueued
                                     diff {
                                         fileDiffs {
