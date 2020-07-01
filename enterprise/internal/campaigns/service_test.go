@@ -257,6 +257,13 @@ func TestService(t *testing.T) {
 		rs = append(rs, r)
 	}
 
+	awsCodeCommitRepoID := 4
+	{
+		r := testRepo(awsCodeCommitRepoID, extsvc.TypeAWSCodeCommit)
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		rs = append(rs, r)
+	}
+
 	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
@@ -615,6 +622,15 @@ func TestService(t *testing.T) {
 		if !haveJob3.FinishedAt.IsZero() {
 			t.Errorf("unexpected changesetJob FinishedAt value: %v. want=%v", haveJob3.FinishedAt, time.Time{})
 		}
+
+		// Update repo to unsupported codehost type.
+		awsPatch := testPatch(patchSet.ID, rs[awsCodeCommitRepoID].ID, now)
+		if err := store.CreatePatch(ctx, awsPatch); err != nil {
+			t.Fatal(err)
+		}
+		if wantErr, haveErr := ErrUnsupportedCodehost, svc.EnqueueChangesetJobForPatch(ctx, awsPatch.ID); wantErr != haveErr {
+			t.Fatalf("got invalid error, want=%v have=%v", wantErr, haveErr)
+		}
 	})
 
 	t.Run("EnqueueChangesetJobs", func(t *testing.T) {
@@ -640,7 +656,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Filter out one repository to make sure it's skipped
-		filteredOutPatch := patches[len(patches)-1]
+		filteredOutPatch := patches[len(patches)-2]
 		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			var filtered []*types.Repo
 			for _, r := range repos {
@@ -665,7 +681,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wantJobsCount := len(patches) - 1 // We filtered out one repository
+		wantJobsCount := len(patches) - 2 // We filtered out one repository, and one is unsupported.
 		if have, want := len(haveJobs), wantJobsCount; have != want {
 			t.Fatal("wrong number of changeset jobs created")
 		}
@@ -1285,6 +1301,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
 	}
+	rs = append(rs, testRepo(len(rs), extsvc.TypeAWSCodeCommit))
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	err := reposStore.UpsertRepos(ctx, rs...)
@@ -1520,6 +1537,17 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			missingRepoPerms: repoNames{"repo-0"},
 			wantUnmodified:   repoNames{"repo-0"},
 			wantCreated:      repoNames{"repo-1"},
+		},
+		{
+			name:           "1 added on unsupported codehost",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0"},
+			newPatches: []newPatchSpec{
+				{repo: "repo-0"},
+				{repo: "repo-4"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    []string{},
 		},
 	}
 

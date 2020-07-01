@@ -133,6 +133,27 @@ func scanVisibilities(rows *sql.Rows, queryErr error) (_ map[int]bool, err error
 	return visibilities, nil
 }
 
+// scanCounts scans pairs of id/counts from the return value of `*store.query`.
+func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return visibilities, nil
+}
+
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error) {
 	return scanFirstUpload(s.query(ctx, sqlf.Sprintf(`
@@ -437,6 +458,32 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTi
 	}
 
 	return false, nil
+}
+
+// DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
+// and the upload and index records for that repository being deleted.
+const DeletedRepositoryGracePeriod = time.Minute * 30
+
+// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
+// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
+// that were removed for that repository.
+func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
+	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
+	// a similar one on this index, but only for uploads that are  completed or visible at tip.
+
+	return scanCounts(s.query(ctx, sqlf.Sprintf(`
+		WITH deleted_repos AS (
+			SELECT r.id AS id FROM repo r
+			WHERE
+				%s - r.deleted_at >= %s * interval '1 second' AND
+				EXISTS (SELECT COUNT(*) from lsif_uploads u WHERE u.repository_id = r.id)
+		),
+		deleted_uploads AS (
+			DELETE FROM lsif_uploads u WHERE repository_id IN (SELECT id FROM deleted_repos)
+			RETURNING u.id, u.repository_id
+		)
+		SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
+	`, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
 }
 
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an

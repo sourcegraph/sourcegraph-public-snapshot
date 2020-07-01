@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -35,9 +35,7 @@ func update(name string) bool {
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
 
-func init() {
-	dbtesting.DBNameSuffix = "enterprise-repo-updater-authz-db"
-}
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 // This integration test performs a repository-centric permissions syncing against
 // https://github.com, then check if permissions are correctly granted for the test
@@ -73,7 +71,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)
 
-	dbtesting.SetupGlobalTestDB(t)
+	testDB := dbtest.NewDB(t, *dsn)
 	ctx := context.Background()
 
 	// Set up repository, user, and user external account
@@ -82,11 +80,12 @@ INSERT INTO repo (id, name, description, language, fork, private,
 					uri, external_service_type, external_service_id, sources)
 	VALUES (1, 'github.com/sourcegraph-vcr-repos/private-org-repo-1', '', '', FALSE, TRUE,
 			'github.com/sourcegraph-vcr-repos/private-org-repo-1', 'github', 'https://github.com/', '{"extsvc:github:1": {}}'::jsonb)`)
-	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = testDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	dbconn.Global = testDB
 	newUser := db.NewUser{
 		Email:           "sourcegraph-vcr-bob@sourcegraph.com",
 		Username:        "sourcegraph-vcr-bob",
@@ -105,8 +104,8 @@ INSERT INTO repo (id, name, description, language, fork, private,
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	permsStore := edb.NewPermsStore(dbconn.Global, clock)
+	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
+	permsStore := edb.NewPermsStore(testDB, clock)
 	syncer := NewPermsSyncer(reposStore, permsStore, clock, nil)
 
 	err = syncer.syncRepoPerms(ctx, api.RepoID(1), true)

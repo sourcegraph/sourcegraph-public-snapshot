@@ -8,6 +8,7 @@ type labels uint8
 const (
 	None    labels = 0
 	Literal        = 1 << iota
+	Regexp
 	Quoted
 	HeuristicParensAsPatterns
 	HeuristicDanglingParens
@@ -17,6 +18,7 @@ const (
 var allLabels = map[labels]string{
 	None:                      "None",
 	Literal:                   "Literal",
+	Regexp:                    "Regexp",
 	Quoted:                    "Quoted",
 	HeuristicParensAsPatterns: "HeuristicParensAsPatterns",
 	HeuristicDanglingParens:   "HeuristicDanglingParens",

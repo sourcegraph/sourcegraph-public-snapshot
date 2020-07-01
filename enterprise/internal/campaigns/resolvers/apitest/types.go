@@ -70,6 +70,7 @@ type Patch struct {
 	Typename            string `json:"__typename"`
 	ID                  string
 	PublicationEnqueued bool
+	Publishable         bool
 	Repository          struct{ Name, URL string }
 	Diff                struct {
 		FileDiffs FileDiffs

@@ -732,6 +732,9 @@ type Patch implements PatchInterface & Node {
     # - A campaign has been created with the patchset to which this patch belongs.
     # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
+
+    # True, when the code host of the associated repository is supported by campaigns.
+    publishable: Boolean!
 }
 
 # A hidden patch is a patch in a repository that the user does NOT have
@@ -1851,6 +1854,8 @@ type Repository implements Node & GenericSearchResultInterface {
         base: String
         # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
         head: String
+        # Attempt to fetch missing revisions from remote if they are not found
+        fetchMissing: Boolean = true
     ): RepositoryComparison!
     # The repository's contributors.
     contributors(
