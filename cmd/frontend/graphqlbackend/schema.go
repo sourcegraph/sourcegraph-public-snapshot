@@ -3764,6 +3764,8 @@ type SiteUsageStatistics {
     waus: [SiteUsagePeriod!]!
     # Recent monthly active users.
     maus: [SiteUsagePeriod!]!
+    # The count of merged campaigns changesets.
+    mergedCampaignChangesets: Int!
 }
 
 # SiteUsagePeriod describes a site's usage statistics for a given timespan.
@@ -3781,6 +3783,18 @@ type SiteUsagePeriod {
     # The count of registered users that have been active on a code host integration.
     # Excludes anonymous users.
     integrationUserCount: Int!
+    # The count of registered user that performed code intelligence actions.
+    # Excludes anonymous users.
+    codeIntelligenceUserCount: Int!
+    # The count of registered users that performed searches.
+    # Excludes anonymous users.
+    searchUserCount: Int!
+    # The count of code intelligence actions.
+    codeIntelligenceActionCount: Int!
+    # The count of search actions.
+    searchActionCount: Int!
+    # The count of code host integration actions.
+    integrationActionCount: Int!
     # The user count of Sourcegraph products at each stage of the software development lifecycle.
     stages: SiteUsageStages
 }
