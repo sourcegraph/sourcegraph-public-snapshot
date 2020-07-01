@@ -173,6 +173,7 @@ func TestZoektSearchHEAD(t *testing.T) {
 						Files: []zoekt.FileMatch{
 							{
 								Repository: "foo/bar",
+								Branches:   []string{"HEAD"},
 								FileName:   "baz.go",
 								LineMatches: []zoekt.LineMatch{
 									{
@@ -192,6 +193,7 @@ func TestZoektSearchHEAD(t *testing.T) {
 							},
 							{
 								Repository: "foo/foobar",
+								Branches:   []string{"HEAD"},
 								FileName:   "baz.go",
 								LineMatches: []zoekt.LineMatch{
 									{
@@ -222,7 +224,7 @@ func TestZoektSearchHEAD(t *testing.T) {
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt:           &searchbackend.Zoekt{Client: tt.args.searcher},
 			}
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, args, tt.args.repos, textRequest, tt.args.since)
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearch(tt.args.ctx, args, nil, tt.args.repos, textRequest, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -313,7 +315,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
+			_, indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
 			if !reflect.DeepEqual(tc.indexed, indexed) {
 				diff := cmp.Diff(tc.indexed, indexed)
@@ -350,7 +352,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_, _ = zoektIndexedRepos(zoektRepos, repos, nil)
+		_, _, _ = zoektIndexedRepos(zoektRepos, repos, nil)
 	}
 }
 
@@ -801,7 +803,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
+		_, indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
 			Indexed:   indexed,
 			Unindexed: unindexed,
