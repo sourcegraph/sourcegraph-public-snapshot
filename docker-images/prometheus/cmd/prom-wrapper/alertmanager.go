@@ -11,6 +11,8 @@ import (
 	"github.com/prometheus/alertmanager/api/v2/client/general"
 )
 
+const alertmanagerPathPrefix = "alerts"
+
 func waitForAlertmanager(ctx context.Context, alertmanager *amclient.Alertmanager) error {
 	ping := func(ctx context.Context) error {
 		resp, err := alertmanager.General.GetStatus(&general.GetStatusParams{Context: ctx})
@@ -44,7 +46,7 @@ func waitForAlertmanager(ctx context.Context, alertmanager *amclient.Alertmanage
 // reloadAlertmanager triggers a realod of the Alertmanager configuration file, because package alertmanager/api/v2 does not have a wrapper for reload
 // See https://prometheus.io/docs/alerting/latest/management_api/#reload
 func reloadAlertmanager(ctx context.Context) error {
-	reloadReq, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1:%s/alerts/-/reload", alertmanagerPort), nil)
+	reloadReq, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1:%s/%s/-/reload", alertmanagerPort, alertmanagerPathPrefix), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create reload request: %w", err)
 	}
