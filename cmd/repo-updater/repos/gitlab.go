@@ -373,7 +373,7 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 			return errors.Wrapf(err, "parsing changeset external ID %s", c.ExternalID)
 		}
 
-		mr, err := s.client.GetMergeRequest(ctx, project, iid)
+		mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
 		if err != nil {
 			return errors.Wrapf(err, "retrieving merge request %d", iid)
 		}

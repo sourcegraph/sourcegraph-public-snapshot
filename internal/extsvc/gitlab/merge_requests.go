@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+type ID int64
+
 type MergeRequestState string
 
 const (
@@ -22,9 +24,9 @@ const (
 )
 
 type MergeRequest struct {
-	ID           int64             `json:"id"`
-	IID          int64             `json:"iid"`
-	ProjectID    int64             `json:"project_id"`
+	ID           ID                `json:"id"`
+	IID          ID                `json:"iid"`
+	ProjectID    ID                `json:"project_id"`
 	Title        string            `json:"title"`
 	Description  string            `json:"description"`
 	State        MergeRequestState `json:"state"`
@@ -49,7 +51,7 @@ type MergeRequest struct {
 }
 
 type Pipeline struct {
-	ID     int64          `json:"id"`
+	ID     ID             `json:"id"`
 	SHA    string         `json:"sha"`
 	Ref    string         `json:"ref"`
 	Status PipelineStatus `json:"status"`
@@ -107,7 +109,7 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 	return resp, nil
 }
 
-func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid int64) (*MergeRequest, error) {
+func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) (*MergeRequest, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, iid), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request to get a merge request")

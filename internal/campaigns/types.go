@@ -427,7 +427,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 	case *gitlab.MergeRequest:
 		c.Metadata = pr
-		c.ExternalID = strconv.FormatInt(pr.IID, 10)
+		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
 		c.ExternalBranch = pr.SourceBranch
 		c.ExternalUpdatedAt = pr.UpdatedAt
