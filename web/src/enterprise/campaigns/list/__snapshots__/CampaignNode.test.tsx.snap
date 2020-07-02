@@ -101,7 +101,7 @@ and renders in markdown
       <div
         data-tooltip="Open changesets"
       >
-        3
+        1
          
         <Memo(SourcePullIcon)
           className="text-success ml-1 mr-2"
@@ -249,7 +249,7 @@ and renders in markdown
       <div
         data-tooltip="Open changesets"
       >
-        3
+        1
          
         <Memo(SourcePullIcon)
           className="text-success ml-1 mr-2"
@@ -375,7 +375,7 @@ exports[`CampaignNode campaign without description 1`] = `
       <div
         data-tooltip="Open changesets"
       >
-        3
+        1
          
         <Memo(SourcePullIcon)
           className="text-success ml-1 mr-2"
@@ -513,7 +513,7 @@ and renders in markdown
       <div
         data-tooltip="Open changesets"
       >
-        3
+        1
          
         <Memo(SourcePullIcon)
           className="text-success ml-1 mr-2"
@@ -651,7 +651,7 @@ and renders in markdown
       <div
         data-tooltip="Open changesets"
       >
-        3
+        1
          
         <Memo(SourcePullIcon)
           className="text-success ml-1 mr-2"
