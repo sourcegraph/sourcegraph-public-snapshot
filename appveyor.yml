@@ -1,13 +1,24 @@
 version: "{build}"
 clone_folder: c:\gopath\src\github.com\sourcegraph\src-cli
+
 environment:
+  GOROOT: 'c:\go'
   GOPATH: c:\gopath
+  GOVERSION: 1.14
+  PATH: '%GOPATH%\bin;%GOROOT%\bin;%PATH%'
+  GO111MODULE: 'on'
+
 install:
-  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
-  - echo %PATH%
-  - echo %GOPATH%
+  # Install the specific Go version.
+  - rmdir c:\go /s /q
+  - appveyor DownloadFile https://storage.googleapis.com/golang/go%GOVERSION%.windows-amd64.msi
+  - msiexec /i go%GOVERSION%.windows-amd64.msi /q
   - go version
   - go env
-  - go get -t -v ./...
+
 build_script:
-  - go test -v ./...
+  - go version
+  - go get -v -t ./...
+
+test_script:
+  - go test ./...
