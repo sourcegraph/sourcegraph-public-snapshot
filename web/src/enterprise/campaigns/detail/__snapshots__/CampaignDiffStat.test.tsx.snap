@@ -13,19 +13,4 @@ exports[`CampaignDiffStat for campaign 1`] = `
 </div>
 `;
 
-exports[`CampaignDiffStat for patch set 1`] = `
-<div
-  className="abc"
->
-  <DiffStat
-    added={888}
-    changed={777}
-    deleted={999}
-    expandedCounts={true}
-  />
-</div>
-`;
-
 exports[`CampaignDiffStat hidden for empty campaign 1`] = `<Fragment />`;
-
-exports[`CampaignDiffStat hidden for empty patch set 1`] = `<Fragment />`;

@@ -12,14 +12,10 @@ import { shallow, mount } from 'enzyme'
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
 
-jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
-jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
 jest.mock('./CampaignStatus', () => ({
     CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.campaign.status.state})`,
 }))
 jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
-jest.mock('./patches/CampaignPatches', () => ({ CampaignPatches: 'CampaignPatches' }))
-jest.mock('./patches/PatchSetPatches', () => ({ PatchSetPatches: 'PatchSetPatches' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()
@@ -124,11 +120,4 @@ describe('CampaignDetails', () => {
             })
         })
     }
-
-    test('editing existing', () => {
-        const component = mount(renderCampaignDetails({ viewerCanAdminister: true }))
-        component.find('#test-campaign-edit').simulate('click')
-
-        expect(component).toMatchSnapshot()
-    })
 })

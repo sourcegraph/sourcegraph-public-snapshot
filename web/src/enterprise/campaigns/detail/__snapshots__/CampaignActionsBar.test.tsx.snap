@@ -40,15 +40,6 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
   <span
     className="flex-grow-1 d-flex justify-content-end align-items-center"
   >
-    <button
-      className="btn btn-secondary mr-1"
-      disabled={false}
-      id="test-campaign-edit"
-      onClick={[Function]}
-      type="button"
-    >
-      Edit
-    </button>
     <CloseDeleteCampaignPrompt
       buttonClassName="btn-secondary mr-1"
       buttonText="Close"
@@ -245,15 +236,6 @@ exports[`CampaignActionsBar editable 1`] = `
   <span
     className="flex-grow-1 d-flex justify-content-end align-items-center"
   >
-    <button
-      className="btn btn-secondary mr-1"
-      disabled={false}
-      id="test-campaign-edit"
-      onClick={[Function]}
-      type="button"
-    >
-      Edit
-    </button>
     <CloseDeleteCampaignPrompt
       buttonClassName="btn-secondary mr-1"
       buttonText="Close"
@@ -333,15 +315,6 @@ exports[`CampaignActionsBar mode: closing 1`] = `
     <LoadingSpinner
       className="mr-2"
     />
-    <button
-      className="btn btn-secondary mr-1"
-      disabled={true}
-      id="test-campaign-edit"
-      onClick={[Function]}
-      type="button"
-    >
-      Edit
-    </button>
     <CloseDeleteCampaignPrompt
       buttonClassName="btn-secondary mr-1"
       buttonText="Close"
@@ -421,15 +394,6 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
     <LoadingSpinner
       className="mr-2"
     />
-    <button
-      className="btn btn-secondary mr-1"
-      disabled={true}
-      id="test-campaign-edit"
-      onClick={[Function]}
-      type="button"
-    >
-      Edit
-    </button>
     <CloseDeleteCampaignPrompt
       buttonClassName="btn-secondary mr-1"
       buttonText="Close"
@@ -748,15 +712,6 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
   <span
     className="flex-grow-1 d-flex justify-content-end align-items-center"
   >
-    <button
-      className="btn btn-secondary mr-1"
-      disabled={false}
-      id="test-campaign-edit"
-      onClick={[Function]}
-      type="button"
-    >
-      Edit
-    </button>
     <CloseDeleteCampaignPrompt
       buttonClassName="btn-secondary mr-1"
       buttonText="Close"

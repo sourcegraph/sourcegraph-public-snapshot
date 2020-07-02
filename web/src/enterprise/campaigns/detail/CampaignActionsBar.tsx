@@ -8,7 +8,6 @@ import { CampaignUIMode } from './CampaignDetails'
 
 interface Props {
     mode: CampaignUIMode
-    previewingPatchSet: boolean
 
     campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
         status: Pick<GQL.ICampaign['status'], 'state'>
@@ -16,20 +15,11 @@ interface Props {
 
     onClose: (closeChangesets: boolean) => Promise<void>
     onDelete: (closeChangesets: boolean) => Promise<void>
-    onEdit: React.MouseEventHandler
     formID: string
 }
 
-export const CampaignActionsBar: React.FunctionComponent<Props> = ({
-    campaign,
-    previewingPatchSet,
-    mode,
-    onClose,
-    onDelete,
-    onEdit,
-    formID,
-}) => {
-    const showActionButtons = campaign && !previewingPatchSet && campaign.viewerCanAdminister
+export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign, mode, onClose, onDelete, formID }) => {
+    const showActionButtons = campaign?.viewerCanAdminister
     const showSpinner = mode === 'saving' || mode === 'deleting' || mode === 'closing'
     const editingCampaign = mode === 'editing' || mode === 'saving'
 
@@ -91,29 +81,18 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     ) : (
                         <>
                             {!campaignClosed && (
-                                <>
-                                    <button
-                                        type="button"
-                                        id="test-campaign-edit"
-                                        className="btn btn-secondary mr-1"
-                                        onClick={onEdit}
-                                        disabled={actionsDisabled}
-                                    >
-                                        Edit
-                                    </button>
-                                    <CloseDeleteCampaignPrompt
-                                        disabled={actionsDisabled}
-                                        disabledTooltip="Cannot close while campaign is being created"
-                                        message={
-                                            <p>
-                                                Close campaign <strong>{campaign.name}</strong>?
-                                            </p>
-                                        }
-                                        buttonText="Close"
-                                        onButtonClick={onClose}
-                                        buttonClassName="btn-secondary mr-1"
-                                    />
-                                </>
+                                <CloseDeleteCampaignPrompt
+                                    disabled={actionsDisabled}
+                                    disabledTooltip="Cannot close while campaign is being created"
+                                    message={
+                                        <p>
+                                            Close campaign <strong>{campaign.name}</strong>?
+                                        </p>
+                                    }
+                                    buttonText="Close"
+                                    onButtonClick={onClose}
+                                    buttonClassName="btn-secondary mr-1"
+                                />
                             )}
                             <CloseDeleteCampaignPrompt
                                 disabled={actionsDisabled}
