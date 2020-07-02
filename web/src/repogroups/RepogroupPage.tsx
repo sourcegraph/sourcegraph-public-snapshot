@@ -271,7 +271,7 @@ const RepoLink: React.FunctionComponent<{ repo: RepositoryType }> = props => (
     </li>
 )
 
-interface RepogroupPageLogoProps extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
+interface RepogroupPageLogoProps extends Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
     icon: string
     text: string
 }
