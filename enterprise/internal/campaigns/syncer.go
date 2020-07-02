@@ -711,7 +711,7 @@ func groupChangesetsBySource(
 	return res, nil
 }
 
-// filterSyncData filters to changesets that serviceID is responsible for.
+// filterSyncData filters to changesets belonging to repositories on codeHostURL.
 func filterSyncData(codeHostURL string, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
 	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
 	for _, d := range allSyncData {
