@@ -14,7 +14,6 @@ interface Props extends ThemeProps {
     location: H.Location
     campaignUpdates: Pick<Observer<void>, 'next'>
     changesetUpdates: Subject<void>
-    enablePublishing: boolean
 
     /** For testing only. */
     queryPatches?: (patchSetID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<GQL.IPatchConnection>
@@ -30,7 +29,6 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
     isLightTheme,
     campaignUpdates,
     changesetUpdates,
-    enablePublishing,
     queryPatches = queryPatchesFromPatchSet,
 }) => {
     const queryPatchesConnection = useCallback((args: FilteredConnectionQueryArgs) => queryPatches(patchSet.id, args), [
@@ -48,7 +46,7 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
                     isLightTheme,
                     history,
                     location,
-                    enablePublishing,
+                    enablePublishing: false,
                     campaignUpdates,
                 }}
                 queryConnection={queryPatchesConnection}

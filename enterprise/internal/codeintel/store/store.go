@@ -75,6 +75,11 @@ type Store interface {
 	// commit on the default branch when invoked.
 	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (bool, error)
 
+	// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
+	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
+	// that were removed for that repository.
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
 	// UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
@@ -130,7 +135,11 @@ type Store interface {
 
 	// UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 	// already marked as indexable, a new record will be created.
-	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error
+	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error
+
+	// ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
+	// since lastUpdatedBefore.
+	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 
 	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
@@ -164,6 +173,11 @@ type Store interface {
 
 	// DeleteIndexByID deletes an index by its identifier.
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
+
+	// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
+	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
+	// that were removed for that repository.
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
 	// ResetStalledIndexes moves all unlocked index processing for more than `StalledIndexMaxAge` back to the
 	// queued state. In order to prevent input that continually crashes indexer instances, indexes that have

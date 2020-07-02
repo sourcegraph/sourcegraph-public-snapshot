@@ -119,7 +119,9 @@ func TestPatchSetResolver(t *testing.T) {
 				  ... on Patch {
                     repository {
                       name
-                    }
+					}
+					publicationEnqueued
+					publishable
                     diff {
                       fileDiffs(first: %d, after: %s) {
                         rawDiff
@@ -177,6 +179,14 @@ func TestPatchSetResolver(t *testing.T) {
 	for i, patch := range response.Node.Patches.Nodes {
 		if have, want := patch.Repository.Name, rs[i].Name; have != want {
 			t.Fatalf("wrong Repository Name %q. want=%q", have, want)
+		}
+
+		if have, want := patch.PublicationEnqueued, false; have != want {
+			t.Fatalf("wrong publication enqueued status %t. want=%t", have, want)
+		}
+
+		if have, want := patch.Publishable, true; have != want {
+			t.Fatalf("wrong publishable status %t. want=%t", have, want)
 		}
 
 		if have, want := patch.Diff.FileDiffs.RawDiff, testDiff; have != want {

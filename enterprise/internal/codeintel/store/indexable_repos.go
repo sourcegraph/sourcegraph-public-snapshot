@@ -28,10 +28,10 @@ type UpdateableIndexableRepository struct {
 // IndexableRepositoryQueryOptions controls the result filter for IndexableRepositories.
 type IndexableRepositoryQueryOptions struct {
 	Limit                       int
-	MinimumTimeSinceLastEnqueue time.Duration
-	MinimumSearchCount          int
-	MinimumPreciseCount         int
-	MinimumSearchRatio          float64
+	MinimumSearchCount          int           // number of events needed to begin indexing
+	MinimumSearchRatio          float64       // ratio of search/total events needed to begin indexing
+	MinimumPreciseCount         int           // number of events needed to continue indexing
+	MinimumTimeSinceLastEnqueue time.Duration // time between enqueues
 	now                         time.Time
 }
 
@@ -70,22 +70,30 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		return nil, ErrIllegalLimit
 	}
 
+	var triggers []*sqlf.Query
+	if opts.MinimumSearchCount > 0 || opts.MinimumSearchRatio > 0 {
+		// Select which repositories with little/no precise code intel to begin indexing
+		triggers = append(triggers, sqlf.Sprintf(
+			"(search_count >= %s AND search_count::float / (search_count + precise_count) >= %s)",
+			opts.MinimumSearchCount,
+			opts.MinimumSearchRatio,
+		))
+	}
+	if opts.MinimumPreciseCount > 0 {
+		// Select which repositories with precise intel to update
+		triggers = append(triggers, sqlf.Sprintf("(precise_count >= %s)", opts.MinimumPreciseCount))
+	}
+
 	var conds []*sqlf.Query
+	if len(triggers) > 0 {
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(triggers, " OR ")))
+	}
 	if opts.MinimumTimeSinceLastEnqueue > 0 {
 		conds = append(conds, sqlf.Sprintf(
 			"(last_index_enqueued_at IS NULL OR %s - last_index_enqueued_at < (%s || ' second')::interval)",
 			opts.now,
 			opts.MinimumTimeSinceLastEnqueue/time.Second,
 		))
-	}
-	if opts.MinimumSearchCount > 0 {
-		conds = append(conds, sqlf.Sprintf("search_count >= %s", opts.MinimumSearchCount))
-	}
-	if opts.MinimumPreciseCount > 0 {
-		conds = append(conds, sqlf.Sprintf("precise_count >= %s", opts.MinimumPreciseCount))
-	}
-	if opts.MinimumSearchRatio > 0 {
-		conds = append(conds, sqlf.Sprintf("search_count::float / (search_count + precise_count) >= %s", opts.MinimumSearchRatio))
 	}
 
 	var whereClause *sqlf.Query
@@ -109,7 +117,7 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 
 // UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 // already marked as indexable, a new record will be created.
-func (s *store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error {
+func (s *store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error {
 	// Ensure that record exists before we attempt to update it
 	err := s.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_indexable_repositories (repository_id)
@@ -132,14 +140,26 @@ func (s *store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 	if indexableRepository.LastIndexEnqueuedAt != nil {
 		pairs = append(pairs, sqlf.Sprintf("last_index_enqueued_at=%s", indexableRepository.LastIndexEnqueuedAt))
 	}
-
 	if len(pairs) == 0 {
 		return nil
 	}
 
 	return s.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexable_repositories
-		SET %s
+		SET %s, last_updated_at = %s
 		WHERE repository_id = %s
-	`, sqlf.Join(pairs, ","), indexableRepository.RepositoryID))
+	`, sqlf.Join(pairs, ","), now, indexableRepository.RepositoryID))
+}
+
+// ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
+// since lastUpdatedBefore.
+func (s *store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error {
+	return s.queryForEffect(ctx, sqlf.Sprintf(
+		`
+		UPDATE lsif_indexable_repositories
+		SET search_count = 0, precise_count = 0
+		WHERE last_updated_at < %s
+	`,
+		lastUpdatedBefore,
+	))
 }

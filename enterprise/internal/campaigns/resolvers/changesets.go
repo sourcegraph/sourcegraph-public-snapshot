@@ -401,8 +401,9 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 	}
 
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-		Base: &base,
-		Head: &head,
+		Base:         &base,
+		Head:         &head,
+		FetchMissing: true,
 	})
 }
 
@@ -500,7 +501,7 @@ func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.R
 	}
 	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 	// exist).
-	return git.ResolveRevision(ctx, *grepo, nil, refName, nil)
+	return git.ResolveRevision(ctx, *grepo, nil, refName, git.ResolveRevisionOptions{})
 }
 
 type changesetLabelResolver struct {

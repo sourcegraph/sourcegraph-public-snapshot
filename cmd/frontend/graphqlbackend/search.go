@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -679,12 +680,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
-		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
-		}
-		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos, excludePatterns)
+		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {
 			return nil, nil, false, nil, errors.Wrap(err, "getting list of default repos")
+		}
+
+		// Search all default repos since indexed search is fast.
+		if len(defaultRepos) > maxRepoListSize {
+			maxRepoListSize = len(defaultRepos)
 		}
 	}
 
@@ -769,7 +772,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); gitserver.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); gitserver.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -800,10 +803,9 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	return repoRevisions, missingRepoRevisions, overLimit, excludedRepos, err
 }
 
-type indexedReposFunc func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error)
 type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
 
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, getIndexedRepos indexedReposFunc, excludePatterns []string) ([]*types.Repo, error) {
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.Repo, error) {
 	// Get the list of default repos from the db.
 	defaultRepos, err := getRawDefaultRepos(ctx)
 	if err != nil {
@@ -822,44 +824,23 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 		defaultRepos = filteredRepos
 	}
 
-	// Find out which of the default repos have been indexed.
-	defaultRepoRevs := make([]*search.RepositoryRevisions, 0, len(defaultRepos))
-	for _, r := range defaultRepos {
-		rr := &search.RepositoryRevisions{
-			Repo: r,
-			Revs: []search.RevisionSpecifier{{RevSpec: ""}},
-		}
-		defaultRepoRevs = append(defaultRepoRevs, rr)
+	// Ask Zoekt which repos it has indexed
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	set, err := z.ListAll(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	indexed, unindexed, err := getIndexedRepos(ctx, defaultRepoRevs)
-	if err != nil {
-		return nil, errors.Wrap(err, "finding subset of default repos that are indexed")
-	}
-	// If any are unindexed, log the first few so we can find out if something is going wrong with those.
-	if len(unindexed) > 0 {
-		N := len(unindexed)
-		if N > 10 {
-			N = 10
-		}
-		var names []string
-		for i := 0; i < N; i++ {
-			names = append(names, string(unindexed[i].Repo.Name))
-		}
-		log15.Info("some unindexed repos found; listing up to 10 of them", "unindexed", names)
-	}
-	// Exclude any that aren't indexed.
-	indexedMap := make(map[api.RepoID]bool, len(indexed))
-	for _, r := range indexed {
-		indexedMap[r.Repo.ID] = true
-	}
-	defaultRepos2 := make([]*types.Repo, 0, len(indexedMap))
+	// In place filtering of defaultRepos to only include names from set.
+	repos := defaultRepos[:0]
 	for _, r := range defaultRepos {
-		if indexedMap[r.ID] {
-			defaultRepos2 = append(defaultRepos2, r)
+		if _, ok := set[string(r.Name)]; ok {
+			repos = append(repos, r)
 		}
 	}
-	return defaultRepos2, nil
+
+	return repos, nil
 }
 
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {

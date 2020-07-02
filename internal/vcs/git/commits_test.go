@@ -13,8 +13,6 @@ import (
 var ctx = context.Background()
 
 func TestRepository_GetCommit(t *testing.T) {
-	t.Parallel()
-
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -27,19 +25,42 @@ func TestRepository_GetCommit(t *testing.T) {
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]struct {
-		repo       gitserver.Repo
-		id         api.CommitID
-		wantCommit *Commit
+		repo             gitserver.Repo
+		id               api.CommitID
+		wantCommit       *Commit
+		noEnsureRevision bool
 	}{
-		"git cmd": {
-			repo:       MakeGitRepository(t, gitCommands...),
-			id:         "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommit: wantGitCommit,
+		"git cmd with NoEnsureRevision false": {
+			repo:             MakeGitRepository(t, gitCommands...),
+			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
+			wantCommit:       wantGitCommit,
+			noEnsureRevision: false,
+		},
+		"git cmd with NoEnsureRevision true": {
+			repo:             MakeGitRepository(t, gitCommands...),
+			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
+			wantCommit:       wantGitCommit,
+			noEnsureRevision: true,
 		},
 	}
 
+	oldRunCommitLog := runCommitLog
+
 	for label, test := range tests {
-		commit, err := GetCommit(ctx, test.repo, nil, test.id)
+		var noEnsureRevision bool
+		t.Cleanup(func() {
+			runCommitLog = oldRunCommitLog
+		})
+		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*Commit, error) {
+			// Track the value of NoEnsureRevision we pass to gitserver
+			noEnsureRevision = opt.NoEnsureRevision
+			return oldRunCommitLog(ctx, cmd, opt)
+		}
+
+		resolveRevisionOptions := ResolveRevisionOptions{
+			NoEnsureRevision: test.noEnsureRevision,
+		}
+		commit, err := GetCommit(ctx, test.repo, nil, test.id, resolveRevisionOptions)
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -50,8 +71,12 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID); !gitserver.IsRevisionNotFound(err) {
+		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, resolveRevisionOptions); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
+		}
+
+		if noEnsureRevision != test.noEnsureRevision {
+			t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
 		}
 	}
 }
