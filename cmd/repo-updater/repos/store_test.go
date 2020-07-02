@@ -931,7 +931,7 @@ func testStoreCountClonedRepos(store repos.Store) func(*testing.T) {
 
 		ctx := context.Background()
 
-		t.Run("no repo name", func(t *testing.T) {
+		t.Run("no clones repos", func(t *testing.T) {
 			count, err := store.CountClonedRepos(ctx)
 			if err != nil {
 				t.Fatalf("CountClonedRepos error: %s", err)
@@ -941,7 +941,7 @@ func testStoreCountClonedRepos(store repos.Store) func(*testing.T) {
 			}
 		})
 
-		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			stored := mkRepos(9, repositories...)
 
 			if err := tx.UpsertRepos(ctx, stored...); err != nil {
@@ -960,7 +960,7 @@ func testStoreCountClonedRepos(store repos.Store) func(*testing.T) {
 			if err != nil {
 				t.Fatalf("CountClonedRepos error: %s", err)
 			}
-			if diff := cmp.Diff(count, uint64(3)); diff != "" {
+			if diff := cmp.Diff(count, uint64(len(names))); diff != "" {
 				t.Fatalf("CountClonedRepos:\n%s", diff)
 			}
 		}))
