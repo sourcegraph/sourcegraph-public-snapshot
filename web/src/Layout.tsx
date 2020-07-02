@@ -137,7 +137,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
+    const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
     useScrollToLocationHash(props.location)
@@ -165,8 +165,15 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}
-                    variant={isSearchHomepage ? 'low-profile' : isRepogroupPage ? 'low-profile-with-logo' : 'default'}
-                    hideGlobalSearchInput={hideGlobalSearchInput}
+                    variant={
+                        hideGlobalSearchInput
+                            ? 'no-search-input'
+                            : isSearchHomepage
+                            ? 'low-profile'
+                            : isRepogroupPage
+                            ? 'low-profile-with-logo'
+                            : 'default'
+                    }
                     hideNavLinks={false}
                 />
             )}

@@ -56,6 +56,9 @@ interface Props
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
+    /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
+    interactiveModeHomepageMode?: boolean
+
     // For NavLinks
     authRequired?: boolean
     showCampaigns: boolean

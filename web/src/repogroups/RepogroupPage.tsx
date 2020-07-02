@@ -86,7 +86,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                 </span>
             </div>
             <div className="repogroup-page__container">
-                <SearchPageInput {...props} source="repogroupPage" />
+                <SearchPageInput {...props} source="repogroupPage" interactiveModeHomepageMode={true} />
             </div>
             <div className="repogroup-page__content">
                 <div className="repogroup-page__column">

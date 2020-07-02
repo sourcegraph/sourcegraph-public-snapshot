@@ -57,12 +57,6 @@ interface Props
     showCampaigns: boolean
 
     /**
-     * Whether to hide the global search input. Use this when the page has a search input that would
-     * conflict with or be confusing with the global search input.
-     */
-    hideGlobalSearchInput: boolean
-
-    /**
      * Which variation of the global navbar to render.
      *
      * 'low-profile' renders the the navbar with no border or background. Used on the search
@@ -70,7 +64,7 @@ interface Props
      *
      * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
      */
-    variant: 'default' | 'low-profile' | 'low-profile-with-logo'
+    variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
 
     splitSearchModes: boolean
     interactiveSearchMode: boolean
@@ -206,7 +200,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                             <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                         )}
                     </>
-                ) : this.props.hideGlobalSearchInput ? (
+                ) : this.props.variant === 'no-search-input' ? (
                     <>
                         {logoLink}
                         <div className="nav-item flex-1">
