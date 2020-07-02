@@ -51,7 +51,7 @@ func reloadAlertmanager(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create reload request: %w", err)
 	}
-	resp, err := http.DefaultClient.Do(reloadReq)
+	resp, err := http.DefaultClient.Do(reloadReq.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("reload request failed: %w", err)
 	}
