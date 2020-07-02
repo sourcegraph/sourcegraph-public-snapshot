@@ -46,11 +46,14 @@ describe('GlobalNavbar', () => {
     setLinkComponent(props => <a {...props} />)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
-    test('normal', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())
+    test('default', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())
 
-    test('lowProfile', () =>
+    test('low-profile', () =>
         expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile" />).toJSON()).toMatchSnapshot())
 
-    test('hideGlobalSearchInput', () =>
+    test('low-profile-with-logo', () =>
+        expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile-with-logo" />).toJSON()).toMatchSnapshot())
+
+    test('no-search-input', () =>
         expect(renderer.create(<GlobalNavbar {...PROPS} variant="no-search-input" />).toJSON()).toMatchSnapshot())
 })
