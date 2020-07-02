@@ -277,8 +277,7 @@ interface RepogroupPageLogoProps extends Exclude<React.ImgHTMLAttributes<HTMLIma
 }
 
 /**
- * The Sourcegraph logo image. If a custom logo specified in the `branding` site configuration
- * property, it is used instead.
+ * The repogroup logo image.
  */
 const RepogroupPageLogo: React.FunctionComponent<RepogroupPageLogoProps> = props => (
     <div className="repogroup-page__logo-container d-flex align-items-center">
