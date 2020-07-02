@@ -41,7 +41,7 @@ type RepoStore interface {
 	ListRepos(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
 }
 
-// NewSycnRegistry creates a new sync registry which starts a syncer for each code host and will update them
+// NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
 func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory) *SyncRegistry {
 	r := &SyncRegistry{
