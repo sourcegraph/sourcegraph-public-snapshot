@@ -30,16 +30,14 @@ $theme-colors-light: (
 // the styles of symbol that has both classes applied.
 .sourcegraph-document-highlight,
 .sourcegraph-document-highlight span {
-    color: rgb(38, 139, 210);
-    background-color: rgb(197, 255, 132);
+    background-color: var(--secondary);
 }
 
 .selection-highlight,
 .selection-highlight span,
 .selection-highlight-sticky,
 .selection-highlight-sticky span {
-    color: rgb(38, 139, 210);
-    background-color: rgb(182, 221, 138);
+    background-color: rgba(255, 192, 120, 0.5);
 }
 
 @import 'bootstrap/scss/functions';

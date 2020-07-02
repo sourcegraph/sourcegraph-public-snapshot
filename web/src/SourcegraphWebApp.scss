@@ -150,14 +150,12 @@ body,
 // Note that we define this before selection highlights so that it will override
 // the styles of symbol that has both classes applied.
 .sourcegraph-document-highlight {
-    color: rgb(5, 61, 101);
-    background-color: rgb(217, 131, 30);
+    background-color: var(--secondary);
 }
 
 .theme-light {
     .sourcegraph-document-highlight {
-        color: rgb(38, 139, 210);
-        background-color: rgb(197, 255, 132);
+        background-color: var(--secondary);
     }
 }
 
@@ -166,15 +164,13 @@ body,
 // or identifying the token the references panel is toggled for
 .selection-highlight,
 .selection-highlight-sticky {
-    color: rgb(49, 150, 221);
-    background-color: rgb(123, 54, 33);
+    background-color: rgba(217, 72, 15, 0.5);
 }
 
 .theme-light {
     .selection-highlight,
     .selection-highlight-sticky {
-        color: rgb(38, 139, 210);
-        background-color: rgb(182, 221, 138);
+        background-color: rgba(255, 192, 120, 0.5);
     }
 }
 
