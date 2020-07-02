@@ -2,7 +2,6 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { CampaignStatus } from './CampaignStatus'
 import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
-import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
 import { createMemoryHistory } from 'history'
 import webStyles from '../../../SourcegraphWebApp.scss'
@@ -33,14 +32,11 @@ add('Errored', () => (
                         '```'
                 ),
             },
-            hasUnpublishedPatches: false,
             changesets: {
                 totalCount: 0,
             },
             closedAt: null,
         }}
-        afterRetry={action('Retry')}
-        afterPublish={action('Publish')}
         history={createMemoryHistory()}
     />
 ))

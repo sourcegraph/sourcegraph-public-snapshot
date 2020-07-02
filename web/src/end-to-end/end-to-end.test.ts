@@ -1501,66 +1501,6 @@ describe('e2e test suite', () => {
         after(async () => {
             await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
         })
-        async function testCampaignPreview({
-            previewURL,
-            changesetCount,
-            snapshotName,
-        }: {
-            previewURL: string
-            changesetCount: number
-            snapshotName: string
-        }): Promise<void> {
-            await driver.page.goto(previewURL.replace('127.0.0.1', 'localhost'))
-            await driver.page.waitForSelector('.e2e-campaign-form')
-
-            // fill campaign preview form
-            await driver.page.type('.e2e-campaign-title', 'E2E campaign')
-
-            await driver.page.waitForSelector('.e2e-changeset-node')
-            // check there were exactly as expected diffs generated
-            const generatedChangesetCount = await driver.page.evaluate(
-                () => document.querySelectorAll('.e2e-changeset-node').length
-            )
-            expect(generatedChangesetCount).toEqual(changesetCount)
-            await percySnapshot(driver.page, snapshotName)
-        }
-        test('View campaign preview for patch set', async () => {
-            const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-e2e-test')
-            const { previewURL } = await driver.createPatchSetFromPatches([
-                {
-                    repository: repo.id,
-                    baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',
-                    baseRef: 'refs/heads/master',
-                    patch: `diff --unified file1.txt file1.txt
---- file1.txt 2020-01-01 01:02:03 -0700
-+++ file1.txt 2020-01-01 03:04:05 -0700
-@@ -1 +1,2 @@
- this is file 1
-+hello
-`,
-                },
-            ])
-            await testCampaignPreview({
-                previewURL,
-                changesetCount: 1,
-                snapshotName: 'Campaign preview page',
-            })
-        })
-        // TODO(eseliger): reenable once the dates of the chart are stable
-        test.skip('Manual campaign workflow', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-            await driver.page.waitForSelector('.e2e-campaign-form')
-            await percySnapshot(driver.page, 'Create manual campaign form')
-            await driver.page.type('.e2e-campaign-title', 'E2E manual campaign')
-            await driver.page.click('.e2e-campaign-create-btn')
-            await driver.page.waitForSelector('.e2e-campaign-get-started')
-            await percySnapshot(driver.page, 'Create manual campaign empty')
-            await driver.page.type('.e2e-track-changeset-repo', 'github.com/sourcegraph-testing/automation-e2e-test')
-            await driver.page.type('.e2e-track-changeset-id', '1')
-            await driver.page.click('.e2e-track-changeset-btn')
-            await driver.page.waitForSelector('.e2e-changeset-node')
-            await percySnapshot(driver.page, 'Create manual campaign added changeset')
-        })
     })
 
     describe('Interactive search mode (feature flagged)', () => {
