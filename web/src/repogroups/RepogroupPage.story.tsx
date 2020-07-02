@@ -96,7 +96,7 @@ const authUser = {
         nodes: [],
         totalCount: 0,
         pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-    } as IEventLogsConnection,
+    } as GQL.IEventLogsConnection,
     emails: [],
     accessTokens: {} as GQL.IAccessTokenConnection,
     externalAccounts: {} as GQL.IExternalAccountConnection,
