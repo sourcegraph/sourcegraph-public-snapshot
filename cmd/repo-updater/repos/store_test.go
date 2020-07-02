@@ -853,6 +853,120 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 	}
 }
 
+func testStoreCountClonedRepos(store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		github := repos.Repo{
+			Name:        "github.com/foo/bar",
+			URI:         "github.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      false,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "AAAAA==",
+				ServiceType: "github",
+				ServiceID:   "http://github.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:1": {
+					ID:       "extsvc:1",
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
+			Metadata: new(github.Repository),
+		}
+
+		gitlab := repos.Repo{
+			Name:        "gitlab.com/foo/bar",
+			URI:         "gitlab.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      false,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "http://gitlab.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:2": {
+					ID:       "extsvc:2",
+					CloneURL: "git@gitlab.com:foo/bar.git",
+				},
+			},
+			Metadata: new(gitlab.Project),
+		}
+
+		bitbucketServer := repos.Repo{
+			Name:        "bitbucketserver.mycorp.com/foo/bar",
+			URI:         "bitbucketserver.mycorp.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      false,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: "bitbucketServer",
+				ServiceID:   "http://bitbucketserver.mycorp.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:3": {
+					ID:       "extsvc:3",
+					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
+				},
+			},
+			Metadata: new(bitbucketserver.Repo),
+		}
+
+		repositories := repos.Repos{
+			&github,
+			&gitlab,
+			&bitbucketServer,
+		}
+
+		ctx := context.Background()
+
+		t.Run("no repo name", func(t *testing.T) {
+			count, err := store.CountClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(0)); diff != "" {
+				t.Fatalf("CountClonedRepos:\n%s", diff)
+			}
+		})
+
+		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(9, repositories...)
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+
+			names := stored[:3].Names()
+
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			count, err := tx.CountClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(3)); diff != "" {
+				t.Fatalf("CountClonedRepos:\n%s", diff)
+			}
+		}))
+	}
+}
+
 func hasNoID(r *repos.Repo) bool {
 	return r.ID == 0
 }

@@ -468,7 +468,7 @@ WITH c AS (
 
 // CountClonedRepos returns the number of repos whose cloned column is true.
 func (s DBStore) CountClonedRepos(ctx context.Context) (uint64, error) {
-	q := sqlf.Sprintf(setClonedReposQueryFmtstr)
+	q := sqlf.Sprintf(countClonedReposQueryFmtstr)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
