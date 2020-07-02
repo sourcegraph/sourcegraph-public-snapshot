@@ -449,15 +449,8 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 	}
 	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Join(names, ","))
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	if rows.Err() != nil {
-		return rows.Err()
-	}
-
-	return rows.Close()
+	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 const setClonedReposQueryFmtstr = `
