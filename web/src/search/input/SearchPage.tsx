@@ -1,7 +1,6 @@
 import * as H from 'history'
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import {
-    parseSearchURLQuery,
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
@@ -10,14 +9,11 @@ import {
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { PageTitle } from '../../components/PageTitle'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { ThemePreferenceProps } from '../../theme'
-import { limitString } from '../../util'
-import { submitSearch } from '../helpers'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { Link } from '../../../../shared/src/components/Link'
