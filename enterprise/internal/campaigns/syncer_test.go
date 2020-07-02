@@ -364,14 +364,12 @@ func TestFilterSyncData(t *testing.T) {
 			data: []campaigns.ChangesetSyncData{
 				{
 					ChangesetID:           1,
-					ExternalServiceIDs:    []int64{1},
 					RepoExternalServiceID: "https://example.com/",
 				},
 			},
 			want: []campaigns.ChangesetSyncData{
 				{
 					ChangesetID:           1,
-					ExternalServiceIDs:    []int64{1},
 					RepoExternalServiceID: "https://example.com/",
 				},
 			},
@@ -382,29 +380,10 @@ func TestFilterSyncData(t *testing.T) {
 			data: []campaigns.ChangesetSyncData{
 				{
 					ChangesetID:           1,
-					ExternalServiceIDs:    []int64{2},
 					RepoExternalServiceID: "https://example2.com/",
 				},
 			},
 			want: []campaigns.ChangesetSyncData{},
-		},
-		{
-			name:        "multiple items, should match",
-			codeHostURL: "https://example2.com/",
-			data: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					ExternalServiceIDs:    []int64{1, 2},
-					RepoExternalServiceID: "https://example2.com/",
-				},
-			},
-			want: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					ExternalServiceIDs:    []int64{1, 2},
-					RepoExternalServiceID: "https://example2.com/",
-				},
-			},
 		},
 	}
 
@@ -446,7 +425,6 @@ func TestSyncRegistry(t *testing.T) {
 				{
 					ChangesetID:           1,
 					UpdatedAt:             now,
-					ExternalServiceIDs:    []int64{1},
 					RepoExternalServiceID: "https://example.com/",
 				},
 			}, nil
