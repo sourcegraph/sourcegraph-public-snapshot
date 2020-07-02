@@ -28,8 +28,7 @@ $theme-colors-light: (
 
 // Note that we define this before selection highlights so that it will override
 // the styles of symbol that has both classes applied.
-.sourcegraph-document-highlight,
-.sourcegraph-document-highlight span {
+.sourcegraph-document-highlight {
     background-color: var(--secondary);
 }
 
