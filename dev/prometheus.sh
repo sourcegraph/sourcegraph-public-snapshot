@@ -8,7 +8,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
 if [ ! -e "${PROMETHEUS_DISK}" ]; then
-  mkdir -p ${PROMETHEUS_DISK}
+  mkdir -p "${PROMETHEUS_DISK}"
 fi
 
 IMAGE=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835
