@@ -837,13 +837,15 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 
 			sort.Sort(stored)
 
-			names := make([]string, 3)
-			for i, repo := range stored[:3] {
-				names[i] = repo.Name
-			}
+			names := stored[:3].Names()
 
 			if err := tx.SetClonedRepos(ctx, names...); err != nil {
 				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			stored, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
 			}
 
 			if cloned := stored.Filter(isCloned); len(cloned) != 3 {

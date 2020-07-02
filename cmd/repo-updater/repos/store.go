@@ -439,6 +439,10 @@ func listAllRepoNamesQuery(cursor, limit int64) *sqlf.Query {
 // All repositories whose name is in repoNames will have their cloned column set to true
 // and every other repository will have it set to false.
 func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	if len(repoNames) == 0 {
+		return nil
+	}
+
 	names := make([]*sqlf.Query, len(repoNames))
 	for i, v := range repoNames {
 		names[i] = sqlf.Sprintf("%s", v)
@@ -449,23 +453,16 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 	if err != nil {
 		return err
 	}
+	if rows.Err() != nil {
+		return rows.Err()
+	}
+
 	return rows.Close()
 }
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-UPDATE
-  repo
-SET cloned = false
-WHERE cloned
-AND id NOT IN(
-  UPDATE
-    repo
-  SET cloned = true
-  WHERE NOT cloned
-  AND name IN (%s)
-  RETURNING id
-)
+UPDATE repo SET cloned = name IN (%s)
 `
 
 // a paginatedQuery returns a query with the given pagination
