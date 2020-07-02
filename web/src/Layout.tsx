@@ -165,8 +165,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}
-                    lowProfile={isSearchHomepage || isRepogroupPage}
-                    lowProfileWithLogo={isRepogroupPage}
+                    variant={isSearchHomepage ? 'low-profile' : isRepogroupPage ? 'low-profile-with-logo' : 'default'}
                     hideGlobalSearchInput={hideGlobalSearchInput}
                     hideNavLinks={false}
                 />

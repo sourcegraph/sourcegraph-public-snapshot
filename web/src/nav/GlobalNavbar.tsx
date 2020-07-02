@@ -63,16 +63,14 @@ interface Props
     hideGlobalSearchInput: boolean
 
     /**
-     * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search
+     * Which variation of the global navbar to render.
+     *
+     * 'low-profile' renders the the navbar with no border or background. Used on the search
      * homepage.
+     *
+     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
      */
-    lowProfile: boolean
-
-    /**
-     * Whether to use the low-profile form of the navbar, but show the homepage logo. Used on repogroup pages.
-     * Must be used toogether with the lowProfile prop.
-     */
-    lowProfileWithLogo?: boolean
+    variant: 'default' | 'low-profile' | 'low-profile-with-logo'
 
     splitSearchModes: boolean
     interactiveSearchMode: boolean
@@ -191,10 +189,18 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         )
 
         return (
-            <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
-                {this.props.lowProfile ? (
+            <div
+                className={`global-navbar ${
+                    this.props.variant === 'low-profile' || this.props.variant === 'low-profile-with-logo'
+                        ? ''
+                        : 'global-navbar--bg border-bottom'
+                } py-1`}
+            >
+                {this.props.variant === 'low-profile' || this.props.variant === 'low-profile-with-logo' ? (
                     <>
-                        {this.props.lowProfileWithLogo && <div className="nav-item flex-1">{logoWithNameLink}</div>}
+                        {this.props.variant === 'low-profile-with-logo' && (
+                            <div className="nav-item flex-1">{logoWithNameLink}</div>
+                        )}
                         <div className="flex-1" />
                         {!this.state.authRequired && !this.props.hideNavLinks && (
                             <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
