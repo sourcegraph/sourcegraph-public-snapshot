@@ -96,6 +96,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     onNavbarQueryChange={setUserQueryState}
                     toggleSearchMode={props.toggleSearchMode}
                     lowProfile={false}
+                    homepageMode={props.interactiveModeHomepageMode}
                 />
             ) : (
                 <>
