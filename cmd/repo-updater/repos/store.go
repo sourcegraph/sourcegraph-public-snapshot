@@ -455,7 +455,14 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-UPDATE repo SET cloned = name IN (%s)
+WITH c AS (
+	UPDATE repo SET cloned = true
+	WHERE NOT cloned AND name in (%s)
+	RETURNING id
+ )
+ UPDATE repo SET cloned = false
+ FROM c
+ WHERE cloned AND repo.id != c.id;
 `
 
 // a paginatedQuery returns a query with the given pagination
