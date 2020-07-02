@@ -214,7 +214,7 @@ func normalisedURLFromService(kind, config string) (string, error) {
 		rawURL = v.Url
 	// Unsupported by campaigns
 	default:
-		return "", fmt.Errorf("campaign syncer not stared for unsuppored code host: %q", kind)
+		return "", fmt.Errorf("changeset syncer not started for unsupported code host: %q", kind)
 	}
 
 	parsed, err := url.Parse(rawURL)
