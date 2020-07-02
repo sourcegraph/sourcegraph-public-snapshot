@@ -15,6 +15,21 @@ import (
 // GetUploadsBatchSize is the maximum number of uploads to request from the database at once.
 const GetUploadsBatchSize = 100
 
+// removeRecordsForDeletedRepositories removes all upload records for deleted repositories.
+func (j *Janitor) removeRecordsForDeletedRepositories() error {
+	counts, err := j.store.DeleteUploadsWithoutRepository(context.Background(), time.Now())
+	if err != nil {
+		return err
+	}
+
+	for repoID, count := range counts {
+		log15.Debug("Removed upload records for a deleted repository", "repository_id", repoID, "count", count)
+		j.metrics.UploadRecordsRemoved.Add(float64(count))
+	}
+
+	return nil
+}
+
 // removeCompletedRecordsWithoutBundleFile removes all upload records in the
 // completed state that do not have a corresponding bundle file on disk.
 func (j *Janitor) removeCompletedRecordsWithoutBundleFile() error {

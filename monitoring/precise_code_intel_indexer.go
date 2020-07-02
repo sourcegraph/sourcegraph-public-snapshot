@@ -125,6 +125,32 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
+				Title:  "Janitor - synchronizes database and filesystem and keeps free space on disk",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:              "janitor_errors",
+							Description:       "janitor errors every 5m",
+							Query:             `sum(increase(src_indexer_janitor_errors_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_indexes_removed",
+							Description:       "index records removed every 5m",
+							Query:             `sum(increase(src_indexer_janitor_index_records_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("records removed"),
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{

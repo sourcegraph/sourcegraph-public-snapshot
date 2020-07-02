@@ -2109,16 +2109,29 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
+		ctx := context.Background()
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
+
+			if t.Failed() {
+				return
+			}
+
+			if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM users`)); err != nil {
+				t.Fatal(err)
+			}
 		})
 
-		ctx := context.Background()
-
-		// Create a soft-deleted user
-		q := sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'cindy', NOW())`)
-		if err := s.execute(ctx, q); err != nil {
-			t.Fatal(err)
+		// Set up some users and permissions
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'alice')`),
+			sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'bob')`),
+			sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'cindy', NOW())`),
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		// Set up some permissions
@@ -2132,7 +2145,7 @@ func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 		}
 
 		// Mock user user 2's permissions to be synced in the future
-		q = sqlf.Sprintf(`
+		q := sqlf.Sprintf(`
 UPDATE user_permissions
 SET synced_at = %s
 WHERE user_id = 2`, clock().AddDate(1, 0, 0))
@@ -2146,8 +2159,8 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 			t.Fatal(err)
 		}
 
-		expResults := map[int32]time.Time{1: {}}
-		if diff := cmp.Diff(expResults, results); diff != "" {
+		wantResults := map[int32]time.Time{1: {}}
+		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatal(diff)
 		}
 
@@ -2157,12 +2170,28 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 			t.Fatal(err)
 		}
 
-		expResults = map[int32]time.Time{
+		wantResults = map[int32]time.Time{
 			1: {},
 			2: clock().AddDate(1, 0, 0),
 		}
-		if diff := cmp.Diff(expResults, results); diff != "" {
+		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatal(diff)
+		}
+
+		// Hard-delete user 2
+		if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM users WHERE id = 2`)); err != nil {
+			t.Fatal(err)
+		}
+
+		// Should only get user 1 back with limit=2
+		results, err = s.UserIDsWithOldestPerms(ctx, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantResults = map[int32]time.Time{1: {}}
+		if diff := cmp.Diff(wantResults, results); diff != "" {
+			t.Fatalf("Results mismatch (-want +got):\n%s", diff)
 		}
 	}
 }

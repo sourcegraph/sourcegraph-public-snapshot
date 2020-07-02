@@ -86,4 +86,8 @@ func TestUpdate(t *testing.T) {
 			t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
 		}
 	}
+
+	if len(mockStore.ResetIndexableRepositoriesFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to ResetIndexableRepositories. want=%d have=%d", 2, len(mockStore.ResetIndexableRepositoriesFunc.History()))
+	}
 }
