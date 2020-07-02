@@ -1,22 +1,22 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
-import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
+import type * as sourcegraph from 'sourcegraph'
+import * as clientTypes from '@sourcegraph/extension-api-types'
+import { BehaviorSubject, Subject, of, Observable, from, concat, OperatorFunction, Subscription } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
-import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
-import { proxySubscribable, providerResultToObservable } from './api/common'
+import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged, filter } from 'rxjs/operators'
+import { proxySubscribable, providerResultToObservable, ProxySubscribable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
-import { toPosition } from './api/types'
-import { TextDocumentPositionParams } from '../protocol'
+import { toPosition, fromLocation } from './api/types'
+import { TextDocumentPositionParams, ReferenceParams } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { Hover } from '@sourcegraph/extension-api-types'
-import { isEqual } from 'lodash'
-import { fromHoverMerged, HoverMerged } from '../client/types/hover'
-import { isNot, isExactly } from '../../util/types'
+import { isEqual, castArray } from 'lodash'
+import { fromHoverMerged } from '../client/types/hover'
+import { isNot, isExactly, allOf, isDefined } from '../../util/types'
 import { ViewerId, ExtensionViewer } from '../viewerTypes'
 import { ReferenceCounter } from '../../util/ReferenceCounter'
 import { ExtensionDocument } from './api/textDocument'
@@ -39,6 +39,9 @@ export interface ExtState {
 
     // Lang
     hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
+    definitionProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>
+    referencesProviders: BehaviorSubject<RegisteredProvider<sourcegraph.ReferenceProvider>[]>
+    locationProviders: BehaviorSubject<(RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -46,15 +49,16 @@ export interface RegisteredProvider<T> {
     provider: T
 }
 
-export interface InitResult {
-    configuration: sourcegraph.ConfigurationService
-    workspace: typeof sourcegraph.workspace
+const matchProvider = (textDocument: TextDocumentIdentifier) => <T>(provider: RegisteredProvider<T>): boolean =>
+    match(provider.selector, {
+        uri: textDocument.uri,
+        languageId: getModeFromPath(parseRepoURI(textDocument.uri).filePath || ''),
+    })
+
+export interface InitResult
+    extends Pick<typeof sourcegraph, 'commands' | 'search' | 'languages' | 'workspace' | 'configuration'> {
     exposedToMain: FlatExtHostAPI
-    // todo this is needed as a temp solution for getter problem
     state: Readonly<ExtState>
-    commands: typeof sourcegraph['commands']
-    search: typeof sourcegraph['search']
-    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider'>
 }
 
 /**
@@ -96,6 +100,11 @@ export const initNewExtensionAPI = (
         settings: initialSettings,
         queryTransformers: new BehaviorSubject<sourcegraph.QueryTransformer[]>([]),
         hoverProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
+        definitionProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
+        referencesProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.ReferenceProvider>[]>([]),
+        locationProviders: new BehaviorSubject<(RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]>(
+            []
+        ),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -195,16 +204,65 @@ export const initNewExtensionAPI = (
             ),
 
         // Language
-        getHover: (textParameters: TextDocumentPositionParams) => {
-            const textDocument = getTextDocument(textParameters.textDocument.uri)
-            const position = toPosition(textParameters.position)
+        getHover: (parameters: TextDocumentPositionParams) => {
+            const textDocument = getTextDocument(parameters.textDocument.uri)
+            const position = toPosition(parameters.position)
 
             return proxySubscribable(
-                callProviders(
-                    state.hoverProviders,
-                    textDocument,
-                    provider => provider.provideHover(textDocument, position),
-                    mergeHoverResults
+                state.hoverProviders.pipe(
+                    map(providers => providers.filter(matchProvider(textDocument))),
+                    callProviders(provider => provider.provideHover(textDocument, position), fromHoverMerged)
+                )
+            )
+        },
+        getDefinitions: (parameters: TextDocumentPositionParams) => {
+            const textDocument = getTextDocument(parameters.textDocument.uri)
+            const position = toPosition(parameters.position)
+
+            return proxySubscribable(
+                state.definitionProviders.pipe(
+                    map(providers => providers.filter(matchProvider(textDocument))),
+                    callProviders(
+                        provider => provider.provideDefinition(textDocument, position),
+                        definitions => definitions.flatMap(castArray).map(fromLocation)
+                    )
+                )
+            )
+        },
+        getReferences: (parameters: ReferenceParams) => {
+            const textDocument = getTextDocument(parameters.textDocument.uri)
+            const position = toPosition(parameters.position)
+            const context = parameters.context
+
+            return proxySubscribable(
+                state.referencesProviders.pipe(
+                    map(providers => providers.filter(matchProvider(textDocument))),
+                    callProviders(
+                        provider => provider.provideReferences(textDocument, position, context),
+                        locations => locations.flat().map(fromLocation)
+                    )
+                )
+            )
+        },
+        hasReferenceProvider: textDocument =>
+            proxySubscribable(
+                state.referencesProviders.pipe(
+                    map(providers => providers.filter(matchProvider(textDocument)).length > 0)
+                )
+            ),
+        getLocations: (id: string, parameters: TextDocumentPositionParams) => {
+            const textDocument = getTextDocument(parameters.textDocument.uri)
+            const position = toPosition(parameters.position)
+
+            return proxySubscribable(
+                state.locationProviders.pipe(
+                    map(providers =>
+                        providers.filter(provider => id === provider.id && matchProvider(textDocument)(provider))
+                    ),
+                    callProviders(
+                        provider => provider.provideLocations(textDocument, position),
+                        locations => locations.flat().map(fromLocation)
+                    )
                 )
             )
         },
@@ -326,8 +384,8 @@ export const initNewExtensionAPI = (
         get textDocuments() {
             return [...textDocuments.values()]
         },
-        openedTextDocuments,
-        onDidOpenTextDocument: openedTextDocuments.asObservable() ,
+        openedTextDocuments: openedTextDocuments.asObservable(),
+        onDidOpenTextDocument: openedTextDocuments.asObservable(),
         onDidChangeRoots: rootChanges.asObservable(),
         rootChanges: rootChanges.asObservable(),
         versionContextChanges: versionContextChanges.asObservable(),
@@ -344,12 +402,6 @@ export const initNewExtensionAPI = (
         registerQueryTransformer: transformer => addWithRollback(state.queryTransformers, transformer),
     }
 
-    // Languages
-    const registerHoverProvider = (
-        selector: sourcegraph.DocumentSelector,
-        provider: sourcegraph.HoverProvider
-    ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider })
-
     return {
         exposedToMain,
         configuration: Object.assign(configChanges.asObservable(), {
@@ -360,32 +412,25 @@ export const initNewExtensionAPI = (
         commands,
         search,
         languages: {
-            registerHoverProvider,
+            registerHoverProvider: (selector, provider) =>
+                addWithRollback(state.hoverProviders, { selector, provider }),
+            registerDefinitionProvider: (selector, provider) =>
+                addWithRollback(state.definitionProviders, { selector, provider }),
+            registerReferenceProvider: (selector, provider) =>
+                addWithRollback(state.referencesProviders, { selector, provider }),
+            registerLocationProvider: (id, selector, provider) =>
+                addWithRollback(state.locationProviders, { id, selector, provider }),
+            registerCompletionItemProvider: () => {
+                console.warn(
+                    'sourcegraph.languages.registerCompletionProvider was removed for the time being. It has no effect.'
+                )
+                return new Subscription()
+            },
         },
     }
 }
 
 // TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
-/**
- * Filters a list of Providers (P type) based on their selectors and a document
- *
- * @param document to use for filtering
- * @param entries array of providers (P[])
- * @param selector a way to get a selector from a Provider
- * @returns a filtered array of providers
- */
-function providersForDocument<P>(
-    document: TextDocumentIdentifier,
-    entries: P[],
-    selector: (p: P) => sourcegraph.DocumentSelector
-): P[] {
-    return entries.filter(provider =>
-        match(selector(provider), {
-            uri: document.uri,
-            languageId: getModeFromPath(parseRepoURI(document.uri).filePath || ''),
-        })
-    )
-}
 
 /**
  * calls next() on behaviorSubject with a immutably added element ([...old, value])
@@ -396,72 +441,51 @@ function providersForDocument<P>(
  */
 function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): sourcegraph.Unsubscribable {
     behaviorSubject.next([...behaviorSubject.value, value])
-    return {
-        unsubscribe: () => behaviorSubject.next(behaviorSubject.value.filter(item => item !== value)),
-    }
+    return new Subscription(() => behaviorSubject.next(behaviorSubject.value.filter(item => item !== value)))
 }
 
 /**
- * Helper function to abstract common logic of invoking language providers.
- *
- * 1. filters providers based on document
- * 2. invokes filtered providers via invokeProvider function
- * 3. adds [LOADING] state for each provider result stream
- * 4. omits errors from provider results with potential logging
- * 5. aggregates latests results from providers based on mergeResult function
+ * Takes a stream of providers, calls them using `invokeProvider` and merges the results using `mergeResults`.
  *
  * @param providersObservable observable of provider collection (expected to emit if a provider was added or removed)
- * @param document used for filtering providers
  * @param invokeProvider specifies how to get results from a provider (usually a closure over provider arguments)
- * @param mergeResult specifies how providers results should be aggregated
+ * @param mergeResults specifies how provider results should be aggregated
  * @param logErrors if console.error should be used for reporting errors from providers
  * @returns observable of aggregated results from all providers based on mergeResults function
  */
 export function callProviders<TProvider, TProviderResult, TMergedResult>(
-    providersObservable: Observable<RegisteredProvider<TProvider>[]>,
-    document: TextDocumentIdentifier,
     invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
-    mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
+    mergeResults: (providerResults: Exclude<TProviderResult, null | undefined>[]) => TMergedResult,
     logErrors: boolean = true
-): Observable<MaybeLoadingResult<TMergedResult>> {
-    return providersObservable
-        .pipe(
-            map(providers => providersForDocument(document, providers, ({ selector }) => selector)),
-            switchMap(providers =>
-                combineLatestOrDefault(
-                    providers.map(provider =>
-                        concat(
-                            [LOADING],
-                            providerResultToObservable(invokeProvider(provider.provider)).pipe(
-                                defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
-                                catchError(error => {
-                                    if (logErrors) {
-                                        console.error('Provider errored:', error)
-                                    }
-                                    return [null]
-                                })
+): OperatorFunction<RegisteredProvider<TProvider>[], MaybeLoadingResult<TMergedResult>> {
+    return providersObservable =>
+        providersObservable
+            .pipe(
+                switchMap(providers =>
+                    combineLatestOrDefault(
+                        providers.map(provider =>
+                            concat(
+                                [LOADING],
+                                providerResultToObservable(invokeProvider(provider.provider)).pipe(
+                                    defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
+                                    catchError(error => {
+                                        if (logErrors) {
+                                            console.error('Provider errored:', error)
+                                        }
+                                        return [null]
+                                    })
+                                )
                             )
                         )
                     )
                 )
             )
-        )
-        .pipe(
-            defaultIfEmpty<(typeof LOADING | TProviderResult | null | undefined)[]>([]),
-            map(results => ({
-                isLoading: results.some(hover => hover === LOADING),
-                result: mergeResult(results),
-            })),
-            distinctUntilChanged((a, b) => isEqual(a, b))
-        )
-}
-
-/**
- * merges latests results from hover providers into a form that is convenient to show
- *
- * @param results latests results from hover providers
- * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
- */
-export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
-    return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
+            .pipe(
+                defaultIfEmpty<(typeof LOADING | TProviderResult | null | undefined)[]>([]),
+                map(results => ({
+                    isLoading: results.some(hover => hover === LOADING),
+                    result: mergeResults(results.filter(allOf(isNot(isExactly(LOADING)), isDefined))),
+                })),
+                distinctUntilChanged((a, b) => isEqual(a, b))
+            )
 }

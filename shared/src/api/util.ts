@@ -109,6 +109,8 @@ export const noopFlatExtensionHostAPI: FlatExtHostAPI = {
     getHover: () => proxySubscribable(of({ isLoading: false, result: null })),
     getDefinitions: () => proxySubscribable(of({ isLoading: false, result: [] })),
     getReferences: () => proxySubscribable(of({ isLoading: false, result: [] })),
+    getLocations: () => proxySubscribable(of({ isLoading: false, result: [] })),
+    hasReferenceProvider: () => proxySubscribable(of(false)),
 }
 
 export const noopMainThreadAPI: MainThreadAPI = {

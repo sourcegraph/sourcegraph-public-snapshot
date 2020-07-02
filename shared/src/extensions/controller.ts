@@ -87,7 +87,7 @@ export function createController(context: PlatformContext): Controller {
 
     const notifications = new Subject<Notification>()
 
-    subscriptions.add(registerBuiltinClientCommands(services, context))
+    subscriptions.add(registerBuiltinClientCommands(services, context, extensionHostClientPromise))
     subscriptions.add(registerExtensionContributions(services.contribution, services.extensions))
 
     // Show messages (that don't need user input) as global notifications.

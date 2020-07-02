@@ -10,7 +10,6 @@ import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
 import { ContributionRegistry } from '../api/client/services/contribution'
 import { createTestViewerService } from '../api/client/services/viewerService.test'
-import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
 import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
 import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
 import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
@@ -32,6 +31,8 @@ import {
 } from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
+import { pretendRemote, noopFlatExtensionHostAPI } from '../api/util'
+import { proxySubscribable } from '../api/extension/api/common'
 
 const FIXTURE_PARAMS: TextDocumentPositionParams & URLToFileContext = {
     textDocument: { uri: 'git://r?c#f' },
@@ -99,22 +100,24 @@ describe('getHoverActionsContext', () => {
                     getHoverActionsContext(
                         {
                             extensionsController: {
+                                extensionHostAPI: Promise.resolve(
+                                    pretendRemote({
+                                        ...noopFlatExtensionHostAPI,
+                                        getLocations: () =>
+                                            proxySubscribable(
+                                                cold<MaybeLoadingResult<Location[]>>(`l ${LOADER_DELAY + 100}ms r`, {
+                                                    l: { isLoading: true, result: [] },
+                                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                                })
+                                            ),
+                                        hasReferenceProvider: () =>
+                                            proxySubscribable(
+                                                cold<boolean>('a', { a: true })
+                                            ),
+                                    })
+                                ),
                                 services: {
                                     workspace: testWorkspaceService(),
-                                    textDocumentDefinition: {
-                                        getLocations: () =>
-                                            cold<MaybeLoadingResult<Location[]>>(`l ${LOADER_DELAY + 100}ms r`, {
-                                                l: { isLoading: true, result: [] },
-                                                r: { isLoading: false, result: [FIXTURE_LOCATION] },
-                                            }),
-                                    },
-                                    textDocumentReferences: {
-                                        providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParams, Location>[]>(
-                                                'a',
-                                                { a: [() => of(null)] }
-                                            ),
-                                    },
                                 },
                             },
                             platformContext: { urlToFile, requestGraphQL },

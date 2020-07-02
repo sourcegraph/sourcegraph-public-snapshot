@@ -9,15 +9,14 @@ import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
-import { ExtensionDocuments } from './api/documents'
 import { handleExtensionActivation } from './api/extensions'
-import { ExtensionLanguageFeatures } from './api/languageFeatures'
 import { ExtensionViewsApi } from './api/views'
 import { ExtensionWindows } from './api/windows'
 
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsCascade } from '../../settings/settings'
+import { ExtensionDocuments } from './api/documents'
 
 /**
  * Required information when initializing an extension host.
@@ -134,17 +133,12 @@ function createExtensionAPI(
 
     const windows = new ExtensionWindows(proxy, documents)
     const views = new ExtensionViewsApi(proxy.views)
-    const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
     const content = new ExtensionContent(proxy.content)
 
-    const {
-        configuration,
-        exposedToMain,
-        workspace,
-        commands,
-        search,
-        languages: { registerHoverProvider },
-    } = initNewExtensionAPI(proxy, initData.initialSettings)
+    const { configuration, exposedToMain, workspace, commands, search, languages } = initNewExtensionAPI(
+        proxy,
+        initData.initialSettings
+    )
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -152,7 +146,6 @@ function createExtensionAPI(
 
         ping: () => 'pong',
 
-        documents,
         windows,
         ...exposedToMain,
     }
@@ -161,14 +154,7 @@ function createExtensionAPI(
     // "redefines" everything instead of exposing internal Ext* classes directly so as to:
     // - Avoid exposing private methods to extensions
     // - Avoid exposing proxy.* to extensions, which gives access to the main thread
-    const extensionAPI: typeof sourcegraph & {
-        // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
-        // noops with a log message), to avoid completely breaking extensions that use them.
-        languages: {
-            registerTypeDefinitionProvider: any
-            registerImplementationProvider: any
-        }
-    } = {
+    const extensionAPI: typeof sourcegraph = {
         URI: URL,
         Position,
         Range,
@@ -193,47 +179,7 @@ function createExtensionAPI(
 
         configuration,
 
-        languages: {
-            registerHoverProvider,
-
-            registerDefinitionProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.DefinitionProvider
-            ) => languageFeatures.registerDefinitionProvider(selector, provider),
-
-            // These were removed, but keep them here so that calls from old extensions do not throw
-            // an exception and completely break.
-            registerTypeDefinitionProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-            registerImplementationProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-
-            registerReferenceProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.ReferenceProvider
-            ) => languageFeatures.registerReferenceProvider(selector, provider),
-
-            registerLocationProvider: (
-                id: string,
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.LocationProvider
-            ) => languageFeatures.registerLocationProvider(id, selector, provider),
-
-            registerCompletionItemProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerCompletionProvider was removed for the time being. It has no effect.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-        },
+        languages,
 
         search,
         commands,

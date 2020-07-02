@@ -2,13 +2,14 @@ import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable, TextDocument } from 'sourcegraph'
+import { Unsubscribable, TextDocument, Badged } from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
-import { TextDocumentPositionParams } from './protocol'
+import { TextDocumentPositionParams, ReferenceParams } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 import { ConfiguredExtension } from '../extensions/extension'
 import { ViewerData, ViewerId } from './viewerTypes'
+import { TextDocumentIdentifier } from './client/types/textDocument'
 
 /**
  * A text model is a text document and associated metadata.
@@ -67,9 +68,16 @@ export interface FlatExtHostAPI {
     removeViewer(viewer: ViewerId): void
 
     // Languages
-    getHover(parameters: TextDocumentPositionParams): ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
-    getDefinitions(parameters: TextDocumentPositionParams): ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
-    getReferences(parameters: TextDocumentPositionParams): ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
+    getHover: (parameters: TextDocumentPositionParams) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
+    getDefinitions: (
+        parameters: TextDocumentPositionParams
+    ) => ProxySubscribable<MaybeLoadingResult<Badged<clientType.Location>[]>>
+    getReferences: (parameters: ReferenceParams) => ProxySubscribable<MaybeLoadingResult<Badged<clientType.Location>[]>>
+    hasReferenceProvider: (textDocument: TextDocumentIdentifier) => ProxySubscribable<boolean>
+    getLocations: (
+        id: string,
+        parameters: TextDocumentPositionParams
+    ) => ProxySubscribable<MaybeLoadingResult<Badged<clientType.Location>[]>>
 }
 
 /**

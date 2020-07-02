@@ -8,7 +8,6 @@ import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
 import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
-import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { Services } from './services'
@@ -93,29 +92,17 @@ export async function createExtensionHostClientConnection(
         }
     )
 
-    const clientViews = new ClientViews(
-        services.panelViews,
-        services.textDocumentLocations,
-        services.viewer,
-        services.view
-    )
-
-    const clientLanguageFeatures = new ClientLanguageFeatures(
-        services.textDocumentDefinition,
-        services.textDocumentReferences,
-        services.textDocumentLocations
-    )
-
     const clientContent = createClientContent(services.linkPreviews)
 
     const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
+
+    const clientViews = new ClientViews(services.panelViews, proxy, services.viewer, services.view)
 
     subscription.add(apiSubscriptions)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
         context: clientContext,
-        languageFeatures: clientLanguageFeatures,
         windows: clientWindows,
         views: clientViews,
         content: clientContent,

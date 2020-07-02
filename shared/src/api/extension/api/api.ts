@@ -9,6 +9,5 @@ export type ExtensionHostAPIFactory = (initData: InitData) => ExtensionHostAPI
 export interface ExtensionHostAPI extends ProxyMarked, FlatExtHostAPI {
     ping(): 'pong'
 
-    documents: ExtDocumentsAPI
     windows: ExtensionWindowsAPI
 }
