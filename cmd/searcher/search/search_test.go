@@ -34,6 +34,7 @@ func TestSearch(t *testing.T) {
 		"README.md": `# Hello World
 
 Hello world example in go`,
+		"file++.plus": `filename contains regex metachars`,
 		"main.go": `package main
 
 import "fmt"
@@ -180,6 +181,14 @@ main.go:7:}
 `},
 
 		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, ``},
+		{protocol.PatternInfo{
+			Pattern:         "filename contains regex metachars",
+			IncludePatterns: []string{"file++.plus"},
+			IsStructuralPat: true,
+			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
+		}, `
+file++.plus:1:filename contains regex metachars
+`},
 	}
 
 	store, cleanup, err := newStore(files)
@@ -191,6 +200,11 @@ main.go:7:}
 	defer ts.Close()
 
 	for i, test := range cases {
+		if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
+			// If we are not on CI, skip the comby-dependent test.
+			continue
+		}
+
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
