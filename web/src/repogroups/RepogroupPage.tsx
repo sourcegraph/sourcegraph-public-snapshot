@@ -1,13 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../components/PageTitle'
-import { Form } from 'reactstrap'
-import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
-import { VersionContextDropdown } from '../nav/VersionContextDropdown'
-import { LazyMonacoQueryInput } from '../search/input/LazyMonacoQueryInput'
-import { QueryInput } from '../search/input/QueryInput'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR, KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { SearchButton } from '../search/input/SearchButton'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { Link } from '../../../shared/src/components/Link'
 import { SettingsCascadeProps, Settings } from '../../../shared/src/settings/settings'
 import sanitizeHtml from 'sanitize-html'
@@ -33,7 +27,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata, RepositoryType, CodeHosts } from './types'
-import { InteractiveModeInput } from '../search/input/interactive/InteractiveModeInput'
+import { SearchPageInput } from '../search/input/SearchPageInput'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -70,22 +64,6 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
 
-    /** The query cursor position and value entered by the user in the query input */
-    const [userQueryState, setUserQueryState] = useState({
-        query: repogroupQuery,
-        cursorPosition: repogroupQuery.length,
-    })
-
-    const onSubmit = React.useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
-            // False positive
-            // eslint-disable-next-line no-unused-expressions
-            event?.preventDefault()
-            submitSearch({ ...props, query: userQueryState.query, source: 'repogroupPage' })
-        },
-        [props, userQueryState.query]
-    )
-
     const onSubmitExample = (query: string) => (event?: React.MouseEvent<HTMLButtonElement>): void => {
         // eslint-disable-next-line no-unused-expressions
         event?.preventDefault()
@@ -108,70 +86,7 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
                 </span>
             </div>
             <div className="repogroup-page__container">
-                <div className="d-flex flex-row flex-shrink-past-contents">
-                    <>
-                        {props.splitSearchModes && props.interactiveSearchMode ? (
-                            <InteractiveModeInput
-                                {...props}
-                                navbarSearchState={userQueryState}
-                                onNavbarQueryChange={setUserQueryState}
-                                toggleSearchMode={props.toggleSearchMode}
-                                lowProfile={false}
-                                homepageMode={true}
-                            />
-                        ) : (
-                            <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                                <div className="repogroup-page__input-container">
-                                    {props.splitSearchModes && (
-                                        <SearchModeToggle
-                                            {...props}
-                                            interactiveSearchMode={props.interactiveSearchMode}
-                                        />
-                                    )}
-                                    <VersionContextDropdown
-                                        history={props.history}
-                                        caseSensitive={props.caseSensitive}
-                                        patternType={props.patternType}
-                                        navbarSearchQuery={userQueryState.query}
-                                        versionContext={props.versionContext}
-                                        setVersionContext={props.setVersionContext}
-                                        availableVersionContexts={props.availableVersionContexts}
-                                    />
-                                    {props.smartSearchField ? (
-                                        <LazyMonacoQueryInput
-                                            {...props}
-                                            hasGlobalQueryBehavior={true}
-                                            queryState={userQueryState}
-                                            onChange={setUserQueryState}
-                                            onSubmit={onSubmit}
-                                            autoFocus={true}
-                                        />
-                                    ) : (
-                                        <QueryInput
-                                            {...props}
-                                            value={userQueryState}
-                                            onChange={setUserQueryState}
-                                            autoFocus="cursor-at-end"
-                                            hasGlobalQueryBehavior={true}
-                                            patternType={props.patternType}
-                                            setPatternType={props.setPatternType}
-                                            withSearchModeToggle={props.splitSearchModes}
-                                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                                        />
-                                    )}
-                                    <SearchButton />
-                                </div>
-                                <div className="search-page__input-sub-container">
-                                    {!props.splitSearchModes && (
-                                        <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
-                                            Query builder
-                                        </Link>
-                                    )}
-                                </div>
-                            </Form>
-                        )}
-                    </>
-                </div>
+                <SearchPageInput {...props} source="repogroupPage" />
             </div>
             <div className="repogroup-page__content">
                 <div className="repogroup-page__column">
