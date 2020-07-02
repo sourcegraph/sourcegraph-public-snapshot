@@ -168,20 +168,36 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
 
 const RepoLink: React.FunctionComponent<{ repo: RepositoryType }> = props => (
     <li className="repogroup-page__repo-item list-unstyled mb-3" key={props.repo.name}>
-        <a href={`https://${props.repo.name}`} target="_blank" rel="noopener noreferrer">
-            {props.repo.codehost === CodeHosts.GITHUB && (
-                <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
-            )}
-            {props.repo.codehost === CodeHosts.GITLAB && (
-                <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
-            )}
-            {props.repo.codehost === CodeHosts.BITBUCKET && (
-                <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
-            )}
-        </a>
-        <Link to={`/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
-            {props.repo.name}
-        </Link>
+        {props.repo.codehost === CodeHosts.GITHUB && (
+            <>
+                <a href={`https://github.com/${props.repo.name}`} target="_blank" rel="noopener noreferrer">
+                    <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
+                </a>
+                <Link to={`/github.com/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
+                    {props.repo.name}
+                </Link>
+            </>
+        )}
+        {props.repo.codehost === CodeHosts.GITLAB && (
+            <>
+                <a href={`https://gitlab.com/${props.repo.name}`} target="_blank" rel="noopener noreferrer">
+                    <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
+                </a>
+                <Link to={`/gitlab.com/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
+                    {props.repo.name}
+                </Link>
+            </>
+        )}
+        {props.repo.codehost === CodeHosts.BITBUCKET && (
+            <>
+                <a href={`https://bitbucket.com/${props.repo.name}`} target="_blank" rel="noopener noreferrer">
+                    <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
+                </a>
+                <Link to={`/bitbucket.com/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
+                    {props.repo.name}
+                </Link>
+            </>
+        )}
     </li>
 )
 

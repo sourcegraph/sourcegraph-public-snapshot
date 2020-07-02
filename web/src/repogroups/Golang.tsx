@@ -5,9 +5,9 @@ export const golang: RepogroupMetadata = {
     name: 'golang',
     url: '/golang',
     repositories: [
-        { name: 'github.com/golang/go', codehost: CodeHosts.GITHUB },
-        { name: 'github.com/kubernetes/kubernetes', codehost: CodeHosts.GITHUB },
-        { name: 'github.com/moby/moby', codehost: CodeHosts.GITHUB },
+        { name: 'golang/go', codehost: CodeHosts.GITHUB },
+        { name: 'kubernetes/kubernetes', codehost: CodeHosts.GITHUB },
+        { name: 'moby/moby', codehost: CodeHosts.GITHUB },
     ],
     description: 'Interesting examples of Go.',
     examples: [

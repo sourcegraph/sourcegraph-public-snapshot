@@ -5,11 +5,11 @@ export const kubernetes: RepogroupMetadata = {
     name: 'kubernetes',
     url: '/kubernetes',
     repositories: [
-        { name: 'github.com/kubernetes/community', codehost: CodeHosts.GITHUB },
-        { name: 'github.com/kubernetes/kubernetes', codehost: CodeHosts.GITHUB },
-        { name: 'github.com/kubernetes/website', codehost: CodeHosts.GITHUB },
-        { name: 'github.com/kubernetes/minikube', codehost: CodeHosts.GITHUB },
-        { name: 'github.com/kubernetes/autoscaler', codehost: CodeHosts.GITHUB },
+        { name: 'kubernetes/community', codehost: CodeHosts.GITHUB },
+        { name: 'kubernetes/kubernetes', codehost: CodeHosts.GITHUB },
+        { name: 'kubernetes/website', codehost: CodeHosts.GITHUB },
+        { name: 'kubernetes/minikube', codehost: CodeHosts.GITHUB },
+        { name: 'kubernetes/autoscaler', codehost: CodeHosts.GITHUB },
     ],
     description: 'This repository group contains all the repositories for the Kubernetes community.',
     examples: [
