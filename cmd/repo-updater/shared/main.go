@@ -277,12 +277,12 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 			continue
 		}
 
+		sched.SetCloned(cloned)
+
 		err = store.SetClonedRepos(ctx, cloned...)
 		if err != nil {
 			log15.Warn("failed to set cloned repository list", "error", err)
 			continue
 		}
-
-		sched.SetCloned(cloned)
 	}
 }
