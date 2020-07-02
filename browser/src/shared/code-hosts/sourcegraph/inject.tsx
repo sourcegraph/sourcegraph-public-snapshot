@@ -40,7 +40,10 @@ function dispatchSourcegraphEvents(): void {
     document.dispatchEvent(new CustomEvent<{}>('sourcegraph:browser-extension-registration'))
 }
 
-export const checkIsSourcegraph = (sourcegraphServerUrl: string): boolean =>
-    window.location.origin === sourcegraphServerUrl ||
-    /^https?:\/\/(www\.)?sourcegraph\.com/.test(location.href) ||
+export const checkIsSourcegraph = (
+    sourcegraphServerUrl: string,
+    { origin, href }: Pick<Location, 'origin' | 'href'> = window.location
+): boolean =>
+    origin === sourcegraphServerUrl ||
+    /^https?:\/\/(www\.)?sourcegraph\.com/.test(href) ||
     !!document.querySelector('#sourcegraph-chrome-webstore-item')
