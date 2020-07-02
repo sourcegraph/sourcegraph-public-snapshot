@@ -191,10 +191,10 @@ for assistance.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # frontend: provisioning_container_memory_usage_1d
 
@@ -204,10 +204,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of frontend container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of frontend container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # frontend: provisioning_container_cpu_usage_5m
 
@@ -358,10 +358,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # gitserver: provisioning_container_memory_usage_1d
 
@@ -371,10 +371,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # gitserver: provisioning_container_cpu_usage_5m
 
@@ -443,10 +443,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # github-proxy: provisioning_container_memory_usage_1d
 
@@ -456,10 +456,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of github-proxy container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of github-proxy container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # github-proxy: provisioning_container_cpu_usage_5m
 
@@ -557,10 +557,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # precise-code-intel-bundle-manager: provisioning_container_memory_usage_1d
 
@@ -570,10 +570,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # precise-code-intel-bundle-manager: provisioning_container_cpu_usage_5m
 
@@ -658,10 +658,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # precise-code-intel-worker: provisioning_container_memory_usage_1d
 
@@ -671,10 +671,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # precise-code-intel-worker: provisioning_container_cpu_usage_5m
 
@@ -759,10 +759,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # precise-code-intel-indexer: provisioning_container_memory_usage_1d
 
@@ -772,10 +772,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # precise-code-intel-indexer: provisioning_container_cpu_usage_5m
 
@@ -860,10 +860,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # query-runner: provisioning_container_memory_usage_1d
 
@@ -873,10 +873,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of query-runner container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of query-runner container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # query-runner: provisioning_container_cpu_usage_5m
 
@@ -961,10 +961,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # replacer: provisioning_container_memory_usage_1d
 
@@ -974,10 +974,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of replacer container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of replacer container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # replacer: provisioning_container_cpu_usage_5m
 
@@ -1062,10 +1062,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # repo-updater: provisioning_container_memory_usage_1d
 
@@ -1075,10 +1075,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of repo-updater container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of repo-updater container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # repo-updater: provisioning_container_cpu_usage_5m
 
@@ -1163,10 +1163,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # searcher: provisioning_container_memory_usage_1d
 
@@ -1176,10 +1176,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of searcher container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of searcher container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # searcher: provisioning_container_cpu_usage_5m
 
@@ -1264,10 +1264,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # symbols: provisioning_container_memory_usage_1d
 
@@ -1277,10 +1277,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of symbols container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of symbols container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # symbols: provisioning_container_cpu_usage_5m
 
@@ -1349,10 +1349,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # syntect-server: provisioning_container_memory_usage_1d
 
@@ -1362,10 +1362,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of syntect-server container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of syntect-server container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # syntect-server: provisioning_container_cpu_usage_5m
 
@@ -1434,10 +1434,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # zoekt-indexserver: provisioning_container_memory_usage_1d
 
@@ -1447,10 +1447,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # zoekt-indexserver: provisioning_container_cpu_usage_5m
 
@@ -1519,10 +1519,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # zoekt-webserver: provisioning_container_memory_usage_1d
 
@@ -1532,10 +1532,10 @@ If usage is low, consider decreasing the above values.
 
 **Possible solutions:**
 
-If usage is high:
-- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider decreasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-If usage is low, consider decreasing the above values.
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
 
 # zoekt-webserver: provisioning_container_cpu_usage_5m
 

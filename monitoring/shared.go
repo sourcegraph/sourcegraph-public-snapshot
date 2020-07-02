@@ -156,10 +156,10 @@ var sharedProvisioningCPUUsage1d sharedObservable = func(containerName string) O
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
 		PossibleSolutions: strings.Replace(`
-			If usage is high:
-			- **Kubernetes:** Consider decreasing CPU limits in the the relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider descreasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			If usage is low, consider decreasing the above values.
+			- If usage is high:
+				- **Kubernetes:** Consider decreasing CPU limits in the the relevant 'Deployment.yaml'.
+				- **Docker Compose:** Consider descreasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+			- If usage is low, consider decreasing the above values.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }
@@ -173,10 +173,10 @@ var sharedProvisioningMemoryUsage1d sharedObservable = func(containerName string
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
 		PossibleSolutions: strings.Replace(`
-			If usage is high:
-			- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider decreasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			If usage is low, consider decreasing the above values.
+			- If usage is high:
+				- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.
+				- **Docker Compose:** Consider decreasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+			- If usage is low, consider decreasing the above values.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }
