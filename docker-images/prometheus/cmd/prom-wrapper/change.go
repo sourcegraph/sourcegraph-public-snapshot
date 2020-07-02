@@ -38,19 +38,20 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 	})
 
 	// make sure alerts are routed appropriately
+	groupBy := []model.LabelName{"level", "service_name", "name"}
 	change.AMConfig.Route = &amconfig.Route{
 		Receiver: alertmanagerNoopReceiver,
 		Routes: []*amconfig.Route{
 			{
 				Receiver: alertmanagerWarningReceiver,
-				GroupBy:  []model.LabelName{"description"},
+				GroupBy:  groupBy,
 				Match: map[string]string{
 					"level": "warning",
 				},
 			},
 			{
 				Receiver: alertmanagerCriticalReceiver,
-				GroupBy:  []model.LabelName{"description"},
+				GroupBy:  groupBy,
 				Match: map[string]string{
 					"level": "critical",
 				},

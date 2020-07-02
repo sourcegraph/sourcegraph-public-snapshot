@@ -15,6 +15,15 @@ const (
 	alertmanagerCriticalReceiver = "src-critical-receiver"
 )
 
+var (
+	// alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
+	alertSolutionsTemplate    = `https://docs.sourcegraph.com/admin/observability/alert_solutions#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
+	notificationTitleTemplate = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
+	notificationBodyTemplate  = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'{{ range .Alerts }} {{ .Labels.instance }}{{ end }}.
+
+For possible solutions, see %s`, alertSolutionsTemplate)
+)
+
 // newReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers.
 // Each alert level has a receiver, which has configuration for all channels for that level.
 func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error)) []*amconfig.Receiver {
@@ -40,6 +49,11 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 		case notifier.Email != nil:
 			receiver.EmailConfigs = append(receiver.EmailConfigs, &amconfig.EmailConfig{
 				To: notifier.Email.Address,
+
+				Headers: map[string]string{
+					"subject": notificationTitleTemplate,
+				},
+				HTML: fmt.Sprintf(`<body>%s</body>`, notificationBodyTemplate),
 				// SMTP configuration is applied globally by changeSMTP
 
 				NotifierConfig: notifierConfig,
@@ -58,6 +72,9 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				APIKey: amconfig.Secret(notifier.Opsgenie.ApiKey),
 				APIURL: apiURL,
 
+				Message:     notificationTitleTemplate,
+				Description: notificationBodyTemplate,
+
 				NotifierConfig: notifierConfig,
 			})
 		case notifier.Pagerduty != nil:
@@ -75,6 +92,12 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				Severity:   notifier.Pagerduty.Severity,
 				URL:        apiURL,
 
+				Description: notificationTitleTemplate,
+				Links: []amconfig.PagerdutyLink{{
+					Text: "Alert solutions",
+					Href: alertSolutionsTemplate,
+				}},
+
 				NotifierConfig: notifierConfig,
 			})
 		case notifier.Slack != nil:
@@ -83,12 +106,18 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
 				continue
 			}
+			if notifier.Slack.Username != "" {
+				notifier.Slack.Username = "Sourcegraph Alerts"
+			}
 			receiver.SlackConfigs = append(receiver.SlackConfigs, &amconfig.SlackConfig{
 				APIURL:    &amconfig.SecretURL{URL: url},
 				Username:  notifier.Slack.Username,
 				Channel:   notifier.Slack.Recipient,
 				IconEmoji: notifier.Slack.Icon_emoji,
 				IconURL:   notifier.Slack.Icon_url,
+
+				Title: notificationTitleTemplate,
+				Text:  notificationBodyTemplate,
 
 				NotifierConfig: notifierConfig,
 			})
