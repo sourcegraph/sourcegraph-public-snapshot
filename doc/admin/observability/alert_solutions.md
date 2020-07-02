@@ -150,7 +150,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 1+ container restarts every 5m by instance (not available on server)_
+- _frontend: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -165,7 +165,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 99%+ container memory usage by instance (not available on server)_
+- _frontend: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -176,7 +176,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -187,7 +187,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _frontend: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -200,7 +200,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _frontend: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -213,7 +213,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _frontend: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _frontend: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -224,7 +224,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _frontend: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _frontend: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -317,7 +317,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _gitserver: 1+ container restarts every 5m by instance (not available on server)_
+- _gitserver: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -332,7 +332,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _gitserver: 99%+ container memory usage by instance (not available on server)_
+- _gitserver: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -343,7 +343,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -354,7 +354,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _gitserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -367,7 +367,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _gitserver: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -380,7 +380,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _gitserver: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -391,7 +391,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _gitserver: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -402,7 +402,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _github-proxy: 1+ container restarts every 5m by instance (not available on server)_
+- _github-proxy: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -417,7 +417,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _github-proxy: 99%+ container memory usage by instance (not available on server)_
+- _github-proxy: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -428,7 +428,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -439,7 +439,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _github-proxy: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -452,7 +452,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _github-proxy: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -465,7 +465,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _github-proxy: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -476,7 +476,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _github-proxy: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -516,7 +516,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -531,7 +531,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -542,7 +542,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -553,7 +553,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -566,7 +566,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -579,7 +579,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -590,7 +590,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -617,7 +617,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 1+ container restarts every 5m by instance (not available on server)_
+- _precise-code-intel-worker: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -632,7 +632,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 99%+ container memory usage by instance (not available on server)_
+- _precise-code-intel-worker: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -643,7 +643,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -654,7 +654,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -667,7 +667,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -680,7 +680,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _precise-code-intel-worker: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -691,7 +691,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _precise-code-intel-worker: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -718,7 +718,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 1+ container restarts every 5m by instance (not available on server)_
+- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -733,7 +733,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container memory usage by instance (not available on server)_
+- _precise-code-intel-indexer: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -744,7 +744,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -755,7 +755,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -768,7 +768,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -781,7 +781,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -792,7 +792,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _precise-code-intel-indexer: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -819,7 +819,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _query-runner: 1+ container restarts every 5m by instance (not available on server)_
+- _query-runner: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -834,7 +834,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _query-runner: 99%+ container memory usage by instance (not available on server)_
+- _query-runner: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -845,7 +845,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _query-runner: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _query-runner: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -856,7 +856,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _query-runner: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -869,7 +869,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _query-runner: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -882,7 +882,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _query-runner: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -893,7 +893,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _query-runner: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -920,7 +920,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _replacer: 1+ container restarts every 5m by instance (not available on server)_
+- _replacer: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -935,7 +935,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _replacer: 99%+ container memory usage by instance (not available on server)_
+- _replacer: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -946,7 +946,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -957,7 +957,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _replacer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -970,7 +970,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _replacer: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -983,7 +983,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _replacer: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _replacer: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -994,7 +994,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _replacer: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _replacer: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -1021,7 +1021,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _repo-updater: 1+ container restarts every 5m by instance (not available on server)_
+- _repo-updater: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -1036,7 +1036,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container memory usage by instance (not available on server)_
+- _repo-updater: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -1047,7 +1047,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1058,7 +1058,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _repo-updater: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1071,7 +1071,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _repo-updater: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -1084,7 +1084,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _repo-updater: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1095,7 +1095,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _repo-updater: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -1122,7 +1122,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _searcher: 1+ container restarts every 5m by instance (not available on server)_
+- _searcher: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -1137,7 +1137,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _searcher: 99%+ container memory usage by instance (not available on server)_
+- _searcher: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -1148,7 +1148,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1159,7 +1159,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _searcher: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1172,7 +1172,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _searcher: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -1185,7 +1185,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _searcher: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _searcher: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1196,7 +1196,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _searcher: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _searcher: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -1223,7 +1223,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _symbols: 1+ container restarts every 5m by instance (not available on server)_
+- _symbols: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -1238,7 +1238,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _symbols: 99%+ container memory usage by instance (not available on server)_
+- _symbols: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -1249,7 +1249,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1260,7 +1260,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _symbols: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1273,7 +1273,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _symbols: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -1286,7 +1286,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _symbols: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _symbols: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1297,7 +1297,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _symbols: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _symbols: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -1308,7 +1308,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _syntect-server: 1+ container restarts every 5m by instance (not available on server)_
+- _syntect-server: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -1323,7 +1323,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _syntect-server: 99%+ container memory usage by instance (not available on server)_
+- _syntect-server: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -1334,7 +1334,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1345,7 +1345,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _syntect-server: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1358,7 +1358,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _syntect-server: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -1371,7 +1371,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _syntect-server: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1382,7 +1382,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _syntect-server: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -1393,7 +1393,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 1+ container restarts every 5m by instance (not available on server)_
+- _zoekt-indexserver: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -1408,7 +1408,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 99%+ container memory usage by instance (not available on server)_
+- _zoekt-indexserver: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -1419,7 +1419,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1430,7 +1430,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1443,7 +1443,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -1456,7 +1456,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _zoekt-indexserver: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1467,7 +1467,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _zoekt-indexserver: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
@@ -1478,7 +1478,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-webserver: 1+ container restarts every 5m by instance (not available on server)_
+- _zoekt-webserver: 1+ container restarts every 5m by instance_
 
 **Possible solutions:**
 
@@ -1493,7 +1493,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-webserver: 99%+ container memory usage by instance (not available on server)_
+- _zoekt-webserver: 99%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -1504,7 +1504,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
+- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1515,7 +1515,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1528,7 +1528,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d average) by instance_
 
 **Possible solutions:**
 
@@ -1541,7 +1541,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _zoekt-webserver: 90%+ container cpu usage total (5m average) across all cores by instance_
 
 **Possible solutions:**
 
@@ -1552,7 +1552,7 @@ If usage is low, consider decreasing the above values.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container memory usage (5m average) by instance (not available on server)_
+- _zoekt-webserver: 90%+ container memory usage (5m average) by instance_
 
 **Possible solutions:**
 
