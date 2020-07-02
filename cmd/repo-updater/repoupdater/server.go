@@ -614,23 +614,12 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 		return 0, err
 	}
 
-	notCloned := make(map[string]struct{}, len(names))
-	for _, n := range names {
-		lower := strings.ToLower(string(n))
-		notCloned[lower] = struct{}{}
-	}
-
-	cloned, err := s.GitserverClient.ListCloned(ctx)
+	cloned, err := s.Store.CountClonedRepos(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	for _, c := range cloned {
-		lower := strings.ToLower(c)
-		delete(notCloned, lower)
-	}
-
-	s.notClonedCount = uint64(len(notCloned))
+	s.notClonedCount = uint64(len(names)) - cloned
 	s.notClonedCountUpdatedAt = time.Now()
 
 	return s.notClonedCount, nil
