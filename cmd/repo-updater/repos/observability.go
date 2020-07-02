@@ -127,6 +127,7 @@ type StoreMetrics struct {
 	ListExternalServices   *metrics.OperationMetrics
 	ListAllRepoNames       *metrics.OperationMetrics
 	SetClonedRepos         *metrics.OperationMetrics
+	CountClonedRepos       *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -262,6 +263,20 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_set_cloned_repos_errors_total",
 				Help: "Total number of errors when setting cloned repos",
+			}, []string{}),
+		},
+		CountClonedRepos: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_count_cloned_repos_duration_seconds",
+				Help: "Time spent counting cloned repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_count_cloned_repos_total",
+				Help: "Total number of count cloned repos calls",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_count_cloned_repos_errors_total",
+				Help: "Total number of errors when counting cloned repos",
 			}, []string{}),
 		},
 	}
@@ -464,6 +479,23 @@ func (o *ObservedStore) SetClonedRepos(ctx context.Context, repoNames ...string)
 	}(time.Now())
 
 	return o.store.SetClonedRepos(ctx, repoNames...)
+}
+
+// CountClonedRepos calls into the inner Store and registers the observed results.
+func (o *ObservedStore) CountClonedRepos(ctx context.Context) (count uint64, err error) {
+	tr, ctx := o.trace(ctx, "Store.CountClonedRepos")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		o.metrics.CountClonedRepos.Observe(secs, float64(count), &err)
+		logging.Log(o.log, "store.count-cloned-repos", &err, "count", count)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.CountClonedRepos(ctx)
 }
 
 func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
