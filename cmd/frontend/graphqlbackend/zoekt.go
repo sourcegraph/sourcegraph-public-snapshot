@@ -321,7 +321,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
-		inputRev := repoRev.Revs[0].RevSpec // RevSpec is gaurenteed to be explicit via zoektIndexedRepos
+		inputRev := repoRev.Revs[0].RevSpec // RevSpec is guaranteed to be explicit via zoektIndexedRepos
 
 		// symbols is set in symbols search, lines in text search.
 		var (
