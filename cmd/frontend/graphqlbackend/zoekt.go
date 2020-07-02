@@ -321,7 +321,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
-		inputRev := repoRev.RevSpecs()[0]
+		inputRev := repoRev.Revs[0].RevSpec // RevSpec is gaurenteed to be explicit via zoektIndexedRepos
 
 		// symbols is set in symbols search, lines in text search.
 		var (
@@ -549,30 +549,28 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 			continue
 		}
 
-		revspecs := reporev.RevSpecs()
-
-		if len(revspecs) != len(reporev.Revs) {
+		if !reporev.OnlyExplicit() {
 			// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
 			// search on it.
 			unindexed = append(unindexed, reporev)
 			continue
 		}
 
-		branches := make([]string, 0, len(revspecs))
-		for _, rev := range revspecs {
-			if rev == "" || rev == "HEAD" {
+		branches := make([]string, 0, len(reporev.Revs))
+		for _, rev := range reporev.Revs {
+			if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
 				// Zoekt convention that first branch is HEAD
 				branches = append(branches, repo.Branches[0].Name)
 				continue
 			}
 
 			for _, branch := range repo.Branches {
-				if branch.Name == rev {
+				if branch.Name == rev.RevSpec {
 					branches = append(branches, branch.Name)
 					break
 				}
 				// Check if rev is an abbrev commit SHA
-				if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
+				if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 					branches = append(branches, branch.Name)
 				}
 			}
@@ -580,7 +578,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 		}
 
 		// Only search zoekt if we can search all revisions on it.
-		if len(branches) == len(revspecs) {
+		if len(branches) == len(reporev.Revs) {
 			// TODO we should return the list of branches to search. Maybe
 			// create the zoektquery.RepoBranches map here?
 			indexed = append(indexed, reporev)
