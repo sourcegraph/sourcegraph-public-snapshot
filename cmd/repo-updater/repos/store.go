@@ -29,6 +29,7 @@ type Store interface {
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
+	CountClonedRepos(ctx context.Context) (uint64, error)
 	ListAllRepoNames(context.Context) ([]api.RepoName, error)
 }
 
@@ -463,6 +464,35 @@ WITH c AS (
  UPDATE repo SET cloned = false
  FROM c
  WHERE cloned AND repo.id != c.id;
+`
+
+// CountClonedRepos returns the number of repos whose cloned column is true.
+func (s DBStore) CountClonedRepos(ctx context.Context) (uint64, error) {
+	q := sqlf.Sprintf(setClonedReposQueryFmtstr)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	rows.Next()
+	if rows.Err() != nil {
+		return 0, rows.Err()
+	}
+
+	var count uint64
+	err = rows.Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+const countClonedReposQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.CountClonedRepos
+SELECT COUNT(*) FROM repo WHERE cloned
 `
 
 // a paginatedQuery returns a query with the given pagination
