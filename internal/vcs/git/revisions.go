@@ -40,6 +40,8 @@ func ensureAbsoluteCommit(commitID api.CommitID) error {
 	return nil
 }
 
+// ResolveRevisionOptions configure how we resolve revisions.
+// The zero value should contain appropriate default values.
 type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
@@ -57,7 +59,7 @@ type ResolveRevisionOptions struct {
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the revision must be fetched from the remote. This only happens when calling
 // ResolveRevision.
-func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), spec string, opt *ResolveRevisionOptions) (api.CommitID, error) {
+func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
@@ -96,7 +98,7 @@ func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc fun
 			return err
 		},
 	}
-	if opt != nil && opt.NoEnsureRevision {
+	if opt.NoEnsureRevision {
 		// Make the commandRetryer no-op so that gitserver does not try to
 		// update the repository.
 		cmd.EnsureRevision = ""

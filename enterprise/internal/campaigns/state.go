@@ -510,7 +510,7 @@ func computeRev(ctx context.Context, c *cmpgn.Changeset, repo gitserver.Repo, ge
 		return "", err
 	}
 
-	rev, err := git.ResolveRevision(ctx, repo, nil, ref, nil)
+	rev, err := git.ResolveRevision(ctx, repo, nil, ref, git.ResolveRevisionOptions{})
 	return string(rev), err
 }
 
