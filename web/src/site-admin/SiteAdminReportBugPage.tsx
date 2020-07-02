@@ -93,7 +93,6 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
     const monitoringDaysBack = 7
     const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
-    const isLoading = allConfig === undefined || monitoringStats === undefined
     return (
         <div>
             <PageTitle title="Report a bug - Admin" />
@@ -119,7 +118,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                     support@sourcegraph.com.
                 </div>
             </div>
-            {isLoading ? (
+            {allConfig === undefined || monitoringStats === undefined ? (
                 <LoadingSpinner className="icon-inline mt-2" />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
