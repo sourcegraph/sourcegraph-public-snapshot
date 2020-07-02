@@ -115,3 +115,42 @@ query Search($query: String!) {
 
 	return resp.Data.Search.Results.Results, nil
 }
+
+type SearchStatsResult struct {
+	Languages []struct {
+		Name       string `json:"name"`
+		TotalLines int    `json:"totalLines"`
+	} `json:"languages"`
+}
+
+// SearchStats returns statistics of given query.
+func (c *Client) SearchStats(query string) (*SearchStatsResult, error) {
+	const gqlQuery = `
+query SearchResultsStats($query: String!) {
+	search(query: $query) {
+		stats {
+			languages {
+				name
+				totalLines
+			}
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"query": query,
+	}
+	var resp struct {
+		Data struct {
+			Search struct {
+				Stats *SearchStatsResult `json:"stats"`
+			} `json:"search"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Search.Stats, nil
+}
