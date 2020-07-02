@@ -12,7 +12,6 @@ CONTAINER=grafana
 # docker containers must access things via docker host on non-linux platforms
 CONFIG_SUB_DIR="all"
 DOCKER_USER=""
-DOCKER_NET=""
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
   CONFIG_SUB_DIR="linux"
@@ -63,7 +62,7 @@ function finish() {
   return $GRAFANA_EXIT_CODE
 }
 
-docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
+docker run --rm ${DOCKER_USER} \
   --name=${CONTAINER} \
   --cpus=1 \
   --memory=1g \
