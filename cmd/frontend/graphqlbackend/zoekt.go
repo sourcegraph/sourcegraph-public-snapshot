@@ -137,9 +137,9 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 
 	switch s.typ {
 	case textRequest:
-		return zoektSearchHEAD(ctx, s.args, s.Repos, false, time.Since)
+		return zoektSearchHEAD(ctx, s.args, s.Repos, s.typ, time.Since)
 	case symbolRequest:
-		return zoektSearchHEAD(ctx, s.args, s.Repos, true, time.Since)
+		return zoektSearchHEAD(ctx, s.args, s.Repos, s.typ, time.Since)
 	case fileRequest:
 		return zoektSearchHEADOnlyFiles(ctx, s.args, s.Repos, false, time.Since)
 	default:
@@ -205,7 +205,7 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -218,7 +218,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		repoMap[string(repoRev.Repo.Name)] = repoRev
 	}
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol)
+	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -329,7 +329,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			lines      []*lineMatch
 			matchCount int
 		)
-		if !isSymbol {
+		if typ != symbolRequest {
 			lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 		} else {
 			symbols = zoektFileMatchToSymbolResults(repoResolvers[repoRev.Repo.Name], inputRev, &file)
@@ -459,7 +459,7 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, queryIsCaseSensitive)
 }
 
-func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
@@ -480,7 +480,8 @@ func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery
 		}
 	}
 
-	if isSymbol {
+	if typ == symbolRequest {
+		// Tell zoekt q must match on symbols
 		q = &zoektquery.Symbol{
 			Expr: q,
 		}
