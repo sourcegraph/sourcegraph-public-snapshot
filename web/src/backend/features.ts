@@ -46,9 +46,9 @@ export function getHover(
 export function getDocumentHighlights(
     context: RepoSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec,
     { extensionsController }: ExtensionsControllerProps
-): Observable<MaybeLoadingResult<DocumentHighlight[] | null>> {
+): Observable<DocumentHighlight[]> {
     return concat(
-        [{ isLoading: true, result: null }],
+        [[]],
         from(extensionsController.extHostAPI).pipe(
             switchMap(extensionHost =>
                 wrapRemoteObservable(

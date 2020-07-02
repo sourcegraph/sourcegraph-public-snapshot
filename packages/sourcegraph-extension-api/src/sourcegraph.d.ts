@@ -1390,9 +1390,9 @@ declare module 'sourcegraph' {
      * A document highlight kind.
      */
     export enum DocumentHighlightKind {
-        Text = 0,
-        Read = 1,
-        Write = 2,
+        Text = 'text',
+        Read = 'read',
+        Write = 'write',
     }
 
     /**

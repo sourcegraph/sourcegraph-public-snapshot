@@ -10,6 +10,7 @@ import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtensionDocuments } from './api/documents'
+import { DocumentHighlightKind } from './api/documentHighlights'
 import { Extensions } from './api/extensions'
 import { ExtensionLanguageFeatures } from './api/languageFeatures'
 import { ExtensionViewsApi } from './api/views'
@@ -18,17 +19,6 @@ import { ExtensionWindows } from './api/windows'
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsCascade } from '../../settings/settings'
-
-/**
- * The type of a document highlight.
- * This is needed because if sourcegraph.DocumentHighlightKind enum values are referenced,
- * the `sourcegraph` module import at the top of the file is emitted in the generated code.
- */
-export const DocumentHighlightKind: typeof sourcegraph.DocumentHighlightKind = {
-    Text: 0,
-    Read: 1,
-    Write: 2,
-}
 
 /**
  * Required information when initializing an extension host.

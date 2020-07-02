@@ -157,7 +157,7 @@ export const initNewExtensionAPI = (
                     document,
                     provider => provider.provideDocumentHighlights(document, position),
                     mergeDocumentHighlightResults
-                )
+                ).pipe(map(result => (result.isLoading ? [] : result.result)))
             )
         },
     }

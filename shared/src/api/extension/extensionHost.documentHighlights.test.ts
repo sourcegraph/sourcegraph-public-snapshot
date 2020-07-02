@@ -1,4 +1,5 @@
-import { Range, DocumentHighlight } from 'sourcegraph'
+import { DocumentHighlight } from 'sourcegraph'
+import { Range } from '@sourcegraph/extension-api-classes'
 import { initNewExtensionAPI, mergeDocumentHighlightResults } from './flatExtensionApi'
 import { pretendRemote } from '../util'
 import { MainThreadAPI } from '../contract'
@@ -6,12 +7,11 @@ import { SettingsCascade } from '../../settings/settings'
 import { Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { ExtensionDocuments } from './api/documents'
-import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
+import { LOADING } from '@sourcegraph/codeintellify'
 
-// TODO this is weird to cast to ranges
-const range1 = ({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } } as unknown) as Range
-const range2 = ({ start: { line: 2, character: 3 }, end: { line: 4, character: 5 } } as unknown) as Range
-const range3 = ({ start: { line: 3, character: 4 }, end: { line: 5, character: 6 } } as unknown) as Range
+const range1 = new Range(1, 2, 3, 4)
+const range2 = new Range(2, 3, 4, 5)
+const range3 = new Range(3, 4, 5, 6)
 
 describe('mergeDocumentHighlightResults', () => {
     it('merges non DocumentHighlight values into empty arrays', () => {
@@ -56,11 +56,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
         })
 
     const documentHighlight = (value: number): DocumentHighlight => ({
-        // TODO this is weird to cast to ranges
-        range: ({
-            start: { line: value, character: value },
-            end: { line: value, character: value },
-        } as unknown) as Range,
+        range: new Range(value, value, value, value),
     })
 
     it('restarts document highlights call if a provider was added or removed', () => {
@@ -82,7 +78,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
             provideDocumentHighlights: () => [documentHighlight(++counter)],
         })
 
-        let results: any[] = []
+        let results: DocumentHighlight[][] = []
         exposedToMain
             .getDocumentHighlights({
                 position: { line: 1, character: 2 },
@@ -91,13 +87,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
             .subscribe(observe(value => results.push(value)))
 
         // first provider results
-        expect(results).toEqual<MaybeLoadingResult<DocumentHighlight[] | null>[]>([
-            { isLoading: true, result: [] },
-            {
-                isLoading: false,
-                result: [documentHighlight(1)],
-            },
-        ])
+        expect(results).toEqual([[], [documentHighlight(1)]])
         results = []
 
         const subscription = languages.registerDocumentHighlightProvider([{ pattern: '*.ts' }], {
@@ -105,27 +95,12 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
         })
 
         // second and first
-        expect(results).toEqual<MaybeLoadingResult<DocumentHighlight[] | null>[]>([
-            {
-                isLoading: true,
-                result: [documentHighlight(2)],
-            },
-            {
-                isLoading: false,
-                result: [2, -1].map(value => documentHighlight(value)),
-            },
-        ])
+        expect(results).toEqual([[documentHighlight(2)], [2, -1].map(value => documentHighlight(value))])
         results = []
 
         subscription.unsubscribe()
 
         // just first was queried for the third time
-        expect(results).toEqual<MaybeLoadingResult<DocumentHighlight[] | null>[]>([
-            { isLoading: true, result: [] },
-            {
-                isLoading: false,
-                result: [documentHighlight(3)],
-            },
-        ])
+        expect(results).toEqual([[], [documentHighlight(3)]])
     })
 })
