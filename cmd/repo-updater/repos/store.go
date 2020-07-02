@@ -470,19 +470,10 @@ WITH c AS (
 func (s DBStore) CountClonedRepos(ctx context.Context) (uint64, error) {
 	q := sqlf.Sprintf(countClonedReposQueryFmtstr)
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return 0, err
-	}
-	defer rows.Close()
-
-	rows.Next()
-	if rows.Err() != nil {
-		return 0, rows.Err()
-	}
+	row := s.db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 
 	var count uint64
-	err = rows.Scan(&count)
+	err := row.Scan(&count)
 	if err != nil {
 		return 0, err
 	}
