@@ -29,7 +29,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata, RepositoryType, CodeHosts } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
 
-interface Props
+export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
@@ -59,7 +59,7 @@ interface Props
     repogroupMetadata: RepogroupMetadata
 }
 
-export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
+export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {
     useEffect(() => eventLogger.logViewEvent(`Repogroup:${props.repogroupMetadata.name}`))
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
