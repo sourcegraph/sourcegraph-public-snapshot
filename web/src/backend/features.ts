@@ -1,7 +1,7 @@
 import { Observable, from, concat } from 'rxjs'
 import { HoverMerged } from '../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevisionSpec } from '../../../shared/src/util/url'
+import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevisionSpec, toURIWithPath } from '../../../shared/src/util/url'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
@@ -24,7 +24,7 @@ export function getHover(
                 wrapRemoteObservable(
                     extensionHost.getHover({
                         textDocument: {
-                            uri: `git://${context.repoName}?${context.commitID}#${context.filePath}`,
+                            uri: toURIWithPath(context),
                         },
                         position: {
                             character: context.position.character - 1,
@@ -54,7 +54,7 @@ export function getDocumentHighlights(
                 wrapRemoteObservable(
                     extensionHost.getDocumentHighlights({
                         textDocument: {
-                            uri: `git://${context.repoName}?${context.commitID}#${context.filePath}`,
+                            uri: toURIWithPath(context),
                         },
                         position: {
                             character: context.position.character - 1,
