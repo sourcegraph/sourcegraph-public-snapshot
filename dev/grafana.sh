@@ -7,7 +7,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 if [ ! -e "${GRAFANA_DISK}" ]; then
-  mkdir -p ${GRAFANA_DISK}
+  mkdir -p "${GRAFANA_DISK}"
 fi
 
 IMAGE=sourcegraph/grafana:dev
