@@ -42,7 +42,7 @@ func main() {
 	if len(os.Args) > 1 {
 		promArgs = os.Args[1:] // propagate args to prometheus
 	}
-	go runCmd(log, procErrs, NewPrometheusCmd(promArgs, prometheusPort, exportPort))
+	go runCmd(log, procErrs, NewPrometheusCmd(promArgs, prometheusPort))
 
 	// router serves endpoints accessible from outside the container (defined by `exportPort`)
 	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying Grafana, etc.

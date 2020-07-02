@@ -19,7 +19,7 @@ func runCmd(log log15.Logger, errs chan<- error, cmd *exec.Cmd) {
 
 // NewPrometheusCmd instantiates a new command to run Prometheus.
 // Parameter promArgs replicates "$@"
-func NewPrometheusCmd(promArgs []string, promPort, externalPort string) *exec.Cmd {
+func NewPrometheusCmd(promArgs []string, promPort string) *exec.Cmd {
 	promFlags := []string{
 		fmt.Sprintf("--web.listen-address=0.0.0.0:%s", promPort),
 	}
