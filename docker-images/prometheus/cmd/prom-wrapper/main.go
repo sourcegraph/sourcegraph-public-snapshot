@@ -55,7 +55,7 @@ func main() {
 		log.Info("initializing configuration")
 		alertmanager := amclient.NewHTTPClientWithConfig(nil, &amclient.TransportConfig{
 			Host:     fmt.Sprintf("127.0.0.1:%s", alertmanagerPort),
-			BasePath: "/alerts/api/v2",
+			BasePath: fmt.Sprintf("/%s/api/v2", alertmanagerPathPrefix),
 			Schemes:  []string{"http"},
 		})
 
@@ -75,8 +75,8 @@ func main() {
 		router.PathPrefix("/prom-wrapper/config-subscriber").Handler(config.Handler())
 	}
 
-	// serve alertmanager ui via reverse proxy
-	router.PathPrefix("/alerts").Handler(&httputil.ReverseProxy{
+	// serve alertmanager via reverse proxy
+	router.PathPrefix(fmt.Sprintf("/%s", alertmanagerPathPrefix)).Handler(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
 			req.URL.Host = fmt.Sprintf(":%s", alertmanagerPort)

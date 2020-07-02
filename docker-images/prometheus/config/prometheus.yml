@@ -7,22 +7,25 @@ global:
 # Alertmanager configuration
 alerting:
   alertmanagers:
+    # bundled alertmanager, started by prom-wrapper
     - static_configs:
-        - targets:
-            - 127.0.0.1:9093 # started by prom-wrapper
+        - targets: ['127.0.0.1:9093']
+      path_prefix: /alertmanager
+    # add more alertmanagers here
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:
   - '*_rules.yml'
   - '/sg_prometheus_add_ons/*_rules.yml'
 
-# A scrape configuration containing exactly one endpoint to scrape for metrics:
+# Configure targets to scrape
 scrape_configs:
   # Scrape prometheus itself for metrics.
   - job_name: 'prometheus'
     static_configs:
       - targets: ['127.0.0.1:9092']
   - job_name: 'alertmanager'
+    metrics_path: /alertmanager/metrics
     static_configs:
       - targets: ['127.0.0.1:9093']
 

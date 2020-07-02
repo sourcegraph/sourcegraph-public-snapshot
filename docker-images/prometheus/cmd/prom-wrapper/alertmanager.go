@@ -11,7 +11,8 @@ import (
 	"github.com/prometheus/alertmanager/api/v2/client/general"
 )
 
-const alertmanagerPathPrefix = "alerts"
+// Prefix to serve alertmanager on. If you change this, make sure you update prometheus.yml as well
+const alertmanagerPathPrefix = "alertmanager"
 
 func waitForAlertmanager(ctx context.Context, alertmanager *amclient.Alertmanager) error {
 	ping := func(ctx context.Context) error {
