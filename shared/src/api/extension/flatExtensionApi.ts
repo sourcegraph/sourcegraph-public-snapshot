@@ -5,11 +5,11 @@ import { BehaviorSubject, Subject, of, Observable, from, concat, OperatorFunctio
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged, mapTo } from 'rxjs/operators'
-import { proxySubscribable, providerResultToObservable, ProxySubscribable } from './api/common'
+import { proxySubscribable, providerResultToObservable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
-import { toPosition, fromLocation } from './api/types'
+import { toPosition, fromLocation, fromDocumentHighlight } from './api/types'
 import { TextDocumentPositionParams, ReferenceParams } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
@@ -42,6 +42,7 @@ export interface ExtState {
     definitionProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>
     referencesProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>
     locationProviders: BehaviorSubject<readonly (RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]>
+    documentHighlightProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -107,6 +108,9 @@ export const initNewExtensionAPI = (
         referencesProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>([]),
         locationProviders: new BehaviorSubject<
             readonly (RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]
+        >([]),
+        documentHighlightProviders: new BehaviorSubject<
+            readonly RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]
         >([]),
     }
 
@@ -262,7 +266,20 @@ export const initNewExtensionAPI = (
                 )
             )
         },
+        getDocumentHighlights: (textParameters: TextDocumentPositionParams) => {
+            const document = getTextDocument(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
 
+            return proxySubscribable(
+                state.documentHighlightProviders.pipe(
+                    callProviders(
+                        provider => provider.provideDocumentHighlights(document, position),
+                        highlights => highlights.flat().map(fromDocumentHighlight)
+                    ),
+                    map(result => (result.isLoading ? [] : result.result))
+                )
+            )
+        },
         // Viewer
         addViewerIfNotExists: viewerData => {
             const viewerId = `viewer#${++lastViewerId}`
@@ -416,6 +433,8 @@ export const initNewExtensionAPI = (
                 addWithRollback(state.referencesProviders, { selector, provider }),
             registerLocationProvider: (id, selector, provider) =>
                 addWithRollback(state.locationProviders, { id, selector, provider }),
+            registerDocumentHighlightProvider: (selector, provider) =>
+                addWithRollback(state.documentHighlightProviders, { selector, provider }),
             registerCompletionItemProvider: () => {
                 console.warn(
                     'sourcegraph.languages.registerCompletionProvider was removed for the time being. It has no effect.'
@@ -451,9 +470,9 @@ function addWithRollback<T>(behaviorSubject: BehaviorSubject<readonly T[]>, valu
  */
 export function callProviders<TProvider, TProviderResult, TMergedResult>(
     invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
-    mergeResults: (providerResults: Exclude<TProviderResult, null | undefined>[]) => TMergedResult,
+    mergeResults: (providerResults: readonly Exclude<TProviderResult, null | undefined>[]) => TMergedResult,
     logErrors: boolean = true
-): OperatorFunction<RegisteredProvider<TProvider>[], MaybeLoadingResult<TMergedResult>> {
+): OperatorFunction<readonly RegisteredProvider<TProvider>[], MaybeLoadingResult<TMergedResult>> {
     return providersObservable =>
         providersObservable
             .pipe(

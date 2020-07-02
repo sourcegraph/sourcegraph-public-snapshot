@@ -69,7 +69,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 			return nil, nil
 		}
 
-		opt := &git.ResolveRevisionOptions{
+		opt := git.ResolveRevisionOptions{
 			NoEnsureRevision: !args.FetchMissing,
 		}
 		// Optimistically fetch using revspec

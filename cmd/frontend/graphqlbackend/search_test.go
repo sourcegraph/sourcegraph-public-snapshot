@@ -33,7 +33,7 @@ func TestSearch(t *testing.T) {
 		searchQuery                  string
 		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-		repoRevsMock                 func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error)
+		repoRevsMock                 func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		phabricatorGetRepoByNameMock func(repo api.RepoName) (*types.PhabricatorRepo, error)
 		wantResults                  Results
@@ -44,8 +44,8 @@ func TestSearch(t *testing.T) {
 			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
-			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
-				return api.CommitID(""), nil
+			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+				return "", nil
 			},
 			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return nil, nil
@@ -67,8 +67,8 @@ func TestSearch(t *testing.T) {
 
 					nil
 			},
-			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
-				return api.CommitID(""), nil
+			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+				return "", nil
 			},
 			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return nil, nil

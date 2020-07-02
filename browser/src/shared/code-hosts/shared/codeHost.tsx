@@ -398,6 +398,16 @@ function initCodeIntelligence({
                     )
                 )
             ),
+        getDocumentHighlights: ({ line, character, part, ...rest }) =>
+            from(extensionsController.extensionHostAPI).pipe(
+                switchMap(extensionHost =>
+                    wrapRemoteObservable(
+                        extensionHost.getDocumentHighlights(
+                            toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                        )
+                    )
+                )
+            ),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
         pinningEnabled: true,
         tokenize: codeHost.codeViewsRequireTokenization,

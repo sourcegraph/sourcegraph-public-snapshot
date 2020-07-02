@@ -9,7 +9,7 @@ import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtensionContent } from './api/content'
 import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
-import { handleExtensionActivation } from './api/extensions'
+import { DocumentHighlightKind } from './api/documentHighlights'
 import { ExtensionViewsApi } from './api/views'
 import { ExtensionWindows } from './api/windows'
 
@@ -31,7 +31,6 @@ export interface InitData {
     /** fetched initial settings object */
     initialSettings: Readonly<SettingsCascade<object>>
 }
-
 /**
  * Starts the extension host, which runs extensions. It is a Web Worker or other similar isolated
  * JavaScript execution context. There is exactly 1 extension host, and it has zero or more
@@ -162,6 +161,7 @@ function createExtensionAPI(
         Location,
         MarkupKind,
         NotificationType,
+        DocumentHighlightKind,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {

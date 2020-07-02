@@ -2,7 +2,7 @@ import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable, TextDocument, Badged } from 'sourcegraph'
+import { Unsubscribable, TextDocument, Badged, DocumentHighlight } from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
 import { TextDocumentPositionParams, ReferenceParams } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -80,6 +80,9 @@ export interface FlatExtHostAPI {
         id: string,
         parameters: TextDocumentPositionParams
     ) => ProxySubscribable<MaybeLoadingResult<Badged<clientType.Location>[]>>
+    getDocumentHighlights: (
+        parameters: TextDocumentPositionParams
+    ) => ProxySubscribable<readonly clientType.DocumentHighlight[]>
 }
 
 /**

@@ -270,7 +270,7 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		return "mockcommitid", nil
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()

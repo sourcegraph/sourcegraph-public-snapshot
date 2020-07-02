@@ -246,7 +246,7 @@ export function checkIsGitHubEnterprise(): boolean {
 /**
  * Returns true if the current page is github.com.
  */
-export const checkIsGitHubDotCom = (): boolean => /^https?:\/\/(www.)?github.com/.test(window.location.href)
+export const checkIsGitHubDotCom = (url = window.location.href): boolean => /^https?:\/\/(www\.)?github\.com/.test(url)
 
 /**
  * Returns true if the current page is either github.com or GitHub Enterprise.

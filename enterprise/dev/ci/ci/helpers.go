@@ -122,12 +122,15 @@ func (c Config) ensureCommit() error {
 	return nil
 }
 
+func (c Config) isDefaultBranch() bool {
+	return c.branch == "master" || strings.HasPrefix(c.branch, "master-dry-run/")
+}
+
 func (c Config) isPR() bool {
 	return !c.isBextReleaseBranch &&
 		!c.releaseBranch &&
 		!c.taggedRelease &&
-		c.branch != "master" &&
-		!strings.HasPrefix(c.branch, "master-dry-run/") &&
+		!c.isDefaultBranch() &&
 		!strings.HasPrefix(c.branch, "docker-images-patch/")
 }
 

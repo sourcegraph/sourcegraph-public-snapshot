@@ -38,7 +38,7 @@ func TestCachedLocationResolver(t *testing.T) {
 		return &types.Repo{ID: id}, nil
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	}
 
@@ -192,7 +192,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 		return &types.Repo{ID: id}, nil
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		return "", &gitserver.RevisionNotFoundError{}
 	}
 
@@ -225,7 +225,7 @@ func TestResolveLocations(t *testing.T) {
 		return &types.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
 			return "", &gitserver.RevisionNotFoundError{}
 		}

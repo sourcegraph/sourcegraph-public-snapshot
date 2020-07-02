@@ -77,7 +77,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) {
 		}
 
 		var commit *git.Commit
-		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid), nil)
+		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid), git.ResolveRevisionOptions{})
 		if r.err != nil {
 			return
 		}
