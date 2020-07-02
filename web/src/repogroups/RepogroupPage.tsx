@@ -65,6 +65,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
 
     const onSubmitExample = (query: string) => (event?: React.MouseEvent<HTMLButtonElement>): void => {
+        eventLogger.log('RepositoryGroupSuggestionClicked')
         // eslint-disable-next-line no-unused-expressions
         event?.preventDefault()
         // TODO: update source
