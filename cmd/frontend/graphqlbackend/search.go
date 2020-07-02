@@ -1130,5 +1130,3 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 	}
 	return nil
 }
-
-var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
