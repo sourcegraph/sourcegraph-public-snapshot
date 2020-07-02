@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
@@ -19,6 +20,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -72,6 +74,7 @@ func TestProcess(t *testing.T) {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
+		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	requeued, err := processor.Process(context.Background(), mockStore, upload)
@@ -176,6 +179,7 @@ func TestProcessError(t *testing.T) {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
+		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	requeued, err := processor.Process(context.Background(), mockStore, upload)
@@ -228,6 +232,7 @@ func TestProcessCloneInProgress(t *testing.T) {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
+		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	requeued, err := processor.Process(context.Background(), mockStore, upload)

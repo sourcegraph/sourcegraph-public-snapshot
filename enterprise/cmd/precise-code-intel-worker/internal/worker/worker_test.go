@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestMain(m *testing.M) {
@@ -30,7 +31,7 @@ func TestDequeueAndProcessNoUpload(t *testing.T) {
 	worker := &Worker{
 		store:     mockStore,
 		processor: mockProcessor,
-		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	dequeued, err := worker.dequeueAndProcess(context.Background())
@@ -58,7 +59,7 @@ func TestDequeueAndProcessSuccess(t *testing.T) {
 	worker := &Worker{
 		store:     mockStore,
 		processor: mockProcessor,
-		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	dequeued, err := worker.dequeueAndProcess(context.Background())
@@ -95,7 +96,7 @@ func TestDequeueAndProcessProcessFailure(t *testing.T) {
 	worker := &Worker{
 		store:     mockStore,
 		processor: mockProcessor,
-		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	dequeued, err := worker.dequeueAndProcess(context.Background())
@@ -136,7 +137,7 @@ func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
 	worker := &Worker{
 		store:     mockStore,
 		processor: mockProcessor,
-		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	_, err := worker.dequeueAndProcess(context.Background())
@@ -168,7 +169,7 @@ func TestDequeueAndProcessDoneFailure(t *testing.T) {
 	worker := &Worker{
 		store:     mockStore,
 		processor: mockProcessor,
-		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
 	_, err := worker.dequeueAndProcess(context.Background())

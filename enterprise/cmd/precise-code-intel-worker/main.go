@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
@@ -46,7 +47,7 @@ func main() {
 
 	store := store.NewObserved(mustInitializeStore(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, store)
-	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
+	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
 
