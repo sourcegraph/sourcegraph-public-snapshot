@@ -533,25 +533,6 @@ func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-// queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
-// `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
-//  A separate zoekt query is created for each file path that should be searched.
-func queryToZoektFileOnlyQueries(query *search.TextPatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
-	var zoektQueries []zoektquery.Q
-	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
-	}
-	for _, p := range listOfFilePaths {
-		q, err := fileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		zoektQueries = append(zoektQueries, zoektquery.Simplify(q))
-	}
-
-	return zoektQueries, nil
-}
-
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
