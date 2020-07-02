@@ -91,11 +91,11 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
         results = []
 
         const subscription = languages.registerDocumentHighlightProvider([{ pattern: '*.ts' }], {
-            provideDocumentHighlights: () => [documentHighlight(-1)],
+            provideDocumentHighlights: () => [documentHighlight(0)],
         })
 
         // second and first
-        expect(results).toEqual([[documentHighlight(2)], [2, -1].map(value => documentHighlight(value))])
+        expect(results).toEqual([[], [2, 0].map(value => documentHighlight(value))])
         results = []
 
         subscription.unsubscribe()
