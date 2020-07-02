@@ -22,6 +22,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+func init() {
+	// by default Alertmanager disallows marshalling of secrets in its configuration - this flag
+	// enables it so we can write secrets to disk
+	amconfig.MarshalSecrets = true
+}
+
 type siteEmailConfig struct {
 	SMTP    *schema.SMTPServerConfig
 	Address string
@@ -201,7 +207,7 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	}
 
 	// persist configuration to disk
-	c.log.Debug("reloading with new configuration", "change_context", changeContext) // *amconfig.Config automatically removes secrets
+	c.log.Debug("reloading with new configuration")
 	updateProblem := conf.NewSiteProblem("`observability`: failed to update Alertmanager configuration, please refer to Prometheus logs for more details")
 	amConfigData, err := yaml.Marshal(amConfig)
 	if err != nil {

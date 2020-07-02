@@ -193,6 +193,9 @@ replace (
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
+
+	// prom-wrapper needs to be able to write alertmanager configuration with secrets - https://github.com/prometheus/alertmanager/pull/2316
+	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200702014640-a941b136043b
 )
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
