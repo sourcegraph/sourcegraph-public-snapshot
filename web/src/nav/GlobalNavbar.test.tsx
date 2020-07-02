@@ -12,12 +12,10 @@ const PROPS: GlobalNavbar['props'] = {
     extensionsController: {} as any,
     location: createLocation('/'),
     history: createMemoryHistory(),
-    hideGlobalSearchInput: false,
     keyboardShortcuts: [],
     isSourcegraphDotCom: false,
     navbarSearchQueryState: { query: 'q', cursorPosition: 0 },
     onNavbarQueryChange: () => undefined,
-    lowProfile: false,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
@@ -50,8 +48,8 @@ describe('GlobalNavbar', () => {
     test('normal', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())
 
     test('lowProfile', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} lowProfile={true} />).toJSON()).toMatchSnapshot())
+        expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile" />).toJSON()).toMatchSnapshot())
 
     test('hideGlobalSearchInput', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} hideGlobalSearchInput={true} />).toJSON()).toMatchSnapshot())
+        expect(renderer.create(<GlobalNavbar {...PROPS} variant="no-search-input" />).toJSON()).toMatchSnapshot())
 })

@@ -6,6 +6,7 @@ import {
     CaseSensitivityProps,
     SmartSearchFieldProps,
     CopyQueryButtonProps,
+    RepogroupHomepageProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -45,7 +46,8 @@ interface Props
         InteractiveSearchProps,
         SmartSearchFieldProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        RepogroupHomepageProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -92,7 +94,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                 <SearchPageInput {...props} source="home" />
                 {views && <ViewGrid {...props} className="mt-5" views={views} />}
             </div>
-            {props.isSourcegraphDotCom && (
+            {props.isSourcegraphDotCom && props.showRepogroupHomepage && (
                 <div className="search-page__repogroup-content mt-5">
                     <div className="d-flex align-items-baseline mb-3">
                         <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>

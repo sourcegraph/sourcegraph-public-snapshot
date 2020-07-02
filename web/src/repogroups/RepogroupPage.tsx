@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../components/PageTitle'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
