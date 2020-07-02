@@ -1,11 +1,10 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import type * as sourcegraph from 'sourcegraph'
-import * as clientTypes from '@sourcegraph/extension-api-types'
 import { BehaviorSubject, Subject, of, Observable, from, concat, OperatorFunction, Subscription } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
-import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged, filter } from 'rxjs/operators'
+import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged, mapTo } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable, ProxySubscribable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
@@ -22,26 +21,27 @@ import { ReferenceCounter } from '../../util/ReferenceCounter'
 import { ExtensionDocument } from './api/textDocument'
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
+import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 
 /**
  * Holds the entire state exposed to the extension host
  * as a single object
  */
 export interface ExtState {
-    settings: Readonly<SettingsCascade<object>>
+    settings: BehaviorSubject<Readonly<SettingsCascade<object>>>
 
     // Workspace
-    roots: readonly sourcegraph.WorkspaceRoot[]
-    versionContext: string | undefined
+    roots: BehaviorSubject<readonly ExtensionWorkspaceRoot[]>
+    versionContext: BehaviorSubject<string | undefined>
 
     // Search
-    queryTransformers: BehaviorSubject<sourcegraph.QueryTransformer[]>
+    queryTransformers: BehaviorSubject<readonly sourcegraph.QueryTransformer[]>
 
     // Lang
-    hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
-    definitionProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>
-    referencesProviders: BehaviorSubject<RegisteredProvider<sourcegraph.ReferenceProvider>[]>
-    locationProviders: BehaviorSubject<(RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]>
+    hoverProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.HoverProvider>[]>
+    definitionProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>
+    referencesProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>
+    locationProviders: BehaviorSubject<readonly (RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -95,26 +95,20 @@ export const initNewExtensionAPI = (
     initialSettings: Readonly<SettingsCascade<object>>
 ): InitResult => {
     const state: ExtState = {
-        roots: [],
-        versionContext: undefined,
-        settings: initialSettings,
-        queryTransformers: new BehaviorSubject<sourcegraph.QueryTransformer[]>([]),
-        hoverProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
-        definitionProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
-        referencesProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.ReferenceProvider>[]>([]),
-        locationProviders: new BehaviorSubject<(RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]>(
-            []
-        ),
+        // Most extensions never call `configuration.get()` synchronously in `activate()` to get
+        // the initial settings data, and instead only subscribe to configuration changes.
+        // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
+        settings: new BehaviorSubject<Readonly<SettingsCascade<object>>>(initialSettings),
+        roots: new BehaviorSubject<readonly ExtensionWorkspaceRoot[]>([]),
+        versionContext: new BehaviorSubject<string | undefined>(undefined),
+        queryTransformers: new BehaviorSubject<readonly sourcegraph.QueryTransformer[]>([]),
+        hoverProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
+        definitionProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
+        referencesProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>([]),
+        locationProviders: new BehaviorSubject<
+            readonly (RegisteredProvider<sourcegraph.LocationProvider> & { id: string })[]
+        >([]),
     }
-
-    const configChanges = new BehaviorSubject<void>(undefined)
-    // Most extensions never call `configuration.get()` synchronously in `activate()` to get
-    // the initial settings data, and instead only subscribe to configuration changes.
-    // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
-
-    const rootChanges = new Subject<void>()
-
-    const versionContextChanges = new Subject<string | undefined>()
 
     let lastViewerId = 0
 
@@ -166,18 +160,20 @@ export const initNewExtensionAPI = (
     const exposedToMain: FlatExtHostAPI = {
         // Configuration
         syncSettingsData: data => {
-            state.settings = Object.freeze(data)
-            configChanges.next()
+            state.settings.next(Object.freeze(data))
         },
 
         // Workspace
-        syncRoots: (roots): void => {
-            state.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
-            rootChanges.next()
+        getWorkspaceRoots: () => state.roots.value.map(({ uri, inputRevision }) => ({ uri: uri.href, inputRevision })),
+        addWorkspaceRoot: root => {
+            state.roots.next(Object.freeze([...state.roots.value, new ExtensionWorkspaceRoot(root)]))
         },
+        removeWorkspaceRoot: uri => {
+            state.roots.next(Object.freeze(state.roots.value.filter(workspace => workspace.uri.href !== uri)))
+        },
+
         syncVersionContext: context => {
-            state.versionContext = context
-            versionContextChanges.next(context)
+            state.versionContext.next(context)
         },
 
         // Search
@@ -362,7 +358,7 @@ export const initNewExtensionAPI = (
 
     // Configuration
     const getConfiguration = <C extends object>(): sourcegraph.Configuration<C> => {
-        const snapshot = state.settings.final as Readonly<C>
+        const snapshot = state.settings.value.final as Readonly<C>
 
         const configuration: sourcegraph.Configuration<C> & { toJSON: any } = {
             value: snapshot,
@@ -376,19 +372,19 @@ export const initNewExtensionAPI = (
     // Workspace
     const workspace: typeof sourcegraph.workspace = {
         get roots() {
-            return state.roots
+            return state.roots.value
         },
         get versionContext() {
-            return state.versionContext
+            return state.versionContext.value
         },
         get textDocuments() {
             return [...textDocuments.values()]
         },
         openedTextDocuments: openedTextDocuments.asObservable(),
         onDidOpenTextDocument: openedTextDocuments.asObservable(),
-        onDidChangeRoots: rootChanges.asObservable(),
-        rootChanges: rootChanges.asObservable(),
-        versionContextChanges: versionContextChanges.asObservable(),
+        onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
+        rootChanges: state.roots.pipe(mapTo(undefined)),
+        versionContextChanges: state.versionContext.pipe(mapTo(undefined)),
     }
 
     // Commands
@@ -404,7 +400,7 @@ export const initNewExtensionAPI = (
 
     return {
         exposedToMain,
-        configuration: Object.assign(configChanges.asObservable(), {
+        configuration: Object.assign(state.settings.pipe(mapTo(undefined)), {
             get: getConfiguration,
         }),
         workspace,
@@ -439,7 +435,7 @@ export const initNewExtensionAPI = (
  * @param value to add to a collection
  * @returns Unsubscribable that will remove that element from the behaviorSubject.value and call next() again
  */
-function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): sourcegraph.Unsubscribable {
+function addWithRollback<T>(behaviorSubject: BehaviorSubject<readonly T[]>, value: T): sourcegraph.Unsubscribable {
     behaviorSubject.next([...behaviorSubject.value, value])
     return new Subscription(() => behaviorSubject.next(behaviorSubject.value.filter(item => item !== value)))
 }

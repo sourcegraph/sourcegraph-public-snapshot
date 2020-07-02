@@ -112,6 +112,7 @@ import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { ReferenceCounter } from '../../../../../shared/src/util/ReferenceCounter'
 
 registerHighlightContributions()
 
@@ -785,44 +786,7 @@ export function handleCodeHost({
     )
 
     /** Map from workspace URI to number of editors referencing it */
-    const rootReferenceCounts = new Map<string, number>()
-
-    /**
-     * Adds root referenced by a code editor to the worskpace.
-     *
-     * Will only cause `workspace.roots` to emit if no root with
-     * the given `uri` existed.
-     */
-    const addRootReference = (uri: string, inputRevision: string | undefined): void => {
-        rootReferenceCounts.set(uri, (rootReferenceCounts.get(uri) || 0) + 1)
-        if (rootReferenceCounts.get(uri) === 1) {
-            extensionsController.services.workspace.roots.next([
-                ...extensionsController.services.workspace.roots.value,
-                { uri, inputRevision },
-            ])
-        }
-    }
-
-    /**
-     * Deletes a reference to a workspace root from a code editor.
-     *
-     * Will only cause `workspace.roots` to emit if the root
-     * with the given `uri` has no more references.
-     */
-    const deleteRootReference = (uri: string): void => {
-        const currentReferenceCount = rootReferenceCounts.get(uri)
-        if (!currentReferenceCount) {
-            throw new Error(`No preexisting root refs for uri ${uri}`)
-        }
-        const updatedReferenceCount = currentReferenceCount - 1
-        if (updatedReferenceCount === 0) {
-            extensionsController.services.workspace.roots.next(
-                extensionsController.services.workspace.roots.value.filter(root => root.uri !== uri)
-            )
-        } else {
-            rootReferenceCounts.set(uri, updatedReferenceCount)
-        }
-    }
+    const rootReferenceCounts = new ReferenceCounter<string>()
 
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
@@ -854,12 +818,20 @@ export function handleCodeHost({
 
                 // Add root ref
                 const rootURI = toRootURI(fileInfo)
-                addRootReference(rootURI, fileInfo.revision)
+                if (rootReferenceCounts.increment(rootURI)) {
+                    await extensionHostAPI.addWorkspaceRoot({ uri: rootURI })
+                }
+                // addRootReference(rootURI, fileInfo.revision)
 
                 // Subscribe for removal
                 codeViewEvent.subscriptions.add(() => {
-                    deleteRootReference(rootURI)
-                    extensionHostAPI.removeViewer(editorId)
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                    ;(async () => {
+                        await extensionHostAPI.removeViewer(editorId)
+                        if (rootReferenceCounts.decrement(rootURI)) {
+                            await extensionHostAPI.removeWorkspaceRoot(rootURI)
+                        }
+                    })()
                 })
 
                 return {

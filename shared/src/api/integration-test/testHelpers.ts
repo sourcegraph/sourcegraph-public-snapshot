@@ -112,7 +112,10 @@ export async function integrationTestContext(
         }
     }
     const viewerIds = await Promise.all(initModel.viewers.map(viewer => extensionHostAPI.addViewerIfNotExists(viewer)))
-    services.workspace.roots.next(initModel.roots)
+
+    for (const root of initModel.roots) {
+        await extensionHostAPI.addWorkspaceRoot(root)
+    }
 
     // Wait for initModel to be initialized
     if (initModel.viewers.length > 0) {

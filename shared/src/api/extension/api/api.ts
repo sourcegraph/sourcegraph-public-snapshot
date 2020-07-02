@@ -1,6 +1,5 @@
 import { ProxyMarked } from 'comlink'
 import { InitData } from '../extensionHost'
-import { ExtDocumentsAPI } from './documents'
 import { ExtensionWindowsAPI } from './windows'
 import { FlatExtHostAPI } from '../../contract'
 

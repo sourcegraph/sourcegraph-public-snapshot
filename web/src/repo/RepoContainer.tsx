@@ -4,7 +4,7 @@ import * as React from 'react'
 import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription, concat, combineLatest } from 'rxjs'
-import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom, concatMap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import { isRepoNotFoundErrorLike, isRepoSeeOtherErrorLike } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
@@ -198,30 +198,42 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             )
         )
 
-        // Update the Sourcegraph extensions model to reflect the current workspace root.
+        // Update the extension host to reflect the current workspace root.
+        let workspaceRootUri: string | null = null
         this.subscriptions.add(
             this.revResolves
                 .pipe(
-                    map(resolvedRevisionOrError => {
-                        this.props.extensionsController.services.workspace.roots.next(
-                            resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                                ? [
-                                      {
-                                          uri: makeRepoURI({
-                                              repoName: this.state.repoName,
-                                              revision: resolvedRevisionOrError.commitID,
-                                          }),
-                                          inputRevision: this.state.revision || '',
-                                      },
-                                  ]
-                                : []
-                        )
+                    map(resolvedRevisionOrError =>
+                        resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
+                            ? makeRepoURI({
+                                  repoName: this.state.repoName,
+                                  revision: resolvedRevisionOrError.commitID,
+                              })
+                            : null
+                    ),
+                    withLatestFrom(this.props.extensionsController.extensionHostAPI),
+                    concatMap(async ([uri, extensionHostAPI]) => {
+                        if (workspaceRootUri) {
+                            await extensionHostAPI.removeWorkspaceRoot(workspaceRootUri)
+                        }
+                        if (uri) {
+                            await extensionHostAPI.addWorkspaceRoot({ uri })
+                        }
+                        workspaceRootUri = uri
                     })
                 )
                 .subscribe()
         )
         // Clear the Sourcegraph extensions model's roots when navigating away.
-        this.subscriptions.add(() => this.props.extensionsController.services.workspace.roots.next([]))
+        this.subscriptions.add(() => {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            ;(async () => {
+                const extensionHostAPI = await this.props.extensionsController.extensionHostAPI
+                if (workspaceRootUri) {
+                    await extensionHostAPI.removeWorkspaceRoot(workspaceRootUri)
+                }
+            })()
+        })
 
         this.componentUpdates.next(this.props)
 

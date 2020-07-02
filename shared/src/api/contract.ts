@@ -32,7 +32,9 @@ export interface FlatExtHostAPI {
     syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
 
     // Workspace
-    syncRoots: (roots: readonly clientType.WorkspaceRoot[]) => void
+    addWorkspaceRoot: (root: clientType.WorkspaceRoot) => void
+    getWorkspaceRoots: () => clientType.WorkspaceRoot[]
+    removeWorkspaceRoot: (uri: string) => void
     syncVersionContext: (versionContext: string | undefined) => void
 
     // Search

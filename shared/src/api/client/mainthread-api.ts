@@ -10,17 +10,14 @@ import { Services } from './services'
 import { proxySubscribable } from '../extension/api/common'
 
 // for now it will partially mimic Services object but hopefully will be incrementally reworked in the process
-export type MainThreadAPIDependencies = Pick<Services, 'commands' | 'workspace'>
+export type MainThreadAPIDependencies = Pick<Services, 'commands'>
 
 export const initMainThreadAPI = (
     extensionHost: Remote<FlatExtHostAPI>,
     platformContext: Pick<PlatformContext, 'updateSettings' | 'settings'>,
     dependencies: MainThreadAPIDependencies
 ): { api: MainThreadAPI; subscription: Subscription } => {
-    const {
-        workspace: { roots, versionContext },
-        commands,
-    } = dependencies
+    const { commands } = dependencies
 
     const subscription = new Subscription()
     // Settings
@@ -38,11 +35,6 @@ export const initMainThreadAPI = (
     )
 
     // Workspace
-    subscription.add(
-        from(roots)
-            .pipe(concatMap(roots => extensionHost.syncRoots(roots)))
-            .subscribe()
-    )
     subscription.add(
         from(versionContext)
             .pipe(concatMap(context => extensionHost.syncVersionContext(context)))

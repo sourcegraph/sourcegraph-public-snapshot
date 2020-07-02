@@ -93,7 +93,9 @@ export const pretendRemote = <T extends object>(object: T): Remote<T> =>
 // Calling these function will never work as expected and the test needs to override the things actually used,
 // meaning it needs to have knowledge of the internals of what is being tested.
 export const noopFlatExtensionHostAPI: FlatExtHostAPI = {
-    syncRoots: noop,
+    getWorkspaceRoots: () => [],
+    addWorkspaceRoot: noop,
+    removeWorkspaceRoot: noop,
     syncVersionContext: noop,
     transformSearchQuery: (query: string) => proxySubscribable(of(query)),
     syncSettingsData: noop,
