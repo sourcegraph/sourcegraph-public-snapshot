@@ -1,26 +1,19 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { DiffStat } from '../../../components/diff/DiffStat'
 
 export interface CampaignDiffstatProps {
-    campaign?: {
+    campaign: {
         diffStat: Pick<GQL.IDiffStat, 'added' | 'changed' | 'deleted'>
     }
-    patchSet?: {
-        diffStat: Pick<GQL.IDiffStat, 'added' | 'changed' | 'deleted'>
-    }
-
     className?: string
 }
 
 /**
  * Total diff stat of a campaign or patchset, including all changesets and patches
  */
-export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, patchSet, className }) => {
-    const { added, changed, deleted } = useMemo(() => (campaign ? campaign.diffStat : patchSet!.diffStat), [
-        campaign,
-        patchSet,
-    ])
+export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, className }) => {
+    const { added, changed, deleted } = campaign.diffStat
 
     if (added + changed + deleted === 0) {
         return <></>
