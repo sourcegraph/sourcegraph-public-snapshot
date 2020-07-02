@@ -24,7 +24,7 @@ import { ActionItemAction } from '../../../../../../shared/src/actions/ActionIte
 import { getHoverActions } from '../../../../../../shared/src/hover/actions'
 import { WebHoverOverlay } from '../../../../components/shared'
 import { getModeFromPath } from '../../../../../../shared/src/languages'
-import { getHover } from '../../../../backend/features'
+import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { property, isDefined } from '../../../../../../shared/src/util/types'
@@ -118,6 +118,8 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 ),
                 getHover: hoveredToken =>
                     getHover(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
+                getDocumentHighlights: hoveredToken =>
+                    getDocumentHighlights(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
                 pinningEnabled: true,
             }),
