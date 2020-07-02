@@ -15,69 +15,81 @@ func TestParseParameterList(t *testing.T) {
 		Input      string
 		Want       string
 		WantLabels labels
+		WantRange  string
 	}{
 		{
 			Name:       "Normal field:value",
 			Input:      `file:README.md`,
 			Want:       `{"field":"file","value":"README.md","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
 			WantLabels: None,
 		},
 		{
 			Name:       "First char is colon",
 			Input:      `:foo`,
 			Want:       `{"value":":foo","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Last char is colon",
 			Input:      `foo:`,
 			Want:       `{"value":"foo:","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Match first colon",
 			Input:      `file:bar:baz`,
 			Want:       `{"field":"file","value":"bar:baz","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":12}}`,
 			WantLabels: None,
 		},
 		{
 			Name:       "No field, start with minus",
 			Input:      `-:foo`,
 			Want:       `{"value":"-:foo","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Minus prefix on field",
 			Input:      `-file:README.md`,
 			Want:       `{"field":"file","value":"README.md","negated":true}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Double minus prefix on field",
 			Input:      `--foo:bar`,
 			Want:       `{"value":"--foo:bar","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Minus in the middle is not a valid field",
 			Input:      `fie-ld:bar`,
 			Want:       `{"value":"fie-ld:bar","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Name:       "Interpret escaped whitespace",
 			Input:      `a\ pattern`,
 			Want:       `{"value":"a pattern","negated":false}`,
-			WantLabels: None,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+			WantLabels: Regexp,
 		},
 		{
 			Input:      `"quoted"`,
 			Want:       `{"value":"quoted","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
 			WantLabels: Literal | Quoted,
 		},
 		{
 			Input:      `'\''`,
 			Want:       `{"value":"'","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
 			WantLabels: Literal | Quoted,
 		},
 	}
@@ -90,9 +102,24 @@ func TestParseParameterList(t *testing.T) {
 			}
 			resultNode := result[0]
 			got, _ := json.Marshal(resultNode)
+			// Check parsed values.
 			if diff := cmp.Diff(tt.Want, string(got)); diff != "" {
 				t.Error(diff)
 			}
+			// Check ranges.
+			switch n := resultNode.(type) {
+			case Pattern:
+				rangeStr := n.Annotation.Range.String()
+				if diff := cmp.Diff(tt.WantRange, rangeStr); diff != "" {
+					t.Error(diff)
+				}
+			case Parameter:
+				rangeStr := n.Annotation.Range.String()
+				if diff := cmp.Diff(tt.WantRange, rangeStr); diff != "" {
+					t.Error(diff)
+				}
+			}
+			// Check labels.
 			if patternNode, ok := resultNode.(Pattern); ok {
 				if diff := cmp.Diff(tt.WantLabels, patternNode.Annotation.Labels); diff != "" {
 					t.Error(diff)

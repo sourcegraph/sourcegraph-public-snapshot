@@ -22,7 +22,11 @@ func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int,
 		return nil, err
 	}
 
-	candidates, err := api.store.FindClosestDumps(ctx, repositoryID, commit, path, indexer)
+	// The parameters exactPath and rootMustEnclosePath align here: if we're looking for dumps
+	// that can answer queries for a directory (e.g. diagnostics), we want any dump that happens
+	// to intersect the target directory. If we're looking for dumps that can answer queries for
+	// a single file, then we need a dump with a root that properly encloses that file.
+	candidates, err := api.store.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.FindClosestDumps")
 	}

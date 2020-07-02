@@ -32,6 +32,8 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import { MockIntersectionObserver } from './MockIntersectionObserver'
+import { pretendRemote } from '../../../../../shared/src/api/util'
+import { FlatExtHostAPI } from '../../../../../shared/src/api/contract'
 
 const RENDER = sinon.spy()
 
@@ -66,6 +68,7 @@ const createMockController = (services: Services): Controller => ({
     notifications: NEVER,
     executeCommand: () => Promise.resolve(),
     unsubscribe: noop,
+    extHostAPI: Promise.resolve(pretendRemote<FlatExtHostAPI>({})),
 })
 
 const createMockPlatformContext = (

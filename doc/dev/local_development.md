@@ -28,6 +28,7 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
     - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
     - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
     - [Running out of disk space](#running-out-of-disk-space)
+    - [Certificate expiry](#certificate-expiry)
 - [How to Run Tests](#how-to-run-tests)
 - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
 - [How to debug live code](#how-to-debug-live-code)
@@ -337,7 +338,7 @@ You may also want to run Postgres within a docker container instead of as a syst
    -v $PGDATA_DIR:/var/lib/postgresql/data postgres
    ```
 
-3. Ensure you can connect to the database using `pgsql -U sourcegraph` and enter password `sourcegraph`.
+3. Ensure you can connect to the database using `psql -U sourcegraph` and enter password `sourcegraph`.
 
 4. Configure database settings in your environment:
 
@@ -533,6 +534,17 @@ We use Caddy 2 to setup HTTPS for local development. It creates self-signed cert
 
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
 
+##### Adding Caddy certificates to Windows
+
+When running Caddy on WSL, you need to manually add the Caddy root certificate to the Windows certificate store using [certutil.exe](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certutil).
+
+```bash
+# Run inside WSL
+certutil.exe -addstore -user Root "$(find /usr/local/share/ca-certificates/ -name '*Caddy*')"
+```
+
+This command will add the certificate to the `Trusted Root Certification Authorities` for your Windows user.
+
 #### Running out of disk space
 
 If you see errors similar to this:
@@ -548,6 +560,12 @@ You can override that by setting this env variable:
 # means 5%. You may want to put that into .bashrc for convinience
 SRC_REPOS_DESIRED_PERCENT_FREE=5
 ```
+
+#### Certificate expiry
+
+If you see a certificate expiry warning you may need to delete your certificate and restart your server.
+
+On MaCOS, the certificate can be removed from here: `~/Library/Application\ Support/Caddy/certificates/local/sourcegraph.test`
 
 ## How to Run Tests
 

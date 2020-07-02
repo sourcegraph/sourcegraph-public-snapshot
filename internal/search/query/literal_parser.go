@@ -92,18 +92,34 @@ loop:
 }
 
 func (p *parser) ParsePatternLiteral() Pattern {
+	start := p.pos
 	if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok && value != "" {
 		p.pos += advance
-		return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: Literal}}
+		return Pattern{
+			Value:   value,
+			Negated: false,
+			Annotation: Annotation{
+				Labels: Literal,
+				Range:  newRange(start, p.pos),
+			},
+		}
 	}
 	value, advance := ScanAnyPatternLiteral(p.buf[p.pos:])
 	p.pos += advance
-	return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: Literal}}
+	return Pattern{
+		Value:   value,
+		Negated: false,
+		Annotation: Annotation{
+			Labels: Literal,
+			Range:  newRange(start, p.pos),
+		},
+	}
 }
 
 // parseParameterParameterList scans for consecutive leaf nodes.
 func (p *parser) parseParameterListLiteral() ([]Node, error) {
 	var nodes []Node
+	start := p.pos
 loop:
 	for {
 		if err := p.skipSpaces(); err != nil {
@@ -121,6 +137,7 @@ loop:
 					Negated: false,
 					Annotation: Annotation{
 						Labels: Literal | HeuristicParensAsPatterns,
+						Range:  newRange(start, p.pos),
 					},
 				}
 				nodes = append(nodes, pattern)
@@ -179,6 +196,7 @@ loop:
 						Value: "()",
 						Annotation: Annotation{
 							Labels: Literal | HeuristicParensAsPatterns,
+							Range:  newRange(start, p.pos),
 						},
 					},
 				}

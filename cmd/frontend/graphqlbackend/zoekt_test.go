@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -260,34 +261,22 @@ func TestZoektIndexedRepos(t *testing.T) {
 		"foo/multi-rev@a:b",
 	)
 
-	zoektRepoList := &zoekt.RepoList{
-		Repos: []*zoekt.RepoListEntry{
-			{
-				Repository: zoekt.Repository{
-					Name:     "foo/indexed-one",
-					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-				},
-			},
-			{
-				Repository: zoekt.Repository{
-					Name:     "foo/indexed-two",
-					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-				},
-			},
-			{
-				Repository: zoekt.Repository{
-					Name: "foo/indexed-three",
-					Branches: []zoekt.RepositoryBranch{
-						{Name: "HEAD", Version: "deadbeef"},
-						{Name: "foobar", Version: "deadcow"},
-					},
-				},
-			},
+	zoektRepos := map[string]*zoekt.Repository{}
+	for _, r := range []*zoekt.Repository{{
+		Name:     "foo/indexed-one",
+		Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+	}, {
+		Name:     "foo/indexed-two",
+		Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+	}, {
+		Name: "foo/indexed-three",
+		Branches: []zoekt.RepositoryBranch{
+			{Name: "HEAD", Version: "deadbeef"},
+			{Name: "foobar", Version: "deadcow"},
 		},
+	}} {
+		zoektRepos[r.Name] = r
 	}
-
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: zoektRepoList}}
-	ctx := context.Background()
 
 	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
 		var indexed []*search.RepositoryRevisions
@@ -325,10 +314,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, tc.repos, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
 			if !reflect.DeepEqual(tc.indexed, indexed) {
 				diff := cmp.Diff(tc.indexed, indexed)
@@ -344,7 +330,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 func Benchmark_zoektIndexedRepos(b *testing.B) {
 	repoNames := []string{}
-	zoektRepos := []*zoekt.RepoListEntry{}
+	zoektRepos := map[string]*zoekt.Repository{}
 
 	for i := 0; i < 10000; i++ {
 		indexedName := fmt.Sprintf("foo/indexed-%d@", i)
@@ -352,23 +338,20 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 
 		repoNames = append(repoNames, indexedName, unindexedName)
 
-		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
-			Repository: zoekt.Repository{
-				Name:     strings.TrimSuffix(indexedName, "@"),
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-			},
-		})
+		zoektName := strings.TrimSuffix(indexedName, "@")
+		zoektRepos[zoektName] = &zoekt.Repository{
+			Name:     zoektName,
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+		}
 	}
 
 	repos := makeRepositoryRevisions(repoNames...)
-	z := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{Repos: zoektRepos}}}
-	ctx := context.Background()
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_, _, _ = zoektIndexedRepos(ctx, z, repos, nil)
+		_, _ = zoektIndexedRepos(zoektRepos, repos, nil)
 	}
 }
 
@@ -1018,7 +1001,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 	}
 }
 
-func TestZoektSingleIndexedRepo(t *testing.T) {
+func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
@@ -1027,8 +1010,8 @@ func TestZoektSingleIndexedRepo(t *testing.T) {
 			},
 		}
 	}
-	zoektRepos := []*zoekt.RepoListEntry{{
-		Repository: zoekt.Repository{
+	zoektRepos := map[string]*zoekt.Repository{
+		"test/repo": {
 			Name: "test/repo",
 			Branches: []zoekt.RepositoryBranch{
 				{
@@ -1041,12 +1024,6 @@ func TestZoektSingleIndexedRepo(t *testing.T) {
 				},
 			},
 		},
-	}}
-	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos: &zoekt.RepoList{Repos: zoektRepos},
-		},
-		DisableCache: true,
 	}
 	cases := []struct {
 		rev           string
@@ -1095,11 +1072,7 @@ func TestZoektSingleIndexedRepo(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		filter := func(*zoekt.Repository) bool { return true }
-		indexed, unindexed, err := zoektSingleIndexedRepo(context.Background(), z, repoRev(tt.rev), filter)
-		if err != nil {
-			t.Fatal(err)
-		}
+		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
 			Indexed:   indexed,
 			Unindexed: unindexed,
@@ -1111,5 +1084,86 @@ func TestZoektSingleIndexedRepo(t *testing.T) {
 		if !cmp.Equal(want, got) {
 			t.Errorf("%s mismatch (-want +got):\n%s", tt.rev, cmp.Diff(want, got))
 		}
+	}
+}
+
+func TestZoektFileMatchToSymbolResults(t *testing.T) {
+	symbolInfo := func(sym string) *zoekt.Symbol {
+		return &zoekt.Symbol{
+			Sym:        sym,
+			Kind:       "kind",
+			Parent:     "parent",
+			ParentKind: "parentkind",
+		}
+	}
+
+	file := &zoekt.FileMatch{
+		FileName:   "bar.go",
+		Repository: "foo",
+		Language:   "go",
+		Version:    "deadbeef",
+		LineMatches: []zoekt.LineMatch{{
+			// Skips missing symbol info (shouldn't happen in practice).
+			LineNumber:    5,
+			LineFragments: []zoekt.LineFragmentMatch{{}},
+		}, {
+			LineNumber: 10,
+			LineFragments: []zoekt.LineFragmentMatch{{
+				SymbolInfo: symbolInfo("a"),
+			}, {
+				SymbolInfo: symbolInfo("b"),
+			}},
+		}, {
+			LineNumber: 15,
+			LineFragments: []zoekt.LineFragmentMatch{{
+				SymbolInfo: symbolInfo("c"),
+			}},
+		}},
+	}
+
+	repo := &RepositoryResolver{repo: &types.Repo{Name: "foo"}}
+
+	results := zoektFileMatchToSymbolResults(repo, "master", file)
+	var symbols []protocol.Symbol
+	for _, res := range results {
+		// Check the fields which are not specific to the symbol
+		if got, want := res.lang, "go"; got != want {
+			t.Fatalf("lang: got %q want %q", got, want)
+		}
+		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
+			t.Fatalf("baseURI: got %q want %q", got, want)
+		}
+		if got, want := string(res.commit.repoResolver.repo.Name), "foo"; got != want {
+			t.Fatalf("reporesolver: got %q want %q", got, want)
+		}
+		if got, want := string(res.commit.oid), "deadbeef"; got != want {
+			t.Fatalf("oid: got %q want %q", got, want)
+		}
+		if got, want := *res.commit.inputRev, "master"; got != want {
+			t.Fatalf("inputRev: got %q want %q", got, want)
+		}
+
+		symbols = append(symbols, res.symbol)
+	}
+
+	want := []protocol.Symbol{{
+		Name: "a",
+		Line: 10,
+	}, {
+		Name: "b",
+		Line: 10,
+	}, {
+		Name: "c",
+		Line: 15,
+	}}
+	for i := range want {
+		want[i].Kind = "kind"
+		want[i].Parent = "parent"
+		want[i].ParentKind = "parentkind"
+		want[i].Path = "bar.go"
+	}
+
+	if diff := cmp.Diff(want, symbols); diff != "" {
+		t.Fatalf("symbol mismatch (-want +got):\n%s", diff)
 	}
 }

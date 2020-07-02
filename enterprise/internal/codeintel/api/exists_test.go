@@ -22,7 +22,7 @@ func TestFindClosestDumps(t *testing.T) {
 	mockBundleClient4 := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
 
-	setMockStoreFindClosestDumps(t, mockStore, 42, testCommit, "s1/main.go", "idx", []store.Dump{
+	setMockStoreFindClosestDumps(t, mockStore, 42, testCommit, "s1/main.go", true, "idx", []store.Dump{
 		{ID: 50, Root: "s1/"},
 		{ID: 51, Root: "s1/"},
 		{ID: 52, Root: "s1/"},
@@ -97,7 +97,7 @@ func TestFindClosestSkipsGitserverIfCommitIsKnown(t *testing.T) {
 	mockGitserverClient := gitservermocks.NewMockClient()
 
 	setMockStoreHasCommit(t, mockStore, 42, testCommit, true)
-	setMockStoreFindClosestDumps(t, mockStore, 42, testCommit, "main.go", "idx", []store.Dump{
+	setMockStoreFindClosestDumps(t, mockStore, 42, testCommit, "main.go", true, "idx", []store.Dump{
 		{ID: 50, Root: ""},
 	})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{

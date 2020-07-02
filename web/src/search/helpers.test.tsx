@@ -118,7 +118,7 @@ describe('search/helpers', () => {
 
             test('filters suggestions for filter aliases', () => {
                 const [{ value }] = filterStaticSuggestions({ query: 'l', cursorPosition: 1 }, searchFilterSuggestions)
-                expect(value).toBe(filterAliases.l + ':')
+                expect(value).toBe(`${filterAliases.l}:`)
             })
 
             test('does not throw for query ":"', () => {

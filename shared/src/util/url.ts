@@ -272,7 +272,7 @@ export function toPositionOrRangeHash(context: {
  * @param ctx 1-indexed partial position
  */
 export function toPositionHashComponent(position: { line: number; character?: number }): string {
-    return position.line.toString() + (position.character ? ':' + position.character : '')
+    return position.line.toString() + (position.character ? `:${position.character}` : '')
 }
 
 /**
@@ -515,7 +515,7 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
 }
 
 const positionString = (position: Position): string =>
-    position.line + '' + (position.character ? ',' + position.character : '')
+    position.line.toString() + (position.character ? `,${position.character}` : '')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.

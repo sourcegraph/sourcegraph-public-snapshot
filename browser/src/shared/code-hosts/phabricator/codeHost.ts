@@ -22,7 +22,7 @@ const getTextContent = (element: HTMLElement): { textContent: string; adjust: nu
 
     // For some reason, phabricator adds an invisible element to the beginning of lines containing the diff indicator
     // followed by a space (ex: '+ '). We need to adjust the position accordingly.
-    if (element.firstElementChild && element.firstElementChild.classList.contains('aural-only')) {
+    if (element.firstElementChild?.classList.contains('aural-only')) {
         const pre = element.firstElementChild.textContent || ''
         // Codeintellify handles ignoring one character for diff indicators so we'll allow it to adjust for that.
         adjust = pre.replace(/^(\+|-)/, '').length
@@ -183,7 +183,7 @@ export const phabricatorCodeHost: CodeHost = {
     // and find a way to listen to changes (Phabricator does not emit popstate events).
     codeViewToolbarClassProps: {
         actionItemClass: 'button grey action-item--phabricator',
-        actionItemIconClass: 'action-item__icon--phabricator',
+        actionItemIconClass: 'icon--phabricator',
     },
     notificationClassNames: {
         [NotificationType.Log]: 'phui-info-view phui-info-severity-plain',

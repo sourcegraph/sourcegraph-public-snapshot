@@ -62,7 +62,6 @@ interface Campaign
         | 'branch'
         | 'hasUnpublishedPatches'
     > {
-    patchSet: Pick<GQL.IPatchSet, 'id'> | null
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
     patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
@@ -88,8 +87,6 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
     _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.ID) => Observable<Campaign | null>)
     /** For testing only. */
     _fetchPatchSetById?: typeof fetchPatchSetById | ((patchSet: GQL.ID) => Observable<PatchSet | null>)
-    /** For testing only. */
-    _noSubject?: boolean
 }
 
 /**
@@ -106,7 +103,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     telemetryService,
     _fetchCampaignById = fetchCampaignById,
     _fetchPatchSetById = fetchPatchSetById,
-    _noSubject = false,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
@@ -131,7 +127,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         let isFirstCampaignFetch = true
 
         // Fetch campaign if ID was given
-        const subscription = merge(of(undefined), _noSubject ? new Observable<void>() : campaignUpdates)
+        const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
                 switchMap(() =>
                     _fetchCampaignById(campaignID).pipe(
@@ -160,7 +156,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById, _noSubject])
+    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
 
     const [mode, setMode] = useState<CampaignUIMode>(campaignID ? 'viewing' : 'editing')
 
@@ -360,13 +356,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     // On update, check if an update is possible
-    if (!!campaign && !!patchSet) {
-        if (!campaign.patchSet?.id) {
-            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a patch set" />
-        }
-        if (campaign.closedAt) {
-            return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
-        }
+    if (!!campaign && !!patchSet && campaign.closedAt) {
+        return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
     }
 
     const author = campaign ? campaign.author : authenticatedUser
@@ -416,7 +407,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             />
                         )}
                         {/* Existing non-manual campaign, but not updating with a new set of patches */}
-                        {campaign && !!campaign.patchSet && !patchSet && (
+                        {campaign && !patchSet && (
                             <div className="card">
                                 <div className="card-body">
                                     <h3 className="card-title">Want to update the patches?</h3>
@@ -539,8 +530,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 </>
                             )}
 
-                            {/* Only campaigns that have no patch set can add changesets manually. */}
-                            {!campaign.patchSet && campaign.viewerCanAdminister && !campaign.closedAt && (
+                            {campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <>
                                     {totalChangesetCount === 0 && (
                                         <div className="mt-4 mb-2 alert alert-info e2e-campaign-get-started">
@@ -593,8 +583,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         patchSet={patchSet!}
                                         campaignUpdates={campaignUpdates}
                                         changesetUpdates={changesetUpdates}
-                                        // No publishing allowed in create view.
-                                        enablePublishing={false}
                                         history={history}
                                         location={location}
                                         isLightTheme={isLightTheme}

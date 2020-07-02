@@ -67,7 +67,7 @@ func indexedSymbolsBranch(repository, commit string) string {
 		return ""
 	}
 
-	repo, ok := set[strings.ToLower(repository)]
+	repo, ok := set[repository]
 	if !ok || !repo.HasSymbols {
 		return ""
 	}

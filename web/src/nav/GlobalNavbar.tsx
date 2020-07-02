@@ -150,10 +150,10 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         const branding = window.context ? window.context.branding : null
         if (branding) {
             if (this.props.isLightTheme) {
-                if (branding.light && branding.light.symbol) {
+                if (branding.light?.symbol) {
                     logoSource = branding.light.symbol
                 }
-            } else if (branding.dark && branding.dark.symbol) {
+            } else if (branding.dark?.symbol) {
                 logoSource = branding.dark.symbol
             }
             if (branding.disableSymbolSpin) {

@@ -1,8 +1,93 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PatchNode renders a patch with publishing disabled 1`] = `
-Object {
-  "children": <Collapsible
+exports[`PatchNode renders a patch with publishing disabled and publishable: disabled 1`] = `
+<li
+  className="list-group-item e2e-changeset-node"
+>
+  <Collapsible
+    expandedButtonClassName="mb-3"
+    title={
+      <div
+        className="d-flex align-items-center m-1 ml-2"
+      >
+        <div
+          className="changeset-node__content flex-fill"
+        >
+          <div
+            className="d-flex flex-column"
+          >
+            <div>
+              <Octicon
+                className="icon-inline mr-2 text-success"
+                icon={[Function]}
+                size={16}
+                verticalAlign="text-bottom"
+              />
+              <strong>
+                <AnchorLink
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  to="github.com/sourcegraph/sourcegraph"
+                >
+                  sourcegraph
+                </AnchorLink>
+                <small>
+                  <Memo(InfoCircleOutlineIcon)
+                    className="icon-inline ml-1"
+                    data-tooltip="Unsupported codehost"
+                  />
+                </small>
+              </strong>
+            </div>
+          </div>
+        </div>
+        <div
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
+        >
+          <DiffStat
+            added={100}
+            changed={200}
+            deleted={100}
+            expandedCounts={true}
+          />
+        </div>
+      </div>
+    }
+    titleClassName="changeset-node__content flex-fill"
+    wholeTitleClickable={false}
+  >
+    <FileDiffConnection
+      cursorPaging={true}
+      defaultFirst={15}
+      hideSearch={true}
+      history="[History]"
+      listClassName="list-group list-group-flush"
+      location="[Location path=/campaigns]"
+      noSummaryIfAllNodesVisible={true}
+      nodeComponent={[Function]}
+      nodeComponentProps={
+        Object {
+          "history": "[History]",
+          "isLightTheme": true,
+          "lineNumbers": true,
+          "location": "[Location path=/campaigns]",
+          "persistLines": false,
+        }
+      }
+      noun="changed file"
+      pluralNoun="changed files"
+      queryConnection={[Function]}
+      useURLQuery={false}
+    />
+  </Collapsible>
+</li>
+`;
+
+exports[`PatchNode renders a patch with publishing disabled and publishable: enabled 1`] = `
+<li
+  className="list-group-item e2e-changeset-node"
+>
+  <Collapsible
     expandedButtonClassName="mb-3"
     title={
       <div
@@ -52,91 +137,17 @@ Object {
       cursorPaging={true}
       defaultFirst={15}
       hideSearch={true}
-      history={
-        Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        }
-      }
+      history="[History]"
       listClassName="list-group list-group-flush"
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/campaigns",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      location="[Location path=/campaigns]"
       noSummaryIfAllNodesVisible={true}
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
-          "history": Object {
-            "action": "POP",
-            "block": [Function],
-            "canGo": [Function],
-            "createHref": [Function],
-            "entries": Array [
-              Object {
-                "hash": "",
-                "key": undefined,
-                "pathname": "/",
-                "search": "",
-                "state": undefined,
-              },
-            ],
-            "go": [Function],
-            "goBack": [Function],
-            "goForward": [Function],
-            "index": 0,
-            "length": 1,
-            "listen": [Function],
-            "location": Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-            "push": [Function],
-            "replace": [Function],
-          },
+          "history": "[History]",
           "isLightTheme": true,
           "lineNumbers": true,
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/campaigns",
-            "search": "",
-            "state": undefined,
-          },
+          "location": "[Location path=/campaigns]",
           "persistLines": false,
         }
       }
@@ -145,14 +156,109 @@ Object {
       queryConnection={[Function]}
       useURLQuery={false}
     />
-  </Collapsible>,
-  "className": "list-group-item e2e-changeset-node",
-}
+  </Collapsible>
+</li>
 `;
 
-exports[`PatchNode renders a patch with publishing enabled 1`] = `
-Object {
-  "children": <Collapsible
+exports[`PatchNode renders a patch with publishing enabled and publishable: disabled 1`] = `
+<li
+  className="list-group-item e2e-changeset-node"
+>
+  <Collapsible
+    expandedButtonClassName="mb-3"
+    title={
+      <div
+        className="d-flex align-items-center m-1 ml-2"
+      >
+        <div
+          className="changeset-node__content flex-fill"
+        >
+          <div
+            className="d-flex flex-column"
+          >
+            <div>
+              <Octicon
+                className="icon-inline mr-2 text-success"
+                icon={[Function]}
+                size={16}
+                verticalAlign="text-bottom"
+              />
+              <strong>
+                <AnchorLink
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  to="github.com/sourcegraph/sourcegraph"
+                >
+                  sourcegraph
+                </AnchorLink>
+                <small>
+                  <Memo(InfoCircleOutlineIcon)
+                    className="icon-inline ml-1"
+                    data-tooltip="Unsupported codehost"
+                  />
+                </small>
+              </strong>
+            </div>
+          </div>
+        </div>
+        <div
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
+        >
+          <DiffStat
+            added={100}
+            changed={200}
+            deleted={100}
+            expandedCounts={true}
+          />
+        </div>
+        <React.Fragment>
+          <button
+            className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
+            disabled={true}
+            onClick={[Function]}
+            type="button"
+          >
+             
+            Publish
+          </button>
+        </React.Fragment>
+      </div>
+    }
+    titleClassName="changeset-node__content flex-fill"
+    wholeTitleClickable={false}
+  >
+    <FileDiffConnection
+      cursorPaging={true}
+      defaultFirst={15}
+      hideSearch={true}
+      history="[History]"
+      listClassName="list-group list-group-flush"
+      location="[Location path=/campaigns]"
+      noSummaryIfAllNodesVisible={true}
+      nodeComponent={[Function]}
+      nodeComponentProps={
+        Object {
+          "history": "[History]",
+          "isLightTheme": true,
+          "lineNumbers": true,
+          "location": "[Location path=/campaigns]",
+          "persistLines": false,
+        }
+      }
+      noun="changed file"
+      pluralNoun="changed files"
+      queryConnection={[Function]}
+      useURLQuery={false}
+    />
+  </Collapsible>
+</li>
+`;
+
+exports[`PatchNode renders a patch with publishing enabled and publishable: enabled 1`] = `
+<li
+  className="list-group-item e2e-changeset-node"
+>
+  <Collapsible
     expandedButtonClassName="mb-3"
     title={
       <div
@@ -213,91 +319,17 @@ Object {
       cursorPaging={true}
       defaultFirst={15}
       hideSearch={true}
-      history={
-        Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        }
-      }
+      history="[History]"
       listClassName="list-group list-group-flush"
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/campaigns",
-          "search": "",
-          "state": undefined,
-        }
-      }
+      location="[Location path=/campaigns]"
       noSummaryIfAllNodesVisible={true}
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
-          "history": Object {
-            "action": "POP",
-            "block": [Function],
-            "canGo": [Function],
-            "createHref": [Function],
-            "entries": Array [
-              Object {
-                "hash": "",
-                "key": undefined,
-                "pathname": "/",
-                "search": "",
-                "state": undefined,
-              },
-            ],
-            "go": [Function],
-            "goBack": [Function],
-            "goForward": [Function],
-            "index": 0,
-            "length": 1,
-            "listen": [Function],
-            "location": Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-            "push": [Function],
-            "replace": [Function],
-          },
+          "history": "[History]",
           "isLightTheme": true,
           "lineNumbers": true,
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/campaigns",
-            "search": "",
-            "state": undefined,
-          },
+          "location": "[Location path=/campaigns]",
           "persistLines": false,
         }
       }
@@ -306,7 +338,58 @@ Object {
       queryConnection={[Function]}
       useURLQuery={false}
     />
-  </Collapsible>,
-  "className": "list-group-item e2e-changeset-node",
-}
+  </Collapsible>
+</li>
+`;
+
+exports[`PatchNode renders a patch without a filediff 1`] = `
+<li
+  className="list-group-item e2e-changeset-node"
+>
+  <div
+    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
+  >
+    <div
+      className="d-flex align-items-center m-1 ml-2"
+    >
+      <div
+        className="changeset-node__content flex-fill"
+      >
+        <div
+          className="d-flex flex-column"
+        >
+          <div>
+            <Octicon
+              className="icon-inline mr-2 text-success"
+              icon={[Function]}
+              size={16}
+              verticalAlign="text-bottom"
+            />
+            <strong>
+              <AnchorLink
+                rel="noopener noreferrer"
+                target="_blank"
+                to="github.com/sourcegraph/sourcegraph"
+              >
+                sourcegraph
+              </AnchorLink>
+            </strong>
+          </div>
+        </div>
+      </div>
+      <div
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
+      />
+      <button
+        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+         
+        Publish
+      </button>
+    </div>
+  </div>
+</li>
 `;

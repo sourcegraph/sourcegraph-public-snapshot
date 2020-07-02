@@ -1,14 +1,13 @@
 import React from 'react'
-import renderer, { act } from 'react-test-renderer'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignDetails } from './CampaignDetails'
 import * as H from 'history'
-import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 import { CampaignStatusProps } from './CampaignStatus'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { PageTitle } from '../../../components/PageTitle'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
+import { shallow, mount } from 'enzyme'
 
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
@@ -31,7 +30,7 @@ describe('CampaignDetails', () => {
     })
     test('creation form for empty manual campaign', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignDetails
                     campaignID={undefined}
                     history={history}
@@ -41,13 +40,12 @@ describe('CampaignDetails', () => {
                     extensionsController={undefined as any}
                     platformContext={undefined as any}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
-                    _noSubject={true}
                 />
             )
         ).toMatchSnapshot())
 
     test('creation form given existing patch set', () => {
-        const component = renderer.create(
+        const component = mount(
             <CampaignDetails
                 campaignID={undefined}
                 history={history}
@@ -69,11 +67,9 @@ describe('CampaignDetails', () => {
                         patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
                     })
                 }
-                _noSubject={true}
             />
         )
-        act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component).toMatchSnapshot()
     })
 
     const renderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
@@ -94,7 +90,6 @@ describe('CampaignDetails', () => {
                     description: 'd',
                     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                     author: { username: 'alice' } as GQL.IUser,
-                    patchSet: { id: 'p' },
                     changesets: { totalCount: 2 },
                     patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
@@ -118,26 +113,21 @@ describe('CampaignDetails', () => {
                     },
                 })
             }
-            _noSubject={true}
         />
     )
 
     for (const viewerCanAdminister of [true, false]) {
         describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
             test('viewing existing', () => {
-                const component = renderer.create(renderCampaignDetails({ viewerCanAdminister }))
-                act(() => undefined)
-                expect(component).toMatchSnapshot()
+                expect(mount(renderCampaignDetails({ viewerCanAdminister }))).toMatchSnapshot()
             })
         })
     }
 
     test('editing existing', () => {
-        const component = renderer.create(renderCampaignDetails({ viewerCanAdminister: true }))
-        act(() => undefined)
-        act(() =>
-            component.root.findByProps({ id: 'e2e-campaign-edit' }).props.onClick({ preventDefault: () => undefined })
-        )
+        const component = mount(renderCampaignDetails({ viewerCanAdminister: true }))
+        component.find('#e2e-campaign-edit').simulate('click')
+
         expect(component).toMatchSnapshot()
     })
 })

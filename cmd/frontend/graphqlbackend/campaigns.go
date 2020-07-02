@@ -278,6 +278,7 @@ type ExternalChangesetResolver interface {
 
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
 	Head(ctx context.Context) (*GitRefResolver, error)
 	Base(ctx context.Context) (*GitRefResolver, error)
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
@@ -318,6 +319,7 @@ type PatchResolver interface {
 	Diff() PatchResolver
 	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
 	PublicationEnqueued(ctx context.Context) (bool, error)
+	Publishable(ctx context.Context) (bool, error)
 }
 
 type ChangesetEventsConnectionResolver interface {

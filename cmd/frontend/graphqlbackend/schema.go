@@ -732,6 +732,9 @@ type Patch implements PatchInterface & Node {
     # - A campaign has been created with the patchset to which this patch belongs.
     # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
+
+    # True, when the code host of the associated repository is supported by campaigns.
+    publishable: Boolean!
 }
 
 # A hidden patch is a patch in a repository that the user does NOT have
@@ -871,6 +874,12 @@ type ExternalChangeset implements Node & Changeset {
 
     # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
     diff: RepositoryComparison
+
+    # The diffstat of this changeset, or null if the changeset is closed
+    # (without merging) or is already merged. This data is also available
+    # indirectly through the diff field above, but if only the diffStat is
+    # required, this field is cheaper to access.
+    diffStat: DiffStat
 
     # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
     # checks have been configured.
@@ -1299,7 +1308,8 @@ type Query {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifUploads(
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # commit, root, and indexer properties.
         query: String
 
         # The state of returned uploads.
@@ -1326,8 +1336,8 @@ type Query {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifIndexes(
-        # TODO(efritz) - update
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # and commit properties.
         query: String
 
         # The state of returned uploads.
@@ -1844,6 +1854,8 @@ type Repository implements Node & GenericSearchResultInterface {
         base: String
         # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
         head: String
+        # Attempt to fetch missing revisions from remote if they are not found
+        fetchMissing: Boolean = true
     ): RepositoryComparison!
     # The repository's contributors.
     contributors(
@@ -1872,7 +1884,8 @@ type Repository implements Node & GenericSearchResultInterface {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifUploads(
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # commit, root, and indexer properties.
         query: String
 
         # The state of returned uploads.
@@ -1899,8 +1912,8 @@ type Repository implements Node & GenericSearchResultInterface {
     # CHANGELOG during this time.
     # The repository's LSIF uploads.
     lsifIndexes(
-        # TODO(efritz) - update
-        # An (optional) search query that searches over the commit and root properties.
+        # An (optional) search query that searches over the state, repository name,
+        # and commit properties.
         query: String
 
         # The state of returned uploads.

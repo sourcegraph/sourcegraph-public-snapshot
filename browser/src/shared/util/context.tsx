@@ -37,7 +37,7 @@ export function getPlatformName(): PlatformName {
     if (window.SOURCEGRAPH_INTEGRATION) {
         return window.SOURCEGRAPH_INTEGRATION
     }
-    return isFirefoxExtension() ? 'firefox-extension' : 'chrome-extension'
+    return isFirefox() ? 'firefox-extension' : 'chrome-extension'
 }
 
 export function getExtensionVersion(): string {
@@ -49,6 +49,6 @@ export function getExtensionVersion(): string {
     return 'NO_VERSION'
 }
 
-function isFirefoxExtension(): boolean {
+export function isFirefox(): boolean {
     return window.navigator.userAgent.includes('Firefox')
 }

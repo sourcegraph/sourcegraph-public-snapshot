@@ -1,6 +1,5 @@
 import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
-import { createExtensionHostClient } from '../api/client/client'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParams } from '../api/client/services/command'
 import { ContributionRegistry, parseContributionExpressions } from '../api/client/services/contribution'
@@ -12,6 +11,9 @@ import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
+import { createExtensionHostClientConnection } from '../api/client/connection'
+import { Remote } from 'comlink'
+import { FlatExtHostAPI } from '../api/contract'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -41,6 +43,8 @@ export interface Controller extends Unsubscribable {
      * Frees all resources associated with this client.
      */
     unsubscribe(): void
+
+    extHostAPI: Promise<Remote<FlatExtHostAPI>>
 }
 
 /**
@@ -68,13 +72,18 @@ export function createController(context: PlatformContext): Controller {
     const subscriptions = new Subscription()
 
     const services = new Services(context)
-    const extensionHostEndpoint = context.createExtensionHost()
     const initData: Omit<InitData, 'initialSettings'> = {
         sourcegraphURL: context.sourcegraphURL,
         clientApplication: context.clientApplication,
     }
-    const client = createExtensionHostClient(services, extensionHostEndpoint, initData, context)
-    subscriptions.add(client)
+    const extensionHostClientPromise = createExtensionHostClientConnection(
+        context.createExtensionHost(),
+        services,
+        initData,
+        context
+    )
+
+    subscriptions.add(() => extensionHostClientPromise.then(({ subscription }) => subscription.unsubscribe()))
 
     const notifications = new Subject<Notification>()
 
@@ -141,6 +150,7 @@ export function createController(context: PlatformContext): Controller {
                 }
                 return Promise.reject(error)
             }),
+        extHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }
 }

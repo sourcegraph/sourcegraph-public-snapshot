@@ -11,39 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
-func TestGetDumpIDs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(1 * time.Minute)
-	t3 := t1.Add(2 * time.Minute)
-	t4 := t1.Add(3 * time.Minute)
-	t5 := t1.Add(4 * time.Minute)
-	t6 := t1.Add(5 * time.Minute)
-
-	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, Commit: makeCommit(1), State: "completed", UploadedAt: t2},
-		Upload{ID: 2, Commit: makeCommit(2), State: "completed", UploadedAt: t6},
-		Upload{ID: 3, Commit: makeCommit(3), State: "completed", UploadedAt: t3},
-		Upload{ID: 4, Commit: makeCommit(4), State: "completed", UploadedAt: t4},
-		Upload{ID: 5, Commit: makeCommit(5), State: "completed", UploadedAt: t5},
-		Upload{ID: 6, Commit: makeCommit(6), State: "errored", UploadedAt: t2},
-	)
-
-	ids, err := store.GetDumpIDs(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error getting dump ids: %s", err)
-	}
-
-	if diff := cmp.Diff([]int{1, 3, 4, 5, 2}, ids); diff != "" {
-		t.Errorf("unexpected ids (-want +got):\n%s", diff)
-	}
-}
-
 func TestGetDumpByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -72,6 +39,7 @@ func TestGetDumpByID(t *testing.T) {
 		StartedAt:      &startedAt,
 		FinishedAt:     &finishedAt,
 		RepositoryID:   50,
+		RepositoryName: "n-50",
 		Indexer:        "lsif-go",
 	}
 
@@ -88,6 +56,7 @@ func TestGetDumpByID(t *testing.T) {
 		ProcessAfter:   expected.ProcessAfter,
 		NumResets:      expected.NumResets,
 		RepositoryID:   expected.RepositoryID,
+		RepositoryName: expected.RepositoryName,
 		Indexer:        expected.Indexer,
 	})
 
@@ -133,14 +102,14 @@ func TestFindClosestDumps(t *testing.T) {
 	)
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "file.ts", anyOfIDs: []int{1}},
-		{commit: makeCommit(2), file: "file.ts", anyOfIDs: []int{1}},
-		{commit: makeCommit(3), file: "file.ts", anyOfIDs: []int{2}},
-		{commit: makeCommit(4), file: "file.ts", anyOfIDs: []int{2}},
-		{commit: makeCommit(6), file: "file.ts", anyOfIDs: []int{3}},
-		{commit: makeCommit(7), file: "file.ts", anyOfIDs: []int{3}},
-		{commit: makeCommit(5), file: "file.ts", anyOfIDs: []int{1, 2, 3}},
-		{commit: makeCommit(8), file: "file.ts", anyOfIDs: []int{1, 2}},
+		{commit: makeCommit(1), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1}},
+		{commit: makeCommit(2), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1}},
+		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{2}},
+		{commit: makeCommit(4), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{2}},
+		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{3}},
+		{commit: makeCommit(7), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{3}},
+		{commit: makeCommit(5), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1, 2, 3}},
+		{commit: makeCommit(8), file: "file.ts", rootMustEnclosePath: true, anyOfIDs: []int{1, 2}},
 	})
 }
 
@@ -212,11 +181,11 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	)
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "blah"},
-		{commit: makeCommit(2), file: "root1/file.ts", allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "root2/file.ts", allOfIDs: []int{2}},
-		{commit: makeCommit(2), file: "root2/file.ts", allOfIDs: []int{2}},
-		{commit: makeCommit(1), file: "root3/file.ts"},
+		{commit: makeCommit(1), file: "blah", rootMustEnclosePath: true},
+		{commit: makeCommit(2), file: "root1/file.ts", rootMustEnclosePath: true, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "root2/file.ts", rootMustEnclosePath: true, allOfIDs: []int{2}},
+		{commit: makeCommit(2), file: "root2/file.ts", rootMustEnclosePath: true, allOfIDs: []int{2}},
+		{commit: makeCommit(1), file: "root3/file.ts", rootMustEnclosePath: true},
 	})
 }
 
@@ -271,11 +240,11 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	)
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(4), file: "root1/file.ts", allOfIDs: []int{7, 3}},
-		{commit: makeCommit(5), file: "root2/file.ts", allOfIDs: []int{8, 7}},
-		{commit: makeCommit(3), file: "root3/file.ts", allOfIDs: []int{5, 1}},
-		{commit: makeCommit(1), file: "root4/file.ts", allOfIDs: []int{2}},
-		{commit: makeCommit(2), file: "root4/file.ts", allOfIDs: []int{5}},
+		{commit: makeCommit(4), file: "root1/file.ts", rootMustEnclosePath: true, allOfIDs: []int{7, 3}},
+		{commit: makeCommit(5), file: "root2/file.ts", rootMustEnclosePath: true, allOfIDs: []int{8, 7}},
+		{commit: makeCommit(3), file: "root3/file.ts", rootMustEnclosePath: true, allOfIDs: []int{5, 1}},
+		{commit: makeCommit(1), file: "root4/file.ts", rootMustEnclosePath: true, allOfIDs: []int{2}},
+		{commit: makeCommit(2), file: "root4/file.ts", rootMustEnclosePath: true, allOfIDs: []int{5}},
 	})
 }
 
@@ -317,10 +286,10 @@ func TestFindClosestDumpsMaxTraversalLimit(t *testing.T) {
 	insertUploads(t, dbconn.Global, Upload{ID: 1, Commit: makeCommit(0)})
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(0), file: "file.ts", allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "file.ts", allOfIDs: []int{1}},
-		{commit: makeCommit(MaxTraversalLimit/2 - 1), file: "file.ts", allOfIDs: []int{1}},
-		{commit: makeCommit(MaxTraversalLimit / 2), file: "file.ts"},
+		{commit: makeCommit(0), file: "file.ts", rootMustEnclosePath: true, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "file.ts", rootMustEnclosePath: true, allOfIDs: []int{1}},
+		{commit: makeCommit(MaxTraversalLimit/2 - 1), file: "file.ts", rootMustEnclosePath: true, allOfIDs: []int{1}},
+		{commit: makeCommit(MaxTraversalLimit / 2), file: "file.ts", rootMustEnclosePath: true},
 	})
 }
 
@@ -365,6 +334,30 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", allOfIDs: []int{6}},
 		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", allOfIDs: []int{7}},
 		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", allOfIDs: []int{8}},
+	})
+}
+
+func TestFindClosestDumpsIntersectingPath(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	if err := store.UpdateCommits(context.Background(), 50, map[string][]string{
+		makeCommit(1): {},
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, Commit: makeCommit(1), Root: "web/src/", Indexer: "lsif-eslint"},
+	)
+
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+		{commit: makeCommit(1), file: "", rootMustEnclosePath: false, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "web/", rootMustEnclosePath: false, allOfIDs: []int{1}},
+		{commit: makeCommit(1), file: "web/src/file.ts", rootMustEnclosePath: false, allOfIDs: []int{1}},
 	})
 }
 
@@ -414,19 +407,26 @@ func TestDeleteOldestDump(t *testing.T) {
 }
 
 type FindClosestDumpsTestCase struct {
-	commit   string
-	file     string
-	indexer  string
-	anyOfIDs []int
-	allOfIDs []int
+	commit              string
+	file                string
+	rootMustEnclosePath bool
+	indexer             string
+	anyOfIDs            []int
+	allOfIDs            []int
 }
 
 func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDumpsTestCase) {
 	for _, testCase := range testCases {
-		name := fmt.Sprintf("commit=%s file=%s", testCase.commit, testCase.file)
+		name := fmt.Sprintf(
+			"commit=%s file=%s rootMustEnclosePath=%v indexer=%s",
+			testCase.commit,
+			testCase.file,
+			testCase.rootMustEnclosePath,
+			testCase.indexer,
+		)
 
 		t.Run(name, func(t *testing.T) {
-			dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.indexer)
+			dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
 			if err != nil {
 				t.Fatalf("unexpected error finding closest dumps: %s", err)
 			}

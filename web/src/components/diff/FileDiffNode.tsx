@@ -66,7 +66,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
 
         let stat: React.ReactFragment
         // If one of the files was binary, display file size change instead of DiffStat.
-        if ((node.oldFile && node.oldFile.binary) || (node.newFile && node.newFile.binary)) {
+        if (node.oldFile?.binary || node.newFile?.binary) {
             const sizeChange = (node.newFile?.byteSize ?? 0) - (node.oldFile?.byteSize ?? 0)
             const className = sizeChange >= 0 ? 'text-success' : 'text-danger'
             stat = <strong className={classNames(className, 'mr-2 code')}>{prettyBytes(sizeChange)}</strong>
@@ -117,7 +117,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                         </div>
                     </div>
                     {this.state.expanded &&
-                        ((node.oldFile && node.oldFile.binary) || (node.newFile && node.newFile.binary) ? (
+                        (node.oldFile?.binary || node.newFile?.binary ? (
                             <div className="text-muted m-2">Binary files can't be rendered.</div>
                         ) : (
                             <FileDiffHunks

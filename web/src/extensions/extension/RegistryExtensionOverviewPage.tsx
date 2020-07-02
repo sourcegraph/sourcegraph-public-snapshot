@@ -101,47 +101,41 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                         )}
                     <small className="text-muted">
                         <dl className="border-top pt-2">
-                            {this.props.extension.registryExtension &&
-                                this.props.extension.registryExtension.publisher && (
-                                    <>
-                                        <dt>Publisher</dt>
-                                        <dd>
-                                            {this.props.extension.registryExtension.publisher ? (
-                                                <Link to={this.props.extension.registryExtension.publisher.url}>
-                                                    {extensionIDPrefix(
-                                                        this.props.extension.registryExtension.publisher
-                                                    )}
-                                                </Link>
-                                            ) : (
-                                                'Unavailable'
-                                            )}
-                                        </dd>
-                                    </>
-                                )}
-                            {this.props.extension.registryExtension &&
-                                this.props.extension.registryExtension.registryName && (
-                                    <>
-                                        <dt
-                                            className={
-                                                this.props.extension.registryExtension.publisher
-                                                    ? 'border-top pt-2'
-                                                    : ''
+                            {this.props.extension.registryExtension?.publisher && (
+                                <>
+                                    <dt>Publisher</dt>
+                                    <dd>
+                                        {this.props.extension.registryExtension.publisher ? (
+                                            <Link to={this.props.extension.registryExtension.publisher.url}>
+                                                {extensionIDPrefix(this.props.extension.registryExtension.publisher)}
+                                            </Link>
+                                        ) : (
+                                            'Unavailable'
+                                        )}
+                                    </dd>
+                                </>
+                            )}
+                            {this.props.extension.registryExtension?.registryName && (
+                                <>
+                                    <dt
+                                        className={
+                                            this.props.extension.registryExtension.publisher ? 'border-top pt-2' : ''
+                                        }
+                                    >
+                                        Published on
+                                    </dt>
+                                    <dd>
+                                        <LinkOrSpan
+                                            to={this.props.extension.registryExtension.remoteURL}
+                                            target={
+                                                this.props.extension.registryExtension.isLocal ? undefined : '_self'
                                             }
                                         >
-                                            Published on
-                                        </dt>
-                                        <dd>
-                                            <LinkOrSpan
-                                                to={this.props.extension.registryExtension.remoteURL}
-                                                target={
-                                                    this.props.extension.registryExtension.isLocal ? undefined : '_self'
-                                                }
-                                            >
-                                                {this.props.extension.registryExtension.registryName}
-                                            </LinkOrSpan>
-                                        </dd>
-                                    </>
-                                )}
+                                            {this.props.extension.registryExtension.registryName}
+                                        </LinkOrSpan>
+                                    </dd>
+                                </>
+                            )}
                             <dt className="border-top pt-2">Extension ID</dt>
                             <dd>{this.props.extension.id}</dd>
                             {this.props.extension.registryExtension &&

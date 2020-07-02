@@ -2,9 +2,9 @@ package db
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

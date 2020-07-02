@@ -401,9 +401,17 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 	}
 
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-		Base: &base,
-		Head: &head,
+		Base:         &base,
+		Head:         &head,
+		FetchMissing: true,
 	})
+}
+
+func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	if stat := r.Changeset.DiffStat(); stat != nil {
+		return graphqlbackend.NewDiffStat(*stat), nil
+	}
+	return nil, nil
 }
 
 func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {

@@ -25,6 +25,7 @@ type Upload struct {
 	ProcessAfter   *time.Time `json:"processAfter"`
 	NumResets      int        `json:"numResets"`
 	RepositoryID   int        `json:"repositoryId"`
+	RepositoryName string     `json:"repositoryName"`
 	Indexer        string     `json:"indexer"`
 	NumParts       int        `json:"numParts"`
 	UploadedParts  []int      `json:"uploadedParts"`
@@ -55,6 +56,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.ProcessAfter,
 			&upload.NumResets,
 			&upload.RepositoryID,
+			&upload.RepositoryName,
 			&upload.Indexer,
 			&upload.NumParts,
 			pq.Array(&rawUploadedParts),
@@ -131,6 +133,27 @@ func scanVisibilities(rows *sql.Rows, queryErr error) (_ map[int]bool, err error
 	return visibilities, nil
 }
 
+// scanCounts scans pairs of id/counts from the return value of `*store.query`.
+func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	visibilities := map[int]int{}
+	for rows.Next() {
+		var id int
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+
+		visibilities[id] = count
+	}
+
+	return visibilities, nil
+}
+
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error) {
 	return scanFirstUpload(s.query(ctx, sqlf.Sprintf(`
@@ -147,14 +170,15 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			u.process_after,
 			u.num_resets,
 			u.repository_id,
+			u.repository_name,
 			u.indexer,
 			u.num_parts,
 			u.uploaded_parts,
 			s.rank
-		FROM lsif_uploads u
+		FROM lsif_uploads_with_repository_name u
 		LEFT JOIN (
 			SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
-			FROM lsif_uploads r
+			FROM lsif_uploads_with_repository_name r
 			WHERE r.state = 'queued'
 		) s
 		ON u.id = s.id
@@ -163,12 +187,13 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 }
 
 type GetUploadsOptions struct {
-	RepositoryID int
-	State        string
-	Term         string
-	VisibleAtTip bool
-	Limit        int
-	Offset       int
+	RepositoryID   int
+	State          string
+	Term           string
+	VisibleAtTip   bool
+	UploadedBefore *time.Time
+	Limit          int
+	Offset         int
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -195,6 +220,9 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("u.visible_at_tip = true"))
 	}
+	if opts.UploadedBefore != nil {
+		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
+	}
 
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
@@ -202,7 +230,7 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 	count, _, err := scanFirstInt(tx.query(
 		ctx,
-		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads u WHERE %s`, sqlf.Join(conds, " AND ")),
+		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return nil, 0, err
@@ -224,14 +252,15 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.process_after,
 				u.num_resets,
 				u.repository_id,
+				u.repository_name,
 				u.indexer,
 				u.num_parts,
 				u.uploaded_parts,
 				s.rank
-			FROM lsif_uploads u
+			FROM lsif_uploads_with_repository_name u
 			LEFT JOIN (
 				SELECT r.id, RANK() OVER (ORDER BY COALESCE(r.process_after, r.uploaded_at)) as rank
-				FROM lsif_uploads r
+				FROM lsif_uploads_with_repository_name r
 				WHERE r.state = 'queued'
 			) s
 			ON u.id = s.id
@@ -248,15 +277,17 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
 func makeSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"commit",
-		"root",
-		"indexer",
-		"failure_message",
+		"(u.state)::text",
+		`u.repository_name`,
+		"u.commit",
+		"u.root",
+		"u.indexer",
+		"u.failure_message",
 	}
 
 	var termConds []*sqlf.Query
 	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf("u."+column+" LIKE %s", "%"+term+"%"))
+		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
 	}
 
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
@@ -264,7 +295,7 @@ func makeSearchCondition(term string) *sqlf.Query {
 
 // QueueSize returns the number of uploads in the queued state.
 func (s *store) QueueSize(ctx context.Context) (int, error) {
-	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads WHERE state = 'queued'`)))
+	count, _, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads_with_repository_name WHERE state = 'queued'`)))
 	return count, err
 }
 
@@ -335,21 +366,22 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) 
 }
 
 var uploadColumnsWithNullRank = []*sqlf.Query{
-	sqlf.Sprintf("id"),
-	sqlf.Sprintf("commit"),
-	sqlf.Sprintf("root"),
-	sqlf.Sprintf("visible_at_tip"),
-	sqlf.Sprintf("uploaded_at"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
-	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("repository_id"),
-	sqlf.Sprintf("indexer"),
-	sqlf.Sprintf("num_parts"),
-	sqlf.Sprintf("uploaded_parts"),
+	sqlf.Sprintf("u.id"),
+	sqlf.Sprintf("u.commit"),
+	sqlf.Sprintf("u.root"),
+	sqlf.Sprintf("u.visible_at_tip"),
+	sqlf.Sprintf("u.uploaded_at"),
+	sqlf.Sprintf("u.state"),
+	sqlf.Sprintf("u.failure_message"),
+	sqlf.Sprintf("u.started_at"),
+	sqlf.Sprintf("u.finished_at"),
+	sqlf.Sprintf("u.process_after"),
+	sqlf.Sprintf("u.num_resets"),
+	sqlf.Sprintf("u.repository_id"),
+	sqlf.Sprintf(`u.repository_name`),
+	sqlf.Sprintf("u.indexer"),
+	sqlf.Sprintf("u.num_parts"),
+	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("NULL"),
 }
 
@@ -358,7 +390,14 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
 // valued flag. This method must not be called from within a transaction.
 func (s *store) Dequeue(ctx context.Context) (Upload, Store, bool, error) {
-	upload, tx, ok, err := s.dequeueRecord(ctx, "lsif_uploads", uploadColumnsWithNullRank, sqlf.Sprintf("uploaded_at"), scanFirstUploadInterface)
+	upload, tx, ok, err := s.dequeueRecord(
+		ctx,
+		"lsif_uploads_with_repository_name",
+		"lsif_uploads",
+		uploadColumnsWithNullRank,
+		sqlf.Sprintf("uploaded_at"),
+		scanFirstUploadInterface,
+	)
 	if err != nil || !ok {
 		return Upload{}, tx, ok, err
 	}
@@ -374,7 +413,7 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
 // GetStates returns the states for the uploads with the given identifiers.
 func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error) {
 	return scanStates(s.query(ctx, sqlf.Sprintf(`
-		SELECT id, state FROM lsif_uploads
+		SELECT id, state FROM lsif_uploads_with_repository_name
 		WHERE id IN (%s)
 	`, sqlf.Join(intsToQueries(ids), ", "))))
 }
@@ -382,7 +421,7 @@ func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error
 // DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
 // the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 // commit on the default branch when invoked.
-func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (_ bool, err error) {
+func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (_ bool, err error) {
 	tx, started, err := s.transact(ctx)
 	if err != nil {
 		return false, err
@@ -421,6 +460,32 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTi
 	return false, nil
 }
 
+// DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
+// and the upload and index records for that repository being deleted.
+const DeletedRepositoryGracePeriod = time.Minute * 30
+
+// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
+// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
+// that were removed for that repository.
+func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
+	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
+	// a similar one on this index, but only for uploads that are  completed or visible at tip.
+
+	return scanCounts(s.query(ctx, sqlf.Sprintf(`
+		WITH deleted_repos AS (
+			SELECT r.id AS id FROM repo r
+			WHERE
+				%s - r.deleted_at >= %s * interval '1 second' AND
+				EXISTS (SELECT COUNT(*) from lsif_uploads u WHERE u.repository_id = r.id)
+		),
+		deleted_uploads AS (
+			DELETE FROM lsif_uploads u WHERE repository_id IN (SELECT id FROM deleted_repos)
+			RETURNING u.id, u.repository_id
+		)
+		SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
+	`, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+}
+
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an
 // upload as "processing" and locking the upload row during processing. An unlocked row that
 // is marked as processing likely indicates that the worker that dequeued the upload has died.
@@ -443,7 +508,7 @@ func (s *store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, 
 			UPDATE lsif_uploads u
 			SET state = 'queued', started_at = null, num_resets = num_resets + 1
 			WHERE id = ANY(
-				SELECT id FROM lsif_uploads
+				SELECT id FROM lsif_uploads_with_repository_name
 				WHERE
 					state = 'processing' AND
 					%s - started_at > (%s * interval '1 second') AND
@@ -463,7 +528,7 @@ func (s *store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, 
 			UPDATE lsif_uploads u
 			SET state = 'errored', finished_at = clock_timestamp(), failure_message = 'failed to process'
 			WHERE id = ANY(
-				SELECT id FROM lsif_uploads
+				SELECT id FROM lsif_uploads_with_repository_name
 				WHERE
 					state = 'processing' AND
 					%s - started_at > (%s * interval '1 second') AND

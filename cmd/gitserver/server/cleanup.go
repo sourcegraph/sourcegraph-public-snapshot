@@ -609,7 +609,7 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 
 func gitConfigGet(dir GitDir, key string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", key)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		// Exit code 1 means the key is not set.
@@ -623,7 +623,7 @@ func gitConfigGet(dir GitDir, key string) (string, error) {
 
 func gitConfigSet(dir GitDir, key, value string) error {
 	cmd := exec.Command("git", "config", key, value)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
@@ -633,7 +633,7 @@ func gitConfigSet(dir GitDir, key, value string) error {
 
 func gitConfigUnset(dir GitDir, key string) error {
 	cmd := exec.Command("git", "config", "--unset-all", key)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	err := cmd.Run()
 	if err != nil {
 		// Exit code 5 means the key is not set.

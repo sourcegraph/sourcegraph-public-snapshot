@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 
@@ -88,7 +87,7 @@ func (c *Zoekt) list(ctx context.Context) (map[string]*zoekt.Repository, error) 
 
 	set := make(map[string]*zoekt.Repository, len(resp.Repos))
 	for _, r := range resp.Repos {
-		set[strings.ToLower(r.Repository.Name)] = &r.Repository
+		set[r.Repository.Name] = &r.Repository
 	}
 
 	return set, nil

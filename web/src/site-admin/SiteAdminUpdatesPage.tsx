@@ -110,7 +110,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                     <br />
                     <small>
                         <strong>Last update check:</strong>{' '}
-                        {this.state.updateCheck && this.state.updateCheck.checkedAt
+                        {this.state.updateCheck?.checkedAt
                             ? formatDistance(parseISO(this.state.updateCheck.checkedAt), new Date(), {
                                   addSuffix: true,
                               })

@@ -100,13 +100,13 @@ describe('e2e test suite', () => {
             })
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             await driver.page.waitForSelector('.e2e-global-alert .notices .global-alerts__alert', { visible: true })
-            await driver.page.evaluate(message => {
+            await driver.page.evaluate((message: string) => {
                 const element = document.querySelector<HTMLElement>('.e2e-global-alert .notices .global-alerts__alert')
                 if (!element) {
                     throw new Error('No .e2e-global-alert .notices .global-alerts__alert element found')
                 }
                 if (!element.textContent?.includes(message)) {
-                    throw new Error('Expected "' + message + '" message, but didn\'t find it')
+                    throw new Error(`Expected "${message}" message, but didn't find it`)
                 }
             }, message)
         })
@@ -115,7 +115,7 @@ describe('e2e test suite', () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/tokens/new')
             await driver.page.waitForSelector('.e2e-create-access-token-description')
 
-            const name = 'E2E Test ' + new Date().toISOString() + ' ' + random(1, 1e7)
+            const name = `E2E Test ${new Date().toISOString()} ${random(1, 1e7)}`
 
             await driver.replaceText({
                 selector: '.e2e-create-access-token-description',

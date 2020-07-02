@@ -73,7 +73,12 @@ type Store interface {
 	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
 	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 	// commit on the default branch when invoked.
-	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
+	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (bool, error)
+
+	// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
+	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
+	// that were removed for that repository.
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// In order to prevent input that continually crashes worker instances, uploads that have been reset more than
@@ -81,14 +86,13 @@ type Store interface {
 	// identifiers.
 	ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error)
 
-	// GetDumpIDs returns all dump ids in chronological order.
-	GetDumpIDs(ctx context.Context) ([]int, error)
-
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)
 
-	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) ([]Dump, error)
+	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
+	// optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
+	// any dump with a root intersecting the given path is returned.
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]Dump, error)
 
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
@@ -131,7 +135,11 @@ type Store interface {
 
 	// UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
 	// already marked as indexable, a new record will be created.
-	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error
+	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) error
+
+	// ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
+	// since lastUpdatedBefore.
+	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 
 	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
@@ -166,6 +174,11 @@ type Store interface {
 	// DeleteIndexByID deletes an index by its identifier.
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 
+	// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
+	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
+	// that were removed for that repository.
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
+
 	// ResetStalledIndexes moves all unlocked index processing for more than `StalledIndexMaxAge` back to the
 	// queued state. In order to prevent input that continually crashes indexer instances, indexes that have
 	// been reset more than IndexMaxNumResets times will be marked as errored. This method returns a list of
@@ -181,8 +194,8 @@ type Store interface {
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
-// GetTipCommitFn returns the head commit for the given repository.
-type GetTipCommitFn func(ctx context.Context, repositoryID int) (string, error)
+// GetTipCommitFunc returns the head commit for the given repository.
+type GetTipCommitFunc func(ctx context.Context, repositoryID int) (string, error)
 
 type store struct {
 	db           dbutil.DB

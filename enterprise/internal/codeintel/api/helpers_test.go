@@ -76,8 +76,8 @@ func setMockStoreGetPackage(t *testing.T, mockStore *storemocks.MockStore, expec
 	})
 }
 
-func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedFile, expectedIndexer string, dumps []store.Dump) {
-	mockStore.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file, indexer string) ([]store.Dump, error) {
+func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, dumps []store.Dump) {
+	mockStore.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string) ([]store.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -86,6 +86,9 @@ func setMockStoreFindClosestDumps(t *testing.T, mockStore *storemocks.MockStore,
 		}
 		if file != expectedFile {
 			t.Errorf("unexpected file for FindClosestDumps. want=%s have=%s", expectedFile, file)
+		}
+		if rootMustEnclosePath != expectedrootMustEnclosePath {
+			t.Errorf("unexpected rootMustEnclosePath for FindClosestDumps. want=%v have=%v", expectedrootMustEnclosePath, rootMustEnclosePath)
 		}
 		if indexer != expectedIndexer {
 			t.Errorf("unexpected indexer for FindClosestDumps. want=%s have=%s", expectedIndexer, indexer)

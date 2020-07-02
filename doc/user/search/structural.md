@@ -17,7 +17,7 @@ that matches all the arguments in `fmt.Sprintf` calls in our code:
 fmt.Sprint(:[args])
 ```
 
-[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%27fmt.Sprintf%28:%5Bargs%5D%29%27&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++fmt.Sprintf%28:%5Bargs%5D%29&patternType=structural)
 
 The `:[args]` part is a hole with a descriptive name `args` that matches
 code.  The important part is that this pattern understands that the parentheses
@@ -49,7 +49,7 @@ In this case, we didn't have to do any special thinking about handling multiple
 lines. The hole `:[args]` by default matches across newlines, but it stops
 inside balanced parentheses. This lets us match large, logical blocks or
 expressions without the limitations of typical line-based regular expression
-patterns. For [more examples](#more-examples), see below. Next, we cover a
+patterns. For [more examples](#examples), see below. Next, we cover
 reference notes to consider when using structural search.
 
 ### Current functionality and restrictions
@@ -60,9 +60,9 @@ following:
 
 - **Only indexed repos.** Structural search can currently only be performed on _indexed_ repositories. See [configuration](#configuration) for more details if you host your own Sourcegraph installation. Our service hosted at [sourcegraph.com](https://sourcegraph.com/search) indexes approximately 10,000 of the most popular repositories on GitHub. Other repositories are currently unsupported.
 
-- **Enclose patterns with quotes.** When entering the pattern in the browser search bar or `src-cli` command line, always enclose the pattern with quotes: `'fmt.Sprintf(:[args])'`. Quotes that are part of the pattern can be escaped with `\`.
-
 - **The `lang` keyword is semantically significant.** Adding the `lang` [keyword](queries.md) informs the parser about language-specific syntax for comments, strings, and code. This makes structural search more accurate for that language. For example, `patterntype:structural 'fmt.Sprintf(:[args])' lang:go`. If `lang` is omitted, we perform a best-effort to infer the language based on matching file extensions, or fall back to a generic structural matcher.
+
+- **Enclosing patterns with quotes.** Prior to version 3.17, we recommended you enclose a pattern with quotes, in case the pattern conflicts with other query syntax. As of version 3.17, quotes should no longer be included, unless the intent is to match actual quotes. To avoid syntax conflicts in version 3.17 and onwards, use the `content:` parameter.
 
 - **Saved search are not supported.** It is not currently possible to save structural searches.
 
@@ -70,7 +70,7 @@ following:
 
 ### Syntax reference
 
-Here is a summary of syntax for structural matching, which is based on [Comby syntax](https://comby.dev/#match-syntax).
+Here is a summary of syntax for structural matching, which is based on [Comby syntax](https://comby.dev/docs/syntax-reference).
 
 - `:[hole]` matches zero or more characters (including whitespace, and across
 newlines) in a lazy fashion. When `:[hole]` is used inside delimiters, as in
@@ -87,7 +87,7 @@ Holes can be used outside of delimiters as well.
 - `:[ ]` (with a space) matches only whitespace characters, excluding newlines. To assign the matched whitespace to variable, put the variable name after the space, like :`[ hole]`.
 
 
-**Rules** [Comby supports rules](https://comby.dev/#advanced-usage) to express equality constraints or pattern-based matching. Comby rules are not officially supported in Sourcegraph yet. We are in the process of making that happen and are taking care to address stable performance and usability. That said, you can explore rule functionality with an experimental `rule:` parameter. For [example](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22buildSearchURLQuery%28:%5Barg%5D%2C+:%5B_%5D%29%22+rule:%27where+:%5Barg%5D+%3D%3D+%22navbarQuery%22%27&patternType=structural), `"buildSearchURLQuery(:[arg], :[_])" rule:'where :[arg] == "navbarQuery"'`.
+**Rules.** [Comby supports rules](https://comby.dev/#advanced-usage) to express equality constraints or pattern-based matching. Comby rules are not officially supported in Sourcegraph yet. We are in the process of making that happen and are taking care to address stable performance and usability. That said, you can explore rule functionality with an experimental `rule:` parameter. For [example](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22buildSearchURLQuery%28:%5Barg%5D%2C+:%5B_%5D%29%22+rule:%27where+:%5Barg%5D+%3D%3D+%22navbarQuery%22%27&patternType=structural), `"buildSearchURLQuery(:[arg], :[_])" rule:'where :[arg] == "navbarQuery"'`.
 
 ### Examples
 
@@ -96,38 +96,30 @@ Here are some more examples. Also see our [blog post](https://about.sourcegraph.
 #### Match stringy data
 
 Taking our [original example](#example), let's modify the original pattern
-slightly to match only if the first (and only) argument is a string. We do this
-by adding string quotes. Adding quotes communicates _structural context_ and
-changes how the hole behaves: it will match the contents of a single string
-delimited `"`. It _won't_ match multiple strings like `"foo", "bar"`.
+slightly to match only if the first argument is a string. We do this by adding
+string quotes around a hole called `format`. Adding quotes communicates
+_structural context_ and changes how the hole behaves: it will match the
+contents of a single string delimited `"`. It _won't_ match multiple strings
+like `"foo", "bar"`. We match remaining arguments with the hole called `args`.
 
 ```go
-fmt.Sprintf(":[str]")
+fmt.Sprintf(":[format]", :[args])
 ```
 
-[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%27fmt.Sprintf%28%22:%5Bargs%5D%22%29%27&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural)
 
-We've matched some interesting examples, like:
+We've matched some examples, like:
 
 ```go
-q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
+fmt.Sprintf("external service not found: %v", e.id)
 ```
-
-In fact, a single string is passed to `fmt.Sprintf` here without any format
-specifiers, so this `fmt.Sprintf` call is unnecessary. We could just write `q.WriteString("nodes{ ... pr }\n")`. Looks like we have some
-cleaning up to do. 
-
-#### Match function arguments contextually
-
-If we wanted to instead match on the first argument of `fmt.Sprintf` calls with more than one argument, we could write:
 
 ```go
-fmt.Sprint(:[first], :[rest])
+fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
 ```
 
-This pattern matches all of the code leading up to the comma `,` in
-`:[first]`. _All_ of the rest of the arguments match to `:[rest]`. Holes stop
-matching based on the first fragment of syntax that comes after it,
+
+Holes stop matching based on the first fragment of syntax that comes after it,
 similar to lazy regular expression matching. So, we could write:
 
 ```go
@@ -144,9 +136,9 @@ Using the same identifier in multiple holes adds a constraint that both of the m
 return :[v.], :[v.]
 ```
 
-will match code where a pair of identifier-like syntax in the `return` statement are the same. For example, `return true, true`, `return nil, nil`, or `return 0, 0`. 
+will match code where a pair of identifier-like syntax in the `return` statement are the same. For example, `return true, true`, `return nil, nil`, or `return 0, 0`.
 
-[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=+lang:go+%27return+:%5Bv.%5D%2C+:%5Bv.%5D%27&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:go+return+:%5Bv.%5D%2C+:%5Bv.%5D&patternType=structural)
 
 #### Match JSON
 
@@ -156,13 +148,13 @@ Structural search also works on structured data, like JSON. Patterns can declara
 "exclude": [:[items]]
 ```
 
-matches all parts of a JSON document that have a member `"exclude"`, where the value is a list of items. 
+matches all parts of a JSON document that have a member `"exclude"`, where the value is a list of items.
 
-[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%27%22exclude%22:+%5B:%5Bitems%5D%5D%27+lang:json&patternType=structural)
+[See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%22exclude%22:+%5B:%5Bitems%5D%5D+lang:json+file:tsconfig.json&patternType=structural)
 
 ### Configuration
 
-**Indexed repositories.** Structural search only works for indexed repositories. To see whether a repository on your instance is indexed, visit `https://<sourcegraph-host>.com/repo-org/repo-name/-/settings/index`. 
+**Indexed repositories.** Structural search only works for indexed repositories. To see whether a repository on your instance is indexed, visit `https://<sourcegraph-host>.com/repo-org/repo-name/-/settings/index`.
 
 **Disabling structural search.** Disable structural search on your instace by adding the following to the site configuration:
 

@@ -4,7 +4,7 @@ import { ChangesetStateIcon } from './ChangesetStateIcon'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 
 export interface HiddenExternalChangesetNodeProps {
-    node: IHiddenExternalChangeset
+    node: Pick<IHiddenExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt' | 'state'>
 }
 
 export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (

@@ -1,21 +1,26 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignTitleField renders 1`] = `
-<div
-  className="form-group"
+<CampaignTitleField
+  onChange={[Function]}
+  value="a"
 >
-  <label
-    htmlFor="campaignTitle"
+  <div
+    className="form-group"
   >
-    Title
-  </label>
-  <input
-    autoFocus={true}
-    className="form-control e2e-campaign-title"
-    id="campaignTitle"
-    onChange={[Function]}
-    required={true}
-    value="a"
-  />
-</div>
+    <label
+      htmlFor="campaignTitle"
+    >
+      Title
+    </label>
+    <input
+      autoFocus={true}
+      className="form-control e2e-campaign-title"
+      id="campaignTitle"
+      onChange={[Function]}
+      required={true}
+      value="a"
+    />
+  </div>
+</CampaignTitleField>
 `;

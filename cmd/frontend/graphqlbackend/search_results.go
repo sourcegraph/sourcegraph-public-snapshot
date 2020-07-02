@@ -800,11 +800,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 
 	var exhausted bool
 	for {
-		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool) query.Node {
+		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool, annotation query.Annotation) query.Node {
 			if field == "count" {
 				value = strconv.FormatInt(int64(tryCount), 10)
 			}
-			return query.Parameter{Field: field, Value: value, Negated: negated}
+			return query.Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 		})
 
 		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
@@ -1770,6 +1770,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
+	}
+
+	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
+		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
 	if len(missingRepoRevs) > 0 {

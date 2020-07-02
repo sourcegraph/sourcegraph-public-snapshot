@@ -33,7 +33,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
             ? node.target.commit.committer
             : node.target.commit.author)
-    const behindAhead = node.target.commit && node.target.commit.behindAhead
+    const behindAhead = node.target.commit?.behindAhead
     url = url !== undefined ? url : node.url
 
     return (

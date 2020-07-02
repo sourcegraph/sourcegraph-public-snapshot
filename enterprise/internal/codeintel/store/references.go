@@ -42,7 +42,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		return 0, nil, err
 	}
 
-	done := noopDoneFn
+	done := noopDoneFunc
 	if started {
 		done = tx.Done
 	}
@@ -55,7 +55,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		return 0, nil, done(err)
 	}
 	if len(visibleIDs) == 0 {
-		return 0, newReferencePager(noopPageFromOffsetFn, done), nil
+		return 0, newReferencePager(noopPageFromOffsetFunc, done), nil
 	}
 
 	conds := []*sqlf.Query{
@@ -78,7 +78,7 @@ func (s *store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 			ctx,
 			sqlf.Sprintf(`
 				SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
-				LEFT JOIN lsif_dumps d on r.dump_id = d.id
+				LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
 				WHERE %s ORDER BY d.root LIMIT %d OFFSET %d
 			`, sqlf.Join(conds, " AND "), limit, offset),
 		))
@@ -96,7 +96,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		return 0, nil, err
 	}
 
-	done := noopDoneFn
+	done := noopDoneFunc
 	if started {
 		done = tx.Done
 	}
@@ -113,7 +113,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 		ctx,
 		sqlf.Sprintf(`
 			SELECT COUNT(*) FROM lsif_references r
-			LEFT JOIN lsif_dumps d ON r.dump_id = d.id
+			LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
 			WHERE %s
 		`, sqlf.Join(conds, " AND ")),
 	))
@@ -124,7 +124,7 @@ func (s *store) PackageReferencePager(ctx context.Context, scheme, name, version
 	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
 		return scanPackageReferences(tx.query(ctx, sqlf.Sprintf(`
 			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
-			LEFT JOIN lsif_dumps d ON r.dump_id = d.id
+			LEFT JOIN lsif_dumps_with_repository_name d ON d.id = r.dump_id
 			WHERE %s ORDER BY d.repository_id, d.root LIMIT %d OFFSET %d
 		`, sqlf.Join(conds, " AND "), limit, offset)))
 	}

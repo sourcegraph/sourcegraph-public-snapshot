@@ -47,9 +47,6 @@ const campaignFragment = gql`
         patches {
             totalCount
         }
-        patchSet {
-            id
-        }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {
             date
@@ -283,6 +280,11 @@ export const queryChangesets = (
                                             }
                                         }
                                     }
+                                    diffStat {
+                                        added
+                                        changed
+                                        deleted
+                                    }
                                 }
                             }
                         }
@@ -329,6 +331,7 @@ export const queryPatchesFromCampaign = (
                                         name
                                         url
                                     }
+                                    publishable
                                     publicationEnqueued
                                     diff {
                                         fileDiffs {
@@ -381,6 +384,7 @@ export const queryPatchesFromPatchSet = (
                                         name
                                         url
                                     }
+                                    publishable
                                     publicationEnqueued
                                     diff {
                                         fileDiffs {

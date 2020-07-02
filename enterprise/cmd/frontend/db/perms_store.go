@@ -1489,9 +1489,9 @@ func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
 SELECT perms.user_id, perms.synced_at FROM user_permissions AS perms
-WHERE perms.user_id NOT IN
+WHERE perms.user_id IN
 	(SELECT users.id FROM users
-	 WHERE users.deleted_at IS NOT NULL)
+	 WHERE users.deleted_at IS NULL)
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
 `, limit)
@@ -1505,9 +1505,9 @@ func (s *PermsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (ma
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ReposIDsWithOldestPerms
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
-WHERE perms.repo_id NOT IN
+WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo
-	 WHERE repo.deleted_at IS NOT NULL)
+	 WHERE repo.deleted_at IS NULL)
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
 `, limit)

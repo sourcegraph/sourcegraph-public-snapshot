@@ -6,7 +6,7 @@ package query
 type Mapper interface {
 	MapNodes(m Mapper, node []Node) []Node
 	MapOperator(m Mapper, kind operatorKind, operands []Node) []Node
-	MapParameter(m Mapper, field, value string, negated bool) Node
+	MapParameter(m Mapper, field, value string, negated bool, annotation Annotation) Node
 	MapPattern(m Mapper, value string, negated bool, annotation Annotation) Node
 }
 
@@ -22,7 +22,7 @@ func (*BaseMapper) MapNodes(mapper Mapper, nodes []Node) []Node {
 		case Pattern:
 			mapped = append(mapped, mapper.MapPattern(mapper, v.Value, v.Negated, v.Annotation))
 		case Parameter:
-			mapped = append(mapped, mapper.MapParameter(mapper, v.Field, v.Value, v.Negated))
+			mapped = append(mapped, mapper.MapParameter(mapper, v.Field, v.Value, v.Negated, v.Annotation))
 		case Operator:
 			mapped = append(mapped, mapper.MapOperator(mapper, v.Kind, v.Operands)...)
 		}
@@ -36,8 +36,8 @@ func (*BaseMapper) MapOperator(mapper Mapper, kind operatorKind, operands []Node
 }
 
 // Base mapper for Parameters. It is the identity function.
-func (*BaseMapper) MapParameter(mapper Mapper, field, value string, negated bool) Node {
-	return Parameter{Field: field, Value: value, Negated: negated}
+func (*BaseMapper) MapParameter(mapper Mapper, field, value string, negated bool, annotation Annotation) Node {
+	return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 }
 
 // Base mapper for Patterns. It is the identity function.
@@ -64,13 +64,13 @@ func (s *OperatorMapper) MapOperator(mapper Mapper, kind operatorKind, operands 
 // the return value.
 type ParameterMapper struct {
 	BaseMapper
-	callback func(field, value string, negated bool) Node
+	callback func(field, value string, negated bool, annotation Annotation) Node
 }
 
 // MapParameter implements ParameterMapper by overriding the BaseMapper's value
 // to substitute a node computed by the callback.
-func (s *ParameterMapper) MapParameter(mapper Mapper, field, value string, negated bool) Node {
-	return s.callback(field, value, negated)
+func (s *ParameterMapper) MapParameter(mapper Mapper, field, value string, negated bool, annotation Annotation) Node {
+	return s.callback(field, value, negated, annotation)
 }
 
 // PatternMapper is a helper mapper that only maps patterns in a query. It
@@ -94,11 +94,11 @@ type FieldMapper struct {
 	callback func(value string, negated bool) Node
 }
 
-func (s *FieldMapper) MapParameter(mapper Mapper, field, value string, negated bool) Node {
+func (s *FieldMapper) MapParameter(mapper Mapper, field, value string, negated bool, annotation Annotation) Node {
 	if s.field == field {
 		return s.callback(value, negated)
 	}
-	return Parameter{Field: field, Value: value, Negated: negated}
+	return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 }
 
 // MapOperator is a convenience function that calls callback on all operator
@@ -112,7 +112,7 @@ func MapOperator(nodes []Node, callback func(kind operatorKind, operands []Node)
 // MapParameter is a convenience function that calls callback on all parameter
 // nodes, substituting them for callback's return value. callback supplies the
 // node's field, value, and whether the value is negated.
-func MapParameter(nodes []Node, callback func(field, value string, negated bool) Node) []Node {
+func MapParameter(nodes []Node, callback func(field, value string, negated bool, annotation Annotation) Node) []Node {
 	mapper := &ParameterMapper{callback: callback}
 	return mapper.MapNodes(mapper, nodes)
 }

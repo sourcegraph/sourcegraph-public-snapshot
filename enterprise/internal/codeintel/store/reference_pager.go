@@ -17,18 +17,18 @@ type ReferencePager interface {
 	Done(err error) error
 }
 
-// PageFromOffsetFn is the function type of ReferencePager's PageFromOffset method.
-type PageFromOffsetFn func(ctx context.Context, offset int) ([]types.PackageReference, error)
+// PageFromOffsetFunc is the function type of ReferencePager's PageFromOffset method.
+type PageFromOffsetFunc func(ctx context.Context, offset int) ([]types.PackageReference, error)
 
-// noopPageFromOffsetFn is a behaviorless PageFromOffsetFn.
-func noopPageFromOffsetFn(ctx context.Context, offset int) ([]types.PackageReference, error) {
+// noopPageFromOffsetFunc is a behaviorless PageFromOffsetFunc.
+func noopPageFromOffsetFunc(ctx context.Context, offset int) ([]types.PackageReference, error) {
 	return nil, nil
 }
 
 // referencePager is a small struct that conforms to the ReferencePager interface.
 type referencePager struct {
-	pageFromOffset PageFromOffsetFn
-	done           DoneFn
+	pageFromOffset PageFromOffsetFunc
+	done           DoneFunc
 }
 
 // PageFromOffset returns the page of package references that starts at the given offset.
@@ -41,6 +41,6 @@ func (rp *referencePager) Done(err error) error {
 	return rp.done(err)
 }
 
-func newReferencePager(pageFromOffset PageFromOffsetFn, done DoneFn) ReferencePager {
+func newReferencePager(pageFromOffset PageFromOffsetFunc, done DoneFunc) ReferencePager {
 	return &referencePager{pageFromOffset: pageFromOffset, done: done}
 }

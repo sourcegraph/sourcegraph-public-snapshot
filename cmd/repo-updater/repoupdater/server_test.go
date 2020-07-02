@@ -653,7 +653,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						SyncError: &protocol.SyncError{
-							Message: "syncer.sync.streaming: syncer.storedExternalIDs: could not connect to database",
+							Message: "syncer.sync.store.list-repos: could not connect to database",
 						},
 					},
 				},
@@ -961,7 +961,6 @@ func TestRepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			assert: repos.Assert.ReposEqual(githubRepository),
 		},
 		{
 			name: "not found - GitHub.com on Sourcegraph.com",
@@ -1051,7 +1050,6 @@ func TestRepoLookup(t *testing.T) {
 				},
 				ExternalRepo: gitlabRepository.ExternalRepo,
 			}},
-			assert: repos.Assert.ReposEqual(gitlabRepository),
 		},
 		{
 			name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
@@ -1078,6 +1076,7 @@ func TestRepoLookup(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			clock := clock
 			syncer := &repos.Syncer{
 				Store: store,
 				Now:   clock.Now,

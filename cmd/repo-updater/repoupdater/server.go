@@ -407,6 +407,12 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+	// Sourcegraph.com: this is on the user path, do not block for ever if codehost is being
+	// bad. Ideally block before cloudflare 504s the request (1min).
+	// Other: we only speak to our database, so response should be in a few ms.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	tr, ctx := trace.New(ctx, "repoLookup", args.String())
 	defer func() {
 		log15.Debug("repoLookup", "result", result, "error", err)
@@ -425,64 +431,95 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	result = &protocol.RepoLookupResult{}
-	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
-
-	if !s.SourcegraphDotComMode || codehost == nil {
-		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-			Names: []string{string(args.Repo)},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		if len(repos) != 1 {
-			result.ErrorNotFound = true
-			return result, nil
-		}
-
-		repoInfo, err := newRepoInfo(repos[0])
-		if err != nil {
-			return nil, err
-		}
-
-		result.Repo = repoInfo
-		return result, nil
+	repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+		Names: []string{string(args.Repo)},
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	var repo *repos.Repo
+	// If we are sourcegraph.com we don't run a global Sync since there are
+	// too many repos. Instead we use an incremental approach where we check
+	// for changes everytime a user browses a repo. RepoLookup is the signal
+	// we rely on to check metadata.
+	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
+	if s.SourcegraphDotComMode && codehost != nil {
+		// TODO a queue with single flighting to speak to remote for args.Repo?
+		if len(repos) == 1 {
+			// We have (potentially stale) data we can return to the user right
+			// now. Do that rather than blocking.
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
+				_, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
+				if err != nil {
+					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+				}
+			}()
+		} else {
+			// Try and find this repo on the remote host. Block on the remote
+			// request.
+			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
+		}
+	}
 
+	if len(repos) != 1 {
+		return &protocol.RepoLookupResult{
+			ErrorNotFound: true,
+		}, nil
+	}
+
+	repoInfo, err := newRepoInfo(repos[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return &protocol.RepoLookupResult{
+		Repo: repoInfo,
+	}, nil
+}
+
+// remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
+// for remoteName on codehost.
+func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
+	var repo *repos.Repo
+	var err error
 	switch codehost {
 	case extsvc.GitHubDotCom:
-		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
+		nameWithOwner := strings.TrimPrefix(remoteName, "github.com/")
 		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
 			if github.IsNotFound(err) {
-				result.ErrorNotFound = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorNotFound: true,
+				}, nil
 			}
 			if isUnauthorized(err) {
-				result.ErrorUnauthorized = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorUnauthorized: true,
+				}, nil
 			}
 			if isTemporarilyUnavailable(err) {
-				result.ErrorTemporarilyUnavailable = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorTemporarilyUnavailable: true,
+				}, nil
 			}
 			return nil, err
 		}
 
 	case extsvc.GitLabDotCom:
-		projectWithNamespace := strings.TrimPrefix(string(args.Repo), "gitlab.com/")
+		projectWithNamespace := strings.TrimPrefix(remoteName, "gitlab.com/")
 		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
 		if err != nil {
 			if gitlab.IsNotFound(err) {
-				result.ErrorNotFound = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorNotFound: true,
+				}, nil
 			}
 			if isUnauthorized(err) {
-				result.ErrorUnauthorized = true
-				return result, nil
+				return &protocol.RepoLookupResult{
+					ErrorUnauthorized: true,
+				}, nil
 			}
 			return nil, err
 		}
@@ -498,8 +535,9 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return nil, err
 	}
 
-	result.Repo = repoInfo
-	return result, nil
+	return &protocol.RepoLookupResult{
+		Repo: repoInfo,
+	}, nil
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
