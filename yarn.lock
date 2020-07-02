@@ -2151,15 +2151,16 @@
     "@babel/helper-module-imports" "^7.0.0"
     "@babel/traverse" "^7.4.4"
 
-"@sourcegraph/codeintellify@^7.0.0":
-  version "7.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.0.0.tgz#8a89d19b254388f7d592846918aa28ccc0101c45"
-  integrity sha512-VrkkXHri2GMpq3SkffeO4lYUEi3BIzkadN6scO6zmRY8BE10mtB51B5/yi1GcXmcYvhXZqx5bRFwnCk6umwTtg==
+"@sourcegraph/codeintellify@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.1.0.tgz#cef5b3498af4d56769119ab592884e010b75c4b3"
+  integrity sha512-KSr3k5dHmaoXNVo15S0FePSfIF92W6+/QpShKOi5FJIQkQl/hDFMafXQCt7uzPBLqFQd1vRuFUQVZKvtZf7h/g==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.4"
-    "@sourcegraph/extension-api-types" "^2.0.0"
+    "@sourcegraph/extension-api-types" "^2.1.0"
     lodash "^4.17.10"
     rxjs "^6.5.5"
+    sourcegraph "^24.0.0"
     ts-key-enum "^2.0.0"
 
 "@sourcegraph/eslint-config@^0.19.4":
@@ -2202,7 +2203,8 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.1.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -19624,8 +19626,14 @@ source-map@^0.7.3:
   resolved "https://registry.npmjs.org/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
-"sourcegraph@link:packages/sourcegraph-extension-api":
+sourcegraph@^24.0.0:
   version "24.5.0"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.5.0.tgz#5ee53b1c933db99addfc801f958ce753afa850c3"
+  integrity sha512-VQw73xafvfZZkjNqJY0kZEXexHRbqut60ed/guDlncdZJwf6zr7jQXeqh3p5v1VH09ef23758s6u6Fqbqgmt9Q==
+
+"sourcegraph@link:packages/sourcegraph-extension-api":
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
