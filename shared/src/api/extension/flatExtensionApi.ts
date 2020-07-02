@@ -327,7 +327,7 @@ export const initNewExtensionAPI = (
             return [...textDocuments.values()]
         },
         openedTextDocuments,
-        onDidOpenTextDocument: openedTextDocuments,
+        onDidOpenTextDocument: openedTextDocuments.asObservable() ,
         onDidChangeRoots: rootChanges.asObservable(),
         rootChanges: rootChanges.asObservable(),
         versionContextChanges: versionContextChanges.asObservable(),
