@@ -98,7 +98,6 @@ export const RepogroupPage: React.FunctionComponent<Props> = (props: Props) => {
             <PageTitle title={props.repogroupMetadata.title} />
             <RepogroupPageLogo
                 className="repogroup-page__logo"
-                isLightTheme={props.isLightTheme}
                 icon={props.repogroupMetadata.homepageIcon}
                 text={props.repogroupMetadata.title}
             />
