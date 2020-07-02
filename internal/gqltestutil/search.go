@@ -64,7 +64,12 @@ query Search($query: String!) {
 }
 
 type SearchFileResult struct {
-	Name string `json:"name"`
+	File struct {
+		Name string `json:"name"`
+	} `json:"file"`
+	RevSpec struct {
+		Expr string `json:"expr"`
+	} `json:"revSpec"`
 }
 
 type SearchFileResults []*SearchFileResult
@@ -80,6 +85,11 @@ query Search($query: String!) {
 					file {
 						name
 					}
+					revSpec {
+						... on GitRevSpecExpr {
+							expr
+						}
+					}
 				}
 			}
 		}
@@ -93,9 +103,7 @@ query Search($query: String!) {
 		Data struct {
 			Search struct {
 				Results struct {
-					Results []struct {
-						*SearchFileResult `json:"file"`
-					} `json:"results"`
+					Results []*SearchFileResult `json:"results"`
 				} `json:"results"`
 			} `json:"search"`
 		} `json:"data"`
@@ -105,9 +113,5 @@ query Search($query: String!) {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
 
-	results := make([]*SearchFileResult, 0, len(resp.Data.Search.Results.Results))
-	for _, r := range resp.Data.Search.Results.Results {
-		results = append(results, r.SearchFileResult)
-	}
-	return results, nil
+	return resp.Data.Search.Results.Results, nil
 }

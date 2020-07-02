@@ -5,11 +5,14 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
@@ -106,9 +109,74 @@ func TestSearch(t *testing.T) {
 
 		// Make sure only got .go files and no .md files
 		for _, r := range results {
-			if !strings.HasSuffix(r.Name, ".go") {
-				t.Fatalf("Found file name does not end with .go: %s", r.Name)
+			if !strings.HasSuffix(r.File.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
 			}
+		}
+	})
+
+	t.Run("multiple revisions per repository", func(t *testing.T) {
+		// Update site configuration to set "experimentalFeatures.searchMultipleRevisionsPerRepository".
+		siteConfig, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+		oldSiteConfig := new(schema.SiteConfiguration)
+		*oldSiteConfig = *siteConfig
+		defer func() {
+			err = client.UpdateSiteConfiguration(oldSiteConfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		val := true
+		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{
+			SearchMultipleRevisionsPerRepository: &val,
+		}
+		err = client.UpdateSiteConfiguration(siteConfig)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var lastExprs []string
+		// Retry because the configuration update endpoint is eventually consistent
+		err = gqltestutil.Retry(5*time.Second, func() error {
+			results, err := client.SearchFiles("repo:sourcegraph/go-diff$@master:print-options:*refs/heads/ func NewHunksReader")
+			if err != nil {
+				if strings.Contains(err.Error(), "text search failed: not yet supported: searching multiple revs in the same repo") {
+					return gqltestutil.ErrContinueRetry
+				}
+				t.Fatal(err)
+			}
+
+			wantExprs := map[string]struct{}{
+				"master":        {},
+				"print-options": {},
+
+				// These next 2 branches are included because of the *refs/heads/ in the query.
+				// If they are ever deleted from the actual live repository, replace them with
+				// any other branches that still exist.
+				"test-already-exist-pr": {},
+				"bug-fix-wip":           {},
+			}
+
+			for _, r := range results {
+				delete(wantExprs, r.RevSpec.Expr)
+				lastExprs = append(lastExprs, r.RevSpec.Expr)
+			}
+
+			if len(wantExprs) > 0 {
+				missing := make([]string, 0, len(wantExprs))
+				for expr := range wantExprs {
+					missing = append(missing, expr)
+				}
+				return errors.Errorf("missing exprs: %v", missing)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err, "lastExprs:", lastExprs)
 		}
 	})
 }
