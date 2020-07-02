@@ -32,7 +32,7 @@ type SyncRegistry struct {
 	priorityNotify chan []int64
 
 	mu sync.Mutex
-	// key is normalised code host url. (which was also call external_service_id on the repo table)
+	// key is normalised code host url, also called external_service_id on the repo table
 	syncers map[string]*ChangesetSyncer
 }
 
@@ -136,7 +136,7 @@ func (s *SyncRegistry) handlePriorityItems() {
 				continue
 			}
 
-			// Assign changesets to external services
+			// Group changesets by code host
 			changesetByHost := make(map[string][]int64)
 			for _, d := range syncData {
 				changesetByHost[d.RepoExternalServiceID] = append(changesetByHost[d.RepoExternalServiceID], d.ChangesetID)

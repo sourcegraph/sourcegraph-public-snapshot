@@ -1470,8 +1470,8 @@ type ChangesetSyncData struct {
 	LatestEvent time.Time
 	// ExternalUpdatedAt is the time the external changeset last changed
 	ExternalUpdatedAt time.Time
-	// RepoExternalServiceID is the external_service_id in the repo table.
-	// It is the URL of the code host.
+	// RepoExternalServiceID is the external_service_id in the repo table, usually
+	// represented by the code host URL
 	RepoExternalServiceID string
 }
 
