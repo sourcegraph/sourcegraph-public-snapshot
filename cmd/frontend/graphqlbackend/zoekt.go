@@ -491,9 +491,6 @@ func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
-	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
-	}
 	for _, p := range query.IncludePatterns {
 		q, err := fileRe(p, query.IsCaseSensitive)
 		if err != nil {
