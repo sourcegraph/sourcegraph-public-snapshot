@@ -1,9 +1,6 @@
 # Alerts
 
-Alerts can be configured to notify site admins when there is something wrong or noteworthy on the Sourcegraph instance. 
-
-Alerts are configured in Grafana. (Prometheus Alertmanager may also be used, but this documentation
-prefers Grafana.)
+Alerts can be configured to notify site admins when there is something wrong or noteworthy on the Sourcegraph instance.
 
 ## Setting up alerting
 
@@ -69,7 +66,7 @@ Note that to receive email notifications, the `email.address` and `email.smtp` f
   {
     "level": "critical",
     "notifier": {
-      "type": "webhook",
+      "type": "email",
       "address": "alerts@company.com"
     }
   }
