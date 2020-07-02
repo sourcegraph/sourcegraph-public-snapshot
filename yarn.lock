@@ -2151,9 +2151,17 @@
     "@babel/helper-module-imports" "^7.0.0"
     "@babel/traverse" "^7.4.4"
 
-"@sourcegraph/codeintellify@link:../codeintellify":
-  version "0.0.0"
-  uid ""
+"@sourcegraph/codeintellify@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.1.0.tgz#cef5b3498af4d56769119ab592884e010b75c4b3"
+  integrity sha512-KSr3k5dHmaoXNVo15S0FePSfIF92W6+/QpShKOi5FJIQkQl/hDFMafXQCt7uzPBLqFQd1vRuFUQVZKvtZf7h/g==
+  dependencies:
+    "@sourcegraph/event-positions" "^1.0.4"
+    "@sourcegraph/extension-api-types" "^2.1.0"
+    lodash "^4.17.10"
+    rxjs "^6.5.5"
+    sourcegraph "^24.0.0"
+    ts-key-enum "^2.0.0"
 
 "@sourcegraph/eslint-config@^0.19.4":
   version "0.19.4"
