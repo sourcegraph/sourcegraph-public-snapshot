@@ -745,12 +745,6 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
-		kinds := []string{
-			extsvc.KindGitHub,
-			extsvc.KindGitLab,
-			extsvc.KindBitbucketServer,
-		}
-
 		github := repos.Repo{
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
@@ -850,17 +844,6 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 
 			if cloned := stored.Filter(isCloned); len(cloned) != 3 {
 				t.Fatalf("SetClonedRepos didn't set the cloned column to true to the right number of repos: %v", cloned.Names())
-			}
-
-			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{
-				Kinds: kinds,
-			})
-			if err != nil {
-				t.Fatalf("ListRepos error: %s", err)
-			}
-
-			if diff := cmp.Diff(have, []*repos.Repo(stored), cmpopts.EquateEmpty()); diff != "" {
-				t.Fatalf("ListRepos:\n%s", diff)
 			}
 		}))
 	}
