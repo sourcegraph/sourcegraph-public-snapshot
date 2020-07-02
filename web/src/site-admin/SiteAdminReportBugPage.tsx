@@ -122,17 +122,11 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                 <LoadingSpinner className="icon-inline mt-2" />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
-                    value={
-                        allConfig
-                            ? JSON.stringify(
-                                  monitoringStats
-                                      ? { ...allConfig, ...monitoringStats }
-                                      : { ...allConfig, alerts: null },
-                                  undefined,
-                                  2
-                              )
-                            : ''
-                    }
+                    value={JSON.stringify(
+                        monitoringStats ? { ...allConfig, ...monitoringStats } : { ...allConfig, alerts: null },
+                        undefined,
+                        2
+                    )}
                     jsonSchema={allConfigSchema}
                     canEdit={false}
                     height={800}
