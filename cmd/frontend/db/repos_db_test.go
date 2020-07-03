@@ -334,7 +334,7 @@ func TestRepos_List_cloned(t *testing.T) {
 
 	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Cloned: false}})
 	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Cloned: true}})
-	t.Logf("Yours: %#v", yours[0].RepoFields)
+
 	{
 		repos, err := Repos.List(ctx, ReposListOptions{OnlyCloned: true})
 		if err != nil {
