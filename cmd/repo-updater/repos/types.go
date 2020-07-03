@@ -927,16 +927,13 @@ type externalServiceLister interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 }
 
-// NewRateLimitSyncer returns a new syncer and attempts to perform an initial sync it. On error, an
-// empty syncer is returned which can still to handle syncs.
-func NewRateLimitSyncer(ctx context.Context, registry *ratelimit.Registry, serviceLister externalServiceLister) (*RateLimitSyncer, error) {
+// NewRateLimitSyncer returns a new syncer
+func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServiceLister) *RateLimitSyncer {
 	r := &RateLimitSyncer{
 		registry:      registry,
 		serviceLister: serviceLister,
 	}
-
-	// We'll return r either way as we'll try again if a service is added or updated
-	return r, r.SyncRateLimiters(ctx)
+	return r
 }
 
 // RateLimitSyncer syncs rate limits based on external service configuration

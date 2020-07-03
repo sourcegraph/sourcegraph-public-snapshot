@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -100,6 +101,15 @@ func Main(enterpriseInit EnterpriseInit) {
 		Store:           store,
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
+	}
+
+	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store)
+	server.RateLimitSyncer = rateLimitSyncer
+	// Attempt to perform an initial sync with all external services
+	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
+		// This is not a fatal error since the syncer has been added to the server above
+		// and will still be run whenever an external service is added or updated
+		log15.Error("Performing initial rate limit sync", "err", err)
 	}
 
 	// All dependencies ready
