@@ -11,23 +11,6 @@ import (
 )
 
 func TestReadConfig(t *testing.T) {
-	makeTempConfig := func(t *testing.T, c config) (string, func()) {
-		data, err := json.Marshal(c)
-		if err != nil {
-			t.Fatal(err)
-		}
-		tmpDir, err := ioutil.TempDir("", "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		filePath := filepath.Join(tmpDir, "config.json")
-		err = ioutil.WriteFile(filePath, data, 0600)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return filePath, func() { os.RemoveAll(tmpDir) }
-	}
-
 	tests := []struct {
 		name         string
 		fileContents *config
@@ -138,31 +121,43 @@ func TestReadConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			oldConfigPath := *configPath
-			defer func() { *configPath = oldConfigPath }()
+			setEnv := func(name, val string) {
+				old := os.Getenv(name)
+				if err := os.Setenv(name, val); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { os.Setenv(name, old) })
+			}
+			setEnv("SRC_ACCESS_TOKEN", test.envToken)
+			setEnv("SRC_ENDPOINT", test.envEndpoint)
 
 			if test.flagEndpoint != "" {
 				val := test.flagEndpoint
 				endpoint = &val
-				defer func() { endpoint = nil }()
+				t.Cleanup(func() { endpoint = nil })
 			}
 
 			if test.fileContents != nil {
-				p, cleanup := makeTempConfig(t, *test.fileContents)
-				defer cleanup()
-				*configPath = p
-			}
-			oldToken := os.Getenv("SRC_ACCESS_TOKEN")
-			defer func() { os.Setenv("SRC_ACCESS_TOKEN", oldToken) }()
-			oldEndpoint := os.Getenv("SRC_ENDPOINT")
-			defer func() { os.Setenv("SRC_ENDPOINT", oldEndpoint) }()
+				oldConfigPath := *configPath
+				t.Cleanup(func() { *configPath = oldConfigPath })
 
-			if err := os.Setenv("SRC_ACCESS_TOKEN", test.envToken); err != nil {
-				t.Fatal(err)
+				data, err := json.Marshal(*test.fileContents)
+				if err != nil {
+					t.Fatal(err)
+				}
+				tmpDir, err := ioutil.TempDir("", "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { os.RemoveAll(tmpDir) })
+				filePath := filepath.Join(tmpDir, "config.json")
+				err = ioutil.WriteFile(filePath, data, 0600)
+				if err != nil {
+					t.Fatal(err)
+				}
+				*configPath = filePath
 			}
-			if err := os.Setenv("SRC_ENDPOINT", test.envEndpoint); err != nil {
-				t.Fatal(err)
-			}
+
 			config, err := readConfig()
 			if diff := cmp.Diff(test.want, config); diff != "" {
 				t.Errorf("config: %v", diff)
