@@ -26,7 +26,7 @@ exports[`SearchScopes empty 1`] = `
 exports[`SearchScopes with scopes 1`] = `
 Array [
   <button
-    className="btn btn-sm text-nowrap filter-chip "
+    className="btn btn-sm text-nowrap filter-chip ga-filter-chip"
     data-testid="filter-chip"
     onClick={[Function]}
     onMouseDown={[Function]}

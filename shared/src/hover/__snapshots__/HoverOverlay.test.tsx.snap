@@ -109,7 +109,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action e2e-tooltip-untitled ga-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -243,7 +243,7 @@ exports[`HoverOverlay actions present 1`] = `
           "title": "Some title",
         }
       }
-      className="hover-overlay__action e2e-tooltip-some-title"
+      className="hover-overlay__action e2e-tooltip-some-title ga-tooltip-some-title"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -312,7 +312,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action e2e-tooltip-untitled ga-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -420,7 +420,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action e2e-tooltip-untitled ga-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -515,7 +515,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
           "id": "a",
         }
       }
-      className="hover-overlay__action e2e-tooltip-untitled"
+      className="hover-overlay__action e2e-tooltip-untitled ga-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
