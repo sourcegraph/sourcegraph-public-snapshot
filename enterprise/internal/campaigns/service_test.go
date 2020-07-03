@@ -703,6 +703,132 @@ func TestService(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("ApplyCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		createCampaignSpec := func(t *testing.T, name string, userID int32) *campaigns.CampaignSpec {
+			t.Helper()
+
+			s := &campaigns.CampaignSpec{
+				UserID:          userID,
+				NamespaceUserID: userID,
+				Spec: campaigns.CampaignSpecFields{
+					Name:        name,
+					Description: "the description",
+					ChangesetTemplate: campaigns.ChangesetTemplate{
+						Branch: "branch-name",
+					},
+				},
+			}
+
+			if err := store.CreateCampaignSpec(ctx, s); err != nil {
+				t.Fatal(err)
+			}
+
+			return s
+		}
+
+		t.Run("new campaign", func(t *testing.T) {
+			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
+			campaign, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec.RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if campaign.ID == 0 {
+				t.Fatalf("campaign ID is 0")
+			}
+
+			want := &campaigns.Campaign{
+				Name:            campaignSpec.Spec.Name,
+				Description:     campaignSpec.Spec.Description,
+				Branch:          campaignSpec.Spec.ChangesetTemplate.Branch,
+				AuthorID:        campaignSpec.UserID,
+				ChangesetIDs:    []int64{},
+				NamespaceUserID: campaignSpec.NamespaceUserID,
+				CampaignSpecID:  campaignSpec.ID,
+
+				// Ignore these fields
+				ID:        campaign.ID,
+				UpdatedAt: campaign.UpdatedAt,
+				CreatedAt: campaign.CreatedAt,
+			}
+
+			if diff := cmp.Diff(want, campaign); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("existing campaign same campaignSpec", func(t *testing.T) {
+			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
+			campaign, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec.RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if campaign.ID == 0 {
+				t.Fatalf("campaign ID is 0")
+			}
+
+			campaign2, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec.RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := campaign2.ID, campaign.ID; have != want {
+				t.Fatalf("campaign ID is wrong. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("existing campaign different campaign spec with same name", func(t *testing.T) {
+			campaignSpec1 := createCampaignSpec(t, "campaign-name", user.ID)
+			campaign, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec1.RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if campaign.ID == 0 {
+				t.Fatalf("campaign ID is 0")
+			}
+
+			campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
+			campaign2, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec2.RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := campaign2.ID, campaign.ID; have != want {
+				t.Fatalf("campaign ID is wrong. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("existing campaign different campaign spec with same name different namespace", func(t *testing.T) {
+			campaignSpec1 := createCampaignSpec(t, "campaign-name", user.ID)
+			campaign, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec1.RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if campaign.ID == 0 {
+				t.Fatalf("campaign ID is 0")
+			}
+
+			user2 := createTestUser(ctx, t)
+			campaignSpec2 := createCampaignSpec(t, "campaign-name", user2.ID)
+			campaign2, err := svc.ApplyCampaign(ctx, user2.ID, 0, campaignSpec2.RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if campaign2.ID == 0 {
+				t.Fatalf("campaign2 ID is 0")
+			}
+			if campaign2.ID == campaign.ID {
+				t.Fatalf("campaign IDs are the same, but want different")
+			}
+		})
+	})
 }
 
 var testUser = db.NewUser{

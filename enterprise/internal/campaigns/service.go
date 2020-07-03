@@ -221,6 +221,75 @@ func (e *changesetSpecNotFoundErr) Error() string {
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
+// ApplyCampaign creates the CampaignSpec.
+func (s *Service) ApplyCampaign(
+	ctx context.Context,
+	namespaceUserID, namespaceOrgID int32,
+	campaignSpecRandID string,
+) (campaign *campaigns.Campaign, err error) {
+	title := fmt.Sprintf(
+		"CampaignSpec %s, NamespaceOrgID %d, NamespaceUserID %d",
+		campaignSpecRandID,
+		namespaceUserID,
+		namespaceOrgID,
+	)
+	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", title)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// TODO: use a transaction
+
+	campaignSpec, err := s.store.GetCampaignSpec(ctx, GetCampaignSpecOpts{RandID: campaignSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	opts := GetCampaignOpts{CampaignSpecName: campaignSpec.Spec.Name}
+	if namespaceUserID != 0 {
+		opts.NamespaceUserID = namespaceUserID
+	} else if namespaceOrgID != 0 {
+		opts.NamespaceOrgID = namespaceOrgID
+	} else {
+		return nil, errors.New("no namespace specified")
+	}
+
+	campaign, err = s.store.GetCampaign(ctx, opts)
+	if err != nil {
+		if err != ErrNoResults {
+			return nil, err
+		}
+		err = nil
+	}
+	if campaign == nil {
+		campaign = &campaigns.Campaign{}
+	}
+
+	if campaign.CampaignSpecID == campaignSpec.ID {
+		return campaign, nil
+	}
+
+	campaign.CampaignSpecID = campaignSpec.ID
+
+	// Do we still need AuthorID on Campaign?
+	campaign.AuthorID = campaignSpec.UserID
+
+	// TODO Do we need these fields on Campaign or is it enough that
+	// we have them on CampaignSpec?
+	campaign.NamespaceOrgID = namespaceOrgID
+	campaign.NamespaceUserID = namespaceUserID
+	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
+	campaign.Name = campaignSpec.Spec.Name
+	campaign.Description = campaignSpec.Spec.Description
+
+	if campaign.ID == 0 {
+		return campaign, s.store.CreateCampaign(ctx, campaign)
+	}
+
+	return campaign, s.store.UpdateCampaign(ctx, campaign)
+}
+
 // ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
 // PatchSetID was specified but the PatchSet does not have any
 // (finished) Patches.
