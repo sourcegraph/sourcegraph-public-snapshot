@@ -198,47 +198,47 @@ export const python2To3Metadata: RepogroupMetadata = {
                         Python 2 to Python 3.`,
     examples: [
         {
-            title: 'Python 2 relative imports',
+            title: 'Python 2 relative imports:',
             description: 'Python 2 import style',
             exampleQuery: <>"from :[package.] import :[function.]”</>,
             rawQuery: '"from :[package.] import :[function.]”',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 3 explicit imports',
+            title: 'Python 3 explicit imports:',
             description: 'Python 3 import style',
             exampleQuery: <>from B.w+ import w+</>,
             rawQuery: 'from B.w+ import w+',
             patternType: SearchPatternType.regexp,
         },
         {
-            title: 'Python 2 print statements',
+            title: 'Python 2 print statements:',
             exampleQuery: <>\'print ":[string]"\'</>,
             rawQuery: '\'print ":[string]"\'',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 3 print statements',
+            title: 'Python 3 print statements:',
             exampleQuery: <>\'print ":[string]"\'</>,
             rawQuery: '\'print ":[string]"\'',
-            patternType: SearchPatternType.regexp,
+            patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 2 integer conversion',
+            title: 'Python 2 integer conversion:',
             exampleQuery: <>float(:[arg]) / float(:[arg])</>,
             rawQuery: 'float(:[arg]) / float(:[arg])',
             patternType: SearchPatternType.structural,
         },
-        {
-            title: 'Python 3 integer conversion',
-            exampleQuery: (
-                <>
-                    <span className="repogroup-page__keyword-text">lang:</span>python \\sint\\(-*\\d+\\)
-                </>
-            ),
-            rawQuery: 'lang:python \\sint\\(-*\\d+\\)',
-            patternType: SearchPatternType.regexp,
-        },
+//         {
+//             title: 'Python 3 integer conversion:',
+//             exampleQuery: (
+//                 <>
+//                     <span className="repogroup-page__keyword-text">lang:</span>python \\sint\\(-*\\d+\\)
+//                 </>
+//             ),
+//             rawQuery: 'lang:python \\sint\\(-*\\d+\\)',
+//             patternType: SearchPatternType.regexp,
+//         },
     ],
     homepageDescription: 'Searches and suggestions to help migrate your code to Python 3.',
     homepageIcon:

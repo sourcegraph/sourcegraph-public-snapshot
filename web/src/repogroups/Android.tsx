@@ -64,7 +64,7 @@ export const android: RepogroupMetadata = {
         { name: 'iampawan/FlutterExampleApps', codehost: CodeHosts.GITHUB },
         { name: 'mitesh77/Best-Flutter-UI-Templates', codehost: CodeHosts.GITHUB },
     ],
-    description: 'Interesting search examples in popular Android repositories.',
+    description: 'This repository group contains popular repositories for Android development.',
     examples: [
         {
             title: 'Find usage examples of the OnClickListener function in Kotlin’s syntax:',

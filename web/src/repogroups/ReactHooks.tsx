@@ -192,7 +192,7 @@ export const reactHooks: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hook', codehost: CodeHosts.GITHUB },
     ],
-    description: 'useState is a React Hook that lets you add React state to function components. Explore examples of how it\'s used.',
+    description: 'This repository group contains popular repositories for React hooks. The search examples below will help you find usages of useState. useState is a React Hook that lets you add React state to function components.',
     examples: [
         {
             title: 'Quickly look up imports for useState with regex search:',
@@ -264,6 +264,6 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
     ],
-    homepageDescription: 'Learn with search examples of useState for ReactHooks.',
+    homepageDescription: 'Learn how to use React Hooks with search examples.',
     homepageIcon: 'https://cdn4.iconfinder.com/data/icons/logos-3/600/React.js_logo-512.png',
 }
