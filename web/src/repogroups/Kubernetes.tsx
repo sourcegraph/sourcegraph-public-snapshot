@@ -19,6 +19,18 @@ export const kubernetes: RepogroupMetadata = {
             exampleQuery:
                 '<span class="repogroup-page__keyword-text">file:</span>pod.yaml <span class="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"',
         },
+       {
+           title: 'See how Prometheus is used in different popular projects:',
+           exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus',
+       },
+       {
+           title: 'See how the sidecar pattern is used in Go:',
+           exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
+       },
+       {
+           title: 'Browse recent commits or diffs from an author: eg. John Howard',
+           exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
+       },
     ],
     homepageDescription: 'Search within the Kubernetes community.',
     homepageIcon:
