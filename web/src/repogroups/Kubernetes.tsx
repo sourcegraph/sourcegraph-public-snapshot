@@ -208,7 +208,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'See how Prometheus is used in different popular projects:',
+            title: 'See how Prometheus is used for monitoring in different popular projects:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus
@@ -218,7 +218,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'See how the sidecar pattern is used in Go:',
+            title: 'Search for examples of the sidecar pattern in Go:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>go sidecar
