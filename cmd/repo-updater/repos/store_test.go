@@ -738,10 +738,6 @@ func isCloned(r *repos.Repo) bool {
 	return r.Cloned
 }
 
-func isNotCloned(r *repos.Repo) bool {
-	return !r.Cloned
-}
-
 func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -895,28 +891,26 @@ func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 		})
 
 		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			stored := mkRepos(9, repositories...)
+			stored := mkRepos(10, repositories...)
 
 			if err := tx.UpsertRepos(ctx, stored...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
 
 			sort.Sort(stored)
-
-			cloned := stored.Filter(isCloned).Names()
-			notCloned := stored.Filter(isNotCloned).Names()
-			sort.Strings(cloned)
-			sort.Strings(notCloned)
+			cloned := stored[:3].Names()
 
 			if err := tx.SetClonedRepos(ctx, cloned...); err != nil {
 				t.Fatalf("SetClonedRepos error: %s", err)
 			}
 
+			sort.Strings(cloned)
+
 			count, err := tx.CountNotClonedRepos(ctx)
 			if err != nil {
 				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
-			if diff := cmp.Diff(count, uint64(len(notCloned))); diff != "" {
+			if diff := cmp.Diff(count, uint64(7)); diff != "" {
 				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		}))
