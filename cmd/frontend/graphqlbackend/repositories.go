@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -130,6 +129,12 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
+		if r.cloned {
+			opt2.OnlyCloned = true
+		} else if r.cloneInProgress || r.notCloned {
+			opt2.NoCloned = true
+		}
+
 		for {
 			repos, err := backend.Repos.List(ctx, opt2)
 			if err != nil {
@@ -137,28 +142,6 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				return
 			}
 			reposFromDB := len(repos)
-
-			if !r.cloned || !r.cloneInProgress || !r.notCloned {
-				// Query gitserver to filter by repository clone status.
-				repoNames := make([]api.RepoName, len(repos))
-				for i, repo := range repos {
-					repoNames[i] = repo.Name
-				}
-				response, err := gitserver.DefaultClient.RepoCloneProgress(ctx, repoNames...)
-				if err != nil {
-					r.err = err
-					return
-				}
-				keepRepos := repos[:0]
-				for _, repo := range repos {
-					if info := response.Results[repo.Name]; info == nil {
-						continue
-					} else if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
-						keepRepos = append(keepRepos, repo)
-					}
-				}
-				repos = keepRepos
-			}
 
 			if !r.indexed || !r.notIndexed {
 				keepRepos := repos[:0]
