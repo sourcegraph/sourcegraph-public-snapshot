@@ -119,24 +119,37 @@ func (db *databaseImpl) Definitions(ctx context.Context, path string, line, char
 	}
 
 	for _, r := range ranges {
-		if r.DefinitionResultID == "" {
+		locations, exists, err := db.definitions(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
 			continue
-		}
-
-		definitionResults, err := db.getResultByID(ctx, r.DefinitionResultID)
-		if err != nil {
-			return nil, pkgerrors.Wrap(err, "db.getResultByID")
-		}
-
-		locations, err := db.convertRangesToLocations(ctx, definitionResults)
-		if err != nil {
-			return nil, pkgerrors.Wrap(err, "db.convertRangesToLocations")
 		}
 
 		return locations, nil
 	}
 
 	return []bundles.Location{}, nil
+}
+
+// definitions returns the definition locations for the given range.
+func (db *databaseImpl) definitions(ctx context.Context, r types.RangeData) ([]bundles.Location, bool, error) {
+	if r.DefinitionResultID == "" {
+		return nil, false, nil
+	}
+
+	definitionResults, err := db.getResultByID(ctx, r.DefinitionResultID)
+	if err != nil {
+		return nil, false, pkgerrors.Wrap(err, "db.getResultByID")
+	}
+
+	locations, err := db.convertRangesToLocations(ctx, definitionResults)
+	if err != nil {
+		return nil, false, pkgerrors.Wrap(err, "db.convertRangesToLocations")
+	}
+
+	return locations, true, nil
 }
 
 // References returns the set of locations referencing the symbol at the given position.
@@ -148,24 +161,34 @@ func (db *databaseImpl) References(ctx context.Context, path string, line, chara
 
 	var allLocations []bundles.Location
 	for _, r := range ranges {
-		if r.ReferenceResultID == "" {
-			continue
-		}
-
-		referenceResults, err := db.getResultByID(ctx, r.ReferenceResultID)
+		locations, _, err := db.references(ctx, r)
 		if err != nil {
-			return nil, pkgerrors.Wrap(err, "db.getResultByID")
-		}
-
-		locations, err := db.convertRangesToLocations(ctx, referenceResults)
-		if err != nil {
-			return nil, pkgerrors.Wrap(err, "db.convertRangesToLocations")
+			return nil, err
 		}
 
 		allLocations = append(allLocations, locations...)
 	}
 
 	return allLocations, nil
+}
+
+// references returns the reference locations for the given range.
+func (db *databaseImpl) references(ctx context.Context, r types.RangeData) ([]bundles.Location, bool, error) {
+	if r.ReferenceResultID == "" {
+		return nil, false, nil
+	}
+
+	referenceResults, err := db.getResultByID(ctx, r.ReferenceResultID)
+	if err != nil {
+		return nil, false, pkgerrors.Wrap(err, "db.getResultByID")
+	}
+
+	locations, err := db.convertRangesToLocations(ctx, referenceResults)
+	if err != nil {
+		return nil, false, pkgerrors.Wrap(err, "db.convertRangesToLocations")
+	}
+
+	return locations, true, nil
 }
 
 // Hover returns the hover text of the symbol at the given position.
@@ -176,24 +199,37 @@ func (db *databaseImpl) Hover(ctx context.Context, path string, line, character 
 	}
 
 	for _, r := range ranges {
-		if r.HoverResultID == "" {
-			continue
+		text, exists, err := db.hover(ctx, documentData, r)
+		if err != nil {
+			return "", bundles.Range{}, false, err
 		}
-
-		text, exists := documentData.HoverResults[r.HoverResultID]
 		if !exists {
-			return "", bundles.Range{}, false, ErrMalformedBundle{
-				Filename: db.filename,
-				Name:     "hoverResult",
-				Key:      string(r.HoverResultID),
-				// TODO(efritz) - add document context
-			}
+			continue
 		}
 
 		return text, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter), true, nil
 	}
 
 	return "", bundles.Range{}, false, nil
+}
+
+// hover returns the hover text locations for the given range.
+func (db *databaseImpl) hover(ctx context.Context, documentData types.DocumentData, r types.RangeData) (string, bool, error) {
+	if r.HoverResultID == "" {
+		return "", false, nil
+	}
+
+	text, exists := documentData.HoverResults[r.HoverResultID]
+	if !exists {
+		return "", false, ErrMalformedBundle{
+			Filename: db.filename,
+			Name:     "hoverResult",
+			Key:      string(r.HoverResultID),
+			// TODO(efritz) - add document context
+		}
+	}
+
+	return text, true, nil
 }
 
 // Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
