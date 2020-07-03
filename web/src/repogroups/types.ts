@@ -24,10 +24,6 @@ export interface RepogroupMetadata {
      */
     url: string
     /**
-     * The list of repositories this repogroup searches over.
-     */
-    repositories: RepositoryType[]
-    /**
      * A list of example queries using the repogroup. Don't include the `repogroup:name` portion of the query. It will be automatically added.
      */
     examples: ExampleQuery[]
