@@ -211,16 +211,6 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with arrays as input parameters structural search:',
-            exampleQuery: (
-                <>
-                    useState([:[string]]) <span className="repogroup-page__keyword-text">count:</span>1000
-                </>
-            ),
-            rawQuery: 'useState([:[string]]) count:1000',
-            patternType: SearchPatternType.structural,
-        },
-        {
             title: 'useState with any type of input parameters structural search:',
             exampleQuery: (
                 <>
@@ -239,28 +229,6 @@ export const reactHooks: RepogroupMetadata = {
                 </>
             ),
             rawQuery: 'useState(:[string]) count:1000 lang:typescript',
-            patternType: SearchPatternType.structural,
-        },
-        {
-            title: 'useState with exactly two input params for structural search should return a lot fewer results:',
-            exampleQuery: (
-                <>
-                    useState([:[1.], :[2.]]) <span className="repogroup-page__keyword-text">count:</span>1000
-                </>
-            ),
-            rawQuery: 'useState([:[1.], :[2.]]) count:1000',
-            patternType: SearchPatternType.structural,
-        },
-        {
-            title: 'useState with two or more params in a specific file with structural search:',
-            exampleQuery: (
-                <>
-                    useState([:[1], :[2]]) <span className="repogroup-page__keyword-text">count:</span>1000{' '}
-                    <span className="repogroup-page__keyword-text">file:</span>
-                    docs/src/pages/components/transfer-list/TransferList.js
-                </>
-            ),
-            rawQuery: 'useState([:[1], :[2]]) count:1000 file:docs/src/pages/components/transfer-list/TransferList.js',
             patternType: SearchPatternType.structural,
         },
     ],
