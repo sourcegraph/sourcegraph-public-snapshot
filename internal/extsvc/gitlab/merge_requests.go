@@ -34,8 +34,8 @@ type MergeRequest struct {
 	UpdatedAt    time.Time         `json:"updated_at"`
 	MergedAt     *time.Time        `json:"merged_at"`
 	ClosedAt     *time.Time        `json:"closed_at"`
+	HeadPipeline *Pipeline         `json:"head_pipeline"`
 	Labels       []string          `json:"labels"`
-	Pipeline     *Pipeline         `json:"pipeline"`
 	SourceBranch string            `json:"source_branch"`
 	TargetBranch string            `json:"target_branch"`
 	WebURL       string            `json:"web_url"`
@@ -46,8 +46,25 @@ type MergeRequest struct {
 		StartSHA string `json:"start_sha"`
 	} `json:"diff_refs"`
 
+	// The fields below are computed from other REST API requests when getting a
+	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
+	// GraphQL API to retrieve all of this data at once, but until then, we have
+	// to do it the old fashioned way with lots of REST requests.
+	Notes []*Note
+
+	// TODO: labels
+
 	// TODO: other fields at
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
+}
+
+type Note struct {
+	// As with the other types here, we're only decoding enough fields here for
+	// the required campaign functionality.
+	ID        ID        `json:"id"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"created_at"`
+	System    bool      `json:"system"`
 }
 
 type Pipeline struct {
@@ -55,7 +72,6 @@ type Pipeline struct {
 	SHA    string         `json:"sha"`
 	Ref    string         `json:"ref"`
 	Status PipelineStatus `json:"status"`
-	WebURL string         `json:"web_url"`
 }
 
 type PipelineStatus string
@@ -129,6 +145,33 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 	}
 
 	return resp, nil
+}
+
+// GetMergeRequestNotes retrieves the notes for the given merge request. As the
+// notes are paginated, a function is returned that may be invoked to return the
+// next page of results. An empty slice and a nil error indicates that all pages
+// have been returned.
+func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid ID) func() ([]*Note, error) {
+	if MockGetMergeRequestNotes != nil {
+		return MockGetMergeRequestNotes(c, ctx, project, iid)
+	}
+
+	page := 1
+	return func() ([]*Note, error) {
+		defer func() { page++ }()
+
+		req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d/notes?page=%d", project.ID, iid, page), nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "creating request to get merge request notes page %d", page)
+		}
+
+		resp := []*Note{}
+		if _, _, err := c.do(ctx, req, &resp); err != nil {
+			return nil, errors.Wrapf(err, "sending request to get merge request notes page %d", page)
+		}
+
+		return resp, nil
+	}
 }
 
 func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project, source, target string) (*MergeRequest, error) {

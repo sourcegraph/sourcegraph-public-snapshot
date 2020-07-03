@@ -363,11 +363,12 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 
 // LoadChangesets loads the given Changesets from the sources and updates them.
 func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
-	// FIXME(aharvey): this is suboptimal, but GitLab doesn't have a REST API to
-	// provide full detail for more than one MR at a time. Need to investigate
-	// if the GraphQL API can do this.
+	// When we require GitLab 12.0+, we should migrate to the GraphQL API, which
+	// will allow us to query multiple MRs at once.
 	for _, c := range cs {
+		old := c.Changeset.Metadata.(*gitlab.MergeRequest)
 		project := c.Repo.Metadata.(*gitlab.Project)
+
 		iid, err := strconv.ParseInt(c.ExternalID, 10, 64)
 		if err != nil {
 			return errors.Wrapf(err, "parsing changeset external ID %s", c.ExternalID)
@@ -378,12 +379,80 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 			return errors.Wrapf(err, "retrieving merge request %d", iid)
 		}
 
+		// As above, these additional API calls can go away once we can use
+		// GraphQL.
+		if err := s.decorateMergeRequestData(ctx, project, mr, old); err != nil {
+			return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
+		}
+
 		if err := c.SetMetadata(mr); err != nil {
 			return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
 		}
 	}
 
 	return nil
+}
+
+func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) error {
+	notes, err := s.getMergeRequestNotes(ctx, project, mr, old)
+	if err != nil {
+		return err
+	}
+
+	mr.Notes = notes
+	return nil
+}
+
+func (s *GitLabSource) getMergeRequestNotes(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Note, error) {
+	// Firstly, we'll set up a set containing the old note IDs so that we know
+	// where we can stop iterating: on a MR with lots of notes, this will mean
+	// we shouldn't need to load all pages on every sync.
+	extant := make(map[gitlab.ID]struct{})
+	for _, note := range old.Notes {
+		extant[note.ID] = struct{}{}
+	}
+
+	// Secondly, we'll get the forward iterator that gives us a note page at a
+	// time.
+	it := s.client.GetMergeRequestNotes(ctx, project, mr.IID)
+
+	var notes []*gitlab.Note
+
+	// Now we can iterate over the pages of notes and fill in the slice to be
+	// returned.
+Iteration:
+	for {
+		page, err := it()
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving note page")
+		}
+		if len(page) == 0 {
+			// The terminal condition for the iterator is returning an empty
+			// slice with no error, so we can stop iterating here.
+			break
+		}
+
+		for _, note := range page {
+			// We're only interested in system notes for campaigns, since they
+			// include the review state changes we need; let's not even bother
+			// storing the non-system ones.
+			if note.System {
+				if _, ok := extant[note.ID]; ok {
+					// We've seen this note before, which means that nothing
+					// after this point should be new.
+					break Iteration
+				}
+				notes = append(notes, note)
+			}
+		}
+	}
+
+	// Finally, we should append the old notes to the new notes. Doing so after
+	// handling the new notes means that all the notes should be in descending
+	// order without needing to explicitly sort.
+	notes = append(notes, old.Notes...)
+
+	return notes, nil
 }
 
 // UpdateChangeset can update Changesets.

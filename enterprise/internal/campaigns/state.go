@@ -102,9 +102,11 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
 
 	case *gitlab.MergeRequest:
-		// TODO: implement webhook support
-		if m.Pipeline != nil {
-			switch m.Pipeline.Status {
+		// GitLab gives us the most recent pipeline state for free in the merge
+		// request.
+		// TODO: iterate events in case we received a webhook later.
+		if m.HeadPipeline != nil {
+			switch m.HeadPipeline.Status {
 			case gitlab.PipelineStatusSuccess:
 				return cmpgn.ChangesetCheckStatePassed
 			case gitlab.PipelineStatusFailed:

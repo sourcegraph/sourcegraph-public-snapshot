@@ -293,6 +293,31 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		return &invocations
 	}
 
+	mockGetMergeRequestNotes := func(notes []*gitlab.Note, pageSize int, err error) *int {
+		invocations := 0
+
+		gitlab.MockGetMergeRequestNotes = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Note, error) {
+			i := 0
+			return func() ([]*gitlab.Note, error) {
+				defer func() { i++ }()
+
+				start := i * pageSize
+				if start >= len(notes) {
+					return []*gitlab.Note{}, nil
+				}
+
+				end := (i + 1) * pageSize
+				if end >= len(notes) {
+					end = len(notes)
+				}
+
+				return notes[start:end], nil
+			}
+		}
+
+		return &invocations
+	}
+
 	mockGetOpenMergeRequestByRefs := func(mr *gitlab.MergeRequest, err error) *int {
 		invocations := 0
 
@@ -322,6 +347,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 	unmock := func() {
 		gitlab.MockCreateMergeRequest = nil
 		gitlab.MockGetMergeRequest = nil
+		gitlab.MockGetMergeRequestNotes = nil
 		gitlab.MockGetOpenMergeRequestByRefs = nil
 		gitlab.MockUpdateMergeRequest = nil
 	}
@@ -462,8 +488,11 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 		t.Run("error from ParseInt", func(t *testing.T) {
 			if err := s.LoadChangesets(ctx, []*Changeset{{
-				Changeset: &campaigns.Changeset{ExternalID: "foo"},
-				Repo:      &Repo{Metadata: &gitlab.Project{}},
+				Changeset: &campaigns.Changeset{
+					ExternalID: "foo",
+					Metadata:   &gitlab.MergeRequest{},
+				},
+				Repo: &Repo{Metadata: &gitlab.Project{}},
 			}}...); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
@@ -472,6 +501,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		t.Run("error from GetMergeRequest", func(t *testing.T) {
 			inner := errors.New("foo")
 			mockGetMergeRequest(42, nil, inner)
+			mockGetMergeRequestNotes(nil, 20, nil)
 			defer unmock()
 
 			if have := s.LoadChangesets(ctx, cs...); !errors.Is(have, inner) {
@@ -481,6 +511,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			inv := mockGetMergeRequest(42, &gitlab.MergeRequest{}, nil)
+			mockGetMergeRequestNotes(nil, 20, nil)
 			defer unmock()
 
 			if err := s.LoadChangesets(ctx, cs...); err != nil {
