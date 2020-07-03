@@ -1,4 +1,4 @@
-import { CodeHosts, RepogroupMetadata } from './types'
+import { RepogroupMetadata } from './types'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import * as React from 'react'
 
