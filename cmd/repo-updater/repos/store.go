@@ -49,6 +49,8 @@ type StoreListReposArgs struct {
 	PerPage int64
 	// Only include private repositories.
 	PrivateOnly bool
+	// Only include cloned repositories.
+	ClonedOnly bool
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -382,6 +384,10 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 		preds = append(preds, sqlf.Sprintf("private = TRUE"))
 	}
 
+	if args.ClonedOnly {
+		preds = append(preds, sqlf.Sprintf("cloned = TRUE"))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -589,6 +595,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		Archived            bool            `json:"archived"`
 		Fork                bool            `json:"fork"`
 		Private             bool            `json:"private"`
+		Cloned              bool            `json:"cloned"`
 		Sources             json.RawMessage `json:"sources"`
 		Metadata            json.RawMessage `json:"metadata"`
 	}
@@ -618,6 +625,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
 			Archived:            r.Archived,
+			Cloned:              r.Cloned,
 			Fork:                r.Fork,
 			Private:             r.Private,
 			Sources:             sources,
@@ -662,6 +670,7 @@ WITH batch AS (
       external_service_id   text,
       external_id           text,
       archived              boolean,
+      cloned                boolean,
       fork                  boolean,
       private               boolean,
       sources               jsonb,
@@ -685,6 +694,7 @@ SET
   external_service_id   = batch.external_service_id,
   external_id           = batch.external_id,
   archived              = batch.archived,
+  cloned                = batch.cloned,
   fork                  = batch.fork,
   private               = batch.private,
   sources               = batch.sources,
@@ -722,6 +732,7 @@ INSERT INTO repo (
   external_service_id,
   external_id,
   archived,
+  cloned,
   fork,
   private,
   sources,
@@ -739,6 +750,7 @@ SELECT
   external_service_id,
   external_id,
   archived,
+  cloned,
   fork,
   private,
   sources,
