@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -100,6 +101,13 @@ func Main(enterpriseInit EnterpriseInit) {
 		Store:           store,
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
+	}
+
+	rateLimitSyncer, err := repos.NewRateLimitSyncer(ctx, ratelimit.DefaultRegistry, store)
+	if err != nil {
+		log15.Error("Creating rate limit syncer", "err", err)
+	} else {
+		server.RateLimitSyncer = rateLimitSyncer
 	}
 
 	// All dependencies ready
