@@ -3,6 +3,7 @@ package resolvers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -35,15 +36,17 @@ type PositionAdjuster interface {
 }
 
 type positionAdjuster struct {
-	repo   *types.Repo
-	commit string
+	repo      *types.Repo
+	commit    string
+	hunkCache HunkCache
 }
 
 // NewPositionAdjuster creates a new PositionAdjuster with the given repository and source commit.
-func NewPositionAdjuster(repo *types.Repo, commit string) PositionAdjuster {
+func NewPositionAdjuster(repo *types.Repo, commit string, hunkCache HunkCache) PositionAdjuster {
 	return &positionAdjuster{
-		repo:   repo,
-		commit: commit,
+		repo:      repo,
+		commit:    commit,
+		hunkCache: hunkCache,
 	}
 }
 
@@ -58,7 +61,7 @@ func (p *positionAdjuster) AdjustPath(ctx context.Context, commit, path string, 
 // indicating that the translation was successful. If revese is true, then the source and
 // target commits are swapped.
 func (p *positionAdjuster) AdjustPosition(ctx context.Context, commit, path string, px bundles.Position, reverse bool) (string, bundles.Position, bool, error) {
-	hunks, err := p.readHunks(ctx, p.repo, p.commit, commit, path, reverse)
+	hunks, err := p.readHunksCached(ctx, p.repo, p.commit, commit, path, reverse)
 	if err != nil {
 		return "", bundles.Position{}, false, err
 	}
@@ -72,7 +75,7 @@ func (p *positionAdjuster) AdjustPosition(ctx context.Context, commit, path stri
 // that the translation was successful. If revese is true, then the source and target commits
 // are swapped.
 func (p *positionAdjuster) AdjustRange(ctx context.Context, commit, path string, rx bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
-	hunks, err := p.readHunks(ctx, p.repo, p.commit, commit, path, reverse)
+	hunks, err := p.readHunksCached(ctx, p.repo, p.commit, commit, path, reverse)
 	if err != nil {
 		return "", bundles.Range{}, false, err
 	}
@@ -81,10 +84,12 @@ func (p *positionAdjuster) AdjustRange(ctx context.Context, commit, path string,
 	return path, adjusted, ok, nil
 }
 
-// readHunks returns a position-ordered slice of changes (additions or deletions) of the
-// given path between the given source and target commits. If revese is true, then the
-// source and target commits are swapped.
-func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string, reverse bool) ([]*diff.Hunk, error) {
+// readHunksCached returns a position-ordered slice of changes (additions or deletions) of
+// the given path between the given source and target commits. If revese is true, then the
+// source and target commits are swapped. If the position adjuster has a hunk cache, it
+// will read from it before attempting to contact a remote server, and populate the cache
+// with new results
+func (p *positionAdjuster) readHunksCached(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string, reverse bool) ([]*diff.Hunk, error) {
 	if sourceCommit == targetCommit {
 		return nil, nil
 	}
@@ -92,6 +97,32 @@ func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sour
 		sourceCommit, targetCommit = targetCommit, sourceCommit
 	}
 
+	if p.hunkCache == nil {
+		return p.readHunks(ctx, repo, sourceCommit, targetCommit, path)
+	}
+
+	key := makeKey(fmt.Sprintf("%d", repo.ID), sourceCommit, targetCommit, path)
+	if hunks, ok := p.hunkCache.Get(key); ok {
+		if hunks == nil {
+			return nil, nil
+		}
+
+		return hunks.([]*diff.Hunk), nil
+	}
+
+	hunks, err := p.readHunks(ctx, repo, sourceCommit, targetCommit, path)
+	if err != nil {
+		return nil, err
+	}
+
+	p.hunkCache.Set(key, hunks, int64(len(hunks)))
+
+	return hunks, nil
+}
+
+// readHunks returns a position-ordered slice of changes (additions or deletions) of
+// the given path between the given source and target commits.
+func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
@@ -231,4 +262,8 @@ func adjustRange(hunks []*diff.Hunk, r bundles.Range) (bundles.Range, bool) {
 	}
 
 	return bundles.Range{Start: start, End: end}, true
+}
+
+func makeKey(parts ...string) string {
+	return strings.Join(parts, ":")
 }
