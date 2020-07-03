@@ -231,10 +231,11 @@ export const kubernetes: RepogroupMetadata = {
             title: 'Browse recent diffs for code changes in the community:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">type:</span>diff <span className="repogroup-page__keyword-text">after:</span>"1 week ago"
+                    <span className="repogroup-page__keyword-text">type:</span>diff{' '}
+                    <span className="repogroup-page__keyword-text">after:</span>"1 week ago"
                 </>
             ),
-            rawQuery: 'type:diff after:\"1 week ago\"',
+            rawQuery: 'type:diff after:"1 week ago"',
             patternType: SearchPatternType.literal,
         },
     ],
