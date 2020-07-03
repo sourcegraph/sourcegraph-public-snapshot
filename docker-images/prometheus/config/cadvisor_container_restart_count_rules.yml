@@ -8,7 +8,7 @@ groups:
     rules:
       - record: cadvisor_container_restart_count
         expr: |-
-          (
+          label_replace((
           (count by (name)(container_spec_cpu_shares{container_label_restartcount=~"^$"}) * 0)
           or (count by (name)(container_spec_cpu_shares{container_label_restartcount=~".*1$"}) * 1)
           or (count by (name)(container_spec_cpu_shares{container_label_restartcount=~".*2$"}) * 2)
@@ -77,4 +77,4 @@ groups:
           or (count by (name)(container_spec_cpu_shares{container_label_restartcount=~"^7....$"}) * 70000)
           or (count by (name)(container_spec_cpu_shares{container_label_restartcount=~"^8....$"}) * 80000)
           or (count by (name)(container_spec_cpu_shares{container_label_restartcount=~"^9....$"}) * 90000)
-          )
+          ), "container", "$1", "name", "(.*)")
