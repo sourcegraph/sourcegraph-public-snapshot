@@ -69,7 +69,6 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
         eventLogger.log('RepositoryGroupSuggestionClicked')
         // eslint-disable-next-line no-unused-expressions
         event?.preventDefault()
-        // TODO: update source
         submitSearch({ ...props, query, patternType, source: 'repogroupPage' })
     }
 
