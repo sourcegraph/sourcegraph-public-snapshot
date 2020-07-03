@@ -22,18 +22,24 @@ export const kubernetes: RepogroupMetadata = {
             rawQuery: 'file:pod.yaml content:"kind: ReplicationController"',
             patternType: SearchPatternType.literal,
         },
-       {
-           title: 'See how Prometheus is used in different popular projects:',
-           exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus',
-       },
-       {
-           title: 'See how the sidecar pattern is used in Go:',
-           exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
-       },
-       {
-           title: 'Browse recent commits or diffs from an author: eg. John Howard',
-           exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
-       },
+        {
+            title: 'See how Prometheus is used in different popular projects:',
+            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus',
+            rawQuery: 'lang:yaml prom/prometheus',
+            patternType: SearchPatternType.literal,
+        },
+        {
+            title: 'See how the sidecar pattern is used in Go:',
+            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
+            rawQuery: 'lang:go sidecar',
+            patternType: SearchPatternType.literal,
+        },
+        {
+            title: 'Browse recent commits or diffs from an author: eg. John Howard',
+            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
+            rawQuery: 'lang:go sidecar',
+            patternType: SearchPatternType.literal,
+        },
     ],
     homepageDescription: 'Search within the Kubernetes community.',
     homepageIcon:
