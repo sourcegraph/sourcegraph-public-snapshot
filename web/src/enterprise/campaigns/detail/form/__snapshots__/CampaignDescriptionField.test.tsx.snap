@@ -33,30 +33,22 @@ exports[`CampaignDescriptionField renders 1`] = `
         </Memo(InformationOutlineIcon)>
       </small>
     </label>
-    <TextareaAutosize
+    <ForwardRef(TextareaAutosize)
       className="form-control"
       id="campaignDescription"
-      inputRef={[Function]}
       minRows={3}
       onChange={[Function]}
-      onHeightChange={[Function]}
       type="text"
-      useCacheForDOMMeasurements={false}
       value="a"
     >
       <textarea
         className="form-control"
         id="campaignDescription"
         onChange={[Function]}
-        style={
-          Object {
-            "height": 0,
-          }
-        }
         type="text"
         value="a"
       />
-    </TextareaAutosize>
+    </ForwardRef(TextareaAutosize)>
     <p
       className="ml-1"
     >

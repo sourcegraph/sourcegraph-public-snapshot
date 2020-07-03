@@ -140,7 +140,6 @@
     "@types/react-router-dom": "5.1.5",
     "@types/react-stripe-elements": "6.0.4",
     "@types/react-test-renderer": "16.9.2",
-    "@types/react-textarea-autosize": "4.3.5",
     "@types/reactstrap": "8.4.2",
     "@types/recharts": "1.8.10",
     "@types/resize-observer-browser": "0.1.3",
