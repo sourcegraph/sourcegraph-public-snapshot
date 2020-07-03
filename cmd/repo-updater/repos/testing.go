@@ -74,7 +74,7 @@ type FakeStore struct {
 	UpsertReposError            error // error to be returned in UpsertRepos
 	ListAllRepoNamesError       error // error to be returned in ListAllRepoNames
 	SetClonedReposError         error // error to be returned in SetClonedRepos
-	CountClonedReposError       error // error to be returned in CountClonedRepos
+	CountNotClonedReposError    error // error to be returned in CountNotClonedRepos
 	svcIDSeq                    int64
 	repoIDSeq                   api.RepoID
 	svcByID                     map[int64]*ExternalService
@@ -107,7 +107,7 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		UpsertReposError:            s.UpsertReposError,
 		ListAllRepoNamesError:       s.ListAllRepoNamesError,
 		SetClonedReposError:         s.SetClonedReposError,
-		CountClonedReposError:       s.CountClonedReposError,
+		CountNotClonedReposError:    s.CountNotClonedReposError,
 
 		svcIDSeq:  s.svcIDSeq,
 		svcByID:   svcByID,
@@ -393,10 +393,10 @@ func (s *FakeStore) SetClonedRepos(ctx context.Context, repoNames ...string) err
 	return s.checkConstraints()
 }
 
-// CountClonedRepos counts the number of repos whose cloned field is true.
-func (s *FakeStore) CountClonedRepos(ctx context.Context) (uint64, error) {
-	if s.CountClonedReposError != nil {
-		return 0, s.CountClonedReposError
+// CountNotClonedRepos counts the number of repos whose cloned field is true.
+func (s *FakeStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
+	if s.CountNotClonedReposError != nil {
+		return 0, s.CountNotClonedReposError
 	}
 
 	var count uint64
@@ -406,7 +406,7 @@ func (s *FakeStore) CountClonedRepos(ctx context.Context) (uint64, error) {
 			continue
 		}
 
-		if r.Cloned {
+		if !r.Cloned {
 			count++
 		}
 	}

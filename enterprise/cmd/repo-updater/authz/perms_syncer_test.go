@@ -108,7 +108,7 @@ func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string
 	return nil
 }
 
-func (s *mockReposStore) CountClonedRepos(ctx context.Context) (uint64, error) {
+func (s *mockReposStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 	return 0, nil
 }
 

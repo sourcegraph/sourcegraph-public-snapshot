@@ -609,17 +609,12 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 		return s.notClonedCount, nil
 	}
 
-	names, err := s.Store.ListAllRepoNames(ctx)
+	var err error
+
+	s.notClonedCount, err = s.Store.CountNotClonedRepos(ctx)
 	if err != nil {
 		return 0, err
 	}
-
-	cloned, err := s.Store.CountClonedRepos(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	s.notClonedCount = uint64(len(names)) - cloned
 	s.notClonedCountUpdatedAt = time.Now()
 
 	return s.notClonedCount, nil

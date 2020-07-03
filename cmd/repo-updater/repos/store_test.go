@@ -738,6 +738,10 @@ func isCloned(r *repos.Repo) bool {
 	return r.Cloned
 }
 
+func isNotCloned(r *repos.Repo) bool {
+	return !r.Cloned
+}
+
 func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -853,91 +857,40 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreCountClonedRepos(store repos.Store) func(*testing.T) {
-	clock := repos.NewFakeClock(time.Now(), 0)
-	now := clock.Now()
-
+func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
-		github := repos.Repo{
-			Name:        "github.com/foo/bar",
-			URI:         "github.com/foo/bar",
-			Description: "The description",
-			Language:    "barlang",
-			CreatedAt:   now,
-			Cloned:      false,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "AAAAA==",
-				ServiceType: "github",
-				ServiceID:   "http://github.com",
-			},
-			Sources: map[string]*repos.SourceInfo{
-				"extsvc:1": {
-					ID:       "extsvc:1",
-					CloneURL: "git@github.com:foo/bar.git",
+		var repositories repos.Repos
+		for i := 0; i < 3; i++ {
+			repositories = append(repositories, &repos.Repo{
+				Name:   fmt.Sprintf("github.com/%d/%d", i, i),
+				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
+				Cloned: false,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          fmt.Sprintf("%d", i),
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "http://github.com",
 				},
-			},
-			Metadata: new(github.Repository),
-		}
-
-		gitlab := repos.Repo{
-			Name:        "gitlab.com/foo/bar",
-			URI:         "gitlab.com/foo/bar",
-			Description: "The description",
-			Language:    "barlang",
-			CreatedAt:   now,
-			Cloned:      false,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1234",
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "http://gitlab.com",
-			},
-			Sources: map[string]*repos.SourceInfo{
-				"extsvc:2": {
-					ID:       "extsvc:2",
-					CloneURL: "git@gitlab.com:foo/bar.git",
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:3": {
+						ID:       "extsvc:3",
+						CloneURL: "git@github.com:foo/bar.git",
+					},
 				},
-			},
-			Metadata: new(gitlab.Project),
-		}
-
-		bitbucketServer := repos.Repo{
-			Name:        "bitbucketserver.mycorp.com/foo/bar",
-			URI:         "bitbucketserver.mycorp.com/foo/bar",
-			Description: "The description",
-			Language:    "barlang",
-			CreatedAt:   now,
-			Cloned:      false,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1234",
-				ServiceType: "bitbucketServer",
-				ServiceID:   "http://bitbucketserver.mycorp.com",
-			},
-			Sources: map[string]*repos.SourceInfo{
-				"extsvc:3": {
-					ID:       "extsvc:3",
-					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
-				},
-			},
-			Metadata: new(bitbucketserver.Repo),
-		}
-
-		repositories := repos.Repos{
-			&github,
-			&gitlab,
-			&bitbucketServer,
+				Metadata: new(github.Repository),
+			})
 		}
 
 		ctx := context.Background()
 
-		t.Run("no clones repos", func(t *testing.T) {
-			count, err := store.CountClonedRepos(ctx)
+		t.Run("no cloned repos", func(t *testing.T) {
+			count, err := store.CountNotClonedRepos(ctx)
 			if err != nil {
-				t.Fatalf("CountClonedRepos error: %s", err)
+				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
 			if diff := cmp.Diff(count, uint64(0)); diff != "" {
-				t.Fatalf("CountClonedRepos:\n%s", diff)
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		})
 
@@ -950,18 +903,21 @@ func testStoreCountClonedRepos(store repos.Store) func(*testing.T) {
 
 			sort.Sort(stored)
 
-			names := stored[:3].Names()
+			cloned := stored.Filter(isCloned).Names()
+			notCloned := stored.Filter(isNotCloned).Names()
+			sort.Strings(cloned)
+			sort.Strings(notCloned)
 
-			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+			if err := tx.SetClonedRepos(ctx, cloned...); err != nil {
 				t.Fatalf("SetClonedRepos error: %s", err)
 			}
 
-			count, err := tx.CountClonedRepos(ctx)
+			count, err := tx.CountNotClonedRepos(ctx)
 			if err != nil {
-				t.Fatalf("CountClonedRepos error: %s", err)
+				t.Fatalf("CountNotClonedRepos error: %s", err)
 			}
-			if diff := cmp.Diff(count, uint64(len(names))); diff != "" {
-				t.Fatalf("CountClonedRepos:\n%s", diff)
+			if diff := cmp.Diff(count, uint64(len(notCloned))); diff != "" {
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		}))
 	}

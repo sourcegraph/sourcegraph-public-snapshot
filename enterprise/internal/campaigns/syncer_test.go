@@ -590,7 +590,7 @@ func (m MockRepoStore) SetClonedRepos(ctx context.Context, repoNames ...string) 
 	panic("implement me")
 }
 
-func (m MockRepoStore) CountClonedRepos(ctx context.Context) (uint64, error) {
+func (m MockRepoStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 	panic("implement me")
 }
 
