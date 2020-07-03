@@ -43,7 +43,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaignsCount = _queryCampaignsCount,
     ...props
 }) => {
-    useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [])
+    useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
 
     const totalCount = useObservable(useMemo(() => queryCampaignsCount(), [queryCampaignsCount]))
     return (
