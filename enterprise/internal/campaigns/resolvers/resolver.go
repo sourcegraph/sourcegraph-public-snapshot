@@ -255,8 +255,16 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, err
 	}
 
+	var ensureCampaignID int64
+	if args.EnsureCampaign != nil {
+		ensureCampaignID, err = campaigns.UnmarshalCampaignID(*args.EnsureCampaign)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err := svc.ApplyCampaign(ctx, namespaceUserID, namespaceOrgID, campaignSpecRandID)
+	campaign, err := svc.ApplyCampaign(ctx, namespaceUserID, namespaceOrgID, campaignSpecRandID, ensureCampaignID)
 	if err != nil {
 		return nil, err
 	}

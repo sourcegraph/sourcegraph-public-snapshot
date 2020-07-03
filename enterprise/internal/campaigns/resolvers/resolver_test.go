@@ -1126,14 +1126,33 @@ func TestApplyCampaign(t *testing.T) {
 	if diff := cmp.Diff(want, have2); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
+
+	// Execute it again with ensureCampaign set to correct campaign's ID
+	input["ensureCampaign"] = have2.ID
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	have3 := response.ApplyCampaign
+	if diff := cmp.Diff(want, have3); diff != "" {
+		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	}
+
+	// Execute it again but ensureCampaign set to wrong campaign ID
+	campaignID, err := campaigns.UnmarshalCampaignID(graphql.ID(have3.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	input["ensureCampaign"] = campaigns.MarshalCampaignID(campaignID + 999)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	if len(errs) == 0 {
+		t.Fatalf("expected errors, got none")
+	}
 }
 
 const mutationApplyCampaign = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($namespace: ID!, $campaignSpec: ID!){
-  applyCampaign(namespace: $namespace, campaignSpec: $campaignSpec) {
+mutation($namespace: ID!, $campaignSpec: ID!, $ensureCampaign: ID){
+  applyCampaign(namespace: $namespace, campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
 	id, name, description, branch
 	author    { ...u }
 	namespace {

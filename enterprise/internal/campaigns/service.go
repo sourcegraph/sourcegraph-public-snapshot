@@ -226,6 +226,7 @@ func (s *Service) ApplyCampaign(
 	ctx context.Context,
 	namespaceUserID, namespaceOrgID int32,
 	campaignSpecRandID string,
+	ensureCampaignID int64,
 ) (campaign *campaigns.Campaign, err error) {
 	title := fmt.Sprintf(
 		"CampaignSpec %s, NamespaceOrgID %d, NamespaceUserID %d",
@@ -266,6 +267,10 @@ func (s *Service) ApplyCampaign(
 		campaign = &campaigns.Campaign{}
 	}
 
+	if ensureCampaignID != 0 && campaign.ID != ensureCampaignID {
+		return nil, ErrEnsureCampaignFailed
+	}
+
 	if campaign.CampaignSpecID == campaignSpec.ID {
 		return campaign, nil
 	}
@@ -289,6 +294,11 @@ func (s *Service) ApplyCampaign(
 
 	return campaign, s.store.UpdateCampaign(ctx, campaign)
 }
+
+// ErrEnsureCampaignFailed is returned by ApplyCampaign when a ensureCampaignID
+// is provided but a campaign with the name specified the campaignSpec exists
+// in the given namespace but has a different ID.
+var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
 // ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
 // PatchSetID was specified but the PatchSet does not have any
