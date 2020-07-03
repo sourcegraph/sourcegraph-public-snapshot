@@ -347,67 +347,40 @@ func TestSyncerRun(t *testing.T) {
 
 func TestFilterSyncData(t *testing.T) {
 	testCases := []struct {
-		name      string
-		serviceID int64
-		data      []campaigns.ChangesetSyncData
-		want      []campaigns.ChangesetSyncData
+		name        string
+		codeHostURL string
+		data        []campaigns.ChangesetSyncData
+		want        []campaigns.ChangesetSyncData
 	}{
 		{
-			name:      "Empty",
-			serviceID: 1,
-			data:      []campaigns.ChangesetSyncData{},
-			want:      []campaigns.ChangesetSyncData{},
+			name:        "Empty",
+			codeHostURL: "https://example.com/",
+			data:        []campaigns.ChangesetSyncData{},
+			want:        []campaigns.ChangesetSyncData{},
 		},
 		{
-			name:      "single item, should match",
-			serviceID: 1,
+			name:        "single item, should match",
+			codeHostURL: "https://example.com/",
 			data: []campaigns.ChangesetSyncData{
 				{
-					ChangesetID:        1,
-					ExternalServiceIDs: []int64{1},
+					ChangesetID:           1,
+					RepoExternalServiceID: "https://example.com/",
 				},
 			},
 			want: []campaigns.ChangesetSyncData{
 				{
-					ChangesetID:        1,
-					ExternalServiceIDs: []int64{1},
+					ChangesetID:           1,
+					RepoExternalServiceID: "https://example.com/",
 				},
 			},
 		},
 		{
-			name:      "single item, should not match",
-			serviceID: 1,
+			name:        "single item, should not match",
+			codeHostURL: "https://example.com/",
 			data: []campaigns.ChangesetSyncData{
 				{
-					ChangesetID:        1,
-					ExternalServiceIDs: []int64{2},
-				},
-			},
-			want: []campaigns.ChangesetSyncData{},
-		},
-		{
-			name:      "multiple items, should match",
-			serviceID: 2,
-			data: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:        1,
-					ExternalServiceIDs: []int64{1, 2},
-				},
-			},
-			want: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:        1,
-					ExternalServiceIDs: []int64{1, 2},
-				},
-			},
-		},
-		{
-			name:      "multiple items, should not match",
-			serviceID: 1,
-			data: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:        1,
-					ExternalServiceIDs: []int64{1, 2},
+					ChangesetID:           1,
+					RepoExternalServiceID: "https://example2.com/",
 				},
 			},
 			want: []campaigns.ChangesetSyncData{},
@@ -416,7 +389,7 @@ func TestFilterSyncData(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			data := filterSyncData(tc.serviceID, tc.data)
+			data := filterSyncData(tc.codeHostURL, tc.data)
 			if diff := cmp.Diff(tc.want, data); diff != "" {
 				t.Fatal(diff)
 			}
@@ -437,7 +410,7 @@ func TestSyncRegistry(t *testing.T) {
 					ID:          1,
 					Kind:        extsvc.KindGitHub,
 					DisplayName: "",
-					Config:      "",
+					Config:      `{"url": "https://example.com/"}`,
 					CreatedAt:   time.Time{},
 					UpdatedAt:   time.Time{},
 				},
@@ -450,9 +423,9 @@ func TestSyncRegistry(t *testing.T) {
 		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
 			return []campaigns.ChangesetSyncData{
 				{
-					ChangesetID:        1,
-					UpdatedAt:          now,
-					ExternalServiceIDs: []int64{1},
+					ChangesetID:           1,
+					UpdatedAt:             now,
+					RepoExternalServiceID: "https://example.com/",
 				},
 			}, nil
 		},
@@ -478,6 +451,7 @@ func TestSyncRegistry(t *testing.T) {
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
 		Kind:      extsvc.KindGitHub,
+		Config:    `{"url": "https://example.com/"}`,
 		DeletedAt: &now,
 	})
 	assertSyncerCount(0)
@@ -495,10 +469,10 @@ func TestSyncRegistry(t *testing.T) {
 	// In order to test that priority items are delivered we'll inject our own syncer
 	// with a custom sync func
 	syncer := &ChangesetSyncer{
-		SyncStore:         syncStore,
-		ReposStore:        repoStore,
-		HTTPFactory:       nil,
-		externalServiceID: 1,
+		SyncStore:   syncStore,
+		ReposStore:  repoStore,
+		HTTPFactory: nil,
+		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
 			return nil
@@ -509,7 +483,7 @@ func TestSyncRegistry(t *testing.T) {
 
 	// Set the syncer
 	r.mu.Lock()
-	r.syncers[1] = syncer
+	r.syncers["https://example.com/"] = syncer
 	r.mu.Unlock()
 
 	// Send priority items
