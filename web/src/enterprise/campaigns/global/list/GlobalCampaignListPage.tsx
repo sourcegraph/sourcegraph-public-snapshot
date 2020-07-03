@@ -6,11 +6,11 @@ import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
 import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
 import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
+import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
-import { eventLogger } from '../../../../tracking/eventLogger'
 import { Observable } from 'rxjs'
 
-interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
+interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: IUser
     queryCampaignsCount?: () => Observable<number>
 }
@@ -43,7 +43,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaignsCount = _queryCampaignsCount,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CampaignsListPage'), [])
+    useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [])
 
     const totalCount = useObservable(useMemo(() => queryCampaignsCount(), [queryCampaignsCount]))
     return (
