@@ -111,6 +111,6 @@ export const android: RepogroupMetadata = {
         //                 'http.Transport{:[_], MaxIdleConns: :[idleconns], :[_]} <span className="repogroup-page__keyword-text">-file:</span>vendor <span class="repogroup-page__keyword-text">lang:</span>go',
         //         },
     ],
-    homepageDescription: 'Interesting examples of Go.',
-    homepageIcon: 'https://code.benco.io/icon-collection/logos/go-lang.svg',
+    homepageDescription: 'Explore popular Android repositories.',
+    homepageIcon: 'https://code.benco.io/icon-collection/logos/android-1.svg',
 }
