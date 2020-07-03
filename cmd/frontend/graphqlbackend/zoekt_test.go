@@ -222,7 +222,7 @@ func TestZoektSearchHEAD(t *testing.T) {
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt:           &searchbackend.Zoekt{Client: tt.args.searcher},
 			}
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, args, tt.args.repos, false, tt.args.since)
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, args, tt.args.repos, textRequest, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -399,11 +399,13 @@ func TestZoektResultCountFactor(t *testing.T) {
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
+		Type    indexedRequestType
 		Pattern *search.TextPatternInfo
 		Query   string
 	}{
 		{
 			Name: "substr",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -415,7 +417,22 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query: "foo case:no",
 		},
 		{
+			Name: "symbol substr",
+			Type: symbolRequest,
+			Pattern: &search.TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: "sym:foo case:no",
+		},
+		{
 			Name: "regex",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -428,6 +445,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -440,6 +458,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "case",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
@@ -452,6 +471,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "casepath",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
@@ -464,6 +484,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path matches only",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -478,6 +499,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "repos must include",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				Pattern:                      "foo",
@@ -493,7 +515,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := queryToZoektQuery(tt.Pattern, false)
+			got, err := queryToZoektQuery(tt.Pattern, tt.Type)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
