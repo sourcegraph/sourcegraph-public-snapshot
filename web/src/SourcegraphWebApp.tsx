@@ -165,6 +165,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The previously used version context, as specified in localStorage.
      */
     previousVersionContext: string | null
+
+    showRepogroupHomepage: boolean
 }
 
 const notificationClassNames = {
@@ -250,6 +252,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
+            showRepogroupHomepage: false,
         }
     }
 
@@ -320,8 +323,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         splitSearchModes = true,
                         smartSearchField = true,
                         copyQueryButton = false,
+                        showRepogroupHomepage = false,
                     } = experimentalFeatures
-                    this.setState({ splitSearchModes, smartSearchField, copyQueryButton })
+                    this.setState({ splitSearchModes, smartSearchField, copyQueryButton, showRepogroupHomepage })
                 }
             })
         )
@@ -452,6 +456,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
                                     previousVersionContext={this.state.previousVersionContext}
+                                    showRepogroupHomepage={this.state.showRepogroupHomepage}
                                 />
                             )}
                         />

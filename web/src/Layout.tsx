@@ -38,6 +38,7 @@ import {
     CaseSensitivityProps,
     SmartSearchFieldProps,
     CopyQueryButtonProps,
+    RepogroupHomepageProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -75,7 +76,8 @@ export interface LayoutProps
         InteractiveSearchProps,
         SmartSearchFieldProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        RepogroupHomepageProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -132,10 +134,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
+    const repogroupPages = ['/refactor-python2-to-3', '/kubernetes', '/golang', '/react-hooks', '/android']
+    const isRepogroupPage = repogroupPages.includes(props.location.pathname)
+
     const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
+    const hideGlobalSearchInput: boolean =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
     useScrollToLocationHash(props.location)
@@ -163,8 +168,15 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     isSearchRelatedPage={isSearchRelatedPage}
-                    lowProfile={isSearchHomepage}
-                    hideGlobalSearchInput={hideGlobalSearchInput}
+                    variant={
+                        hideGlobalSearchInput
+                            ? 'no-search-input'
+                            : isSearchHomepage
+                            ? 'low-profile'
+                            : isRepogroupPage
+                            ? 'low-profile-with-logo'
+                            : 'default'
+                    }
                     hideNavLinks={false}
                 />
             )}

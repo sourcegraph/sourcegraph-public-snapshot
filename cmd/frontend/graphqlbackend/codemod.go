@@ -235,7 +235,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 	}()
 
 	// For performance, assume repo is cloned in gitserver and do not trigger a repo-updater lookup (this call fails if repo is not on gitserver).
-	commit, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, repoRevs.Revs[0].RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, repoRevs.Revs[0].RevSpec, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return nil, errors.Wrap(err, "codemod repo lookup failed: it's possible that the repo is not cloned in gitserver. Try force a repo update another way.")
 	}

@@ -500,7 +500,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	spec := vars["Spec"]
 
 	// Do not to trigger a repo-updater lookup since this is a batch job.
-	commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, nil, spec, nil)
+	commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, nil, spec, git.ResolveRevisionOptions{})
 	if err != nil {
 		return err
 	}
@@ -518,7 +518,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 
 	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
 	repo := gitserver.Repo{Name: name}
-	commit, err := git.ResolveRevision(r.Context(), repo, nil, spec, nil)
+	commit, err := git.ResolveRevision(r.Context(), repo, nil, spec, git.ResolveRevisionOptions{})
 	if err != nil {
 		return err
 	}

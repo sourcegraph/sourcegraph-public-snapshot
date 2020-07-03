@@ -111,6 +111,7 @@ $code-bg: var(--body-bg);
 @import 'bootstrap/scss/grid';
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
+@import 'bootstrap/scss/transitions';
 @import './global-styles/badge';
 @import './global-styles/breadcrumb';
 @import './global-styles/card';
@@ -143,23 +144,26 @@ body,
     height: 100%;
 }
 
+// Document highlight is the background color for tokens which are matched with
+// a result from a document highlight provider. e.g. for references of the token
+// currently being hovered over.
+//
+// Note that we define this before selection highlights so that it will override
+// the styles of symbol that has both classes applied.
+.sourcegraph-document-highlight {
+    background-color: var(--secondary);
+}
+
 // Selection highlight is the background color for matched/highlighted tokens,
 // e.g. for search results, for identifying the token currently being hovered over,
 // or identifying the token the references panel is toggled for
-.selection-highlight {
-    background-color: rgba(217, 72, 15, 0.5);
-}
-// Same as above, but indicates highlighting for a fixed hover (vs. e.g.
-// an ephemeral mouseover on some token).
+.selection-highlight,
 .selection-highlight-sticky {
     background-color: rgba(217, 72, 15, 0.5);
 }
 
 .theme-light {
-    .selection-highlight {
-        background-color: rgba(255, 192, 120, 0.5);
-    }
-
+    .selection-highlight,
     .selection-highlight-sticky {
         background-color: rgba(255, 192, 120, 0.5);
     }
@@ -230,6 +234,7 @@ body,
 @import './global/Notices';
 @import './savedSearches/index';
 @import './search/input/SearchPage';
+@import './repogroups/RepogroupPage';
 @import './search/queryBuilder/index';
 @import './search/results/SearchResults';
 @import './settings/SettingsFile';

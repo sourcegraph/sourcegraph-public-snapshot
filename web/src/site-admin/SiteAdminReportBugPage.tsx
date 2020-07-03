@@ -16,6 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { mapValues, values } from 'lodash'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -117,23 +118,23 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                     support@sourcegraph.com.
                 </div>
             </div>
-            <DynamicallyImportedMonacoSettingsEditor
-                value={
-                    allConfig
-                        ? JSON.stringify(
-                              monitoringStats ? { ...allConfig, ...monitoringStats } : { ...allConfig, alerts: null },
-                              undefined,
-                              2
-                          )
-                        : ''
-                }
-                jsonSchema={allConfigSchema}
-                canEdit={false}
-                height={800}
-                isLightTheme={isLightTheme}
-                history={history}
-                readOnly={true}
-            />
+            {allConfig === undefined || monitoringStats === undefined ? (
+                <LoadingSpinner className="icon-inline mt-2" />
+            ) : (
+                <DynamicallyImportedMonacoSettingsEditor
+                    value={JSON.stringify(
+                        monitoringStats ? { ...allConfig, ...monitoringStats } : { ...allConfig, alerts: null },
+                        undefined,
+                        2
+                    )}
+                    jsonSchema={allConfigSchema}
+                    canEdit={false}
+                    height={800}
+                    isLightTheme={isLightTheme}
+                    history={history}
+                    readOnly={true}
+                />
+            )}
         </div>
     )
 }

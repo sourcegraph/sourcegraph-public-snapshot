@@ -7,6 +7,9 @@ set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
+if [ ! -e "${PROMETHEUS_DISK}" ]; then
+  mkdir -p "${PROMETHEUS_DISK}"
+fi
 IMAGE=sourcegraph/prometheus:dev
 CONTAINER=prometheus
 

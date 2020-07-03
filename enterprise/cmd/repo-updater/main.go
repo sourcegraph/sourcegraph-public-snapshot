@@ -45,13 +45,6 @@ func enterpriseInit(
 	ctx := context.Background()
 	campaignsStore := campaigns.NewStore(db)
 
-	rateLimitSyncer, err := repos.NewRateLimitSyncer(ctx, ratelimit.DefaultRegistry, repoStore)
-	if err != nil {
-		log15.Error("Creating rate limit registry", "err", err)
-	} else if server != nil {
-		server.RateLimitSyncer = rateLimitSyncer
-	}
-
 	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry

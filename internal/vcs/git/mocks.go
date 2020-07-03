@@ -20,7 +20,7 @@ var Mocks, emptyMocks struct {
 	NewFileReader    func(commit api.CommitID, name string) (io.ReadCloser, error)
 	ReadFile         func(commit api.CommitID, name string) ([]byte, error)
 	ReadDir          func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error)
-	ResolveRevision  func(spec string, opt *ResolveRevisionOptions) (api.CommitID, error)
+	ResolveRevision  func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 	Stat             func(commit api.CommitID, name string) (os.FileInfo, error)
 	GetObject        func(objectName string) (OID, ObjectType, error)
 	Commits          func(repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error)

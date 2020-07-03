@@ -2,7 +2,12 @@ import { existsSync, readdirSync } from 'fs'
 import { startCase } from 'lodash'
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { CodeView } from '../shared/codeViews'
-import { createFileActionsToolbarMount, createFileLineContainerToolbarMount, githubCodeHost } from './codeHost'
+import {
+    createFileActionsToolbarMount,
+    createFileLineContainerToolbarMount,
+    githubCodeHost,
+    checkIsGitHubDotCom,
+} from './codeHost'
 import { readFile } from 'mz/fs'
 
 const testCodeHost = (fixturePath: string): void => {
@@ -167,6 +172,21 @@ describe('github/codeHost', () => {
                     'https://github.com/sourcegraph/sourcegraph/pull/3257/files#diff-93ceb95cf0be7b7b17815c5638fc4c5cR1335'
                 )
             })
+        })
+    })
+
+    describe('githubCodeHost.checkIsGithubDotCom()', () => {
+        it('returns true with a github.com URL', () => {
+            expect(checkIsGitHubDotCom('https://www.github.com')).toBe(true)
+            expect(checkIsGitHubDotCom('https://github.com')).toBe(true)
+            expect(checkIsGitHubDotCom('http://github.com')).toBe(true)
+            expect(checkIsGitHubDotCom('http://www.github.com')).toBe(true)
+        })
+
+        it('returns false on domains that impersonate github.com', () => {
+            expect(checkIsGitHubDotCom('https://wwwwgithub.com')).toBe(false)
+            expect(checkIsGitHubDotCom('https://www.githubccom')).toBe(false)
+            expect(checkIsGitHubDotCom('http://githubccom')).toBe(false)
         })
     })
 })

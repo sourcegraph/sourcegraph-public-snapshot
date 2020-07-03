@@ -4,6 +4,12 @@ import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
 import { isErrorLike } from '../../shared/src/util/errors'
+import { RepogroupPage } from './repogroups/RepogroupPage'
+import { python2To3Metadata } from './repogroups/Python2To3'
+import { kubernetes } from './repogroups/Kubernetes'
+import { golang } from './repogroups/Golang'
+import { reactHooks } from './repogroups/ReactHooks'
+import { android } from './repogroups/Android'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -159,6 +165,26 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/views',
         render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
+    },
+    {
+        path: '/refactor-python2-to-3',
+        render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
+    },
+    {
+        path: '/kubernetes',
+        render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+    },
+    {
+        path: '/golang',
+        render: props => <RepogroupPage {...props} repogroupMetadata={golang} />,
+    },
+    {
+        path: '/react-hooks',
+        render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
+    },
+    {
+        path: '/android',
+        render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
     },
     {
         path: '/:repoRevAndRest+',

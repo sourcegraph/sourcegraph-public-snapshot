@@ -47,6 +47,14 @@ All notable changes to Sourcegraph are documented in this file.
 - Backwards compatibility for "critical configuration" (a type of configuration that was deprecated in December 2019) was removed. All critical configuration now belongs in site configuration.
 - Experimental feature setting `{ "experimentalFeatures": { "searchMultipleRevisionsPerRepository": true } }` will be removed in 3.19. It is now always on. Please remove references to it.
 
+## 3.17.3
+
+### Fixed
+
+- git: Command retrying made a copy that was never used [#11807](https://github.com/sourcegraph/sourcegraph/pull/11807)
+- frontend: Allow opt out of EnsureRevision when making a comparison query [#11811](https://github.com/sourcegraph/sourcegraph/pull/11811)
+- Fix Phabricator icon class [#11825](https://github.com/sourcegraph/sourcegraph/pull/11825)
+
 ## 3.17.2
 
 ### Fixed
