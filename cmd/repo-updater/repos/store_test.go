@@ -842,8 +842,12 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos error: %s", err)
 			}
 
-			if cloned := stored.Filter(isCloned); len(cloned) != 3 {
-				t.Fatalf("SetClonedRepos didn't set the cloned column to true to the right number of repos: %v", cloned.Names())
+			cloned := stored.Filter(isCloned).Names()
+			sort.Strings(cloned)
+			sort.Strings(names)
+
+			if got, want := cloned, names; !cmp.Equal(got, want) {
+				t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
 			}
 		}))
 	}
