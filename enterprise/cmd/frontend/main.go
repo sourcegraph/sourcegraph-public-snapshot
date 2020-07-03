@@ -166,7 +166,7 @@ func initCampaigns(ctx context.Context, enterpriseServices *enterprise.Services)
 }
 
 var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
-var rawHunkCacheSize = env.Get("PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY", "10000", "Maximum number of git diff hunks that can be loaded into the cache at once.")
+var rawHunkCacheSize = env.Get("PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY", "1000", "Maximum number of git diff hunk objects that can be loaded into the cache at once.")
 
 func initCodeIntel(enterpriseServices *enterprise.Services) {
 	if bundleManagerURL == "" {
