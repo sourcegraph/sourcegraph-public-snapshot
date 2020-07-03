@@ -100,10 +100,6 @@ func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
 	return nil
 }
 
-func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, error) {
-	return nil, nil
-}
-
 func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
 	return nil
 }

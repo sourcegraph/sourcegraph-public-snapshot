@@ -72,7 +72,6 @@ type FakeStore struct {
 	GetRepoByNameError          error // error to be returned in GetRepoByName
 	ListReposError              error // error to be returned in ListRepos
 	UpsertReposError            error // error to be returned in UpsertRepos
-	ListAllRepoNamesError       error // error to be returned in ListAllRepoNames
 	SetClonedReposError         error // error to be returned in SetClonedRepos
 	CountNotClonedReposError    error // error to be returned in CountNotClonedRepos
 	svcIDSeq                    int64
@@ -105,7 +104,6 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		GetRepoByNameError:          s.GetRepoByNameError,
 		ListReposError:              s.ListReposError,
 		UpsertReposError:            s.UpsertReposError,
-		ListAllRepoNamesError:       s.ListAllRepoNamesError,
 		SetClonedReposError:         s.SetClonedReposError,
 		CountNotClonedReposError:    s.CountNotClonedReposError,
 
@@ -280,22 +278,6 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 	}
 
 	return repos, nil
-}
-
-// ListAllRepoNames lists names of all repos in the store
-func (s FakeStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error) {
-	if s.ListAllRepoNamesError != nil {
-		return nil, s.ListAllRepoNamesError
-	}
-
-	names := make([]api.RepoName, 0, len(s.repoByID))
-	for _, r := range s.repoByID {
-		if !r.IsDeleted() {
-			names = append(names, api.RepoName(r.Name))
-		}
-	}
-
-	return names, nil
 }
 
 func evalOr(bs ...bool) bool {

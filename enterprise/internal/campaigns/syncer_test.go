@@ -574,10 +574,6 @@ func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) er
 	panic("implement me")
 }
 
-func (m MockRepoStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error) {
-	panic("implement me")
-}
-
 func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
 	return m.listExternalServices(ctx, args)
 }
