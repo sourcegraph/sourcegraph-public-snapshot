@@ -224,7 +224,7 @@ export const golang: RepogroupMetadata = {
                 </>
             ),
             rawQuery: 'if err != nil {:[_]} lang:go',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.structural,
         },
         {
             title: 'Find usage examples of cmp.Diff with options',

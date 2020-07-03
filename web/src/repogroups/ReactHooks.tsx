@@ -242,7 +242,7 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with exactly two input params for structural search, should return a lot fewer results:',
+            title: 'useState with exactly two input params for structural search should return a lot fewer results:',
             exampleQuery: (
                 <>
                     useState([:[1.], :[2.]]) <span className="repogroup-page__keyword-text">count:</span>1000
@@ -252,7 +252,7 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with two or more params in a specific file (need better eg here) with structural search:',
+            title: 'useState with two or more params in a specific file with structural search:',
             exampleQuery: (
                 <>
                     useState([:[1], :[2]]) <span className="repogroup-page__keyword-text">count:</span>1000{' '}
