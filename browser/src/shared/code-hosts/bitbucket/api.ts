@@ -1,12 +1,12 @@
 import { first } from 'lodash'
 import { Observable } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { DiffResolvedRevSpec } from '../../repo'
 import { BitbucketRepoInfo } from './scrape'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
-import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
@@ -26,7 +26,7 @@ const buildURL = (project: string, repoSlug: string, path: string): string =>
     )}/repos/${repoSlug}${path}`
 
 const get = <T>(url: string): Observable<T> =>
-    fromFetch(url, undefined, response => checkOk(response).json() as Promise<T>)
+    fromFetch(url, { selector: response => checkOk(response).json() as Promise<T> })
 
 interface Repo {
     project: { key: string }
