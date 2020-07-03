@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // SyncRegistry manages a ChangesetSyncer per code host
@@ -86,11 +84,17 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 
 	service := services[0]
 
-	normalised, err := normalisedURLFromService(service.Kind, service.Config)
+	if !campaigns.IsKindSupported(service.Kind) {
+		log15.Info("External service not support by campaigns", "kind", service.Kind)
+		return
+	}
+
+	baseURL, err := extsvc.ExtractBaseURL(service.Kind, service.Config)
 	if err != nil {
 		log15.Error("Getting normalised URL from service", "err", err)
 		return
 	}
+	normalised := baseURL.String()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -177,11 +181,12 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	normalised, err := normalisedURLFromService(es.Kind, es.Config)
+	baseURL, err := extsvc.ExtractBaseURL(es.Kind, es.Config)
 	if err != nil {
 		log15.Error("Extracting url from external service", "err", err)
 		return
 	}
+	normalised := baseURL.String()
 
 	s.mu.Lock()
 	syncer, exists := s.syncers[normalised]
@@ -197,32 +202,6 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 		delete(s.syncers, normalised)
 		syncer.cancel()
 	}
-}
-
-func normalisedURLFromService(kind, config string) (string, error) {
-	cfg, err := extsvc.ParseConfig(kind, config)
-	if err != nil {
-		return "", errors.Wrap(err, "parsing external service config")
-	}
-
-	var rawURL string
-	switch v := cfg.(type) {
-	// Supported by campaigns
-	case *schema.BitbucketServerConnection:
-		rawURL = v.Url
-	case *schema.GitHubConnection:
-		rawURL = v.Url
-	// Unsupported by campaigns
-	default:
-		return "", fmt.Errorf("changeset syncer not started for unsupported code host: %q", kind)
-	}
-
-	parsed, err := url.Parse(rawURL)
-	if err != nil {
-		return "", errors.Wrap(err, "parsing code host url")
-	}
-	normalised := extsvc.NormalizeBaseURL(parsed).String()
-	return normalised, nil
 }
 
 func timeIsNilOrZero(t *time.Time) bool {

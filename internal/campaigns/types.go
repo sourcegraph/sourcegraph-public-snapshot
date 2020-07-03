@@ -36,6 +36,11 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
+func IsKindSupported(kind string) bool {
+	_, ok := SupportedExternalServices[extsvc.KindToType(kind)]
+	return ok
+}
+
 // A PatchSet is a collection of multiple Patches.
 type PatchSet struct {
 	ID int64

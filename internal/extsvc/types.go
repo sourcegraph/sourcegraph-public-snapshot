@@ -117,6 +117,31 @@ const (
 	TypeOther = "other"
 )
 
+// KindToType returns a Type constants given a Kind
+// It will panic when given an unknown kind
+func KindToType(kind string) string {
+	switch kind {
+	case KindAWSCodeCommit:
+		return TypeAWSCodeCommit
+	case KindBitbucketServer:
+		return TypeBitbucketServer
+	case KindBitbucketCloud:
+		return TypeBitbucketCloud
+	case KindGitHub:
+		return TypeGitHub
+	case KindGitLab:
+		return TypeGitLab
+	case KindGitolite:
+		return TypeGitolite
+	case KindPhabricator:
+		return TypePhabricator
+	case KindOther:
+		return TypeOther
+	default:
+		panic(fmt.Sprintf("unknown kind: %q", kind))
+	}
+}
+
 var (
 	// Precompute these for use in ParseServiceType below since the constants are mixed case
 	bbsLower = strings.ToLower(TypeBitbucketServer)
