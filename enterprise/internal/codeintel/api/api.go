@@ -18,6 +18,9 @@ type CodeIntelAPI interface {
 	// Definitions, References, and Hover.
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error)
 
+	// Window returns definition, reference, and hover data for each range within the given span of lines.
+	Window(ctx context.Context, file string, startLine, endLine, uploadID int) ([]ResolvedAggregateCodeIntelligence, error)
+
 	// Definitions returns the list of source locations that define the symbol at the given position.
 	// This may include remote definitions if the remote repository is also indexed.
 	Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error)

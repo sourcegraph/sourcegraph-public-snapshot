@@ -128,7 +128,6 @@ func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sour
 		return nil, err
 	}
 
-	// TODO(efritz) - cache diff results
 	reader, err := git.ExecReader(ctx, *cachedRepo, []string{"diff", sourceCommit, targetCommit, "--", path})
 	if err != nil {
 		return nil, err

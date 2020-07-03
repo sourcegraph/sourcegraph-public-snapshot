@@ -14,6 +14,7 @@ type ObservedDatabase struct {
 	database                    Database
 	filename                    string
 	existsOperation             *observation.Operation
+	windowOperation             *observation.Operation
 	definitionsOperation        *observation.Operation
 	referencesOperation         *observation.Operation
 	hoverOperation              *observation.Operation
@@ -47,6 +48,11 @@ func NewObserved(database Database, filename string, observationContext *observa
 		existsOperation: observationContext.Operation(observation.Op{
 			Name:         "Database.Exists",
 			MetricLabels: []string{"exists"},
+			Metrics:      metrics,
+		}),
+		windowOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Window",
+			MetricLabels: []string{"window"},
 			Metrics:      metrics,
 		}),
 		definitionsOperation: observationContext.Operation(observation.Op{
@@ -100,6 +106,20 @@ func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 	return db.database.Exists(ctx, path)
+}
+
+// Window calls into the inner Database and registers the observed results.
+func (db *ObservedDatabase) Window(ctx context.Context, path string, startLine, endLine int) (ranges []bundles.AggregateCodeIntelligence, err error) {
+	ctx, endObservation := db.windowOperation.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("filename", db.filename),
+			log.String("path", path),
+			log.Int("startLine", startLine),
+			log.Int("endLine", endLine),
+		},
+	})
+	defer func() { endObservation(float64(len(ranges)), observation.Args{}) }()
+	return db.database.Window(ctx, path, startLine, endLine)
 }
 
 // Definitions calls into the inner Database and registers the observed results.

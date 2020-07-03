@@ -30,6 +30,9 @@ type MockCodeIntelAPI struct {
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
 	ReferencesFunc *CodeIntelAPIReferencesFunc
+	// WindowFunc is an instance of a mock function object controlling the
+	// behavior of the method Window.
+	WindowFunc *CodeIntelAPIWindowFunc
 }
 
 // NewMockCodeIntelAPI creates a new mock of the CodeIntelAPI interface. All
@@ -61,6 +64,11 @@ func NewMockCodeIntelAPI() *MockCodeIntelAPI {
 				return nil, api.Cursor{}, false, nil
 			},
 		},
+		WindowFunc: &CodeIntelAPIWindowFunc{
+			defaultHook: func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error) {
+				return nil, nil
+			},
+		},
 	}
 }
 
@@ -83,6 +91,9 @@ func NewMockCodeIntelAPIFrom(i api.CodeIntelAPI) *MockCodeIntelAPI {
 		},
 		ReferencesFunc: &CodeIntelAPIReferencesFunc{
 			defaultHook: i.References,
+		},
+		WindowFunc: &CodeIntelAPIWindowFunc{
+			defaultHook: i.Window,
 		},
 	}
 }
@@ -693,4 +704,121 @@ func (c CodeIntelAPIReferencesFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeIntelAPIReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// CodeIntelAPIWindowFunc describes the behavior when the Window method of
+// the parent MockCodeIntelAPI instance is invoked.
+type CodeIntelAPIWindowFunc struct {
+	defaultHook func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error)
+	hooks       []func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error)
+	history     []CodeIntelAPIWindowFuncCall
+	mutex       sync.Mutex
+}
+
+// Window delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeIntelAPI) Window(v0 context.Context, v1 string, v2 int, v3 int, v4 int) ([]api.ResolvedAggregateCodeIntelligence, error) {
+	r0, r1 := m.WindowFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.WindowFunc.appendCall(CodeIntelAPIWindowFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Window method of the
+// parent MockCodeIntelAPI instance is invoked and the hook queue is empty.
+func (f *CodeIntelAPIWindowFunc) SetDefaultHook(hook func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Window method of the parent MockCodeIntelAPI instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeIntelAPIWindowFunc) PushHook(hook func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeIntelAPIWindowFunc) SetDefaultReturn(r0 []api.ResolvedAggregateCodeIntelligence, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeIntelAPIWindowFunc) PushReturn(r0 []api.ResolvedAggregateCodeIntelligence, r1 error) {
+	f.PushHook(func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeIntelAPIWindowFunc) nextHook() func(context.Context, string, int, int, int) ([]api.ResolvedAggregateCodeIntelligence, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeIntelAPIWindowFunc) appendCall(r0 CodeIntelAPIWindowFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeIntelAPIWindowFuncCall objects
+// describing the invocations of this function.
+func (f *CodeIntelAPIWindowFunc) History() []CodeIntelAPIWindowFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeIntelAPIWindowFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeIntelAPIWindowFuncCall is an object that describes an invocation of
+// method Window on an instance of MockCodeIntelAPI.
+type CodeIntelAPIWindowFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.ResolvedAggregateCodeIntelligence
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeIntelAPIWindowFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeIntelAPIWindowFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

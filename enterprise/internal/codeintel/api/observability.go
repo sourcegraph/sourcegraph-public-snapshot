@@ -13,6 +13,7 @@ import (
 type ObservedCodeIntelAPI struct {
 	codeIntelAPI              CodeIntelAPI
 	findClosestDumpsOperation *observation.Operation
+	windowOperation           *observation.Operation
 	definitionsOperation      *observation.Operation
 	referencesOperation       *observation.Operation
 	hoverOperation            *observation.Operation
@@ -35,6 +36,11 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 		findClosestDumpsOperation: observationContext.Operation(observation.Op{
 			Name:         "CodeIntelAPI.FindClosestDumps",
 			MetricLabels: []string{"find_closest_dumps"},
+			Metrics:      metrics,
+		}),
+		windowOperation: observationContext.Operation(observation.Op{
+			Name:         "CodeIntelAPI.Window",
+			MetricLabels: []string{"window"},
 			Metrics:      metrics,
 		}),
 		definitionsOperation: observationContext.Operation(observation.Op{
@@ -65,6 +71,13 @@ func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositor
 	ctx, endObservation := api.findClosestDumpsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
 	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer)
+}
+
+// Window calls into the inner CodeIntelAPI and registers the observed results.
+func (api *ObservedCodeIntelAPI) Window(ctx context.Context, file string, startLine, endLine, uploadID int) (ranges []ResolvedAggregateCodeIntelligence, err error) {
+	ctx, endObservation := api.windowOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(ranges)), observation.Args{}) }()
+	return api.codeIntelAPI.Window(ctx, file, startLine, endLine, uploadID)
 }
 
 // Definitions calls into the inner CodeIntelAPI and registers the observed results.
