@@ -124,13 +124,25 @@ func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sour
 // boolean flag indicating that the translation is successful. A translation fails when the
 // line indicated by the position has been edited.
 func adjustPosition(hunks []*diff.Hunk, pos bundles.Position) (bundles.Position, bool) {
+	line, ok := adjustLine(hunks, pos.Line)
+	if !ok {
+		return bundles.Position{}, false
+	}
+
+	return bundles.Position{Line: line, Character: pos.Character}, true
+}
+
+// adjustLine translates the given line nubmerbased on the number of additions and deletions
+// that occur before that line. This function returns a boolean flag indicating that the
+// translation is successful. A translation fails when the given line has been edited.
+func adjustLine(hunks []*diff.Hunk, line int) (int, bool) {
 	// Translate from bundle/lsp zero-index to git diff one-index
-	line := pos.Line + 1
+	line = line + 1
 
 	hunk := findHunk(hunks, line)
 	if hunk == nil {
 		// Trivial case, no changes before this line
-		return pos, true
+		return line - 1, true
 	}
 
 	// If the hunk ends before this line, we can simply adjust the line offset by the
@@ -141,7 +153,7 @@ func adjustPosition(hunks []*diff.Hunk, pos bundles.Position) (bundles.Position,
 		adjustedLine := line + (endOfTargetHunk - endOfSourceHunk)
 
 		// Translate from git diff one-index to bundle/lsp zero-index
-		return bundles.Position{Line: adjustedLine - 1, Character: pos.Character}, true
+		return adjustedLine - 1, true
 	}
 
 	// These offsets start at the beginning of the hunk's delta. The following loop will
@@ -170,11 +182,11 @@ func adjustPosition(hunks []*diff.Hunk, pos bundles.Position) (bundles.Position,
 			// If it was added, then we don't have any index information for it in
 			// our source file. In any case, we won't have a precise translation.
 			if isAdded || isRemoved {
-				return bundles.Position{}, false
+				return 0, false
 			}
 
 			// Translate from git diff one-index to bundle/lsp zero-index
-			return bundles.Position{Line: targetOffset - 1, Character: pos.Character}, true
+			return targetOffset - 1, true
 		}
 
 		// A line exists in the target file if it wasn't deleted in the delta. We adjust
