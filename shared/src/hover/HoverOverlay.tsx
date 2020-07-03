@@ -273,7 +273,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                     className={classNames(
                                         'hover-overlay__action',
                                         actionItemClassName,
-                                        `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                        `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`,
+                                        `ga-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
                                     )}
                                     iconClassName={this.props.iconClassName}
                                     pressedClassName={actionItemPressedClassName}

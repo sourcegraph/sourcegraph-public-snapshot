@@ -132,7 +132,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 isActive={caseSensitive}
                 onToggle={toggleCaseSensitivity}
                 icon={FormatLetterCaseIcon}
-                className="e2e-case-sensitivity-toggle"
+                className="e2e-case-sensitivity-toggle ga-case-sensitivity-toggle"
                 activeClassName="e2e-case-sensitivity-toggle--active"
                 disabledCondition={patternType === SearchPatternType.structural}
                 disabledMessage="Structural search is always case sensitive"
@@ -143,14 +143,14 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 isActive={patternType === SearchPatternType.regexp}
                 onToggle={toggleRegexp}
                 icon={RegexIcon}
-                className="e2e-regexp-toggle"
+                className="e2e-regexp-toggle ga-regexp-toggle"
                 activeClassName="e2e-regexp-toggle--active"
             />
             {!structuralSearchDisabled && (
                 <QueryInputToggle
                     {...props}
                     title="Structural search"
-                    className="e2e-structural-search-toggle"
+                    className="e2e-structural-search-toggle ga-structural-search-toggle"
                     activeClassName="e2e-structural-search-toggle--active"
                     isActive={patternType === SearchPatternType.structural}
                     onToggle={toggleStructuralSearch}
