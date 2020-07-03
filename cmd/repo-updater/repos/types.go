@@ -93,42 +93,6 @@ func (e ExternalService) Configuration() (cfg interface{}, _ error) {
 	return extsvc.ParseConfig(e.Kind, e.Config)
 }
 
-// BaseURL will fetch the normalised base URL from the service if
-// supported.
-func (e ExternalService) BaseURL() (*url.URL, error) {
-	config, err := extsvc.ParseConfig(e.Kind, e.Config)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing config")
-	}
-
-	var rawURL string
-	switch c := config.(type) {
-	case *schema.AWSCodeCommitConnection:
-		return nil, errors.New("BaseURL unavailable for AWSCodeCommit")
-	case *schema.BitbucketServerConnection:
-		rawURL = c.Url
-	case *schema.GitHubConnection:
-		rawURL = c.Url
-	case *schema.GitLabConnection:
-		rawURL = c.Url
-	case *schema.GitoliteConnection:
-		rawURL = c.Host
-	case *schema.PhabricatorConnection:
-		rawURL = c.Url
-	case *schema.OtherExternalServiceConnection:
-		rawURL = c.Url
-	default:
-		return nil, fmt.Errorf("unknown external service type %T", config)
-	}
-
-	parsed, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing service URL")
-	}
-
-	return extsvc.NormalizeBaseURL(parsed), nil
-}
-
 // Exclude changes the configuration of an external service to exclude the given
 // repos from being synced.
 func (e *ExternalService) Exclude(rs ...*Repo) error {
