@@ -192,16 +192,16 @@ export const reactHooks: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hook', codehost: CodeHosts.GITHUB },
     ],
-    description: 'Examples of useState for ReactHooks.',
+    description: 'useState is a React Hook that lets you add React state to function components. Explore examples of how it\'s used.',
     examples: [
         {
-            title: 'useState imports regex search:',
+            title: 'Quickly look up imports for useState with regex search:',
             exampleQuery: <>import [^;]+useState[^;]+ from 'react'</>,
             rawQuery: "import [^;]+useState[^;]+ from 'react'",
             patternType: SearchPatternType.regexp,
         },
         {
-            title: 'useState with objects as input parameters structural search:',
+            title: 'Find examples where useState accepts objects as input parameters:',
             exampleQuery: (
                 <>
                     {'useState({:[string]})'} <span className="repogroup-page__keyword-text">count:</span>1000
@@ -211,7 +211,7 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with arrays as input parameters structural search:',
+            title: 'Find examples where useState accepts arrays as input parameters:',
             exampleQuery: (
                 <>
                     useState([:[string]]) <span className="repogroup-page__keyword-text">count:</span>1000
@@ -221,7 +221,7 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with any type of input parameters structural search:',
+            title: 'useState examples that accept any type of input parameters:',
             exampleQuery: (
                 <>
                     useState(:[string]) <span className="repogroup-page__keyword-text">count:</span>1000
@@ -231,7 +231,7 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with any type of input parameters structural search for only typescript files:',
+            title: 'useState examples that accept any type of input parameters in only typescript files:',
             exampleQuery: (
                 <>
                     useState(:[string]) <span className="repogroup-page__keyword-text">count:</span>1000{' '}
@@ -242,7 +242,7 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with exactly two input params for structural search should return a lot fewer results:',
+            title: 'Searching for useState examples with exactly two input parameters should return a lot fewer results:',
             exampleQuery: (
                 <>
                     useState([:[1.], :[2.]]) <span className="repogroup-page__keyword-text">count:</span>1000
@@ -252,7 +252,7 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with two or more params in a specific file with structural search:',
+            title: 'Search for useState examples with two or more input parameters in a specific file:',
             exampleQuery: (
                 <>
                     useState([:[1], :[2]]) <span className="repogroup-page__keyword-text">count:</span>1000{' '}
@@ -264,6 +264,6 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
     ],
-    homepageDescription: 'Examples of useState for ReactHooks.',
+    homepageDescription: 'Learn with search examples of useState for ReactHooks.',
     homepageIcon: 'https://cdn4.iconfinder.com/data/icons/logos-3/600/React.js_logo-512.png',
 }
