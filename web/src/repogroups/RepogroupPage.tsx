@@ -64,12 +64,14 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
 
-    const onSubmitExample = (query: string) => (event?: React.MouseEvent<HTMLButtonElement>): void => {
+    const onSubmitExample = (query: string, patternType: GQL.SearchPatternType) => (
+        event?: React.MouseEvent<HTMLButtonElement>
+    ): void => {
         eventLogger.log('RepositoryGroupSuggestionClicked')
         // eslint-disable-next-line no-unused-expressions
         event?.preventDefault()
         // TODO: update source
-        submitSearch({ ...props, query, source: 'repogroupPage' })
+        submitSearch({ ...props, query, patternType, source: 'repogroupPage' })
     }
 
     return (
@@ -118,7 +120,10 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                         className="repogroup-page__example-search-button btn btn-primary search-button__btn e2e-search-button btn-secondary"
                                         type="button"
                                         aria-label="Search"
-                                        onClick={onSubmitExample(`${repogroupQuery} ${example.exampleQuery}`)}
+                                        onClick={onSubmitExample(
+                                            `${repogroupQuery} ${example.rawQuery}`,
+                                            example.patternType
+                                        )}
                                     >
                                         Search
                                     </button>

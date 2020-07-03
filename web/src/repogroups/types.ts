@@ -1,3 +1,5 @@
+import * as GQL from '../../../shared/src/graphql/schema'
+
 export enum CodeHosts {
     GITHUB = 'github',
     GITLAB = 'gitlab',
@@ -12,7 +14,11 @@ export interface RepositoryType {
 export interface ExampleQuery {
     title: string
     description?: string
+    /** HTML string to display the example query. */
     exampleQuery: string
+    /** The raw query string. */
+    rawQuery: string
+    patternType: GQL.SearchPatternType
 }
 
 export interface RepogroupMetadata {

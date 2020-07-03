@@ -1,4 +1,5 @@
 import { CodeHosts, RepogroupMetadata } from './types'
+import { SearchPatternType } from '../../../shared/src/graphql/schema'
 
 export const kubernetes: RepogroupMetadata = {
     title: 'Kubernetes',
@@ -18,6 +19,8 @@ export const kubernetes: RepogroupMetadata = {
                 'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.',
             exampleQuery:
                 '<span class="repogroup-page__keyword-text">file:</span>pod.yaml <span class="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"',
+            rawQuery: 'file:pod.yaml content:"kind: ReplicationController"',
+            patternType: SearchPatternType.literal,
         },
     ],
     homepageDescription: 'Search within the Kubernetes community.',
