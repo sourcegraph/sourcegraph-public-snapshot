@@ -14,7 +14,6 @@ import { EventLogger } from '../tracking/eventLogger'
 import { Services } from '../../../shared/src/api/client/services'
 import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
-import { Settings } from '../../../shared/src/settings/settings'
 
 const { add } = storiesOf('web/RepogroupPage', module).addDecorator(story => (
     <>
