@@ -1,5 +1,6 @@
 import { CodeHosts, RepogroupMetadata } from './types'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
+import * as React from 'react'
 
 export const python2To3Metadata: RepogroupMetadata = {
     title: 'Refactor Python 2 to 3',
@@ -198,7 +199,7 @@ export const python2To3Metadata: RepogroupMetadata = {
     examples: [
         {
             title: 'Python 2 imports',
-            exampleQuery: '"from :[package.] import :[function.]”',
+            exampleQuery: <>"from :[package.] import :[function.]”</>,
             description: 'Python 2 imports test description',
             rawQuery: '"from :[package.] import :[function.]”',
             patternType: SearchPatternType.structural,
@@ -206,31 +207,35 @@ export const python2To3Metadata: RepogroupMetadata = {
         {
             title: 'Python 3 imports',
             description: 'Python 3 imports test description',
-            exampleQuery: 'from B.w+ import w+',
+            exampleQuery: <>from B.w+ import w+</>,
             rawQuery: 'from B.w+ import w+',
             patternType: SearchPatternType.regexp,
         },
         {
             title: 'Python 2 prints',
-            exampleQuery: '\'print ":[string]"\'',
+            exampleQuery: <>\'print ":[string]"\'</>,
             rawQuery: '\'print ":[string]"\'',
             patternType: SearchPatternType.structural,
         },
         {
             title: 'Python 3 prints',
-            exampleQuery: '\'print ":[string]"\'',
+            exampleQuery: <>\'print ":[string]"\'</>,
             rawQuery: '\'print ":[string]"\'',
             patternType: SearchPatternType.regexp,
         },
         {
             title: 'Python 2 integer conversion',
-            exampleQuery: 'float(:[arg]) / float(:[arg])',
+            exampleQuery: <>float(:[arg]) / float(:[arg])</>,
             rawQuery: 'float(:[arg]) / float(:[arg])',
             patternType: SearchPatternType.structural,
         },
         {
             title: 'Python 3 integer conversion',
-            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>python \\sint\\(-*\\d+\\)',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>python \\sint\\(-*\\d+\\)
+                </>
+            ),
             rawQuery: 'lang:python \\sint\\(-*\\d+\\)',
             patternType: SearchPatternType.regexp,
         },

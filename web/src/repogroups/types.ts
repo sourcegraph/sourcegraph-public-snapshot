@@ -15,7 +15,7 @@ export interface ExampleQuery {
     title: string
     description?: string
     /** HTML string to display the example query. */
-    exampleQuery: string
+    exampleQuery: JSX.Element
     /** The raw query string. */
     rawQuery: string
     patternType: GQL.SearchPatternType

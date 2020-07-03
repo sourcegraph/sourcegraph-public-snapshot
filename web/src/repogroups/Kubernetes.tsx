@@ -1,5 +1,6 @@
 import { CodeHosts, RepogroupMetadata } from './types'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
+import * as React from 'react'
 
 export const kubernetes: RepogroupMetadata = {
     title: 'Kubernetes',
@@ -197,26 +198,42 @@ export const kubernetes: RepogroupMetadata = {
         {
             title:
                 'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.',
-            exampleQuery:
-                '<span class="repogroup-page__keyword-text">file:</span>pod.yaml <span class="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">file:</span>pod.yaml{' '}
+                    <span className="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"
+                </>
+            ),
             rawQuery: 'file:pod.yaml content:"kind: ReplicationController"',
             patternType: SearchPatternType.literal,
         },
         {
             title: 'See how Prometheus is used in different popular projects:',
-            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus
+                </>
+            ),
             rawQuery: 'lang:yaml prom/prometheus',
             patternType: SearchPatternType.literal,
         },
         {
             title: 'See how the sidecar pattern is used in Go:',
-            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>go sidecar
+                </>
+            ),
             rawQuery: 'lang:go sidecar',
             patternType: SearchPatternType.literal,
         },
         {
             title: 'Browse recent commits or diffs from an author: eg. John Howard',
-            exampleQuery: '<span class="repogroup-page__keyword-text">lang:</span>go sidecar',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>go sidecar
+                </>
+            ),
             rawQuery: 'lang:go sidecar',
             patternType: SearchPatternType.literal,
         },

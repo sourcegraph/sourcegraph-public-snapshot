@@ -103,17 +103,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                             <div className="d-flex mb-4">
                                 <div className="repogroup-page__example-bar form-control text-monospace">
                                     <span className="repogroup-page__keyword-text">repogroup:</span>
-                                    {props.repogroupMetadata.name}{' '}
-                                    <span
-                                        dangerouslySetInnerHTML={{
-                                            __html: sanitizeHtml(example.exampleQuery, {
-                                                allowedTags: ['span'],
-                                                allowedClasses: {
-                                                    span: ['repogroup-page__keyword-text'],
-                                                },
-                                            }),
-                                        }}
-                                    />
+                                    {props.repogroupMetadata.name} {example.exampleQuery}
                                 </div>
                                 <div className="d-flex">
                                     <button
