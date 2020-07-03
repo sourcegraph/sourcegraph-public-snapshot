@@ -226,13 +226,13 @@ export const reactHooks: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with exactly two input params for structural search, should return a lot fewer results:',
+            title: 'useState with exactly two input params for structural search should return a lot fewer results:',
             exampleQuery: 'useState([:[1.], :[2.]]) <span class="repogroup-page__keyword-text">count:</span>1000',
             rawQuery: 'useState([:[1.], :[2.]]) count:1000',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'useState with two or more params in a specific file (need better eg here) with structural search:',
+            title: 'useState with two or more params in a specific file with structural search:',
             exampleQuery:
                 'useState([:[1], :[2]]) <span class="repogroup-page__keyword-text">count:</span>1000 <span class="repogroup-page__keyword-text">file:</span>docs/src/pages/components/transfer-list/TransferList.js',
             rawQuery: 'useState([:[1], :[2]]) count:1000 file:docs/src/pages/components/transfer-list/TransferList.js',

@@ -211,7 +211,7 @@ export const golang: RepogroupMetadata = {
             title: 'Find error handling examples in Go',
             exampleQuery: 'if err != nil {:[_]} <span class="repogroup-page__keyword-text">lang:</span>go',
             rawQuery: 'if err != nil {:[_]} lang:go',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.structural,
         },
         {
             title: 'Find usage examples of cmp.Diff with options',

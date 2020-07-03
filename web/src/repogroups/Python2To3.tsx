@@ -197,27 +197,27 @@ export const python2To3Metadata: RepogroupMetadata = {
                         3 syntax.`,
     examples: [
         {
-            title: 'Python 2 imports',
+            title: 'Python 2 relative imports',
             exampleQuery: '"from :[package.] import :[function.]”',
-            description: 'Python 2 imports test description',
+            description: 'Python 2 import style',
             rawQuery: '"from :[package.] import :[function.]”',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 3 imports',
-            description: 'Python 3 imports test description',
+            title: 'Python 3 explicit imports',
+            description: 'Python 3 import style',
             exampleQuery: 'from B.w+ import w+',
             rawQuery: 'from B.w+ import w+',
             patternType: SearchPatternType.regexp,
         },
         {
-            title: 'Python 2 prints',
+            title: 'Python 2 print statements',
             exampleQuery: '\'print ":[string]"\'',
             rawQuery: '\'print ":[string]"\'',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Python 3 prints',
+            title: 'Python 3 print statements',
             exampleQuery: '\'print ":[string]"\'',
             rawQuery: '\'print ":[string]"\'',
             patternType: SearchPatternType.regexp,
