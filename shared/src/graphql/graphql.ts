@@ -65,13 +65,10 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
-    return fromFetch(
-        baseUrl ? new URL(apiURL, baseUrl).href : apiURL,
-        {
-            ...options,
-            method: 'POST',
-            body: JSON.stringify({ query: request, variables }),
-        },
-        response => checkOk(response).json()
-    )
+    return fromFetch(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
+        ...options,
+        method: 'POST',
+        body: JSON.stringify({ query: request, variables }),
+        selector: response => checkOk(response).json(),
+    })
 }

@@ -85,7 +85,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(({ e
                 concat(
                     isErrorLike(extension.manifest) || !extension.manifest?.url
                         ? of(DEFAULT_SOURCE)
-                        : fromFetch(extension.manifest.url, undefined, resp => resp.text()).pipe(
+                        : fromFetch(extension.manifest.url, {selector: resp => resp.text()}).pipe(
                               catchError(error => [asError(error)])
                           ),
                     bundleChanges

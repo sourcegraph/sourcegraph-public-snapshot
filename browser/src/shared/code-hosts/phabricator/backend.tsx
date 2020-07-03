@@ -129,18 +129,15 @@ export function queryConduitHelper<T>(endpoint: string, parameters: {}): Observa
     for (const [key, value] of Object.entries(parameters)) {
         form.set(`params[${key}]`, JSON.stringify(value))
     }
-    return fromFetch(
-        window.location.origin + endpoint,
-        {
-            method: 'POST',
-            body: form,
-            credentials: 'include',
-            headers: {
-                Accept: 'application/json',
-            },
+    return fromFetch(window.location.origin + endpoint, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
         },
-        response => checkOk(response).json()
-    ).pipe(
+        selector: response => checkOk(response).json(),
+    }).pipe(
         map((response: ConduitResponse<T>) => {
             if (response.error_code !== null) {
                 throw new Error(`error ${response.error_code}: ${response.error_info}`)

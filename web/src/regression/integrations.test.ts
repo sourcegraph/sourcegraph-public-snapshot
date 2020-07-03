@@ -17,7 +17,7 @@ describe('Native integrations regression test suite', () => {
         ]
         await merge(
             ...assets.map(asset =>
-                fromFetch(new URL(asset, sourcegraphBaseUrl).href, undefined, response => [checkOk(response)]).pipe(
+                fromFetch(new URL(asset, sourcegraphBaseUrl).href, { selector: response => [checkOk(response)] }).pipe(
                     catchError(() => {
                         throw new Error('Error fetching native integration asset: ' + asset)
                     })

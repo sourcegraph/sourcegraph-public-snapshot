@@ -38,7 +38,7 @@ interface SideloadedExtensionManifest extends Omit<ExtensionManifest, 'url'> {
 }
 
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
-    fromFetch(`${baseUrl}/package.json`, undefined, response => checkOk(response).json()).pipe(
+    fromFetch(`${baseUrl}/package.json`, { selector: response => checkOk(response).json() }).pipe(
         map(
             (response: SideloadedExtensionManifest): ConfiguredExtension => ({
                 id: response.name,
