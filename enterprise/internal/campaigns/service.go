@@ -248,9 +248,13 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		tr.Finish()
 	}()
 
-	// TODO: use a transaction
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
 
-	campaignSpec, err := s.store.GetCampaignSpec(ctx, GetCampaignSpecOpts{
+	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{
 		RandID: opts.CampaignSpecRandID,
 	})
 	if err != nil {
@@ -266,7 +270,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, errors.New("no namespace specified")
 	}
 
-	campaign, err = s.store.GetCampaign(ctx, getOpts)
+	campaign, err = tx.GetCampaign(ctx, getOpts)
 	if err != nil {
 		if err != ErrNoResults {
 			return nil, err
@@ -299,10 +303,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	campaign.Description = campaignSpec.Spec.Description
 
 	if campaign.ID == 0 {
-		return campaign, s.store.CreateCampaign(ctx, campaign)
+		return campaign, tx.CreateCampaign(ctx, campaign)
 	}
 
-	return campaign, s.store.UpdateCampaign(ctx, campaign)
+	return campaign, tx.UpdateCampaign(ctx, campaign)
 }
 
 // ErrEnsureCampaignFailed is returned by ApplyCampaign when a ensureCampaignID
