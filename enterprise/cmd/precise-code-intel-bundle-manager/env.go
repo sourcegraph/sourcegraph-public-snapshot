@@ -10,7 +10,7 @@ import (
 
 var (
 	rawBundleDir           = env.Get("PRECISE_CODE_INTEL_BUNDLE_DIR", "/lsif-storage", "Root dir containing uploads and converted bundles.")
-	rawReaderDataCacheSize = env.Get("PRECISE_CODE_INTEL_READER_DATA_CACHE_CAPACITY", "10000", "Maximum sum of (compressed and marshalled) source data that can be loaded into the SQLite reader data cache at once.")
+	rawReaderDataCacheSize = env.Get("PRECISE_CODE_INTEL_READER_DATA_CACHE_CAPACITY", "100000", "Maximum sum of (compressed and marshalled) source data that can be loaded into the SQLite reader data cache at once.")
 	rawDesiredPercentFree  = env.Get("PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
 	rawJanitorInterval     = env.Get("PRECISE_CODE_INTEL_JANITOR_INTERVAL", "1m", "Interval between cleanup runs.")
 	rawMaxUploadAge        = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_AGE", "24h", "The maximum time an upload can sit on disk.")
