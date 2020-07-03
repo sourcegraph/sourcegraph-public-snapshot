@@ -25,7 +25,7 @@ import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import { RepogroupMetadata, RepositoryType, CodeHosts } from './types'
+import { RepogroupMetadata } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 

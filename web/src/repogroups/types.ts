@@ -1,16 +1,5 @@
 import * as GQL from '../../../shared/src/graphql/schema'
 
-export enum CodeHosts {
-    GITHUB = 'github',
-    GITLAB = 'gitlab',
-    BITBUCKET = 'bitbucket',
-}
-
-export interface RepositoryType {
-    name: string
-    codehost: CodeHosts
-}
-
 export interface ExampleQuery {
     title: string
     description?: string
