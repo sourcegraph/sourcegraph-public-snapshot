@@ -1,4 +1,5 @@
 import { from, Observable, of, throwError } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -12,7 +13,6 @@ import { isRepoNotFoundErrorLike } from '../../../../../shared/src/backend/error
 import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
-import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
 
 interface PhabEntity {
     id: string // e.g. "48"

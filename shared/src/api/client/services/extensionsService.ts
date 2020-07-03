@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
@@ -15,7 +16,6 @@ import { isDefined } from '../../../util/types'
 import { ModelService } from './modelService'
 import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
-import { fromFetch } from '../../../graphql/fromFetch'
 
 /**
  * The information about an extension necessary to execute and activate it.

@@ -1,12 +1,12 @@
 import { first } from 'lodash'
 import { Observable } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { DiffResolvedRevSpec } from '../../repo'
 import { BitbucketRepoInfo } from './scrape'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
-import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1

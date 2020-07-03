@@ -3,7 +3,7 @@ import { getConfig } from '../../../shared/src/testing/config'
 import { catchError } from 'rxjs/operators'
 import { checkOk } from '../../../shared/src/backend/fetch'
 import { merge } from 'rxjs'
-import { fromFetch } from '../../../shared/src/graphql/fromFetch'
+import { fromFetch } from 'rxjs/fetch'
 
 describe('Native integrations regression test suite', () => {
     const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')
