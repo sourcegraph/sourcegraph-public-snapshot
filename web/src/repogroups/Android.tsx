@@ -81,11 +81,11 @@ export const android: RepogroupMetadata = {
             title: 'Find intent filter examples in Android Manifest XML files:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>
+                    <span className="repogroup-page__keyword-text">file:</span>
                     {'.xml <intent-filter> :[string] </intent-filter>'}
                 </>
             ),
-            rawQuery: 'lang:.xml <intent-filter> :[string] </intent-filter>',
+            rawQuery: 'file:.xml <intent-filter> :[string] </intent-filter>',
             patternType: SearchPatternType.structural,
         },
         {
