@@ -425,7 +425,6 @@ func TestQueryToZoektQuery(t *testing.T) {
 				Pattern:                      "foo",
 				IncludePatterns:              nil,
 				ExcludePattern:               "",
-				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
 			Query: "sym:foo case:no",
