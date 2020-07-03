@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
 import { Omit } from 'utility-types'
 import { createAggregateError } from '../util/errors'
 import { checkOk } from '../backend/fetch'
 import * as GQL from './schema'
-import { fromFetch } from './fromFetch'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -65,13 +65,10 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
-    return fromFetch(
-        baseUrl ? new URL(apiURL, baseUrl).href : apiURL,
-        {
-            ...options,
-            method: 'POST',
-            body: JSON.stringify({ query: request, variables }),
-        },
-        response => checkOk(response).json()
-    )
+    return fromFetch(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
+        ...options,
+        method: 'POST',
+        body: JSON.stringify({ query: request, variables }),
+        selector: response => checkOk(response).json(),
+    })
 }

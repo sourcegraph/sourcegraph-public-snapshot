@@ -14,7 +14,7 @@ jobs:
       with: { node-version: '14.4' }
 
     - name: Install license_finder
-      run: gem install license_finder
+      run: gem install license_finder:6.6.1
 
     - name: Check dependencies
       run: LICENSE_CHECK=true ./dev/licenses.sh

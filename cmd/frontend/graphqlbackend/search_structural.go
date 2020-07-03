@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"regexp"
 	"regexp/syntax"
 	"strings"
@@ -77,9 +76,6 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 
 	// Zoekt uses regular expressions for file paths.
 	// Unhandled cases: PathPatternsAreCaseSensitive and whitespace in file path patterns.
-	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
-	}
 	for _, p := range query.IncludePatterns {
 		q, err := fileRe(p, query.IsCaseSensitive)
 		if err != nil {
@@ -93,6 +89,27 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 			return nil, err
 		}
 		and = append(and, &zoektquery.Not{Child: q})
+	}
+
+	// For conditionals that happen on a repo we can use type:repo queries. eg
+	// (type:repo file:foo) (type:repo file:bar) will match all repos which
+	// contain a filename matching "foo" and a filename matchinb "bar".
+	//
+	// Note: (type:repo file:foo file:bar) will only find repos with a
+	// filename containing both "foo" and "bar".
+	for _, p := range query.FilePatternsReposMustInclude {
+		q, err := fileRe(p, query.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q})
+	}
+	for _, p := range query.FilePatternsReposMustExclude {
+		q, err := fileRe(p, query.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Not{Child: &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q}})
 	}
 
 	return zoektquery.NewAnd(and...), nil
@@ -157,14 +174,8 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, err
 	}
 
-	// Handle `repohasfile` or `-repohasfile`
-	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, repoSet)
-	if err != nil {
-		return nil, false, nil, err
-	}
-
 	t0 := time.Now()
-	q, err := buildQuery(args, newRepoSet, filePathPatterns, true)
+	q, err := buildQuery(args, repoSet, filePathPatterns, true)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -181,7 +192,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
-		q, err = buildQuery(args, newRepoSet, filePathPatterns, false)
+		q, err = buildQuery(args, repoSet, filePathPatterns, false)
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err

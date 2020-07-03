@@ -156,6 +156,10 @@ export interface CopyQueryButtonProps {
     copyQueryButton: boolean
 }
 
+export interface RepogroupHomepageProps {
+    showRepogroupHomepage: boolean
+}
+
 /**
  * Verifies whether a version context exists on an instance.
  *

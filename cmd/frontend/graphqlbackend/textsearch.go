@@ -208,6 +208,8 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"FetchTimeout":    []string{fetchTimeout.String()},
 		"Languages":       p.Languages,
 		"CombyRule":       []string{p.CombyRule},
+
+		"PathPatternsAreRegExps": []string{"true"},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
@@ -228,9 +230,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 	}
 	if p.IsCaseSensitive {
 		q.Set("IsCaseSensitive", "true")
-	}
-	if p.PathPatternsAreRegExps {
-		q.Set("PathPatternsAreRegExps", "true")
 	}
 	if p.PathPatternsAreCaseSensitive {
 		q.Set("PathPatternsAreCaseSensitive", "true")
@@ -369,7 +368,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := git.ResolveRevision(ctx, gitserverRepo, nil, rev, &git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := git.ResolveRevision(ctx, gitserverRepo, nil, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return nil, false, err
 	}
@@ -424,7 +423,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 // whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
-		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		matches, _, err := textSearch(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout)
 		if err != nil {
 			return false, err

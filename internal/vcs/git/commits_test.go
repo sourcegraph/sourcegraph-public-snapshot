@@ -57,7 +57,7 @@ func TestRepository_GetCommit(t *testing.T) {
 			return oldRunCommitLog(ctx, cmd, opt)
 		}
 
-		resolveRevisionOptions := &ResolveRevisionOptions{
+		resolveRevisionOptions := ResolveRevisionOptions{
 			NoEnsureRevision: test.noEnsureRevision,
 		}
 		commit, err := GetCommit(ctx, test.repo, nil, test.id, resolveRevisionOptions)

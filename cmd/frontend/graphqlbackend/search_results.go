@@ -1262,7 +1262,6 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
-		PathPatternsAreRegExps:       true,
 		Languages:                    languages,
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
@@ -1651,7 +1650,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					FileMatchLimit:               old.FileMatchLimit,
 					IncludePatterns:              old.IncludePatterns,
 					ExcludePattern:               old.ExcludePattern,
-					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreRegExps:       true,
 					PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 				}
 				args := search.TextParametersForCommitParameters{
@@ -1691,7 +1690,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					FileMatchLimit:               old.FileMatchLimit,
 					IncludePatterns:              old.IncludePatterns,
 					ExcludePattern:               old.ExcludePattern,
-					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreRegExps:       true,
 					PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
 				}
 				args := search.TextParametersForCommitParameters{

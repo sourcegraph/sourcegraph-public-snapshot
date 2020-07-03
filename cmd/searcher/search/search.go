@@ -188,11 +188,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		}
 	}(time.Now())
 
-	rg, err := compile(&p.PatternInfo)
-	if err != nil {
-		return nil, false, false, badRequestError{err.Error()}
-	}
-
 	if p.FetchTimeout == "" {
 		p.FetchTimeout = "500ms"
 	}
@@ -230,6 +225,10 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	if p.IsStructuralPat {
 		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, p.Repo)
 	} else {
+		rg, err := compile(&p.PatternInfo)
+		if err != nil {
+			return nil, false, false, badRequestError{err.Error()}
+		}
 		matches, limitHit, err = regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
 	}
 	return matches, limitHit, false, err

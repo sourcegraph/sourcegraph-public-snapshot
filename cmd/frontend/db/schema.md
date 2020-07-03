@@ -358,6 +358,7 @@ Check constraints:
  search_count           | integer                  | not null default 0
  precise_count          | integer                  | not null default 0
  last_index_enqueued_at | timestamp with time zone | 
+ last_updated_at        | timestamp with time zone | not null default now()
 Indexes:
     "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
     "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
@@ -740,11 +741,13 @@ Referenced by:
  sources               | jsonb                    | not null default '{}'::jsonb
  metadata              | jsonb                    | not null default '{}'::jsonb
  private               | boolean                  | not null default false
+ cloned                | boolean                  | not null default false
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
+    "repo_cloned" btree (cloned)
     "repo_fork" btree (fork)
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)

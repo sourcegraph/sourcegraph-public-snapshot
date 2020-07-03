@@ -19,8 +19,8 @@ type Scheduler struct {
 	batchSize                   int
 	minimumTimeSinceLastEnqueue time.Duration
 	minimumSearchCount          int
-	minimumPreciseCount         int
 	minimumSearchRatio          float64
+	minimumPreciseCount         int
 	metrics                     SchedulerMetrics
 	done                        chan struct{}
 	once                        sync.Once
@@ -33,8 +33,8 @@ func NewScheduler(
 	batchSize int,
 	minimumTimeSinceLastEnqueue time.Duration,
 	minimumSearchCount int,
-	minimumPreciseCount int,
 	minimumSearchRatio float64,
+	minimumPreciseCount int,
 	metrics SchedulerMetrics,
 ) *Scheduler {
 	return &Scheduler{
@@ -44,8 +44,8 @@ func NewScheduler(
 		batchSize:                   batchSize,
 		minimumTimeSinceLastEnqueue: minimumTimeSinceLastEnqueue,
 		minimumSearchCount:          minimumSearchCount,
-		minimumPreciseCount:         minimumPreciseCount,
 		minimumSearchRatio:          minimumSearchRatio,
+		minimumPreciseCount:         minimumPreciseCount,
 		metrics:                     metrics,
 		done:                        make(chan struct{}),
 	}
@@ -128,12 +128,13 @@ func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository store.In
 		return errors.Wrap(err, "store.QueueIndex")
 	}
 
-	now := time.Now()
-
-	if err := tx.UpdateIndexableRepository(ctx, store.UpdateableIndexableRepository{
+	now := time.Now().UTC()
+	update := store.UpdateableIndexableRepository{
 		RepositoryID:        indexableRepository.RepositoryID,
 		LastIndexEnqueuedAt: &now,
-	}); err != nil {
+	}
+
+	if err := tx.UpdateIndexableRepository(ctx, update, now); err != nil {
 		return errors.Wrap(err, "store.UpdateIndexableRepository")
 	}
 

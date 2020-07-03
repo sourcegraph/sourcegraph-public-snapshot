@@ -309,3 +309,10 @@
     :why:
     :versions: []
     :when: 2020-06-16 02:20:33.870044000 Z
+- - :approve
+  - mdi-react
+  - :who:
+    :why: Seems to be a bug approving this dependency, despite its license already
+      being on the approvelist
+    :versions: []
+    :when: 2020-07-02 01:16:22.339839000 Z
