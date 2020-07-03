@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
@@ -228,8 +227,8 @@ func setMockBundleClientHover(t *testing.T, mockBundleClient *bundlemocks.MockBu
 	})
 }
 
-func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []client.Diagnostic, totalCount int) {
-	mockBundleClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, prefix string, skip, take int) ([]client.Diagnostic, int, error) {
+func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []bundles.Diagnostic, totalCount int) {
+	mockBundleClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, prefix string, skip, take int) ([]bundles.Diagnostic, int, error) {
 		if prefix != expectedPrefix {
 			t.Errorf("unexpected prefix for Diagnostics. want=%s have=%s", expectedPrefix, prefix)
 		}

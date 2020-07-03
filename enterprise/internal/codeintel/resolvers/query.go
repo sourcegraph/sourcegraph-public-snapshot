@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
@@ -245,9 +244,9 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) ([]AdjustedD
 
 	adjustedDiagnostics := make([]AdjustedDiagnostic, 0, len(allDiagnostics))
 	for i := range allDiagnostics {
-		clientRange := client.Range{
-			Start: client.Position{Line: allDiagnostics[i].Diagnostic.StartLine, Character: allDiagnostics[i].Diagnostic.StartCharacter},
-			End:   client.Position{Line: allDiagnostics[i].Diagnostic.EndLine, Character: allDiagnostics[i].Diagnostic.EndCharacter},
+		clientRange := bundles.Range{
+			Start: bundles.Position{Line: allDiagnostics[i].Diagnostic.StartLine, Character: allDiagnostics[i].Diagnostic.StartCharacter},
+			End:   bundles.Position{Line: allDiagnostics[i].Diagnostic.EndLine, Character: allDiagnostics[i].Diagnostic.EndCharacter},
 		}
 
 		adjustedCommit, adjustedRange, err := r.adjustRange(ctx, allDiagnostics[i].Dump.RepositoryID, allDiagnostics[i].Dump.Commit, allDiagnostics[i].Diagnostic.Path, clientRange)
