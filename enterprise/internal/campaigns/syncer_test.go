@@ -586,6 +586,10 @@ func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposA
 	return m.listRepos(ctx, args)
 }
 
+func (m MockRepoStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	panic("implement me")
+}
+
 func mockListChangesets(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 	return nil, 0, nil
 }

@@ -126,6 +126,7 @@ type StoreMetrics struct {
 	UpsertExternalServices *metrics.OperationMetrics
 	ListExternalServices   *metrics.OperationMetrics
 	ListAllRepoNames       *metrics.OperationMetrics
+	SetClonedRepos         *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -139,6 +140,7 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.ListExternalServices,
 		sm.UpsertExternalServices,
 		sm.ListAllRepoNames,
+		sm.SetClonedRepos,
 	} {
 		r.MustRegister(om.Count)
 		r.MustRegister(om.Duration)
@@ -246,6 +248,20 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_list_all_repo_names_errors_total",
 				Help: "Total number of errors when listing repo names",
+			}, []string{}),
+		},
+		SetClonedRepos: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_set_cloned_repos_duration_seconds",
+				Help: "Time spent setting cloned repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_set_cloned_repos_total",
+				Help: "Total number of set cloned repos calls",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_set_cloned_repos_errors_total",
+				Help: "Total number of errors when setting cloned repos",
 			}, []string{}),
 		},
 	}
@@ -429,6 +445,25 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 	}(time.Now())
 
 	return o.store.UpsertRepos(ctx, repos...)
+}
+
+// SetClonedRepos calls into the inner Store and registers the observed results.
+func (o *ObservedStore) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
+	tr, ctx := o.trace(ctx, "Store.SetClonedRepos")
+	tr.LogFields(otlog.Int("count", len(repoNames)))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(repoNames))
+
+		o.metrics.SetClonedRepos.Observe(secs, count, &err)
+		logging.Log(o.log, "store.set-cloned-repos", &err, "count", len(repoNames))
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.SetClonedRepos(ctx, repoNames...)
 }
 
 func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {

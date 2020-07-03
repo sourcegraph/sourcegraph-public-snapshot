@@ -54,6 +54,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
+		{"DBStore/SetClonedRepos", testStoreSetClonedRepos(store)},
 		{"DBStore/Syncer/Sync", testSyncerSync(store)},
 		{"DBStore/Syncer/SyncSubset", testSyncSubset(store)},
 	} {

@@ -104,6 +104,10 @@ func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, erro
 	return nil, nil
 }
 
+func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	return nil
+}
+
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		serviceType: extsvc.TypeGitLab,
