@@ -93,10 +93,10 @@ export const android: RepogroupMetadata = {
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">file:</span>
-                    {'xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>'}
+                    {'.xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>'}
                 </>
             ),
-            rawQuery: 'file:xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>',
+            rawQuery: 'file:.xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>',
             patternType: SearchPatternType.structural,
         },
         {

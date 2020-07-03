@@ -228,13 +228,13 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'Browse recent commits or diffs from an author: eg. John Howard',
+            title: 'Browse recent diffs for code changes in the community:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">lang:</span>go sidecar
+                    <span className="repogroup-page__keyword-text">type:</span>diff <span className="repogroup-page__keyword-text">after:</span>"1 week ago"
                 </>
             ),
-            rawQuery: 'lang:go sidecar',
+            rawQuery: 'type:diff after:\"1 week ago\"',
             patternType: SearchPatternType.literal,
         },
     ],
