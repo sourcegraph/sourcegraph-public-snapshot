@@ -1112,8 +1112,8 @@ func TestApplyCampaign(t *testing.T) {
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-
-		// TODO: Test for CampaignSpec/ChangesetSpecs etc.
+		// TODO: Test for CampaignSpec/ChangesetSpecs once they're defined in
+		// the schema.
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {

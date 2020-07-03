@@ -221,20 +221,28 @@ func (e *changesetSpecNotFoundErr) Error() string {
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
-// ApplyCampaign creates the CampaignSpec.
-func (s *Service) ApplyCampaign(
-	ctx context.Context,
-	namespaceUserID, namespaceOrgID int32,
-	campaignSpecRandID string,
-	ensureCampaignID int64,
-) (campaign *campaigns.Campaign, err error) {
-	title := fmt.Sprintf(
-		"CampaignSpec %s, NamespaceOrgID %d, NamespaceUserID %d",
-		campaignSpecRandID,
-		namespaceUserID,
-		namespaceOrgID,
+type ApplyCampaignOpts struct {
+	CampaignSpecRandID string
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	EnsureCampaignID int64
+}
+
+func (o ApplyCampaignOpts) String() string {
+	return fmt.Sprintf(
+		"CampaignSpec %s, NamespaceOrgID %d, NamespaceUserID %d, EnsureCampaignID %d",
+		o.CampaignSpecRandID,
+		o.NamespaceOrgID,
+		o.NamespaceUserID,
+		o.EnsureCampaignID,
 	)
-	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", title)
+}
+
+// ApplyCampaign creates the CampaignSpec.
+func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *campaigns.Campaign, err error) {
+	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", opts.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -242,21 +250,23 @@ func (s *Service) ApplyCampaign(
 
 	// TODO: use a transaction
 
-	campaignSpec, err := s.store.GetCampaignSpec(ctx, GetCampaignSpecOpts{RandID: campaignSpecRandID})
+	campaignSpec, err := s.store.GetCampaignSpec(ctx, GetCampaignSpecOpts{
+		RandID: opts.CampaignSpecRandID,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	opts := GetCampaignOpts{CampaignSpecName: campaignSpec.Spec.Name}
-	if namespaceUserID != 0 {
-		opts.NamespaceUserID = namespaceUserID
-	} else if namespaceOrgID != 0 {
-		opts.NamespaceOrgID = namespaceOrgID
+	getOpts := GetCampaignOpts{CampaignSpecName: campaignSpec.Spec.Name}
+	if opts.NamespaceUserID != 0 {
+		getOpts.NamespaceUserID = opts.NamespaceUserID
+	} else if opts.NamespaceOrgID != 0 {
+		getOpts.NamespaceOrgID = opts.NamespaceOrgID
 	} else {
 		return nil, errors.New("no namespace specified")
 	}
 
-	campaign, err = s.store.GetCampaign(ctx, opts)
+	campaign, err = s.store.GetCampaign(ctx, getOpts)
 	if err != nil {
 		if err != ErrNoResults {
 			return nil, err
@@ -267,7 +277,7 @@ func (s *Service) ApplyCampaign(
 		campaign = &campaigns.Campaign{}
 	}
 
-	if ensureCampaignID != 0 && campaign.ID != ensureCampaignID {
+	if opts.EnsureCampaignID != 0 && campaign.ID != opts.EnsureCampaignID {
 		return nil, ErrEnsureCampaignFailed
 	}
 
@@ -282,8 +292,8 @@ func (s *Service) ApplyCampaign(
 
 	// TODO Do we need these fields on Campaign or is it enough that
 	// we have them on CampaignSpec?
-	campaign.NamespaceOrgID = namespaceOrgID
-	campaign.NamespaceUserID = namespaceUserID
+	campaign.NamespaceOrgID = opts.NamespaceOrgID
+	campaign.NamespaceUserID = opts.NamespaceUserID
 	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
 	campaign.Name = campaignSpec.Spec.Name
 	campaign.Description = campaignSpec.Spec.Description

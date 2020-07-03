@@ -731,7 +731,10 @@ func TestService(t *testing.T) {
 
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
-			campaign, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec.RandID, 0)
+			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				NamespaceUserID:    user.ID,
+				CampaignSpecRandID: campaignSpec.RandID,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -762,7 +765,10 @@ func TestService(t *testing.T) {
 
 		t.Run("existing campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
-			campaign, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec.RandID, 0)
+			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				NamespaceUserID:    user.ID,
+				CampaignSpecRandID: campaignSpec.RandID,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -772,7 +778,10 @@ func TestService(t *testing.T) {
 			}
 
 			t.Run("apply same campaignSpec", func(t *testing.T) {
-				campaign2, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec.RandID, 0)
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					NamespaceUserID:    user.ID,
+					CampaignSpecRandID: campaignSpec.RandID,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -784,7 +793,10 @@ func TestService(t *testing.T) {
 
 			t.Run("apply campaign spec with same name", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
-				campaign2, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec2.RandID, 0)
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					NamespaceUserID:    user.ID,
+					CampaignSpecRandID: campaignSpec2.RandID,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -797,7 +809,11 @@ func TestService(t *testing.T) {
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
 				user2 := createTestUser(ctx, t)
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user2.ID)
-				campaign2, err := svc.ApplyCampaign(ctx, user2.ID, 0, campaignSpec2.RandID, 0)
+
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					NamespaceUserID:    user2.ID,
+					CampaignSpecRandID: campaignSpec2.RandID,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -813,22 +829,28 @@ func TestService(t *testing.T) {
 
 			t.Run("campaign spec with same name and same ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
-				ensureID := campaign.ID
 
-				campaign2, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec2.RandID, ensureID)
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					NamespaceUserID:    user.ID,
+					CampaignSpecRandID: campaignSpec2.RandID,
+					EnsureCampaignID:   campaign.ID,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
-				if have, want := campaign2.ID, ensureID; have != want {
+				if have, want := campaign2.ID, campaign.ID; have != want {
 					t.Fatalf("campaign has wrong ID. want=%d, have=%d", want, have)
 				}
 			})
 
 			t.Run("campaign spec with same name but different ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
-				ensureID := campaign.ID + 999
 
-				_, err := svc.ApplyCampaign(ctx, user.ID, 0, campaignSpec2.RandID, ensureID)
+				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					NamespaceUserID:    user.ID,
+					CampaignSpecRandID: campaignSpec2.RandID,
+					EnsureCampaignID:   campaign.ID + 999,
+				})
 				if err != ErrEnsureCampaignFailed {
 					t.Fatalf("wrong error: %s", err)
 				}

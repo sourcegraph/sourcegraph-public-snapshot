@@ -236,12 +236,12 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	var namespaceUserID, namespaceOrgID int32
+	opts := ee.ApplyCampaignOpts{}
 	switch relay.UnmarshalKind(args.Namespace) {
 	case "User":
-		err = relay.UnmarshalSpec(args.Namespace, &namespaceUserID)
+		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceUserID)
 	case "Org":
-		err = relay.UnmarshalSpec(args.Namespace, &namespaceOrgID)
+		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceOrgID)
 	default:
 		err = errors.Errorf("Invalid namespace %q", args.Namespace)
 	}
@@ -250,21 +250,20 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, err
 	}
 
-	campaignSpecRandID, err := unmarshalCampaignSpecID(args.CampaignSpec)
+	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	var ensureCampaignID int64
 	if args.EnsureCampaign != nil {
-		ensureCampaignID, err = campaigns.UnmarshalCampaignID(*args.EnsureCampaign)
+		opts.EnsureCampaignID, err = campaigns.UnmarshalCampaignID(*args.EnsureCampaign)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err := svc.ApplyCampaign(ctx, namespaceUserID, namespaceOrgID, campaignSpecRandID, ensureCampaignID)
+	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
