@@ -100,7 +100,8 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 
 		case campaigns.ChangesetEventKindGitHubReviewed,
 			campaigns.ChangesetEventKindBitbucketServerApproved,
-			campaigns.ChangesetEventKindBitbucketServerReviewed:
+			campaigns.ChangesetEventKindBitbucketServerReviewed,
+			campaigns.ChangesetEventKindGitLabApproved:
 
 			s, err := e.ReviewState()
 			if err != nil {
@@ -151,7 +152,8 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			continue
 
 		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
-			campaigns.ChangesetEventKindBitbucketServerDismissed:
+			campaigns.ChangesetEventKindBitbucketServerDismissed,
+			campaigns.ChangesetEventKindGitLabUnapproved:
 			author, err := e.ReviewAuthor()
 			if err != nil {
 				return nil, err

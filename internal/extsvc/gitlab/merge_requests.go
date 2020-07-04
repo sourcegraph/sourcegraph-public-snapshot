@@ -58,15 +58,6 @@ type MergeRequest struct {
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
 }
 
-type Note struct {
-	// As with the other types here, we're only decoding enough fields here for
-	// the required campaign functionality.
-	ID        ID        `json:"id"`
-	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"created_at"`
-	System    bool      `json:"system"`
-}
-
 type Pipeline struct {
 	ID     ID             `json:"id"`
 	SHA    string         `json:"sha"`

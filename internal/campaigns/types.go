@@ -653,7 +653,17 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *gitlab.MergeRequest:
-		// TODO: implement event support.
+		events = make([]*ChangesetEvent, 0, len(m.Notes))
+		for _, note := range m.Notes {
+			if review := note.ToReview(); review != nil {
+				events = append(events, &ChangesetEvent{
+					ChangesetID: c.ID,
+					Key:         review.(Keyer).Key(),
+					Kind:        ChangesetEventKindFor(review),
+					Metadata:    review,
+				})
+			}
+		}
 	}
 	return events
 }
@@ -850,6 +860,20 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 		}
 		return username, nil
 
+	case *gitlab.ReviewApproved:
+		username := meta.Author.Username
+		if username == "" {
+			return "", errors.New("review user is blank")
+		}
+		return username, nil
+
+	case *gitlab.ReviewUnapproved:
+		username := meta.Author.Username
+		if username == "" {
+			return "", errors.New("review user is blank")
+		}
+		return username, nil
+
 	default:
 		return "", nil
 	}
@@ -858,7 +882,8 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 // ReviewState returns the review state of the ChangesetEvent if it is a review event.
 func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	switch e.Kind {
-	case ChangesetEventKindBitbucketServerApproved:
+	case ChangesetEventKindBitbucketServerApproved,
+		ChangesetEventKindGitLabApproved:
 		return ChangesetReviewStateApproved, nil
 
 	// BitbucketServer's "REVIEWED" activity is created when someone clicks
@@ -882,7 +907,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 
 	case ChangesetEventKindGitHubReviewDismissed,
 		ChangesetEventKindBitbucketServerUnapproved,
-		ChangesetEventKindBitbucketServerDismissed:
+		ChangesetEventKindBitbucketServerDismissed,
+		ChangesetEventKindGitLabUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -944,6 +970,10 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = unixMilliToTime(int64(e.CreatedDate))
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(int64(e.Status.DateAdded))
+	case *gitlab.ReviewApproved:
+		return e.CreatedAt
+	case *gitlab.ReviewUnapproved:
+		return e.CreatedAt
 	}
 
 	return t
@@ -1280,6 +1310,16 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		}
 		e.CheckRuns = o.CheckRuns
 
+	case *gitlab.ReviewApproved:
+		o := o.Metadata.(*gitlab.ReviewApproved)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlab.ReviewUnapproved:
+		o := o.Metadata.(*gitlab.ReviewUnapproved)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
 	default:
 		panic(errors.Errorf("unknown changeset event metadata %T", e))
 	}
@@ -1413,6 +1453,10 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
 	case *bitbucketserver.CommitStatus:
 		return ChangesetEventKindBitbucketServerCommitStatus
+	case *gitlab.ReviewApproved:
+		return ChangesetEventKindGitLabApproved
+	case *gitlab.ReviewUnapproved:
+		return ChangesetEventKindGitLabUnapproved
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -1470,6 +1514,13 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		case ChangesetEventKindCheckRun:
 			return new(github.CheckRun), nil
 		}
+	case strings.HasPrefix(string(k), "gitlab"):
+		switch k {
+		case ChangesetEventKindGitLabApproved:
+			return new(gitlab.ReviewApproved), nil
+		case ChangesetEventKindGitLabUnapproved:
+			return new(gitlab.ReviewUnapproved), nil
+		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
 }
@@ -1515,6 +1566,9 @@ const (
 	// BitbucketServer calls this an Unapprove event but we've called it Dismissed to more
 	// clearly convey that it only occurs when a request for changes has been dismissed.
 	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
+
+	ChangesetEventKindGitLabApproved   ChangesetEventKind = "gitlab:approved"
+	ChangesetEventKindGitLabUnapproved ChangesetEventKind = "gitlab:unapproved"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset
