@@ -7,6 +7,10 @@ Before diving into the technical part of campaigns, make sure to read up on what
 1. Start by looking at the product page for [code change management](https://about.sourcegraph.com/product/code-change-management)
 1. Read through the first page of the [campaigns documentation](https://docs.sourcegraph.com/user/campaigns/) **IMPORTANT:** Watch the video!
 
+## [Campaigns design doc](campaigns_design.md)
+
+See "[Campaigns design doc](campaigns_design.md)".
+
 ## Starting up your environment
 
 1. Run `./enterprise/dev/start.sh` — Wait until all repositories are cloned.
@@ -15,11 +19,11 @@ Before diving into the technical part of campaigns, make sure to read up on what
 
 ## Glossary
 
-The code campaigns feature introduces a lot of new names, GraphQL queries and mutations and database tables. This section tries to explain the most common names and provide a mapping between the GraphQL types and their internal counterpart in the Go backend.
+The campaigns feature introduces a lot of new names, GraphQL queries and mutations and database tables. This section tries to explain the most common names and provide a mapping between the GraphQL types and their internal counterpart in the Go backend.
 
 | GraphQL type        | Go type              | Database table     | Description |
 | ------------------- | -------------------- | -------------------| ----------- |
-| `Campaign`          | `campaigns.Campaign`       | `campaigns`        | A campaign is a collection of changesets on code hosts. The central entity. |
+| `Campaign`          | `campaigns.Campaign`       | `campaigns`        | A campaign is a collection of changesets. The central entity. |
 | `ExternalChangeset` | `campaigns.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
 | `PatchSet`          | `campaigns.PatchSet`       | `patch_sets`       | A patch set is a collection of patches that will be applied by creating and publishing a campaign. A campaign *has one* patch set. |
 | `Patch`             | `campaigns.Patch`          | `patches`          | A patch for a repository that *can* be turned into a changeset on a code host. It belongs to a patch set, which has multiple patches, one per repository. |

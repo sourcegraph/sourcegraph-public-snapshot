@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CampaignTemplate",
+  "description": "CampaignTemplate describes how to produce a CampaignSpec.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "fooscripts": {
+      "description": "A list of scripts that are executed to produce changesets.",
+      "type": "array",
+      "items": {"$ref": "#/definitions/Script"}
+    }
+  },
+    "definitions": {
+      "Script": {
+        "description": "A script that is executed to produce changesets.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {"type":"string", "enum": ["docker", "command"]},
+
+        }
+      }
+    }
+}

@@ -18,7 +18,7 @@ web/src/schema/
 ts-node-*
 testdata
 .github/*
-doc/
+/doc/**/*.md
 **/.cache
 shared/dev/**/*.js
 **/__snapshots__

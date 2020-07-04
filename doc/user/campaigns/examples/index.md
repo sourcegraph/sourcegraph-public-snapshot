@@ -4,4 +4,4 @@ The following examples demonstrate various types of campaigns for different lang
 
 * [Using ESLint to automatically migrate to a new TypeScript version](./eslint_typescript_version.md)
 * [Adding a GitHub action to upload LSIF data to Sourcegraph](./lsif_action.md)
-* [Refactor Go code using Comby](./refactor_go_comby.md)
+* [Refactoring Go code using Comby](./refactor_go_comby.md)
