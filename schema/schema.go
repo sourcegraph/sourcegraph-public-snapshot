@@ -750,7 +750,9 @@ type NotifierOpsGenie struct {
 	ApiKey   string `json:"apiKey"`
 	ApiUrl   string `json:"apiUrl"`
 	Priority string `json:"priority,omitempty"`
-	Type     string `json:"type"`
+	// Reponders description: List of responders responsible for notifications.
+	Reponders []*Reponders `json:"reponders,omitempty"`
+	Type      string       `json:"type"`
 }
 
 // NotifierPagerduty description: PagerDuty notifier
@@ -886,6 +888,12 @@ type QuickLink struct {
 	Name string `json:"name"`
 	// Url description: The URL of this quick link (absolute or relative)
 	Url string `json:"url"`
+}
+type Reponders struct {
+	Id       string `json:"id,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Username string `json:"username,omitempty"`
 }
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.

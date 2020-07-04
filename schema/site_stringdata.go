@@ -1101,6 +1101,27 @@ const SiteSchemaJSON = `{
         "priority": {
           "type": "string",
           "enum": ["P1", "P2", "P3", "P4", "P5"]
+        },
+        "reponders": {
+          "type": "array",
+          "description": "List of responders responsible for notifications.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["team", "user", "escalation", "schedule"]
+              },
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "username": { "type": "string" }
+            },
+            "oneOf": [
+              { "required": ["type", "id"] },
+              { "required": ["type", "name"] },
+              { "required": ["type", "username"] }
+            ]
+          }
         }
       }
     }

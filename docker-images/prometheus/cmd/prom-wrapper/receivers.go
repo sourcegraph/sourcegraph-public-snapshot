@@ -46,6 +46,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 		notifier := alert.Notifier
 		switch {
+		// https://prometheus.io/docs/alerting/latest/configuration/#email_config
 		case notifier.Email != nil:
 			receiver.EmailConfigs = append(receiver.EmailConfigs, &amconfig.EmailConfig{
 				To: notifier.Email.Address,
@@ -58,6 +59,8 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 				NotifierConfig: notifierConfig,
 			})
+
+		// https://prometheus.io/docs/alerting/latest/configuration/#opsgenie_config
 		case notifier.Opsgenie != nil:
 			var apiURL *amconfig.URL
 			if notifier.Opsgenie.ApiUrl != "" {
@@ -68,15 +71,27 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				}
 				apiURL = &amconfig.URL{URL: url}
 			}
+			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Reponders))
+			for i, resp := range notifier.Opsgenie.Reponders {
+				responders[i] = amconfig.OpsGenieConfigResponder{
+					Type:     resp.Type,
+					ID:       resp.Id,
+					Name:     resp.Name,
+					Username: resp.Username,
+				}
+			}
 			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
 				APIKey: amconfig.Secret(notifier.Opsgenie.ApiKey),
 				APIURL: apiURL,
 
 				Message:     notificationTitleTemplate,
 				Description: notificationBodyTemplate,
+				Responders:  responders,
 
 				NotifierConfig: notifierConfig,
 			})
+
+		// https://prometheus.io/docs/alerting/latest/configuration/#pagerduty_config
 		case notifier.Pagerduty != nil:
 			var apiURL *amconfig.URL
 			if notifier.Pagerduty.ApiUrl != "" {
@@ -100,6 +115,8 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 				NotifierConfig: notifierConfig,
 			})
+
+		// https://prometheus.io/docs/alerting/latest/configuration/#slack_config
 		case notifier.Slack != nil:
 			url, err := url.Parse(notifier.Slack.Url)
 			if err != nil {
@@ -121,6 +138,8 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 				NotifierConfig: notifierConfig,
 			})
+
+		// https://prometheus.io/docs/alerting/latest/configuration/#webhook_config
 		case notifier.Webhook != nil:
 			url, err := url.Parse(notifier.Webhook.Url)
 			if err != nil {
@@ -139,6 +158,8 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 				NotifierConfig: notifierConfig,
 			})
+
+		// define new notifiers to support in site.schema.json
 		default:
 			newProblem(fmt.Errorf("failed to apply notifier %d: no configuration found", i))
 		}
