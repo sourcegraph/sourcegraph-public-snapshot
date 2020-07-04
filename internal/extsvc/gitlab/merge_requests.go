@@ -78,6 +78,10 @@ const (
 	PipelineStatusManual   PipelineStatus = "manual"
 )
 
+func (p *Pipeline) Key() string {
+	return fmt.Sprintf("Pipeline:%d", p.ID)
+}
+
 var (
 	ErrMergeRequestAlreadyExists = errors.New("merge request already exists")
 	ErrMergeRequestNotFound      = errors.New("merge request not found")
