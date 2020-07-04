@@ -150,7 +150,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 1+ container restarts every 5m by instance_
+- _frontend: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -165,31 +165,29 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 99%+ container memory usage by instance_
+- _frontend: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # frontend: container_cpu_usage
 
 **Descriptions:**
 
-- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # frontend: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _frontend: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -197,13 +195,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # frontend: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _frontend: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -211,31 +208,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of frontend container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # frontend: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _frontend: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _frontend: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # frontend: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _frontend: 90%+ container memory usage (5m average) by instance_
+- _frontend: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # gitserver: disk_space_remaining
 
@@ -323,7 +317,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _gitserver: 1+ container restarts every 5m by instance_
+- _gitserver: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -338,31 +332,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _gitserver: 99%+ container memory usage by instance_
+- _gitserver: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # gitserver: container_cpu_usage
 
 **Descriptions:**
 
-- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # gitserver: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _gitserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -370,13 +362,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # gitserver: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _gitserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -384,37 +375,34 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # gitserver: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _gitserver: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _gitserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # gitserver: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _gitserver: 90%+ container memory usage (5m average) by instance_
+- _gitserver: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # github-proxy: container_restarts
 
 **Descriptions:**
 
-- _github-proxy: 1+ container restarts every 5m by instance_
+- _github-proxy: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -429,31 +417,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _github-proxy: 99%+ container memory usage by instance_
+- _github-proxy: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # github-proxy: container_cpu_usage
 
 **Descriptions:**
 
-- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # github-proxy: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _github-proxy: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -461,13 +447,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # github-proxy: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _github-proxy: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -475,31 +460,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of github-proxy container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # github-proxy: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _github-proxy: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # github-proxy: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container memory usage (5m average) by instance_
+- _github-proxy: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-bundle-manager: disk_space_remaining
 
@@ -534,7 +516,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_
+- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -549,31 +531,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_
+- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-bundle-manager: container_cpu_usage
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-bundle-manager: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -581,13 +561,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-bundle-manager: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -595,31 +574,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-bundle-manager: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-bundle-manager: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m average) by instance_
+- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-worker: frontend_internal_api_error_responses
 
@@ -641,7 +617,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 1+ container restarts every 5m by instance_
+- _precise-code-intel-worker: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -656,31 +632,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 99%+ container memory usage by instance_
+- _precise-code-intel-worker: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-worker: container_cpu_usage
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-worker: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -688,13 +662,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-worker: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -702,31 +675,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-worker: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _precise-code-intel-worker: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-worker: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container memory usage (5m average) by instance_
+- _precise-code-intel-worker: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-indexer: frontend_internal_api_error_responses
 
@@ -748,7 +718,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_
+- _precise-code-intel-indexer: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -763,31 +733,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container memory usage by instance_
+- _precise-code-intel-indexer: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-indexer: container_cpu_usage
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-indexer: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -795,13 +763,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-indexer: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -809,31 +776,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-indexer: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # precise-code-intel-indexer: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container memory usage (5m average) by instance_
+- _precise-code-intel-indexer: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # query-runner: frontend_internal_api_error_responses
 
@@ -855,7 +819,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _query-runner: 1+ container restarts every 5m by instance_
+- _query-runner: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -870,31 +834,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _query-runner: 99%+ container memory usage by instance_
+- _query-runner: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # query-runner: container_cpu_usage
 
 **Descriptions:**
 
-- _query-runner: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _query-runner: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # query-runner: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _query-runner: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -902,13 +864,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # query-runner: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _query-runner: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -916,31 +877,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of query-runner container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # query-runner: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _query-runner: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _query-runner: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # query-runner: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _query-runner: 90%+ container memory usage (5m average) by instance_
+- _query-runner: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # replacer: frontend_internal_api_error_responses
 
@@ -962,7 +920,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _replacer: 1+ container restarts every 5m by instance_
+- _replacer: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -977,31 +935,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _replacer: 99%+ container memory usage by instance_
+- _replacer: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # replacer: container_cpu_usage
 
 **Descriptions:**
 
-- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # replacer: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _replacer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1009,13 +965,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # replacer: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _replacer: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1023,31 +978,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of replacer container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # replacer: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _replacer: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _replacer: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # replacer: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _replacer: 90%+ container memory usage (5m average) by instance_
+- _replacer: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # repo-updater: frontend_internal_api_error_responses
 
@@ -1069,7 +1021,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _repo-updater: 1+ container restarts every 5m by instance_
+- _repo-updater: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1084,31 +1036,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container memory usage by instance_
+- _repo-updater: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # repo-updater: container_cpu_usage
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # repo-updater: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _repo-updater: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1116,13 +1066,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # repo-updater: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _repo-updater: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1130,31 +1079,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of repo-updater container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # repo-updater: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _repo-updater: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # repo-updater: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container memory usage (5m average) by instance_
+- _repo-updater: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # searcher: frontend_internal_api_error_responses
 
@@ -1176,7 +1122,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _searcher: 1+ container restarts every 5m by instance_
+- _searcher: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1191,31 +1137,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _searcher: 99%+ container memory usage by instance_
+- _searcher: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # searcher: container_cpu_usage
 
 **Descriptions:**
 
-- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # searcher: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _searcher: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1223,13 +1167,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # searcher: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _searcher: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1237,31 +1180,28 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of searcher container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # searcher: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _searcher: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _searcher: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # searcher: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _searcher: 90%+ container memory usage (5m average) by instance_
+- _searcher: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # symbols: frontend_internal_api_error_responses
 
@@ -1283,7 +1223,7 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _symbols: 1+ container restarts every 5m by instance_
+- _symbols: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1298,31 +1238,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _symbols: 99%+ container memory usage by instance_
+- _symbols: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # symbols: container_cpu_usage
 
 **Descriptions:**
 
-- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # symbols: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _symbols: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1330,13 +1268,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # symbols: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _symbols: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1344,37 +1281,34 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of symbols container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # symbols: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _symbols: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _symbols: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # symbols: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _symbols: 90%+ container memory usage (5m average) by instance_
+- _symbols: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # syntect-server: container_restarts
 
 **Descriptions:**
 
-- _syntect-server: 1+ container restarts every 5m by instance_
+- _syntect-server: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1389,31 +1323,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _syntect-server: 99%+ container memory usage by instance_
+- _syntect-server: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # syntect-server: container_cpu_usage
 
 **Descriptions:**
 
-- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # syntect-server: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _syntect-server: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1421,13 +1353,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # syntect-server: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _syntect-server: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1435,37 +1366,34 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of syntect-server container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # syntect-server: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _syntect-server: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # syntect-server: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container memory usage (5m average) by instance_
+- _syntect-server: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-indexserver: container_restarts
 
 **Descriptions:**
 
-- _zoekt-indexserver: 1+ container restarts every 5m by instance_
+- _zoekt-indexserver: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1480,31 +1408,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 99%+ container memory usage by instance_
+- _zoekt-indexserver: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-indexserver: container_cpu_usage
 
 **Descriptions:**
 
-- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-indexserver: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1512,13 +1438,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-indexserver: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1526,37 +1451,34 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-indexserver: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _zoekt-indexserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-indexserver: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container memory usage (5m average) by instance_
+- _zoekt-indexserver: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-webserver: container_restarts
 
 **Descriptions:**
 
-- _zoekt-webserver: 1+ container restarts every 5m by instance_
+- _zoekt-webserver: 1+ container restarts every 5m by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1571,31 +1493,29 @@ This alert is not available on `sourcegraph/server`.
 
 **Descriptions:**
 
-- _zoekt-webserver: 99%+ container memory usage by instance_
+- _zoekt-webserver: 99%+ container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-webserver: container_cpu_usage
 
 **Descriptions:**
 
-- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-webserver: provisioning_container_cpu_usage_1d
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1603,13 +1523,12 @@ If usage is high:
 - **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-webserver: provisioning_container_memory_usage_1d
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1617,29 +1536,26 @@ If usage is high:
 - **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider decreasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
 If usage is low, consider decreasing the above values.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-webserver: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _zoekt-webserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
 # zoekt-webserver: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container memory usage (5m average) by instance_
+- _zoekt-webserver: 90%+ container memory usage (5m average) by instance (not available on server)_
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-This alert is not available on `sourcegraph/server`.
 
