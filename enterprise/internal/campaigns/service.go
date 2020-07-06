@@ -221,6 +221,99 @@ func (e *changesetSpecNotFoundErr) Error() string {
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
+type ApplyCampaignOpts struct {
+	CampaignSpecRandID string
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	EnsureCampaignID int64
+}
+
+func (o ApplyCampaignOpts) String() string {
+	return fmt.Sprintf(
+		"CampaignSpec %s, NamespaceOrgID %d, NamespaceUserID %d, EnsureCampaignID %d",
+		o.CampaignSpecRandID,
+		o.NamespaceOrgID,
+		o.NamespaceUserID,
+		o.EnsureCampaignID,
+	)
+}
+
+// ApplyCampaign creates the CampaignSpec.
+func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *campaigns.Campaign, err error) {
+	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", opts.String())
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{
+		RandID: opts.CampaignSpecRandID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	getOpts := GetCampaignOpts{CampaignSpecName: campaignSpec.Spec.Name}
+	if opts.NamespaceUserID != 0 {
+		getOpts.NamespaceUserID = opts.NamespaceUserID
+	} else if opts.NamespaceOrgID != 0 {
+		getOpts.NamespaceOrgID = opts.NamespaceOrgID
+	} else {
+		return nil, errors.New("no namespace specified")
+	}
+
+	campaign, err = tx.GetCampaign(ctx, getOpts)
+	if err != nil {
+		if err != ErrNoResults {
+			return nil, err
+		}
+		err = nil
+	}
+	if campaign == nil {
+		campaign = &campaigns.Campaign{}
+	}
+
+	if opts.EnsureCampaignID != 0 && campaign.ID != opts.EnsureCampaignID {
+		return nil, ErrEnsureCampaignFailed
+	}
+
+	if campaign.CampaignSpecID == campaignSpec.ID {
+		return campaign, nil
+	}
+
+	campaign.CampaignSpecID = campaignSpec.ID
+
+	// Do we still need AuthorID on Campaign?
+	campaign.AuthorID = campaignSpec.UserID
+
+	// TODO Do we need these fields on Campaign or is it enough that
+	// we have them on CampaignSpec?
+	campaign.NamespaceOrgID = opts.NamespaceOrgID
+	campaign.NamespaceUserID = opts.NamespaceUserID
+	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
+	campaign.Name = campaignSpec.Spec.Name
+	campaign.Description = campaignSpec.Spec.Description
+
+	if campaign.ID == 0 {
+		return campaign, tx.CreateCampaign(ctx, campaign)
+	}
+
+	return campaign, tx.UpdateCampaign(ctx, campaign)
+}
+
+// ErrEnsureCampaignFailed is returned by ApplyCampaign when a ensureCampaignID
+// is provided but a campaign with the name specified the campaignSpec exists
+// in the given namespace but has a different ID.
+var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
+
 // ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
 // PatchSetID was specified but the PatchSet does not have any
 // (finished) Patches.
