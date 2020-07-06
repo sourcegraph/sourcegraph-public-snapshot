@@ -573,74 +573,90 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (repoBranches map[string][]string, indexed, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (_ map[string][]string, indexed, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
-	indexed = make([]*search.RepositoryRevisions, 0, len(revs))
+	irr := &indexedRepoRevs{
+		indexed:      make([]*search.RepositoryRevisions, 0, len(revs)),
+		repoBranches: make(map[string][]string, len(revs)),
+	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
-	// repoBranches will be used when we query zoekt. The order of branches
-	// must match that in a reporev such that we can map back results. IE this
-	// invariant is maintained:
-	//
-	//  repoBranches[reporev.Name][i] <-> reporev.Revs[i]
-	repoBranches = make(map[string][]string, len(revs))
-
 	for _, reporev := range revs {
-		zoektName := string(reporev.Repo.Name)
-		repo, ok := indexedSet[zoektName]
+		repo, ok := indexedSet[string(reporev.Repo.Name)]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, reporev)
 			continue
 		}
 
-		// A repo should only appear once in revs. However, in case this
-		// invariant is broken we will treat later revs as if it isn't
-		// indexed.
-		if _, ok := repoBranches[zoektName]; ok {
-			unindexed = append(unindexed, reporev)
-			continue
-		}
-
-		if !reporev.OnlyExplicit() {
-			// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
-			// search on it.
-			unindexed = append(unindexed, reporev)
-			continue
-		}
-
-		branches := make([]string, 0, len(reporev.Revs))
-		for _, rev := range reporev.Revs {
-			if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
-				// Zoekt convention that first branch is HEAD
-				branches = append(branches, repo.Branches[0].Name)
-				continue
-			}
-
-			for _, branch := range repo.Branches {
-				if branch.Name == rev.RevSpec {
-					branches = append(branches, branch.Name)
-					break
-				}
-				// Check if rev is an abbrev commit SHA
-				if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
-					branches = append(branches, branch.Name)
-					break
-				}
-			}
-
-		}
-
-		// Only search zoekt if we can search all revisions on it. TODO see if
-		// anything breaks if we do split out the search. Educated guess: the
-		// lists of repos in searchResultsCommon may not like it.
-		if len(branches) == len(reporev.Revs) {
-			indexed = append(indexed, reporev)
-			repoBranches[zoektName] = branches
-		} else {
+		ok = irr.Add(reporev, repo)
+		if !ok {
 			unindexed = append(unindexed, reporev)
 		}
 	}
 
-	return repoBranches, indexed, unindexed
+	return irr.repoBranches, irr.indexed, unindexed
+}
+
+// indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
+// list of repository and refs to search.
+type indexedRepoRevs struct {
+	// indexed is the Sourcegraph representation of a the list of indexed
+	// repository and revisions to search.
+	indexed []*search.RepositoryRevisions
+	// repoBranches will be used when we query zoekt. The order of branches
+	// must match that in a reporev such that we can map back results. IE this
+	// invariant is maintained:
+	//
+	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
+	repoBranches map[string][]string
+}
+
+// Add will add reporev and repo to the list of repository and branches to
+// search if reporev's refs are a subset of repo's branches.
+func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) bool {
+	// A repo should only appear once in revs. However, in case this
+	// invariant is broken we will treat later revs as if it isn't
+	// indexed.
+	if _, ok := rb.repoBranches[string(reporev.Repo.Name)]; ok {
+		return false
+	}
+
+	if !reporev.OnlyExplicit() {
+		// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
+		// search on it.
+		return false
+	}
+
+	branches := make([]string, 0, len(reporev.Revs))
+	for _, rev := range reporev.Revs {
+		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
+			// Zoekt convention that first branch is HEAD
+			branches = append(branches, repo.Branches[0].Name)
+			continue
+		}
+
+		for _, branch := range repo.Branches {
+			if branch.Name == rev.RevSpec {
+				branches = append(branches, branch.Name)
+				break
+			}
+			// Check if rev is an abbrev commit SHA
+			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
+				branches = append(branches, branch.Name)
+				break
+			}
+		}
+	}
+
+	// Only search zoekt if we can search all revisions on it. TODO see if
+	// anything breaks if we do split out the search. Educated guess: the
+	// lists of repos in searchResultsCommon may not like it.
+	if len(branches) != len(reporev.Revs) {
+		return false
+	}
+
+	rb.indexed = append(rb.indexed, reporev)
+	rb.repoBranches[string(reporev.Repo.Name)] = branches
+	return true
 }
