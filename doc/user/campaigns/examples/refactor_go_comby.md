@@ -1,4 +1,6 @@
-# Example: Refactor Go code using Comby
+# Example: Refactoring Go code using Comby
+
+> TODO(sqs): update for new campaigns flow
 
 Our goal for this campaign is to simplify Go code by using [Comby](https://comby.dev/) to rewrite statements of this form
 
