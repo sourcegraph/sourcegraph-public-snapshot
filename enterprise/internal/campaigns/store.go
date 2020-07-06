@@ -1207,9 +1207,10 @@ INSERT INTO campaigns (
   updated_at,
   changeset_ids,
   patch_set_id,
-  closed_at
+  closed_at,
+  campaign_spec_id
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
@@ -1222,7 +1223,8 @@ RETURNING
   updated_at,
   changeset_ids,
   patch_set_id,
-  closed_at
+  closed_at,
+  campaign_spec_id
 `
 
 func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
@@ -1252,6 +1254,7 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		changesetIDs,
 		nullInt64Column(c.PatchSetID),
 		nullTimeColumn(c.ClosedAt),
+		nullInt64Column(c.CampaignSpecID),
 	), nil
 }
 
@@ -1309,8 +1312,9 @@ SET (
   updated_at,
   changeset_ids,
   patch_set_id,
-  closed_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  closed_at,
+  campaign_spec_id
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1324,7 +1328,8 @@ RETURNING
   updated_at,
   changeset_ids,
   patch_set_id,
-  closed_at
+  closed_at,
+  campaign_spec_id
 `
 
 func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
@@ -1347,6 +1352,7 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		changesetIDs,
 		nullInt64Column(c.PatchSetID),
 		nullTimeColumn(c.ClosedAt),
+		nullInt64Column(c.CampaignSpecID),
 		c.ID,
 	), nil
 }
@@ -1429,6 +1435,12 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 type GetCampaignOpts struct {
 	ID         int64
 	PatchSetID int64
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	CampaignSpecID   int64
+	CampaignSpecName string
 }
 
 // GetCampaign gets a campaign matching the given options.
@@ -1450,22 +1462,26 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 	return &c, nil
 }
 
-var getCampaignsQueryFmtstr = `
+var getCampaignsQueryFmtstrPre = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaign
 SELECT
-  id,
-  name,
-  description,
-  branch,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  patch_set_id,
-  closed_at
+  campaigns.id,
+  campaigns.name,
+  campaigns.description,
+  campaigns.branch,
+  campaigns.author_id,
+  campaigns.namespace_user_id,
+  campaigns.namespace_org_id,
+  campaigns.created_at,
+  campaigns.updated_at,
+  campaigns.changeset_ids,
+  campaigns.patch_set_id,
+  campaigns.closed_at,
+  campaigns.campaign_spec_id
 FROM campaigns
+`
+
+var getCampaignsQueryFmtstrPost = `
 WHERE %s
 LIMIT 1
 `
@@ -1473,18 +1489,40 @@ LIMIT 1
 func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+		preds = append(preds, sqlf.Sprintf("campaigns.id = %s", opts.ID))
 	}
 
 	if opts.PatchSetID != 0 {
-		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.PatchSetID))
+		preds = append(preds, sqlf.Sprintf("campaigns.patch_set_id = %s", opts.PatchSetID))
+	}
+
+	if opts.CampaignSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.campaign_spec_id = %s", opts.CampaignSpecID))
+	}
+
+	if opts.NamespaceUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
+	}
+
+	if opts.NamespaceOrgID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(getCampaignsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	var joinClause string
+	if opts.CampaignSpecName != "" {
+		joinClause = "JOIN campaign_specs ON campaigns.campaign_spec_id = campaign_specs.id"
+		cond := fmt.Sprintf(`campaign_specs.spec @> '{"name": %q}'`, opts.CampaignSpecName)
+		preds = append(preds, sqlf.Sprintf(cond))
+
+	}
+	return sqlf.Sprintf(
+		getCampaignsQueryFmtstrPre+joinClause+getCampaignsQueryFmtstrPost,
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 // ListCampaignsOpts captures the query options needed for
@@ -1535,7 +1573,8 @@ SELECT
   updated_at,
   changeset_ids,
   patch_set_id,
-  closed_at
+  closed_at,
+  campaign_spec_id
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -2966,6 +3005,7 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullInt64{N: &c.PatchSetID},
 		&dbutil.NullTime{Time: &c.ClosedAt},
+		&dbutil.NullInt64{N: &c.CampaignSpecID},
 	)
 }
 

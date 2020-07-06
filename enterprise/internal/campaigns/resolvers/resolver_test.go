@@ -1024,3 +1024,141 @@ mutation($changesetSpec: String!){
   }
 }
 `
+
+func TestApplyCampaign(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+
+	store := ee.NewStore(dbconn.Global)
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	repoApiID := graphqlbackend.MarshalRepositoryID(repo.ID)
+
+	changesetSpec := &campaigns.ChangesetSpec{
+		RawSpec: ct.NewRawChangesetSpec(repoApiID),
+		Spec: campaigns.ChangesetSpecFields{
+			RepoID: repoApiID,
+		},
+		RepoID: repo.ID,
+		UserID: userID,
+	}
+	if err := store.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	campaignSpec := &campaigns.CampaignSpec{
+		RawSpec: ct.TestRawCampaignSpec,
+		Spec: campaigns.CampaignSpecFields{
+			Name:        "my-campaign",
+			Description: "My description",
+			ChangesetTemplate: campaigns.ChangesetTemplate{
+				Title:  "Hello there",
+				Body:   "This is the body",
+				Branch: "my-branch",
+				Commit: campaigns.CommitTemplate{
+					Message: "Add hello world",
+				},
+				Published: false,
+			},
+		},
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userApiID := string(graphqlbackend.MarshalUserID(userID))
+	input := map[string]interface{}{
+		// TODO: Do we need the namespace in this mutation?
+		"namespace":    userApiID,
+		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
+	}
+
+	var response struct{ ApplyCampaign apitest.Campaign }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+
+	have := response.ApplyCampaign
+	want := apitest.Campaign{
+		ID:          have.ID,
+		Name:        campaignSpec.Spec.Name,
+		Description: campaignSpec.Spec.Description,
+		Branch:      campaignSpec.Spec.ChangesetTemplate.Branch,
+		Namespace: apitest.UserOrg{
+			ID:         userApiID,
+			DatabaseID: userID,
+			SiteAdmin:  true,
+		},
+		Author: apitest.User{
+			ID:         userApiID,
+			DatabaseID: userID,
+			SiteAdmin:  true,
+		},
+		// TODO: Test for CampaignSpec/ChangesetSpecs once they're defined in
+		// the schema.
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	}
+
+	// Now we execute it again and make sure we get the same campaign back
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	have2 := response.ApplyCampaign
+	if diff := cmp.Diff(want, have2); diff != "" {
+		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	}
+
+	// Execute it again with ensureCampaign set to correct campaign's ID
+	input["ensureCampaign"] = have2.ID
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	have3 := response.ApplyCampaign
+	if diff := cmp.Diff(want, have3); diff != "" {
+		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	}
+
+	// Execute it again but ensureCampaign set to wrong campaign ID
+	campaignID, err := campaigns.UnmarshalCampaignID(graphql.ID(have3.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	input["ensureCampaign"] = campaigns.MarshalCampaignID(campaignID + 999)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	if len(errs) == 0 {
+		t.Fatalf("expected errors, got none")
+	}
+}
+
+const mutationApplyCampaign = `
+fragment u on User { id, databaseID, siteAdmin }
+fragment o on Org  { id, name }
+
+mutation($namespace: ID!, $campaignSpec: ID!, $ensureCampaign: ID){
+  applyCampaign(namespace: $namespace, campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
+	id, name, description, branch
+	author    { ...u }
+	namespace {
+		... on User { ...u }
+		... on Org  { ...o }
+	}
+  }
+}
+`
