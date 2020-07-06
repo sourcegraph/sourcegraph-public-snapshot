@@ -119,6 +119,10 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             id: 'ConnectedCodeHost',
             title: 'Add repositories',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
+            onClick: (event: React.MouseEvent<HTMLElement>, history: H.History) => {
+                event.preventDefault()
+                history.push('/site-admin/external-services/new')
+            },
             siteAdminOnly: true,
         },
         {
