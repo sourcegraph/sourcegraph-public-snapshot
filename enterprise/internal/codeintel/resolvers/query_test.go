@@ -13,7 +13,7 @@ import (
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
-func TestWindow(t *testing.T) {
+func TestRanges(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockCodeIntelAPI := apimocks.NewMockCodeIntelAPI()
@@ -26,7 +26,7 @@ func TestWindow(t *testing.T) {
 	mockPositionAdjuster.AdjustPathFunc.PushReturn("", false, nil)
 
 	// second requested dump (dump 44) has some data
-	mockCodeIntelAPI.WindowFunc.PushReturn([]codeintelapi.ResolvedAggregateCodeIntelligence{
+	mockCodeIntelAPI.RangesFunc.PushReturn([]codeintelapi.ResolvedCodeIntelligenceRange{
 		{
 			Range:       bundles.Range{Start: bundles.Position{Line: 11, Character: 12}, End: bundles.Position{Line: 13, Character: 14}},
 			Definitions: []codeintelapi.ResolvedLocation{{Dump: store.Dump{ID: 44, RepositoryID: 50}, Path: "p1.go", Range: bundles.Range{Start: bundles.Position{Line: 111, Character: 121}, End: bundles.Position{Line: 131, Character: 141}}}},
@@ -48,7 +48,7 @@ func TestWindow(t *testing.T) {
 	}, nil)
 
 	// first requested dump (dump 43) has no data
-	mockCodeIntelAPI.WindowFunc.PushReturn(nil, nil)
+	mockCodeIntelAPI.RangesFunc.PushReturn(nil, nil)
 
 	mockPositionAdjuster.AdjustRangeFunc.SetDefaultHook(func(ctx context.Context, path, commit string, r bundles.Range, reverse bool) (string, bundles.Range, bool, error) {
 		return path, bundles.Range{
@@ -73,12 +73,12 @@ func TestWindow(t *testing.T) {
 		},
 	)
 
-	ranges, err := queryResolver.Window(context.Background(), 10, 20)
+	ranges, err := queryResolver.Ranges(context.Background(), 10, 20)
 	if err != nil {
-		t.Fatalf("unexpected error resolving window: %s", err)
+		t.Fatalf("unexpected error resolving ranges: %s", err)
 	}
 
-	expectedRanges := []AdjustedAggregateCodeIntelligence{
+	expectedRanges := []AdjustedCodeIntelligenceRange{
 		{
 			Range: bundles.Range{Start: bundles.Position{Line: 110, Character: 120}, End: bundles.Position{Line: 130, Character: 140}},
 			Definitions: []AdjustedLocation{

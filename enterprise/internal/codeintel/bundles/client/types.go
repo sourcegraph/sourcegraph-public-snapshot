@@ -48,8 +48,8 @@ type Diagnostic struct {
 	EndCharacter   int    `json:"endCharacter"`
 }
 
-// AggregateCodeIntelligence pairs a range with its definitions, reference, and hover text.
-type AggregateCodeIntelligence struct {
+// CodeIntelligenceRange pairs a range with its definitions, reference, and hover text.
+type CodeIntelligenceRange struct {
 	Range       Range      `json:"range"`
 	Definitions []Location `json:"definitions"`
 	References  []Location `json:"references"`

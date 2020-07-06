@@ -153,7 +153,7 @@ type GitBlobLSIFDataResolver interface {
 	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
 	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
 
-	Window(ctx context.Context, args *LSIFWindowArgs) (AggregateCodeIntelligenceConnectionResolver, error)
+	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
@@ -167,7 +167,7 @@ type GitBlobLSIFDataArgs struct {
 	ToolName  string
 }
 
-type LSIFWindowArgs struct {
+type LSIFRangesArgs struct {
 	StartLine int32
 	EndLine   int32
 }
@@ -187,11 +187,11 @@ type LSIFDiagnosticsArgs struct {
 	graphqlutil.ConnectionArgs
 }
 
-type AggregateCodeIntelligenceConnectionResolver interface {
-	Nodes(ctx context.Context) ([]AggregateCodeIntelligenceResolver, error)
+type CodeIntelligenceRangeConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CodeIntelligenceRangeResolver, error)
 }
 
-type AggregateCodeIntelligenceResolver interface {
+type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	References(ctx context.Context) (LocationConnectionResolver, error)

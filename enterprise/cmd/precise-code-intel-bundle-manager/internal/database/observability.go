@@ -14,7 +14,7 @@ type ObservedDatabase struct {
 	database                    Database
 	filename                    string
 	existsOperation             *observation.Operation
-	windowOperation             *observation.Operation
+	rangesOperation             *observation.Operation
 	definitionsOperation        *observation.Operation
 	referencesOperation         *observation.Operation
 	hoverOperation              *observation.Operation
@@ -50,9 +50,9 @@ func NewObserved(database Database, filename string, observationContext *observa
 			MetricLabels: []string{"exists"},
 			Metrics:      metrics,
 		}),
-		windowOperation: observationContext.Operation(observation.Op{
-			Name:         "Database.Window",
-			MetricLabels: []string{"window"},
+		rangesOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Ranges",
+			MetricLabels: []string{"ranges"},
 			Metrics:      metrics,
 		}),
 		definitionsOperation: observationContext.Operation(observation.Op{
@@ -108,9 +108,9 @@ func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, er
 	return db.database.Exists(ctx, path)
 }
 
-// Window calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) Window(ctx context.Context, path string, startLine, endLine int) (ranges []bundles.AggregateCodeIntelligence, err error) {
-	ctx, endObservation := db.windowOperation.With(ctx, &err, observation.Args{
+// Ranges calls into the inner Database and registers the observed results.
+func (db *ObservedDatabase) Ranges(ctx context.Context, path string, startLine, endLine int) (ranges []bundles.CodeIntelligenceRange, err error) {
+	ctx, endObservation := db.rangesOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
 			log.String("path", path),
@@ -119,7 +119,7 @@ func (db *ObservedDatabase) Window(ctx context.Context, path string, startLine, 
 		},
 	})
 	defer func() { endObservation(float64(len(ranges)), observation.Args{}) }()
-	return db.database.Window(ctx, path, startLine, endLine)
+	return db.database.Ranges(ctx, path, startLine, endLine)
 }
 
 // Definitions calls into the inner Database and registers the observed results.

@@ -37,12 +37,12 @@ type MockDatabase struct {
 	// PackageInformationFunc is an instance of a mock function object
 	// controlling the behavior of the method PackageInformation.
 	PackageInformationFunc *DatabasePackageInformationFunc
+	// RangesFunc is an instance of a mock function object controlling the
+	// behavior of the method Ranges.
+	RangesFunc *DatabaseRangesFunc
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
 	ReferencesFunc *DatabaseReferencesFunc
-	// WindowFunc is an instance of a mock function object controlling the
-	// behavior of the method Window.
-	WindowFunc *DatabaseWindowFunc
 }
 
 // NewMockDatabase creates a new mock of the Database interface. All methods
@@ -89,13 +89,13 @@ func NewMockDatabase() *MockDatabase {
 				return client.PackageInformationData{}, false, nil
 			},
 		},
-		ReferencesFunc: &DatabaseReferencesFunc{
-			defaultHook: func(context.Context, string, int, int) ([]client.Location, error) {
+		RangesFunc: &DatabaseRangesFunc{
+			defaultHook: func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
 				return nil, nil
 			},
 		},
-		WindowFunc: &DatabaseWindowFunc{
-			defaultHook: func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error) {
+		ReferencesFunc: &DatabaseReferencesFunc{
+			defaultHook: func(context.Context, string, int, int) ([]client.Location, error) {
 				return nil, nil
 			},
 		},
@@ -130,11 +130,11 @@ func NewMockDatabaseFrom(i Database) *MockDatabase {
 		PackageInformationFunc: &DatabasePackageInformationFunc{
 			defaultHook: i.PackageInformation,
 		},
+		RangesFunc: &DatabaseRangesFunc{
+			defaultHook: i.Ranges,
+		},
 		ReferencesFunc: &DatabaseReferencesFunc{
 			defaultHook: i.References,
-		},
-		WindowFunc: &DatabaseWindowFunc{
-			defaultHook: i.Window,
 		},
 	}
 }
@@ -1053,6 +1053,120 @@ func (c DatabasePackageInformationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// DatabaseRangesFunc describes the behavior when the Ranges method of the
+// parent MockDatabase instance is invoked.
+type DatabaseRangesFunc struct {
+	defaultHook func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)
+	hooks       []func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)
+	history     []DatabaseRangesFuncCall
+	mutex       sync.Mutex
+}
+
+// Ranges delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDatabase) Ranges(v0 context.Context, v1 string, v2 int, v3 int) ([]client.CodeIntelligenceRange, error) {
+	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2, v3)
+	m.RangesFunc.appendCall(DatabaseRangesFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Ranges method of the
+// parent MockDatabase instance is invoked and the hook queue is empty.
+func (f *DatabaseRangesFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Ranges method of the parent MockDatabase instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DatabaseRangesFunc) PushHook(hook func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DatabaseRangesFunc) SetDefaultReturn(r0 []client.CodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DatabaseRangesFunc) PushReturn(r0 []client.CodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
+		return r0, r1
+	})
+}
+
+func (f *DatabaseRangesFunc) nextHook() func(context.Context, string, int, int) ([]client.CodeIntelligenceRange, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DatabaseRangesFunc) appendCall(r0 DatabaseRangesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DatabaseRangesFuncCall objects describing
+// the invocations of this function.
+func (f *DatabaseRangesFunc) History() []DatabaseRangesFuncCall {
+	f.mutex.Lock()
+	history := make([]DatabaseRangesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DatabaseRangesFuncCall is an object that describes an invocation of
+// method Ranges on an instance of MockDatabase.
+type DatabaseRangesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []client.CodeIntelligenceRange
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DatabaseRangesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DatabaseRangesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DatabaseReferencesFunc describes the behavior when the References method
 // of the parent MockDatabase instance is invoked.
 type DatabaseReferencesFunc struct {
@@ -1164,119 +1278,5 @@ func (c DatabaseReferencesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DatabaseReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// DatabaseWindowFunc describes the behavior when the Window method of the
-// parent MockDatabase instance is invoked.
-type DatabaseWindowFunc struct {
-	defaultHook func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error)
-	hooks       []func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error)
-	history     []DatabaseWindowFuncCall
-	mutex       sync.Mutex
-}
-
-// Window delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDatabase) Window(v0 context.Context, v1 string, v2 int, v3 int) ([]client.AggregateCodeIntelligence, error) {
-	r0, r1 := m.WindowFunc.nextHook()(v0, v1, v2, v3)
-	m.WindowFunc.appendCall(DatabaseWindowFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Window method of the
-// parent MockDatabase instance is invoked and the hook queue is empty.
-func (f *DatabaseWindowFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Window method of the parent MockDatabase instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DatabaseWindowFunc) PushHook(hook func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DatabaseWindowFunc) SetDefaultReturn(r0 []client.AggregateCodeIntelligence, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DatabaseWindowFunc) PushReturn(r0 []client.AggregateCodeIntelligence, r1 error) {
-	f.PushHook(func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error) {
-		return r0, r1
-	})
-}
-
-func (f *DatabaseWindowFunc) nextHook() func(context.Context, string, int, int) ([]client.AggregateCodeIntelligence, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DatabaseWindowFunc) appendCall(r0 DatabaseWindowFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DatabaseWindowFuncCall objects describing
-// the invocations of this function.
-func (f *DatabaseWindowFunc) History() []DatabaseWindowFuncCall {
-	f.mutex.Lock()
-	history := make([]DatabaseWindowFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DatabaseWindowFuncCall is an object that describes an invocation of
-// method Window on an instance of MockDatabase.
-type DatabaseWindowFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []client.AggregateCodeIntelligence
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DatabaseWindowFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DatabaseWindowFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

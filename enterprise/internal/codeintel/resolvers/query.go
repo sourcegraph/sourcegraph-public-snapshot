@@ -27,9 +27,9 @@ type AdjustedDiagnostic struct {
 	AdjustedRange  bundles.Range
 }
 
-// AdjustedAggregateCodeIntelligence is similar to a codeintelapi.ResolvedAggregatedCodeIntelligence,
+// AdjustedCodeIntelligenceRange is similar to a codeintelapi.CodeIntelligenceRange,
 // but with adjusted definition and reference locations.
-type AdjustedAggregateCodeIntelligence struct {
+type AdjustedCodeIntelligenceRange struct {
 	Range       bundles.Range
 	Definitions []AdjustedLocation
 	References  []AdjustedLocation
@@ -41,7 +41,7 @@ type AdjustedAggregateCodeIntelligence struct {
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
 // in this package's graphql subpackage, which is exposed directly by the API.
 type QueryResolver interface {
-	Window(ctx context.Context, startLine, endLine int) ([]AdjustedAggregateCodeIntelligence, error)
+	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Hover(ctx context.Context, line, character int) (string, bundles.Range, bool, error)
@@ -84,10 +84,10 @@ func NewQueryResolver(
 	}
 }
 
-// Window returns aggregated code intelligence for the ranges that fall within the given range of lines.
-// These results do not include any data that requires cross-linking of bundles (cross-repo or cross-root).
-func (r *queryResolver) Window(ctx context.Context, startLine, endLine int) ([]AdjustedAggregateCodeIntelligence, error) {
-	var adjustedRanges []AdjustedAggregateCodeIntelligence
+// Ranges returns code intelligence for the ranges that fall within the given range of lines. These
+// results do not include any data that requires cross-linking of bundles (cross-repo or cross-root).
+func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error) {
+	var adjustedRanges []AdjustedCodeIntelligenceRange
 	for i := range r.uploads {
 		adjustedPath, ok, err := r.positionAdjuster.AdjustPath(ctx, r.uploads[i].Commit, r.path, false)
 		if err != nil {
@@ -98,7 +98,7 @@ func (r *queryResolver) Window(ctx context.Context, startLine, endLine int) ([]A
 		}
 
 		// TODO(efritz) - determine how to do best-effort line adjustments for this case
-		ranges, err := r.codeIntelAPI.Window(ctx, adjustedPath, startLine, endLine, r.uploads[i].ID)
+		ranges, err := r.codeIntelAPI.Ranges(ctx, adjustedPath, startLine, endLine, r.uploads[i].ID)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func (r *queryResolver) Window(ctx context.Context, startLine, endLine int) ([]A
 				return nil, err
 			}
 
-			adjustedRanges = append(adjustedRanges, AdjustedAggregateCodeIntelligence{
+			adjustedRanges = append(adjustedRanges, AdjustedCodeIntelligenceRange{
 				Range:       adjustedRange,
 				Definitions: adjustedDefinitions,
 				References:  adjustedReferences,

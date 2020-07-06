@@ -12,13 +12,13 @@ import (
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 )
 
-func TestWindow(t *testing.T) {
+func TestRanges(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
 
-	sourceRanges := []bundles.AggregateCodeIntelligence{
+	sourceRanges := []bundles.CodeIntelligenceRange{
 		{
 			Range:       bundles.Range{Start: bundles.Position{1, 2}, End: bundles.Position{3, 4}},
 			Definitions: []bundles.Location{},
@@ -41,15 +41,15 @@ func TestWindow(t *testing.T) {
 
 	setMockStoreGetDumpByID(t, mockStore, map[int]store.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
-	setMockBundleClientWindow(t, mockBundleClient, "main.go", 10, 20, sourceRanges)
+	setMockBundleClientRanges(t, mockBundleClient, "main.go", 10, 20, sourceRanges)
 
 	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
-	ranges, err := api.Window(context.Background(), "sub1/main.go", 10, 20, 42)
+	ranges, err := api.Ranges(context.Background(), "sub1/main.go", 10, 20, 42)
 	if err != nil {
-		t.Fatalf("expected error getting window: %s", err)
+		t.Fatalf("expected error getting ranges: %s", err)
 	}
 
-	expectedRanges := []ResolvedAggregateCodeIntelligence{
+	expectedRanges := []ResolvedCodeIntelligenceRange{
 		{
 			Range:       bundles.Range{Start: bundles.Position{1, 2}, End: bundles.Position{3, 4}},
 			Definitions: nil,
@@ -74,14 +74,14 @@ func TestWindow(t *testing.T) {
 	}
 }
 
-func TestWindowUnknownDump(t *testing.T) {
+func TestRangesUnknownDump(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
 	setMockStoreGetDumpByID(t, mockStore, nil)
 
 	api := testAPI(mockStore, mockBundleManagerClient, mockGitserverClient)
-	if _, err := api.Window(context.Background(), "sub1", 42, 0, 10); err != ErrMissingDump {
-		t.Fatalf("unexpected error getting window. want=%q have=%q", ErrMissingDump, err)
+	if _, err := api.Ranges(context.Background(), "sub1", 42, 0, 10); err != ErrMissingDump {
+		t.Fatalf("unexpected error getting ranges. want=%q have=%q", ErrMissingDump, err)
 	}
 }

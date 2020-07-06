@@ -11,22 +11,22 @@ import (
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/mocks"
 )
 
-func TestWindow(t *testing.T) {
+func TestRanges(t *testing.T) {
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver())
 
-	args := &gql.LSIFWindowArgs{StartLine: 10, EndLine: 20}
-	if _, err := resolver.Window(context.Background(), args); err != nil {
+	args := &gql.LSIFRangesArgs{StartLine: 10, EndLine: 20}
+	if _, err := resolver.Ranges(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.WindowFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.WindowFunc.History()))
+	if len(mockResolver.RangesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.RangesFunc.History()))
 	}
-	if val := mockResolver.WindowFunc.History()[0].Arg1; val != 10 {
+	if val := mockResolver.RangesFunc.History()[0].Arg1; val != 10 {
 		t.Fatalf("unexpected start line. want=%d have=%d", 10, val)
 	}
-	if val := mockResolver.WindowFunc.History()[0].Arg2; val != 20 {
+	if val := mockResolver.RangesFunc.History()[0].Arg2; val != 20 {
 		t.Fatalf("unexpected end line. want=%d have=%d", 20, val)
 	}
 }

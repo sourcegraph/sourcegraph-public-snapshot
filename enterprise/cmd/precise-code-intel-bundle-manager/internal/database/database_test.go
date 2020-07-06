@@ -40,7 +40,7 @@ func TestDatabaseExists(t *testing.T) {
 	}
 }
 
-func TestDatabaseWindow(t *testing.T) {
+func TestDatabaseRanges(t *testing.T) {
 	//   20: // NewWriter creates a new Writer.
 	//   21: func NewWriter(w io.Writer, addContents bool) *Writer {
 	// > 22:     return &Writer{
@@ -54,10 +54,10 @@ func TestDatabaseWindow(t *testing.T) {
 	//   30: }
 
 	db := openTestDatabase(t)
-	if actual, err := db.Window(context.Background(), "protocol/writer.go", 21, 23); err != nil {
+	if actual, err := db.Ranges(context.Background(), "protocol/writer.go", 21, 23); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := []bundles.AggregateCodeIntelligence{
+		expected := []bundles.CodeIntelligenceRange{
 			{
 				Range: newRange(21, 9, 21, 15),
 				Definitions: []bundles.Location{

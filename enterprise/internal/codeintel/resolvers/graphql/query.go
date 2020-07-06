@@ -42,17 +42,17 @@ func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *Cached
 func (r *QueryResolver) ToGitTreeLSIFData() (gql.GitTreeLSIFDataResolver, bool) { return r, true }
 func (r *QueryResolver) ToGitBlobLSIFData() (gql.GitBlobLSIFDataResolver, bool) { return r, true }
 
-func (r *QueryResolver) Window(ctx context.Context, args *gql.LSIFWindowArgs) (gql.AggregateCodeIntelligenceConnectionResolver, error) {
+func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (gql.CodeIntelligenceRangeConnectionResolver, error) {
 	if args.StartLine < 0 || args.EndLine < args.StartLine {
 		return nil, ErrIllegalBounds
 	}
 
-	ranges, err := r.resolver.Window(ctx, int(args.StartLine), int(args.EndLine))
+	ranges, err := r.resolver.Ranges(ctx, int(args.StartLine), int(args.EndLine))
 	if err != nil {
 		return nil, err
 	}
 
-	return &AggregateCodeIntelligenceConnectionResolver{
+	return &CodeIntelligenceRangeConnectionResolver{
 		ranges:           ranges,
 		locationResolver: r.locationResolver,
 	}, nil

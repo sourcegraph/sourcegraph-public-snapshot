@@ -36,7 +36,7 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/dbs/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabasePart)
 	mux.Path("/dbs/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostDatabaseStitch)
 	mux.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
-	mux.Path("/dbs/{id:[0-9]+}/window").Methods("GET").HandlerFunc(s.handleWindow)
+	mux.Path("/dbs/{id:[0-9]+}/ranges").Methods("GET").HandlerFunc(s.handleRanges)
 	mux.Path("/dbs/{id:[0-9]+}/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
 	mux.Path("/dbs/{id:[0-9]+}/references").Methods("GET").HandlerFunc(s.handleReferences)
 	mux.Path("/dbs/{id:[0-9]+}/hover").Methods("GET").HandlerFunc(s.handleHover)
@@ -154,12 +154,12 @@ func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GET /dbs/{id:[0-9]+}/window
-func (s *Server) handleWindow(w http.ResponseWriter, r *http.Request) {
+// GET /dbs/{id:[0-9]+}/ranges
+func (s *Server) handleRanges(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
-		ranges, err := db.Window(ctx, getQuery(r, "path"), getQueryInt(r, "startLine"), getQueryInt(r, "endLine"))
+		ranges, err := db.Ranges(ctx, getQuery(r, "path"), getQueryInt(r, "startLine"), getQueryInt(r, "endLine"))
 		if err != nil {
-			return nil, pkgerrors.Wrap(err, "db.Window")
+			return nil, pkgerrors.Wrap(err, "db.Ranges")
 		}
 		return ranges, nil
 	})

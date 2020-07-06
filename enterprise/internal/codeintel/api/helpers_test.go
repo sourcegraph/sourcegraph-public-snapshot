@@ -182,16 +182,16 @@ func setMockBundleClientExists(t *testing.T, mockBundleClient *bundlemocks.MockB
 	})
 }
 
-func setMockBundleClientWindow(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.AggregateCodeIntelligence) {
-	mockBundleClient.WindowFunc.SetDefaultHook(func(ctx context.Context, path string, startLine, endLine int) ([]bundles.AggregateCodeIntelligence, error) {
+func setMockBundleClientRanges(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.CodeIntelligenceRange) {
+	mockBundleClient.RangesFunc.SetDefaultHook(func(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
 		if path != expectedPath {
-			t.Errorf("unexpected path for Window. want=%s have=%s", expectedPath, path)
+			t.Errorf("unexpected path for Ranges. want=%s have=%s", expectedPath, path)
 		}
 		if startLine != expectedStartLine {
-			t.Errorf("unexpected start line for Window. want=%d have=%d", expectedStartLine, startLine)
+			t.Errorf("unexpected start line for Ranges. want=%d have=%d", expectedStartLine, startLine)
 		}
 		if endLine != expectedEndLine {
-			t.Errorf("unexpected end line for Window. want=%d have=%d", expectedEndLine, endLine)
+			t.Errorf("unexpected end line for Ranges. want=%d have=%d", expectedEndLine, endLine)
 		}
 		return ranges, nil
 	})

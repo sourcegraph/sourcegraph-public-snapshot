@@ -2980,7 +2980,7 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     # in the same index as the source range. To get cross-repository and cross-bundle
     # results, you must query the definitions, references, and hovers of that range
     # explicitly.
-    window(startLine: Int!, endLine: Int!): AggregateCodeIntelligenceConnection
+    ranges(startLine: Int!, endLine: Int!): CodeIntelligenceRangeConnection
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
@@ -4135,13 +4135,13 @@ type RegistryExtensionConnection {
 }
 
 # Aggregate local code intelligence for all ranges that fall bewteen a window of lines in a document.
-type AggregateCodeIntelligenceConnection {
+type CodeIntelligenceRangeConnection {
     # Aggregate local code intelligence grouped by range.
-    nodes: [AggregateCodeIntelligence!]!
+    nodes: [CodeIntelligenceRange!]!
 }
 
 # Aggregate code intelligence for a particular range within a document.
-type AggregateCodeIntelligence {
+type CodeIntelligenceRange {
     # The range this code intelligence applies to.
     range: Range!
 

@@ -13,7 +13,7 @@ import (
 type ObservedCodeIntelAPI struct {
 	codeIntelAPI              CodeIntelAPI
 	findClosestDumpsOperation *observation.Operation
-	windowOperation           *observation.Operation
+	rangesOperation           *observation.Operation
 	definitionsOperation      *observation.Operation
 	referencesOperation       *observation.Operation
 	hoverOperation            *observation.Operation
@@ -38,9 +38,9 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 			MetricLabels: []string{"find_closest_dumps"},
 			Metrics:      metrics,
 		}),
-		windowOperation: observationContext.Operation(observation.Op{
-			Name:         "CodeIntelAPI.Window",
-			MetricLabels: []string{"window"},
+		rangesOperation: observationContext.Operation(observation.Op{
+			Name:         "CodeIntelAPI.Ranges",
+			MetricLabels: []string{"ranges"},
 			Metrics:      metrics,
 		}),
 		definitionsOperation: observationContext.Operation(observation.Op{
@@ -73,11 +73,11 @@ func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositor
 	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer)
 }
 
-// Window calls into the inner CodeIntelAPI and registers the observed results.
-func (api *ObservedCodeIntelAPI) Window(ctx context.Context, file string, startLine, endLine, uploadID int) (ranges []ResolvedAggregateCodeIntelligence, err error) {
-	ctx, endObservation := api.windowOperation.With(ctx, &err, observation.Args{})
+// Ranges calls into the inner CodeIntelAPI and registers the observed results.
+func (api *ObservedCodeIntelAPI) Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) (ranges []ResolvedCodeIntelligenceRange, err error) {
+	ctx, endObservation := api.rangesOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(ranges)), observation.Args{}) }()
-	return api.codeIntelAPI.Window(ctx, file, startLine, endLine, uploadID)
+	return api.codeIntelAPI.Ranges(ctx, file, startLine, endLine, uploadID)
 }
 
 // Definitions calls into the inner CodeIntelAPI and registers the observed results.

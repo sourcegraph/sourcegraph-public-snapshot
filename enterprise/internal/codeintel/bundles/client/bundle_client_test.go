@@ -55,9 +55,9 @@ func TestExistsBadResponse(t *testing.T) {
 	}
 }
 
-func TestWindow(t *testing.T) {
+func TestRanges(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assertRequest(t, r, "GET", "/dbs/42/window", map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/ranges", map[string]string{
 			"path":      "main.go",
 			"startLine": "15",
 			"endLine":   "20",
@@ -86,7 +86,7 @@ func TestWindow(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	expected := []AggregateCodeIntelligence{
+	expected := []CodeIntelligenceRange{
 		{
 			Range:       Range{Start: Position{1, 2}, End: Position{3, 4}},
 			Definitions: []Location{},
@@ -108,37 +108,37 @@ func TestWindow(t *testing.T) {
 	}
 
 	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
-	ranges, err := client.Window(context.Background(), "main.go", 15, 20)
+	ranges, err := client.Ranges(context.Background(), "main.go", 15, 20)
 	if err != nil {
-		t.Fatalf("unexpected error querying window: %s", err)
+		t.Fatalf("unexpected error querying ranges: %s", err)
 	} else if diff := cmp.Diff(expected, ranges); diff != "" {
 		t.Errorf("unexpected ranges (-want +got):\n%s", diff)
 	}
 }
 
-func TestWindowNotFound(t *testing.T) {
+func TestRangesNotFound(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer ts.Close()
 
 	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
-	_, err := client.Window(context.Background(), "main.go", 15, 20)
+	_, err := client.Ranges(context.Background(), "main.go", 15, 20)
 	if err != ErrNotFound {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrNotFound, err)
 	}
 }
 
-func TestWindowBadResponse(t *testing.T) {
+func TestRangesBadResponse(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer ts.Close()
 
 	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
-	_, err := client.Window(context.Background(), "main.go", 15, 20)
+	_, err := client.Ranges(context.Background(), "main.go", 15, 20)
 	if err == nil {
-		t.Fatalf("unexpected nil error querying window")
+		t.Fatalf("unexpected nil error querying ranges")
 	}
 }
 

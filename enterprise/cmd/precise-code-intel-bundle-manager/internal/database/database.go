@@ -21,8 +21,8 @@ type Database interface {
 	// Exists determines if the path exists in the database.
 	Exists(ctx context.Context, path string) (bool, error)
 
-	// Window returns definition, reference, and hover data for each range within the given span of lines.
-	Window(ctx context.Context, path string, startLine, endLint int) ([]bundles.AggregateCodeIntelligence, error)
+	// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+	Ranges(ctx context.Context, path string, startLine, endLint int) ([]bundles.CodeIntelligenceRange, error)
 
 	// Definitions returns the set of locations defining the symbol at the given position.
 	Definitions(ctx context.Context, path string, line, character int) ([]bundles.Location, error)
@@ -114,14 +114,14 @@ func (db *databaseImpl) Exists(ctx context.Context, path string) (bool, error) {
 	return exists, pkgerrors.Wrap(err, "db.getDocumentData")
 }
 
-// Window returns definition, reference, and hover data for each range within the given span of lines.
-func (db *databaseImpl) Window(ctx context.Context, path string, startLine, endLine int) ([]bundles.AggregateCodeIntelligence, error) {
+// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+func (db *databaseImpl) Ranges(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
 	documentData, exists, err := db.getDocumentData(ctx, path)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "db.getDocumentData")
 	}
 
-	var aggregatedRanges []bundles.AggregateCodeIntelligence
+	var codeintelRanges []bundles.CodeIntelligenceRange
 	for _, r := range documentData.Ranges {
 		if !rangeIntersectsSpan(r, startLine, endLine) {
 			continue
@@ -142,7 +142,7 @@ func (db *databaseImpl) Window(ctx context.Context, path string, startLine, endL
 			return nil, err
 		}
 
-		aggregatedRanges = append(aggregatedRanges, bundles.AggregateCodeIntelligence{
+		codeintelRanges = append(codeintelRanges, bundles.CodeIntelligenceRange{
 			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			Definitions: definitions,
 			References:  references,
@@ -150,16 +150,16 @@ func (db *databaseImpl) Window(ctx context.Context, path string, startLine, endL
 		})
 	}
 
-	sort.Slice(aggregatedRanges, func(i, j int) bool {
-		cmp := aggregatedRanges[i].Range.Start.Line - aggregatedRanges[j].Range.Start.Line
+	sort.Slice(codeintelRanges, func(i, j int) bool {
+		cmp := codeintelRanges[i].Range.Start.Line - codeintelRanges[j].Range.Start.Line
 		if cmp == 0 {
-			cmp = aggregatedRanges[i].Range.Start.Character - aggregatedRanges[j].Range.Start.Character
+			cmp = codeintelRanges[i].Range.Start.Character - codeintelRanges[j].Range.Start.Character
 		}
 
 		return cmp < 0
 	})
 
-	return aggregatedRanges, nil
+	return codeintelRanges, nil
 }
 
 // Definitions returns the set of locations defining the symbol at the given position.
