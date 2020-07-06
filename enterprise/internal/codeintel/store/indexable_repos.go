@@ -90,7 +90,7 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 	}
 	if opts.MinimumTimeSinceLastEnqueue > 0 {
 		conds = append(conds, sqlf.Sprintf(
-			"(last_index_enqueued_at IS NULL OR %s - last_index_enqueued_at < (%s || ' second')::interval)",
+			"(last_index_enqueued_at IS NULL OR %s - last_index_enqueued_at >= (%s || ' second')::interval)",
 			opts.now,
 			opts.MinimumTimeSinceLastEnqueue/time.Second,
 		))
