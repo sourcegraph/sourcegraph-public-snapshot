@@ -10,6 +10,12 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
   history="[History]"
   location="[Location path=/]"
   queryCampaignsCount={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <div
     className="d-flex justify-content-between align-items-end mb-3"
@@ -86,6 +92,12 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
   history="[History]"
   location="[Location path=/]"
   queryCampaignsCount={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <div
     className="d-flex justify-content-between align-items-end mb-3"
@@ -194,6 +206,12 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
+    telemetryService={
+      Object {
+        "log": [Function],
+        "logViewEvent": [Function],
+      }
+    }
   />
 </GlobalCampaignListPage>
 `;
@@ -208,6 +226,12 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
   history="[History]"
   location="[Location path=/]"
   queryCampaignsCount={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <div
     className="d-flex justify-content-between align-items-end mb-3"
@@ -310,6 +334,12 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
   history="[History]"
   location="[Location path=/]"
   queryCampaignsCount={[Function]}
+  telemetryService={
+    Object {
+      "log": [Function],
+      "logViewEvent": [Function],
+    }
+  }
 >
   <div
     className="d-flex justify-content-between align-items-end mb-3"
@@ -444,6 +474,12 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
+    telemetryService={
+      Object {
+        "log": [Function],
+        "logViewEvent": [Function],
+      }
+    }
   />
 </GlobalCampaignListPage>
 `;

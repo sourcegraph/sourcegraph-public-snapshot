@@ -2,6 +2,7 @@ import * as H from 'history'
 import React from 'react'
 import { GlobalCampaignListPage } from './GlobalCampaignListPage'
 import { IUser } from '../../../../../../shared/src/graphql/schema'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
 import { mount } from 'enzyme'
 
@@ -21,6 +22,7 @@ describe('GlobalCampaignListPage', () => {
                         location={history.location}
                         authenticatedUser={{ siteAdmin: true } as IUser}
                         queryCampaignsCount={() => of(totalCount)}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
                     />
                 )
             ).toMatchSnapshot()
@@ -33,6 +35,7 @@ describe('GlobalCampaignListPage', () => {
                         location={history.location}
                         authenticatedUser={{ siteAdmin: false } as IUser}
                         queryCampaignsCount={() => of(totalCount)}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
                     />
                 )
             ).toMatchSnapshot()
