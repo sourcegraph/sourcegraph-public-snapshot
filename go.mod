@@ -135,7 +135,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
-	github.com/sourcegraph/codeintelutils v0.0.0-20200602000243-9543a4b9c9f8
+	github.com/sourcegraph/codeintelutils v0.0.0-20200706134726-59faffa53cc3
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-diff v0.5.3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200429204646-54904d837db8
