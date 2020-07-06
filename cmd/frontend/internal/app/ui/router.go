@@ -62,6 +62,7 @@ const (
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
 	routeExplore        = "explore"
+	routeRepoGroups     = "repo-groups"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
@@ -133,6 +134,13 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+
+	// Repogroup hacks! We don't have a subroute for them at the moment and
+	// the routing is hacked into the webapp code. Before launch this should
+	// be thought through. Copying behaviour from webapp. Must mirror
+	// web/src/Layout.tsx
+	repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
+	r.Path("/Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -214,6 +222,7 @@ func initRouter() {
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions")))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats")))
 	router.Get(routeViews).Handler(handler(serveBrandedPageString("View")))
+	router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings")))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User")))
