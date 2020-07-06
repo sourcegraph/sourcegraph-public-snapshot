@@ -81,8 +81,8 @@ func TestZoektSearchHEAD(t *testing.T) {
 	tests := []struct {
 		name              string
 		args              args
-		wantFm            []*FileMatchResolver
 		wantMatchCount    int
+		wantMatchURLs     []string
 		wantLimitHit      bool
 		wantReposLimitHit map[string]struct{}
 		wantErr           bool
@@ -97,7 +97,6 @@ func TestZoektSearchHEAD(t *testing.T) {
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: nil,
 			wantErr:           false,
@@ -112,7 +111,6 @@ func TestZoektSearchHEAD(t *testing.T) {
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: nil,
 			wantErr:           true,
@@ -127,7 +125,6 @@ func TestZoektSearchHEAD(t *testing.T) {
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: nil,
 			wantErr:           true,
@@ -142,7 +139,6 @@ func TestZoektSearchHEAD(t *testing.T) {
 				searcher:        &errorSearcher{err: errors.New("womp womp")},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: nil,
 			wantErr:           true,
@@ -210,11 +206,14 @@ func TestZoektSearchHEAD(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: map[string]struct{}{},
 			wantMatchCount:    5,
-			wantErr:           false,
+			wantMatchURLs: []string{
+				"git://foo/bar#baz.go",
+				"git://foo/foobar#baz.go",
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -229,11 +228,6 @@ func TestZoektSearchHEAD(t *testing.T) {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			if tt.wantFm != nil {
-				if !reflect.DeepEqual(gotFm, tt.wantFm) {
-					t.Errorf("zoektSearchHEAD() gotFm = %v, want %v", gotFm, tt.wantFm)
-				}
-			}
 			if gotLimitHit != tt.wantLimitHit {
 				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
@@ -242,11 +236,16 @@ func TestZoektSearchHEAD(t *testing.T) {
 			}
 
 			var gotMatchCount int
+			var gotMatchURLs []string
 			for _, m := range gotFm {
 				gotMatchCount += m.MatchCount
+				gotMatchURLs = append(gotMatchURLs, m.Resource())
+			}
+			if diff := cmp.Diff(tt.wantMatchURLs, gotMatchURLs); diff != "" {
+				t.Errorf("match URLs mismatch (-want +got):\n%s", diff)
 			}
 			if gotMatchCount != tt.wantMatchCount {
-				t.Errorf("zoektSearchHEAD() gotMatchCount = %v, want %v", gotMatchCount, tt.wantMatchCount)
+				t.Errorf("gotMatchCount = %v, want %v", gotMatchCount, tt.wantMatchCount)
 			}
 		})
 	}
