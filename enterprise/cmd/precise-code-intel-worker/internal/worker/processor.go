@@ -118,7 +118,7 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 	}
 
 	// Send converted database file to bundle manager
-	if err := p.sendDB(ctx, upload.ID, tempDir); err != nil {
+	if err := p.sendDB(ctx, upload.ID, filepath.Join(tempDir, "sqlite.db")); err != nil {
 		return false, err
 	}
 
