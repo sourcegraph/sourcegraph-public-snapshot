@@ -63,23 +63,25 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(campaigns); i++ {
 			c := &cmpgn.Campaign{
-				Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
-				Description:  "All the Javascripts are belong to us",
-				Branch:       "upgrade-es-lint",
-				AuthorID:     int32(i) + 50,
-				ChangesetIDs: []int64{int64(i) + 1},
-				PatchSetID:   42 + int64(i),
-				ClosedAt:     clock.now(),
+				Name:           fmt.Sprintf("Upgrade ES-Lint %d", i),
+				Description:    "All the Javascripts are belong to us",
+				Branch:         "upgrade-es-lint",
+				AuthorID:       int32(i) + 50,
+				ChangesetIDs:   []int64{int64(i) + 1},
+				PatchSetID:     42 + int64(i),
+				CampaignSpecID: 1742 + int64(i),
+				ClosedAt:       clock.now(),
 			}
 			if i == 0 {
-				// don't have a patch set for the first one
+				// don't have associations for the first one
 				c.PatchSetID = 0
+				c.CampaignSpecID = 0
 				// Don't close the first one
 				c.ClosedAt = time.Time{}
 			}
 
 			if i%2 == 0 {
-				c.NamespaceOrgID = 23
+				c.NamespaceOrgID = int32(i) + 23
 			} else {
 				c.NamespaceUserID = c.AuthorID
 			}
@@ -399,6 +401,87 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ByCampaignSpecID", func(t *testing.T) {
+			want := campaigns[0]
+			opts := GetCampaignOpts{CampaignSpecID: want.CampaignSpecID}
+
+			have, err := s.GetCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ByCampaignSpecName", func(t *testing.T) {
+			want := campaigns[0]
+
+			campaignSpec := &cmpgn.CampaignSpec{
+				Spec:           cmpgn.CampaignSpecFields{Name: "the-name"},
+				NamespaceOrgID: want.NamespaceOrgID,
+			}
+			if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+				t.Fatal(err)
+			}
+
+			want.CampaignSpecID = campaignSpec.ID
+			if err := s.UpdateCampaign(ctx, want); err != nil {
+				t.Fatal(err)
+			}
+
+			opts := GetCampaignOpts{CampaignSpecName: campaignSpec.Spec.Name}
+			have, err := s.GetCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ByNamespaceUserID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+
+				want := c
+				opts := GetCampaignOpts{NamespaceUserID: c.NamespaceUserID}
+
+				have, err := s.GetCampaign(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("ByNamespaceOrgID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+
+				want := c
+				opts := GetCampaignOpts{NamespaceOrgID: c.NamespaceOrgID}
+
+				have, err := s.GetCampaign(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 		})
 
