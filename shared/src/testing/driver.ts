@@ -700,6 +700,7 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
         args,
         headless: readEnvironmentBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
+        devtools: true,
     }
     let browser: puppeteer.Browser
     if (options.browser === 'firefox') {

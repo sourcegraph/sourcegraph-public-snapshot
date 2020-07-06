@@ -5,7 +5,7 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import * as path from 'path'
 import mkdirp from 'mkdirp-promise'
 import express from 'express'
-import { Polly } from '@pollyjs/core'
+import { Polly, Request, Response } from '@pollyjs/core'
 import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 
@@ -23,7 +23,11 @@ type IntegrationTestInitGeneration = () => Promise<{
 
 type IntegrationTest = (
     testName: string,
-    run: (options: { sourcegraphBaseUrl: string; driver: Driver }) => Promise<void>
+    run: (options: {
+        sourcegraphBaseUrl: string
+        driver: Driver
+        overrideGql: (queryName: string, gqlHandler: (req: Request, resp: Response) => void) => void
+    }) => Promise<void>
 ) => void
 
 type IntegrationTestBeforeGeneration = (
@@ -112,6 +116,20 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 })
                 const { server } = polly
                 server.get('/.assets/*path').passthrough()
+
+                let overrides
+                const overrideGql = (queryName: string, gqlHandler: (req: Request, resp: Response) => void) =>
+                    server.get('/.api/graphql/?' + queryName).intercept((request, response) => {
+                        if (!(queryName in overrides)) {
+                            throw new Error(
+                                'New GraphQL request that was not in the snapshots. Please run whatever to update.'
+                            )
+                        }
+                    })
+
+                // server.get('/.api/graphql').intercept((request, response) => {
+                //     // handle GraphQL queries
+                // })
                 // Filter out 'server' header filled in by Caddy before persisting responses,
                 // otherwise tests will hang when replayed from recordings.
                 server
@@ -124,7 +142,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                             )
                         }
                     )
-                await run({ sourcegraphBaseUrl, driver })
+                await run({ sourcegraphBaseUrl, driver, overrideGql })
                 await polly.stop()
                 await driver.page.close()
             })
