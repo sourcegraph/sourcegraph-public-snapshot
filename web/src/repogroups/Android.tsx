@@ -81,22 +81,22 @@ export const android: RepogroupMetadata = {
             title: 'Find intent filter examples in Android Manifest XML files:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">file:</span>
-                    {'.xml <intent-filter> :[string] </intent-filter>'}
+                    <span className="repogroup-page__keyword-text">lang:</span>
+                    {'xml <intent-filter> :[string] </intent-filter>'}
                 </>
             ),
-            rawQuery: 'file:.xml <intent-filter> :[string] </intent-filter>',
+            rawQuery: 'langxml <intent-filter> :[string] </intent-filter>',
             patternType: SearchPatternType.structural,
         },
         {
             title: 'Detect nested LinearLayouts in your XML layout files:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">file:</span>
-                    {'.xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>'}
+                    <span className="repogroup-page__keyword-text">lang:</span>
+                    {'xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>'}
                 </>
             ),
-            rawQuery: 'file:.xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>',
+            rawQuery: 'lang:xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>',
             patternType: SearchPatternType.structural,
         },
         {

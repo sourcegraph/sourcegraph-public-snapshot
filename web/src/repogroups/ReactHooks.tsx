@@ -202,21 +202,13 @@ export const reactHooks: RepogroupMetadata = {
         },
         {
             title: 'useState with objects as input parameters structural search:',
-            exampleQuery: (
-                <>
-                    {'useState({:[string]})'} <span className="repogroup-page__keyword-text">count:</span>1000
-                </>
-            ),
+            exampleQuery: <>{'useState({:[string]})'}</>,
             rawQuery: 'useState({:[string]}) count:1000',
             patternType: SearchPatternType.structural,
         },
         {
             title: 'useState with any type of input parameters structural search:',
-            exampleQuery: (
-                <>
-                    useState(:[string]) <span className="repogroup-page__keyword-text">count:</span>1000
-                </>
-            ),
+            exampleQuery: <>useState(:[string])</>,
             rawQuery: 'useState(:[string]) count:1000',
             patternType: SearchPatternType.structural,
         },
@@ -224,7 +216,7 @@ export const reactHooks: RepogroupMetadata = {
             title: 'useState with any type of input parameters structural search for only typescript files:',
             exampleQuery: (
                 <>
-                    useState(:[string]) <span className="repogroup-page__keyword-text">count:</span>1000{' '}
+                    useState(:[string])
                     <span className="repogroup-page__keyword-text">lang:</span>typescript
                 </>
             ),

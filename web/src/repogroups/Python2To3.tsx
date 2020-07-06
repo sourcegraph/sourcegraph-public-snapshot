@@ -218,6 +218,18 @@ export const python2To3Metadata: RepogroupMetadata = {
             patternType: SearchPatternType.structural,
         },
         {
+            title: 'Python 3 print statements',
+            exampleQuery: <>print(":[string]")</>,
+            rawQuery: 'print(":[string]")',
+            patternType: SearchPatternType.structural,
+        },
+        {
+            title: 'Python 2 integer conversion',
+            exampleQuery: <>float(:[numerator]) / float(:[denominator])</>,
+            rawQuery: 'float(:[numerator]) / float(:[denominator])',
+            patternType: SearchPatternType.structural,
+        },
+        {
             title: 'Python 3 integer conversion',
             exampleQuery: (
                 <>
