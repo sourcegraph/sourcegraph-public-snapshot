@@ -166,7 +166,7 @@
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "8.0.0",
-    "@types/webpack": "4.41.18",
+    "@types/webpack": "4.41.20",
     "@types/webpack-dev-server": "3.11.0",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^9.8.0",
