@@ -2,7 +2,7 @@ digraph architecture {
     label="Precise code intelligence architecture overview"
     rankdir=TD
     ratio=fill
-    ranksep=1.4
+    ranksep=1.0
     nodesep=0.4
     stylesheet="/assets/architecture.css"
     splines="compound"

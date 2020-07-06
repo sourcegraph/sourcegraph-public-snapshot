@@ -69,6 +69,16 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 	}
 
+	// We do not yet support searching non-HEAD for fileRequest (structural
+	// search).
+	if typ == fileRequest {
+		for _, r := range args.Repos {
+			if !r.OnlyHEAD() {
+				return nil, fmt.Errorf("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906: %s", r.String())
+			}
+		}
+	}
+
 	// If Zoekt is disabled just fallback to Unindexed.
 	if !args.Zoekt.Enabled() {
 		if indexParam == Only {

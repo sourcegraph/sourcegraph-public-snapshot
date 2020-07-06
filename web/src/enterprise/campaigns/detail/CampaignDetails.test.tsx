@@ -28,6 +28,7 @@ describe('CampaignDetails', () => {
     afterEach(() => {
         PageTitle.titleSet = false
     })
+
     test('creation form for empty manual campaign', () =>
         expect(
             shallow(

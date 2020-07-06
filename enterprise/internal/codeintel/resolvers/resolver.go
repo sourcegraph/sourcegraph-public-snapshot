@@ -30,14 +30,16 @@ type resolver struct {
 	store               store.Store
 	bundleManagerClient bundles.BundleManagerClient
 	codeIntelAPI        codeintelapi.CodeIntelAPI
+	hunkCache           HunkCache
 }
 
 // NewResolver creates a new resolver with the given services.
-func NewResolver(store store.Store, bundleManagerClient bundles.BundleManagerClient, codeIntelAPI codeintelapi.CodeIntelAPI) Resolver {
+func NewResolver(store store.Store, bundleManagerClient bundles.BundleManagerClient, codeIntelAPI codeintelapi.CodeIntelAPI, hunkCache HunkCache) Resolver {
 	return &resolver{
 		store:               store,
 		bundleManagerClient: bundleManagerClient,
 		codeIntelAPI:        codeIntelAPI,
+		hunkCache:           hunkCache,
 	}
 }
 
@@ -87,7 +89,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		r.store,
 		r.bundleManagerClient,
 		r.codeIntelAPI,
-		NewPositionAdjuster(args.Repo, string(args.Commit)),
+		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
 		int(args.Repo.ID),
 		string(args.Commit),
 		args.Path,

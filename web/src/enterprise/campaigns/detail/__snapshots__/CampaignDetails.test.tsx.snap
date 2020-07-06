@@ -64,6 +64,7 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
   telemetryService={
     Object {
       "log": [Function],
+      "logViewEvent": [Function],
     }
   }
 >
@@ -329,6 +330,7 @@ exports[`CampaignDetails editing existing 1`] = `
   telemetryService={
     Object {
       "log": [Function],
+      "logViewEvent": [Function],
     }
   }
 >
@@ -998,6 +1000,7 @@ exports[`CampaignDetails editing existing 1`] = `
     telemetryService={
       Object {
         "log": [Function],
+        "logViewEvent": [Function],
       }
     }
   />
@@ -1021,6 +1024,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
   telemetryService={
     Object {
       "log": [Function],
+      "logViewEvent": [Function],
     }
   }
 >
@@ -1453,6 +1457,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     telemetryService={
       Object {
         "log": [Function],
+        "logViewEvent": [Function],
       }
     }
   />
@@ -1476,6 +1481,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
   telemetryService={
     Object {
       "log": [Function],
+      "logViewEvent": [Function],
     }
   }
 >
@@ -2145,6 +2151,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     telemetryService={
       Object {
         "log": [Function],
+        "logViewEvent": [Function],
       }
     }
   />

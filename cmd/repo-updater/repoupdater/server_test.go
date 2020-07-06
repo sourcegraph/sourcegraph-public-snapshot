@@ -561,7 +561,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "all cloned",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "foobar"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -582,7 +582,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		},
 		{
 			name:            "subset cloned",
-			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}, {Name: "barfoo"}},
 			gitserverCloned: []string{"foobar"},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
@@ -596,7 +596,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		},
 		{
 			name:            "more cloned than stored",
-			stored:          []*repos.Repo{{Name: "foobar"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}},
 			gitserverCloned: []string{"foobar", "barfoo"},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
@@ -619,7 +619,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "case insensitivity",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			stored:          []*repos.Repo{{Name: "FOOBar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -627,7 +627,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "case insensitivity to gitserver names",
 			gitserverCloned: []string{"FOOBar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			stored:          []*repos.Repo{{Name: "FOOBar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},

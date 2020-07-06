@@ -2,11 +2,22 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
-import { catchError, delay, distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap } from 'rxjs/operators'
+import {
+    catchError,
+    delay,
+    distinctUntilChanged,
+    map,
+    mapTo,
+    mergeMap,
+    startWith,
+    switchMap,
+    tap,
+} from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { NamespaceProps } from '../namespaces'
 import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
+import { eventLogger } from '../tracking/eventLogger'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }>, NamespaceProps {
@@ -66,6 +77,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                                 this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
                             ).pipe(
                                 mapTo(null),
+                                tap(() => eventLogger.log('SavedSearchUpdated')),
                                 mergeMap(() =>
                                     concat(
                                         // Flash "updated" text
@@ -83,6 +95,8 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
         )
 
         this.componentUpdates.next(this.props)
+
+        eventLogger.logViewEvent('UpdateSavedSearchPage')
     }
 
     public render(): JSX.Element | null {

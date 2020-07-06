@@ -102,4 +102,15 @@ export class EventLogger implements TelemetryService {
                 break
         }
     }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param pageTitle The title of the page being viewed.
+     */
+    public async logViewEvent(pageTitle: string): Promise<void> {
+        const anonUserId = await this.getAnonUserID()
+        const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
+        logEvent({ name: `View${pageTitle}`, userCookieID: anonUserId, url: sourcegraphURL }, this.requestGraphQL)
+    }
 }
