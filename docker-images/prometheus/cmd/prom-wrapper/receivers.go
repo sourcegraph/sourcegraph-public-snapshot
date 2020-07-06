@@ -15,6 +15,11 @@ const (
 	alertmanagerCriticalReceiver = "src-critical-receiver"
 )
 
+const (
+	colorWarning  = "#FFFF00" // yellow
+	colorCritical = "#FF0000" // red
+)
+
 var (
 	// alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
 	alertSolutionsTemplate    = `https://docs.sourcegraph.com/admin/observability/alert_solutions#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
@@ -34,10 +39,13 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 	for i, alert := range newAlerts {
 		var receiver *amconfig.Receiver
+		var color string
 		if alert.Level == "critical" {
 			receiver = criticalReceiver
+			color = colorCritical
 		} else {
 			receiver = warningReceiver
+			color = colorWarning
 		}
 
 		notifierConfig := amconfig.NotifierConfig{
@@ -126,6 +134,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 			if notifier.Slack.Username != "" {
 				notifier.Slack.Username = "Sourcegraph Alerts"
 			}
+
 			receiver.SlackConfigs = append(receiver.SlackConfigs, &amconfig.SlackConfig{
 				APIURL:    &amconfig.SecretURL{URL: url},
 				Username:  notifier.Slack.Username,
@@ -133,8 +142,10 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				IconEmoji: notifier.Slack.Icon_emoji,
 				IconURL:   notifier.Slack.Icon_url,
 
-				Title: notificationTitleTemplate,
-				Text:  notificationBodyTemplate,
+				Title:     notificationTitleTemplate,
+				TitleLink: alertSolutionsTemplate,
+				Text:      notificationBodyTemplate,
+				Color:     color,
 
 				NotifierConfig: notifierConfig,
 			})
