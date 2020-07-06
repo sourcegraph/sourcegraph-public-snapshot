@@ -147,6 +147,7 @@ type Campaign struct {
 	ChangesetIDs    []int64
 	PatchSetID      int64
 	ClosedAt        time.Time
+	CampaignSpecID  int64
 }
 
 // Clone returns a clone of a Campaign.
