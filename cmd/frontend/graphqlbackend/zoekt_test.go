@@ -34,18 +34,21 @@ import (
 type fakeSearcher struct {
 	result *zoekt.SearchResult
 
-	repos *zoekt.RepoList
+	repos []*zoekt.RepoListEntry
 
 	// Default all unimplemented zoekt.Searcher methods to panic.
 	zoekt.Searcher
 }
 
 func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	if ss.result == nil {
+		return &zoekt.SearchResult{}, nil
+	}
 	return ss.result, nil
 }
 
 func (ss *fakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
-	return ss.repos, nil
+	return &zoekt.RepoList{Repos: ss.repos}, nil
 }
 
 func (ss *fakeSearcher) String() string {
@@ -151,17 +154,15 @@ func TestZoektSearchHEAD(t *testing.T) {
 				repos:           makeRepositoryRevisions("foo/bar@master", "foo/foobar@master"),
 				useFullDeadline: false,
 				searcher: &fakeSearcher{
-					repos: &zoekt.RepoList{
-						Repos: []*zoekt.RepoListEntry{
-							{
-								Repository: zoekt.Repository{
-									Name: "foo/bar",
-								},
+					repos: []*zoekt.RepoListEntry{
+						{
+							Repository: zoekt.Repository{
+								Name: "foo/bar",
 							},
-							{
-								Repository: zoekt.Repository{
-									Name: "foo/foobar",
-								},
+						},
+						{
+							Repository: zoekt.Repository{
+								Name: "foo/foobar",
 							},
 						},
 					},
@@ -549,7 +550,7 @@ func BenchmarkSearchResults(b *testing.B) {
 
 	z := &searchbackend.Zoekt{
 		Client: &fakeSearcher{
-			repos:  &zoekt.RepoList{Repos: zoektRepos},
+			repos:  zoektRepos,
 			result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 		DisableCache: true,
@@ -593,7 +594,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	zoektFileMatches := generateZoektMatches(50)
 
 	zoektClient, cleanup := zoektRPC(&fakeSearcher{
-		repos:  &zoekt.RepoList{Repos: zoektRepos},
+		repos:  zoektRepos,
 		result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()

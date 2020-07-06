@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/zoekt"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -58,7 +57,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
@@ -133,7 +132,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}})
 	defer conf.Mock(nil)
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
 
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
