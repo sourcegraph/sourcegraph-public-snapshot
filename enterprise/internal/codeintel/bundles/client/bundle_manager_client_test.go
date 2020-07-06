@@ -18,7 +18,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/tar"
 )
 
 func TestMain(m *testing.M) {
@@ -375,29 +374,24 @@ func TestSendDB(t *testing.T) {
 		}
 		defer gzipReader.Close()
 
-		if err := tar.Extract(filepath.Join(tempDir, "dest"), gzipReader); err != nil {
-			t.Fatalf("unexpected error extracting payload: %s", err)
+		contents, err := ioutil.ReadAll(gzipReader)
+		if err != nil {
+			t.Fatalf("unexpected error reading decompressed payload: %s", err)
+		}
+
+		if diff := cmp.Diff([]byte("payload\n"), contents); diff != "" {
+			t.Errorf("unexpected contents (-want +got):\n%s", diff)
 		}
 	}))
 	defer ts.Close()
 
-	filename := filepath.Join(tempDir, "test")
-	if err := ioutil.WriteFile(filename, []byte("payload\n"), os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tempDir, "test"), []byte("payload\n"), os.ModePerm); err != nil {
 		t.Fatalf("unexpected error writing temp file: %s", err)
 	}
 
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, maxPayloadSizeBytes: 10000}
-	if err := client.SendDB(context.Background(), 42, tempDir); err != nil {
+	if err := client.SendDB(context.Background(), 42, filepath.Join(tempDir, "test")); err != nil {
 		t.Fatalf("unexpected error sending db: %s", err)
-	}
-
-	contents, err := ioutil.ReadFile(filepath.Join(tempDir, "dest", "test"))
-	if err != nil {
-		t.Fatalf("unexpected error reading file: %s", err)
-	}
-
-	if diff := cmp.Diff([]byte("payload\n"), contents); diff != "" {
-		t.Errorf("unexpected contents (-want +got):\n%s", diff)
 	}
 }
 
@@ -453,7 +447,7 @@ func TestSendDBMultipart(t *testing.T) {
 	}
 
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, maxPayloadSizeBytes: maxPayloadSizeBytes}
-	if err := client.SendDB(context.Background(), 42, tempDir); err != nil {
+	if err := client.SendDB(context.Background(), 42, filename); err != nil {
 		t.Fatalf("unexpected error sending db: %s", err)
 	}
 
@@ -464,16 +458,7 @@ func TestSendDBMultipart(t *testing.T) {
 		t.Errorf("unexpected final request path. want=%s have=%s", "/dbs/42/stitch", paths[len(paths)-1])
 	}
 
-	if err := tar.Extract(filepath.Join(tempDir, "dest"), bytes.NewReader(sentContent)); err != nil {
-		t.Fatalf("unexpected error extracting payload: %s", err)
-	}
-
-	contents, err := ioutil.ReadFile(filepath.Join(tempDir, "dest", "test"))
-	if err != nil {
-		t.Fatalf("unexpected error reading file: %s", err)
-	}
-
-	if diff := cmp.Diff(fullContents, contents); diff != "" {
+	if diff := cmp.Diff(sentContent, fullContents); diff != "" {
 		t.Errorf("unexpected contents (-want +got):\n%s", diff)
 	}
 }
