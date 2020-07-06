@@ -82,7 +82,7 @@ func TestIndexedSearch(t *testing.T) {
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
-			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}},
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}, {Name: "dev", Version: "bardevSHA"}},
 		},
 	}, {
 		Repository: zoekt.Repository{
@@ -190,6 +190,35 @@ func TestIndexedSearch(t *testing.T) {
 			wantMatchURLs: []string{
 				"git://foo/bar#baz.go",
 				"git://foo/foobar#baz.go",
+			},
+			wantErr: false,
+		},
+		{
+			name: "results multi-branch",
+			args: args{
+				ctx:             context.Background(),
+				query:           &search.TextPatternInfo{FileMatchLimit: 100},
+				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev"),
+				useFullDeadline: false,
+				results: []zoekt.FileMatch{
+					{
+						Repository: "foo/bar",
+						Branches:   []string{"HEAD"},
+						FileName:   "baz.go",
+					},
+					{
+						Repository: "foo/bar",
+						Branches:   []string{"dev"},
+						FileName:   "baz.go",
+					},
+				},
+				since: func(time.Time) time.Duration { return 0 },
+			},
+			wantLimitHit:      false,
+			wantReposLimitHit: map[string]struct{}{},
+			wantMatchURLs: []string{
+				"git://foo/bar?HEAD#baz.go",
+				"git://foo/bar?dev#baz.go",
 			},
 			wantErr: false,
 		},
