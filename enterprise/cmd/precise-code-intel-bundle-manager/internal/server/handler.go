@@ -95,7 +95,7 @@ func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) 
 		return paths.UploadPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	if err := codeintelutils.StitchFiles(filename, makePartFilename, true); err != nil {
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, false, false); err != nil {
 		log15.Error("Failed to stitch multipart upload", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,7 +124,7 @@ func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request
 		return paths.DBPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	if err := codeintelutils.StitchFiles(filename, makePartFilename, false); err != nil {
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, true, false); err != nil {
 		log15.Error("Failed to stitch multipart database", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

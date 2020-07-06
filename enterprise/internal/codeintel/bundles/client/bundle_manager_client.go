@@ -350,11 +350,8 @@ func writeToTempFile(r io.Reader) (_ string, err error) {
 		}
 	}()
 
-	if _, err := io.Copy(file, r); err != nil {
-		return "", err
-	}
-
-	return file.Name(), nil
+	_, err = io.Copy(file, r)
+	return file.Name(), err
 }
 
 // doAndDrop performs an HTTP request to the bundle manager and ignores the body contents.
