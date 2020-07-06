@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -66,7 +66,7 @@ func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt
 	return nil, es.err
 }
 
-func TestZoektSearchHEAD(t *testing.T) {
+func TestIndexedSearch(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
@@ -74,12 +74,22 @@ func TestZoektSearchHEAD(t *testing.T) {
 		query           *search.TextPatternInfo
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
-		searcher        zoekt.Searcher
+		results         []zoekt.FileMatch
 		since           func(time.Time) time.Duration
 	}
 
-	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
-	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
+	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
+	zoektRepos := []*zoekt.RepoListEntry{{
+		Repository: zoekt.Repository{
+			Name:     "foo/bar",
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}},
+		},
+	}, {
+		Repository: zoekt.Repository{
+			Name:     "foo/foobar",
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "foobarHEADSHA"}},
+		},
+	}}
 
 	tests := []struct {
 		name              string
@@ -91,13 +101,12 @@ func TestZoektSearchHEAD(t *testing.T) {
 		wantErr           bool
 	}{
 		{
-			name: "returns no error if search completed with no matches before timeout",
+			name: "no matches",
 			args: args{
 				ctx:             context.Background(),
 				query:           &search.TextPatternInfo{},
-				repos:           singleRepositoryRevisions,
+				repos:           reposHEAD,
 				useFullDeadline: false,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
 			wantLimitHit:      false,
@@ -105,13 +114,12 @@ func TestZoektSearchHEAD(t *testing.T) {
 			wantErr:           false,
 		},
 		{
-			name: "returns error if max wall time is exceeded but no matches have been found yet",
+			name: "no matches timeout",
 			args: args{
 				ctx:             context.Background(),
 				query:           &search.TextPatternInfo{},
-				repos:           singleRepositoryRevisions,
+				repos:           reposHEAD,
 				useFullDeadline: false,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
 			wantLimitHit:      false,
@@ -119,13 +127,12 @@ func TestZoektSearchHEAD(t *testing.T) {
 			wantErr:           true,
 		},
 		{
-			name: "returns error if context timeout already passed",
+			name: "context timeout",
 			args: args{
 				ctx:             zeroTimeoutCtx,
 				query:           &search.TextPatternInfo{},
-				repos:           singleRepositoryRevisions,
+				repos:           reposHEAD,
 				useFullDeadline: true,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
 			wantLimitHit:      false,
@@ -133,73 +140,43 @@ func TestZoektSearchHEAD(t *testing.T) {
 			wantErr:           true,
 		},
 		{
-			name: "returns error if searcher returns an error",
-			args: args{
-				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{},
-				repos:           singleRepositoryRevisions,
-				useFullDeadline: true,
-				searcher:        &errorSearcher{err: errors.New("womp womp")},
-				since:           func(time.Time) time.Duration { return 0 },
-			},
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           true,
-		},
-		{
-			name: "returns accurate match count of 5 line fragment matches across two files",
+			name: "results",
 			args: args{
 				ctx:             context.Background(),
 				query:           &search.TextPatternInfo{FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar@master", "foo/foobar@master"),
+				repos:           makeRepositoryRevisions("foo/bar", "foo/foobar"),
 				useFullDeadline: false,
-				searcher: &fakeSearcher{
-					repos: []*zoekt.RepoListEntry{
-						{
-							Repository: zoekt.Repository{
-								Name: "foo/bar",
-							},
-						},
-						{
-							Repository: zoekt.Repository{
-								Name: "foo/foobar",
-							},
-						},
-					},
-					result: &zoekt.SearchResult{
-						Files: []zoekt.FileMatch{
+				results: []zoekt.FileMatch{
+					{
+						Repository: "foo/bar",
+						Branches:   []string{"HEAD"},
+						FileName:   "baz.go",
+						LineMatches: []zoekt.LineMatch{
 							{
-								Repository: "foo/bar",
-								Branches:   []string{"HEAD"},
-								FileName:   "baz.go",
-								LineMatches: []zoekt.LineMatch{
-									{
-										Line: []byte("I'm like 1.5+ hours into writing this test :'("),
-										LineFragments: []zoekt.LineFragmentMatch{
-											{LineOffset: 0, MatchLength: 5},
-										},
-									},
-									{
-										Line: []byte("I'm ready for the rain to stop."),
-										LineFragments: []zoekt.LineFragmentMatch{
-											{LineOffset: 0, MatchLength: 5},
-											{LineOffset: 5, MatchLength: 10},
-										},
-									},
+								Line: []byte("I'm like 1.5+ hours into writing this test :'("),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{LineOffset: 0, MatchLength: 5},
 								},
 							},
 							{
-								Repository: "foo/foobar",
-								Branches:   []string{"HEAD"},
-								FileName:   "baz.go",
-								LineMatches: []zoekt.LineMatch{
-									{
-										Line: []byte("s/rain/pain"),
-										LineFragments: []zoekt.LineFragmentMatch{
-											{LineOffset: 0, MatchLength: 5},
-											{LineOffset: 5, MatchLength: 2},
-										},
-									},
+								Line: []byte("I'm ready for the rain to stop."),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{LineOffset: 0, MatchLength: 5},
+									{LineOffset: 5, MatchLength: 10},
+								},
+							},
+						},
+					},
+					{
+						Repository: "foo/foobar",
+						Branches:   []string{"HEAD"},
+						FileName:   "baz.go",
+						LineMatches: []zoekt.LineMatch{
+							{
+								Line: []byte("s/rain/pain"),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{LineOffset: 0, MatchLength: 5},
+									{LineOffset: 5, MatchLength: 2},
 								},
 							},
 						},
@@ -219,12 +196,33 @@ func TestZoektSearchHEAD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			args := &search.TextParameters{
-				PatternInfo:     tt.args.query,
-				UseFullDeadline: tt.args.useFullDeadline,
-				Zoekt:           &searchbackend.Zoekt{Client: tt.args.searcher},
+			q, err := query.ParseAndCheck("")
+			if err != nil {
+				t.Fatal(err)
 			}
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearch(tt.args.ctx, args, nil, tt.args.repos, textRequest, tt.args.since)
+
+			args := &search.TextParameters{
+				Query:           q,
+				PatternInfo:     tt.args.query,
+				Repos:           tt.args.repos,
+				UseFullDeadline: tt.args.useFullDeadline,
+				Zoekt: &searchbackend.Zoekt{
+					Client: &fakeSearcher{
+						result: &zoekt.SearchResult{Files: tt.args.results},
+						repos:  zoektRepos,
+					},
+					DisableCache: true,
+				},
+			}
+
+			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			indexed.since = tt.args.since
+
+			gotFm, gotLimitHit, gotReposLimitHit, err := indexed.Search(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -232,8 +230,8 @@ func TestZoektSearchHEAD(t *testing.T) {
 			if gotLimitHit != tt.wantLimitHit {
 				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
-			if !reflect.DeepEqual(gotReposLimitHit, tt.wantReposLimitHit) {
-				t.Errorf("zoektSearchHEAD() gotReposLimitHit = %v, want %v", gotReposLimitHit, tt.wantReposLimitHit)
+			if diff := cmp.Diff(tt.wantReposLimitHit, gotReposLimitHit, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("reposLimitHit mismatch (-want +got):\n%s", diff)
 			}
 
 			var gotMatchCount int

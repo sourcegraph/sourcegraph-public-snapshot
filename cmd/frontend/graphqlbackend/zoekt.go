@@ -65,6 +65,9 @@ type indexedSearchRequest struct {
 	// repoBranches[repo.Name][i] maps to repo.RevSpecs[i].RevSpec. This
 	// invariant is maintained for mapping results back.
 	repoBranches map[string][]string
+
+	// since if non-nil will be used instead of time.Since. For tests
+	since func(time.Time) time.Duration
 }
 
 func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
@@ -155,13 +158,18 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 		return nil, false, nil, nil
 	}
 
+	since := time.Since
+	if s.since != nil {
+		since = s.since
+	}
+
 	switch s.typ {
 	case textRequest:
-		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, time.Since)
+		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, since)
 	case symbolRequest:
-		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, time.Since)
+		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.Repos, false, time.Since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.Repos, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
