@@ -55,9 +55,15 @@ const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = (
                         )
                     ),
                     tap(onDidUpdate),
-                    tap(() => refreshSiteFlags().subscribe())
+                    tap(deletedOrError => {
+                        // eslint-disable-next-line rxjs/no-ignored-subscription
+                        refreshSiteFlags().subscribe()
+                        if (deletedOrError === true) {
+                            history.push('/site-admin/repositories?repositoriesUpdated')
+                        }
+                    })
                 ),
-            [node.displayName, node.id, onDidUpdate]
+            [history, node.displayName, node.id, onDidUpdate]
         )
     )
 

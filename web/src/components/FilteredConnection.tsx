@@ -704,7 +704,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (!filter) {
             filter = this.state.activeFilter
         }
-        const searchParameters = new URLSearchParams()
+        const searchParameters = new URLSearchParams(this.props.location.search)
         if (query) {
             searchParameters.set(QUERY_KEY, query)
         }

@@ -13,7 +13,7 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     input: GQL.IAddExternalServiceInput
     isLightTheme: boolean
     error?: ErrorLike
-    warning?: string
+    warning?: string | null
     mode: 'edit' | 'create'
     loading: boolean
     hideDisplayNameField?: boolean
