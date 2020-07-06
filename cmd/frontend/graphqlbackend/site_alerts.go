@@ -2,7 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -103,6 +107,8 @@ func init() {
 
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
+
+	AlertFuncs = append(AlertFuncs, activeAlertsAlert)
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
@@ -263,4 +269,49 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", months)
 		return &Alert{TypeValue: alertType, MessageValue: message, IsDismissibleWithKeyValue: key}
 	}
+}
+
+// activeAlertsAlert directs admins to check Grafana if critical alerts are firing
+func activeAlertsAlert(args AlertFuncArgs) []*Alert {
+	if !args.IsSiteAdmin || len(prometheusutil.PrometheusURL) == 0 {
+		return nil
+	}
+
+	// set up request to fetch status from prom-wrapper
+	errorKey := "active-alerts-alert-error"
+	promURL, err := url.Parse(prometheusutil.PrometheusURL)
+	if err != nil {
+		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
+	}
+	promURL.Path = "/prom-wrapper/alerts-status"
+	req, err := http.NewRequest("GET", promURL.String(), nil)
+	if err != nil {
+		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
+	}
+
+	// use a short timeout to avoid having this block problems from loading
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	if err != nil {
+		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: %s", err), IsDismissibleWithKeyValue: errorKey}}
+	}
+	if resp.StatusCode != 200 {
+		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: status %d", resp.StatusCode), IsDismissibleWithKeyValue: errorKey}}
+	}
+
+	var alertsStatus map[string]int
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&alertsStatus); err != nil {
+		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error(), IsDismissibleWithKeyValue: errorKey}}
+	}
+	criticalAlerts := alertsStatus["critical"]
+	servicesCritical := alertsStatus["services_critical"]
+	if criticalAlerts == 0 {
+		return nil
+	}
+	msg := fmt.Sprintf("%d critical alerts across %d services are currently firing - [view alerts](/-/debug/grafana)",
+		criticalAlerts, servicesCritical)
+	key := fmt.Sprintf("active-alerts-alert-%d-critical-%d-services", criticalAlerts, servicesCritical)
+	return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg, IsDismissibleWithKeyValue: key}}
 }

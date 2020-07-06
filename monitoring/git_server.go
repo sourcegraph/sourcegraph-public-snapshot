@@ -68,9 +68,9 @@ func GitServer() *Container {
 							Description:     "echo command duration test",
 							Query:           "max(src_gitserver_echo_duration_seconds)",
 							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 1.0},
-							Critical:        Alert{GreaterOrEqual: 2.0},
-							PanelOptions:    PanelOptions().LegendFormat("running commands").Unit(Seconds),
+							// Warning:         Alert{GreaterOrEqual: 1.0},
+							Critical:     Alert{GreaterOrEqual: 0.00001},
+							PanelOptions: PanelOptions().LegendFormat("running commands").Unit(Seconds),
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
