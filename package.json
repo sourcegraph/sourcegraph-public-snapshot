@@ -183,7 +183,7 @@
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.9",
     "cross-env": "^7.0.2",
-    "css-loader": "^3.5.3",
+    "css-loader": "^3.6.0",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
     "enzyme-to-json": "^3.5.0",
