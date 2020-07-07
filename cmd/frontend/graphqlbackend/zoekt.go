@@ -56,6 +56,18 @@ type indexedSearchRequest struct {
 	// inputs
 	args *search.TextParameters
 	typ  indexedRequestType
+
+	// repoBranches is the zoekt representation of Repos. It will be used when
+	// querying Zoekt.
+	//
+	// We maintain an invariant between the list of branches in repoBranches
+	// and the list of input revs in Repos. For any repo in Repos,
+	// repoBranches[repo.Name][i] maps to repo.RevSpecs[i].RevSpec. This
+	// invariant is maintained for mapping results back.
+	repoBranches map[string][]string
+
+	// since if non-nil will be used instead of time.Since. For tests
+	since func(time.Time) time.Duration
 }
 
 func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType) (*indexedSearchRequest, error) {
@@ -127,14 +139,15 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	// Split based on indexed vs unindexed
-	zoektRepos, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+	repoBranches, zoektRepos, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
 
 	return &indexedSearchRequest{
 		args: args,
 		typ:  typ,
 
-		Repos:     zoektRepos,
-		Unindexed: searcherRepos,
+		Repos:        zoektRepos,
+		Unindexed:    searcherRepos,
+		repoBranches: repoBranches,
 
 		DisableUnindexedSearch: indexParam == Only,
 	}, nil
@@ -145,13 +158,18 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 		return nil, false, nil, nil
 	}
 
+	since := time.Since
+	if s.since != nil {
+		since = s.since
+	}
+
 	switch s.typ {
 	case textRequest:
-		return zoektSearchHEAD(ctx, s.args, s.Repos, s.typ, time.Since)
+		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, since)
 	case symbolRequest:
-		return zoektSearchHEAD(ctx, s.args, s.Repos, s.typ, time.Since)
+		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.Repos, false, time.Since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.Repos, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
@@ -210,21 +228,19 @@ func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 
-// zoektSearchHEAD searches repositories using zoekt.
+// zoektSearch searches repositories using zoekt.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, repos []*search.RepositoryRevisions, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
 
 	// Tell zoekt which repos to search
-	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
 	repoMap := make(map[string]*search.RepositoryRevisions, len(repos))
 	for _, repoRev := range repos {
-		repoSet.Set[string(repoRev.Repo.Name)] = true
 		repoMap[string(repoRev.Repo.Name)] = repoRev
 	}
 
@@ -232,9 +248,9 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
+	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repoBranches}, queryExceptRepos)
 
-	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoSet.Set), finalQuery.String()))
+	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoMap), finalQuery.String()))
 	defer func() {
 		tr.SetError(err)
 		if len(fm) > 0 {
@@ -331,7 +347,20 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
-		inputRev := repoRev.Revs[0].RevSpec // RevSpec is guaranteed to be explicit via zoektIndexedRepos
+
+		// TODO(keegancsmith) We need to handle results across branches for
+		// the same file. Options:
+		// 1. a filematch per file.Branches
+		// 2. update result schema to have multiple uris.
+		//
+		// For now we only show one result for simplicity.
+		branch := file.Branches[0]
+		inputRev := file.Version // we should find a match in "revs", just in case we don't fallback to SHA.
+		for i, b := range repoBranches[file.Repository] {
+			if branch == b {
+				inputRev = repoRev.Revs[i].RevSpec // RevSpec is guaranteed to be explicit via zoektIndexedRepos
+			}
+		}
 
 		// symbols is set in symbols search, lines in text search.
 		var (
@@ -350,7 +379,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
 			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
-			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+			uri:          fileMatchURI(repoRev.Repo.Name, inputRev, file.FileName),
 			symbols:      symbols,
 			Repo:         repoResolvers[repoRev.Repo.Name],
 			CommitID:     api.CommitID(file.Version),
@@ -544,15 +573,31 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (repoBranches map[string][]string, indexed, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = make([]*search.RepositoryRevisions, 0, len(revs))
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
+	// repoBranches will be used when we query zoekt. The order of branches
+	// must match that in a reporev such that we can map back results. IE this
+	// invariant is maintained:
+	//
+	//  repoBranches[reporev.Name][i] <-> reporev.Revs[i]
+	repoBranches = make(map[string][]string, len(revs))
+
 	for _, reporev := range revs {
-		repo, ok := indexedSet[string(reporev.Repo.Name)]
+		zoektName := string(reporev.Repo.Name)
+		repo, ok := indexedSet[zoektName]
 		if !ok || (filter != nil && !filter(repo)) {
+			unindexed = append(unindexed, reporev)
+			continue
+		}
+
+		// A repo should only appear once in revs. However, in case this
+		// invariant is broken we will treat later revs as if it isn't
+		// indexed.
+		if _, ok := repoBranches[zoektName]; ok {
 			unindexed = append(unindexed, reporev)
 			continue
 		}
@@ -580,20 +625,22 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 				// Check if rev is an abbrev commit SHA
 				if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 					branches = append(branches, branch.Name)
+					break
 				}
 			}
 
 		}
 
-		// Only search zoekt if we can search all revisions on it.
+		// Only search zoekt if we can search all revisions on it. TODO see if
+		// anything breaks if we do split out the search. Educated guess: the
+		// lists of repos in searchResultsCommon may not like it.
 		if len(branches) == len(reporev.Revs) {
-			// TODO we should return the list of branches to search. Maybe
-			// create the zoektquery.RepoBranches map here?
 			indexed = append(indexed, reporev)
+			repoBranches[zoektName] = branches
 		} else {
 			unindexed = append(unindexed, reporev)
 		}
 	}
 
-	return indexed, unindexed
+	return repoBranches, indexed, unindexed
 }

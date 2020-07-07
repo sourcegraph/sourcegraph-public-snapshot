@@ -317,7 +317,7 @@ func TestDefaultRepositories(t *testing.T) {
 				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
 			}
 			z := &searchbackend.Zoekt{
-				Client:       &fakeSearcher{repos: &zoekt.RepoList{Repos: indexed}},
+				Client:       &fakeSearcher{repos: indexed},
 				DisableCache: true,
 			}
 

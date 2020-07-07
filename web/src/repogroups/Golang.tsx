@@ -254,10 +254,9 @@ export const golang: RepogroupMetadata = {
                 <>
                     {'switch :[_] := :[_].(type) { :[string] }'}{' '}
                     <span className="repogroup-page__keyword-text">lang:</span>go{' '}
-                    <span className="repogroup-page__keyword-text">count:</span>1000
                 </>
             ),
-            rawQuery: 'switch :[_] := :[_].(type) { :[string] } lang:go count:1000',
+            rawQuery: 'switch :[_] := :[_].(type) { :[string] } lang:go',
             patternType: SearchPatternType.structural,
         },
     ],

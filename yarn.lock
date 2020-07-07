@@ -2988,10 +2988,10 @@
     "@types/node" "*"
     "@types/responselike" "*"
 
-"@types/chai-as-promised@7.1.2":
-  version "7.1.2"
-  resolved "https://registry.npmjs.org/@types/chai-as-promised/-/chai-as-promised-7.1.2.tgz#2f564420e81eaf8650169e5a3a6b93e096e5068b"
-  integrity sha512-PO2gcfR3Oxa+u0QvECLe1xKXOqYTzCmWf0FhLhjREoW3fPAVamjihL7v1MOVLJLsnAMdLcjkfrs01yvDMwVK4Q==
+"@types/chai-as-promised@7.1.3":
+  version "7.1.3"
+  resolved "https://registry.npmjs.org/@types/chai-as-promised/-/chai-as-promised-7.1.3.tgz#779166b90fda611963a3adbfd00b339d03b747bd"
+  integrity sha512-FQnh1ohPXJELpKhzjuDkPLR2BZCAqed+a6xV4MI/T3XzHfd2FlarfUGUdZYgqYe8oxkYn0fchHEeHfHqdZ96sg==
   dependencies:
     "@types/chai" "*"
 
@@ -3298,10 +3298,10 @@
   dependencies:
     "@types/jest" "*"
 
-"@types/jest@*", "@types/jest@25.2.3":
-  version "25.2.3"
-  resolved "https://registry.npmjs.org/@types/jest/-/jest-25.2.3.tgz#33d27e4c4716caae4eced355097a47ad363fdcaf"
-  integrity sha512-JXc1nK/tXHiDhV55dvfzqtmP4S3sy3T3ouV2tkViZgxY/zeUkcpQcQPGRlgF4KmWzWW5oiWYSZwtCB+2RsE4Fw==
+"@types/jest@*", "@types/jest@26.0.4":
+  version "26.0.4"
+  resolved "https://registry.npmjs.org/@types/jest/-/jest-26.0.4.tgz#d2e513e85aca16992816f192582b5e67b0b15efb"
+  integrity sha512-4fQNItvelbNA9+sFgU+fhJo8ZFF+AS4Egk3GWwCW2jFtViukXbnztccafAdLhzE/0EiCogljtQQXP8aQ9J7sFg==
   dependencies:
     jest-diff "^25.2.1"
     pretty-format "^25.2.1"
@@ -3565,10 +3565,10 @@
     "@types/react" "*"
     "@types/react-router" "*"
 
-"@types/react-router@*", "@types/react-router@5.1.7":
-  version "5.1.7"
-  resolved "https://registry.npmjs.org/@types/react-router/-/react-router-5.1.7.tgz#e9d12ed7dcfc79187e4d36667745b69a5aa11556"
-  integrity sha512-2ouP76VQafKjtuc0ShpwUebhHwJo0G6rhahW9Pb8au3tQTjYXd2jta4wv6U2tGLR/I42yuG00+UXjNYY0dTzbg==
+"@types/react-router@*", "@types/react-router@5.1.8":
+  version "5.1.8"
+  resolved "https://registry.npmjs.org/@types/react-router/-/react-router-5.1.8.tgz#4614e5ba7559657438e17766bb95ef6ed6acc3fa"
+  integrity sha512-HzOyJb+wFmyEhyfp4D4NYrumi+LQgQL/68HvJO+q6XtuHSDvw6Aqov7sCAhjbNq3bUPgPqbdvjXC5HeB2oEAPg==
   dependencies:
     "@types/history" "*"
     "@types/react" "*"
@@ -3618,19 +3618,13 @@
     "@types/react" "*"
     popper.js "^1.14.1"
 
-"@types/recharts-scale@*":
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/@types/recharts-scale/-/recharts-scale-1.0.0.tgz#348c9220d6d9062c44a9d585d686644a97f7e25d"
-  integrity sha512-HR/PrCcxYb2YHviTqH7CMdL1TUhUZLTUKzfrkMhxm1HTa5mg/QtP8XMiuSPz6dZ6wecazAOu8aYZ5DqkNlgHHQ==
-
-"@types/recharts@1.8.10":
-  version "1.8.10"
-  resolved "https://registry.npmjs.org/@types/recharts/-/recharts-1.8.10.tgz#46bfc0450b1d38e84642b8b22a290359e454f7f6"
-  integrity sha512-XHVagR/eJFTTeYGygNuZIiMhNpwGjjf5+8clc6ST27sReecEZN7YTRWlZVvMyN0sJRIhABTLnhoIU+5Gts9+yQ==
+"@types/recharts@1.8.14":
+  version "1.8.14"
+  resolved "https://registry.npmjs.org/@types/recharts/-/recharts-1.8.14.tgz#7fcbf9346db415d417910f5ce17af4e3e8e42c57"
+  integrity sha512-Q4NR9vgmugOELYY/8lXzs99nf9E1/fDWx6ZTVEjAtOhAbqXYFrepyQKa4+bR4mHl1F2WcYgf96fvWIu7It6rmA==
   dependencies:
     "@types/d3-shape" "*"
     "@types/react" "*"
-    "@types/recharts-scale" "*"
 
 "@types/resize-observer-browser@0.1.3":
   version "0.1.3"
@@ -3892,10 +3886,10 @@
     "@types/source-list-map" "*"
     source-map "^0.6.1"
 
-"@types/webpack@*", "@types/webpack@4.41.18":
-  version "4.41.18"
-  resolved "https://registry.npmjs.org/@types/webpack/-/webpack-4.41.18.tgz#2945202617866ecdffa582087f1b6de04a7eed55"
-  integrity sha512-mQm2R8vV2BZE/qIDVYqmBVLfX73a8muwjs74SpjEyJWJxeXBbsI9L65Pcia9XfYLYWzD1c1V8m+L0p30y2N7MA==
+"@types/webpack@*", "@types/webpack@4.41.20":
+  version "4.41.20"
+  resolved "https://registry.npmjs.org/@types/webpack/-/webpack-4.41.20.tgz#aceaa606240d6897d88d70bcb9ff0e61bd691f4c"
+  integrity sha512-MBHtjttd1NTrrr3m+De5VAlnNHgkdK79Kd0zAjVpFPPOSXri+3oA9q8VvC7SDPITzaWiSS1whBrGLtN2HodM5w==
   dependencies:
     "@types/anymatch" "*"
     "@types/node" "*"
@@ -9109,10 +9103,10 @@ eslint@^3.7.1:
     text-table "~0.2.0"
     user-home "^2.0.0"
 
-eslint@^7.3.1:
-  version "7.3.1"
-  resolved "https://registry.npmjs.org/eslint/-/eslint-7.3.1.tgz#76392bd7e44468d046149ba128d1566c59acbe19"
-  integrity sha512-cQC/xj9bhWUcyi/RuMbRtC3I0eW8MH0jhRELSvpKYkWep3C6YZ2OkvcvJVUeO6gcunABmzptbXBuDoXsjHmfTA==
+eslint@^7.4.0:
+  version "7.4.0"
+  resolved "https://registry.npmjs.org/eslint/-/eslint-7.4.0.tgz#4e35a2697e6c1972f9d6ef2b690ad319f80f206f"
+  integrity sha512-gU+lxhlPHu45H3JkEGgYhWhkR9wLHHEXC9FbWFnTlEkbKyZKWgWRLgf61E8zWmBuI6g5xKBph9ltg3NtZMVF8g==
   dependencies:
     "@babel/code-frame" "^7.0.0"
     ajv "^6.10.0"
@@ -10874,10 +10868,10 @@ graphql-request@^1.5.0:
   dependencies:
     cross-fetch "2.2.2"
 
-graphql-schema-linter@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-0.4.0.tgz#3fa099ea45cba6fd239130cdf0387e36cb1cc3b7"
-  integrity sha512-3aTKlMJKA+xjjRROG5d9wqNzWFJNcqfZI4/Oo58wR6kembBPJEARsMu6l0QH/2spZNQSLdqUUaN+/m4FyJ2bOQ==
+graphql-schema-linter@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-0.5.0.tgz#6136bc2c30ff03408f6b93f5648b2da82971ad15"
+  integrity sha512-x7Z1qTpvoDjoRAf2hqGKmznKxoUw3t0QX28R5gcvkVZXZbeDDNnbhmW57Z3EXulqxwkNUiIqDImtJDOjhPYqyg==
   dependencies:
     chalk "^2.0.1"
     columnify "^1.5.4"
