@@ -671,7 +671,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-						group.AppendRow(alertQuery, makeLabels("high"))
+						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"))
 					}
 					if alert.LessOrEqual != 0 {
 						//
@@ -694,7 +694,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-						group.AppendRow(alertQuery, makeLabels("low"))
+						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"))
 					}
 				}
 			}
