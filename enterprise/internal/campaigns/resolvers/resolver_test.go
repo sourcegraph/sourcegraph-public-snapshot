@@ -90,17 +90,30 @@ func TestCampaigns(t *testing.T) {
 		}
 	`)
 
-	var campaigns struct{ Admin, Org apitest.Campaign }
-
-	input := map[string]interface{}{
+	var campaignSpecs struct{ A, B apitest.CampaignSpec }
+	apitest.MustExec(ctx, t, s, map[string]interface{}{
 		"admin": users.Admin.ID,
 		"org":   orgs.ACME.ID,
-		// TODO: Use real campaign specs
-		"spec1": "CampaignSpec:TODO:0",
-		"spec2": "CampaignSpec:TODO:1",
-	}
+		"specA": `{"name":"specA"}`,
+		"specB": `{"name":"specB"}`,
+	}, &campaignSpecs, `
+		fragment s on CampaignSpec {
+			id
+			namespace {
+				id
+			}
+		}
+		mutation($admin: ID!, $org: ID!, $specA: String!, $specB: String!) {
+			A: createCampaignSpec(namespace: $admin, campaignSpec: $specA, changesetSpecs: []) { ...s }
+			B: createCampaignSpec(namespace: $org, campaignSpec: $specB, changesetSpecs: [])   { ...s }
+		}
+	`)
 
-	apitest.MustExec(ctx, t, s, input, &campaigns, `
+	var campaigns struct{ A, B apitest.Campaign }
+	apitest.MustExec(ctx, t, s, map[string]interface{}{
+		"specA": campaignSpecs.A.ID,
+		"specB": campaignSpecs.B.ID,
+	}, &campaigns, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -111,17 +124,17 @@ func TestCampaigns(t *testing.T) {
 				... on Org  { ...o }
 			}
 		}
-		mutation($admin: ID!, $org: ID!, $spec1: ID!, $spec2: ID!){
-			admin: createCampaign(namespace: $admin, campaignSpec: $spec1) { ...c }
-			org: createCampaign(namespace: $org, campaignSpec: $spec2)     { ...c }
+		mutation($specA: ID!, $specB: ID!) {
+			A: applyCampaign(campaignSpec: $specA) { ...c }
+			B: applyCampaign(campaignSpec: $specB) { ...c }
 		}
 	`)
 
-	if have, want := campaigns.Admin.Namespace.ID, users.Admin.ID; have != want {
+	if have, want := campaigns.A.Namespace.ID, users.Admin.ID; have != want {
 		t.Fatalf("have admin's campaign namespace id %q, want %q", have, want)
 	}
 
-	if have, want := campaigns.Org.Namespace.ID, orgs.ACME.ID; have != want {
+	if have, want := campaigns.B.Namespace.ID, orgs.ACME.ID; have != want {
 		t.Fatalf("have orgs's campaign namespace id %q, want %q", have, want)
 	}
 
@@ -149,7 +162,7 @@ func TestCampaigns(t *testing.T) {
 	`)
 
 	have := listed.First.Nodes
-	want := []apitest.Campaign{campaigns.Admin}
+	want := []apitest.Campaign{campaigns.A}
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
 	}
@@ -159,7 +172,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	have = listed.All.Nodes
-	want = []apitest.Campaign{campaigns.Admin, campaigns.Org}
+	want = []apitest.Campaign{campaigns.A, campaigns.B}
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
 	}
@@ -1087,8 +1100,6 @@ func TestApplyCampaign(t *testing.T) {
 
 	userApiID := string(graphqlbackend.MarshalUserID(userID))
 	input := map[string]interface{}{
-		// TODO: Do we need the namespace in this mutation?
-		"namespace":    userApiID,
 		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
 	}
 
@@ -1151,8 +1162,8 @@ const mutationApplyCampaign = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($namespace: ID!, $campaignSpec: ID!, $ensureCampaign: ID){
-  applyCampaign(namespace: $namespace, campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
+mutation($campaignSpec: ID!, $ensureCampaign: ID){
+  applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
 	id, name, description, branch
 	author    { ...u }
 	namespace {

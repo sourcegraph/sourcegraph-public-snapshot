@@ -54,17 +54,17 @@ const campaignFragment = gql`
     ${DiffStatFields}
 `
 
-export async function createCampaign(namespace: ID, campaignSpec: ID): Promise<ICampaign> {
+export async function createCampaign(campaignSpec: ID): Promise<ICampaign> {
     const result = await mutateGraphQL(
         gql`
-            mutation CreateCampaign($namespace: ID!, $campaignSpec: ID!) {
-                createCampaign(namespace: $namespace, campaignSpec: $campaignSpec) {
+            mutation CreateCampaign($campaignSpec: ID!) {
+                createCampaign(campaignSpec: $campaignSpec) {
                     id
                     url
                 }
             }
         `,
-        { namespace, campaignSpec }
+        { campaignSpec }
     ).toPromise()
     return dataOrThrowErrors(result).createCampaign
 }
