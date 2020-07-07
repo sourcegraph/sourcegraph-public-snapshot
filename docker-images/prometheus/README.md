@@ -27,3 +27,5 @@ Image expects two volumes mounted:
 You can specify additional flags to pass to Prometheus by setting the environment variable `PROMETHEUS_ADDITIONAL_FLAGS`, and similarly for Alertmanager, you can set the environment variable `ALERTMANAGER_ADDITIONAL_FLAGS`. For example, this can be used to leverage [high-availability Alertmanager](https://github.com/prometheus/alertmanager#high-availability).
 
 `prom-wrapper` also accepts a few configuration options through environment variables - see [`cmd/prom-wrapper/main.go`](./cmd/prom-wrapper/main.go) for more details.
+
+Alertmanager components can be disabled entirely with `DISABLE_ALERTMANAGER=true`.

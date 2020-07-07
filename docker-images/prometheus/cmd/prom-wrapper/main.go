@@ -22,8 +22,9 @@ import (
 
 // prom-wrapper configuration options
 var (
-	noConfig   = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
-	exportPort = env.Get("EXPORT_PORT", "9090", "port that should be used to reverse-proxy Prometheus and custom endpoints externally")
+	noConfig       = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
+	noAlertmanager = os.Getenv("DISABLE_ALERTMANAGER")
+	exportPort     = env.Get("EXPORT_PORT", "9090", "port that should be used to reverse-proxy Prometheus and custom endpoints externally")
 
 	prometheusPort = env.Get("PROMETHEUS_INTERNAL_PORT", "9092", "internal Prometheus port")
 
@@ -34,10 +35,11 @@ var (
 func main() {
 	log := log15.New("cmd", "prom-wrapper")
 	ctx := context.Background()
+	disableAlertmanager := noAlertmanager == "true"
+	disableSourcegraphConfig := noConfig == "true"
 
 	// spin up prometheus and alertmanager
 	procErrs := make(chan error)
-	go runCmd(log, procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
 	var promArgs []string
 	if len(os.Args) > 1 {
 		promArgs = os.Args[1:] // propagate args to prometheus
@@ -48,42 +50,50 @@ func main() {
 	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying Grafana, etc.
 	router := mux.NewRouter()
 
-	// wait for alertmanager to become available
-	log.Info("waiting for alertmanager")
-	alertmanager := amclient.NewHTTPClientWithConfig(nil, &amclient.TransportConfig{
-		Host:     fmt.Sprintf("127.0.0.1:%s", alertmanagerPort),
-		BasePath: fmt.Sprintf("/%s/api/v2", alertmanagerPathPrefix),
-		Schemes:  []string{"http"},
-	})
-	alertmanagerWaitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	if err := waitForAlertmanager(alertmanagerWaitCtx, alertmanager); err != nil {
-		log.Crit("unable to reach Alertmanager", "error", err)
-		os.Exit(1)
-	}
-	cancel()
-	log.Debug("detected alertmanager ready")
-
-	// subscribe to configuration
-	if noConfig == "true" {
-		log.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
+	// disable all components that depend on Alertmanager if DISABLE_ALERTMANAGER=true
+	if disableAlertmanager {
+		log.Warn("DISABLE_ALERTMANAGER=true; Alertmanager is disabled")
 	} else {
-		log.Info("initializing configuration")
-		subscriber := NewSiteConfigSubscriber(log, alertmanager)
+		// start alertmanager
+		go runCmd(log, procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
 
-		// watch for configuration updates in the background
-		go subscriber.Subscribe(ctx)
+		// wait for alertmanager to become available
+		log.Info("waiting for alertmanager")
+		alertmanager := amclient.NewHTTPClientWithConfig(nil, &amclient.TransportConfig{
+			Host:     fmt.Sprintf("127.0.0.1:%s", alertmanagerPort),
+			BasePath: fmt.Sprintf("/%s/api/v2", alertmanagerPathPrefix),
+			Schemes:  []string{"http"},
+		})
+		alertmanagerWaitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		if err := waitForAlertmanager(alertmanagerWaitCtx, alertmanager); err != nil {
+			log.Crit("unable to reach Alertmanager", "error", err)
+			os.Exit(1)
+		}
+		cancel()
+		log.Debug("detected alertmanager ready")
 
-		// serve subscriber status
-		router.PathPrefix("/prom-wrapper/config-subscriber").Handler(subscriber.Handler())
+		// subscribe to configuration
+		if disableSourcegraphConfig {
+			log.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
+		} else {
+			log.Info("initializing configuration")
+			subscriber := NewSiteConfigSubscriber(log, alertmanager)
+
+			// watch for configuration updates in the background
+			go subscriber.Subscribe(ctx)
+
+			// serve subscriber status
+			router.PathPrefix("/prom-wrapper/config-subscriber").Handler(subscriber.Handler())
+		}
+
+		// serve alertmanager via reverse proxy
+		router.PathPrefix(fmt.Sprintf("/%s", alertmanagerPathPrefix)).Handler(&httputil.ReverseProxy{
+			Director: func(req *http.Request) {
+				req.URL.Scheme = "http"
+				req.URL.Host = fmt.Sprintf(":%s", alertmanagerPort)
+			},
+		})
 	}
-
-	// serve alertmanager via reverse proxy
-	router.PathPrefix(fmt.Sprintf("/%s", alertmanagerPathPrefix)).Handler(&httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.URL.Scheme = "http"
-			req.URL.Host = fmt.Sprintf(":%s", alertmanagerPort)
-		},
-	})
 
 	// serve prometheus by default via reverse proxy - place last so other prefixes get served first
 	router.PathPrefix("/").Handler(&httputil.ReverseProxy{
