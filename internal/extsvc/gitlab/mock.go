@@ -29,6 +29,10 @@ var MockGetMergeRequest func(c *Client, ctx context.Context, project *Project, i
 // Client.GetMergeRequestNotes
 var MockGetMergeRequestNotes func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*Note, error)
 
+// MockGetMergeRequestPipelines, if non-nil, will be called instead of
+// Client.GetMergeRequestPipelines
+var MockGetMergeRequestPipelines func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*Pipeline, error)
+
 // MockGetOpenMergeRequestByRefs, if non-nil, will be called instead of
 // Client.GetOpenMergeRequestByRefs
 var MockGetOpenMergeRequestByRefs func(c *Client, ctx context.Context, project *Project, source, target string) (*MergeRequest, error)

@@ -50,36 +50,13 @@ type MergeRequest struct {
 	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
 	// GraphQL API to retrieve all of this data at once, but until then, we have
 	// to do it the old fashioned way with lots of REST requests.
-	Notes []*Note
+	Notes     []*Note
+	Pipelines []*Pipeline
 
 	// TODO: labels
 
 	// TODO: other fields at
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
-}
-
-type Pipeline struct {
-	ID     ID             `json:"id"`
-	SHA    string         `json:"sha"`
-	Ref    string         `json:"ref"`
-	Status PipelineStatus `json:"status"`
-}
-
-type PipelineStatus string
-
-const (
-	PipelineStatusRunning  PipelineStatus = "running"
-	PipelineStatusPending  PipelineStatus = "pending"
-	PipelineStatusSuccess  PipelineStatus = "success"
-	PipelineStatusFailed   PipelineStatus = "failed"
-	PipelineStatusCanceled PipelineStatus = "canceled"
-	PipelineStatusSkipped  PipelineStatus = "skipped"
-	PipelineStatusCreated  PipelineStatus = "created"
-	PipelineStatusManual   PipelineStatus = "manual"
-)
-
-func (p *Pipeline) Key() string {
-	return fmt.Sprintf("Pipeline:%d", p.ID)
 }
 
 var (
@@ -151,21 +128,26 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 		return MockGetMergeRequestNotes(c, ctx, project, iid)
 	}
 
-	page := 1
+	pr := c.newPaginatedResult("GET", fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid), func() interface{} { return []*Note{} })
 	return func() ([]*Note, error) {
-		defer func() { page++ }()
+		page, err := pr.next(ctx)
+		return page.([]*Note), err
+	}
+}
 
-		req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d/notes?page=%d", project.ID, iid, page), nil)
-		if err != nil {
-			return nil, errors.Wrapf(err, "creating request to get merge request notes page %d", page)
-		}
+// GetMergeRequestPipelines retrieves the pipelines that have been executed as
+// part of the given merge request. As the pipelines are paginated, a function
+// is returned that may be invoked to return the next page of results. An empty
+// slice and a nil error indicates that all pages have been returned.
+func (c *Client) GetMergeRequestPipelines(ctx context.Context, project *Project, iid ID) func() ([]*Pipeline, error) {
+	if MockGetMergeRequestPipelines != nil {
+		return MockGetMergeRequestPipelines(c, ctx, project, iid)
+	}
 
-		resp := []*Note{}
-		if _, _, err := c.do(ctx, req, &resp); err != nil {
-			return nil, errors.Wrapf(err, "sending request to get merge request notes page %d", page)
-		}
-
-		return resp, nil
+	pr := c.newPaginatedResult("GET", fmt.Sprintf("projects/%d/merge_requests/%d/pipelines", project.ID, iid), func() interface{} { return []*Pipeline{} })
+	return func() ([]*Pipeline, error) {
+		page, err := pr.next(ctx)
+		return page.([]*Pipeline), err
 	}
 }
 
