@@ -6,11 +6,31 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
 func TestRepositories(t *testing.T) {
 	resetMocks()
-	db.Mocks.Repos.MockList(t, "repo1", "repo2", "repo3")
+	repos := make([]*types.Repo, 3)
+	repos[0] = &types.Repo{Name: "repo1"}
+	repos[1] = &types.Repo{Name: "repo2"}
+	repos[2] = &types.Repo{
+		Name: "repo3",
+		RepoFields: &types.RepoFields{
+			Cloned: true,
+		},
+	}
+	db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+		if opt.NoCloned {
+			return repos[0:2], nil
+		}
+		if opt.OnlyCloned {
+			return repos[2:], nil
+		}
+
+		return repos, nil
+	}
+
 	db.Mocks.Repos.Count = func(context.Context, db.ReposListOptions) (int, error) { return 3, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
@@ -56,6 +76,71 @@ func TestRepositories(t *testing.T) {
 							{ "name": "repo2" }
 						],
 						"pageInfo": {"hasNextPage": true}
+					}
+				}
+			`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+				{
+					repositories(cloned: false) {
+						nodes { name }
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo1" },
+							{ "name": "repo2" }
+						],
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+				{
+					repositories(notCloned: false) {
+						nodes { name }
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo3" }
+						],
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+				{
+					repositories(notCloned: false, cloned: false) {
+						nodes { name }
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo1" },
+							{ "name": "repo2" }
+						],
+						"pageInfo": {"hasNextPage": false}
 					}
 				}
 			`,
