@@ -83,8 +83,9 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				repository_id,
 				indexer,
 				num_parts,
-				uploaded_parts
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				uploaded_parts,
+				upload_size
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -101,6 +102,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.Indexer,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

@@ -19,7 +19,7 @@ const GetStateBatchSize = 100
 
 // MinimumUploadAge is the minimum age an upload has to be before it can be considered orphaned.
 // We allow a grace period here because the transaction that writes the initial record may not
-// have committed by the time this clenaup function runs.
+// have committed by the time this cleanup function runs.
 const MinimumUploadAge = time.Minute
 
 // removeOrphanedUploadFiles removes any upload file on disk that is associated with an

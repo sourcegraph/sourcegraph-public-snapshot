@@ -18,22 +18,40 @@ type dequeueScanner func(rows *sql.Rows, err error) (interface{}, bool, error)
 // Assumptions: The table name describes a record with an `id`, `state`, `started_at`, `process_after`, and
 // `repository_id` column, where state can be one of (at least) 'queued' or 'processing' and repository_id refers
 // to the PK of the repo table..
-func (s *store) dequeueRecord(ctx context.Context, viewName, tableName string, columnExpressions []*sqlf.Query, sortExpression *sqlf.Query, scan dequeueScanner) (interface{}, Store, bool, error) {
+func (s *store) dequeueRecord(
+	ctx context.Context,
+	viewName string,
+	tableName string,
+	columnExpressions []*sqlf.Query,
+	sortExpression *sqlf.Query,
+	additionalConditions []*sqlf.Query,
+	scan dequeueScanner,
+) (interface{}, Store, bool, error) {
+	conditions := []*sqlf.Query{
+		sqlf.Sprintf("state = 'queued'"),
+		sqlf.Sprintf("(process_after IS NULL OR process_after >= NOW())"),
+	}
+	conditions = append(conditions, additionalConditions...)
+
 	for {
 		// First, we try to select an eligible record outside of a transaction. This will skip
 		// any rows that are currently locked inside of a transaction of another dequeue process.
 		id, ok, err := scanFirstInt(s.query(ctx, sqlf.Sprintf(`
-			UPDATE `+tableName+` SET state = 'processing', started_at = now() WHERE id = (
-				SELECT id FROM `+tableName+` WHERE state = 'queued' AND (process_after IS NULL OR process_after >= NOW()) ORDER BY %s
-				FOR UPDATE SKIP LOCKED LIMIT 1
+			WITH candidate AS (
+				SELECT id FROM `+tableName+`
+					WHERE %s
+					ORDER BY %s
+					FOR UPDATE SKIP LOCKED
+					LIMIT 1
 			)
+			UPDATE `+tableName+` SET state = 'processing', started_at = now() WHERE id IN (SELECT id FROM candidate)
 			RETURNING id
-		`, sortExpression)))
+		`, sqlf.Join(conditions, " AND "), sortExpression)))
 		if err != nil || !ok {
 			return nil, nil, false, err
 		}
 
-		record, tx, ok, err := s.dequeueByID(ctx, viewName, columnExpressions, scan, id)
+		record, tx, ok, err := s.dequeueByID(ctx, viewName, tableName, columnExpressions, scan, id)
 		if err != nil {
 			// This will occur if we selected an ID that raced with another dequeue process. If both
 			// dequeue processes select the same ID and the other process begins its transaction first,
@@ -42,7 +60,7 @@ func (s *store) dequeueRecord(ctx context.Context, viewName, tableName string, c
 				continue
 			}
 
-			return nil, nil, false, errors.Wrap(err, "s.dequeue")
+			return nil, nil, false, errors.Wrap(err, "store.dequeueByID")
 		}
 
 		return record, tx, ok, nil
@@ -55,6 +73,7 @@ func (s *store) dequeueRecord(ctx context.Context, viewName, tableName string, c
 // processing by the caller.
 func (s *store) dequeueByID(
 	ctx context.Context,
+	viewName string,
 	tableName string,
 	columnExpressions []*sqlf.Query,
 	scan dequeueScanner,
@@ -71,9 +90,9 @@ func (s *store) dequeueByID(
 	// SKIP LOCKED is necessary not to block on this select. We allow the database driver to return
 	// sql.ErrNoRows on this condition so we can determine if we need to select a new record to process
 	// on race conditions with other dequeue attempts.
-	record, exists, err := scan(tx.query(
+	_, exists, err := scanFirstInt(tx.query(
 		ctx,
-		sqlf.Sprintf(`SELECT %s FROM `+tableName+` u WHERE u.id = %s FOR UPDATE SKIP LOCKED LIMIT 1`, sqlf.Join(columnExpressions, ","), id),
+		sqlf.Sprintf(`SELECT 1 FROM `+tableName+` u WHERE u.id = %s FOR UPDATE SKIP LOCKED LIMIT 1`, id),
 	))
 	if err != nil {
 		return nil, nil, false, tx.Done(err)
@@ -81,5 +100,14 @@ func (s *store) dequeueByID(
 	if !exists {
 		return nil, nil, false, tx.Done(ErrDequeueRace)
 	}
+
+	record, _, err := scan(tx.query(
+		ctx,
+		sqlf.Sprintf(`SELECT %s FROM `+viewName+` u WHERE u.id = %s LIMIT 1`, sqlf.Join(columnExpressions, ","), id),
+	))
+	if err != nil {
+		return nil, nil, false, tx.Done(err)
+	}
+
 	return record, tx, true, nil
 }

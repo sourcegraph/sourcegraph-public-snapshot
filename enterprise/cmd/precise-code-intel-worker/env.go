@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -10,6 +11,8 @@ import (
 var (
 	rawBundleManagerURL   = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
 	rawWorkerPollInterval = env.Get("PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL", "1s", "Interval between queries to the upload queue.")
+	rawWorkerConcurrency  = env.Get("PRECISE_CODE_INTEL_WORKER_CONCURRENCY", "1", "The maximum number of indexes that can be processed concurrently.")
+	rawWorkerBudget       = env.Get("PRECISE_CODE_INTEL_WORKER_BUDGET", "800000000", "The amount of compressed input data (in bytes) a worker can process concurrently.")
 	rawResetInterval      = env.Get("PRECISE_CODE_INTEL_RESET_INTERVAL", "1m", "How often to reset stalled uploads.")
 )
 
@@ -20,6 +23,16 @@ func mustGet(rawValue, name string) string {
 	}
 
 	return rawValue
+}
+
+// mustParseInt returns the integer version of the given raw value fatally logs on failure.
+func mustParseInt(rawValue, name string) int {
+	i, err := strconv.ParseInt(rawValue, 10, 64)
+	if err != nil {
+		log.Fatalf("invalid int %q for %s: %s", rawValue, name, err)
+	}
+
+	return int(i)
 }
 
 // mustParseInterval returns the interval version of the given raw value fatally logs on failure.

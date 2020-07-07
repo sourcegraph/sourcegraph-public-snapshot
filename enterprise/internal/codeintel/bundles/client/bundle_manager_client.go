@@ -43,13 +43,13 @@ type BundleManagerClient interface {
 	BundleClient(bundleID int) BundleClient
 
 	// SendUpload transfers a raw LSIF upload to the bundle manager to be stored on disk.
-	SendUpload(ctx context.Context, bundleID int, r io.Reader) error
+	SendUpload(ctx context.Context, bundleID int, r io.Reader) (int, error)
 
 	// SendUploadPart transfers a partial LSIF upload to the bundle manager to be stored on disk.
 	SendUploadPart(ctx context.Context, bundleID, partIndex int, r io.Reader) error
 
 	// StitchParts instructs the bundle manager to collapse multipart uploads into a single file.
-	StitchParts(ctx context.Context, bundleID int) error
+	StitchParts(ctx context.Context, bundleID int) (int, error)
 
 	// DeleteUpload removes the upload file with the given identifier from disk.
 	DeleteUpload(ctx context.Context, bundleID int) error
@@ -126,10 +126,10 @@ func (c *bundleManagerClientImpl) BundleClient(bundleID int) BundleClient {
 }
 
 // SendUpload transfers a raw LSIF upload to the bundle manager to be stored on disk.
-func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, r io.Reader) error {
+func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, r io.Reader) (int, error) {
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	return c.postPayload(ctx, url, r)
@@ -142,17 +142,24 @@ func (c *bundleManagerClientImpl) SendUploadPart(ctx context.Context, bundleID, 
 		return err
 	}
 
-	return c.postPayload(ctx, url, r)
+	_, err = c.postPayload(ctx, url, r)
+	return err
 }
 
 // StitchParts instructs the bundle manager to collapse multipart uploads into a single file.
-func (c *bundleManagerClientImpl) StitchParts(ctx context.Context, bundleID int) error {
+func (c *bundleManagerClientImpl) StitchParts(ctx context.Context, bundleID int) (size int, err error) {
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d/stitch", bundleID), nil)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return c.doAndDrop(ctx, "POST", url, nil)
+	payload := struct {
+		Size *int `json:"size"`
+	}{
+		Size: &size,
+	}
+	err = c.doAndDecode(ctx, "POST", url, nil, &payload)
+	return size, err
 }
 
 // DeleteUpload removes the upload file with the given identifier from disk.
@@ -278,7 +285,8 @@ func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, fi
 		}
 	}()
 
-	return c.postPayload(ctx, url, codeintelutils.Gzip(f))
+	_, err = c.postPayload(ctx, url, codeintelutils.Gzip(f))
+	return err
 }
 
 // Exists determines if a file exists on disk for all the supplied identifiers.
@@ -315,21 +323,29 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 // make it to the bundle manager from the frontend, then the src-cli client would need to be responsible
 // for distinguishing which errors are retryable. Similarly, if a database part fails to make it to the
 // bundle manager from the worker, then the worker needs to distinguish the same errors.
-func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) error {
+func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) (size int, err error) {
 	tempFilePath, err := writeToTempFile(r)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer os.Remove(tempFilePath)
 
-	return retry(ctx, c.clock, func(ctx context.Context) error {
+	err = retry(ctx, c.clock, func(ctx context.Context) error {
 		file, err := os.Open(tempFilePath)
 		if err != nil {
 			return err
 		}
 
-		return c.doAndDrop(ctx, "POST", url, file)
+		payload := struct {
+			Size *int `json:"size"`
+		}{
+			Size: &size,
+		}
+		err = c.doAndDecode(ctx, "POST", url, file, &payload)
+		return err
 	})
+
+	return size, err
 }
 
 // writeToTempFile writes the content of the given reader to a temporary file. This function returns the

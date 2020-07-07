@@ -21,8 +21,11 @@ type Worker struct {
 	processor    Processor
 	pollInterval time.Duration
 	metrics      metrics.WorkerMetrics
-	done         chan struct{}
+	ctx          context.Context
+	done         chan<- struct{}
 	once         sync.Once
+	semaphore    chan struct{}
+	budget       int
 }
 
 func NewWorker(
@@ -30,6 +33,8 @@ func NewWorker(
 	bundleManagerClient bundles.BundleManagerClient,
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
+	numProcessorRoutines int,
+	budget int,
 	metrics metrics.WorkerMetrics,
 ) *Worker {
 	processor := &processor{
@@ -38,31 +43,62 @@ func NewWorker(
 		metrics:             metrics,
 	}
 
+	return newWorker(
+		store,
+		processor,
+		pollInterval,
+		numProcessorRoutines,
+		budget,
+		metrics,
+	)
+}
+
+func newWorker(
+	store store.Store,
+	processor Processor,
+	pollInterval time.Duration,
+	numProcessorRoutines int,
+	budget int,
+	metrics metrics.WorkerMetrics,
+) *Worker {
+	ctx, done := makeContext()
+
+	semaphore := make(chan struct{}, numProcessorRoutines)
+	for i := 0; i < numProcessorRoutines; i++ {
+		semaphore <- struct{}{}
+	}
+
 	return &Worker{
 		store:        store,
 		processor:    processor,
 		pollInterval: pollInterval,
 		metrics:      metrics,
-		done:         make(chan struct{}),
+		ctx:          ctx,
+		done:         done,
+		semaphore:    semaphore,
+		budget:       budget,
 	}
 }
 
 func (w *Worker) Start() {
-	ctx := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	ctx := w.ctx
 
 	for {
-		if ok, _ := w.dequeueAndProcess(ctx); !ok {
-			select {
-			case <-time.After(w.pollInterval):
-			case <-w.done:
-				return
-			}
-		} else {
-			select {
-			case <-w.done:
-				return
-			default:
-			}
+		ok, err := w.dequeueAndProcess(ctx)
+		if err != nil {
+			log15.Error("Failed to dequeue upload", "err", err)
+		}
+
+		delay := w.pollInterval
+		if ok {
+			// Don't wait between successful dequeues
+			delay = 0
+		}
+
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return
 		}
 	}
 }
@@ -73,21 +109,59 @@ func (w *Worker) Stop() {
 	})
 }
 
-// TODO(efritz) - use cancellable context
+// dequeueAndProcess selects a queued upload record to process. This method returns false
+// if no such method can be dequeued and returns an error only on failure to dequeue a new
+// record (no processor errors are bubbled up past this point).
+func (w *Worker) dequeueAndProcess(ctx context.Context) (dequeued bool, err error) {
+	if !w.reserveProcessorRoutine(ctx) {
+		return false, nil
+	}
+	defer func() {
+		if !dequeued {
+			// Ensure we release the processor routine back to the
+			// pool if we did not start a new one.
+			w.releaseProcessorRoutine()
+		}
+	}()
 
-// dequeueAndProcess pulls a job from the queue and processes it. If there
-// were no jobs ready to process, this method returns a false-valued flag.
-func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
-	upload, store, ok, err := w.store.Dequeue(ctx)
-	if err != nil || !ok {
+	// Select a queued upload to process and the transaction that holds it
+	upload, store, ok, err := w.store.Dequeue(ctx, w.budget)
+	if err != nil {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
+	if !ok {
+		return false, nil
+	}
 
+	size := 0
+	if upload.UploadSize != nil {
+		size = *upload.UploadSize
+	}
+
+	w.budget -= size
+
+	go func() {
+		defer func() {
+			w.budget += size
+			w.releaseProcessorRoutine()
+		}()
+
+		if err := w.handle(ctx, store, upload); err != nil {
+			log15.Error("Failed to finalize upload record", "err", err)
+		}
+	}()
+
+	return true, nil
+}
+
+// handle processes the given upload record. This method returns an error only if there
+// is an issue committing the transaction (no processor errors are bubbled up past this point).
+func (w *Worker) handle(ctx context.Context, store store.Store, upload store.Upload) (err error) {
 	// Enable tracing on this context
 	ctx = ot.WithShouldTrace(ctx, true)
 
 	// Trace the remainder of the operation including the transaction commit call in
-	// the following defered function.
+	// the following deferred function.
 	ctx, endOperation := w.metrics.ProcessOperation.With(ctx, &err, observation.Args{})
 
 	defer func() {
@@ -97,21 +171,54 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 
 	log15.Info("Dequeued upload for processing", "id", upload.ID)
 
-	// TODO - same for janitors/resetters
-	if requeued, processErr := w.processor.Process(ctx, store, upload); processErr == nil {
-		if requeued {
-			log15.Info("Requeueing upload", "id", upload.ID)
-		} else {
-			log15.Info("Processed upload", "id", upload.ID)
-		}
-	} else {
-		// TODO(efritz) - distinguish between correlation and system errors
+	requeued, processErr := w.processor.Process(ctx, store, upload)
+	if processErr != nil {
 		log15.Warn("Failed to process upload", "id", upload.ID, "err", processErr)
 
 		if markErr := store.MarkErrored(ctx, upload.ID, processErr.Error()); markErr != nil {
-			return true, errors.Wrap(markErr, "store.MarkErrored")
+			return errors.Wrap(markErr, "store.MarkErrored")
 		}
+
+		return nil
 	}
 
-	return true, nil
+	if requeued {
+		log15.Info("Requeueing upload", "id", upload.ID)
+	} else {
+		log15.Info("Processed upload", "id", upload.ID)
+	}
+
+	return nil
+}
+
+// reserveProcessorRoutine blocks until there is room for another processor routine
+// to start. This method returns false if the context is canceled before a blocking
+// processor has finished. If this method returns true, releaseProcessorRoutine must
+// be called at the end of the processor function, or the worker will leak capacity.
+func (w *Worker) reserveProcessorRoutine(ctx context.Context) bool {
+	select {
+	case <-w.semaphore:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+// releaseProcessOrRoutine signals that a processor routine has finished.
+func (w *Worker) releaseProcessorRoutine() {
+	w.semaphore <- struct{}{}
+}
+
+// makeContext returns an internal context and a write-only channel. The context will
+// be closed when the user closes the channel.
+func makeContext() (context.Context, chan<- struct{}) {
+	ctx, cancel := context.WithCancel(actor.WithActor(context.Background(), &actor.Actor{Internal: true}))
+
+	done := make(chan struct{})
+	go func() {
+		<-done
+		defer cancel()
+	}()
+
+	return ctx, done
 }

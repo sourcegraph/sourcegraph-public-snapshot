@@ -36,6 +36,8 @@ func main() {
 	var (
 		bundleManagerURL   = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
 		workerPollInterval = mustParseInterval(rawWorkerPollInterval, "PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL")
+		workerConcurrency  = mustParseInt(rawWorkerConcurrency, "PRECISE_CODE_INTEL_WORKER_CONCURRENCY")
+		workerBudget       = mustParseInt(rawWorkerBudget, "PRECISE_CODE_INTEL_WORKER_BUDGET")
 		resetInterval      = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
@@ -62,6 +64,8 @@ func main() {
 		bundles.New(bundleManagerURL),
 		gitserver.DefaultClient,
 		workerPollInterval,
+		workerConcurrency,
+		workerBudget,
 		workerMetrics,
 	)
 

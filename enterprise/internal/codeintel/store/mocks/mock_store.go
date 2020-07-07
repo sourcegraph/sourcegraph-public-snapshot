@@ -203,7 +203,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		DequeueFunc: &StoreDequeueFunc{
-			defaultHook: func(context.Context) (store.Upload, store.Store, bool, error) {
+			defaultHook: func(context.Context, int) (store.Upload, store.Store, bool, error) {
 				return store.Upload{}, nil, false, nil
 			},
 		},
@@ -308,7 +308,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		MarkQueuedFunc: &StoreMarkQueuedFunc{
-			defaultHook: func(context.Context, int) error {
+			defaultHook: func(context.Context, int, *int) error {
 				return nil
 			},
 		},
@@ -1334,23 +1334,23 @@ func (c StoreDeleteUploadsWithoutRepositoryFuncCall) Results() []interface{} {
 // StoreDequeueFunc describes the behavior when the Dequeue method of the
 // parent MockStore instance is invoked.
 type StoreDequeueFunc struct {
-	defaultHook func(context.Context) (store.Upload, store.Store, bool, error)
-	hooks       []func(context.Context) (store.Upload, store.Store, bool, error)
+	defaultHook func(context.Context, int) (store.Upload, store.Store, bool, error)
+	hooks       []func(context.Context, int) (store.Upload, store.Store, bool, error)
 	history     []StoreDequeueFuncCall
 	mutex       sync.Mutex
 }
 
 // Dequeue delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Dequeue(v0 context.Context) (store.Upload, store.Store, bool, error) {
-	r0, r1, r2, r3 := m.DequeueFunc.nextHook()(v0)
-	m.DequeueFunc.appendCall(StoreDequeueFuncCall{v0, r0, r1, r2, r3})
+func (m *MockStore) Dequeue(v0 context.Context, v1 int) (store.Upload, store.Store, bool, error) {
+	r0, r1, r2, r3 := m.DequeueFunc.nextHook()(v0, v1)
+	m.DequeueFunc.appendCall(StoreDequeueFuncCall{v0, v1, r0, r1, r2, r3})
 	return r0, r1, r2, r3
 }
 
 // SetDefaultHook sets function that is called when the Dequeue method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreDequeueFunc) SetDefaultHook(hook func(context.Context) (store.Upload, store.Store, bool, error)) {
+func (f *StoreDequeueFunc) SetDefaultHook(hook func(context.Context, int) (store.Upload, store.Store, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1358,7 +1358,7 @@ func (f *StoreDequeueFunc) SetDefaultHook(hook func(context.Context) (store.Uplo
 // Dequeue method of the parent MockStore instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreDequeueFunc) PushHook(hook func(context.Context) (store.Upload, store.Store, bool, error)) {
+func (f *StoreDequeueFunc) PushHook(hook func(context.Context, int) (store.Upload, store.Store, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1367,7 +1367,7 @@ func (f *StoreDequeueFunc) PushHook(hook func(context.Context) (store.Upload, st
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreDequeueFunc) SetDefaultReturn(r0 store.Upload, r1 store.Store, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context) (store.Upload, store.Store, bool, error) {
+	f.SetDefaultHook(func(context.Context, int) (store.Upload, store.Store, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
@@ -1375,12 +1375,12 @@ func (f *StoreDequeueFunc) SetDefaultReturn(r0 store.Upload, r1 store.Store, r2 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreDequeueFunc) PushReturn(r0 store.Upload, r1 store.Store, r2 bool, r3 error) {
-	f.PushHook(func(context.Context) (store.Upload, store.Store, bool, error) {
+	f.PushHook(func(context.Context, int) (store.Upload, store.Store, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *StoreDequeueFunc) nextHook() func(context.Context) (store.Upload, store.Store, bool, error) {
+func (f *StoreDequeueFunc) nextHook() func(context.Context, int) (store.Upload, store.Store, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1416,6 +1416,9 @@ type StoreDequeueFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 store.Upload
@@ -1433,7 +1436,7 @@ type StoreDequeueFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreDequeueFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -3640,23 +3643,23 @@ func (c StoreMarkIndexErroredFuncCall) Results() []interface{} {
 // StoreMarkQueuedFunc describes the behavior when the MarkQueued method of
 // the parent MockStore instance is invoked.
 type StoreMarkQueuedFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
+	defaultHook func(context.Context, int, *int) error
+	hooks       []func(context.Context, int, *int) error
 	history     []StoreMarkQueuedFuncCall
 	mutex       sync.Mutex
 }
 
 // MarkQueued delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) MarkQueued(v0 context.Context, v1 int) error {
-	r0 := m.MarkQueuedFunc.nextHook()(v0, v1)
-	m.MarkQueuedFunc.appendCall(StoreMarkQueuedFuncCall{v0, v1, r0})
+func (m *MockStore) MarkQueued(v0 context.Context, v1 int, v2 *int) error {
+	r0 := m.MarkQueuedFunc.nextHook()(v0, v1, v2)
+	m.MarkQueuedFunc.appendCall(StoreMarkQueuedFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the MarkQueued method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreMarkQueuedFunc) SetDefaultHook(hook func(context.Context, int) error) {
+func (f *StoreMarkQueuedFunc) SetDefaultHook(hook func(context.Context, int, *int) error) {
 	f.defaultHook = hook
 }
 
@@ -3664,7 +3667,7 @@ func (f *StoreMarkQueuedFunc) SetDefaultHook(hook func(context.Context, int) err
 // MarkQueued method of the parent MockStore instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreMarkQueuedFunc) PushHook(hook func(context.Context, int) error) {
+func (f *StoreMarkQueuedFunc) PushHook(hook func(context.Context, int, *int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3673,7 +3676,7 @@ func (f *StoreMarkQueuedFunc) PushHook(hook func(context.Context, int) error) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreMarkQueuedFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
+	f.SetDefaultHook(func(context.Context, int, *int) error {
 		return r0
 	})
 }
@@ -3681,12 +3684,12 @@ func (f *StoreMarkQueuedFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreMarkQueuedFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
+	f.PushHook(func(context.Context, int, *int) error {
 		return r0
 	})
 }
 
-func (f *StoreMarkQueuedFunc) nextHook() func(context.Context, int) error {
+func (f *StoreMarkQueuedFunc) nextHook() func(context.Context, int, *int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3725,6 +3728,9 @@ type StoreMarkQueuedFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -3733,7 +3739,7 @@ type StoreMarkQueuedFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreMarkQueuedFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
