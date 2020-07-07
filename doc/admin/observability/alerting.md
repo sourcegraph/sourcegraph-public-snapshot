@@ -67,7 +67,8 @@ Note that to receive email notifications, the [`email.address`](../config/site_c
     "level": "critical",
     "notifier": {
       "type": "email",
-      "address": "alerts@company.com"
+      // Address where alerts will be sent
+      "address": "sourcegraph@company.com"
     }
   }
 ]

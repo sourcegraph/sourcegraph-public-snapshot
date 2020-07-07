@@ -33,7 +33,7 @@ cp -R . "$BUILDDIR"
 cp -R ../../monitoring "$BUILDDIR"/
 cp ../../go.* "$BUILDDIR"/monitoring
 
-cd "$BUILDDIR"
+pushd "$BUILDDIR"
 
 # Enable image build caching via CACHE=true (the jsonnet builds can take a long time)
 BUILD_CACHE="--no-cache"
@@ -49,4 +49,4 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
   --build-arg VERSION
 
 # cd out of $BUILDDIR for cleanup
-cd -
+popd
