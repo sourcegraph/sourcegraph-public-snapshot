@@ -376,9 +376,6 @@ type Mutation {
     # the same namespace with the same name already exists, an error is returned. The newly created
     # campaign is returned.
     createCampaign(
-        # The campaign's namespace (either a user or organization).
-        namespace: ID!
-
         # The campaign spec that describes the desired state of the campaign.
         campaignSpec: ID!
     ): Campaign!
@@ -387,9 +384,6 @@ type Mutation {
     # campaign exists in the namespace with the name given in the campaign spec, a campaign will be
     # created. Otherwise, the existing campaign will be updated. The campaign is returned.
     applyCampaign(
-        # The campaign's namespace (either a user or organization).
-        namespace: ID!
-
         # The campaign spec that describes the new desired state of the campaign.
         campaignSpec: ID!
 
