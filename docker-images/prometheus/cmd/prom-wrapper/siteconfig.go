@@ -143,6 +143,9 @@ func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 	// Syncing relies on access to frontend, so wait until it is ready before subscribing.
 	// At this point, everything else should have started as normal, so it's safe to block
 	// here for however long is needed.
+	//
+	// Note that in the event that e.g. the Sourcegraph frontend is entirely down or never becomes
+	// accessible, we simply use the existing configuration persisted on disk.
 	c.log.Info("waiting for frontend", "url", api.InternalClient.URL)
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
 		c.log.Error("unable to connect to frontend, proceeding with existing configuration",

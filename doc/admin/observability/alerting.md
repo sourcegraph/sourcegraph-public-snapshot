@@ -59,7 +59,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 
 #### Email
 
-Note that to receive email notifications, the `email.address` and `email.smtp` fields must be configured in site configuration.
+Note that to receive email notifications, the [`email.address`](../config/site_config#email-address) and [`email.smtp`](../config/site_config#email-smtp) fields must be configured in site configuration.
 
 ```json
 "observability.alerts": [
