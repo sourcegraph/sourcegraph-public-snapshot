@@ -342,8 +342,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 
 		repo, inputRev := repos.GetRepoInputRev(&file)
-		if repoResolvers[repo.Name] == nil {
-			repoResolvers[repo.Name] = &RepositoryResolver{repo: repo}
+		repoResolver := repoResolvers[repo.Name]
+		if repoResolver == nil {
+			repoResolver = &RepositoryResolver{repo: repo}
+			repoResolvers[repo.Name] = repoResolver
 		}
 
 		// symbols is set in symbols search, lines in text search.
@@ -355,7 +357,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		if typ != symbolRequest {
 			lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 		} else {
-			symbols = zoektFileMatchToSymbolResults(repoResolvers[repo.Name], inputRev, &file)
+			symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 		}
 
 		matches[i] = &FileMatchResolver{
@@ -365,7 +367,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
 			uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
 			symbols:      symbols,
-			Repo:         repoResolvers[repo.Name],
+			Repo:         repoResolver,
 			CommitID:     api.CommitID(file.Version),
 		}
 	}
