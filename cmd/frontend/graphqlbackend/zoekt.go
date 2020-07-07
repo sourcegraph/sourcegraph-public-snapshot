@@ -33,9 +33,9 @@ const (
 // query into a Zoekt query and mapping the results from zoekt back to
 // Sourcegraph result types.
 type indexedSearchRequest struct {
-	// Repos is a slice of repository revisions that are indexed and will be
+	// Repos is a map of repository revisions that are indexed and will be
 	// searched by Zoekt.
-	Repos []*search.RepositoryRevisions
+	Repos map[string]*search.RepositoryRevisions
 
 	// Unindexed is a slice of repository revisions that can't be searched by
 	// Zoekt. The repository revisions should be searched by the searcher
@@ -233,15 +233,9 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, repos []*search.RepositoryRevisions, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos) == 0 {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, repoMap map[string]*search.RepositoryRevisions, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+	if len(repoMap) == 0 {
 		return nil, false, nil, nil
-	}
-
-	// Tell zoekt which repos to search
-	repoMap := make(map[string]*search.RepositoryRevisions, len(repos))
-	for _, repoRev := range repos {
-		repoMap[string(repoRev.Repo.Name)] = repoRev
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
@@ -259,7 +253,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 		tr.Finish()
 	}()
 
-	k := zoektResultCountFactor(len(repos), args.PatternInfo)
+	k := zoektResultCountFactor(len(repoMap), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
 
 	if args.UseFullDeadline {
@@ -577,7 +571,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &indexedRepoRevs{
-		repoRevs:     make([]*search.RepositoryRevisions, 0, len(revs)),
+		repoRevs:     make(map[string]*search.RepositoryRevisions, len(revs)),
 		repoBranches: make(map[string][]string, len(revs)),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
@@ -603,7 +597,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 type indexedRepoRevs struct {
 	// repoRevs is the Sourcegraph representation of a the list of repoRevs
 	// repository and revisions to search.
-	repoRevs []*search.RepositoryRevisions
+	repoRevs map[string]*search.RepositoryRevisions
 
 	// repoBranches will be used when we query zoekt. The order of branches
 	// must match that in a reporev such that we can map back results. IE this
@@ -657,7 +651,7 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return false
 	}
 
-	rb.repoRevs = append(rb.repoRevs, reporev)
+	rb.repoRevs[string(reporev.Repo.Name)] = reporev
 	rb.repoBranches[string(reporev.Repo.Name)] = branches
 	return true
 }

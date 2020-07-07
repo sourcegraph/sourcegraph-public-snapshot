@@ -343,7 +343,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
-			if diff := cmp.Diff(tc.indexed, indexed.repoRevs); diff != "" {
+			if diff := cmp.Diff(repoRevsSliceToMap(tc.indexed), indexed.repoRevs); diff != "" {
 				t.Error("unexpected indexed:", diff)
 			}
 			if diff := cmp.Diff(tc.unindexed, unindexed); diff != "" {
@@ -823,7 +823,8 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	type ret struct {
-		Indexed, Unindexed []*search.RepositoryRevisions
+		Indexed   map[string]*search.RepositoryRevisions
+		Unindexed []*search.RepositoryRevisions
 	}
 
 	for _, tt := range cases {
@@ -833,7 +834,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 			Unindexed: unindexed,
 		}
 		want := ret{
-			Indexed:   tt.wantIndexed,
+			Indexed:   repoRevsSliceToMap(tt.wantIndexed),
 			Unindexed: tt.wantUnindexed,
 		}
 		if !cmp.Equal(want, got) {
@@ -921,4 +922,12 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	if diff := cmp.Diff(want, symbols); diff != "" {
 		t.Fatalf("symbol mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[string]*search.RepositoryRevisions {
+	m := map[string]*search.RepositoryRevisions{}
+	for _, r := range rs {
+		m[string(r.Repo.Name)] = r
+	}
+	return m
 }
