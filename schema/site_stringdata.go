@@ -90,6 +90,12 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "migrateParser": {
+            "description": "If enabled, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+            "type": "string",
+            "enum": ["enabled", "disabled"],
+            "default": "disabled"
+        },
         "bitbucketServerFastPerm": {
           "description": "DEPRECATED: Configure in Bitbucket Server config.",
           "type": "string",

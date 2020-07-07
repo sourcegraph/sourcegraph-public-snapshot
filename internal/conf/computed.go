@@ -328,6 +328,14 @@ func AndOrQueryEnabled() bool {
 	return e.AndOrQuery == "enabled"
 }
 
+func MigrateParserEnabled() bool {
+	e := Get().ExperimentalFeatures
+	if e == nil || e.MigrateParser == "" {
+		return false
+	}
+	return e.AndOrQuery == "enabled"
+}
+
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {
