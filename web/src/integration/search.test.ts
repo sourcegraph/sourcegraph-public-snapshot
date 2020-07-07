@@ -3,15 +3,13 @@ import MockDate from 'mockdate'
 import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import expect from 'expect'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { describeIntegration } from './helpers'
 
 describeIntegration('Search', ({ initGeneration, describe }) => {
     initGeneration(async () => {
         // Reset date mocking
         MockDate.reset()
-        const { gitHubToken, sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
-            'gitHubToken',
+        const { sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
             'sourcegraphBaseUrl',
             'headless',
             'slowMo',
@@ -25,19 +23,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
             headless,
             slowMo,
         })
-        const repoSlugs = ['gorilla/mux', 'sourcegraph/jsonrpc2']
         await driver.ensureLoggedIn({ username: 'test', password: testUserPassword, email: 'test@test.com' })
-        await driver.resetUserSettings()
-        await driver.ensureHasExternalService({
-            kind: ExternalServiceKind.GITHUB,
-            displayName: 'e2e-test-github',
-            config: JSON.stringify({
-                url: 'https://github.com',
-                token: gitHubToken,
-                repos: repoSlugs,
-            }),
-            ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
-        })
         return { driver, sourcegraphBaseUrl }
     })
 
@@ -45,12 +31,9 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
         test('Search mode component appears', async ({ sourcegraphBaseUrl, driver }) => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-search-mode-toggle')
-            expect(
-                await driver.page.evaluate(() => {
-                    const toggles = document.querySelectorAll('.e2e-search-mode-toggle')
-                    return toggles.length
-                })
-            ).toBe(1)
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.e2e-search-mode-toggle').length)).toBe(
+                1
+            )
         })
 
         test('Filter buttons', async ({ sourcegraphBaseUrl, driver }) => {

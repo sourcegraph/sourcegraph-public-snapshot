@@ -3,7 +3,6 @@ import MockDate from 'mockdate'
 import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import {
-    ExternalServiceKind,
     IQuery,
     IOrgConnection,
     IUserEmail,
@@ -19,8 +18,7 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
     initGeneration(async () => {
         // Reset date mocking
         MockDate.reset()
-        const { gitHubToken, sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
-            'gitHubToken',
+        const { sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
             'sourcegraphBaseUrl',
             'headless',
             'slowMo',
@@ -34,19 +32,7 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
             headless,
             slowMo,
         })
-        const repoSlugs = ['gorilla/mux', 'sourcegraph/jsonrpc2']
         await driver.ensureLoggedIn({ username: 'test', password: testUserPassword, email: 'test@test.com' })
-        await driver.resetUserSettings()
-        await driver.ensureHasExternalService({
-            kind: ExternalServiceKind.GITHUB,
-            displayName: 'e2e-test-github',
-            config: JSON.stringify({
-                url: 'https://github.com',
-                token: gitHubToken,
-                repos: repoSlugs,
-            }),
-            ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
-        })
         return { driver, sourcegraphBaseUrl }
     })
 
