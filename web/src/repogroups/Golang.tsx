@@ -214,7 +214,7 @@ export const golang: RepogroupMetadata = {
                 </>
             ),
             rawQuery: 'file:.go http.Post json',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.regexp,
         },
         {
             title: 'Find error handling examples in Go',
