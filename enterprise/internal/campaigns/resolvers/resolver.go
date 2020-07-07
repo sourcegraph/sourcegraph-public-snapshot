@@ -180,42 +180,10 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
-	}
 
-	// 🚨 SECURITY: Only site admins may create a campaign for now.
-	if !user.SiteAdmin {
-		return nil, backend.ErrMustBeSiteAdmin
-	}
-
-	campaign := &campaigns.Campaign{
-		Name:     "TODO: not blank",
-		AuthorID: user.ID,
-	}
-
-	switch relay.UnmarshalKind(args.Namespace) {
-	case "User":
-		err = relay.UnmarshalSpec(args.Namespace, &campaign.NamespaceUserID)
-	case "Org":
-		err = relay.UnmarshalSpec(args.Namespace, &campaign.NamespaceOrgID)
-	default:
-		err = errors.Errorf("Invalid namespace %q", args.Namespace)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	svc := ee.NewService(r.store, r.httpFactory)
-	err = svc.CreateCampaign(ctx, campaign)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: This mutation is not done.
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	// TODO(sqs): Implement createCampaign when we've implemented applyCampaign and are happy about
+	// how it works.
+	return nil, errors.New("createCampaign is not yet implemented (use applyCampaign instead)")
 }
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.CampaignResolver, error) {
