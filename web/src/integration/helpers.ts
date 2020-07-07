@@ -10,6 +10,7 @@ import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../../shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
 import { first, timeoutWith } from 'rxjs/operators'
+import * as path from 'path'
 import * as util from 'util'
 
 // Reduce log verbosity
@@ -107,7 +108,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
             const wrapTestBody = (title: string, run: TestBody) => async () => {
                 await driver.newPage()
                 await driver.page.setRequestInterception(true)
-                const recordingsDirectory = FIXTURES_DIRECTORY
+                const recordingsDirectory = path.join(FIXTURES_DIRECTORY, ...prefixes.map(snakeCase))
                 if (record) {
                     await mkdirp(recordingsDirectory)
                 }
@@ -159,17 +160,22 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 const { server } = polly
                 server.get('/.assets/*path').passthrough()
 
+                const errors = new Subject<unknown>()
+
                 // GraphQL requests are not handled by HARs, but configured per-test.
-                let graphQlOverrides: GraphQLOverrides
+                let graphQlOverrides: GraphQLOverrides | undefined
                 const graphQlRequests = new Subject<{ queryName: string; variables: unknown }>()
                 server.post(new URL('/.api/graphql', sourcegraphBaseUrl).href).intercept((request, response) => {
                     const queryName = new URL(request.absoluteUrl).search.slice(1)
                     const { variables, query } = request.jsonBody() as { query: string; variables: string }
                     graphQlRequests.next({ queryName, variables })
-                    if (!Object.prototype.hasOwnProperty.call(graphQlOverrides, queryName)) {
-                        throw new Error(
+                    if (!graphQlOverrides || !Object.prototype.hasOwnProperty.call(graphQlOverrides, queryName)) {
+                        const error = new Error(
                             `GraphQL query "${queryName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${queryName}" query:\n${query}`
                         )
+                        // Make test fail
+                        errors.next(error)
+                        throw error
                     }
                     const result = graphQlOverrides[queryName]
                     response.json(result)
@@ -188,27 +194,30 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         }
                     )
                 try {
-                    await run({
-                        sourcegraphBaseUrl,
-                        driver,
-                        overrideGraphQL: overrides => {
-                            graphQlOverrides = overrides
-                        },
-                        waitForGraphQLRequest: async (triggerRequest, queryName) => {
-                            const requestPromise = graphQlRequests
-                                .pipe(
-                                    first(request => request.queryName === queryName),
-                                    timeoutWith(
-                                        4000,
-                                        throwError(new Error(`Timeout waiting for GraphQL request "${queryName}"`))
+                    await Promise.race([
+                        errors.pipe(first()).toPromise(),
+                        run({
+                            sourcegraphBaseUrl,
+                            driver,
+                            overrideGraphQL: overrides => {
+                                graphQlOverrides = overrides
+                            },
+                            waitForGraphQLRequest: async (triggerRequest, queryName) => {
+                                const requestPromise = graphQlRequests
+                                    .pipe(
+                                        first(request => request.queryName === queryName),
+                                        timeoutWith(
+                                            4000,
+                                            throwError(new Error(`Timeout waiting for GraphQL request "${queryName}"`))
+                                        )
                                     )
-                                )
-                                .toPromise()
-                            await triggerRequest()
-                            const { variables } = await requestPromise
-                            return variables
-                        },
-                    })
+                                    .toPromise()
+                                await triggerRequest()
+                                const { variables } = await requestPromise
+                                return variables
+                            },
+                        }),
+                    ])
                 } finally {
                     await polly.stop()
                     await driver.page.close()
