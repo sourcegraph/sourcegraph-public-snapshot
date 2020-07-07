@@ -54,7 +54,7 @@ func TestDatabaseRanges(t *testing.T) {
 	//   30: }
 
 	db := openTestDatabase(t)
-	if actual, err := db.Ranges(context.Background(), "protocol/writer.go", 21, 23); err != nil {
+	if actual, err := db.Ranges(context.Background(), "protocol/writer.go", 21, 24); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []bundles.CodeIntelligenceRange{

@@ -22,7 +22,7 @@ type Database interface {
 	Exists(ctx context.Context, path string) (bool, error)
 
 	// Ranges returns definition, reference, and hover data for each range within the given span of lines.
-	Ranges(ctx context.Context, path string, startLine, endLint int) ([]bundles.CodeIntelligenceRange, error)
+	Ranges(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error)
 
 	// Definitions returns the set of locations defining the symbol at the given position.
 	Definitions(ctx context.Context, path string, line, character int) ([]bundles.Location, error)

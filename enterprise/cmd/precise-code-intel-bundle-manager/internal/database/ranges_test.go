@@ -140,7 +140,7 @@ func TestRangeIntersectsSpan(t *testing.T) {
 		{startLine: 1, endLine: 4, expected: false},
 		{startLine: 7, endLine: 9, expected: false},
 		{startLine: 1, endLine: 6, expected: true},
-		{startLine: 6, endLine: 6, expected: true},
+		{startLine: 6, endLine: 7, expected: true},
 	}
 
 	r := types.RangeData{StartLine: 5, StartCharacter: 1, EndLine: 6, EndCharacter: 10}
