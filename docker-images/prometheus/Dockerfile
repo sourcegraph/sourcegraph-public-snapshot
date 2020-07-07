@@ -75,7 +75,7 @@ COPY ./prometheus.sh /prometheus.sh
 COPY ./alertmanager.sh /alertmanager.sh
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
-COPY --chown=sourcegraph config/alertmanager.yml /sg_config_prometheus/
+COPY config/alertmanager.yml /sg_config_prometheus/
 
 ENTRYPOINT ["/bin/prom-wrapper"]
 # Note that upstream's 'VOLUME' directive was deliberately removed. Including it makes it impossible
