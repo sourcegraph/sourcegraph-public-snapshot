@@ -63,6 +63,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 					"subject": notificationTitleTemplate,
 				},
 				HTML: fmt.Sprintf(`<body>%s</body>`, notificationBodyTemplate),
+				Text: notificationBodyTemplate,
 				// SMTP configuration is applied globally by changeSMTP
 
 				NotifierConfig: notifierConfig,
