@@ -48,31 +48,33 @@ func main() {
 	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying Grafana, etc.
 	router := mux.NewRouter()
 
+	// wait for alertmanager to become available
+	log.Info("waiting for alertmanager")
+	alertmanager := amclient.NewHTTPClientWithConfig(nil, &amclient.TransportConfig{
+		Host:     fmt.Sprintf("127.0.0.1:%s", alertmanagerPort),
+		BasePath: fmt.Sprintf("/%s/api/v2", alertmanagerPathPrefix),
+		Schemes:  []string{"http"},
+	})
+	alertmanagerWaitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	if err := waitForAlertmanager(alertmanagerWaitCtx, alertmanager); err != nil {
+		log.Crit("unable to reach Alertmanager", "error", err)
+		os.Exit(1)
+	}
+	cancel()
+	log.Debug("detected alertmanager ready")
+
 	// subscribe to configuration
 	if noConfig == "true" {
 		log.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
 	} else {
 		log.Info("initializing configuration")
-		alertmanager := amclient.NewHTTPClientWithConfig(nil, &amclient.TransportConfig{
-			Host:     fmt.Sprintf("127.0.0.1:%s", alertmanagerPort),
-			BasePath: fmt.Sprintf("/%s/api/v2", alertmanagerPathPrefix),
-			Schemes:  []string{"http"},
-		})
-
-		// limit the amount of time we spend spinning up the subscriber before erroring
-		newSubscriberCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		config, err := NewSiteConfigSubscriber(newSubscriberCtx, log, alertmanager)
-		if err != nil {
-			log.Crit("failed to configuration subscriber", "error", err)
-			os.Exit(1)
-		}
-		cancel()
+		subscriber := NewSiteConfigSubscriber(log, alertmanager)
 
 		// watch for configuration updates in the background
-		go config.Subscribe(ctx)
+		go subscriber.Subscribe(ctx)
 
 		// serve subscriber status
-		router.PathPrefix("/prom-wrapper/config-subscriber").Handler(config.Handler())
+		router.PathPrefix("/prom-wrapper/config-subscriber").Handler(subscriber.Handler())
 	}
 
 	// serve alertmanager via reverse proxy

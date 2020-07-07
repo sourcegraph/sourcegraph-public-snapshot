@@ -93,21 +93,14 @@ type SiteConfigSubscriber struct {
 	problems conf.Problems // exported by handler
 }
 
-func NewSiteConfigSubscriber(ctx context.Context, logger log15.Logger, alertmanager *amclient.Alertmanager) (*SiteConfigSubscriber, error) {
+func NewSiteConfigSubscriber(logger log15.Logger, alertmanager *amclient.Alertmanager) *SiteConfigSubscriber {
 	log := logger.New("logger", "config-subscriber")
-
-	log.Info("waiting for alertmanager")
-	if err := waitForAlertmanager(ctx, alertmanager); err != nil {
-		return nil, err
-	}
-	log.Debug("detected alertmanager ready")
-
 	zeroConfig := newSubscribedSiteConfig(schema.SiteConfiguration{})
 	return &SiteConfigSubscriber{
 		log:          log,
 		alertmanager: alertmanager,
 		config:       zeroConfig,
-	}, nil
+	}
 }
 
 func (c *SiteConfigSubscriber) Handler() http.Handler {
