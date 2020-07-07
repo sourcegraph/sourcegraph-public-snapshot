@@ -24,56 +24,7 @@ var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana 
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 
 func init() {
-	// if Prometheus is enabled, this warning renders problems with the Prometheus deployment and configuration
-	// as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container.
-	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if len(prometheusutil.PrometheusURL) == 0 || len(c.ObservabilityAlerts) == 0 {
-			return
-		}
-
-		// see https://github.com/sourcegraph/sourcegraph/issues/11473
-		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
-			problems = append(problems, conf.NewSiteProblem("`observability.alerts` is not currently supported in sourcegraph/server deployments. Follow [this issue](https://github.com/sourcegraph/sourcegraph/issues/11473) for updates."))
-			return
-		}
-
-		// set up request to fetch status from grafana-wrapper
-		promURL, err := url.Parse(prometheusutil.PrometheusURL)
-		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts` are configured, but Prometheus configuration is invalid: %v", err)))
-			return
-		}
-		promURL.Path = "/prom-wrapper/config-subscriber"
-		req, err := http.NewRequest("GET", promURL.String(), nil)
-		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to fetch Prometheus status: %v", err)))
-			return
-		}
-
-		// use a short timeout to avoid having this block problems from loading
-		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-		defer cancel()
-		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
-		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: %v", err)))
-			return
-		}
-		if resp.StatusCode != 200 {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: status code %d", resp.StatusCode)))
-			return
-		}
-
-		var promConfigStatus struct {
-			Problems conf.Problems `json:"problems"`
-		}
-		defer resp.Body.Close()
-		if err := json.NewDecoder(resp.Body).Decode(&promConfigStatus); err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to read Prometheus status: %v", err)))
-			return
-		}
-
-		return promConfigStatus.Problems
-	})
+	conf.ContributeWarning(newPrometheusValidator(prometheusutil.PrometheusURL, conf.DeployType()))
 }
 
 func addNoK8sClientHandler(r *mux.Router) {
@@ -190,4 +141,57 @@ func adminOnly(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// newPrometheusValidator renders problems with the Prometheus deployment and configuration
+// as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container if Prometheus is enabled.
+func newPrometheusValidator(prometheusURL, deployType string) conf.Validator {
+	return func(c conf.Unified) (problems conf.Problems) {
+		if len(prometheusURL) == 0 || len(c.ObservabilityAlerts) == 0 {
+			return
+		}
+
+		// see https://github.com/sourcegraph/sourcegraph/issues/11473
+		if conf.IsDeployTypeSingleDockerContainer(deployType) {
+			problems = append(problems, conf.NewSiteProblem("`observability.alerts` is not currently supported in sourcegraph/server deployments. Follow [this issue](https://github.com/sourcegraph/sourcegraph/issues/11473) for updates."))
+			return
+		}
+
+		// set up request to fetch status from grafana-wrapper
+		promURL, err := url.Parse(prometheusURL)
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts` are configured, but Prometheus configuration is invalid: %v", err)))
+			return
+		}
+		promURL.Path = "/prom-wrapper/config-subscriber"
+		req, err := http.NewRequest("GET", promURL.String(), nil)
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to fetch Prometheus status: %v", err)))
+			return
+		}
+
+		// use a short timeout to avoid having this block problems from loading
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		if err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: %v", err)))
+			return
+		}
+		if resp.StatusCode != 200 {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: status code %d", resp.StatusCode)))
+			return
+		}
+
+		var promConfigStatus struct {
+			Problems conf.Problems `json:"problems"`
+		}
+		defer resp.Body.Close()
+		if err := json.NewDecoder(resp.Body).Decode(&promConfigStatus); err != nil {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to read Prometheus status: %v", err)))
+			return
+		}
+
+		return promConfigStatus.Problems
+	}
 }
