@@ -2,6 +2,7 @@ package correlation
 
 import (
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -61,7 +62,7 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 }
 
 func serializeBundleDocuments(state *State) map[string]types.DocumentData {
-	out := map[string]types.DocumentData{}
+	out := make(map[string]types.DocumentData, len(state.DocumentData))
 	for _, doc := range state.DocumentData {
 		if strings.HasPrefix(doc.URI, "..") {
 			continue
@@ -82,51 +83,51 @@ func serializeDocument(state *State, doc lsif.Document) types.DocumentData {
 		Diagnostics:        []types.DiagnosticData{},
 	}
 
-	for rangeID := range doc.Contains {
+	doc.Contains.Each(func(rangeID int) {
 		k := rangeID
 		v := state.RangeData[rangeID]
 
-		var monikerIDs []types.ID
-		for m := range v.MonikerIDs {
-			monikerIDs = append(monikerIDs, types.ID(m))
-		}
+		monikerIDs := make([]types.ID, 0, v.MonikerIDs.Len())
+		v.MonikerIDs.Each(func(m int) {
+			monikerIDs = append(monikerIDs, toID(m))
+		})
 
-		document.Ranges[types.ID(k)] = types.RangeData{
+		document.Ranges[toID(k)] = types.RangeData{
 			StartLine:          v.StartLine,
 			StartCharacter:     v.StartCharacter,
 			EndLine:            v.EndLine,
 			EndCharacter:       v.EndCharacter,
-			DefinitionResultID: types.ID(v.DefinitionResultID),
-			ReferenceResultID:  types.ID(v.ReferenceResultID),
-			HoverResultID:      types.ID(v.HoverResultID),
+			DefinitionResultID: toID(v.DefinitionResultID),
+			ReferenceResultID:  toID(v.ReferenceResultID),
+			HoverResultID:      toID(v.HoverResultID),
 			MonikerIDs:         monikerIDs,
 		}
 
-		if v.HoverResultID != "" {
+		if v.HoverResultID != 0 {
 			hoverData := state.HoverData[v.HoverResultID]
-			document.HoverResults[types.ID(v.HoverResultID)] = hoverData
+			document.HoverResults[toID(v.HoverResultID)] = hoverData
 		}
 
-		for monikerID := range v.MonikerIDs {
+		v.MonikerIDs.Each(func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
-			document.Monikers[types.ID(monikerID)] = types.MonikerData{
+			document.Monikers[toID(monikerID)] = types.MonikerData{
 				Kind:                 moniker.Kind,
 				Scheme:               moniker.Scheme,
 				Identifier:           moniker.Identifier,
-				PackageInformationID: types.ID(moniker.PackageInformationID),
+				PackageInformationID: toID(moniker.PackageInformationID),
 			}
 
-			if moniker.PackageInformationID != "" {
+			if moniker.PackageInformationID != 0 {
 				packageInformation := state.PackageInformationData[moniker.PackageInformationID]
-				document.PackageInformation[types.ID(moniker.PackageInformationID)] = types.PackageInformationData{
+				document.PackageInformation[toID(moniker.PackageInformationID)] = types.PackageInformationData{
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
 				}
 			}
-		}
-	}
+		})
+	})
 
-	for diagnosticID := range doc.Diagnostics {
+	doc.Diagnostics.Each(func(diagnosticID int) {
 		for _, diagnostic := range state.Diagnostics[diagnosticID].Result {
 			document.Diagnostics = append(document.Diagnostics, types.DiagnosticData{
 				Severity:       diagnostic.Severity,
@@ -139,13 +140,13 @@ func serializeDocument(state *State, doc lsif.Document) types.DocumentData {
 				EndCharacter:   diagnostic.EndCharacter,
 			})
 		}
-	}
+	})
 
 	return document
 }
 
 func serializeResultChunks(state *State, numResultChunks int) map[int]types.ResultChunkData {
-	var resultChunks []types.ResultChunkData
+	resultChunks := make([]types.ResultChunkData, 0, numResultChunks)
 	for i := 0; i < numResultChunks; i++ {
 		resultChunks = append(resultChunks, types.ResultChunkData{
 			DocumentPaths:      map[types.ID]string{},
@@ -156,7 +157,7 @@ func serializeResultChunks(state *State, numResultChunks int) map[int]types.Resu
 	addToChunk(state, resultChunks, state.DefinitionData)
 	addToChunk(state, resultChunks, state.ReferenceData)
 
-	out := map[int]types.ResultChunkData{}
+	out := make(map[int]types.ResultChunkData, len(resultChunks))
 	for id, resultChunk := range resultChunks {
 		if len(resultChunk.DocumentPaths) == 0 && len(resultChunk.DocumentIDRangeIDs) == 0 {
 			continue
@@ -168,64 +169,77 @@ func serializeResultChunks(state *State, numResultChunks int) map[int]types.Resu
 	return out
 }
 
-func addToChunk(state *State, resultChunks []types.ResultChunkData, data map[string]datastructures.DefaultIDSetMap) {
+func addToChunk(state *State, resultChunks []types.ResultChunkData, data map[int]datastructures.DefaultIDSetMap) {
 	for id, documentRanges := range data {
-		resultChunk := resultChunks[types.HashKey(types.ID(id), len(resultChunks))]
+		resultChunk := resultChunks[types.HashKey(toID(id), len(resultChunks))]
 
 		if len(documentRanges) == 0 {
 			// We may have pruned all document/ranges from a definition or reference result,
 			// but we add a dummy set here so that we don't hit an unknown key during queries.
 			// TODO(efritz) - remove these as part of the prune pass instead
-			resultChunk.DocumentIDRangeIDs[types.ID(id)] = nil
+			resultChunk.DocumentIDRangeIDs[toID(id)] = nil
 		}
 
 		for documentID, rangeIDs := range documentRanges {
 			doc := state.DocumentData[documentID]
-			resultChunk.DocumentPaths[types.ID(documentID)] = doc.URI
+			resultChunk.DocumentPaths[toID(documentID)] = doc.URI
 
-			for rangeID := range rangeIDs {
-				resultChunk.DocumentIDRangeIDs[types.ID(id)] = append(resultChunk.DocumentIDRangeIDs[types.ID(id)], types.DocumentIDRangeID{
-					DocumentID: types.ID(documentID),
-					RangeID:    types.ID(rangeID),
+			rangeIDs.Each(func(rangeID int) {
+				resultChunk.DocumentIDRangeIDs[toID(id)] = append(resultChunk.DocumentIDRangeIDs[toID(id)], types.DocumentIDRangeID{
+					DocumentID: toID(documentID),
+					RangeID:    toID(rangeID),
 				})
-			}
+			})
 		}
 	}
 }
 
 var (
-	getDefinitionResultID = func(r lsif.Range) string { return r.DefinitionResultID }
-	getReferenceResultID  = func(r lsif.Range) string { return r.ReferenceResultID }
+	getDefinitionResultID = func(r lsif.Range) int { return r.DefinitionResultID }
+	getReferenceResultID  = func(r lsif.Range) int { return r.ReferenceResultID }
 )
 
-func gatherMonikersLocations(state *State, data map[string]datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) string) []types.MonikerLocations {
+func gatherMonikersLocations(state *State, data map[int]datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) []types.MonikerLocations {
 	monikers := datastructures.DefaultIDSetMap{}
 	for _, r := range state.RangeData {
 		resultID := getResultID(r)
-		if resultID != "" && len(r.MonikerIDs) > 0 {
-			s := monikers.GetOrCreate(resultID)
-			for id := range r.MonikerIDs {
-				s.Add(id)
-			}
+
+		if resultID != 0 && r.MonikerIDs.Len() > 0 {
+			monikers.GetOrCreate(resultID).Union(r.MonikerIDs)
 		}
 	}
 
-	uniques := map[string]types.MonikerLocations{}
+	n := 0
+	for id := range data {
+		monikerIDs, ok := monikers[id]
+		if !ok {
+			continue
+		}
+
+		n += monikerIDs.Len()
+	}
+
+	uniques := make(map[string]types.MonikerLocations, n)
 	for id, documentRanges := range data {
 		monikerIDs, ok := monikers[id]
 		if !ok {
 			continue
 		}
 
-		for monikerID := range monikerIDs {
-			var locations []types.Location
+		monikerIDs.Each(func(monikerID int) {
+			n := 0
+			for _, rangeIDs := range documentRanges {
+				n += rangeIDs.Len()
+			}
+
+			locations := make([]types.Location, 0, n)
 			for documentID, rangeIDs := range documentRanges {
 				document := state.DocumentData[documentID]
 				if strings.HasPrefix(document.URI, "..") {
 					continue
 				}
 
-				for id := range rangeIDs {
+				rangeIDs.Each(func(id int) {
 					r := state.RangeData[id]
 
 					locations = append(locations, types.Location{
@@ -235,7 +249,7 @@ func gatherMonikersLocations(state *State, data map[string]datastructures.Defaul
 						EndLine:        r.EndLine,
 						EndCharacter:   r.EndCharacter,
 					})
-				}
+				})
 			}
 
 			moniker := state.MonikerData[monikerID]
@@ -245,7 +259,7 @@ func gatherMonikersLocations(state *State, data map[string]datastructures.Defaul
 				Identifier: moniker.Identifier,
 				Locations:  append(uniques[key].Locations, locations...),
 			}
-		}
+		})
 	}
 
 	monikerLocations := make([]types.MonikerLocations, 0, len(uniques))
@@ -258,10 +272,9 @@ func gatherMonikersLocations(state *State, data map[string]datastructures.Defaul
 	return monikerLocations
 }
 
-// TODO(efritz) - document
 func gatherPackages(state *State, dumpID int) []types.Package {
-	uniques := map[string]types.Package{}
-	for id := range state.ExportedMonikers {
+	uniques := make(map[string]types.Package, state.ExportedMonikers.Len())
+	state.ExportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
 
@@ -271,7 +284,7 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
 		}
-	}
+	})
 
 	packages := make([]types.Package, 0, len(uniques))
 	for _, v := range uniques {
@@ -281,7 +294,6 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 	return packages
 }
 
-// TODO(efritz) - document
 func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference, error) {
 	type ExpandedPackageReference struct {
 		Scheme      string
@@ -290,8 +302,8 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 		Identifiers []string
 	}
 
-	uniques := map[string]ExpandedPackageReference{}
-	for id := range state.ImportedMonikers {
+	uniques := make(map[string]ExpandedPackageReference, state.ImportedMonikers.Len())
+	state.ImportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
 
@@ -302,7 +314,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 			Version:     packageInfo.Version,
 			Identifiers: append(uniques[key].Identifiers, source.Identifier),
 		}
-	}
+	})
 
 	packageReferences := make([]types.PackageReference, 0, len(uniques))
 	for _, v := range uniques {
@@ -325,4 +337,12 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 
 func makeKey(parts ...string) string {
 	return strings.Join(parts, ":")
+}
+
+func toID(id int) types.ID {
+	if id == 0 {
+		return types.ID("")
+	}
+
+	return types.ID(strconv.FormatInt(int64(id), 10))
 }

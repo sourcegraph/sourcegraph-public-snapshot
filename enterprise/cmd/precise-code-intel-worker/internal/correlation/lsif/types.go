@@ -3,17 +3,17 @@ package lsif
 import "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 
 type Element struct {
-	ID      string
+	ID      int
 	Type    string
 	Label   string
 	Payload interface{}
 }
 
 type Edge struct {
-	OutV     string
-	InV      string
-	InVs     []string
-	Document string
+	OutV     int
+	InV      int
+	InVs     []int
+	Document int
 }
 
 type MetaData struct {
@@ -23,8 +23,8 @@ type MetaData struct {
 
 type Document struct {
 	URI         string
-	Contains    datastructures.IDSet
-	Diagnostics datastructures.IDSet
+	Contains    *datastructures.IDSet
+	Diagnostics *datastructures.IDSet
 }
 
 type Range struct {
@@ -32,13 +32,13 @@ type Range struct {
 	StartCharacter     int
 	EndLine            int
 	EndCharacter       int
-	DefinitionResultID string
-	ReferenceResultID  string
-	HoverResultID      string
-	MonikerIDs         datastructures.IDSet
+	DefinitionResultID int
+	ReferenceResultID  int
+	HoverResultID      int
+	MonikerIDs         *datastructures.IDSet
 }
 
-func (d Range) SetDefinitionResultID(id string) Range {
+func (d Range) SetDefinitionResultID(id int) Range {
 	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
@@ -51,7 +51,7 @@ func (d Range) SetDefinitionResultID(id string) Range {
 	}
 }
 
-func (d Range) SetReferenceResultID(id string) Range {
+func (d Range) SetReferenceResultID(id int) Range {
 	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
@@ -64,7 +64,7 @@ func (d Range) SetReferenceResultID(id string) Range {
 	}
 }
 
-func (d Range) SetHoverResultID(id string) Range {
+func (d Range) SetHoverResultID(id int) Range {
 	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
@@ -77,7 +77,7 @@ func (d Range) SetHoverResultID(id string) Range {
 	}
 }
 
-func (d Range) SetMonikerIDs(ids datastructures.IDSet) Range {
+func (d Range) SetMonikerIDs(ids *datastructures.IDSet) Range {
 	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
@@ -91,13 +91,13 @@ func (d Range) SetMonikerIDs(ids datastructures.IDSet) Range {
 }
 
 type ResultSet struct {
-	DefinitionResultID string
-	ReferenceResultID  string
-	HoverResultID      string
-	MonikerIDs         datastructures.IDSet
+	DefinitionResultID int
+	ReferenceResultID  int
+	HoverResultID      int
+	MonikerIDs         *datastructures.IDSet
 }
 
-func (d ResultSet) SetDefinitionResultID(id string) ResultSet {
+func (d ResultSet) SetDefinitionResultID(id int) ResultSet {
 	return ResultSet{
 		DefinitionResultID: id,
 		ReferenceResultID:  d.ReferenceResultID,
@@ -106,7 +106,7 @@ func (d ResultSet) SetDefinitionResultID(id string) ResultSet {
 	}
 }
 
-func (d ResultSet) SetReferenceResultID(id string) ResultSet {
+func (d ResultSet) SetReferenceResultID(id int) ResultSet {
 	return ResultSet{
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  id,
@@ -115,7 +115,7 @@ func (d ResultSet) SetReferenceResultID(id string) ResultSet {
 	}
 }
 
-func (d ResultSet) SetHoverResultID(id string) ResultSet {
+func (d ResultSet) SetHoverResultID(id int) ResultSet {
 	return ResultSet{
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  d.ReferenceResultID,
@@ -124,7 +124,7 @@ func (d ResultSet) SetHoverResultID(id string) ResultSet {
 	}
 }
 
-func (d ResultSet) SetMonikerIDs(ids datastructures.IDSet) ResultSet {
+func (d ResultSet) SetMonikerIDs(ids *datastructures.IDSet) ResultSet {
 	return ResultSet{
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  d.ReferenceResultID,
@@ -137,10 +137,10 @@ type Moniker struct {
 	Kind                 string
 	Scheme               string
 	Identifier           string
-	PackageInformationID string
+	PackageInformationID int
 }
 
-func (d Moniker) SetPackageInformationID(id string) Moniker {
+func (d Moniker) SetPackageInformationID(id int) Moniker {
 	return Moniker{
 		Kind:                 d.Kind,
 		Scheme:               d.Scheme,

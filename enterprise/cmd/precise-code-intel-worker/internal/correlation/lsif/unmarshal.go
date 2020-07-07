@@ -1,37 +1,40 @@
-package jsonlines
+package lsif
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
-	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 )
 
 var unmarshaller = jsoniter.ConfigFastest
 
-func unmarshalElement(line []byte) (_ lsif.Element, err error) {
+func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
 	var payload struct {
-		ID    StringOrInt `json:"id"`
-		Type  string      `json:"type"`
-		Label string      `json:"label"`
+		ID    json.RawMessage `json:"id"`
+		Type  string          `json:"type"`
+		Label string          `json:"label"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
-		return lsif.Element{}, err
+		return Element{}, err
 	}
 
-	element := lsif.Element{
-		ID:    string(payload.ID),
+	id, err := internRaw(interner, payload.ID)
+	if err != nil {
+		return Element{}, err
+	}
+
+	element := Element{
+		ID:    id,
 		Type:  payload.Type,
 		Label: payload.Label,
 	}
 
 	if payload.Type == "edge" {
-		element.Payload, err = unmarshalEdge(line)
+		element.Payload, err = unmarshalEdge(interner, line)
 	} else if payload.Type == "vertex" {
 		if unmarshaler, ok := vertexUnmarshalers[payload.Label]; ok {
 			element.Payload, err = unmarshaler(line)
@@ -41,27 +44,45 @@ func unmarshalElement(line []byte) (_ lsif.Element, err error) {
 	return element, err
 }
 
-func unmarshalEdge(line []byte) (interface{}, error) {
+func unmarshalEdge(interner *Interner, line []byte) (interface{}, error) {
 	var payload struct {
-		OutV     StringOrInt   `json:"outV"`
-		InV      StringOrInt   `json:"inV"`
-		InVs     []StringOrInt `json:"inVs"`
-		Document StringOrInt   `json:"document"`
+		OutV     json.RawMessage   `json:"outV"`
+		InV      json.RawMessage   `json:"inV"`
+		InVs     []json.RawMessage `json:"inVs"`
+		Document json.RawMessage   `json:"document"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
-		return lsif.Edge{}, err
+		return Edge{}, err
 	}
 
-	var inVs []string
+	outV, err := internRaw(interner, payload.OutV)
+	if err != nil {
+		return nil, err
+	}
+	inV, err := internRaw(interner, payload.InV)
+	if err != nil {
+		return nil, err
+	}
+	document, err := internRaw(interner, payload.Document)
+	if err != nil {
+		return nil, err
+	}
+
+	var inVs []int
 	for _, inV := range payload.InVs {
-		inVs = append(inVs, string(inV))
+		id, err := internRaw(interner, inV)
+		if err != nil {
+			return nil, err
+		}
+
+		inVs = append(inVs, id)
 	}
 
-	return lsif.Edge{
-		OutV:     string(payload.OutV),
-		InV:      string(payload.InV),
+	return Edge{
+		OutV:     outV,
+		InV:      inV,
 		InVs:     inVs,
-		Document: string(payload.Document),
+		Document: document,
 	}, nil
 }
 
@@ -84,7 +105,7 @@ func unmarshalMetaData(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return lsif.MetaData{
+	return MetaData{
 		Version:     payload.Version,
 		ProjectRoot: payload.ProjectRoot,
 	}, nil
@@ -98,10 +119,10 @@ func unmarshalDocument(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return lsif.Document{
+	return Document{
 		URI:         payload.URI,
-		Contains:    datastructures.IDSet{},
-		Diagnostics: datastructures.IDSet{},
+		Contains:    datastructures.NewIDSet(),
+		Diagnostics: datastructures.NewIDSet(),
 	}, nil
 }
 
@@ -118,14 +139,19 @@ func unmarshalRange(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return lsif.Range{
+	return Range{
 		StartLine:      payload.Start.Line,
 		StartCharacter: payload.Start.Character,
 		EndLine:        payload.End.Line,
 		EndCharacter:   payload.End.Character,
-		MonikerIDs:     datastructures.IDSet{},
+		MonikerIDs:     datastructures.NewIDSet(),
 	}, nil
 }
+
+var (
+	HoverPartSeparator = []byte("\n\n---\n\n")
+	CodeFence          = []byte("```")
+)
 
 func unmarshalHover(line []byte) (interface{}, error) {
 	type _hoverResult struct {
@@ -140,10 +166,15 @@ func unmarshalHover(line []byte) (interface{}, error) {
 
 	var target []json.RawMessage
 	if err := unmarshaller.Unmarshal(payload.Result.Contents, &target); err != nil {
-		return unmarshalHoverPart(payload.Result.Contents)
+		v, err := unmarshalHoverPart(payload.Result.Contents)
+		if err != nil {
+			return nil, err
+		}
+
+		return string(v), nil
 	}
 
-	var parts []string
+	var parts [][]byte
 	for _, t := range target {
 		part, err := unmarshalHoverPart(t)
 		if err != nil {
@@ -153,29 +184,36 @@ func unmarshalHover(line []byte) (interface{}, error) {
 		parts = append(parts, part)
 	}
 
-	return strings.Join(parts, "\n\n---\n\n"), nil
+	return string(bytes.Join(parts, HoverPartSeparator)), nil
 }
 
-func unmarshalHoverPart(raw json.RawMessage) (string, error) {
+func unmarshalHoverPart(raw json.RawMessage) ([]byte, error) {
 	var strPayload string
 	if err := unmarshaller.Unmarshal(raw, &strPayload); err == nil {
-		return strings.TrimSpace(strPayload), nil
+		return bytes.TrimSpace([]byte(strPayload)), nil
 	}
 
 	var objPayload struct {
-		Kind     string `json:"kind"`
 		Language string `json:"language"`
 		Value    string `json:"value"`
 	}
 	if err := unmarshaller.Unmarshal(raw, &objPayload); err != nil {
-		return "", errors.New("unrecognized hover format")
+		return nil, errors.New("unrecognized hover format")
 	}
 
-	if objPayload.Language != "" {
-		return fmt.Sprintf("```%s\n%s\n```", objPayload.Language, objPayload.Value), nil
+	if len(objPayload.Language) > 0 {
+		v := make([]byte, 0, len(objPayload.Language)+len(objPayload.Value)+len(CodeFence)*2+2)
+		v = append(v, CodeFence...)
+		v = append(v, objPayload.Language...)
+		v = append(v, '\n')
+		v = append(v, objPayload.Value...)
+		v = append(v, '\n')
+		v = append(v, CodeFence...)
+
+		return v, nil
 	}
 
-	return strings.TrimSpace(objPayload.Value), nil
+	return bytes.TrimSpace([]byte(objPayload.Value)), nil
 }
 
 func unmarshalMoniker(line []byte) (interface{}, error) {
@@ -192,7 +230,7 @@ func unmarshalMoniker(line []byte) (interface{}, error) {
 		payload.Kind = "local"
 	}
 
-	return lsif.Moniker{
+	return Moniker{
 		Kind:       payload.Kind,
 		Scheme:     payload.Scheme,
 		Identifier: payload.Identifier,
@@ -208,7 +246,7 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return lsif.PackageInformation{
+	return PackageInformation{
 		Name:    payload.Name,
 		Version: payload.Version,
 	}, nil
@@ -237,9 +275,9 @@ func unmarshalDiagnosticResult(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	var diagnostics []lsif.Diagnostic
+	var diagnostics []Diagnostic
 	for _, result := range payload.Results {
-		diagnostics = append(diagnostics, lsif.Diagnostic{
+		diagnostics = append(diagnostics, Diagnostic{
 			Severity:       result.Severity,
 			Code:           string(result.Code),
 			Message:        result.Message,
@@ -251,7 +289,7 @@ func unmarshalDiagnosticResult(line []byte) (interface{}, error) {
 		})
 	}
 
-	return lsif.DiagnosticResult{Result: diagnostics}, nil
+	return DiagnosticResult{Result: diagnostics}, nil
 }
 
 type StringOrInt string
@@ -274,4 +312,12 @@ func (id *StringOrInt) UnmarshalJSON(raw []byte) error {
 
 	*id = StringOrInt(strconv.FormatInt(v, 10))
 	return nil
+}
+
+// internRaw trims whitespace from the raw message and submits it to the
+// interner to produce a unique identifier for this value. It is necessary
+// to trim the whitespace as json-iterator can add a whitespace prefixe to
+// raw messages during unmarshalling.
+func internRaw(interner *Interner, raw json.RawMessage) (int, error) {
+	return interner.Intern(bytes.TrimSpace(raw))
 }

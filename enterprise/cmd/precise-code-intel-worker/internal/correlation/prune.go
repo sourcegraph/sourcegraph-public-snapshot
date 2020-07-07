@@ -34,7 +34,7 @@ func prune(ctx context.Context, state *State, root string, getChildren existence
 	return nil
 }
 
-func pruneFromDefinitionReferences(state *State, definitionReferenceData map[string]datastructures.DefaultIDSetMap) {
+func pruneFromDefinitionReferences(state *State, definitionReferenceData map[int]datastructures.DefaultIDSetMap) {
 	for _, documentRanges := range definitionReferenceData {
 		for documentID := range documentRanges {
 			if _, ok := state.DocumentData[documentID]; !ok {
