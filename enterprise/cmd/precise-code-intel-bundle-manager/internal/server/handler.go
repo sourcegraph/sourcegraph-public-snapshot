@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	sqlitereader "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence/sqlite"
-	"github.com/sourcegraph/sourcegraph/internal/tar"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -96,7 +95,7 @@ func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) 
 		return paths.UploadPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	if err := codeintelutils.StitchFiles(filename, makePartFilename, true); err != nil {
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, false, false); err != nil {
 		log15.Error("Failed to stitch multipart upload", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -120,20 +119,13 @@ func (s *Server) handlePostDatabasePart(w http.ResponseWriter, r *http.Request) 
 // POST /dbs/{id:[0-9]+}/stitch
 func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request) {
 	id := idFromRequest(r)
-	dirname := paths.DBDir(s.bundleDir, id)
+	filename := paths.SQLiteDBFilename(s.bundleDir, idFromRequest(r))
 	makePartFilename := func(index int) string {
 		return paths.DBPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	stitchedReader, err := codeintelutils.StitchFilesReader(makePartFilename, false)
-	if err != nil {
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, true, false); err != nil {
 		log15.Error("Failed to stitch multipart database", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := tar.Extract(dirname, stitchedReader); err != nil {
-		log15.Error("Failed to extract database archive", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -304,11 +296,8 @@ func writeToFile(filename string, r io.Reader) (err error) {
 		}
 	}()
 
-	if _, err := io.Copy(targetFile, r); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = io.Copy(targetFile, r)
+	return err
 }
 
 func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
