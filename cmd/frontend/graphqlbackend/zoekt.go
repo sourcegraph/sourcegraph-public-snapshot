@@ -13,6 +13,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -339,23 +340,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repos.repoRevs[file.Repository]
-		if repoResolvers[repoRev.Repo.Name] == nil {
-			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
-		}
 
-		// TODO(keegancsmith) We need to handle results across branches for
-		// the same file. Options:
-		// 1. a filematch per file.Branches
-		// 2. update result schema to have multiple uris.
-		//
-		// For now we only show one result for simplicity.
-		branch := file.Branches[0]
-		inputRev := file.Version // we should find a match in "revs", just in case we don't fallback to SHA.
-		for i, b := range repos.repoBranches[file.Repository] {
-			if branch == b {
-				inputRev = repoRev.Revs[i].RevSpec // RevSpec is guaranteed to be explicit via zoektIndexedRepos
-			}
+		repo, inputRev := repos.GetRepoInputRev(&file)
+		if repoResolvers[repo.Name] == nil {
+			repoResolvers[repo.Name] = &RepositoryResolver{repo: repo}
 		}
 
 		// symbols is set in symbols search, lines in text search.
@@ -367,7 +355,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		if typ != symbolRequest {
 			lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 		} else {
-			symbols = zoektFileMatchToSymbolResults(repoResolvers[repoRev.Repo.Name], inputRev, &file)
+			symbols = zoektFileMatchToSymbolResults(repoResolvers[repo.Name], inputRev, &file)
 		}
 
 		matches[i] = &FileMatchResolver{
@@ -375,9 +363,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
 			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
-			uri:          fileMatchURI(repoRev.Repo.Name, inputRev, file.FileName),
+			uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
 			symbols:      symbols,
-			Repo:         repoResolvers[repoRev.Repo.Name],
+			Repo:         repoResolvers[repo.Name],
 			CommitID:     api.CommitID(file.Version),
 		}
 	}
@@ -656,4 +644,27 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 	rb.repoRevs[string(reporev.Repo.Name)] = reporev
 	rb.repoBranches[string(reporev.Repo.Name)] = branches
 	return true
+}
+
+// GetRepoInputRev returns the repo and inputRev associated with file.
+func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.Repo, inputRev string) {
+	repoRev := rb.repoRevs[file.Repository]
+
+	// TODO(keegancsmith) We need to handle results across branches for the
+	// same file. Options:
+	// 1. a filematch per file.Branches
+	// 2. update result schema to have multiple uris.
+	//
+	// For now we only show one result for simplicity.
+	branch := file.Branches[0]
+	for i, b := range rb.repoBranches[file.Repository] {
+		if branch == b {
+			// RevSpec is guaranteed to be explicit via zoektIndexedRepos
+			return repoRev.Repo, repoRev.Revs[i].RevSpec
+		}
+	}
+
+	// Did not find a match. This is unexpected, but we can fallback to
+	// file.Version to generate correct links.
+	return repoRev.Repo, file.Version
 }
