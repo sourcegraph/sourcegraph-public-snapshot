@@ -199,21 +199,21 @@ export const golang: RepogroupMetadata = {
             title: 'Search for usages of the Retry-After header in non-vendor Go files:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">file:</span>.go{' '}
+                    <span className="repogroup-page__keyword-text">lang:</span>go{' '}
                     <span className="repogroup-page__keyword-text">-file:</span>vendor/ Retry-After
                 </>
             ),
             patternType: SearchPatternType.literal,
-            rawQuery: 'file:.go -file:vendor/ Retry-After',
+            rawQuery: 'lang:go -file:vendor/ Retry-After',
         },
         {
             title: 'Find examples of sending JSON in a HTTP POST request:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">file:</span>.go http.Post json
+                    <span className="repogroup-page__keyword-text">lang:</span>go http.Post json
                 </>
             ),
-            rawQuery: 'file:.go http.Post json',
+            rawQuery: 'lang:go http.Post json',
             patternType: SearchPatternType.regexp,
         },
         {
