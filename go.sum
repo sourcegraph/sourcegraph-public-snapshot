@@ -528,7 +528,6 @@ github.com/gostaticanalysis/analysisutil v0.0.3 h1:iwp+5/UAyzQSFgQ4uR2sni99sJ8Eo
 github.com/gostaticanalysis/analysisutil v0.0.3/go.mod h1:eEOZF4jCKGi+aprrirO9e7WKB3beBRtWgqGunKl6pKE=
 github.com/goware/urlx v0.3.1 h1:BbvKl8oiXtJAzOzMqAQ0GfIhf96fKeNEZfm9ocNSUBI=
 github.com/goware/urlx v0.3.1/go.mod h1:h8uwbJy68o+tQXCGZNa9D73WN8n0r9OBae5bUnLcgjw=
-github.com/grafana-tools/sdk v0.0.0-20200610203821-a982d46f0598/go.mod h1:aqBqJVTJmj0MTX9cP8wuReJPte6HyttMDzSS2u8nJwo=
 github.com/grafana-tools/sdk v0.0.0-20200627094057-622ba1f937bb h1:Xu4WladfCJ4Bpg7oFeQanfKkzlyE7pHQ+2/YPBGo8ww=
 github.com/grafana-tools/sdk v0.0.0-20200627094057-622ba1f937bb/go.mod h1:aqBqJVTJmj0MTX9cP8wuReJPte6HyttMDzSS2u8nJwo=
 github.com/graphql-go/graphql v0.7.9 h1:5Va/Rt4l5g3YjwDnid3vFfn43faaQBq7rMcIZ0VnV34=
@@ -938,8 +937,6 @@ github.com/sirupsen/logrus v1.4.2 h1:SPIRibHv4MatM3XXNO2BJeFLZwZ2LvZgfQ5+UNI2im4
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/sirupsen/logrus v1.6.0 h1:UBcNElsrwanuuMsnGSlYmtmgbb23qDR5dG+6X6Oo89I=
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
-github.com/slimsag/sdk v0.0.0-20200402190125-fc52c0aed0b7 h1:W6INGdp5se7XpUtRbk5kp6jG87VRa30cZTiY6RF8OQM=
-github.com/slimsag/sdk v0.0.0-20200402190125-fc52c0aed0b7/go.mod h1:aqBqJVTJmj0MTX9cP8wuReJPte6HyttMDzSS2u8nJwo=
 github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 h1:kr3of2TY0avjMhryOvEOUExpDF5yYRs3PFUGpwsawUw=
 github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5/go.mod h1:rvsMTVl5yyd7liGH3cxu5eRjfNcC1WkSKe4HBSZ3ZA4=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=

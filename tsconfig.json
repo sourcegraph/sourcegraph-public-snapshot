@@ -6,6 +6,7 @@
     { "path": "web" },
     { "path": "web/src/end-to-end" },
     { "path": "web/src/regression" },
+    { "path": "web/src/integration" },
     { "path": "browser" },
     { "path": "browser/src/end-to-end" },
     { "path": "schema" },

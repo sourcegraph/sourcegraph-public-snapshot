@@ -139,6 +139,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -273,6 +274,7 @@ exports[`HoverOverlay actions present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -342,6 +344,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -450,6 +453,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"
@@ -545,6 +549,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       telemetryService={
         Object {
           "log": [Function],
+          "logViewEvent": [Function],
         }
       }
       variant="actionItem"

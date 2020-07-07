@@ -119,6 +119,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
 
     const [campaign, setCampaign] = useState<Campaign | null>()
+
+    useEffect(() => {
+        telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')
+    }, [campaignID, telemetryService])
+
     useEffect(() => {
         if (!campaignID) {
             return
@@ -190,7 +195,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
         campaignUpdates.next()
         changesetUpdates.next()
-    }, [campaignUpdates, changesetUpdates])
+        telemetryService.log('CampaignChangesetAdded')
+    }, [campaignUpdates, changesetUpdates, telemetryService])
 
     const onNameChange = useCallback(
         (newName: string): void => {
@@ -234,6 +240,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     setBranch(newCampaign.branch ?? '')
                     setBranchModified(false)
                     unblockHistoryReference.current()
+                    telemetryService.log('CampaignUpdated')
                     history.push(`/campaigns/${newCampaign.id}`)
                 } else {
                     const createdCampaign = await createCampaign({
@@ -244,6 +251,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         branch: specifyingBranchAllowed ? branch : undefined,
                     })
                     unblockHistoryReference.current()
+                    telemetryService.log('CampaignCreated')
                     history.push(`/campaigns/${createdCampaign.id}`)
                 }
                 setMode('viewing')
@@ -265,6 +273,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             patchSet,
             patchSetID,
             specifyingBranchAllowed,
+            telemetryService,
         ]
     )
 
@@ -276,8 +285,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             unblockHistoryReference.current = history.block(discardChangesMessage)
             setMode('editing')
             setAlertError(undefined)
+            telemetryService.log('EditCampaignPage')
         },
-        [history]
+        [history, telemetryService]
     )
 
     const onCancel: React.FormEventHandler = useCallback(
@@ -303,6 +313,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setMode('closing')
             try {
                 await closeCampaign(campaign!.id, closeChangesets)
+                telemetryService.log('CampaignClosed')
                 campaignUpdates.next()
             } catch (error) {
                 setAlertError(asError(error))
@@ -310,7 +321,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 setMode('viewing')
             }
         },
-        [campaign, campaignUpdates]
+        [campaign, campaignUpdates, telemetryService]
     )
 
     const onDelete = useCallback(
@@ -321,13 +332,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setMode('deleting')
             try {
                 await deleteCampaign(campaign!.id, closeChangesets)
+                telemetryService.log('CampaignDeleted')
                 history.push('/campaigns')
             } catch (error) {
                 setAlertError(asError(error))
                 setMode('viewing')
             }
         },
-        [campaign, history]
+        [campaign, history, telemetryService]
     )
 
     const afterCampaignModify = useCallback(

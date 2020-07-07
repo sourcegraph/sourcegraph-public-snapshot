@@ -39,7 +39,6 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
   - `"syntect-server"`
 - `name`: the name of the alert that the service fired (chosen by the service)
 - `description`: a human-readable description of the alert
-- `instance`: identifies the Kubernetes pod, Docker container, or host machine from which the alert came.
 
 **Examples:**
 

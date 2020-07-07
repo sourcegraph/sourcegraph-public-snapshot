@@ -96,8 +96,8 @@ func TestIndexableRepositoriesMinimumTimeSinceLastEnqueue(t *testing.T) {
 
 	expectedIndexableRepositories := []IndexableRepository{
 		{RepositoryID: 1},
-		{RepositoryID: 2, LastIndexEnqueuedAt: &t1},
-		{RepositoryID: 3, LastIndexEnqueuedAt: &t2},
+		{RepositoryID: 4, LastIndexEnqueuedAt: &t3},
+		{RepositoryID: 5, LastIndexEnqueuedAt: &t4},
 	}
 	if diff := cmp.Diff(expectedIndexableRepositories, indexableRepositories); diff != "" {
 		t.Errorf("unexpected ids (-want +got):\n%s", diff)

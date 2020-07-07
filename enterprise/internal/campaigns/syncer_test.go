@@ -548,10 +548,6 @@ func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) er
 	panic("implement me")
 }
 
-func (m MockRepoStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error) {
-	panic("implement me")
-}
-
 func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
 	return m.listExternalServices(ctx, args)
 }
@@ -561,6 +557,10 @@ func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposA
 }
 
 func (m MockRepoStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	panic("implement me")
+}
+
+func (m MockRepoStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 	panic("implement me")
 }
 

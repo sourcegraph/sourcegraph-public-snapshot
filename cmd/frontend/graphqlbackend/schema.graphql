@@ -1270,6 +1270,13 @@ type Query {
     repoGroups: [RepoGroup!]!
     # (experimental) All version contexts.
     versionContexts: [VersionContext!]!
+    # (experimental) Return the parse tree of a search query.
+    parseSearchQuery(
+        # The search query (such as "repo:myrepo foo").
+        query: String = ""
+        # The parser to use for this query.
+        patternType: SearchPatternType = literal
+    ): JSONValue
     # The current site.
     site: Site!
     # Retrieve responses to surveys.
