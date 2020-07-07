@@ -47,7 +47,7 @@ func main() {
 	go runCmd(log, procErrs, NewPrometheusCmd(promArgs, prometheusPort))
 
 	// router serves endpoints accessible from outside the container (defined by `exportPort`)
-	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying Grafana, etc.
+	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying services, etc.
 	router := mux.NewRouter()
 
 	// disable all components that depend on Alertmanager if DISABLE_ALERTMANAGER=true
