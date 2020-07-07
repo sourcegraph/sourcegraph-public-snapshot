@@ -139,15 +139,15 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	// Split based on indexed vs unindexed
-	repoBranches, zoektRepos, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
 
 	return &indexedSearchRequest{
 		args: args,
 		typ:  typ,
 
-		Repos:        zoektRepos,
+		Repos:        indexed.indexed,
 		Unindexed:    searcherRepos,
-		repoBranches: repoBranches,
+		repoBranches: indexed.repoBranches,
 
 		DisableUnindexedSearch: indexParam == Only,
 	}, nil
@@ -573,10 +573,10 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (_ map[string][]string, indexed, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed *indexedRepoRevs, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
-	irr := &indexedRepoRevs{
+	indexed = &indexedRepoRevs{
 		indexed:      make([]*search.RepositoryRevisions, 0, len(revs)),
 		repoBranches: make(map[string][]string, len(revs)),
 	}
@@ -589,13 +589,13 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 			continue
 		}
 
-		ok = irr.Add(reporev, repo)
+		ok = indexed.Add(reporev, repo)
 		if !ok {
 			unindexed = append(unindexed, reporev)
 		}
 	}
 
-	return irr.repoBranches, irr.indexed, unindexed
+	return indexed, unindexed
 }
 
 // indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a

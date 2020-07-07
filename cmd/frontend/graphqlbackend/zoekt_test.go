@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -342,14 +341,12 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
+			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
-			if !reflect.DeepEqual(tc.indexed, indexed) {
-				diff := cmp.Diff(tc.indexed, indexed)
+			if diff := cmp.Diff(tc.indexed, indexed.indexed); diff != "" {
 				t.Error("unexpected indexed:", diff)
 			}
-			if !reflect.DeepEqual(tc.unindexed, unindexed) {
-				diff := cmp.Diff(tc.unindexed, unindexed)
+			if diff := cmp.Diff(tc.unindexed, unindexed); diff != "" {
 				t.Error("unexpected unindexed:", diff)
 			}
 		})
@@ -379,7 +376,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_, _, _ = zoektIndexedRepos(zoektRepos, repos, nil)
+		_, _ = zoektIndexedRepos(zoektRepos, repos, nil)
 	}
 }
 
@@ -830,9 +827,9 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		_, indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
+		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
-			Indexed:   indexed,
+			Indexed:   indexed.indexed,
 			Unindexed: unindexed,
 		}
 		want := ret{
