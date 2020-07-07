@@ -49,7 +49,7 @@ func toJSON(node query.Node) interface{} {
 			Field:   n.Field,
 			Value:   n.Value,
 			Negated: n.Negated,
-			Labels:  query.Strings(n.Annotation.Labels),
+			Labels:  n.Annotation.Labels.String(),
 			Range:   n.Annotation.Range,
 		}
 	case query.Pattern:
@@ -61,7 +61,7 @@ func toJSON(node query.Node) interface{} {
 		}{
 			Value:   n.Value,
 			Negated: n.Negated,
-			Labels:  query.Strings(n.Annotation.Labels),
+			Labels:  n.Annotation.Labels.String(),
 			Range:   n.Annotation.Range,
 		}
 	}
