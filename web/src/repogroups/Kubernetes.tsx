@@ -193,11 +193,11 @@ export const kubernetes: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hoo', codehost: CodeHosts.GITHUB },
     ],
-    description: 'This repository group contains all the repositories for the Kubernetes community.',
+    description: 'This repository group contains popular Kubernetes repositories with the most GitHub stars. Explore these repositories with interesting search examples.',
     examples: [
         {
             title:
-                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.',
+                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">file:</span>pod.yaml{' '}
@@ -207,8 +207,9 @@ export const kubernetes: RepogroupMetadata = {
             rawQuery: 'file:pod.yaml content:"kind: ReplicationController"',
             patternType: SearchPatternType.literal,
         },
+
         {
-            title: 'See how Prometheus is used for monitoring in different popular projects:',
+            title: 'Find Prometheus usage in YAML files:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus

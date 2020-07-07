@@ -64,8 +64,42 @@ export const android: RepogroupMetadata = {
         { name: 'iampawan/FlutterExampleApps', codehost: CodeHosts.GITHUB },
         { name: 'mitesh77/Best-Flutter-UI-Templates', codehost: CodeHosts.GITHUB },
     ],
-    description: 'Interesting search examples in popular Android repositories.',
+    description: `This repository group contains popular Android repositories with the most stars and trending on GitHub. Explore these repositories
+     with interesting search examples.`,
     examples: [
+        {
+            title: 'Find intent filter examples in Android Manifest XML files:',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>
+                    {'xml <intent-filter> :[string] </intent-filter>'}
+                </>
+            ),
+            rawQuery: 'langxml <intent-filter> :[string] </intent-filter>',
+            description: `An intent filter is used to specify the type of intents a component would like to receive. An intent filter can accept
+             3 types of elements - <action>, <category> and <data> elements.`,
+            patternType: SearchPatternType.structural,
+        },
+        {
+            title: 'Find try-catch blocks to see how errors are caught:',
+            exampleQuery: <>{'try {:[0]} catch (:[1]) {:[2]} finally {:[3]}'}</>,
+            rawQuery: 'try {:[0]} catch (:[1]) {:[2]} finally {:[3]}',
+            patternType: SearchPatternType.structural,
+        },
+        {
+            title: 'Examine and optimize your layout by detecting nested LinearLayouts:',
+            description: `LinearLayout can lead to an excessively deep view hierarchy. Nesting several instances of
+            LinearLayout that use the layout_weight parameter can be especially expensive as each child needs to be measured twice. This is particularly
+            important when the layout is inflated repeatedly, such as when used in a ListView or GridView.`,
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>
+                    {'xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>'}
+                </>
+            ),
+            rawQuery: 'lang:xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>',
+            patternType: SearchPatternType.structural,
+        },
         {
             title: 'Find usage examples of the OnClickListener function in Kotlin’s syntax:',
             exampleQuery: (
@@ -77,39 +111,6 @@ export const android: RepogroupMetadata = {
             rawQuery: 'file:.kt .setOnClickListener {:[function]}',
             patternType: SearchPatternType.structural,
         },
-        {
-            title: 'Find intent filter examples in Android Manifest XML files:',
-            exampleQuery: (
-                <>
-                    <span className="repogroup-page__keyword-text">lang:</span>
-                    {'xml <intent-filter> :[string] </intent-filter>'}
-                </>
-            ),
-            rawQuery: 'langxml <intent-filter> :[string] </intent-filter>',
-            patternType: SearchPatternType.structural,
-        },
-        {
-            title: 'Detect nested LinearLayouts in your XML layout files:',
-            exampleQuery: (
-                <>
-                    <span className="repogroup-page__keyword-text">lang:</span>
-                    {'xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>'}
-                </>
-            ),
-            rawQuery: 'lang:xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>',
-            patternType: SearchPatternType.structural,
-        },
-        {
-            title: 'Find try-catch blocks to see how errors are caught:',
-            exampleQuery: <>{'try {:[0]} catch (:[1]) {:[2]} finally {:[3]}'}</>,
-            rawQuery: 'try {:[0]} catch (:[1]) {:[2]} finally {:[3]}',
-            patternType: SearchPatternType.structural,
-        },
-        //         {
-        //             title: 'Switch statements in Java',
-        //             exampleQuery:
-        //                 'http.Transport{:[_], MaxIdleConns: :[idleconns], :[_]} <span className="repogroup-page__keyword-text">-file:</span>vendor <span class="repogroup-page__keyword-text">lang:</span>go',
-        //         },
     ],
     homepageDescription: 'Explore popular Android repositories.',
     homepageIcon: 'https://code.benco.io/icon-collection/logos/android-1.svg',
