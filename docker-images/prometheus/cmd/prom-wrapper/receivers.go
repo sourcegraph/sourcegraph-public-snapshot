@@ -111,7 +111,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				apiURL = &amconfig.URL{URL: url}
 			}
 			receiver.PagerdutyConfigs = append(receiver.PagerdutyConfigs, &amconfig.PagerdutyConfig{
-				RoutingKey: amconfig.Secret(notifier.Pagerduty.RoutingKey),
+				RoutingKey: amconfig.Secret(notifier.Pagerduty.IntegrationKey),
 				Severity:   notifier.Pagerduty.Severity,
 				URL:        apiURL,
 

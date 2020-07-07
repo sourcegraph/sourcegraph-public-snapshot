@@ -1046,8 +1046,8 @@ const SiteSchemaJSON = `{
           "type": "string",
           "const": "pagerduty"
         },
-        "routingKey": {
-          "description": "Routing key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview",
+        "integrationKey": {
+          "description": "Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview",
           "type": "string"
         },
         "severity": {

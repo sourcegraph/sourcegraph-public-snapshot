@@ -30,7 +30,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Configuration for `observability.alerts` has changed and notifications are now provided by Prometheus Alertmanager. [#11832](https://github.com/sourcegraph/sourcegraph/pull/11832)
   - Removed: `observability.alerts.id`.
   - Removed: Slack notifiers no longer accept `mentionUsers`, `mentionGroups`, `mentionChannel`, and `token` options.
-  - Changed: PagerDuty notifiers now accept `routingKey` instead of `integrationKey` - see the [PagerDuty Events API v2](https://developer.pagerduty.com/docs/events-api-v2/overview).
 
 ### Fixed
 
