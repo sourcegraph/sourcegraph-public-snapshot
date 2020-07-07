@@ -24,9 +24,9 @@ var (
 	// alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
 	alertSolutionsTemplate    = `https://docs.sourcegraph.com/admin/observability/alert_solutions#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
 	notificationTitleTemplate = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
-	notificationBodyTemplate  = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'{{ range .Alerts }} {{ .Labels.instance }}{{ end }}.
+	notificationBodyTemplate  = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'.
 
-For possible solutions, see %s`, alertSolutionsTemplate)
+For possible solutions, please refer to %s`, alertSolutionsTemplate)
 )
 
 // newReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers.
