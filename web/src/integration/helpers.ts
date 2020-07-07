@@ -164,7 +164,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                             `GraphQL query "${queryName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${queryName}" query:\n${query}`
                         )
                         // Make test fail
-                        errors.next(error)
+                        errors.error(error)
                         throw error
                     }
                     const result = graphQlOverrides[queryName]
@@ -185,7 +185,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                     )
                 try {
                     await Promise.race([
-                        errors.pipe(first()).toPromise(),
+                        errors.toPromise(),
                         run({
                             sourcegraphBaseUrl,
                             driver,
