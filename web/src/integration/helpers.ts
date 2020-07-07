@@ -132,17 +132,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         // Origin header will change when running against a test instance
                         headers: false,
                         url: {
-                            // For simplicity, always use the same index.html for Sourcegraph pages.
-                            // They only have irrelevant differences, like the <title>.
-                            pathname: (pathname, request) => {
-                                if (
-                                    request.absoluteUrl.startsWith(sourcegraphBaseUrl) &&
-                                    !request.pathname.startsWith('/.') // ignore assets, API requests, etc
-                                ) {
-                                    return ''
-                                }
-                                return pathname
-                            },
+                            pathname: true,
                             query: true,
                             hash: true,
                             // Allow recording tests against https://sourcegraph.test
