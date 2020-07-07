@@ -946,9 +946,9 @@ func (g *promGroup) AppendRow(alertQuery string, labels map[string]string) {
 		},
 		// a "real" prometheus alert to attach onto alert_count
 		promRule{
-			Alert:  fmt.Sprintf("%s_%s_%s", labels["service_name"], labels["level"], labels["name"]),
+			Alert:  fmt.Sprintf("%s_%s_%s", labels["level"], labels["service_name"], labels["name"]),
 			Labels: labels,
-			Expr: fmt.Sprintf(`alert_count{service_name="%s",level="%s",name="%s"} > 0`,
+			Expr: fmt.Sprintf(`alert_count{service_name="%s",level="%s",name="%s"} >= 1`,
 				labels["service_name"], labels["level"], labels["name"]),
 		})
 }
