@@ -343,7 +343,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
-			if diff := cmp.Diff(tc.indexed, indexed.indexed); diff != "" {
+			if diff := cmp.Diff(tc.indexed, indexed.repoRevs); diff != "" {
 				t.Error("unexpected indexed:", diff)
 			}
 			if diff := cmp.Diff(tc.unindexed, unindexed); diff != "" {
@@ -829,7 +829,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	for _, tt := range cases {
 		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
-			Indexed:   indexed.indexed,
+			Indexed:   indexed.repoRevs,
 			Unindexed: unindexed,
 		}
 		want := ret{

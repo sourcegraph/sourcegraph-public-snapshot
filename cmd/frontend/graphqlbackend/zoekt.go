@@ -145,7 +145,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		args: args,
 		typ:  typ,
 
-		Repos:        indexed.indexed,
+		Repos:        indexed.repoRevs,
 		Unindexed:    searcherRepos,
 		repoBranches: indexed.repoBranches,
 
@@ -577,7 +577,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &indexedRepoRevs{
-		indexed:      make([]*search.RepositoryRevisions, 0, len(revs)),
+		repoRevs:     make([]*search.RepositoryRevisions, 0, len(revs)),
 		repoBranches: make(map[string][]string, len(revs)),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
@@ -601,9 +601,10 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 // indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
 // list of repository and refs to search.
 type indexedRepoRevs struct {
-	// indexed is the Sourcegraph representation of a the list of indexed
+	// repoRevs is the Sourcegraph representation of a the list of repoRevs
 	// repository and revisions to search.
-	indexed []*search.RepositoryRevisions
+	repoRevs []*search.RepositoryRevisions
+
 	// repoBranches will be used when we query zoekt. The order of branches
 	// must match that in a reporev such that we can map back results. IE this
 	// invariant is maintained:
@@ -656,7 +657,7 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return false
 	}
 
-	rb.indexed = append(rb.indexed, reporev)
+	rb.repoRevs = append(rb.repoRevs, reporev)
 	rb.repoBranches[string(reporev.Repo.Name)] = branches
 	return true
 }
