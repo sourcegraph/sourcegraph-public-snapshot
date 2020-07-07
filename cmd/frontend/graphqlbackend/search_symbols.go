@@ -128,7 +128,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
-			for _, repo := range indexed.Repos {
+			for _, repo := range indexed.Repos() {
 				common.searched = append(common.searched, repo.Repo)
 				common.indexed = append(common.indexed, repo.Repo)
 			}

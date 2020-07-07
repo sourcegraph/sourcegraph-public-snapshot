@@ -34,10 +34,6 @@ const (
 // query into a Zoekt query and mapping the results from zoekt back to
 // Sourcegraph result types.
 type indexedSearchRequest struct {
-	// Repos is a map of repository revisions that are indexed and will be
-	// searched by Zoekt.
-	Repos map[string]*search.RepositoryRevisions
-
 	// Unindexed is a slice of repository revisions that can't be searched by
 	// Zoekt. The repository revisions should be searched by the searcher
 	// service.
@@ -58,14 +54,9 @@ type indexedSearchRequest struct {
 	args *search.TextParameters
 	typ  indexedRequestType
 
-	// repoBranches is the zoekt representation of Repos. It will be used when
-	// querying Zoekt.
-	//
-	// We maintain an invariant between the list of branches in repoBranches
-	// and the list of input revs in Repos. For any repo in Repos,
-	// repoBranches[repo.Name][i] maps to repo.RevSpecs[i].RevSpec. This
-	// invariant is maintained for mapping results back.
-	repoBranches map[string][]string
+	// repos is the repository revisions that are indexed and will be
+	// searched.
+	repos *indexedRepoRevs
 
 	// since if non-nil will be used instead of time.Since. For tests
 	since func(time.Time) time.Duration
@@ -146,16 +137,24 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		args: args,
 		typ:  typ,
 
-		Repos:        indexed.repoRevs,
-		Unindexed:    searcherRepos,
-		repoBranches: indexed.repoBranches,
+		Unindexed: searcherRepos,
+		repos:     indexed,
 
 		DisableUnindexedSearch: indexParam == Only,
 	}, nil
 }
 
+// Repos is a map of repository revisions that are indexed and will be
+// searched by Zoekt. Do not mutate.
+func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
+	if s.repos == nil {
+		return nil
+	}
+	return s.repos.repoRevs
+}
+
 func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(s.Repos) == 0 {
+	if len(s.Repos()) == 0 {
 		return nil, false, nil, nil
 	}
 
@@ -164,15 +163,13 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 		since = s.since
 	}
 
-	repos := &indexedRepoRevs{repoRevs: s.Repos, repoBranches: s.repoBranches}
-
 	switch s.typ {
 	case textRequest:
-		return zoektSearch(ctx, s.args, repos, s.typ, since)
+		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case symbolRequest:
-		return zoektSearch(ctx, s.args, repos, s.typ, since)
+		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, repos.repoRevs, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos.repoRevs, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
