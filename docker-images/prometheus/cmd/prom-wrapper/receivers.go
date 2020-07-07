@@ -49,7 +49,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 		}
 
 		notifierConfig := amconfig.NotifierConfig{
-			VSendResolved: alert.SendResolved,
+			VSendResolved: !alert.DisableSendResolved,
 		}
 
 		notifier := alert.Notifier

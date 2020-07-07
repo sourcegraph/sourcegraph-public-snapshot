@@ -796,11 +796,11 @@ type OAuthIdentity struct {
 	Type                 string `json:"type"`
 }
 type ObservabilityAlerts struct {
+	// DisableSendResolved description: Disable notifications when alerts resolve themselves.
+	DisableSendResolved bool `json:"disableSendResolved,omitempty"`
 	// Level description: Sourcegraph alert level to subscribe to notifications for.
 	Level    string   `json:"level"`
 	Notifier Notifier `json:"notifier"`
-	// SendResolved description: Whether or not to notify about resolved alerts.
-	SendResolved bool `json:"sendResolved,omitempty"`
 }
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.

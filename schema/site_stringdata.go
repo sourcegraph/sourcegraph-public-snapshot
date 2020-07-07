@@ -643,9 +643,10 @@ const SiteSchemaJSON = `{
               "taggedUnionType": true
             }
           },
-          "sendResolved": {
-            "description": "Whether or not to notify about resolved alerts.",
-            "type": "boolean"
+          "disableSendResolved": {
+            "description": "Disable notifications when alerts resolve themselves.",
+            "type": "boolean",
+            "default": false
           }
         },
         "default": {
