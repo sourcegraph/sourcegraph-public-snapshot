@@ -41,6 +41,7 @@ func TestFakeStore(t *testing.T) {
 		{"ListRepos", testStoreListRepos},
 		{"ListRepos_Pagination", testStoreListReposPagination},
 		{"UpsertRepos", testStoreUpsertRepos},
+		{"SetClonedRepos", testStoreSetClonedRepos},
 	} {
 		t.Run(tc.name, tc.test(repos.NewObservedStore(
 			new(repos.FakeStore),
@@ -728,6 +729,189 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			}
 			if diff := cmp.Diff(have, []*repos.Repo(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("ListRepos:\n%s", diff)
+			}
+		}))
+	}
+}
+
+func isCloned(r *repos.Repo) bool {
+	return r.Cloned
+}
+
+func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		github := repos.Repo{
+			Name:        "github.com/foo/bar",
+			URI:         "github.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "AAAAA==",
+				ServiceType: "github",
+				ServiceID:   "http://github.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:1": {
+					ID:       "extsvc:1",
+					CloneURL: "git@github.com:foo/bar.git",
+				},
+			},
+			Metadata: new(github.Repository),
+		}
+
+		gitlab := repos.Repo{
+			Name:        "gitlab.com/foo/bar",
+			URI:         "gitlab.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      false,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "http://gitlab.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:2": {
+					ID:       "extsvc:2",
+					CloneURL: "git@gitlab.com:foo/bar.git",
+				},
+			},
+			Metadata: new(gitlab.Project),
+		}
+
+		bitbucketServer := repos.Repo{
+			Name:        "bitbucketserver.mycorp.com/foo/bar",
+			URI:         "bitbucketserver.mycorp.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: "bitbucketServer",
+				ServiceID:   "http://bitbucketserver.mycorp.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:3": {
+					ID:       "extsvc:3",
+					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
+				},
+			},
+			Metadata: new(bitbucketserver.Repo),
+		}
+
+		repositories := repos.Repos{
+			&github,
+			&gitlab,
+			&bitbucketServer,
+		}
+
+		ctx := context.Background()
+
+		t.Run("no repo name", func(t *testing.T) {
+			if err := store.SetClonedRepos(ctx); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+		})
+
+		t.Run("many repo names", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(9, repositories...)
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+
+			names := stored[:3].Names()
+
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			stored, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			cloned := stored.Filter(isCloned).Names()
+			sort.Strings(cloned)
+			sort.Strings(names)
+
+			if got, want := cloned, names; !cmp.Equal(got, want) {
+				t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
+			}
+		}))
+	}
+}
+
+func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Helper()
+
+		var repositories repos.Repos
+		for i := 0; i < 3; i++ {
+			repositories = append(repositories, &repos.Repo{
+				Name:   fmt.Sprintf("github.com/%d/%d", i, i),
+				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
+				Cloned: false,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          fmt.Sprintf("%d", i),
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "http://github.com",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:3": {
+						ID:       "extsvc:3",
+						CloneURL: "git@github.com:foo/bar.git",
+					},
+				},
+				Metadata: new(github.Repository),
+			})
+		}
+
+		ctx := context.Background()
+
+		t.Run("no cloned repos", func(t *testing.T) {
+			count, err := store.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(0)); diff != "" {
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
+			}
+		})
+
+		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(10, repositories...)
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+			cloned := stored[:3].Names()
+
+			if err := tx.SetClonedRepos(ctx, cloned...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			sort.Strings(cloned)
+
+			count, err := tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(7)); diff != "" {
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		}))
 	}

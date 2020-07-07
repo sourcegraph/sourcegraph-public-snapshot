@@ -36,6 +36,11 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
+func IsKindSupported(kind string) bool {
+	_, ok := SupportedExternalServices[extsvc.KindToType(kind)]
+	return ok
+}
+
 // A PatchSet is a collection of multiple Patches.
 type PatchSet struct {
 	ID int64
@@ -1470,8 +1475,9 @@ type ChangesetSyncData struct {
 	LatestEvent time.Time
 	// ExternalUpdatedAt is the time the external changeset last changed
 	ExternalUpdatedAt time.Time
-	// ExternalServiceID is the ID of the external service to which the changeset belongs
-	ExternalServiceIDs []int64
+	// RepoExternalServiceID is the external_service_id in the repo table, usually
+	// represented by the code host URL
+	RepoExternalServiceID string
 }
 
 func MarshalCampaignID(id int64) graphql.ID {

@@ -400,6 +400,16 @@ Sourcegraph expects there to be storage class named `sourcegraph` that it uses f
 
 Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
 
+The sourceraph storageclass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim. 
+
+This cannot be changed once the storage class has been created. Persistent volumes not created with the reclaimPolicy set to `Retain` can be patched with the following command:
+
+```bash
+kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+```
+
+See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
+
 ### Google Cloud Platform (GCP)
 
 ```yaml
@@ -413,6 +423,7 @@ metadata:
 provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-ssd # This configures SSDs (recommended).
+reclaimPolicy: Retain  
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#gce-pd).
@@ -430,6 +441,7 @@ metadata:
 provisioner: kubernetes.io/aws-ebs
 parameters:
   type: gp2 # This configures SSDs (recommended).
+reclaimPolicy: Retain  
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
@@ -447,6 +459,7 @@ metadata:
 provisioner: kubernetes.io/azure-disk
 parameters:
   storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
+reclaimPolicy: Retain  
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk).
@@ -461,6 +474,7 @@ metadata:
   name: sourcegraph
   labels:
     deploy: sourcegraph
+reclaimPolicy: Retain  
 # Read https://kubernetes.io/docs/concepts/storage/storage-classes/ to configure the "provisioner" and "parameters" fields for your cloud provider.
 # SSDs are highly recommended!
 # provisioner:

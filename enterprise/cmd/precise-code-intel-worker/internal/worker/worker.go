@@ -7,17 +7,20 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type Worker struct {
 	store        store.Store
 	processor    Processor
 	pollInterval time.Duration
-	metrics      WorkerMetrics
+	metrics      metrics.WorkerMetrics
 	done         chan struct{}
 	once         sync.Once
 }
@@ -27,11 +30,12 @@ func NewWorker(
 	bundleManagerClient bundles.BundleManagerClient,
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
-	metrics WorkerMetrics,
+	metrics metrics.WorkerMetrics,
 ) *Worker {
 	processor := &processor{
 		bundleManagerClient: bundleManagerClient,
 		gitserverClient:     gitserverClient,
+		metrics:             metrics,
 	}
 
 	return &Worker{
@@ -74,21 +78,26 @@ func (w *Worker) Stop() {
 // dequeueAndProcess pulls a job from the queue and processes it. If there
 // were no jobs ready to process, this method returns a false-valued flag.
 func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
-	start := time.Now()
-
 	upload, store, ok, err := w.store.Dequeue(ctx)
 	if err != nil || !ok {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
+
+	// Enable tracing on this context
+	ctx = ot.WithShouldTrace(ctx, true)
+
+	// Trace the remainder of the operation including the transaction commit call in
+	// the following defered function.
+	ctx, endOperation := w.metrics.ProcessOperation.With(ctx, &err, observation.Args{})
+
 	defer func() {
 		err = store.Done(err)
-
-		// TODO(efritz) - set error if correlation failed
-		w.metrics.Processor.Observe(time.Since(start).Seconds(), 1, &err)
+		endOperation(1, observation.Args{})
 	}()
 
 	log15.Info("Dequeued upload for processing", "id", upload.ID)
 
+	// TODO - same for janitors/resetters
 	if requeued, processErr := w.processor.Process(ctx, store, upload); processErr == nil {
 		if requeued {
 			log15.Info("Requeueing upload", "id", upload.ID)

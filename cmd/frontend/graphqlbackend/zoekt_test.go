@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,18 +34,21 @@ import (
 type fakeSearcher struct {
 	result *zoekt.SearchResult
 
-	repos *zoekt.RepoList
+	repos []*zoekt.RepoListEntry
 
 	// Default all unimplemented zoekt.Searcher methods to panic.
 	zoekt.Searcher
 }
 
 func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	if ss.result == nil {
+		return &zoekt.SearchResult{}, nil
+	}
 	return ss.result, nil
 }
 
 func (ss *fakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
-	return ss.repos, nil
+	return &zoekt.RepoList{Repos: ss.repos}, nil
 }
 
 func (ss *fakeSearcher) String() string {
@@ -63,7 +66,7 @@ func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt
 	return nil, es.err
 }
 
-func TestZoektSearchHEAD(t *testing.T) {
+func TestIndexedSearch(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
@@ -71,136 +74,109 @@ func TestZoektSearchHEAD(t *testing.T) {
 		query           *search.TextPatternInfo
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
-		searcher        zoekt.Searcher
+		results         []zoekt.FileMatch
 		since           func(time.Time) time.Duration
 	}
 
-	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
-	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
+	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
+	zoektRepos := []*zoekt.RepoListEntry{{
+		Repository: zoekt.Repository{
+			Name:     "foo/bar",
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}, {Name: "dev", Version: "bardevSHA"}},
+		},
+	}, {
+		Repository: zoekt.Repository{
+			Name:     "foo/foobar",
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "foobarHEADSHA"}},
+		},
+	}}
 
 	tests := []struct {
 		name              string
 		args              args
-		wantFm            []*FileMatchResolver
 		wantMatchCount    int
+		wantMatchURLs     []string
 		wantLimitHit      bool
 		wantReposLimitHit map[string]struct{}
 		wantErr           bool
 	}{
 		{
-			name: "returns no error if search completed with no matches before timeout",
+			name: "no matches",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
-				repos:           singleRepositoryRevisions,
+				query:           &search.TextPatternInfo{},
+				repos:           reposHEAD,
 				useFullDeadline: false,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: nil,
 			wantErr:           false,
 		},
 		{
-			name: "returns error if max wall time is exceeded but no matches have been found yet",
+			name: "no matches timeout",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
-				repos:           singleRepositoryRevisions,
+				query:           &search.TextPatternInfo{},
+				repos:           reposHEAD,
 				useFullDeadline: false,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: nil,
 			wantErr:           true,
 		},
 		{
-			name: "returns error if context timeout already passed",
+			name: "context timeout",
 			args: args{
 				ctx:             zeroTimeoutCtx,
-				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
-				repos:           singleRepositoryRevisions,
+				query:           &search.TextPatternInfo{},
+				repos:           reposHEAD,
 				useFullDeadline: true,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: nil,
 			wantErr:           true,
 		},
 		{
-			name: "returns error if searcher returns an error",
+			name: "results",
 			args: args{
 				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true},
-				repos:           singleRepositoryRevisions,
-				useFullDeadline: true,
-				searcher:        &errorSearcher{err: errors.New("womp womp")},
-				since:           func(time.Time) time.Duration { return 0 },
-			},
-			wantFm:            nil,
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           true,
-		},
-		{
-			name: "returns accurate match count of 5 line fragment matches across two files",
-			args: args{
-				ctx:             context.Background(),
-				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true, FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar@master", "foo/foobar@master"),
+				query:           &search.TextPatternInfo{FileMatchLimit: 100},
+				repos:           makeRepositoryRevisions("foo/bar", "foo/foobar"),
 				useFullDeadline: false,
-				searcher: &fakeSearcher{
-					repos: &zoekt.RepoList{
-						Repos: []*zoekt.RepoListEntry{
+				results: []zoekt.FileMatch{
+					{
+						Repository: "foo/bar",
+						Branches:   []string{"HEAD"},
+						FileName:   "baz.go",
+						LineMatches: []zoekt.LineMatch{
 							{
-								Repository: zoekt.Repository{
-									Name: "foo/bar",
+								Line: []byte("I'm like 1.5+ hours into writing this test :'("),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{LineOffset: 0, MatchLength: 5},
 								},
 							},
 							{
-								Repository: zoekt.Repository{
-									Name: "foo/foobar",
+								Line: []byte("I'm ready for the rain to stop."),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{LineOffset: 0, MatchLength: 5},
+									{LineOffset: 5, MatchLength: 10},
 								},
 							},
 						},
 					},
-					result: &zoekt.SearchResult{
-						Files: []zoekt.FileMatch{
+					{
+						Repository: "foo/foobar",
+						Branches:   []string{"HEAD"},
+						FileName:   "baz.go",
+						LineMatches: []zoekt.LineMatch{
 							{
-								Repository: "foo/bar",
-								FileName:   "baz.go",
-								LineMatches: []zoekt.LineMatch{
-									{
-										Line: []byte("I'm like 1.5+ hours into writing this test :'("),
-										LineFragments: []zoekt.LineFragmentMatch{
-											{LineOffset: 0, MatchLength: 5},
-										},
-									},
-									{
-										Line: []byte("I'm ready for the rain to stop."),
-										LineFragments: []zoekt.LineFragmentMatch{
-											{LineOffset: 0, MatchLength: 5},
-											{LineOffset: 5, MatchLength: 10},
-										},
-									},
-								},
-							},
-							{
-								Repository: "foo/foobar",
-								FileName:   "baz.go",
-								LineMatches: []zoekt.LineMatch{
-									{
-										Line: []byte("s/rain/pain"),
-										LineFragments: []zoekt.LineFragmentMatch{
-											{LineOffset: 0, MatchLength: 5},
-											{LineOffset: 5, MatchLength: 2},
-										},
-									},
+								Line: []byte("s/rain/pain"),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{LineOffset: 0, MatchLength: 5},
+									{LineOffset: 5, MatchLength: 2},
 								},
 							},
 						},
@@ -208,43 +184,96 @@ func TestZoektSearchHEAD(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantFm:            nil,
 			wantLimitHit:      false,
 			wantReposLimitHit: map[string]struct{}{},
 			wantMatchCount:    5,
-			wantErr:           false,
+			wantMatchURLs: []string{
+				"git://foo/bar#baz.go",
+				"git://foo/foobar#baz.go",
+			},
+			wantErr: false,
+		},
+		{
+			name: "results multi-branch",
+			args: args{
+				ctx:             context.Background(),
+				query:           &search.TextPatternInfo{FileMatchLimit: 100},
+				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev"),
+				useFullDeadline: false,
+				results: []zoekt.FileMatch{
+					{
+						Repository: "foo/bar",
+						Branches:   []string{"HEAD"},
+						FileName:   "baz.go",
+					},
+					{
+						Repository: "foo/bar",
+						Branches:   []string{"dev"},
+						FileName:   "baz.go",
+					},
+				},
+				since: func(time.Time) time.Duration { return 0 },
+			},
+			wantLimitHit:      false,
+			wantReposLimitHit: map[string]struct{}{},
+			wantMatchURLs: []string{
+				"git://foo/bar?HEAD#baz.go",
+				"git://foo/bar?dev#baz.go",
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			args := &search.TextParameters{
-				PatternInfo:     tt.args.query,
-				UseFullDeadline: tt.args.useFullDeadline,
-				Zoekt:           &searchbackend.Zoekt{Client: tt.args.searcher},
+			q, err := query.ParseAndCheck("")
+			if err != nil {
+				t.Fatal(err)
 			}
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, args, tt.args.repos, false, tt.args.since)
+
+			args := &search.TextParameters{
+				Query:           q,
+				PatternInfo:     tt.args.query,
+				Repos:           tt.args.repos,
+				UseFullDeadline: tt.args.useFullDeadline,
+				Zoekt: &searchbackend.Zoekt{
+					Client: &fakeSearcher{
+						result: &zoekt.SearchResult{Files: tt.args.results},
+						repos:  zoektRepos,
+					},
+					DisableCache: true,
+				},
+			}
+
+			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			indexed.since = tt.args.since
+
+			gotFm, gotLimitHit, gotReposLimitHit, err := indexed.Search(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			if tt.wantFm != nil {
-				if !reflect.DeepEqual(gotFm, tt.wantFm) {
-					t.Errorf("zoektSearchHEAD() gotFm = %v, want %v", gotFm, tt.wantFm)
-				}
-			}
 			if gotLimitHit != tt.wantLimitHit {
 				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
-			if !reflect.DeepEqual(gotReposLimitHit, tt.wantReposLimitHit) {
-				t.Errorf("zoektSearchHEAD() gotReposLimitHit = %v, want %v", gotReposLimitHit, tt.wantReposLimitHit)
+			if diff := cmp.Diff(tt.wantReposLimitHit, gotReposLimitHit, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("reposLimitHit mismatch (-want +got):\n%s", diff)
 			}
 
 			var gotMatchCount int
+			var gotMatchURLs []string
 			for _, m := range gotFm {
 				gotMatchCount += m.MatchCount
+				gotMatchURLs = append(gotMatchURLs, m.Resource())
+			}
+			if diff := cmp.Diff(tt.wantMatchURLs, gotMatchURLs); diff != "" {
+				t.Errorf("match URLs mismatch (-want +got):\n%s", diff)
 			}
 			if gotMatchCount != tt.wantMatchCount {
-				t.Errorf("zoektSearchHEAD() gotMatchCount = %v, want %v", gotMatchCount, tt.wantMatchCount)
+				t.Errorf("gotMatchCount = %v, want %v", gotMatchCount, tt.wantMatchCount)
 			}
 		})
 	}
@@ -313,7 +342,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
+			_, indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
 			if !reflect.DeepEqual(tc.indexed, indexed) {
 				diff := cmp.Diff(tc.indexed, indexed)
@@ -350,7 +379,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_, _ = zoektIndexedRepos(zoektRepos, repos, nil)
+		_, _, _ = zoektIndexedRepos(zoektRepos, repos, nil)
 	}
 }
 
@@ -399,83 +428,97 @@ func TestZoektResultCountFactor(t *testing.T) {
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
+		Type    indexedRequestType
 		Pattern *search.TextPatternInfo
 		Query   string
 	}{
 		{
 			Name: "substr",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
 				IncludePatterns:              nil,
 				ExcludePattern:               "",
-				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
 			Query: "foo case:no",
 		},
 		{
+			Name: "symbol substr",
+			Type: symbolRequest,
+			Pattern: &search.TextPatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: "sym:foo case:no",
+		},
+		{
 			Name: "regex",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "(foo).*?(bar)",
 				IncludePatterns:              nil,
 				ExcludePattern:               "",
-				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
 			Query: "(foo).*?(bar) case:no",
 		},
 		{
 			Name: "path",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
 				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
 				ExcludePattern:               `\bvendor\b`,
-				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
 			Query: `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 		{
 			Name: "case",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
 				IncludePatterns:              []string{`\.go$`, `yaml`},
 				ExcludePattern:               "",
-				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 			},
 			Query: `foo case:yes f:\.go$ f:yaml`,
 		},
 		{
 			Name: "casepath",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
 				IncludePatterns:              []string{`\.go$`, `\.yaml$`},
 				ExcludePattern:               `\bvendor\b`,
-				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 			},
 			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 		{
 			Name: "path matches only",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "test",
 				IncludePatterns:              []string{},
 				ExcludePattern:               ``,
-				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: true,
 				PatternMatchesContent:        false,
 				PatternMatchesPath:           true,
@@ -484,10 +527,10 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "repos must include",
+			Type: textRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				Pattern:                      "foo",
-				PathPatternsAreRegExps:       true,
 				FilePatternsReposMustInclude: []string{`\.go$`, `\.yaml$`},
 				FilePatternsReposMustExclude: []string{`\.java$`, `\.xml$`},
 			},
@@ -500,7 +543,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := queryToZoektQuery(tt.Pattern, false)
+			got, err := queryToZoektQuery(tt.Pattern, tt.Type)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
@@ -528,106 +571,13 @@ func queryEqual(a, b zoektquery.Q) bool {
 	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
-func TestQueryToZoektFileOnlyQueries(t *testing.T) {
-	cases := []struct {
-		Name    string
-		Pattern *search.TextPatternInfo
-		Query   []string
-		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
-		ListOfFilePaths []string
-	}{
-		{
-			Name: "single repohasfile filter",
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "foo",
-				IncludePatterns:              nil,
-				ExcludePattern:               "",
-				FilePatternsReposMustInclude: []string{"test.md"},
-				PathPatternsAreRegExps:       true,
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query:           []string{`f:"test.md"`},
-			ListOfFilePaths: []string{"test.md"},
-		},
-		{
-			Name: "multiple repohasfile filters",
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "foo",
-				IncludePatterns:              nil,
-				ExcludePattern:               "",
-				FilePatternsReposMustInclude: []string{"t", "d"},
-				PathPatternsAreRegExps:       true,
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query:           []string{`f:"t"`, `f:"d"`},
-			ListOfFilePaths: []string{"t", "d"},
-		},
-		{
-			Name: "single negated repohasfile filter",
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "foo",
-				IncludePatterns:              nil,
-				ExcludePattern:               "",
-				FilePatternsReposMustExclude: []string{"test.md"},
-				PathPatternsAreRegExps:       true,
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query:           []string{`f:"test.md"`},
-			ListOfFilePaths: []string{"test.md"},
-		},
-		{
-			Name: "multiple negated repohasfile filter",
-			Pattern: &search.TextPatternInfo{
-				IsRegExp:                     true,
-				IsCaseSensitive:              false,
-				Pattern:                      "foo",
-				IncludePatterns:              nil,
-				ExcludePattern:               "",
-				FilePatternsReposMustExclude: []string{"t", "d"},
-				PathPatternsAreRegExps:       true,
-				PathPatternsAreCaseSensitive: false,
-			},
-			Query:           []string{`f:"t"`, `f:"d"`},
-			ListOfFilePaths: []string{"t", "d"},
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			queries := []zoektquery.Q{}
-			for _, query := range tt.Query {
-				q, err := zoektquery.Parse(query)
-				if err != nil {
-					t.Fatalf("failed to parse %q: %v", tt.Query, err)
-				}
-				queries = append(queries, q)
-			}
-
-			got, err := queryToZoektFileOnlyQueries(tt.Pattern, tt.ListOfFilePaths)
-			if err != nil {
-				t.Fatal("queryToZoektQuery failed:", err)
-			}
-			for i, gotQuery := range got {
-				if !queryEqual(gotQuery, queries[i]) {
-					t.Fatalf("mismatched queries\ngot  %s\nwant %s", gotQuery.String(), queries[i].String())
-				}
-			}
-		})
-	}
-}
-
 func BenchmarkSearchResults(b *testing.B) {
 	minimalRepos, _, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
 	z := &searchbackend.Zoekt{
 		Client: &fakeSearcher{
-			repos:  &zoekt.RepoList{Repos: zoektRepos},
+			repos:  zoektRepos,
 			result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 		DisableCache: true,
@@ -671,7 +621,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	zoektFileMatches := generateZoektMatches(50)
 
 	zoektClient, cleanup := zoektRPC(&fakeSearcher{
-		repos:  &zoekt.RepoList{Repos: zoektRepos},
+		repos:  zoektRepos,
 		result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()
@@ -880,7 +830,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
+		_, indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
 			Indexed:   indexed,
 			Unindexed: unindexed,

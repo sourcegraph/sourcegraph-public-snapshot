@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -627,30 +625,13 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 }
 
 func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
-	var sources json.RawMessage
-	err := s.Scan(
+	return s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
 		&dbutil.NullTime{Time: &h.LatestEvent},
 		&dbutil.NullTime{Time: &h.ExternalUpdatedAt},
-		&sources,
+		&h.RepoExternalServiceID,
 	)
-	if err != nil {
-		return err
-	}
-
-	infos := make(map[string]*repos.SourceInfo)
-	if err = json.Unmarshal(sources, &infos); err != nil {
-		return errors.Wrap(err, "scanChangesetSyncData: failed to unmarshal sources")
-	}
-	h.ExternalServiceIDs = make([]int64, 0, len(infos))
-	for _, v := range infos {
-		id := v.ExternalServiceID()
-		h.ExternalServiceIDs = append(h.ExternalServiceIDs, id)
-	}
-	sort.Slice(h.ExternalServiceIDs, func(i, j int) bool { return h.ExternalServiceIDs[i] < h.ExternalServiceIDs[j] })
-
-	return nil
 }
 
 func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
@@ -659,7 +640,7 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
         changesets.updated_at,
         max(ce.updated_at) AS latest_event,
         changesets.external_updated_at,
-        r.sources
+        r.external_service_id
  FROM changesets
  LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
  JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT

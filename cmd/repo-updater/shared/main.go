@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -100,6 +101,15 @@ func Main(enterpriseInit EnterpriseInit) {
 		Store:           store,
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
+	}
+
+	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store)
+	server.RateLimitSyncer = rateLimitSyncer
+	// Attempt to perform an initial sync with all external services
+	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
+		// This is not a fatal error since the syncer has been added to the server above
+		// and will still be run whenever an external service is added or updated
+		log15.Error("Performing initial rate limit sync", "err", err)
 	}
 
 	// All dependencies ready
@@ -182,7 +192,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 	server.Syncer = syncer
 
-	go syncCloned(ctx, scheduler, gitserver.DefaultClient)
+	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store)
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -263,7 +273,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 // syncCloned will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list.
-func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client) {
+func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -278,5 +288,11 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		}
 
 		sched.SetCloned(cloned)
+
+		err = store.SetClonedRepos(ctx, cloned...)
+		if err != nil {
+			log15.Warn("failed to set cloned repository list", "error", err)
+			continue
+		}
 	}
 }

@@ -72,13 +72,13 @@ type FakeStore struct {
 	GetRepoByNameError          error // error to be returned in GetRepoByName
 	ListReposError              error // error to be returned in ListRepos
 	UpsertReposError            error // error to be returned in UpsertRepos
-	ListAllRepoNamesError       error // error to be returned in ListAllRepoNames
-
-	svcIDSeq  int64
-	repoIDSeq api.RepoID
-	svcByID   map[int64]*ExternalService
-	repoByID  map[api.RepoID]*Repo
-	parent    *FakeStore
+	SetClonedReposError         error // error to be returned in SetClonedRepos
+	CountNotClonedReposError    error // error to be returned in CountNotClonedRepos
+	svcIDSeq                    int64
+	repoIDSeq                   api.RepoID
+	svcByID                     map[int64]*ExternalService
+	repoByID                    map[api.RepoID]*Repo
+	parent                      *FakeStore
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
@@ -104,7 +104,8 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		GetRepoByNameError:          s.GetRepoByNameError,
 		ListReposError:              s.ListReposError,
 		UpsertReposError:            s.UpsertReposError,
-		ListAllRepoNamesError:       s.ListAllRepoNamesError,
+		SetClonedReposError:         s.SetClonedReposError,
+		CountNotClonedReposError:    s.CountNotClonedReposError,
 
 		svcIDSeq:  s.svcIDSeq,
 		svcByID:   svcByID,
@@ -279,22 +280,6 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 	return repos, nil
 }
 
-// ListAllRepoNames lists names of all repos in the store
-func (s FakeStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error) {
-	if s.ListAllRepoNamesError != nil {
-		return nil, s.ListAllRepoNamesError
-	}
-
-	names := make([]api.RepoName, 0, len(s.repoByID))
-	for _, r := range s.repoByID {
-		if !r.IsDeleted() {
-			names = append(names, api.RepoName(r.Name))
-		}
-	}
-
-	return names, nil
-}
-
 func evalOr(bs ...bool) bool {
 	if len(bs) == 0 {
 		return true
@@ -362,6 +347,53 @@ func (s *FakeStore) byExternalID(eid api.ExternalRepoSpec) (*Repo, bool) {
 		}
 	}
 	return nil, false
+}
+
+// SetClonedRepos sets the cloned field to true for all repos whose name is in the repoNames list
+// and sets it to false for all the other ones.
+func (s *FakeStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	if s.SetClonedReposError != nil {
+		return s.SetClonedReposError
+	}
+
+	for _, r := range s.repoByID {
+		if r.IsDeleted() {
+			continue
+		}
+
+		var found bool
+		for _, repoName := range repoNames {
+			if repoName == r.Name {
+				found = true
+				break
+			}
+		}
+
+		r.Cloned = found
+	}
+
+	return s.checkConstraints()
+}
+
+// CountNotClonedRepos counts the number of repos whose cloned field is true.
+func (s *FakeStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
+	if s.CountNotClonedReposError != nil {
+		return 0, s.CountNotClonedReposError
+	}
+
+	var count uint64
+
+	for _, r := range s.repoByID {
+		if r.IsDeleted() {
+			continue
+		}
+
+		if !r.Cloned {
+			count++
+		}
+	}
+
+	return count, nil
 }
 
 // checkConstraints ensures the FakeStore has not violated any constraints we

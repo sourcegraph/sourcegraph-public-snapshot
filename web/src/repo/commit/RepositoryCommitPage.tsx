@@ -25,7 +25,7 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '../../../../shared/src/util/url'
-import { getHover } from '../../backend/features'
+import { getHover, getDocumentHighlights } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { WebHoverOverlay } from '../../components/shared'
@@ -131,6 +131,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getDocumentHighlights: hoveredToken =>
+                getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
             pinningEnabled: true,
         })

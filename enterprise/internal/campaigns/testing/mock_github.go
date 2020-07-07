@@ -15,7 +15,7 @@ import (
 type MockedGitHubChangesetSyncState struct {
 	execReader      func([]string) (io.ReadCloser, error)
 	mockRepoLookup  func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
-	resolveRevision func(string, *git.ResolveRevisionOptions) (api.CommitID, error)
+	resolveRevision func(string, git.ResolveRevisionOptions) (api.CommitID, error)
 }
 
 // MockGitHubChangesetSync sets up mocks such that invoking LoadChangesets() on
@@ -65,8 +65,8 @@ index 884601b..c4886d5 100644
 		return ioutil.NopCloser(strings.NewReader(testGitHubDiff)), nil
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID("mockcommitid"), nil
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		return "mockcommitid", nil
 	}
 
 	return state
