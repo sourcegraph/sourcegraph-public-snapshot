@@ -207,7 +207,19 @@ export const kubernetes: RepogroupMetadata = {
             rawQuery: 'file:pod.yaml content:"kind: ReplicationController"',
             patternType: SearchPatternType.literal,
         },
-
+        {
+            title:
+                'Look for outdated `apiVersions` of admission webhooks:',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">content:</span>"apiVersion: admissionregistration.k8s.io/v1beta1"
+                </>
+            ),
+            description: `This apiVersion has been deprecated in favor of "admissionregistration.k8s.io/v1".
+            You can read more about this at https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/`,
+            rawQuery: 'content:"apiVersion: admissionregistration.k8s.io/v1beta1"',
+            patternType: SearchPatternType.literal,
+        },
         {
             title: 'Find Prometheus usage in YAML files:',
             exampleQuery: (
