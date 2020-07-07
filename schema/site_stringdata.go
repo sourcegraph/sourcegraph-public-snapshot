@@ -1106,7 +1106,7 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["P1", "P2", "P3", "P4", "P5"]
         },
-        "reponders": {
+        "responders": {
           "type": "array",
           "description": "List of responders responsible for notifications.",
           "items": {

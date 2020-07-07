@@ -80,8 +80,8 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				}
 				apiURL = &amconfig.URL{URL: url}
 			}
-			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Reponders))
-			for i, resp := range notifier.Opsgenie.Reponders {
+			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
+			for i, resp := range notifier.Opsgenie.Responders {
 				responders[i] = amconfig.OpsGenieConfigResponder{
 					Type:     resp.Type,
 					ID:       resp.Id,
