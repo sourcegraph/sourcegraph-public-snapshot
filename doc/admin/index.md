@@ -25,6 +25,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Upgrading PostgreSQL](postgres.md)
 - [Using external databases (PostgreSQL and Redis)](external_database.md)
 - [User data deletion](user_data_deletion.md)
+- [Validation](validation.md) **Experimental**
 
 ## Features
 
