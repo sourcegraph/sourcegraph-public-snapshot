@@ -2982,11 +2982,11 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # Get aggregated local code intelligence for all ranges that fall in the window
-    # indicated by the given start and end lines (zero-based, inclusive). The associated
-    # data for each range is "local", in that the locations and hover must also be defined
-    # in the same index as the source range. To get cross-repository and cross-bundle
-    # results, you must query the definitions, references, and hovers of that range
-    # explicitly.
+    # indicated by the given zero-based start (inclusive) and end (exclusive) lines.
+    # The associated data for each range is "local", in that the locations and hover
+    # must also be defined in the same index as the source range. To get cross-repository
+    # and cross-bundle results, you must query the definitions, references, and hovers
+    # of that range explicitly.
     ranges(startLine: Int!, endLine: Int!): CodeIntelligenceRangeConnection
 
     # (experimental) The LSIF API may change substantially in the near future as we
@@ -2999,7 +2999,7 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
 
         # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
         character: Int!
-    ): LocationConnection
+    ): LocationConnection!
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
@@ -3023,7 +3023,7 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         # the first N results (relative to the cursor) should be returned. i.e.
         # how many results to return per page.
         first: Int
-    ): LocationConnection
+    ): LocationConnection!
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
@@ -4153,10 +4153,10 @@ type CodeIntelligenceRange {
     range: Range!
 
     # A list of definitions of the symbol occurring within the range.
-    definitions: LocationConnection
+    definitions: LocationConnection!
 
     # A list of references of the symbol occurring within the range.
-    references: LocationConnection
+    references: LocationConnection!
 
     # The hover result of the symbol occurring within the range.
     hover: Hover
