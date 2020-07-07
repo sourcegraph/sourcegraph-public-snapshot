@@ -150,7 +150,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 const { server } = polly
                 server.get('/.assets/*path').passthrough()
 
-                const errors = new Subject<unknown>()
+                const errors = new Subject<never>()
 
                 // GraphQL requests are not handled by HARs, but configured per-test.
                 let graphQlOverrides: GraphQLOverrides | undefined
