@@ -11,12 +11,10 @@ import (
 )
 
 type CreateCampaignArgs struct {
-	Namespace    graphql.ID
 	CampaignSpec graphql.ID
 }
 
 type ApplyCampaignArgs struct {
-	Namespace      graphql.ID
 	CampaignSpec   graphql.ID
 	EnsureCampaign *graphql.ID
 }

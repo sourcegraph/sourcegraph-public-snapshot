@@ -175,7 +175,7 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("Namespace %s, CampaignSpec %s", args.Namespace, args.CampaignSpec))
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("CampaignSpec %s", args.CampaignSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -188,7 +188,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.ApplyCampaign", fmt.Sprintf("Namespace %s, CampaignSpec %s", args.Namespace, args.CampaignSpec))
+	tr, ctx := trace.New(ctx, "Resolver.ApplyCampaign", fmt.Sprintf("CampaignSpec %s", args.CampaignSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -205,18 +205,6 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	}
 
 	opts := ee.ApplyCampaignOpts{}
-	switch relay.UnmarshalKind(args.Namespace) {
-	case "User":
-		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceUserID)
-	case "Org":
-		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceOrgID)
-	default:
-		err = errors.Errorf("Invalid namespace %q", args.Namespace)
-	}
-
-	if err != nil {
-		return nil, err
-	}
 
 	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
 	if err != nil {

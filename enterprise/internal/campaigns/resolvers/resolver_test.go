@@ -111,10 +111,8 @@ func TestCampaigns(t *testing.T) {
 
 	var campaigns struct{ A, B apitest.Campaign }
 	apitest.MustExec(ctx, t, s, map[string]interface{}{
-		"specA":          campaignSpecs.A.ID,
-		"specANamespace": campaignSpecs.A.Namespace.ID,
-		"specB":          campaignSpecs.B.ID,
-		"specBNamespace": campaignSpecs.B.Namespace.ID,
+		"specA": campaignSpecs.A.ID,
+		"specB": campaignSpecs.B.ID,
 	}, &campaigns, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
@@ -126,9 +124,9 @@ func TestCampaigns(t *testing.T) {
 				... on Org  { ...o }
 			}
 		}
-		mutation($specA: ID!, $specANamespace: ID!, $specB: ID!, $specBNamespace: ID!) {
-			A: applyCampaign(namespace: $specANamespace, campaignSpec: $specA) { ...c }
-			B: applyCampaign(namespace: $specBNamespace, campaignSpec: $specB) { ...c }
+		mutation($specA: ID!, $specB: ID!) {
+			A: applyCampaign(campaignSpec: $specA) { ...c }
+			B: applyCampaign(campaignSpec: $specB) { ...c }
 		}
 	`)
 
@@ -1102,8 +1100,6 @@ func TestApplyCampaign(t *testing.T) {
 
 	userApiID := string(graphqlbackend.MarshalUserID(userID))
 	input := map[string]interface{}{
-		// TODO: Do we need the namespace in this mutation?
-		"namespace":    userApiID,
 		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
 	}
 
@@ -1166,8 +1162,8 @@ const mutationApplyCampaign = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($namespace: ID!, $campaignSpec: ID!, $ensureCampaign: ID){
-  applyCampaign(namespace: $namespace, campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
+mutation($campaignSpec: ID!, $ensureCampaign: ID){
+  applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
 	id, name, description, branch
 	author    { ...u }
 	namespace {
