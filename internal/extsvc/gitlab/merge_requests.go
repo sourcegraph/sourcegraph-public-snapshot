@@ -119,38 +119,6 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 	return resp, nil
 }
 
-// GetMergeRequestNotes retrieves the notes for the given merge request. As the
-// notes are paginated, a function is returned that may be invoked to return the
-// next page of results. An empty slice and a nil error indicates that all pages
-// have been returned.
-func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid ID) func() ([]*Note, error) {
-	if MockGetMergeRequestNotes != nil {
-		return MockGetMergeRequestNotes(c, ctx, project, iid)
-	}
-
-	pr := c.newPaginatedResult("GET", fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid), func() interface{} { return []*Note{} })
-	return func() ([]*Note, error) {
-		page, err := pr.next(ctx)
-		return page.([]*Note), err
-	}
-}
-
-// GetMergeRequestPipelines retrieves the pipelines that have been executed as
-// part of the given merge request. As the pipelines are paginated, a function
-// is returned that may be invoked to return the next page of results. An empty
-// slice and a nil error indicates that all pages have been returned.
-func (c *Client) GetMergeRequestPipelines(ctx context.Context, project *Project, iid ID) func() ([]*Pipeline, error) {
-	if MockGetMergeRequestPipelines != nil {
-		return MockGetMergeRequestPipelines(c, ctx, project, iid)
-	}
-
-	pr := c.newPaginatedResult("GET", fmt.Sprintf("projects/%d/merge_requests/%d/pipelines", project.ID, iid), func() interface{} { return []*Pipeline{} })
-	return func() ([]*Pipeline, error) {
-		page, err := pr.next(ctx)
-		return page.([]*Pipeline), err
-	}
-}
-
 func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project, source, target string) (*MergeRequest, error) {
 	if MockGetOpenMergeRequestByRefs != nil {
 		return MockGetOpenMergeRequestByRefs(c, ctx, project, source, target)

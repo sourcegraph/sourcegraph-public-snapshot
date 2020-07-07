@@ -1,9 +1,26 @@
 package gitlab
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
+
+// GetMergeRequestNotes retrieves the notes for the given merge request. As the
+// notes are paginated, a function is returned that may be invoked to return the
+// next page of results. An empty slice and a nil error indicates that all pages
+// have been returned.
+func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid ID) func() ([]*Note, error) {
+	if MockGetMergeRequestNotes != nil {
+		return MockGetMergeRequestNotes(c, ctx, project, iid)
+	}
+
+	pr := c.newPaginatedResult("GET", fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid), func() interface{} { return []*Note{} })
+	return func() ([]*Note, error) {
+		page, err := pr.next(ctx)
+		return page.([]*Note), err
+	}
+}
 
 type Note struct {
 	// As with the other types here, we're only decoding enough fields here for
