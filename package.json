@@ -125,7 +125,7 @@
     "@types/jest": "26.0.4",
     "@types/jsdom": "12.2.4",
     "@types/lodash": "4.14.157",
-    "@types/marked": "0.7.4",
+    "@types/marked": "1.1.0",
     "@types/mini-css-extract-plugin": "0.9.1",
     "@types/mkdirp-promise": "5.0.0",
     "@types/mocha": "7.0.2",
