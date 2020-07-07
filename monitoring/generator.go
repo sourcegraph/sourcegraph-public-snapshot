@@ -948,7 +948,7 @@ func (g *promGroup) AppendRow(alertQuery string, labels map[string]string) {
 		promRule{
 			Alert:  fmt.Sprintf("%s_%s_%s", labels["level"], labels["service_name"], labels["name"]),
 			Labels: labels,
-			Expr: fmt.Sprintf(`alert_count{service_name="%s",level="%s",name="%s"} >= 1`,
+			Expr: fmt.Sprintf(`alert_count{service_name=%q,level=%q,name=%q} >= 1`,
 				labels["service_name"], labels["level"], labels["name"]),
 		})
 }
