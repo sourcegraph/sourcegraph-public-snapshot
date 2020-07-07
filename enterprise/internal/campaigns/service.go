@@ -223,19 +223,13 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
 type ApplyCampaignOpts struct {
 	CampaignSpecRandID string
-
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-
-	EnsureCampaignID int64
+	EnsureCampaignID   int64
 }
 
 func (o ApplyCampaignOpts) String() string {
 	return fmt.Sprintf(
-		"CampaignSpec %s, NamespaceOrgID %d, NamespaceUserID %d, EnsureCampaignID %d",
+		"CampaignSpec %s, EnsureCampaignID %d",
 		o.CampaignSpecRandID,
-		o.NamespaceOrgID,
-		o.NamespaceUserID,
 		o.EnsureCampaignID,
 	)
 }
@@ -261,13 +255,10 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
-	getOpts := GetCampaignOpts{CampaignSpecName: campaignSpec.Spec.Name}
-	if opts.NamespaceUserID != 0 {
-		getOpts.NamespaceUserID = opts.NamespaceUserID
-	} else if opts.NamespaceOrgID != 0 {
-		getOpts.NamespaceOrgID = opts.NamespaceOrgID
-	} else {
-		return nil, errors.New("no namespace specified")
+	getOpts := GetCampaignOpts{
+		CampaignSpecName: campaignSpec.Spec.Name,
+		NamespaceUserID:  campaignSpec.NamespaceUserID,
+		NamespaceOrgID:   campaignSpec.NamespaceOrgID,
 	}
 
 	campaign, err = tx.GetCampaign(ctx, getOpts)
@@ -296,8 +287,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 
 	// TODO Do we need these fields on Campaign or is it enough that
 	// we have them on CampaignSpec?
-	campaign.NamespaceOrgID = opts.NamespaceOrgID
-	campaign.NamespaceUserID = opts.NamespaceUserID
+	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
+	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
 	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
 	campaign.Name = campaignSpec.Spec.Name
 	campaign.Description = campaignSpec.Spec.Description
