@@ -40,31 +40,6 @@
     margin-top: 5px;
 }
 
-// Use flexbox instead of float, so we can handle wrapping action items
-.file-toolbar {
-    display: flex;
-    > .primary {
-        flex: 1 0 auto;
-        order: 1;
-
-        display: flex;
-        align-items: center;
-    }
-    > .secondary {
-        // Overrides
-        float: none;
-        white-space: normal;
-        line-height: initial;
-
-        flex: 1 1 auto;
-        order: 2;
-
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-    }
-}
-
 // Hover overlay buttons
 .hover-action-item--bitbucket-server {
     margin: 0 !important;

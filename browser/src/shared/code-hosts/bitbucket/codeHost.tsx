@@ -36,6 +36,8 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     mount.classList.add('btn-group')
     mount.classList.add('sg-toolbar-mount')
     mount.classList.add('sg-toolbar-mount-bitbucket-server')
+    // Adds AUI (bitbucket) style for buttons in toolbar
+    mount.classList.add('aui-buttons')
 
     fileActions.prepend(mount)
 
