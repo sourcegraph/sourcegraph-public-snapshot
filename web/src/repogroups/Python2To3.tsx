@@ -200,8 +200,8 @@ export const python2To3Metadata: RepogroupMetadata = {
         {
             title: 'Python 2 relative imports',
             description: 'Python 2 import style',
-            exampleQuery: <>"from :[package.] import :[function.]”</>,
-            rawQuery: '"from :[package.] import :[function.]”',
+            exampleQuery: <>from :[package.] import :[function.]</>,
+            rawQuery: 'from :[package.] import :[function.]',
             patternType: SearchPatternType.structural,
         },
         {
@@ -213,20 +213,20 @@ export const python2To3Metadata: RepogroupMetadata = {
         },
         {
             title: 'Python 2 print statements',
-            exampleQuery: <>\'print ":[string]"\'</>,
-            rawQuery: '\'print ":[string]"\'',
+            exampleQuery: <>print ":[string]"</>,
+            rawQuery: 'print ":[string]"',
             patternType: SearchPatternType.structural,
         },
         {
             title: 'Python 3 print statements',
-            exampleQuery: <>\'print ":[string]"\'</>,
-            rawQuery: '\'print ":[string]"\'',
-            patternType: SearchPatternType.regexp,
+            exampleQuery: <>print(":[string]")</>,
+            rawQuery: 'print(":[string]")',
+            patternType: SearchPatternType.structural,
         },
         {
             title: 'Python 2 integer conversion',
-            exampleQuery: <>float(:[arg]) / float(:[arg])</>,
-            rawQuery: 'float(:[arg]) / float(:[arg])',
+            exampleQuery: <>float(:[numerator]) / float(:[denominator])</>,
+            rawQuery: 'float(:[numerator]) / float(:[denominator])',
             patternType: SearchPatternType.structural,
         },
         {
