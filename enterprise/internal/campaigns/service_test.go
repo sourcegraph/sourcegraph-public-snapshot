@@ -732,7 +732,6 @@ func TestService(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
 			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-				NamespaceUserID:    user.ID,
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err != nil {
@@ -766,7 +765,6 @@ func TestService(t *testing.T) {
 		t.Run("existing campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
 			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-				NamespaceUserID:    user.ID,
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err != nil {
@@ -779,7 +777,6 @@ func TestService(t *testing.T) {
 
 			t.Run("apply same campaignSpec", func(t *testing.T) {
 				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-					NamespaceUserID:    user.ID,
 					CampaignSpecRandID: campaignSpec.RandID,
 				})
 				if err != nil {
@@ -794,7 +791,6 @@ func TestService(t *testing.T) {
 			t.Run("apply campaign spec with same name", func(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
 				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-					NamespaceUserID:    user.ID,
 					CampaignSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
@@ -811,7 +807,6 @@ func TestService(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user2.ID)
 
 				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-					NamespaceUserID:    user2.ID,
 					CampaignSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
@@ -831,7 +826,6 @@ func TestService(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
 
 				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-					NamespaceUserID:    user.ID,
 					CampaignSpecRandID: campaignSpec2.RandID,
 					EnsureCampaignID:   campaign.ID,
 				})
@@ -847,7 +841,6 @@ func TestService(t *testing.T) {
 				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
 
 				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-					NamespaceUserID:    user.ID,
 					CampaignSpecRandID: campaignSpec2.RandID,
 					EnsureCampaignID:   campaign.ID + 999,
 				})
