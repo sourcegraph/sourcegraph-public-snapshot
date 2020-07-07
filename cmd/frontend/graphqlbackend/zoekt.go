@@ -163,13 +163,15 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 		since = s.since
 	}
 
+	repos := &indexedRepoRevs{repoRevs: s.Repos, repoBranches: s.repoBranches}
+
 	switch s.typ {
 	case textRequest:
-		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, since)
+		return zoektSearch(ctx, s.args, repos, s.typ, since)
 	case symbolRequest:
-		return zoektSearch(ctx, s.args, s.repoBranches, s.Repos, s.typ, since)
+		return zoektSearch(ctx, s.args, repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.Repos, false, since)
+		return zoektSearchHEADOnlyFiles(ctx, s.args, repos.repoRevs, false, since)
 	default:
 		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
@@ -233,8 +235,8 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches map[string][]string, repoMap map[string]*search.RepositoryRevisions, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repoMap) == 0 {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+	if len(repos.repoRevs) == 0 {
 		return nil, false, nil, nil
 	}
 
@@ -242,9 +244,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 	if err != nil {
 		return nil, false, nil, err
 	}
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repoBranches}, queryExceptRepos)
+	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 
-	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoMap), finalQuery.String()))
+	tr, ctx := trace.New(ctx, "zoekt.Search", finalQuery.String())
 	defer func() {
 		tr.SetError(err)
 		if len(fm) > 0 {
@@ -253,7 +255,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 		tr.Finish()
 	}()
 
-	k := zoektResultCountFactor(len(repoMap), args.PatternInfo)
+	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
 
 	if args.UseFullDeadline {
@@ -337,7 +339,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repoMap[file.Repository]
+		repoRev := repos.repoRevs[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
 			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
@@ -350,7 +352,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repoBranches 
 		// For now we only show one result for simplicity.
 		branch := file.Branches[0]
 		inputRev := file.Version // we should find a match in "revs", just in case we don't fallback to SHA.
-		for i, b := range repoBranches[file.Repository] {
+		for i, b := range repos.repoBranches[file.Repository] {
 			if branch == b {
 				inputRev = repoRev.Revs[i].RevSpec // RevSpec is guaranteed to be explicit via zoektIndexedRepos
 			}
