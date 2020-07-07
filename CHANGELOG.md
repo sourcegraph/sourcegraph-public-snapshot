@@ -16,12 +16,12 @@ All notable changes to Sourcegraph are documented in this file.
 - To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Previously this was only supported for diff and commit searches and only available via the experimental site setting `searchMultipleRevisionsPerRepository`.
 - The "Add repositories" page (/site-admin/external-services/new) now displays a dismissable notification explaining how and why we access code host data. [#11789](https://github.com/sourcegraph/sourcegraph/pull/11789).
 - New `observability.alerts` features:
-  - A new `sendResolved` option enables notifications for when alerts resolve themselves.
   - Notifications now provide more details about relevant alerts.
   - Support for email and OpsGenie notifications has been added. Note that to receive email alerts, `email.address` and `email.smtp` must be configured.
   - Some notifiers now have new options:
     - PagerDuty notifiers: `severity` and `apiUrl`
     - Webhook notifiers: `bearerToken`
+  - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
 
 ### Changed
 
