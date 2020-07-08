@@ -219,10 +219,10 @@ export const python2To3Metadata: RepogroupMetadata = {
             title: 'Python 2 style print statements:',
             description: 'Find print statements with double quotes like print “Hello, World!”.',
             exampleQuery: (
-                    <>
-                        <span className="repogroup-page__keyword-text">lang:</span>python print ":[string]"
-                    </>
-                ),
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>python print ":[string]"
+                </>
+            ),
             rawQuery: 'lang:python print ":[string]"',
             patternType: SearchPatternType.structural,
         },
@@ -231,10 +231,10 @@ export const python2To3Metadata: RepogroupMetadata = {
             description:
                 'Convert print statements to the print( ) function like print(“Hello, World!”). These will work with both Python 2 and Python 3.',
             exampleQuery: (
-                    <>
-                        <span className="repogroup-page__keyword-text">lang:</span>python print(":[string]")
-                    </>
-                ),
+                <>
+                    <span className="repogroup-page__keyword-text">lang:</span>python print(":[string]")
+                </>
+            ),
             rawQuery: 'lang:python print(":[string]")',
             patternType: SearchPatternType.structural,
         },
