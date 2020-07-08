@@ -154,14 +154,12 @@ func newPrometheusValidator(prometheusURL string) conf.Validator {
 		// set up request to fetch status from grafana-wrapper
 		promURL, err := url.Parse(prometheusURL)
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts` are configured, but Prometheus configuration is invalid: %v", err)))
-			return
+			return // don't report problem, since activeAlertsAlert will report this
 		}
 		promURL.Path = "/prom-wrapper/config-subscriber"
 		req, err := http.NewRequest("GET", promURL.String(), nil)
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: unable to fetch Prometheus status: %v", err)))
-			return
+			return // don't report problem, since activeAlertsAlert will report this
 		}
 
 		// use a short timeout to avoid having this block problems from loading
@@ -169,11 +167,11 @@ func newPrometheusValidator(prometheusURL string) conf.Validator {
 		defer cancel()
 		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 		if err != nil {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: %v", err)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Unable to fetch configuration status: %v", err)))
 			return
 		}
 		if resp.StatusCode != 200 {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Prometheus is unreachable: status code %d", resp.StatusCode)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: Unable to fetch configuration status: status code %d", resp.StatusCode)))
 			return
 		}
 

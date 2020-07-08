@@ -46,10 +46,10 @@ func Test_prometheusValidator(t *testing.T) {
 					},
 				},
 			},
-			wantProblemSubstring: "Prometheus configuration is invalid",
+			wantProblemSubstring: "",
 		},
 		{
-			name: "prometheus 404",
+			name: "prometheus not found",
 			args: args{
 				prometheusURL: "http://no-prometheus:9090",
 				config: conf.Unified{
@@ -60,7 +60,7 @@ func Test_prometheusValidator(t *testing.T) {
 					},
 				},
 			},
-			wantProblemSubstring: "Prometheus is unreachable",
+			wantProblemSubstring: "Unable to fetch configuration status",
 		},
 	}
 	for _, tt := range tests {
