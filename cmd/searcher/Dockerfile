@@ -6,7 +6,7 @@
 FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
 
 # hadolint ignore=DL3018
-RUN apk --no-cache add pcre
+RUN apk --no-cache add pcre sqlite-dev
 
 # The comby/comby image is a small binary-only distribution. See the bin and src directories
 # here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine
