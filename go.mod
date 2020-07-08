@@ -17,7 +17,6 @@ require (
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
-	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/containerd/containerd v1.3.4 // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
@@ -113,7 +112,8 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
-	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/alertmanager v0.21.0
+	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.10.0
 	github.com/prometheus/procfs v0.1.3 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
@@ -183,12 +183,17 @@ require (
 )
 
 replace (
+	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
+	github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200622101713-7b13614a083e
 
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200626080007-7fa8b67cbb1d
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
+
+	// prom-wrapper needs to be able to write alertmanager configuration with secrets - https://github.com/prometheus/alertmanager/pull/2316
+	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200702014640-a941b136043b
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
