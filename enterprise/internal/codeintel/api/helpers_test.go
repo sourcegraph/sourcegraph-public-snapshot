@@ -182,6 +182,21 @@ func setMockBundleClientExists(t *testing.T, mockBundleClient *bundlemocks.MockB
 	})
 }
 
+func setMockBundleClientRanges(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedStartLine, expectedEndLine int, ranges []bundles.CodeIntelligenceRange) {
+	mockBundleClient.RangesFunc.SetDefaultHook(func(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
+		if path != expectedPath {
+			t.Errorf("unexpected path for Ranges. want=%s have=%s", expectedPath, path)
+		}
+		if startLine != expectedStartLine {
+			t.Errorf("unexpected start line for Ranges. want=%d have=%d", expectedStartLine, startLine)
+		}
+		if endLine != expectedEndLine {
+			t.Errorf("unexpected end line for Ranges. want=%d have=%d", expectedEndLine, endLine)
+		}
+		return ranges, nil
+	})
+}
+
 func setMockBundleClientDefinitions(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
 	mockBundleClient.DefinitionsFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) ([]bundles.Location, error) {
 		if path != expectedPath {
