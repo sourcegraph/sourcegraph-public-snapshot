@@ -396,55 +396,46 @@ func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) err
 func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) error {
 	notes, err := s.getMergeRequestNotes(ctx, project, mr, old)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "retrieving notes")
+	}
+
+	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr, old)
+	if err != nil {
+		return errors.Wrap(err, "retrieving pipelines")
 	}
 
 	mr.Notes = notes
+	mr.Pipelines = pipelines
 	return nil
+}
+
+type idSet map[gitlab.ID]struct{}
+
+func (s idSet) add(id gitlab.ID) { s[id] = struct{}{} }
+
+func (s idSet) has(id gitlab.ID) bool {
+	_, ok := s[id]
+	return ok
 }
 
 func (s *GitLabSource) getMergeRequestNotes(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Note, error) {
 	// Firstly, we'll set up a set containing the old note IDs so that we know
 	// where we can stop iterating: on a MR with lots of notes, this will mean
 	// we shouldn't need to load all pages on every sync.
-	extant := make(map[gitlab.ID]struct{})
+	extant := make(idSet)
 	for _, note := range old.Notes {
-		extant[note.ID] = struct{}{}
+		extant.add(note.ID)
 	}
 
 	// Secondly, we'll get the forward iterator that gives us a note page at a
 	// time.
 	it := s.client.GetMergeRequestNotes(ctx, project, mr.IID)
 
-	var notes []*gitlab.Note
-
 	// Now we can iterate over the pages of notes and fill in the slice to be
 	// returned.
-Iteration:
-	for {
-		page, err := it()
-		if err != nil {
-			return nil, errors.Wrap(err, "retrieving note page")
-		}
-		if len(page) == 0 {
-			// The terminal condition for the iterator is returning an empty
-			// slice with no error, so we can stop iterating here.
-			break
-		}
-
-		for _, note := range page {
-			// We're only interested in system notes for campaigns, since they
-			// include the review state changes we need; let's not even bother
-			// storing the non-system ones.
-			if note.System {
-				if _, ok := extant[note.ID]; ok {
-					// We've seen this note before, which means that nothing
-					// after this point should be new.
-					break Iteration
-				}
-				notes = append(notes, note)
-			}
-		}
+	notes, err := readNotesUntilSeen(it, extant)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading note pages")
 	}
 
 	// Finally, we should append the old notes to the new notes. Doing so after
@@ -453,6 +444,91 @@ Iteration:
 	notes = append(notes, old.Notes...)
 
 	return notes, nil
+}
+
+func readNotesUntilSeen(it func() ([]*gitlab.Note, error), extant idSet) ([]*gitlab.Note, error) {
+	var notes []*gitlab.Note
+
+	for {
+		page, err := it()
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving note page")
+		}
+		if len(page) == 0 {
+			// The terminal condition for the iterator is returning an empty
+			// slice with no error, so we can stop iterating here.
+			return notes, nil
+		}
+
+		for _, note := range page {
+			// We're only interested in system notes for campaigns, since they
+			// include the review state changes we need; let's not even bother
+			// storing the non-system ones.
+			if note.System {
+				if extant.has(note.ID) {
+					// We've seen this note before, which means that nothing
+					// after this point should be new.
+					return notes, nil
+				}
+				notes = append(notes, note)
+			}
+		}
+	}
+}
+
+// getMergeRequestPipelines hopes you enjoyed getMergeRequestNotes, because it's
+// going to look eerily similar.
+func (s *GitLabSource) getMergeRequestPipelines(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Pipeline, error) {
+	// Firstly, we'll set up a set containing the old pipeline IDs so that we
+	// know where we can stop iterating: on a MR with lots of pipelines, this
+	// will mean we shouldn't need to load all pages on every sync.
+	extant := make(idSet)
+	for _, pipeline := range old.Pipelines {
+		extant.add(pipeline.ID)
+	}
+
+	// Secondly, we'll get the forward iterator that gives us a pipeline page at
+	// a time.
+	it := s.client.GetMergeRequestPipelines(ctx, project, mr.IID)
+
+	// Now we can iterate over the pages of pipelines and fill in the slice to
+	// be returned.
+	pipelines, err := readPipelinesUntilSeen(it, extant)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading pipeline pages")
+	}
+
+	// Finally, we should append the old pipelines to the new pipelines. Doing
+	// so after handling the new pipelines means that all the pipelines should
+	// be in descending order without needing to explicitly sort.
+	pipelines = append(pipelines, old.Pipelines...)
+
+	return pipelines, nil
+}
+
+func readPipelinesUntilSeen(it func() ([]*gitlab.Pipeline, error), extant idSet) ([]*gitlab.Pipeline, error) {
+	var pipelines []*gitlab.Pipeline
+
+	for {
+		page, err := it()
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving pipeline page")
+		}
+		if len(page) == 0 {
+			// The terminal condition for the iterator is returning an empty
+			// slice with no error, so we can stop iterating here.
+			return pipelines, nil
+		}
+
+		for _, pipeline := range page {
+			if extant.has(pipeline.ID) {
+				// We've seen this pipeline before, which means that nothing
+				// after this point should be new.
+				return pipelines, nil
+			}
+			pipelines = append(pipelines, pipeline)
+		}
+	}
 }
 
 // UpdateChangeset can update Changesets.

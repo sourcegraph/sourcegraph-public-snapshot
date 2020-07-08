@@ -3,7 +3,10 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // GetMergeRequestNotes retrieves the notes for the given merge request. As the
@@ -15,10 +18,32 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 		return MockGetMergeRequestNotes(c, ctx, project, iid)
 	}
 
-	pr := c.newPaginatedResult("GET", fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid), func() interface{} { return []*Note{} })
+	url := fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid)
 	return func() ([]*Note, error) {
-		page, err := pr.next(ctx)
-		return page.([]*Note), err
+		var page []*Note
+
+		// If there aren't any further pages, we'll return the empty slice we
+		// just created.
+		if url == "" {
+			return page, nil
+		}
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating notes request")
+		}
+
+		header, _, err := c.do(ctx, req, &page)
+		if err != nil {
+			return nil, errors.Wrap(err, "requesting notes page")
+		}
+
+		// If there's another page, this will be a URL. If there's not, then
+		// this will be an empty string, and we can detect that next iteration
+		// to short circuit.
+		url = header.Get("X-Next-Page")
+
+		return page, nil
 	}
 }
 

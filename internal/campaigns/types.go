@@ -653,7 +653,8 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *gitlab.MergeRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Notes))
+		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Pipelines))
+
 		for _, note := range m.Notes {
 			if review := note.ToReview(); review != nil {
 				events = append(events, &ChangesetEvent{
@@ -663,6 +664,15 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					Metadata:    review,
 				})
 			}
+		}
+
+		for _, pipeline := range m.Pipelines {
+			events = append(events, &ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         pipeline.Key(),
+				Kind:        ChangesetEventKindFor(pipeline),
+				Metadata:    pipeline,
+			})
 		}
 	}
 	return events
@@ -1453,6 +1463,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
 	case *bitbucketserver.CommitStatus:
 		return ChangesetEventKindBitbucketServerCommitStatus
+	case *gitlab.Pipeline:
+		return ChangesetEventKindGitLabPipeline
 	case *gitlab.ReviewApproved:
 		return ChangesetEventKindGitLabApproved
 	case *gitlab.ReviewUnapproved:
@@ -1518,6 +1530,8 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		switch k {
 		case ChangesetEventKindGitLabApproved:
 			return new(gitlab.ReviewApproved), nil
+		case ChangesetEventKindGitLabPipeline:
+			return new(gitlab.Pipeline), nil
 		case ChangesetEventKindGitLabUnapproved:
 			return new(gitlab.ReviewUnapproved), nil
 		}
@@ -1568,6 +1582,7 @@ const (
 	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 
 	ChangesetEventKindGitLabApproved   ChangesetEventKind = "gitlab:approved"
+	ChangesetEventKindGitLabPipeline   ChangesetEventKind = "gitlab:pipeline"
 	ChangesetEventKindGitLabUnapproved ChangesetEventKind = "gitlab:unapproved"
 )
 
