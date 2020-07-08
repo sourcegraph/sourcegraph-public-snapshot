@@ -2244,10 +2244,10 @@
     sourcegraph "^24.0.0"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.19.10":
-  version "0.19.10"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.19.10.tgz#986a47e21e2722640fb69020e503feac35ed3eda"
-  integrity sha512-P9k/iEgWqql9h7Z30EX+CatOhguejMDtHS/m3jkI/2xxLf/KSbpRurCq5dT9GAxpIbkeIDQFRXOE9SzEi8jC4Q==
+"@sourcegraph/eslint-config@^0.19.11":
+  version "0.19.11"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.19.11.tgz#e64aca71a6c15994deac45ab8b4c406f355f59ba"
+  integrity sha512-818Z+oSV8vEu0wQnY6dq8s5fs8Dq/oIHCkU0oXwHwyWxs+VzrLKjy8KuvIF+CaM32VSycgd+nIJVF6gx2d0SbQ==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^3.6.0"
