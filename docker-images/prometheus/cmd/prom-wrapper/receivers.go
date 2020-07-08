@@ -21,7 +21,8 @@ const (
 )
 
 var (
-	// alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
+	// Alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
+	// All labels used in these templates should be included in route.GroupByStr
 	alertSolutionsTemplate    = `https://docs.sourcegraph.com/admin/observability/alert_solutions#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
 	notificationTitleTemplate = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
 	notificationBodyTemplate  = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'.

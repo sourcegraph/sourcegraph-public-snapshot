@@ -36,8 +36,11 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		Name: alertmanagerNoopReceiver,
 	})
 
-	// make sure alerts are routed appropriately
+	// include `alertname` for now to accomodate non-generator alerts - in the long run, we want to remove grouping on `alertname`
+	// because all alerts should have some predefined labels
+	// https://github.com/sourcegraph/sourcegraph/issues/5370
 	groupBy := []string{"alertname", "level", "service_name", "name"}
+	// make sure alerts are routed appropriately
 	change.AMConfig.Route = &amconfig.Route{
 		Receiver:   alertmanagerNoopReceiver,
 		GroupByStr: groupBy,
