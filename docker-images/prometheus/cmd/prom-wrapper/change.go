@@ -37,7 +37,7 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 	})
 
 	// make sure alerts are routed appropriately
-	groupBy := []string{"level", "service_name", "name"}
+	groupBy := []string{"alertname", "level", "service_name", "name"}
 	change.AMConfig.Route = &amconfig.Route{
 		Receiver:   alertmanagerNoopReceiver,
 		GroupByStr: groupBy,
