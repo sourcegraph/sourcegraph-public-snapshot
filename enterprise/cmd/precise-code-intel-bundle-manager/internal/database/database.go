@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
@@ -625,7 +626,7 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, pairs map[
 				return compareBundleRanges(locations[i].Range, locations[j].Range)
 			}
 
-			return locations[i].Path < locations[j].Path
+			return strings.Compare(locations[i].Path, locations[j].Path) < 0
 		})
 
 		locationsByID[id] = locations
