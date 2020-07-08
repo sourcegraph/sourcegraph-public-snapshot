@@ -781,23 +781,44 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 			sort.Sort(stored)
 
 			names := stored[:3].Names()
+			sort.Strings(names)
+
+			check := func() {
+				t.Helper()
+
+				res, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+				if err != nil {
+					t.Fatalf("ListRepos error: %s", err)
+				}
+
+				cloned := repos.Repos(res).Filter(isCloned).Names()
+				sort.Strings(cloned)
+
+				if got, want := cloned, names; !cmp.Equal(got, want) {
+					t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
+				}
+			}
 
 			if err := tx.SetClonedRepos(ctx, names...); err != nil {
 				t.Fatalf("SetClonedRepos error: %s", err)
 			}
+			check()
 
-			stored, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
-			if err != nil {
-				t.Fatalf("ListRepos error: %s", err)
+			// setClonedRepositories should be idempotent and have the same behavior
+			// when called with the same repos
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
 			}
+			check()
 
-			cloned := stored.Filter(isCloned).Names()
-			sort.Strings(cloned)
+			// when adding another repo to the list, the other repos must be set as well
+			names = stored[:4].Names()
 			sort.Strings(names)
-
-			if got, want := cloned, names; !cmp.Equal(got, want) {
-				t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
 			}
+
+			check()
 		}))
 	}
 }

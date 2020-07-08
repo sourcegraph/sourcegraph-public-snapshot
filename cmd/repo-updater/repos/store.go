@@ -431,12 +431,12 @@ const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
 WITH c AS (
 	UPDATE repo SET cloned = true
-	WHERE NOT cloned AND name in (%s)
+	WHERE name IN (%s)
 	RETURNING id
  )
  UPDATE repo SET cloned = false
  FROM c
- WHERE cloned AND repo.id != c.id;
+ WHERE cloned AND repo.id NOT IN (SELECT id FROM c);
 `
 
 // CountNotClonedRepos returns the number of repos whose cloned column is true.
