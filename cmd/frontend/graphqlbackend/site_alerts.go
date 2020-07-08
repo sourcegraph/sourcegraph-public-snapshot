@@ -315,8 +315,7 @@ func observabilityActiveAlertsAlert(prometheusURL string) func(AlertFuncArgs) []
 		msg := fmt.Sprintf("%s across %s are currently firing - [view alerts](/-/debug/grafana)",
 			pluralize(criticalAlerts, "critical alert", "critical alerts"),
 			pluralize(servicesCritical, "service", "services"))
-		key := fmt.Sprintf("active-alerts-alert-%d-critical-%d-services", criticalAlerts, servicesCritical)
-		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg, IsDismissibleWithKeyValue: key}}
+		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg}}
 	}
 }
 
