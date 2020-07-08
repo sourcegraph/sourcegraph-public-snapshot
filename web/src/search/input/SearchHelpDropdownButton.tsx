@@ -31,7 +31,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     <li>
                         <span className="text-muted small">Structural:</span>{' '}
                         <code>
-                            <strong>try&#123;:[my_match]&#125; </strong>
+                            <strong>if(:[my_match]) </strong>
                         </code>
                     </li>
                     <li>
