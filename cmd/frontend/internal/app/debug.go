@@ -24,7 +24,7 @@ var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana 
 var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 
 func init() {
-	conf.ContributeWarning(newPrometheusValidator(prometheusutil.PrometheusURL, conf.DeployType()))
+	conf.ContributeWarning(newPrometheusValidator(prometheusutil.PrometheusURL))
 }
 
 func addNoK8sClientHandler(r *mux.Router) {
@@ -145,15 +145,9 @@ func adminOnly(next http.Handler) http.Handler {
 
 // newPrometheusValidator renders problems with the Prometheus deployment and configuration
 // as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container if Prometheus is enabled.
-func newPrometheusValidator(prometheusURL, deployType string) conf.Validator {
+func newPrometheusValidator(prometheusURL string) conf.Validator {
 	return func(c conf.Unified) (problems conf.Problems) {
 		if len(prometheusURL) == 0 || len(c.ObservabilityAlerts) == 0 {
-			return
-		}
-
-		// see https://github.com/sourcegraph/sourcegraph/issues/11473
-		if conf.IsDeployTypeSingleDockerContainer(deployType) {
-			problems = append(problems, conf.NewSiteProblem("`observability.alerts` is not currently supported in sourcegraph/server deployments. Follow [this issue](https://github.com/sourcegraph/sourcegraph/issues/11473) for updates."))
 			return
 		}
 
