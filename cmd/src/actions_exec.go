@@ -221,12 +221,13 @@ Format of the action JSON files:
 		}
 
 		opts := campaigns.ExecutorOpts{
-			Endpoint:    cfg.Endpoint,
-			AccessToken: cfg.AccessToken,
-			Timeout:     *timeoutFlag,
-			KeepLogs:    *keepLogsFlag,
-			ClearCache:  *clearCacheFlag,
-			Cache:       campaigns.ExecutionDiskCache{Dir: *cacheDirFlag},
+			Endpoint:          cfg.Endpoint,
+			AccessToken:       cfg.AccessToken,
+			AdditionalHeaders: cfg.AdditionalHeaders,
+			Timeout:           *timeoutFlag,
+			KeepLogs:          *keepLogsFlag,
+			ClearCache:        *clearCacheFlag,
+			Cache:             campaigns.ExecutionDiskCache{Dir: *cacheDirFlag},
 		}
 
 		// Query repos over which to run action

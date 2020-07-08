@@ -63,6 +63,9 @@ func getRecommendedVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	for k, v := range cfg.AdditionalHeaders {
+		req.Header.Set(k, v)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

@@ -21,10 +21,10 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-func runAction(ctx context.Context, endpoint, accessToken, prefix, repoName, rev string, steps []*ActionStep, logger *ActionLogger) ([]byte, error) {
+func runAction(ctx context.Context, endpoint, accessToken string, additionalHeaders map[string]string, prefix, repoName, rev string, steps []*ActionStep, logger *ActionLogger) ([]byte, error) {
 	logger.RepoStarted(repoName, rev, steps)
 
-	zipFile, err := fetchRepositoryArchive(ctx, endpoint, accessToken, repoName, rev)
+	zipFile, err := fetchRepositoryArchive(ctx, endpoint, accessToken, additionalHeaders, repoName, rev)
 	if err != nil {
 		return nil, errors.Wrap(err, "Fetching ZIP archive failed")
 	}
@@ -179,7 +179,7 @@ func unzipToTempDir(ctx context.Context, zipFile, prefix string) (string, error)
 	return volumeDir, unzip(zipFile, volumeDir)
 }
 
-func fetchRepositoryArchive(ctx context.Context, endpoint, accessToken, repoName, rev string) (*os.File, error) {
+func fetchRepositoryArchive(ctx context.Context, endpoint, accessToken string, additionalHeaders map[string]string, repoName, rev string) (*os.File, error) {
 	zipURL, err := repositoryZipArchiveURL(endpoint, repoName, rev, "")
 	if err != nil {
 		return nil, err
@@ -192,6 +192,9 @@ func fetchRepositoryArchive(ctx context.Context, endpoint, accessToken, repoName
 	req.Header.Set("Accept", "application/zip")
 	if accessToken != "" {
 		req.Header.Set("Authorization", "token "+accessToken)
+	}
+	for k, v := range additionalHeaders {
+		req.Header.Set(k, v)
 	}
 	resp, err := ctxhttp.Do(ctx, nil, req)
 	if err != nil {

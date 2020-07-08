@@ -127,7 +127,7 @@ func gqlURL(endpoint string) string {
 }
 
 // curlCmd returns the curl command to perform the given GraphQL query. Bash-only.
-func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (string, error) {
+func curlCmd(endpoint, accessToken string, additionalHeaders map[string]string, query string, vars map[string]interface{}) (string, error) {
 	data, err := json.Marshal(map[string]interface{}{
 		"query":     query,
 		"variables": vars,
@@ -139,6 +139,9 @@ func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (
 	s := "curl \\\n"
 	if accessToken != "" {
 		s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+accessToken))
+	}
+	for k, v := range additionalHeaders {
+		s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", k+": "+v))
 	}
 	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-d", string(data)))
 	s += fmt.Sprintf("   %s", shellquote.Join(gqlURL(endpoint)))
@@ -177,7 +180,7 @@ func (a *apiRequest) do() error {
 	if a.done != nil {
 		// Handle the get-curl flag now.
 		if *a.flags.getCurl {
-			curl, err := curlCmd(cfg.Endpoint, cfg.AccessToken, a.query, a.vars)
+			curl, err := curlCmd(cfg.Endpoint, cfg.AccessToken, cfg.AdditionalHeaders, a.query, a.vars)
 			if err != nil {
 				return err
 			}
@@ -204,6 +207,9 @@ func (a *apiRequest) do() error {
 	}
 	if cfg.AccessToken != "" {
 		req.Header.Set("Authorization", "token "+cfg.AccessToken)
+	}
+	for k, v := range cfg.AdditionalHeaders {
+		req.Header.Set(k, v)
 	}
 	req.Body = ioutil.NopCloser(&buf)
 

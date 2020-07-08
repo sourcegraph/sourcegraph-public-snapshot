@@ -156,6 +156,7 @@ Examples:
 		opts := codeintel.UploadIndexOpts{
 			Endpoint:             cfg.Endpoint,
 			AccessToken:          cfg.AccessToken,
+			AdditionalHeaders:    cfg.AdditionalHeaders,
 			Repo:                 *flags.repo,
 			Commit:               *flags.commit,
 			Root:                 *flags.root,

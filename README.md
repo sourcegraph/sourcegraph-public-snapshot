@@ -73,6 +73,8 @@ Point `src` to your instance and access token using environment variables:
 SRC_ENDPOINT=https://sourcegraph.example.com SRC_ACCESS_TOKEN="secret" src search 'foobar'
 ```
 
+Sourcegraph behind a custom auth proxy? See [auth proxy configuration](./AUTH_PROXY.md) docs.
+
 ### Where to get an access token
 
 Visit your Sourcegraph instance (or https://sourcegraph.com), click your username in the top right to open the user menu, select **Settings**, and then select **Access tokens** in the left hand menu.

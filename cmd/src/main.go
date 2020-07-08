@@ -70,8 +70,9 @@ var cfg *config
 
 // config represents the config format.
 type config struct {
-	Endpoint    string `json:"endpoint"`
-	AccessToken string `json:"accessToken"`
+	Endpoint          string            `json:"endpoint"`
+	AccessToken       string            `json:"accessToken"`
+	AdditionalHeaders map[string]string `json:"additionalHeaders"`
 }
 
 // readConfig reads the config file from the given path.
@@ -123,6 +124,8 @@ func readConfig() (*config, error) {
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "https://sourcegraph.com"
 	}
+
+	cfg.AdditionalHeaders = parseAdditionalHeaders()
 
 	// Lastly, apply endpoint flag if set
 	if endpoint != nil && *endpoint != "" {

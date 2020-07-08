@@ -13,6 +13,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- `SRC_HEADER_AUTHORIZATION="Bearer $(...)"` is now supported for authenticating `src` with custom auth proxies. See [auth proxy configuration docs](AUTH_PROXY.md) for more information.
 - Pull missing docker images automatically. [#191](https://github.com/sourcegraph/src-cli/pull/191)
 - Searches that result in errors will now display any alerts returned by Sourcegraph, including suggestions for how the search could be corrected. [#221](https://github.com/sourcegraph/src-cli/pull/221)
 
@@ -24,4 +25,3 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 ### Removed
-

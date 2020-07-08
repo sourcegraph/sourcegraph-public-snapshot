@@ -25,8 +25,9 @@ type ActionRepoStatus struct {
 }
 
 type ExecutorOpts struct {
-	Endpoint    string
-	AccessToken string
+	Endpoint          string
+	AccessToken       string
+	AdditionalHeaders map[string]string
 
 	KeepLogs bool
 	Timeout  time.Duration
@@ -168,7 +169,7 @@ func (x *Executor) do(ctx context.Context, repo ActionRepo) (err error) {
 	runCtx, cancel := context.WithTimeout(ctx, x.opt.Timeout)
 	defer cancel()
 
-	patch, err := runAction(runCtx, x.opt.Endpoint, x.opt.AccessToken, prefix, repo.Name, repo.Rev, x.action.Steps, x.logger)
+	patch, err := runAction(runCtx, x.opt.Endpoint, x.opt.AccessToken, x.opt.AdditionalHeaders, prefix, repo.Name, repo.Rev, x.action.Steps, x.logger)
 	status := ActionRepoStatus{
 		FinishedAt: time.Now(),
 	}
