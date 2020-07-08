@@ -64,7 +64,7 @@ export const android: RepogroupMetadata = {
         { name: 'iampawan/FlutterExampleApps', codehost: CodeHosts.GITHUB },
         { name: 'mitesh77/Best-Flutter-UI-Templates', codehost: CodeHosts.GITHUB },
     ],
-    description: `Search the most starred Android repositories on GitHub. Explore with search examples below.`,
+    description: 'Search the most starred Android repositories on GitHub. Explore with search examples below.',
     examples: [
         {
             title: 'Find intent filter examples in Android Manifest XML files:',
