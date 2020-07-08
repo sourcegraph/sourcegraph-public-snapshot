@@ -74,7 +74,7 @@ export const android: RepogroupMetadata = {
                     {'xml <intent-filter> :[string] </intent-filter>'}
                 </>
             ),
-            rawQuery: 'langxml <intent-filter> :[string] </intent-filter>',
+            rawQuery: 'lang:xml <intent-filter> :[string] </intent-filter>',
             description: `An intent filter is used to specify the type of intents a component would like to receive. An intent filter can accept
              3 types of elements - <action>, <category> and <data> elements.`,
             patternType: SearchPatternType.structural,
@@ -90,13 +90,8 @@ export const android: RepogroupMetadata = {
             description: `LinearLayout can lead to an excessively deep view hierarchy. Nesting several instances of
             LinearLayout that use the layout_weight parameter can be especially expensive as each child needs to be measured twice. This is particularly
             important when the layout is inflated repeatedly, such as when used in a ListView or GridView.`,
-            exampleQuery: (
-                <>
-                    <span className="repogroup-page__keyword-text">lang:</span>
-                    {'xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>'}
-                </>
-            ),
-            rawQuery: 'lang:xml <LinearLayout :[0] <LinearLayout :[1] </LinearLayout> :[2] </LinearLayout>',
+            exampleQuery: <>{'<LinearLayout:[_]>:[_]<LinearLayout:[_]>:[_]</LinearLayout>:[_]</LinearLayout>'}</>,
+            rawQuery: '<LinearLayout:[_]>:[_]<LinearLayout:[_]>:[_]</LinearLayout>:[_]</LinearLayout>',
             patternType: SearchPatternType.structural,
         },
         {
