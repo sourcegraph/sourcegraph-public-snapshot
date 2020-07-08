@@ -521,10 +521,14 @@ func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]Docum
 	return resultData, nil
 }
 
-// getResultChunkByResultID fetches and unmarshals the result chunk data with the given identifier.
-// This method caches result chunk data by a unique key prefixed by the database filename.
+// getResultChunkByResultID fetches and unmarshals the result chunk data containing the given identifier.
 func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.ID) (_ types.ResultChunkData, _ bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByResultID")
+	return db.getResultChunkByID(ctx, db.resultChunkID(id))
+}
+
+// getResultChunkByID fetches and unmarshals the result chunk data with the given identifier.
+func (db *databaseImpl) getResultChunkByID(ctx context.Context, id int) (_ types.ResultChunkData, _ bool, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByID")
 	span.SetTag("filename", db.filename)
 	span.SetTag("id", id)
 	defer func() {
@@ -535,11 +539,16 @@ func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.I
 		span.Finish()
 	}()
 
-	resultChunkData, ok, err := db.reader.ReadResultChunk(ctx, types.HashKey(id, db.numResultChunks))
+	resultChunkData, ok, err := db.reader.ReadResultChunk(ctx, id)
 	if err != nil {
 		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "reader.ReadResultChunk")
 	}
 	return resultChunkData, ok, nil
+}
+
+// resultChunkID returns the identifier of the result chunk that contains the given identifier.
+func (db *databaseImpl) resultChunkID(id types.ID) int {
+	return types.HashKey(id, db.numResultChunks)
 }
 
 // convertRangesToLocations converts pairs of document paths and range identifiers
