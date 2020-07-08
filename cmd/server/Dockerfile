@@ -43,15 +43,23 @@ RUN apk update && apk add --no-cache \
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e416c62cee345f615a0dcb09b /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.16.0@sha256:3807c4d87afe226a120da8fbf745685a5a2cb7ff1d0a0a4a5dfdce7b116f986f /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835 /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:server /bin/prom-wrapper /bin
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835 /usr/share/prometheus /usr/share/prometheus
+COPY --from=sourcegraph/prometheus:server /bin/alertmanager /bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /alertmanager.sh /alertmanager.sh
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /bin/prometheus /bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \

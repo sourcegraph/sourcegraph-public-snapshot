@@ -193,11 +193,12 @@ export const kubernetes: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hoo', codehost: CodeHosts.GITHUB },
     ],
-    description: 'This repository group contains all the repositories for the Kubernetes community.',
+    description:
+        'Search the trending and most starred Kubernetes repositories on GitHub. Explore with search examples below.',
     examples: [
         {
             title:
-                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.',
+                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">file:</span>pod.yaml{' '}
@@ -208,7 +209,20 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'See how Prometheus is used for monitoring in different popular projects:',
+            title: 'Look for outdated `apiVersions` of admission webhooks:',
+            exampleQuery: (
+                <>
+                    <span className="repogroup-page__keyword-text">content:</span>"apiVersion:
+                    admissionregistration.k8s.io/v1beta1"
+                </>
+            ),
+            description: `This apiVersion has been deprecated in favor of "admissionregistration.k8s.io/v1".
+            You can read more about this at https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/`,
+            rawQuery: 'content:"apiVersion: admissionregistration.k8s.io/v1beta1"',
+            patternType: SearchPatternType.literal,
+        },
+        {
+            title: 'Find Prometheus usage in YAML files:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus
@@ -228,7 +242,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'Browse recent diffs for code changes in the community:',
+            title: 'Browse diffs for recent code changes in the community:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">type:</span>diff{' '}

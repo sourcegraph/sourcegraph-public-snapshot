@@ -3,6 +3,7 @@ package query
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -22,7 +23,6 @@ func SubstituteAliases(nodes []Node) []Node {
 	}
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == "content" {
-			// The Quoted label is unset if content is specified.
 			return Pattern{Value: value, Negated: negated, Annotation: annotation}
 		}
 		if canonical, ok := aliases[field]; ok {
@@ -96,7 +96,6 @@ func Hoist(nodes []Node) ([]Node, error) {
 func SearchUppercase(nodes []Node) []Node {
 	var foundMixedCase bool
 	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
-		// FIXME: make sure query maps content before calling this.
 		if match := containsUppercase(value); match {
 			foundMixedCase = true
 		}
@@ -217,6 +216,24 @@ func substituteConcat(nodes []Node, separator string) []Node {
 
 	}
 	return new
+}
+
+// EmptyGroupsToLiteral is a heuristic used in the context of regular expression
+// search. It labels any pattern containing "()" as a literal pattern since in
+// regex it implies the empty string, which is meaningless as a search query and
+// probably not what the user intended.
+func EmptyGroupsToLiteral(nodes []Node) []Node {
+	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
+		if ok, _ := regexp.MatchString(`\(\)`, value); ok {
+			annotation.Labels.set(Literal)
+			annotation.Labels.unset(Regexp)
+		}
+		return Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
 }
 
 // Map pipes query through one or more query transformer functions.

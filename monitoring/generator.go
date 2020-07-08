@@ -671,7 +671,11 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-						group.AppendRow(alertQuery, makeLabels("high"))
+						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
+						// get flattened into a single one (we only support per-service alerts,
+						// not per-container/replica).
+						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
+						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"))
 					}
 					if alert.LessOrEqual != 0 {
 						//
@@ -694,7 +698,11 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-						group.AppendRow(alertQuery, makeLabels("low"))
+						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
+						// get flattened into a single one (we only support per-service alerts,
+						// not per-container/replica).
+						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
+						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"))
 					}
 				}
 			}
@@ -938,15 +946,26 @@ func (g *promGroup) AppendRow(alertQuery string, labels map[string]string) {
 	//    metric that does not exist.)
 	//
 	expr := "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)"
-	g.Rules = append(g.Rules, promRule{
-		Record: "alert_count",
-		Labels: labels,
-		Expr:   expr,
-	})
+	g.Rules = append(g.Rules,
+		promRule{
+			Record: "alert_count",
+			Labels: labels,
+			Expr:   expr,
+		},
+		// a "real" prometheus alert to attach onto alert_count
+		promRule{
+			Alert:  fmt.Sprintf("%s_%s_%s", labels["level"], labels["service_name"], labels["name"]),
+			Labels: labels,
+			Expr: fmt.Sprintf(`alert_count{service_name=%q,level=%q,name=%q} >= 1`,
+				labels["service_name"], labels["level"], labels["name"]),
+		})
 }
 
 type promRule struct {
-	Record string
+	// either Record or Alert
+	Record string `yaml:",omitempty"`
+	Alert  string `yaml:",omitempty"`
+
 	Labels map[string]string
 	Expr   string
 }

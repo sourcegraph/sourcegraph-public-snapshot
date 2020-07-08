@@ -21,6 +21,9 @@ type Database interface {
 	// Exists determines if the path exists in the database.
 	Exists(ctx context.Context, path string) (bool, error)
 
+	// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+	Ranges(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error)
+
 	// Definitions returns the set of locations defining the symbol at the given position.
 	Definitions(ctx context.Context, path string, line, character int) ([]bundles.Location, error)
 
@@ -109,6 +112,54 @@ func (db *databaseImpl) Close() error {
 func (db *databaseImpl) Exists(ctx context.Context, path string) (bool, error) {
 	_, exists, err := db.getDocumentData(ctx, path)
 	return exists, pkgerrors.Wrap(err, "db.getDocumentData")
+}
+
+// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+func (db *databaseImpl) Ranges(ctx context.Context, path string, startLine, endLine int) ([]bundles.CodeIntelligenceRange, error) {
+	documentData, exists, err := db.getDocumentData(ctx, path)
+	if err != nil || !exists {
+		return nil, pkgerrors.Wrap(err, "db.getDocumentData")
+	}
+
+	var codeintelRanges []bundles.CodeIntelligenceRange
+	for _, r := range documentData.Ranges {
+		if !rangeIntersectsSpan(r, startLine, endLine) {
+			continue
+		}
+
+		definitions, _, err := db.definitions(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+
+		references, _, err := db.references(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+
+		hoverText, _, err := db.hover(ctx, documentData, r)
+		if err != nil {
+			return nil, err
+		}
+
+		codeintelRanges = append(codeintelRanges, bundles.CodeIntelligenceRange{
+			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+			Definitions: definitions,
+			References:  references,
+			HoverText:   hoverText,
+		})
+	}
+
+	sort.Slice(codeintelRanges, func(i, j int) bool {
+		cmp := codeintelRanges[i].Range.Start.Line - codeintelRanges[j].Range.Start.Line
+		if cmp == 0 {
+			cmp = codeintelRanges[i].Range.Start.Character - codeintelRanges[j].Range.Start.Character
+		}
+
+		return cmp < 0
+	})
+
+	return codeintelRanges, nil
 }
 
 // Definitions returns the set of locations defining the symbol at the given position.

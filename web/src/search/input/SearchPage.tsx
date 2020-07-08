@@ -127,41 +127,53 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             <ul className="list-group-flush p-0">
                                 <li className="list-group-item px-0 pb-3">
                                     <Link
-                                        to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=literal"
+                                        to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural"
                                         className="text-monospace mb-1"
                                     >
                                         <span className="repogroup-page__keyword-text">lang:</span>javascript
                                         alert(:[variable])
                                     </Link>{' '}
+                                    <div>Find usages of the alert() method that displays an alert box.</div>
+                                </li>
+                                <li className="list-group-item px-0 py-3">
+                                    <Link
+                                        to="/search?q=lang:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
+                                        className="text-monospace mb-1"
+                                    >
+                                        <span className="repogroup-page__keyword-text">lang:</span>python from \B\.\w+
+                                        import \w+
+                                    </Link>{' '}
                                     <div>
-                                        A collection of top react repositories, including, tooling, ui, testing and key
-                                        components.
+                                        Search for explicit imports with one or more leading dots that indicate current
+                                        and parent packages involved.
                                     </div>
                                 </li>
                                 <li className="list-group-item px-0 py-3">
                                     <Link
-                                        to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=literal"
+                                        to='/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                         className="text-monospace mb-1"
                                     >
-                                        <span className="repogroup-page__keyword-text">lang:</span>javascript
-                                        alert(:[variable])
+                                        <span className="repogroup-page__keyword-text">repo:</span>
+                                        ^github\.com/golang/go${' '}
+                                        <span className="repogroup-page__keyword-text">type:</span>diff{' '}
+                                        <span className="repogroup-page__keyword-text">after:</span>"1 week ago"
                                     </Link>{' '}
                                     <div>
-                                        A collection of top react repositories, including, tooling, ui, testing and key
-                                        components.
+                                        Browse diffs for recent code changes in the 'golang/go' GitHub repository.
                                     </div>
                                 </li>
                                 <li className="list-group-item px-0 py-3">
                                     <Link
-                                        to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=literal"
+                                        to='/search?q=file:pod.yaml+content:"kind:+ReplicationController"&patternType=literal'
                                         className="text-monospace mb-1"
                                     >
-                                        <span className="repogroup-page__keyword-text">lang:</span>javascript
-                                        alert(:[variable])
+                                        <span className="repogroup-page__keyword-text">file:</span>pod.yaml{' '}
+                                        <span className="repogroup-page__keyword-text">content:</span>"kind:
+                                        ReplicationController"
                                     </Link>{' '}
                                     <div>
-                                        A collection of top react repositories, including, tooling, ui, testing and key
-                                        components.
+                                        Use a ReplicationController configuration to ensure specified number of pod
+                                        replicas are running at any one time.
                                     </div>
                                 </li>
                             </ul>
