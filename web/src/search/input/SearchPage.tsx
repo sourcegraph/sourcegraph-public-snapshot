@@ -151,19 +151,6 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </li>
                                 <li className="list-group-item px-0 py-3">
                                     <Link
-                                        to="/search?q=file:pod.yaml+content:&quot;kind:+ReplicationController&quot;&patternType=literal"
-                                        className="text-monospace mb-1"
-                                    >
-                                        <span className="repogroup-page__keyword-text">file:</span>pod.yaml
-                                        {' '}
-                                        <span className="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"
-                                    </Link>{' '}
-                                    <div>
-                                        Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.
-                                    </div>
-                                </li>
-                                <li className="list-group-item px-0 py-3">
-                                    <Link
                                         to="/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:&quot;1+week+ago&quot;&patternType=literal&quot;"
                                         className="text-monospace mb-1"
                                     >
@@ -175,6 +162,19 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     </Link>{' '}
                                     <div>
                                         Browse diffs for recent code changes in the 'golang/go' repository.
+                                    </div>
+                                </li>
+                                <li className="list-group-item px-0 py-3">
+                                    <Link
+                                        to="/search?q=file:pod.yaml+content:&quot;kind:+ReplicationController&quot;&patternType=literal"
+                                        className="text-monospace mb-1"
+                                    >
+                                        <span className="repogroup-page__keyword-text">file:</span>pod.yaml
+                                        {' '}
+                                        <span className="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"
+                                    </Link>{' '}
+                                    <div>
+                                        Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.
                                     </div>
                                 </li>
                             </ul>
