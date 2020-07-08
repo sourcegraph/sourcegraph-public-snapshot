@@ -108,7 +108,8 @@ func init() {
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
-	AlertFuncs = append(AlertFuncs, activeAlertsAlert)
+	// Notify admins if critical alerts are firing.
+	AlertFuncs = append(AlertFuncs, activeAlertsAlert(prometheusutil.PrometheusURL))
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
@@ -272,46 +273,48 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 }
 
 // activeAlertsAlert directs admins to check Grafana if critical alerts are firing
-func activeAlertsAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || len(prometheusutil.PrometheusURL) == 0 {
-		return nil
-	}
+func activeAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
+	return func(args AlertFuncArgs) []*Alert {
+		if !args.IsSiteAdmin || len(prometheusURL) == 0 {
+			return nil
+		}
 
-	// set up request to fetch status from prom-wrapper
-	errorKey := "active-alerts-alert-error"
-	promURL, err := url.Parse(prometheusutil.PrometheusURL)
-	if err != nil {
-		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
-	}
-	promURL.Path = "/prom-wrapper/alerts-status"
-	req, err := http.NewRequest("GET", promURL.String(), nil)
-	if err != nil {
-		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
-	}
+		// set up request to fetch status from prom-wrapper
+		errorKey := "active-alerts-alert-error"
+		promURL, err := url.Parse(prometheusURL)
+		if err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
+		}
+		promURL.Path = "/prom-wrapper/alerts-status"
+		req, err := http.NewRequest("GET", promURL.String(), nil)
+		if err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
+		}
 
-	// use a short timeout to avoid having this block problems from loading
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cancel()
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: %s", err), IsDismissibleWithKeyValue: errorKey}}
-	}
-	if resp.StatusCode != 200 {
-		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: status %d", resp.StatusCode), IsDismissibleWithKeyValue: errorKey}}
-	}
+		// use a short timeout to avoid having this block problems from loading
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		if err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: %s", err), IsDismissibleWithKeyValue: errorKey}}
+		}
+		if resp.StatusCode != 200 {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: status %d", resp.StatusCode), IsDismissibleWithKeyValue: errorKey}}
+		}
 
-	var alertsStatus map[string]int
-	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(&alertsStatus); err != nil {
-		return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error(), IsDismissibleWithKeyValue: errorKey}}
+		var alertsStatus map[string]int
+		defer resp.Body.Close()
+		if err := json.NewDecoder(resp.Body).Decode(&alertsStatus); err != nil {
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error(), IsDismissibleWithKeyValue: errorKey}}
+		}
+		criticalAlerts := alertsStatus["critical"]
+		servicesCritical := alertsStatus["services_critical"]
+		if criticalAlerts == 0 {
+			return nil
+		}
+		msg := fmt.Sprintf("%d critical alerts across %d services are currently firing - [view alerts](/-/debug/grafana)",
+			criticalAlerts, servicesCritical)
+		key := fmt.Sprintf("active-alerts-alert-%d-critical-%d-services", criticalAlerts, servicesCritical)
+		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg, IsDismissibleWithKeyValue: key}}
 	}
-	criticalAlerts := alertsStatus["critical"]
-	servicesCritical := alertsStatus["services_critical"]
-	if criticalAlerts == 0 {
-		return nil
-	}
-	msg := fmt.Sprintf("%d critical alerts across %d services are currently firing - [view alerts](/-/debug/grafana)",
-		criticalAlerts, servicesCritical)
-	key := fmt.Sprintf("active-alerts-alert-%d-critical-%d-services", criticalAlerts, servicesCritical)
-	return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg, IsDismissibleWithKeyValue: key}}
 }
