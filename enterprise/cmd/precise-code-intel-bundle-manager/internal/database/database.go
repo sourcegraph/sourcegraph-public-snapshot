@@ -222,6 +222,7 @@ func (db *databaseImpl) references(ctx context.Context, r types.RangeData) ([]bu
 	return db.locations(ctx, r.ReferenceResultID)
 }
 
+// locations returns the locations for the given definition or reference identifier.
 func (db *databaseImpl) locations(ctx context.Context, id types.ID) ([]bundles.Location, bool, error) {
 	results, err := db.getResultByID(ctx, id)
 	if err != nil {
@@ -440,8 +441,7 @@ func (db *databaseImpl) getPathsWithPrefix(ctx context.Context, prefix string) (
 	return db.reader.PathsWithPrefix(ctx, prefix)
 }
 
-// getDocumentData fetches and unmarshals the document data or the given path. This method caches
-// document data by a unique key prefixed by the database filename.
+// getDocumentData fetches and unmarshals the document data or the given path.
 func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ types.DocumentData, _ bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "getDocumentData")
 	span.SetTag("filename", db.filename)
@@ -476,7 +476,6 @@ func (db *databaseImpl) getRangeByPosition(ctx context.Context, path string, lin
 }
 
 // getResultByID fetches and unmarshals a definition or reference result by identifier.
-// This method caches result chunk data by a unique key prefixed by the database filename.
 func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]DocumentPathRangeID, error) {
 	resultChunkData, exists, err := db.getResultChunkByResultID(ctx, id)
 	if err != nil {
