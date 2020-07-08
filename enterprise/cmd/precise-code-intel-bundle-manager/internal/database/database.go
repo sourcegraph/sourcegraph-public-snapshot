@@ -121,21 +121,36 @@ func (db *databaseImpl) Ranges(ctx context.Context, path string, startLine, endL
 		return nil, pkgerrors.Wrap(err, "db.getDocumentData")
 	}
 
+	var rangeIDs []types.ID
+	for id, r := range documentData.Ranges {
+		if rangeIntersectsSpan(r, startLine, endLine) {
+			rangeIDs = append(rangeIDs, id)
+		}
+	}
+
+	resultIDSet := map[types.ID]struct{}{}
+	for _, rangeID := range rangeIDs {
+		r := documentData.Ranges[rangeID]
+		resultIDSet[r.DefinitionResultID] = struct{}{}
+		resultIDSet[r.ReferenceResultID] = struct{}{}
+	}
+
+	// Remove empty results
+	delete(resultIDSet, "")
+
+	var resultIDs []types.ID
+	for id := range resultIDSet {
+		resultIDs = append(resultIDs, id)
+	}
+
+	locations, err := db.locations(ctx, resultIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	var codeintelRanges []bundles.CodeIntelligenceRange
-	for _, r := range documentData.Ranges {
-		if !rangeIntersectsSpan(r, startLine, endLine) {
-			continue
-		}
-
-		definitions, _, err := db.definitions(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-
-		references, _, err := db.references(ctx, r)
-		if err != nil {
-			return nil, err
-		}
+	for _, rangeID := range rangeIDs {
+		r := documentData.Ranges[rangeID]
 
 		hoverText, _, err := db.hover(ctx, documentData, r)
 		if err != nil {
@@ -144,19 +159,14 @@ func (db *databaseImpl) Ranges(ctx context.Context, path string, startLine, endL
 
 		codeintelRanges = append(codeintelRanges, bundles.CodeIntelligenceRange{
 			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
-			Definitions: definitions,
-			References:  references,
+			Definitions: locations[r.DefinitionResultID],
+			References:  locations[r.ReferenceResultID],
 			HoverText:   hoverText,
 		})
 	}
 
 	sort.Slice(codeintelRanges, func(i, j int) bool {
-		cmp := codeintelRanges[i].Range.Start.Line - codeintelRanges[j].Range.Start.Line
-		if cmp == 0 {
-			cmp = codeintelRanges[i].Range.Start.Character - codeintelRanges[j].Range.Start.Character
-		}
-
-		return cmp < 0
+		return compareBundleRanges(codeintelRanges[i].Range, codeintelRanges[j].Range)
 	})
 
 	return codeintelRanges, nil
@@ -170,27 +180,19 @@ func (db *databaseImpl) Definitions(ctx context.Context, path string, line, char
 	}
 
 	for _, r := range ranges {
-		locations, exists, err := db.definitions(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
+		if r.DefinitionResultID == "" {
 			continue
 		}
 
-		return locations, nil
+		locations, err := db.locations(ctx, []types.ID{r.DefinitionResultID})
+		if err != nil {
+			return nil, err
+		}
+
+		return locations[r.DefinitionResultID], nil
 	}
 
 	return []bundles.Location{}, nil
-}
-
-// definitions returns the definition locations for the given range.
-func (db *databaseImpl) definitions(ctx context.Context, r types.RangeData) ([]bundles.Location, bool, error) {
-	if r.DefinitionResultID == "" {
-		return nil, false, nil
-	}
-
-	return db.locations(ctx, r.DefinitionResultID)
 }
 
 // References returns the set of locations referencing the symbol at the given position.
@@ -202,39 +204,19 @@ func (db *databaseImpl) References(ctx context.Context, path string, line, chara
 
 	var allLocations []bundles.Location
 	for _, r := range ranges {
-		locations, _, err := db.references(ctx, r)
+		if r.ReferenceResultID == "" {
+			continue
+		}
+
+		locations, err := db.locations(ctx, []types.ID{r.ReferenceResultID})
 		if err != nil {
 			return nil, err
 		}
 
-		allLocations = append(allLocations, locations...)
+		allLocations = append(allLocations, locations[r.ReferenceResultID]...)
 	}
 
 	return allLocations, nil
-}
-
-// references returns the reference locations for the given range.
-func (db *databaseImpl) references(ctx context.Context, r types.RangeData) ([]bundles.Location, bool, error) {
-	if r.ReferenceResultID == "" {
-		return nil, false, nil
-	}
-
-	return db.locations(ctx, r.ReferenceResultID)
-}
-
-// locations returns the locations for the given definition or reference identifier.
-func (db *databaseImpl) locations(ctx context.Context, id types.ID) ([]bundles.Location, bool, error) {
-	results, err := db.getResultByID(ctx, id)
-	if err != nil {
-		return nil, false, pkgerrors.Wrap(err, "db.getResultByID")
-	}
-
-	locations, err := db.convertRangesToLocations(ctx, results)
-	if err != nil {
-		return nil, false, pkgerrors.Wrap(err, "db.convertRangesToLocations")
-	}
-
-	return locations, true, nil
 }
 
 // Hover returns the hover text of the symbol at the given position.
@@ -257,25 +239,6 @@ func (db *databaseImpl) Hover(ctx context.Context, path string, line, character 
 	}
 
 	return "", bundles.Range{}, false, nil
-}
-
-// hover returns the hover text locations for the given range.
-func (db *databaseImpl) hover(ctx context.Context, documentData types.DocumentData, r types.RangeData) (string, bool, error) {
-	if r.HoverResultID == "" {
-		return "", false, nil
-	}
-
-	text, exists := documentData.HoverResults[r.HoverResultID]
-	if !exists {
-		return "", false, ErrMalformedBundle{
-			Filename: db.filename,
-			Name:     "hoverResult",
-			Key:      string(r.HoverResultID),
-			// TODO(efritz) - add document context
-		}
-	}
-
-	return text, true, nil
 }
 
 // Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
@@ -426,6 +389,25 @@ func (db *databaseImpl) PackageInformation(ctx context.Context, path, packageInf
 	return bundles.PackageInformationData{}, false, nil
 }
 
+// hover returns the hover text locations for the given range.
+func (db *databaseImpl) hover(ctx context.Context, documentData types.DocumentData, r types.RangeData) (string, bool, error) {
+	if r.HoverResultID == "" {
+		return "", false, nil
+	}
+
+	text, exists := documentData.HoverResults[r.HoverResultID]
+	if !exists {
+		return "", false, ErrMalformedBundle{
+			Filename: db.filename,
+			Name:     "hoverResult",
+			Key:      string(r.HoverResultID),
+			// TODO(efritz) - add document context
+		}
+	}
+
+	return text, true, nil
+}
+
 func (db *databaseImpl) getPathsWithPrefix(ctx context.Context, prefix string) (_ []string, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "getPathsWithPrefix")
 	span.SetTag("filename", db.filename)
@@ -475,49 +457,83 @@ func (db *databaseImpl) getRangeByPosition(ctx context.Context, path string, lin
 	return documentData, findRanges(documentData.Ranges, line, character), true, nil
 }
 
-// getResultByID fetches and unmarshals a definition or reference result by identifier.
-func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]DocumentPathRangeID, error) {
-	resultChunkData, exists, err := db.getResultChunkByResultID(ctx, id)
+// locations returns the locations for the given definition or reference identifiers.
+func (db *databaseImpl) locations(ctx context.Context, id []types.ID) (map[types.ID][]bundles.Location, error) {
+	results, err := db.getResultsByIDs(ctx, id)
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "db.getResultChunkByResultID")
-	}
-	if !exists {
-		return nil, ErrMalformedBundle{
-			Filename: db.filename,
-			Name:     "result chunk",
-			Key:      string(id),
-		}
+		return nil, pkgerrors.Wrap(err, "db.getResultByID")
 	}
 
-	documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
-	if !exists {
-		return nil, ErrMalformedBundle{
-			Filename: db.filename,
-			Name:     "result",
-			Key:      string(id),
-			// TODO(efritz) - add result chunk context
-		}
+	locationWrapper, err := db.convertRangesToLocations(ctx, results)
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "db.convertRangesToLocations")
 	}
 
-	var resultData []DocumentPathRangeID
-	for _, documentIDRangeID := range documentIDRangeIDs {
-		path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]
-		if !ok {
+	return locationWrapper, nil
+}
+
+// getResultsByIDs fetches and unmarshals a definition or reference results for the given identifiers.
+func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (map[types.ID][]DocumentPathRangeID, error) {
+	xids := map[int]struct{}{}
+	for _, id := range ids {
+		xids[db.resultChunkID(id)] = struct{}{}
+	}
+
+	resultChunks := map[int]types.ResultChunkData{}
+	for index := range xids {
+		resultChunkData, exists, err := db.getResultChunkByID(ctx, index)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.getResultChunkByID")
+		}
+		if !exists {
 			return nil, ErrMalformedBundle{
 				Filename: db.filename,
-				Name:     "documentPath",
-				Key:      string(documentIDRangeID.DocumentID),
+				Name:     "result chunk",
+				Key:      fmt.Sprintf("%d", index),
+			}
+		}
+
+		resultChunks[index] = resultChunkData
+	}
+
+	data := map[types.ID][]DocumentPathRangeID{}
+
+	for _, id := range ids {
+		index := db.resultChunkID(id)
+		resultChunkData := resultChunks[index]
+
+		documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
+		if !exists {
+			return nil, ErrMalformedBundle{
+				Filename: db.filename,
+				Name:     "result",
+				Key:      string(id),
 				// TODO(efritz) - add result chunk context
 			}
 		}
 
-		resultData = append(resultData, DocumentPathRangeID{
-			Path:    path,
-			RangeID: documentIDRangeID.RangeID,
-		})
+		var resultData []DocumentPathRangeID
+		for _, documentIDRangeID := range documentIDRangeIDs {
+			path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]
+			if !ok {
+				return nil, ErrMalformedBundle{
+					Filename: db.filename,
+					Name:     "documentPath",
+					Key:      string(documentIDRangeID.DocumentID),
+					// TODO(efritz) - add result chunk context
+				}
+			}
+
+			resultData = append(resultData, DocumentPathRangeID{
+				Path:    path,
+				RangeID: documentIDRangeID.RangeID,
+			})
+		}
+
+		data[id] = resultData
 	}
 
-	return resultData, nil
+	return data, nil
 }
 
 // getResultChunkByResultID fetches and unmarshals the result chunk data containing the given identifier.
@@ -550,26 +566,21 @@ func (db *databaseImpl) resultChunkID(id types.ID) int {
 	return types.HashKey(id, db.numResultChunks)
 }
 
-// convertRangesToLocations converts pairs of document paths and range identifiers
-// to a list of locations.
-func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData []DocumentPathRangeID) ([]bundles.Location, error) {
+// convertRangesToLocations converts pairs of document paths and range identifiers to a list of locations.
+func (db *databaseImpl) convertRangesToLocations(ctx context.Context, pairs map[types.ID][]DocumentPathRangeID) (map[types.ID][]bundles.Location, error) {
 	// We potentially have to open a lot of documents. Reduce possible pressure on the
 	// cache by ordering our queries so we only have to read and unmarshal each document
 	// once.
 
 	groupedResults := map[string][]types.ID{}
-	for _, documentPathRangeID := range resultData {
-		groupedResults[documentPathRangeID.Path] = append(groupedResults[documentPathRangeID.Path], documentPathRangeID.RangeID)
+	for _, resultData := range pairs {
+		for _, documentPathRangeID := range resultData {
+			groupedResults[documentPathRangeID.Path] = append(groupedResults[documentPathRangeID.Path], documentPathRangeID.RangeID)
+		}
 	}
 
-	paths := []string{}
+	documents := map[string]types.DocumentData{}
 	for path := range groupedResults {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
-
-	var locations []bundles.Location
-	for _, path := range paths {
 		documentData, exists, err := db.getDocumentData(ctx, path)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "db.getDocumentData")
@@ -583,8 +594,17 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData
 			}
 		}
 
-		for _, rangeID := range groupedResults[path] {
-			r, exists := documentData.Ranges[rangeID]
+		documents[path] = documentData
+	}
+
+	locationsByID := map[types.ID][]bundles.Location{}
+	for id, resultData := range pairs {
+		var locations []bundles.Location
+		for _, documentPathRangeID := range resultData {
+			path := documentPathRangeID.Path
+			rangeID := documentPathRangeID.RangeID
+
+			r, exists := documents[path].Ranges[rangeID]
 			if !exists {
 				return nil, ErrMalformedBundle{
 					Filename: db.filename,
@@ -599,7 +619,27 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData
 				Range: newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			})
 		}
+
+		sort.Slice(locations, func(i, j int) bool {
+			if locations[i].Path == locations[j].Path {
+				return compareBundleRanges(locations[i].Range, locations[j].Range)
+			}
+
+			return locations[i].Path < locations[j].Path
+		})
+
+		locationsByID[id] = locations
 	}
 
-	return locations, nil
+	return locationsByID, nil
+}
+
+// compareBundleRanges returns true if r1's start position occurs before r2's start position.
+func compareBundleRanges(r1, r2 bundles.Range) bool {
+	cmp := r1.Start.Line - r2.Start.Line
+	if cmp == 0 {
+		cmp = r1.Start.Character - r2.Start.Character
+	}
+
+	return cmp < 0
 }
