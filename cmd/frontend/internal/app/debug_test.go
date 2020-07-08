@@ -12,7 +12,6 @@ func Test_prometheusValidator(t *testing.T) {
 	// test some simple problem cases
 	type args struct {
 		prometheusURL string
-		deployType    string
 		config        conf.Unified
 	}
 	tests := []struct {
@@ -66,7 +65,7 @@ func Test_prometheusValidator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := newPrometheusValidator(tt.args.prometheusURL, tt.args.deployType)
+			fn := newPrometheusValidator(tt.args.prometheusURL)
 			problems := fn(tt.args.config)
 			if tt.wantProblemSubstring == "" {
 				if len(problems) > 0 {
