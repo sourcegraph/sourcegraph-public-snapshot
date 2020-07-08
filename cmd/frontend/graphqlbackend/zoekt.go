@@ -593,7 +593,7 @@ type indexedRepoRevs struct {
 
 	// NotHEADOnlySearch is true if we are searching a branch other than HEAD.
 	//
-	// This function can be removed once structural search supports searching
+	// This option can be removed once structural search supports searching
 	// more than HEAD.
 	NotHEADOnlySearch bool
 }
