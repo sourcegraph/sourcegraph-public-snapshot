@@ -241,7 +241,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'Browse recent diffs for code changes in the community:',
+            title: 'Browse diffs for recent code changes in the community:',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">type:</span>diff{' '}
