@@ -2,17 +2,10 @@ import { createDriverForTest } from '../../../shared/src/testing/driver'
 import MockDate from 'mockdate'
 import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
-import {
-    IQuery,
-    IOrgConnection,
-    IUserEmail,
-    IOrg,
-    IMutation,
-    StatusMessage,
-    IAlert,
-} from '../../../shared/src/graphql/schema'
+import { IQuery, IOrgConnection, IUserEmail, IOrg, IMutation } from '../../../shared/src/graphql/schema'
 import { describeIntegration } from './helpers'
 import { retry } from '../../../shared/src/testing/utils'
+import { commonGraphQlResults, testUserID, settingsID } from './graphQlResults'
 
 describeIntegration('Settings', ({ initGeneration, describe }) => {
     initGeneration(async () => {
@@ -38,9 +31,8 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
 
     describe('User settings page', ({ it }) => {
         it('updates user settings', async ({ driver, sourcegraphBaseUrl, overrideGraphQL, waitForGraphQLRequest }) => {
-            const testUserID = 'TestUserID'
-            const settingsID = 123
             overrideGraphQL({
+                ...commonGraphQlResults,
                 SettingsCascade: {
                     data: {
                         settingsSubject: {
@@ -89,144 +81,6 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
                             permissionsInfo: null,
                         },
                     } as IQuery,
-                    errors: undefined,
-                },
-                ViewerSettings: {
-                    data: {
-                        viewerSettings: {
-                            subjects: [
-                                {
-                                    __typename: 'DefaultSettings',
-                                    latestSettings: {
-                                        id: 0,
-                                        contents: JSON.stringify({}),
-                                    },
-                                    settingsURL: null,
-                                    viewerCanAdminister: false,
-                                },
-                                {
-                                    __typename: 'Site',
-                                    id: 'U2l0ZToic2l0ZSI=',
-                                    siteID: 'e00d94ff-adc1-432c-ab53-5181c664b1ed',
-                                    latestSettings: {
-                                        id: 470,
-                                        contents: JSON.stringify({}),
-                                    },
-                                    settingsURL: '/site-admin/global-settings',
-                                    viewerCanAdminister: true,
-                                },
-                                {
-                                    __typename: 'User',
-                                    id: testUserID,
-                                    username: 'test',
-                                    displayName: null,
-                                    latestSettings: {
-                                        id: settingsID,
-                                        contents: JSON.stringify({}),
-                                    },
-                                    settingsURL: '/users/test/settings',
-                                    viewerCanAdminister: true,
-                                },
-                            ],
-                            final: JSON.stringify({}),
-                        },
-                    } as IQuery,
-                    errors: undefined,
-                },
-                CurrentAuthState: {
-                    data: {
-                        currentUser: {
-                            __typename: 'User',
-                            id: testUserID,
-                            databaseID: 1,
-                            username: 'test',
-                            avatarURL: null,
-                            email: 'felix@sourcegraph.com',
-                            displayName: null,
-                            siteAdmin: true,
-                            tags: [] as string[],
-                            url: '/users/test',
-                            settingsURL: '/users/test/settings',
-                            organizations: { nodes: [] as IOrg[] },
-                            session: { canSignOut: true },
-                            viewerCanAdminister: true,
-                        },
-                    } as IQuery,
-                    errors: undefined,
-                },
-                StatusMessages: {
-                    data: {
-                        statusMessages: [] as StatusMessage[],
-                    } as IQuery,
-                    errors: undefined,
-                },
-                ActivationStatus: {
-                    data: {
-                        externalServices: { totalCount: 3 },
-                        repositories: { totalCount: 9 },
-                        viewerSettings: {
-                            final: JSON.stringify({}),
-                        },
-                        users: { totalCount: 2 },
-                        currentUser: {
-                            usageStatistics: {
-                                searchQueries: 171,
-                                findReferencesActions: 14,
-                                codeIntelligenceActions: 670,
-                            },
-                        },
-                    } as IQuery,
-                    errors: undefined,
-                },
-                SiteFlags: {
-                    data: {
-                        site: {
-                            needsRepositoryConfiguration: false,
-                            freeUsersExceeded: false,
-                            alerts: [] as IAlert[],
-                            authProviders: {
-                                nodes: [
-                                    {
-                                        serviceType: 'builtin',
-                                        serviceID: '',
-                                        clientID: '',
-                                        displayName: 'Builtin username-password authentication',
-                                        isBuiltin: true,
-                                        authenticationURL: null,
-                                    },
-                                ],
-                            },
-                            disableBuiltInSearches: false,
-                            sendsEmailVerificationEmails: true,
-                            updateCheck: {
-                                pending: false,
-                                checkedAt: '2020-07-07T12:31:16+02:00',
-                                errorMessage: null,
-                                updateVersionAvailable: null,
-                            },
-                            productSubscription: {
-                                license: { expiresAt: '3021-05-28T16:06:40Z' },
-                                noLicenseWarningUserCount: null,
-                            },
-                            productVersion: '0.0.0+dev',
-                        },
-                    } as IQuery,
-                    errors: undefined,
-                },
-                logEvent: {
-                    data: {
-                        logEvent: {
-                            alwaysNil: null,
-                        },
-                    } as IMutation,
-                    errors: undefined,
-                },
-                logUserEvent: {
-                    data: {
-                        logUserEvent: {
-                            alwaysNil: null,
-                        },
-                    } as IMutation,
                     errors: undefined,
                 },
             })

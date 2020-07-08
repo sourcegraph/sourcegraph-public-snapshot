@@ -704,7 +704,6 @@ export function addExternalService(
 }
 
 const genericSearchResultInterfaceFields = gql`
-  __typename
   label {
       html
   }

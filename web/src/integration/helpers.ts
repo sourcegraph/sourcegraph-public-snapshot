@@ -12,6 +12,8 @@ import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
 import { first, timeoutWith } from 'rxjs/operators'
 import * as path from 'path'
 import * as util from 'util'
+import { commonGraphQlResults } from './graphQlResults'
+import * as prettier from 'prettier'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -29,7 +31,7 @@ type IntegrationTestInitGeneration = () => Promise<{
     subscriptions?: Subscription
 }>
 
-type GraphQLOverrides = Record<string, SuccessGraphQLResult<IQuery | IMutation> | ErrorGraphQLResult>
+export type GraphQLOverrides = Record<string, SuccessGraphQLResult<IQuery | IMutation> | ErrorGraphQLResult>
 
 interface TestContext {
     sourcegraphBaseUrl: string
@@ -153,15 +155,17 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 const errors = new Subject<never>()
 
                 // GraphQL requests are not handled by HARs, but configured per-test.
-                let graphQlOverrides: GraphQLOverrides | undefined
+                let graphQlOverrides: GraphQLOverrides = commonGraphQlResults
                 const graphQlRequests = new Subject<{ queryName: string; variables: unknown }>()
                 server.post(new URL('/.api/graphql', sourcegraphBaseUrl).href).intercept((request, response) => {
                     const queryName = new URL(request.absoluteUrl).search.slice(1)
                     const { variables, query } = request.jsonBody() as { query: string; variables: string }
                     graphQlRequests.next({ queryName, variables })
                     if (!graphQlOverrides || !Object.prototype.hasOwnProperty.call(graphQlOverrides, queryName)) {
+                        const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
+                        const formattedVariables = util.inspect(variables)
                         const error = new Error(
-                            `GraphQL query "${queryName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${queryName}" query:\n${query}`
+                            `GraphQL query "${queryName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${queryName}" query:\n${formattedVariables} ⤵️\n${formattedQuery}`
                         )
                         // Make test fail
                         errors.error(error)

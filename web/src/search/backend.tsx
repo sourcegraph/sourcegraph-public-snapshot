@@ -13,7 +13,6 @@ import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 
 // TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
 const genericSearchResultInterfaceFields = `
-    __typename
     label {
         html
     }
