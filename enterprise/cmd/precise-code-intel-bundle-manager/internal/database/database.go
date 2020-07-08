@@ -405,7 +405,7 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, i
 }
 
 // PackageInformation looks up package information data by identifier.
-func (db *databaseImpl) PackageInformation(ctx context.Context, path string, packageInformationID string) (bundles.PackageInformationData, bool, error) {
+func (db *databaseImpl) PackageInformation(ctx context.Context, path, packageInformationID string) (bundles.PackageInformationData, bool, error) {
 	documentData, exists, err := db.getDocumentData(ctx, path)
 	if err != nil {
 		return bundles.PackageInformationData{}, false, pkgerrors.Wrap(err, "db.getDocumentData")
@@ -571,7 +571,7 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData
 			return nil, ErrMalformedBundle{
 				Filename: db.filename,
 				Name:     "document",
-				Key:      string(path),
+				Key:      path,
 			}
 		}
 
