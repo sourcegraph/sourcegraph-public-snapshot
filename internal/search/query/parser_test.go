@@ -3,6 +3,7 @@ package query
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -74,9 +75,9 @@ func TestParseParameterList(t *testing.T) {
 			WantLabels: Regexp,
 		},
 		{
-			Name:       "Interpret escaped whitespace",
+			Name:       "Preserve escaped whitespace",
 			Input:      `a\ pattern`,
-			Want:       `{"value":"a pattern","negated":false}`,
+			Want:       `{"value":"a\\ pattern","negated":false}`,
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
 			WantLabels: Regexp,
 		},
@@ -98,7 +99,7 @@ func TestParseParameterList(t *testing.T) {
 			parser := &parser{buf: []byte(tt.Input)}
 			result, err := parser.parseParameterList()
 			if err != nil {
-				t.Fatal("Unexpected error")
+				t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
 			}
 			resultNode := result[0]
 			got, _ := json.Marshal(resultNode)
@@ -362,7 +363,7 @@ func TestParse(t *testing.T) {
 			Name:          "Paren reduction over operators",
 			Input:         "(((a b c))) and d",
 			WantGrammar:   Spec(`(and (concat "a" "b" "c") "d")`),
-			WantHeuristic: Diff(`(and (concat "(((a" "b" "c)))") "d")`),
+			WantHeuristic: Diff(`(and "(((a b c)))" "d")`),
 		},
 		// Partition parameters and concatenated patterns.
 		{
@@ -373,12 +374,17 @@ func TestParse(t *testing.T) {
 		{
 			Input:         "(a b c) and (d e f) and (g h i)",
 			WantGrammar:   Spec(`(and (concat "a" "b" "c") (concat "d" "e" "f") (concat "g" "h" "i"))`),
-			WantHeuristic: Diff(`(and (concat "(a" "b" "c)") (concat "(d" "e" "f)") (concat "(g" "h" "i)"))`),
+			WantHeuristic: `(and "(a b c)" "(d e f)" "(g h i)")`,
 		},
 		{
 			Input:         "(a) repo:foo (b)",
 			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "b"))`),
 			WantHeuristic: Diff(`(and "repo:foo" (concat "(a)" "(b)"))`),
+		},
+		{
+			Input:         "repo:foo func( or func(.*)",
+			WantGrammar:   Spec(`expected operand at 15`),
+			WantHeuristic: Diff(`(and "repo:foo" (or "func(" "func(.*)"))`),
 		},
 		{
 			Input:         "repo:foo main { and bar {",
@@ -387,6 +393,11 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         "a b (repo:foo c d)",
+			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "a b (c d repo:foo)",
 			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
 			WantHeuristic: Same,
 		},
@@ -482,37 +493,37 @@ func TestParse(t *testing.T) {
 			Name:          "nested paren reduction with whitespace",
 			Input:         "(((a b c))) d",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(((a" "b" "c)))" "d")`),
+			WantHeuristic: Diff(`(concat "(((a b c)))" "d")`),
 		},
 		{
 			Name:          "left paren reduction with whitespace",
 			Input:         "(a b) c d",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "c" "d")`),
+			WantHeuristic: Diff(`(concat "(a b)" "c" "d")`),
 		},
 		{
 			Name:          "right paren reduction with whitespace",
 			Input:         "a b (c d)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "a" "b" "(c" "d)")`),
+			WantHeuristic: Diff(`(concat "a" "b" "(c d)")`),
 		},
 		{
 			Name:          "grouped paren reduction with whitespace",
 			Input:         "(a b) (c d)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "(c" "d)")`),
+			WantHeuristic: Diff(`(concat "(a b)" "(c d)")`),
 		},
 		{
 			Name:          "multiple grouped paren reduction with whitespace",
 			Input:         "(a b) (c d) (e f)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d" "e" "f")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "(c" "d)" "(e" "f)")`),
+			WantHeuristic: Diff(`(concat "(a b)" "(c d)" "(e f)")`),
 		},
 		{
 			Name:          "interpolated grouped paren reduction",
 			Input:         "(a b) c d (e f)",
 			WantGrammar:   Spec(`(concat "a" "b" "c" "d" "e" "f")`),
-			WantHeuristic: Diff(`(concat "(a" "b)" "c" "d" "(e" "f)")`),
+			WantHeuristic: Diff(`(concat "(a b)" "c" "d" "(e f)")`),
 		},
 		{
 			Name:          "mixed interpolated grouped paren reduction",
@@ -534,10 +545,16 @@ func TestParse(t *testing.T) {
 			WantHeuristic: Diff(`"foo()bar"`),
 		},
 		{
+			Name:          "paren inside contiguous string",
+			Input:         "(x and regex(s)?)",
+			WantGrammar:   Spec(`(and "x" (concat "regex" "s" "?"))`),
+			WantHeuristic: Diff(`(and "x" "regex(s)?")`),
+		},
+		{
 			Name:          "paren containing whitespace inside contiguous string",
 			Input:         "foo(   )bar",
-			WantGrammar:   Diff(`(concat "foo" "bar")`),
-			WantHeuristic: Spec(`(concat "foo(" ")bar")`),
+			WantGrammar:   Spec(`(concat "foo" "bar")`),
+			WantHeuristic: Diff(`"foo(   )bar"`),
 		},
 		{
 			Name:          "nested empty paren",
@@ -549,7 +566,7 @@ func TestParse(t *testing.T) {
 			Name:          "interpolated nested empty paren",
 			Input:         "(()x(  )(())())",
 			WantGrammar:   Spec(`"x"`),
-			WantHeuristic: Diff(`(concat "(()x(" ")(())())")`),
+			WantHeuristic: Diff(`"(()x(  )(())())"`),
 		},
 		{
 			Name:          "empty paren on or",
@@ -564,16 +581,10 @@ func TestParse(t *testing.T) {
 			WantHeuristic: Diff(`(or "()" "(x)")`),
 		},
 		{
-			Name:          "empty left paren on or",
-			Input:         "() or (x)",
-			WantGrammar:   Spec(`"x"`),
-			WantHeuristic: Diff(`(or "()" "(x)")`),
-		},
-		{
 			Name:          "complex interpolated nested empty paren",
 			Input:         "(()x(  )(y or () or (f))())",
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
-			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
+			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "(f)") "()")`),
 		},
 		{
 			Name:          "disable parens as patterns heuristic if containing recognized operator",
@@ -594,13 +605,13 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `\ `,
-			WantGrammar:   `" "`,
+			WantGrammar:   `"\\ "`,
 			WantHeuristic: Same,
 		},
 		{
 			Input:         `\  \ `,
-			WantGrammar:   Spec(`(concat " " " ")`),
-			WantHeuristic: Diff(`(concat " " " ")`),
+			WantGrammar:   Spec(`(concat "\\ " "\\ ")`),
+			WantHeuristic: Diff(`(concat "\\ " "\\ ")`),
 		},
 		// Dangling parentheses heuristic.
 		{
@@ -686,7 +697,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			Input:         `repo:foo\ bar \:\\`,
-			WantGrammar:   `(and "repo:foo bar" ":\\")`,
+			WantGrammar:   `(and "repo:foo\\ bar" "\\:\\\\")`,
 			WantHeuristic: Same,
 		},
 	}
