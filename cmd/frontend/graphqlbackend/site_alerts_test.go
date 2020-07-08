@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func Test_determineOutOfDateAlert(t *testing.T) {
@@ -133,9 +134,8 @@ func Test_activeAlertsAlert(t *testing.T) {
 				prometheusURL: " http://prometheus:9090",
 			},
 			want: []*Alert{{
-				TypeValue:                 AlertTypeWarning,
-				MessageValue:              "Prometheus misconfigured",
-				IsDismissibleWithKeyValue: "active-alerts-alert-error",
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "Prometheus misconfigured",
 			}},
 		},
 		{
@@ -145,10 +145,22 @@ func Test_activeAlertsAlert(t *testing.T) {
 				prometheusURL: "http://no-prometheus:9090",
 			},
 			want: []*Alert{{
-				TypeValue:                 AlertTypeWarning,
-				MessageValue:              "Unable to fetch alerts status",
-				IsDismissibleWithKeyValue: "active-alerts-alert-error",
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "Unable to fetch alerts status",
 			}},
+		},
+		{
+			name: "no alerts if alerts are disabled",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					ViewerFinalSettings: &schema.Settings{
+						AlertsHideObservabilitySiteAlerts: true,
+					},
+				},
+				prometheusURL: "http://no-prometheus:9090",
+			},
+			want: nil,
 		},
 	}
 	for _, tt := range tests {

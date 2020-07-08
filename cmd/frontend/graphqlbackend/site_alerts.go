@@ -275,20 +275,20 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 // activeAlertsAlert directs admins to check Grafana if critical alerts are firing
 func activeAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
 	return func(args AlertFuncArgs) []*Alert {
-		if !args.IsSiteAdmin || len(prometheusURL) == 0 {
+		observabilitySiteAlertsDisabled := (args.ViewerFinalSettings != nil && args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts)
+		if !args.IsSiteAdmin || len(prometheusURL) == 0 || observabilitySiteAlertsDisabled {
 			return nil
 		}
 
 		// set up request to fetch status from prom-wrapper
-		errorKey := "active-alerts-alert-error"
 		promURL, err := url.Parse(prometheusURL)
 		if err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err)}}
 		}
 		promURL.Path = "/prom-wrapper/alerts-status"
 		req, err := http.NewRequest("GET", promURL.String(), nil)
 		if err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err), IsDismissibleWithKeyValue: errorKey}}
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Prometheus misconfigured: %s", err)}}
 		}
 
 		// use a short timeout to avoid having this block problems from loading
@@ -296,16 +296,16 @@ func activeAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
 		defer cancel()
 		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 		if err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: %s", err), IsDismissibleWithKeyValue: errorKey}}
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: %s", err)}}
 		}
 		if resp.StatusCode != 200 {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: status %d", resp.StatusCode), IsDismissibleWithKeyValue: errorKey}}
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Unable to fetch alerts status: status %d", resp.StatusCode)}}
 		}
 
 		var alertsStatus map[string]int
 		defer resp.Body.Close()
 		if err := json.NewDecoder(resp.Body).Decode(&alertsStatus); err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error(), IsDismissibleWithKeyValue: errorKey}}
+			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: err.Error()}}
 		}
 		criticalAlerts := alertsStatus["critical"]
 		servicesCritical := alertsStatus["services_critical"]
