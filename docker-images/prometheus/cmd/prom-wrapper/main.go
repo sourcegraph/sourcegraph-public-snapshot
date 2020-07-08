@@ -86,6 +86,7 @@ func main() {
 			router.PathPrefix("/prom-wrapper/config-subscriber").Handler(subscriber.Handler())
 		}
 
+		// serve alerts summary status
 		router.PathPrefix("/prom-wrapper/alerts-status").Handler(NewAlertsStatusReporter(log, alertmanager).Handler())
 
 		// serve alertmanager via reverse proxy

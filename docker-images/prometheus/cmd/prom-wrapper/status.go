@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/alertmanager/api/v2/client/alert"
 )
 
+// AlertsStatusReporter summarizes alert activity from Alertmanager
 type AlertsStatusReporter struct {
 	log          log15.Logger
 	alertmanager *amclient.Alertmanager
@@ -48,6 +49,7 @@ func (s *AlertsStatusReporter) Handler() http.Handler {
 				servicesWithCriticalAlerts[svc] = struct{}{}
 			}
 		}
+		// summarize alerts status
 		b, err := json.Marshal(map[string]int{
 			"critical":          criticalAlerts,
 			"services_critical": len(servicesWithCriticalAlerts),
