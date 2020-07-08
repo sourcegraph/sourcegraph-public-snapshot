@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
     - PagerDuty notifiers: `severity` and `apiUrl`
     - Webhook notifiers: `bearerToken`
   - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
+- Recently firing critical alerts are now displayed to admins in site alerts.
 
 ### Changed
 
