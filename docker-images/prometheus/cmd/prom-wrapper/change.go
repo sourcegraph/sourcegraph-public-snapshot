@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/inconshreveable/log15"
+	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/common/model"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -14,6 +15,7 @@ import (
 
 type ChangeContext struct {
 	AMConfig *amconfig.Config // refer to https://prometheus.io/docs/alerting/latest/configuration/
+	AMClient *amclient.Alertmanager
 }
 
 // ChangeResult indicates output from a Change
@@ -89,5 +91,10 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 	}
 	change.AMConfig.Global.SMTPRequireTLS = !email.SMTP.DisableTLS
 
+	return
+}
+
+func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
+	// TODO
 	return
 }

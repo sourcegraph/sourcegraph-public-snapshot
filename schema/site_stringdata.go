@@ -657,6 +657,14 @@ const SiteSchemaJSON = `{
         }
       }
     },
+    "observability.silenceAlerts": {
+      "description": "Silence individual Sourcegraph alerts by name.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "examples": ["critical_some-service_some_alert_name"]
+      }
+    },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
