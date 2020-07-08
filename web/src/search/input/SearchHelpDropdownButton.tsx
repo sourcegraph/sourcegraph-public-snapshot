@@ -37,7 +37,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     <li>
                         <span className="text-muted small">Exact:</span>{' '}
                         <code>
-                            "<strong>fs.open(f)</strong>"
+                            <strong>fs.open(f)</strong>
                         </code>
                     </li>
                 </ul>
