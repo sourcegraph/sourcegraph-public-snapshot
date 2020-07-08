@@ -193,19 +193,19 @@ export const python2To3Metadata: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hoo', codehost: CodeHosts.GITHUB },
     ],
-    description: `This repository group contains popular Python repositories with the most GitHub stars.
-                        The search examples will help you find Python 2 code that requires refactoring and
+    description: `Search popular Python repositories with the most GitHub stars.
+                        The examples below help you find Python 2 code that requires refactoring and
                         review examples of the new Python 3 syntax.`,
     examples: [
-        {
-            title: 'Implicit relative imports in Python 2 and absolute imports:',
-            description: `A relative import specifies the package to be imported relative to the current location, where the import statement is.
-            An absolute import specifies the resource to be imported using its full path from the project's root folder. The search below returns all implicit
-            relative imports (without leading dots) in Python 2 and absolute imports in both Python 2 and Python 3.`,
-            exampleQuery: <>/from [^.].+ import \w+/</>,
-            rawQuery: '/from [^.].+ import \\w+/',
-            patternType: SearchPatternType.regexp,
-        },
+//         {
+//             title: 'Implicit relative imports in Python 2 and absolute imports:',
+//             description: `A relative import specifies the resource to be imported relative to the current location, where the import statement is.
+//             An absolute import specifies the resource to be imported using its full path from the project's root folder. The search below returns all implicit
+//             relative imports (without leading dots) in Python 2 and absolute imports in both Python 2 and Python 3.`,
+//             exampleQuery: <>/from [^.].+ import \w+/</>,
+//             rawQuery: '/from [^.].+ import \\w+/',
+//             patternType: SearchPatternType.regexp,
+//         },
         {
             title: 'Python 3 explicit relative imports:',
             description: `Python 3 deprecates implicit relative reports. It requires explicitly specifying the location of the package relative to the current folder. The
@@ -231,8 +231,9 @@ export const python2To3Metadata: RepogroupMetadata = {
         },
         {
             title: 'Python 2 float division:',
-            description: `In Python 2, the division operator / rounds down the result to the nearest integer. To get a result with a floating point number, you need to convert
-            the numbers to float and then perform the division.`,
+            description: `In Python 2, the division operator / rounds down the result to the nearest integer. To get a result with a floating point number,
+            you need to convert the numbers to float and then perform the division. Python 3 no longer needs an explicit conversion to float by using 2 different
+            operators: / for float division and // for integer division.`,
             exampleQuery: <>float(:[numerator]) / float(:[denominator])</>,
             rawQuery: 'float(:[numerator]) / float(:[denominator])',
             patternType: SearchPatternType.structural,

@@ -193,7 +193,7 @@ export const kubernetes: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hoo', codehost: CodeHosts.GITHUB },
     ],
-    description: 'This repository group contains popular Kubernetes repositories with the most GitHub stars. Explore these repositories with interesting search examples.',
+    description: 'Search the trending and most starred Kubernetes repositories on GitHub. Explore with search examples below.',
     examples: [
         {
             title:

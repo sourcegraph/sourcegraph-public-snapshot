@@ -193,7 +193,7 @@ export const golang: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hoo', codehost: CodeHosts.GITHUB },
     ],
-    description: 'This repository group contains popular Go repositories with the most GitHub stars. Explore these repositories with interesting search examples.',
+    description: 'Search the most starred Go repositories on GitHub. Explore with search examples below.',
     examples: [
         {
             title: 'Search for usages of the Retry-After header in non-vendor Go files:',
