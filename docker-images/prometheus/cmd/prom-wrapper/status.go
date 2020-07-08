@@ -32,12 +32,17 @@ func (s *AlertsStatusReporter) Handler() http.Handler {
 			Inhibited: &f,
 			Context:   req.Context(),
 		})
+		if err != nil {
+			w.WriteHeader(500)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
 		var criticalAlerts, warningAlerts, silencedAlerts int
 		servicesWithCriticalAlerts := map[string]struct{}{}
 		for _, a := range results.GetPayload() {
 			if len(a.Status.SilencedBy) > 0 {
 				silencedAlerts++
-				return
+				continue
 			}
 			level := a.Labels["level"]
 			switch level {
