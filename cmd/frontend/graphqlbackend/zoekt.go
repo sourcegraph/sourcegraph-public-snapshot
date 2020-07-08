@@ -73,16 +73,6 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 	}
 
-	// We do not yet support searching non-HEAD for fileRequest (structural
-	// search).
-	if typ == fileRequest {
-		for _, r := range args.Repos {
-			if !r.OnlyHEAD() {
-				return nil, fmt.Errorf("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906: %s", r.String())
-			}
-		}
-	}
-
 	// If Zoekt is disabled just fallback to Unindexed.
 	if !args.Zoekt.Enabled() {
 		if indexParam == Only {
@@ -132,6 +122,12 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 	// Split based on indexed vs unindexed
 	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+
+	// We do not yet support searching non-HEAD for fileRequest (structural
+	// search).
+	if typ == fileRequest && indexed.NotHEADOnlySearch {
+		return nil, errors.New("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906")
+	}
 
 	return &indexedSearchRequest{
 		args: args,
@@ -594,6 +590,12 @@ type indexedRepoRevs struct {
 	//
 	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
 	repoBranches map[string][]string
+
+	// NotHEADOnlySearch is true if we are searching a branch other than HEAD.
+	//
+	// This function can be removed once structural search supports searching
+	// more than HEAD.
+	NotHEADOnlySearch bool
 }
 
 // Add will add reporev and repo to the list of repository and branches to
@@ -612,6 +614,10 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return false
 	}
 
+	// notHEADOnlySearch is set to true if we search any branch other than
+	// repo.Branches[0]
+	notHEADOnlySearch := false
+
 	branches := make([]string, 0, len(reporev.Revs))
 	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
@@ -620,14 +626,16 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 			continue
 		}
 
-		for _, branch := range repo.Branches {
+		for i, branch := range repo.Branches {
 			if branch.Name == rev.RevSpec {
 				branches = append(branches, branch.Name)
+				notHEADOnlySearch = notHEADOnlySearch || i > 0
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 				branches = append(branches, branch.Name)
+				notHEADOnlySearch = notHEADOnlySearch || i > 0
 				break
 			}
 		}
@@ -636,12 +644,15 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 	// Only search zoekt if we can search all revisions on it. TODO see if
 	// anything breaks if we do split out the search. Educated guess: the
 	// lists of repos in searchResultsCommon may not like it.
+	//
+	// NOTE: notHEADOnlySearch depends on this assumptions
 	if len(branches) != len(reporev.Revs) {
 		return false
 	}
 
 	rb.repoRevs[string(reporev.Repo.Name)] = reporev
 	rb.repoBranches[string(reporev.Repo.Name)] = branches
+	rb.NotHEADOnlySearch = rb.NotHEADOnlySearch || notHEADOnlySearch
 	return true
 }
 
