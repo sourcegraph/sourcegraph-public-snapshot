@@ -7,7 +7,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	amconfig "github.com/prometheus/alertmanager/config"
-	"github.com/prometheus/common/model"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -37,21 +36,25 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		Name: alertmanagerNoopReceiver,
 	})
 
+	// include `alertname` for now to accomodate non-generator alerts - in the long run, we want to remove grouping on `alertname`
+	// because all alerts should have some predefined labels
+	// https://github.com/sourcegraph/sourcegraph/issues/5370
+	groupBy := []string{"alertname", "level", "service_name", "name"}
 	// make sure alerts are routed appropriately
-	groupBy := []model.LabelName{"level", "service_name", "name"}
 	change.AMConfig.Route = &amconfig.Route{
-		Receiver: alertmanagerNoopReceiver,
+		Receiver:   alertmanagerNoopReceiver,
+		GroupByStr: groupBy,
 		Routes: []*amconfig.Route{
 			{
-				Receiver: alertmanagerWarningReceiver,
-				GroupBy:  groupBy,
+				Receiver:   alertmanagerWarningReceiver,
+				GroupByStr: groupBy,
 				Match: map[string]string{
 					"level": "warning",
 				},
 			},
 			{
-				Receiver: alertmanagerCriticalReceiver,
-				GroupBy:  groupBy,
+				Receiver:   alertmanagerCriticalReceiver,
+				GroupByStr: groupBy,
 				Match: map[string]string{
 					"level": "critical",
 				},
