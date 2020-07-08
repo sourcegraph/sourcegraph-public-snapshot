@@ -109,7 +109,7 @@ func init() {
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
 	// Notify admins if critical alerts are firing.
-	AlertFuncs = append(AlertFuncs, activeAlertsAlert(prometheusutil.PrometheusURL))
+	AlertFuncs = append(AlertFuncs, observabilityActiveAlertsAlert(prometheusutil.PrometheusURL))
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
@@ -272,8 +272,8 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 	}
 }
 
-// activeAlertsAlert directs admins to check Grafana if critical alerts are firing
-func activeAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
+// observabilityActiveAlertsAlert directs admins to check Grafana if critical alerts are firing
+func observabilityActiveAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
 	return func(args AlertFuncArgs) []*Alert {
 		observabilitySiteAlertsDisabled := (args.ViewerFinalSettings != nil && args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts)
 		if !args.IsSiteAdmin || len(prometheusURL) == 0 || observabilitySiteAlertsDisabled {

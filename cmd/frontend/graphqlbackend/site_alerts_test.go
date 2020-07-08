@@ -102,7 +102,7 @@ func Test_determineOutOfDateAlert(t *testing.T) {
 	}
 }
 
-func Test_activeAlertsAlert(t *testing.T) {
+func TestObservabilityActiveAlertsAlert(t *testing.T) {
 	type args struct {
 		prometheusURL string
 		args          AlertFuncArgs
@@ -165,7 +165,7 @@ func Test_activeAlertsAlert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := activeAlertsAlert(tt.args.prometheusURL)
+			fn := observabilityActiveAlertsAlert(tt.args.prometheusURL)
 			gotAlerts := fn(tt.args.args)
 			if len(gotAlerts) != len(tt.want) {
 				t.Errorf("expected %+v, got %+v", tt.want, gotAlerts)
