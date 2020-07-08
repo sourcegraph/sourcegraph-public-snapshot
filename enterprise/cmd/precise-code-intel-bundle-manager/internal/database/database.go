@@ -190,17 +190,7 @@ func (db *databaseImpl) definitions(ctx context.Context, r types.RangeData) ([]b
 		return nil, false, nil
 	}
 
-	definitionResults, err := db.getResultByID(ctx, r.DefinitionResultID)
-	if err != nil {
-		return nil, false, pkgerrors.Wrap(err, "db.getResultByID")
-	}
-
-	locations, err := db.convertRangesToLocations(ctx, definitionResults)
-	if err != nil {
-		return nil, false, pkgerrors.Wrap(err, "db.convertRangesToLocations")
-	}
-
-	return locations, true, nil
+	return db.locations(ctx, r.DefinitionResultID)
 }
 
 // References returns the set of locations referencing the symbol at the given position.
@@ -229,12 +219,16 @@ func (db *databaseImpl) references(ctx context.Context, r types.RangeData) ([]bu
 		return nil, false, nil
 	}
 
-	referenceResults, err := db.getResultByID(ctx, r.ReferenceResultID)
+	return db.locations(ctx, r.ReferenceResultID)
+}
+
+func (db *databaseImpl) locations(ctx context.Context, id types.ID) ([]bundles.Location, bool, error) {
+	results, err := db.getResultByID(ctx, id)
 	if err != nil {
 		return nil, false, pkgerrors.Wrap(err, "db.getResultByID")
 	}
 
-	locations, err := db.convertRangesToLocations(ctx, referenceResults)
+	locations, err := db.convertRangesToLocations(ctx, results)
 	if err != nil {
 		return nil, false, pkgerrors.Wrap(err, "db.convertRangesToLocations")
 	}
