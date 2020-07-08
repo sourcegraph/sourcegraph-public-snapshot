@@ -13,7 +13,7 @@ RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /g
 # (replacing master with the version number) to see if any changes (added/removed files, etc.) need to be
 # synchronized with this derivative Dockerfile. Also make sure to update the appropriate com.sourcegraph.*.version
 # labels below.
-FROM prom/prometheus:v2.16.0@sha256:e4ca62c0d62f3e886e684806dfe9d4e0cda60d54986898173c1083856cfda0f4 AS prom_upstream
+FROM prom/prometheus:v2.19.2@sha256:43b19072ef98fd0ea5a29ac794fbadf365cca6d5247830034c7b86ae9650126c AS prom_upstream
 
 # Similarly to above, this Dockerfile also extends https://github.com/prometheus/alertmanager/blob/v0.21.0/Dockerfile
 # When upgrading alertmanager, make sure to make similar checks to the one above.
