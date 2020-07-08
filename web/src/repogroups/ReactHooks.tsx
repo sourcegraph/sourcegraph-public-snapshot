@@ -211,16 +211,13 @@ export const reactHooks: RepogroupMetadata = {
         },
         {
             title: 'Examples of useState with any Javascript data type as the input parameter:',
-            exampleQuery: (
-                <>
-                    useState(:[string])
-                </>
-            ),
+            exampleQuery: <>useState(:[string])</>,
             rawQuery: 'useState(:[string]) count:1000',
             patternType: SearchPatternType.structural,
         },
         {
-            title: 'Examples of useState with any Javascript data type as the input parameter in only Typescript files:',
+            title:
+                'Examples of useState with any Javascript data type as the input parameter in only Typescript files:',
             exampleQuery: (
                 <>
                     useState(:[string])

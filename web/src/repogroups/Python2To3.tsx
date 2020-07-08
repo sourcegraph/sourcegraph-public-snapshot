@@ -197,15 +197,15 @@ export const python2To3Metadata: RepogroupMetadata = {
                         The examples below help you find Python 2 code that requires refactoring and
                         review examples of the new Python 3 syntax.`,
     examples: [
-//         {
-//             title: 'Implicit relative imports in Python 2 and absolute imports:',
-//             description: `A relative import specifies the resource to be imported relative to the current location, where the import statement is.
-//             An absolute import specifies the resource to be imported using its full path from the project's root folder. The search below returns all implicit
-//             relative imports (without leading dots) in Python 2 and absolute imports in both Python 2 and Python 3.`,
-//             exampleQuery: <>/from [^.].+ import \w+/</>,
-//             rawQuery: '/from [^.].+ import \\w+/',
-//             patternType: SearchPatternType.regexp,
-//         },
+        //         {
+        //             title: 'Implicit relative imports in Python 2 and absolute imports:',
+        //             description: `A relative import specifies the resource to be imported relative to the current location, where the import statement is.
+        //             An absolute import specifies the resource to be imported using its full path from the project's root folder. The search below returns all implicit
+        //             relative imports (without leading dots) in Python 2 and absolute imports in both Python 2 and Python 3.`,
+        //             exampleQuery: <>/from [^.].+ import \w+/</>,
+        //             rawQuery: '/from [^.].+ import \\w+/',
+        //             patternType: SearchPatternType.regexp,
+        //         },
         {
             title: 'Python 3 explicit relative imports:',
             description: `Python 3 deprecates implicit relative reports. It requires explicitly specifying the location of the package relative to the current folder. The
@@ -224,7 +224,8 @@ export const python2To3Metadata: RepogroupMetadata = {
         },
         {
             title: 'Python 3 style print statements:',
-            description: 'Convert print statements to the print( ) function like print(“Hello, World!”). These will work with both Python 2 and Python 3.',
+            description:
+                'Convert print statements to the print( ) function like print(“Hello, World!”). These will work with both Python 2 and Python 3.',
             exampleQuery: <>print(":[string]")</>,
             rawQuery: 'print(":[string]")',
             patternType: SearchPatternType.structural,

@@ -193,7 +193,8 @@ export const kubernetes: RepogroupMetadata = {
         { name: 'bboydflo/use-value-after', codehost: CodeHosts.GITHUB },
         { name: 'wednesday-solutions/react-screentype-hoo', codehost: CodeHosts.GITHUB },
     ],
-    description: 'Search the trending and most starred Kubernetes repositories on GitHub. Explore with search examples below.',
+    description:
+        'Search the trending and most starred Kubernetes repositories on GitHub. Explore with search examples below.',
     examples: [
         {
             title:
@@ -208,11 +209,11 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title:
-                'Look for outdated `apiVersions` of admission webhooks:',
+            title: 'Look for outdated `apiVersions` of admission webhooks:',
             exampleQuery: (
                 <>
-                    <span className="repogroup-page__keyword-text">content:</span>"apiVersion: admissionregistration.k8s.io/v1beta1"
+                    <span className="repogroup-page__keyword-text">content:</span>"apiVersion:
+                    admissionregistration.k8s.io/v1beta1"
                 </>
             ),
             description: `This apiVersion has been deprecated in favor of "admissionregistration.k8s.io/v1".

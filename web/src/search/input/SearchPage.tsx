@@ -133,31 +133,29 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <span className="repogroup-page__keyword-text">lang:</span>javascript
                                         alert(:[variable])
                                     </Link>{' '}
-                                    <div>
-                                        Find usages of the alert() method that displays an alert box.
-                                    </div>
+                                    <div>Find usages of the alert() method that displays an alert box.</div>
                                 </li>
                                 <li className="list-group-item px-0 py-3">
                                     <Link
                                         to="/search?q=lang:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
                                         className="text-monospace mb-1"
                                     >
-                                        <span className="repogroup-page__keyword-text">lang:</span>python
-                                        from \B\.\w+ import \w+
+                                        <span className="repogroup-page__keyword-text">lang:</span>python from \B\.\w+
+                                        import \w+
                                     </Link>{' '}
                                     <div>
-                                        Search for explicit imports with one or more leading dots that indicate current and parent packages involved.
+                                        Search for explicit imports with one or more leading dots that indicate current
+                                        and parent packages involved.
                                     </div>
                                 </li>
                                 <li className="list-group-item px-0 py-3">
                                     <Link
-                                        to="/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:&quot;1+week+ago&quot;&patternType=literal&quot;"
+                                        to='/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                         className="text-monospace mb-1"
                                     >
-                                        <span className="repogroup-page__keyword-text">repo:</span>^github\.com/golang/go$
-                                        {' '}
-                                        <span className="repogroup-page__keyword-text">type:</span>diff
-                                        {' '}
+                                        <span className="repogroup-page__keyword-text">repo:</span>
+                                        ^github\.com/golang/go${' '}
+                                        <span className="repogroup-page__keyword-text">type:</span>diff{' '}
                                         <span className="repogroup-page__keyword-text">after:</span>"1 week ago"
                                     </Link>{' '}
                                     <div>
@@ -166,15 +164,16 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </li>
                                 <li className="list-group-item px-0 py-3">
                                     <Link
-                                        to="/search?q=file:pod.yaml+content:&quot;kind:+ReplicationController&quot;&patternType=literal"
+                                        to='/search?q=file:pod.yaml+content:"kind:+ReplicationController"&patternType=literal'
                                         className="text-monospace mb-1"
                                     >
-                                        <span className="repogroup-page__keyword-text">file:</span>pod.yaml
-                                        {' '}
-                                        <span className="repogroup-page__keyword-text">content:</span>"kind: ReplicationController"
+                                        <span className="repogroup-page__keyword-text">file:</span>pod.yaml{' '}
+                                        <span className="repogroup-page__keyword-text">content:</span>"kind:
+                                        ReplicationController"
                                     </Link>{' '}
                                     <div>
-                                        Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time.
+                                        Use a ReplicationController configuration to ensure specified number of pod
+                                        replicas are running at any one time.
                                     </div>
                                 </li>
                             </ul>
