@@ -312,9 +312,17 @@ func observabilityActiveAlertsAlert(prometheusURL string) func(AlertFuncArgs) []
 		if criticalAlerts == 0 {
 			return nil
 		}
-		msg := fmt.Sprintf("%d critical alerts across %d services are currently firing - [view alerts](/-/debug/grafana)",
-			criticalAlerts, servicesCritical)
+		msg := fmt.Sprintf("%s across %s are currently firing - [view alerts](/-/debug/grafana)",
+			pluralize(criticalAlerts, "critical alert", "critical alerts"),
+			pluralize(servicesCritical, "service", "services"))
 		key := fmt.Sprintf("active-alerts-alert-%d-critical-%d-services", criticalAlerts, servicesCritical)
 		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg, IsDismissibleWithKeyValue: key}}
 	}
+}
+
+func pluralize(v int, singular, plural string) string {
+	if v == 1 {
+		return fmt.Sprintf("%d %s", v, singular)
+	}
+	return fmt.Sprintf("%d %s", v, plural)
 }
