@@ -107,14 +107,14 @@ func correlateFromReader(r io.Reader, root string) (*State, error) {
 type wrappedState struct {
 	*State
 	dumpRoot            string
-	unsupportedVertexes *datastructures.IDSet
+	unsupportedVertices *datastructures.IDSet
 }
 
 func newWrappedState(dumpRoot string) *wrappedState {
 	return &wrappedState{
 		State:               newState(),
 		dumpRoot:            dumpRoot,
-		unsupportedVertexes: datastructures.NewIDSet(),
+		unsupportedVertices: datastructures.NewIDSet(),
 	}
 }
 
@@ -152,7 +152,7 @@ func correlateVertex(state *wrappedState, element lsif.Element) error {
 		// don't track this, item edges related to something other than a
 		// definition or reference result will result in a spurious error
 		// although the LSIF index is valid.
-		state.unsupportedVertexes.Add(element.ID)
+		state.unsupportedVertices.Add(element.ID)
 		return nil
 	}
 
@@ -366,7 +366,7 @@ func correlateItemEdge(state *wrappedState, id int, edge lsif.Edge) error {
 		return nil
 	}
 
-	if !state.unsupportedVertexes.Contains(edge.OutV) {
+	if !state.unsupportedVertices.Contains(edge.OutV) {
 		return malformedDump(id, edge.OutV, "vertex")
 	}
 
