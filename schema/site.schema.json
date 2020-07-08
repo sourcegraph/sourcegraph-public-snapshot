@@ -464,7 +464,7 @@
           "type": "string"
         },
         "password": {
-          "description": "The username to use when communicating with the SMTP server.",
+          "description": "The password to use when communicating with the SMTP server.",
           "type": "string"
         },
         "authentication": {
@@ -475,6 +475,10 @@
         "domain": {
           "description": "The HELO domain to provide to the SMTP server (if needed).",
           "type": "string"
+        },
+        "disableTLS": {
+          "description": "Disable TLS verification - only compatible with observability.alerts today, see https://github.com/sourcegraph/sourcegraph/issues/10702",
+          "type": "boolean"
         }
       },
       "default": null,
@@ -608,34 +612,42 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["level", "id", "notifier"],
+        "required": ["level", "notifier"],
         "properties": {
           "level": {
             "description": "Sourcegraph alert level to subscribe to notifications for.",
             "type": "string",
             "enum": ["warning", "critical"]
           },
-          "id": {
-            "description": "Unique identifier for this alert.",
-            "type": "string"
-          },
           "notifier": {
             "type": "object",
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["slack", "pagerduty", "webhook"]
+                "enum": ["slack", "pagerduty", "webhook", "email", "opsgenie"]
               }
             },
             "oneOf": [
-              { "$ref": "#/definitions/GrafanaNotifierSlack" },
-              { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-              { "$ref": "#/definitions/GrafanaNotifierWebhook" },
-              { "$ref": "#/definitions/GrafanaNotifierOpsGenie" }
+              { "$ref": "#/definitions/NotifierSlack" },
+              { "$ref": "#/definitions/NotifierPagerduty" },
+              { "$ref": "#/definitions/NotifierWebhook" },
+              { "$ref": "#/definitions/NotifierEmail" },
+              { "$ref": "#/definitions/NotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
             }
+          },
+          "disableSendResolved": {
+            "description": "Disable notifications when alerts resolve themselves.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "default": {
+          "level": "critical",
+          "notifier": {
+            "type": ""
           }
         }
       }
@@ -994,8 +1006,8 @@
         }
       }
     },
-    "GrafanaNotifierSlack": {
-      "description": "Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack",
+    "NotifierSlack": {
+      "description": "Slack notifier",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -1022,46 +1034,31 @@
         "icon_url": {
           "description": "Provide a URL to an image to use as the icon for the bot’s message.",
           "type": "string"
-        },
-        "mentionUsers": {
-          "description": "Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).",
-          "type": "string"
-        },
-        "mentionGroups": {
-          "description": "Optionally mention one or more groups in the Slack notification sent by Grafana. You have to refer to groups, comma-separated, via their corresponding Slack IDs (which you can get from each group’s Slack profile URL).",
-          "type": "string"
-        },
-        "mentionChannel": {
-          "description": "Optionally mention either all channel members or just active ones.",
-          "type": "string"
-        },
-        "token": {
-          "description": "If provided, Grafana will upload the generated image via Slack’s file.upload API method, not the external image destination.",
-          "type": "string"
         }
       }
     },
-    "GrafanaNotifierPagerduty": {
-      "description": "Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty",
+    "NotifierPagerduty": {
+      "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "integrationKey"],
+      "required": ["type", "routingKey"],
       "properties": {
         "type": {
           "type": "string",
           "const": "pagerduty"
         },
         "integrationKey": {
-          "description": "Integration key for PagerDuty.",
+          "description": "Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview",
           "type": "string"
         },
-        "autoResolve": {
-          "description": "Resolve incidents in PagerDuty once the alert goes back to ok",
-          "type": "boolean"
-        }
+        "severity": {
+          "description": "Severity level for PagerDuty alert",
+          "type": "string"
+        },
+        "apiUrl": { "type": "string" }
       }
     },
-    "GrafanaNotifierWebhook": {
-      "description": "Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook",
+    "NotifierWebhook": {
+      "description": "Webhook notifier",
       "type": "object",
       "required": ["type", "url"],
       "properties": {
@@ -1071,11 +1068,27 @@
         },
         "url": { "type": "string" },
         "username": { "type": "string" },
-        "password": { "type": "string" }
+        "password": { "type": "string" },
+        "bearerToken": { "type": "string" }
       }
     },
-    "GrafanaNotifierOpsGenie": {
-      "description": "OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration",
+    "NotifierEmail": {
+      "description": "Email notifier",
+      "type": "object",
+      "required": ["type", "address"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "email"
+        },
+        "address": {
+          "description": "Address to send email to",
+          "type": "string"
+        }
+      }
+    },
+    "NotifierOpsGenie": {
+      "description": "OpsGenie notifier",
       "type": "object",
       "required": ["type", "apiKey", "apiUrl"],
       "properties": {
@@ -1085,7 +1098,31 @@
         },
         "apiKey": { "type": "string" },
         "apiUrl": { "type": "string" },
-        "autoClose": { "type": "boolean" }
+        "priority": {
+          "type": "string",
+          "enum": ["P1", "P2", "P3", "P4", "P5"]
+        },
+        "responders": {
+          "type": "array",
+          "description": "List of responders responsible for notifications.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["team", "user", "escalation", "schedule"]
+              },
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "username": { "type": "string" }
+            },
+            "oneOf": [
+              { "required": ["type", "id"] },
+              { "required": ["type", "name"] },
+              { "required": ["type", "username"] }
+            ]
+          }
+        }
       }
     }
   }

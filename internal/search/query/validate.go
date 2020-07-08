@@ -321,5 +321,13 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
+	VisitPattern(nodes, func(value string, _ bool, annotation Annotation) {
+		if annotation.Labels.isSet(Regexp) {
+			if err != nil {
+				return
+			}
+			_, err = regexp.Compile(value)
+		}
+	})
 	return err
 }
