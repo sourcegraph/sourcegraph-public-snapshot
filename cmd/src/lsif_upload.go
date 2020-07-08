@@ -47,6 +47,7 @@ Examples:
 		gitHubToken          *string
 		open                 *bool
 		json                 *bool
+		noProgress           *bool
 		maxPayloadSizeMb     *int
 		ignoreUploadFailures *bool
 	}
@@ -60,6 +61,7 @@ Examples:
 	flags.gitHubToken = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
 	flags.open = flagSet.Bool("open", false, `Open the LSIF upload page in your browser.`)
 	flags.json = flagSet.Bool("json", false, `Output relevant state in JSON on success.`)
+	flags.noProgress = flagSet.Bool("no-progress", false, `Do not display a progress bar.`)
 	flags.maxPayloadSizeMb = flagSet.Int("max-payload-size", 100, `The maximum upload size (in megabytes). Indexes exceeding this limit will be uploaded over multiple HTTP requests.`)
 	flags.ignoreUploadFailures = flagSet.Bool("ignore-upload-failure", false, `Exit with status code zero on upload failure.`)
 
@@ -175,7 +177,7 @@ Examples:
 		go func() {
 			defer wg.Done()
 
-			if *flags.json {
+			if *flags.json || *flags.noProgress {
 				return
 			}
 
