@@ -141,11 +141,11 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 
 // Warn that instances might need more/less resources if long-term usage is high or low.
 
-var sharedProvisioningCPUUsage1d sharedObservable = func(containerName string) Observable {
+var sharedProvisioningCPUUsage7d sharedObservable = func(containerName string) Observable {
 	return Observable{
-		Name:            "provisioning_container_cpu_usage_1d",
-		Description:     "container cpu usage total (1d average) across all cores by instance",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
+		Name:            "provisioning_container_cpu_usage_7d",
+		Description:     "container cpu usage total (7d average) across all cores by instance",
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
@@ -158,11 +158,11 @@ var sharedProvisioningCPUUsage1d sharedObservable = func(containerName string) O
 	}
 }
 
-var sharedProvisioningMemoryUsage1d sharedObservable = func(containerName string) Observable {
+var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string) Observable {
 	return Observable{
-		Name:            "provisioning_container_memory_usage_1d",
-		Description:     "container memory usage (1d average) by instance",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
+		Name:            "provisioning_container_memory_usage_7d",
+		Description:     "container memory usage (7d average) by instance",
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),

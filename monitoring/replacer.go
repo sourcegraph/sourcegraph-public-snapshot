@@ -30,8 +30,8 @@ func Replacer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("replacer"),
-						sharedProvisioningMemoryUsage1d("replacer"),
+						sharedProvisioningCPUUsage7d("replacer"),
+						sharedProvisioningMemoryUsage7d("replacer"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("replacer"),

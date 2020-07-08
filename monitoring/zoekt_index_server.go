@@ -39,8 +39,8 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("zoekt-indexserver"),
-						sharedProvisioningMemoryUsage1d("zoekt-indexserver"),
+						sharedProvisioningCPUUsage7d("zoekt-indexserver"),
+						sharedProvisioningMemoryUsage7d("zoekt-indexserver"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("zoekt-indexserver"),

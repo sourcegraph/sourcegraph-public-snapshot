@@ -196,8 +196,8 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("precise-code-intel-indexer"),
-						sharedProvisioningMemoryUsage1d("precise-code-intel-indexer"),
+						sharedProvisioningCPUUsage7d("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage7d("precise-code-intel-indexer"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),

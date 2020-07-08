@@ -50,8 +50,8 @@ func Symbols() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("symbols"),
-						sharedProvisioningMemoryUsage1d("symbols"),
+						sharedProvisioningCPUUsage7d("symbols"),
+						sharedProvisioningMemoryUsage7d("symbols"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("symbols"),

@@ -39,8 +39,8 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("searcher"),
-						sharedProvisioningMemoryUsage1d("searcher"),
+						sharedProvisioningCPUUsage7d("searcher"),
+						sharedProvisioningMemoryUsage7d("searcher"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("searcher"),

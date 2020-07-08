@@ -406,8 +406,8 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("frontend"),
-						sharedProvisioningMemoryUsage1d("frontend"),
+						sharedProvisioningCPUUsage7d("frontend"),
+						sharedProvisioningMemoryUsage7d("frontend"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("frontend"),
