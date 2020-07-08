@@ -161,7 +161,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <span className="repogroup-page__keyword-text">after:</span>"1 week ago"
                                     </Link>{' '}
                                     <div>
-                                        Browse diffs for recent code changes in the 'golang/go' repository.
+                                        Browse diffs for recent code changes in the 'golang/go' GitHub repository.
                                     </div>
                                 </li>
                                 <li className="list-group-item px-0 py-3">
