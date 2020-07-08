@@ -301,7 +301,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         }
         for (const action of Object.keys(editor._actions)) {
             // Keep ctrl+space to show all available completions
-            if (action === 'editor.action.triggerSuggest') {
+            if (action === 'editor.action.triggerSuggest' || action === 'deleteAllRight') {
                 continue
             }
             // Prefixing action ids with `-` to unbind the default actions.
