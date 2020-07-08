@@ -8,11 +8,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
 if [ ! -e "${PROMETHEUS_DISK}" ]; then
-  # Note: This chmod is so that both the `sourcegraph` user and host system user (what `whoami` reports on
-  # Linux) both have access to the files in the container AND files mounted by `-v` into the container without it
-  # running as root. For more details, see:
-  # https://github.com/sourcegraph/sourcegraph/pull/11832#discussion_r451109637
-  mkdir -p "${PROMETHEUS_DISK}" && chmod 777 "${PROMETHEUS_DISK}"
+  mkdir -p "${PROMETHEUS_DISK}"
 fi
 IMAGE=sourcegraph/prometheus:dev
 CONTAINER=prometheus

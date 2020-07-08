@@ -35,6 +35,12 @@ cp ../../go.* "$BUILDDIR"/monitoring
 
 pushd "$BUILDDIR"
 
+# Note: This chmod is so that both the `sourcegraph` user and host system user (what `whoami` reports on
+# Linux) both have access to the files in the container AND files mounted by `-v` into the container without it
+# running as root. For more details, see:
+# https://github.com/sourcegraph/sourcegraph/pull/11832#discussion_r451109637
+chmod -R 777 config
+
 # Enable image build caching via CACHE=true (the jsonnet builds can take a long time)
 BUILD_CACHE="--no-cache"
 if [[ "$CACHE" == "true" ]]; then
