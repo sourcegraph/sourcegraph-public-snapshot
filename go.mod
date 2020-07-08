@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/dustin/go-humanize v1.0.0
+	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.9.0
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/google/go-cmp v0.4.1
@@ -13,12 +14,13 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/mmcloughlin/avo v0.0.0-20200523190732-4439b6b2c061
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/errors v0.9.1
 	github.com/segmentio/textio v1.2.0
-	github.com/sourcegraph/codeintelutils v0.0.0-20200602000243-9543a4b9c9f8
+	github.com/sourcegraph/codeintelutils v0.0.0-20200706141440-54ddac67b5b6
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/efritz/pentimento"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
@@ -151,18 +154,45 @@ Examples:
 		}
 
 		opts := codeintel.UploadIndexOpts{
-			Endpoint:            cfg.Endpoint,
-			AccessToken:         cfg.AccessToken,
-			Repo:                *flags.repo,
-			Commit:              *flags.commit,
-			Root:                *flags.root,
-			Indexer:             *flags.indexer,
-			GitHubToken:         *flags.gitHubToken,
-			File:                *flags.file,
-			MaxPayloadSizeBytes: *flags.maxPayloadSizeMb * 1000 * 1000,
+			Endpoint:             cfg.Endpoint,
+			AccessToken:          cfg.AccessToken,
+			Repo:                 *flags.repo,
+			Commit:               *flags.commit,
+			Root:                 *flags.root,
+			Indexer:              *flags.indexer,
+			GitHubToken:          *flags.gitHubToken,
+			File:                 *flags.file,
+			MaxPayloadSizeBytes:  *flags.maxPayloadSizeMb * 1000 * 1000,
+			MaxRetries:           10,
+			RetryInterval:        time.Millisecond * 250,
+			UploadProgressEvents: make(chan codeintelutils.UploadProgressEvent),
 		}
 
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			if *flags.json {
+				return
+			}
+
+			pentimento.PrintProgress(func(p *pentimento.Printer) error {
+				for event := range opts.UploadProgressEvents {
+					content := pentimento.NewContent()
+					content.AddLine(formatProgressBar(event.TotalProgress, fmt.Sprintf("%d/%d", event.Part, event.NumParts)))
+					p.WriteContent(content)
+				}
+
+				_ = p.Reset()
+				return nil
+			})
+		}()
+
 		uploadID, err := codeintel.UploadIndex(opts)
+		close(opts.UploadProgressEvents) // Stop progress bar updates
+		wg.Wait()                        // Wait for progress bar goroutine to clear screen
 		if err != nil {
 			if err == codeintelutils.ErrUnauthorized {
 				if *flags.gitHubToken == "" {
@@ -233,4 +263,39 @@ func isFlagSet(fs *flag.FlagSet, name string) (found bool) {
 	})
 
 	return found
+}
+
+// maxDisplayWidth is the number of columns that can be used to draw a progress bar.
+const maxDisplayWidth = 80
+
+// formatProgressBar draws a progress bar with the given percentage complete and the
+// given literal suffix.
+func formatProgressBar(progress float64, suffix string) string {
+	if len(suffix) > 0 {
+		suffix = " " + suffix
+	}
+
+	maxWidth := maxDisplayWidth - 3 - len(suffix)
+	width := int(float64(maxWidth) * float64(progress))
+
+	var arrow string
+	if width < maxWidth {
+		arrow = ">"
+	}
+
+	return fmt.Sprintf(
+		"[%s%s%s]%s",
+		strings.Repeat("=", width),
+		arrow,
+		strings.Repeat(" ", maxWidth-width-len(arrow)),
+		suffix,
+	)
+}
+
+// digits returns the number of digits of n.
+func digits(n int) int {
+	if n >= 10 {
+		return 1 + digits(n/10)
+	}
+	return 1
 }
