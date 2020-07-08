@@ -15,8 +15,7 @@ func GitServer() *Container {
 							Description:     "disk space remaining by instance",
 							Query:           `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert{LessOrEqual: 25},
-							Critical:        Alert{LessOrEqual: 15},
+							Critical:        Alert{LessOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
 							PossibleSolutions: `
 								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
