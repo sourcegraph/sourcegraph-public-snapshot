@@ -300,7 +300,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             throw new Error('Cannot unbind default Monaco keybindings')
         }
         for (const action of Object.keys(editor._actions)) {
-            // Keep ctrl+space to show all available completions
+            // Keep ctrl+space to show all available completions. Keep ctrl+k to delete text on right of cursor.
             if (action === 'editor.action.triggerSuggest' || action === 'deleteAllRight') {
                 continue
             }
