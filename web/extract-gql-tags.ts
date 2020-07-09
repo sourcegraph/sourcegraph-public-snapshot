@@ -10,37 +10,8 @@ import * as ts from 'typescript'
 import { TsGraphQLPluginConfigOptions } from 'ts-graphql-plugin/lib/types'
 import { extractTypes, createTsTypeDeclaration } from './gql2ts-transformer'
 import { memoize } from 'lodash'
-// export async function typegenCommand({ options }: CommandOptions<typeof cliDefinition>) {
-//     const ts = require('typescript') as typeof import('typescript')
-//     const {
-//         AnalyzerFactory,
-//     } = require('../../analyzer/analyzer-factory') as typeof import('../../analyzer/analyzer-factory')
-//     const { ErrorReporter } = require('../../errors/error-reporter') as typeof import('../../errors/error-reporter')
-//     const { color } = require('../../string-util') as typeof import('../../string-util')
-
-//     const logger = new ConsoleLogger(options.verbose ? 'debug' : 'info')
-//     const { project } = options
-//     const errorReporter = new ErrorReporter(process.cwd(), logger.error.bind(logger))
-//     const analyzer = new AnalyzerFactory().createAnalyzerFromProjectPath(project, logger.debug.bind(logger))
-//     const { errors, outputSourceFiles } = await analyzer.typegen()
-//     if (errors.length) {
-//         logger.error(`Found ${color.red(errors.length + '')} errors generating type files.\n`)
-//         errors.forEach(error => errorReporter.outputError(error))
-//     }
-//     if (!outputSourceFiles || outputSourceFiles.length === 0) {
-//         logger.error('No type files to generate.')
-//         return false
-//     }
-//     const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed, removeComments: false })
-//     outputSourceFiles.forEach(source => ts.sys.writeFile(source.fileName, printer.printFile(source)))
-//     logger.info(`Write ${color.green(outputSourceFiles.length + ' type files')}.`)
-//     return true
-// }
-
-// const relativeSchemaPath = '../cmd/frontend/graphqlbackend/schema.graphql'
 
 const readSchema = (schemaPath: string): GraphQLSchema => {
-    // const resolvedSchemaPath = path.join(__dirname, relativeSchemaPath)
     const isExists = fs.existsSync(schemaPath)
     if (!isExists) {
         throw new Error('schema file was not found here:' + schemaPath)
@@ -49,13 +20,6 @@ const readSchema = (schemaPath: string): GraphQLSchema => {
     const sdl = fs.readFileSync(schemaPath, 'utf-8')
     const schema = buildSchema(sdl)
     return schema
-
-    // const scriptHost = new ScriptHost(currentDirectory, tsconfig.options)
-    // tsconfig.fileNames.forEach(fileName => scriptHost.readFile(fileName))
-    // const schemaManagerHost = new SystemSchemaManagerHost(pluginConfig, prjRootPath, debug)
-    // const schemaManager = new SchemaManagerFactory(schemaManagerHost).create()
-    // const analyzer = new Analyzer(pluginConfig, prjRootPath, scriptHost, schemaManager, debug)
-    // return { analyzer, scriptHost }
 }
 
 const extractGQL = (projectPath: string = './'): void => {
@@ -70,7 +34,6 @@ const extractGQL = (projectPath: string = './'): void => {
     for (const fileName of tsconfig.fileNames) {
         scriptHost.readFile(fileName)
     }
-    // const schemaManagerHost = new SystemSchemaManagerHost(pluginConfig, prjRootPath, debug)
 
     const langService = ts.createLanguageService(scriptHost)
     const scriptSourceHelper = createScriptSourceHelper({

@@ -8,8 +8,7 @@ import express from 'express'
 import { Polly } from '@pollyjs/core'
 import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
-import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
+import { ErrorGraphQLResult } from '../../../shared/src/graphql/graphql'
 import { first, timeoutWith } from 'rxjs/operators'
 import * as path from 'path'
 import * as util from 'util'
@@ -18,6 +17,7 @@ import * as prettier from 'prettier'
 import html from 'tagged-template-noop'
 import { createJsContext } from './jscontext'
 import { SourcegraphContext } from '../jscontext'
+import { GQLWebOperations } from '../../gql-operations'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -35,7 +35,12 @@ type IntegrationTestInitGeneration = () => Promise<{
     subscriptions?: Subscription
 }>
 
-export type GraphQLOverrides = Record<string, SuccessGraphQLResult<IQuery | IMutation> | ErrorGraphQLResult>
+type PotentialOverrides<T> = Partial<
+    { [K in keyof T]: T[K] extends (input: any) => infer Output ? Output | ErrorGraphQLResult : never }
+>
+
+export type GraphQLOverrides = PotentialOverrides<GQLWebOperations>
+// export type GraphQLOverrides = Record<string, SuccessGraphQLResult<IQuery | IMutation> | ErrorGraphQLResult>
 
 interface TestContext {
     sourcegraphBaseUrl: string
@@ -95,6 +100,9 @@ type IntegrationTestSuite = (helpers: {
     test: IntegrationTestDefiner
     describe: IntegrationTestDescriber
 }) => void
+
+const isErrorResult = <T extends object>(result: ErrorGraphQLResult | T): result is ErrorGraphQLResult =>
+    'errors' in result && result.errors !== undefined && 'data' in result && result.data === undefined
 
 /**
  * Describes an integration test suite using wrappers over Mocha primitives.
@@ -181,8 +189,13 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         errors.error(error)
                         throw error
                     }
-                    const result = graphQlOverrides[queryName]
-                    response.json(result)
+                    const result = (graphQlOverrides as any)[queryName]
+                    if (isErrorResult(result)) {
+                        response.json(result)
+                    } else {
+                        // for successful results we need to wrap it in SuccessGraphQLResult
+                        response.json({ data: result, errors: undefined })
+                    }
                 })
 
                 // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
