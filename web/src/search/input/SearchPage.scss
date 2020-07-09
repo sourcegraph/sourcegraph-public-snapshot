@@ -97,8 +97,6 @@
         display: grid;
         grid-template-columns: 2fr 1fr 2fr;
         column-gap: 2rem;
-        color: $gray-13;
-
 
         &-subheading {
             margin-bottom: 1rem;
@@ -143,7 +141,25 @@
             color: $gray-18;
         }
 
+        strong {
+            color: $gray-11
+        }
+
+        &__help-content {
+            color: $gray-11;
+        }
+
+        &__example-searches {
+            a {
+                color: $gray-19;
+            }
+        }
+
         &__web-link {
+            color: #1C7CD6;
+        }
+
+        &__keyword-text {
             color: #1C7CD6;
         }
     }
@@ -167,7 +183,21 @@
             color: $gray-06;
         }
 
+        strong {
+            color: $gray-11
+        }
+
+        &__example-searches {
+            a {
+                color: $white;
+            }
+        }
+
         &__web-link {
+            color: #329AF0;
+        }
+
+        &__keyword-text {
             color: #329AF0;
         }
     }
