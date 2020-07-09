@@ -92,8 +92,8 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 text={props.repogroupMetadata.title}
             />
             <div className="repogroup-page__subheading">
-                <span className="text-monospace">
-                    <span className="repogroup-page__keyword-text">repogroup:</span>
+                <span className="repogroup-page__keyword-text text-monospace">
+                    <span className="highlight">repogroup:</span>
                     {props.repogroupMetadata.name}
                 </span>
             </div>
@@ -110,7 +110,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                             <h3 className="mb-3">{example.title}</h3>
                             <p>{example.description}</p>
                             <div className="d-flex mb-4">
-                                <div className="repogroup-page__example-bar form-control text-monospace">
+                                <div className="repogroup-page__example-bar form-control text-monospace ">
                                     <span className="repogroup-page__keyword-text">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
                                 </div>

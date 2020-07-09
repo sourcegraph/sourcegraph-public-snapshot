@@ -7,15 +7,6 @@
     overflow: auto;
     padding-bottom: 4rem;
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        color: $gray-14;
-    }
-
     &__logo {
         width: 3rem;
         height: 3rem;
@@ -50,6 +41,11 @@
         }
     }
 
+    &__content-description {
+        font-size: 16px;
+        line-height: 150%;
+    }
+
     &__repo-card {
         padding: 1rem;
         background: $color-bg-2;
@@ -60,7 +56,7 @@
         padding-right: 2rem;
     }
 
-    &__keyword-text {
+    &__keyword-text .highlight  {
         color: #1c7cd6;
     }
 
@@ -70,7 +66,6 @@
 
     &__repo-list-icon {
         margin-right: 0.5rem;
-        color: #cad2e2;
     }
 
     &__example-bar {
@@ -91,16 +86,79 @@
     }
 
     &__web-link {
-        color: #1c7cd6;
         font-size: 12px;
     }
 }
 
 .theme-light {
     .repogroup-page {
+
         &__repo-card {
             background: #f7fafd;
             border-color: $color-light-border-2;
         }
+
+        h1, h2 {
+            color: #39496A;
+        }
+
+        h3, h4, h6 {
+            color: #566E9F;
+        }
+
+        h5 {
+            color: #32405D;
+        }
+
+        &__web-link {
+            color: #1C7CD6;
+        }
+
+        &__repo-list-icon {
+            color: #6D84B0;
+        }
+
+        &__repo-list-icon {
+            color: #cad2e2;
+        }
+    }
+}
+
+.theme-dark {
+
+    .repogroup-page {
+
+        h1, h2 {
+            color: #889ABF;
+        }
+
+        h3, h4, h6 {
+            color: #95A5C6;
+        }
+
+        span.h3 {
+            color: #889ABF;
+        }
+
+        h5 {
+            color: #D7DDEA;
+        }
+
+        p, i {
+            color: #AFBCD4;
+        }
+
+        &__web-link {
+            color: #329AF0;
+        }
+
+        &__repo-list-icon {
+            color: #475C85;
+        }
+
+        &__keyword-text {
+            color: #A2B0CD;
+        }
+
     }
 }
