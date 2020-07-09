@@ -180,67 +180,6 @@ type reposListServer struct {
 	}
 }
 
-// Deprecated: serveList used to be used by Zoekt to get the list of
-// repositories to index. Can be removed in 3.11.
-func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) error {
-	var opt struct {
-		Hostname string
-		db.ReposListOptions
-	}
-	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
-		return err
-	}
-
-	var names []string
-	if h.SourcegraphDotComMode {
-		res, err := h.Repos.ListDefault(r.Context())
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
-	} else {
-		res, err := h.Repos.List(r.Context(), opt.ReposListOptions)
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
-	}
-
-	if h.Indexers.Enabled() {
-		var err error
-		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, map[string]struct{}{}, names)
-		if err != nil {
-			return err
-		}
-	}
-
-	// BACKCOMPAT: Add a Name field that serializes to `URI` because
-	// zoekt-sourcegraph-indexserver expects one to exist (with the
-	// repository name). This is a legacy of the rename from "repo URI" to
-	// "repo name".
-	type repoWithBackcompatURIField struct {
-		Name string `json:"URI"`
-	}
-	res := make([]repoWithBackcompatURIField, len(names))
-	for i, name := range names {
-		res[i].Name = name
-	}
-
-	data, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
-	return nil
-}
-
 // serveIndex is used by zoekt to get the list of repositories for it to
 // index.
 func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) error {
