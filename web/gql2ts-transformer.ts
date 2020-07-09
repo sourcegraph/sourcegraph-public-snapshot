@@ -54,8 +54,10 @@ class Stack<T> {
         return this._array.length === 0
     }
 }
-
-type ListTypeKind = 'none' | 'nullableList' | 'strictList'
+type ListModifier = 'nullableList' | 'strictList'
+// Nothing or a list with any amount of nesting
+// NOTE the left element of the list is the closest to the actual type for ease of iteration
+type ListTypeKind = 'none' | [ListModifier, ...ListModifier[]]
 
 type GraphQLFragmentTypeConditionNamedType = GraphQLObjectType | GraphQLUnionType | GraphQLInterfaceType
 
@@ -93,7 +95,8 @@ export type GQLTagExtractedType =
 export function extractTypes(
     documentNode: DocumentNode,
     fileName: string,
-    schema: GraphQLSchema
+    schema: GraphQLSchema,
+    getUniqueNameForFragment: (fragmentName: string) => string
 ): GQLTagExtractedType[] {
     const statements: GQLTagExtractedType[] = []
     const parentTypeStack = new Stack<GraphQLFragmentTypeConditionNamedType>()
@@ -216,7 +219,12 @@ export function extractTypes(
                 resultFieldElementStack.stack()
             },
             leave: node => {
-                statements.push({ tag: 'fragment', name: node.name.value, output: resultFieldElementStack.consume() })
+                statements.push({
+                    tag: 'fragment',
+                    // name: `${parentTypeStack.current.name}_${node.name.value}`,
+                    name: getUniqueNameForFragment(node.name.value),
+                    output: resultFieldElementStack.consume(),
+                })
                 parentTypeStack.consume()
             },
         },
@@ -230,7 +238,7 @@ export function extractTypes(
                 resultFieldElementStack.current.typeFragments.push({
                     isUnionCondition,
                     // TODO(simon) might have to give a proper name here
-                    typeNode: ts.createTypeReferenceNode(node.name.value, undefined),
+                    typeNode: ts.createTypeReferenceNode(getUniqueNameForFragment(node.name.value), undefined),
                 })
             },
         },
@@ -273,6 +281,7 @@ export function extractTypes(
                         node
                     )
                 }
+
                 const fieldMetadata = getFieldMetadataFromFieldTypeInstance(field)
                 if (
                     fieldMetadata.fieldType instanceof GraphQLObjectType ||
@@ -291,6 +300,7 @@ export function extractTypes(
                     )
                     return
                 }
+
                 const { fieldType, strict, list } = fieldMetadataMap.get(node)!
                 let typeNode: ts.TypeNode | undefined
                 if (fieldType instanceof GraphQLScalarType) {
@@ -304,9 +314,6 @@ export function extractTypes(
                 ) {
                     typeNode = createTsFieldTypeNode(resultFieldElementStack.consume())
                     parentTypeStack.consume()
-                } else if (fieldType instanceof GraphQLList) {
-                    // TODO simon
-                    typeNode = ts.createTypeReferenceNode('TODO_SIMON', undefined)
                 }
                 if (!typeNode) {
                     throw new Error('Unknown field output type. ' + fieldType.toJSON())
@@ -329,95 +336,84 @@ export function extractTypes(
     return statements
 }
 
-function getFieldMetadataFromFieldTypeInstance<T extends GraphQLField<any, any> | GraphQLInputField>(
-    field: T
-): {
-    fieldType: T extends GraphQLField<any, any>
-        ? GraphQLOutputType
-        : T extends GraphQLInputField
-        ? GraphQLInputType
-        : never
+type FieldType<T extends GraphQLField<any, any> | GraphQLInputField> = T extends GraphQLField<any, any>
+    ? GraphQLOutputType
+    : T extends GraphQLInputField
+    ? GraphQLInputType
+    : never
+
+interface FieldTypeMetadata<T extends GraphQLField<any, any> | GraphQLInputField> {
+    fieldType: FieldType<T>
     list: ListTypeKind
     strict: boolean
-} {
-    let fieldType = field.type
-    let listTypeKind: ListTypeKind | undefined
-    let isStrict: boolean | undefined
+}
+
+const appendListModifier = (list: ListTypeKind, isNewListStrict: boolean): ListTypeKind => {
+    const nextListModifier: ListModifier = isNewListStrict ? 'strictList' : 'nullableList'
+    return list === 'none'
+        ? [nextListModifier]
+        : // NOTE the left element of the list is the closest to the actual type for ease of iteration
+          [nextListModifier, ...list]
+}
+
+function getFieldMetadataFromFieldTypeInstance<T extends GraphQLField<any, any> | GraphQLInputField>(
+    field: T
+): FieldTypeMetadata<T> {
+    return collectModifiers({ fieldType: field.type as FieldType<T>, list: 'none', strict: false })
+}
+
+function collectModifiers<T extends GraphQLField<any, any> | GraphQLInputField>({
+    fieldType,
+    list,
+    strict,
+}: FieldTypeMetadata<T>): FieldTypeMetadata<T> {
     if (fieldType instanceof GraphQLNonNull) {
-        fieldType = fieldType.ofType
-        if (fieldType instanceof GraphQLList) {
-            fieldType = fieldType.ofType
-            listTypeKind = 'strictList'
-            if (fieldType instanceof GraphQLNonNull) {
-                fieldType = fieldType.ofType
-                isStrict = true
-            } else {
-                isStrict = false
-            }
-        } else {
-            isStrict = true
-            listTypeKind = 'none'
-        }
-    } else if (fieldType instanceof GraphQLList) {
-        fieldType = fieldType.ofType
-        listTypeKind = 'nullableList'
-        if (fieldType instanceof GraphQLNonNull) {
-            fieldType = fieldType.ofType
-            isStrict = true
-        } else {
-            isStrict = false
-        }
-    } else {
-        listTypeKind = 'none'
-        isStrict = false
+        return collectModifiers({ list, strict: true, fieldType: fieldType.ofType as FieldType<T> })
+    }
+    if (fieldType instanceof GraphQLList) {
+        // strict:false because we used it to construct a list modifier
+        return collectModifiers({
+            fieldType: fieldType.ofType as FieldType<T>,
+            list: appendListModifier(list, strict),
+            strict: false,
+        })
     }
 
-    return {
-        fieldType: fieldType as T extends GraphQLField<any, any>
-            ? GraphQLOutputType
-            : T extends GraphQLInputField
-            ? GraphQLInputType
-            : never,
-        list: listTypeKind,
-        strict: isStrict,
-    }
+    // it is neither a list nor a null modifier which means we found the inner type
+    return { list, strict, fieldType }
+}
+
+interface TypeNodeMetadata {
+    typeNode: TypeNode
+    list: ListTypeKind
+    strict: boolean
 }
 
 function getFieldMetadataFromTypeNode(
     node: TypeNode
 ): { typeNode: NamedTypeNode; list: ListTypeKind; strict: boolean } {
-    let typeNode = node
-    let listTypeKind: ListTypeKind | undefined
-    let isStrict: boolean | undefined
-    if (typeNode.kind === 'NonNullType') {
-        typeNode = typeNode.type
-        if (typeNode.kind === 'ListType') {
-            typeNode = typeNode.type
-            listTypeKind = 'strictList'
-            if (typeNode.kind === 'NonNullType') {
-                typeNode = typeNode.type
-                isStrict = true
-            } else {
-                isStrict = false
-            }
-        } else {
-            isStrict = true
-            listTypeKind = 'none'
-        }
-    } else if (typeNode.kind === 'ListType') {
-        typeNode = typeNode.type
-        listTypeKind = 'nullableList'
-        if (typeNode.kind === 'NonNullType') {
-            typeNode = typeNode.type
-            isStrict = true
-        } else {
-            isStrict = false
-        }
-    } else {
-        listTypeKind = 'none'
-        isStrict = false
+    const { typeNode, list, strict } = collectModifiersForTypeNode({ typeNode: node, list: 'none', strict: false })
+    if (typeNode.kind !== 'NamedType') {
+        throw new Error("we didn't finish unwrapping inner types!")
     }
-    return { typeNode: typeNode as NamedTypeNode, list: listTypeKind, strict: isStrict }
+    return { typeNode, list, strict }
+}
+
+function collectModifiersForTypeNode({ typeNode, list, strict }: TypeNodeMetadata): TypeNodeMetadata {
+    if (typeNode.kind === 'NonNullType') {
+        return collectModifiersForTypeNode({ list, strict: true, typeNode: typeNode.type })
+    }
+    if (typeNode.kind === 'ListType') {
+        // strict:false because we used it to construct a list modifier
+        return collectModifiersForTypeNode({
+            typeNode: typeNode.type,
+            list: appendListModifier(list, strict),
+            strict: false,
+        })
+    }
+
+    // it is neither a list nor a null modifier which means we found the inner type
+    return { list, strict, typeNode }
 }
 
 function isConcreteTypeOfParentUnionType(
@@ -434,14 +430,20 @@ function wrapTsTypeNodeWithModifiers(typeNode: ts.TypeNode, list: ListTypeKind, 
     if (!strict) {
         typeNode = ts.createUnionTypeNode([typeNode, ts.createKeywordTypeNode(ts.SyntaxKind.NullKeyword)])
     }
-    if (list === 'strictList' || list === 'nullableList') {
-        typeNode = ts.createArrayTypeNode(typeNode)
-        if (list === 'nullableList') {
-            typeNode = ts.createUnionTypeNode([typeNode, ts.createKeywordTypeNode(ts.SyntaxKind.NullKeyword)])
+
+    if (list !== 'none') {
+        // NOTE the left element of the list is the closest to the actual type for ease of iteration
+        for (const modifier of list) {
+            typeNode = ts.createArrayTypeNode(typeNode)
+
+            if (modifier === 'nullableList') {
+                typeNode = ts.createUnionTypeNode([typeNode, ts.createKeywordTypeNode(ts.SyntaxKind.NullKeyword)])
+            }
         }
     }
     return typeNode
 }
+
 function createTsTypeNodeFromEnum(fieldType: GraphQLEnumType): ts.UnionTypeNode {
     return ts.createUnionTypeNode(
         fieldType.getValues().map(v => ts.createLiteralTypeNode(ts.createStringLiteral(v.value)))

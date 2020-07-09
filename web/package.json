@@ -21,7 +21,7 @@
     "test-e2e-sgdev": "env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} mocha ./end-to-end/end-to-end.test.ts",
     "build": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp build",
     "watch": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watch",
-    "gql-extract": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./extract-gql-tags.ts",
+    "gql-extract-operations": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./extract-gql-tags.ts",
     "watch-webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watchWebpack",
     "webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp webpack",
     "lint": "yarn run eslint && gulp unusedExports && yarn run stylelint",

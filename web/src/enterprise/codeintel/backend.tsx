@@ -101,7 +101,7 @@ export function fetchLsifUploads({
 
     return queryGraphQL(
         gql`
-            query LsifUploads(
+            query LsifUploadsWithRepo(
                 $repository: ID!
                 $state: LSIFUploadState
                 $isLatestForRepo: Boolean
@@ -319,7 +319,13 @@ export function fetchLsifIndexes({
 
     return queryGraphQL(
         gql`
-            query LsifIndexes($repository: ID!, $state: LSIFIndexState, $first: Int, $after: String, $query: String) {
+            query LsifIndexesWithRepo(
+                $repository: ID!
+                $state: LSIFIndexState
+                $first: Int
+                $after: String
+                $query: String
+            ) {
                 node(id: $repository) {
                     __typename
                     ... on Repository {

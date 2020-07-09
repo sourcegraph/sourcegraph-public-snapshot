@@ -73,7 +73,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
     private queryAccessTokens = (args: { first?: number }): Observable<GQL.IAccessTokenConnection> =>
         queryGraphQL(
             gql`
-                query AccessTokens($first: Int) {
+                query SiteAdminAccessTokens($first: Int) {
                     site {
                         accessTokens(first: $first) {
                             nodes {

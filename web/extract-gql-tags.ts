@@ -9,6 +9,7 @@ import { buildSchema, GraphQLSchema } from 'graphql'
 import * as ts from 'typescript'
 import { TsGraphQLPluginConfigOptions } from 'ts-graphql-plugin/lib/types'
 import { extractTypes, createTsTypeDeclaration } from './gql2ts-transformer'
+import { memoize } from 'lodash'
 // export async function typegenCommand({ options }: CommandOptions<typeof cliDefinition>) {
 //     const ts = require('typescript') as typeof import('typescript')
 //     const {
@@ -62,6 +63,7 @@ const extractGQL = (projectPath: string = './'): void => {
     if (typeof pluginConfig.schema !== 'string') {
         throw new TypeError('for now schema field needs to be a string path')
     }
+
     const schema = readSchema(path.join(prjRootPath, pluginConfig.schema))
     const currentDirectory = process.cwd()
     const scriptHost = new ScriptHost(currentDirectory, tsconfig.options)
@@ -84,11 +86,13 @@ const extractGQL = (projectPath: string = './'): void => {
 
     const extractedResults = extractor.extract(scriptHost.getScriptFileNames(), pluginConfig.tag)
 
-    const typeDeclarations: ts.Statement[] = []
+    let typeDeclarations: ts.Statement[] = []
     const members: ts.PropertySignature[] = []
 
     const operationInputName = (name: string): string => name + 'Input'
     const operationOutputName = (name: string): string => name + 'Output'
+
+    const fragmentNames = new Set<string>()
 
     for (const result of extractedResults) {
         if (!result.documentNode) {
@@ -100,7 +104,27 @@ const extractGQL = (projectPath: string = './'): void => {
             throw new Error('not complex types')
         }
 
-        const types = extractTypes(result.documentNode, result.fileName, schema)
+        // TODO this is a hack to generate unique names for fragments
+        // note within a single document it should be memoized
+        const uniqueFragmentName = memoize((name: string): string => {
+            if (!fragmentNames.has(name)) {
+                fragmentNames.add(name)
+                return name
+            }
+            let index = 1
+            while (true) {
+                const potentialName = name + index.toString()
+                if (fragmentNames.has(potentialName)) {
+                    index += 1
+                    continue
+                }
+
+                fragmentNames.add(potentialName)
+                return potentialName
+            }
+        })
+
+        const types = extractTypes(result.documentNode, result.fileName, schema, uniqueFragmentName)
         for (const type of types) {
             if (type.tag === 'fragment') {
                 typeDeclarations.push(createTsTypeDeclaration(type.name, type.output))
@@ -115,7 +139,7 @@ const extractGQL = (projectPath: string = './'): void => {
                 members.push(
                     ts.createPropertySignature(
                         undefined,
-                        type.name,
+                        type.name + `/*${path.relative(prjRootPath, result.fileName)}*/`,
                         undefined,
                         ts.createFunctionTypeNode(
                             undefined,
@@ -138,19 +162,20 @@ const extractGQL = (projectPath: string = './'): void => {
         }
     }
 
-    typeDeclarations.push(
+    typeDeclarations = [
         ts.createInterfaceDeclaration(
             undefined,
             ts.createModifiersFromModifierFlags(ts.ModifierFlags.Export),
-            'AllOperations',
+            'GQLWebOperations',
             undefined,
             undefined,
             members
-        )
-    )
+        ),
+        ...typeDeclarations,
+    ]
 
     // TODO as an option
-    const outputFileName = 'all-operations.ts'
+    const outputFileName = 'gql-operations.ts'
 
     const sourceFile = ts.createSourceFile(outputFileName, '', ts.ScriptTarget.Latest, false, ts.ScriptKind.TS)
     const resultFile = ts.updateSourceFileNode(sourceFile, typeDeclarations)
