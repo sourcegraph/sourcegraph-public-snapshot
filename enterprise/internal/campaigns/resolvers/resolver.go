@@ -175,7 +175,7 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("CampaignSpec %s", args.CampaignSpec))
+	tr, _ := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("CampaignSpec %s", args.CampaignSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -194,14 +194,9 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.Finish()
 	}()
 
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
-	}
-
-	// 🚨 SECURITY: Only site admins may create a campaign for now.
-	if !user.SiteAdmin {
-		return nil, backend.ErrMustBeSiteAdmin
+	// 🚨 SECURITY: Only site admins may apply campaigns for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
 
 	opts := ee.ApplyCampaignOpts{}
@@ -209,6 +204,10 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.CampaignSpecRandID == "" {
+		return nil, ErrIDIsZero
 	}
 
 	if args.EnsureCampaign != nil {
@@ -324,7 +323,52 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 }
 
 func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.CampaignResolver, error) {
-	return nil, errors.New("TODO: not implemented")
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.MoveCampaign", fmt.Sprintf("Campaign %s", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	if campaignID == 0 {
+		return nil, ErrIDIsZero
+	}
+
+	var opts ee.MoveCampaignOpts
+
+	if args.NewName != nil {
+		opts.NewName = *args.NewName
+	}
+
+	if args.NewNamespace != nil {
+		newNamespace := *args.NewNamespace
+		switch relay.UnmarshalKind(newNamespace) {
+		case "User":
+			err = relay.UnmarshalSpec(newNamespace, &opts.NewNamespaceUserID)
+		case "Org":
+			err = relay.UnmarshalSpec(newNamespace, &opts.NewNamespaceOrgID)
+		default:
+			err = errors.Errorf("Invalid namespace %q", newNamespace)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	svc := ee.NewService(r.store, r.httpFactory)
+	// 🚨 SECURITY: MoveCampaign checks whether the current user is authorized.
+	campaign, err := svc.MoveCampaign(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
