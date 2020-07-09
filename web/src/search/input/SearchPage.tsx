@@ -213,14 +213,14 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         Diff/commit search keywords:
                                     </dt>
                                     <dd className="text-monospace">type:diff or type:commit</dd>
-                                    <dd className="text-monospace">after:”2 weeks ago”</dd>
+                                    <dd className="text-monospace">after:"2 weeks ago"</dd>
                                     <dd className="text-monospace">author:alice@example.com</dd>{' '}
                                     <dd className="text-monospace">repo:r@*refs/heads/ (all branches)</dd>
                                 </dl>
                                 <dl>
                                     <dt className="search-page__help-content-subheading">Finding matches</dt>
                                     <dd className="text-monospace">Regexp: (read|write)File</dd>{' '}
-                                    <dd className="text-monospace">Exact: “fs.open(f)”</dd>
+                                    <dd className="text-monospace">Exact: "fs.open(f)"</dd>
                                 </dl>
                                 <dl>
                                     <dt className="search-page__help-content-subheading">Structural Searches</dt>
