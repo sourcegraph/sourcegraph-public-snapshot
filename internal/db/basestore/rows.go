@@ -24,7 +24,7 @@ import (
 // Scan methods should be called directly with the results of `*store.Query` to
 // ensure that the rows are always properly handled.
 //
-//     thing, err := ScanThings(store.Query(ctx, query))
+//     things, err := ScanThings(store.Query(ctx, query))
 func CloseRows(rows *sql.Rows, err error) error {
 	if closeErr := rows.Close(); closeErr != nil {
 		err = multierror.Append(err, closeErr)
