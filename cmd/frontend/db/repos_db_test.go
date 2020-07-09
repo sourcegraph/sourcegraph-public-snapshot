@@ -42,6 +42,7 @@ func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
 		op.Description = repo.Description
 		op.Fork = repo.Fork
 		op.Cloned = repo.Cloned
+		op.Archived = repo.Archived
 	}
 
 	if err := Repos.Upsert(ctx, op); err != nil {
