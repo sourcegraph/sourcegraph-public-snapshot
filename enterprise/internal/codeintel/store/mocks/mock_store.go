@@ -132,15 +132,9 @@ type MockStore struct {
 	// ResetStalledIndexesFunc is an instance of a mock function object
 	// controlling the behavior of the method ResetStalledIndexes.
 	ResetStalledIndexesFunc *StoreResetStalledIndexesFunc
-	// RollbackToSavepointFunc is an instance of a mock function object
-	// controlling the behavior of the method RollbackToSavepoint.
-	RollbackToSavepointFunc *StoreRollbackToSavepointFunc
 	// SameRepoPagerFunc is an instance of a mock function object
 	// controlling the behavior of the method SameRepoPager.
 	SameRepoPagerFunc *StoreSameRepoPagerFunc
-	// SavepointFunc is an instance of a mock function object controlling
-	// the behavior of the method Savepoint.
-	SavepointFunc *StoreSavepointFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *StoreTransactFunc
@@ -357,19 +351,9 @@ func NewMockStore() *MockStore {
 				return nil, nil, nil
 			},
 		},
-		RollbackToSavepointFunc: &StoreRollbackToSavepointFunc{
-			defaultHook: func(context.Context, string) error {
-				return nil
-			},
-		},
 		SameRepoPagerFunc: &StoreSameRepoPagerFunc{
 			defaultHook: func(context.Context, int, string, string, string, string, int) (int, store.ReferencePager, error) {
 				return 0, nil, nil
-			},
-		},
-		SavepointFunc: &StoreSavepointFunc{
-			defaultHook: func(context.Context) (string, error) {
-				return "", nil
 			},
 		},
 		TransactFunc: &StoreTransactFunc{
@@ -523,14 +507,8 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		ResetStalledIndexesFunc: &StoreResetStalledIndexesFunc{
 			defaultHook: i.ResetStalledIndexes,
 		},
-		RollbackToSavepointFunc: &StoreRollbackToSavepointFunc{
-			defaultHook: i.RollbackToSavepoint,
-		},
 		SameRepoPagerFunc: &StoreSameRepoPagerFunc{
 			defaultHook: i.SameRepoPager,
-		},
-		SavepointFunc: &StoreSavepointFunc{
-			defaultHook: i.Savepoint,
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: i.Transact,
@@ -4733,112 +4711,6 @@ func (c StoreResetStalledIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// StoreRollbackToSavepointFunc describes the behavior when the
-// RollbackToSavepoint method of the parent MockStore instance is invoked.
-type StoreRollbackToSavepointFunc struct {
-	defaultHook func(context.Context, string) error
-	hooks       []func(context.Context, string) error
-	history     []StoreRollbackToSavepointFuncCall
-	mutex       sync.Mutex
-}
-
-// RollbackToSavepoint delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) RollbackToSavepoint(v0 context.Context, v1 string) error {
-	r0 := m.RollbackToSavepointFunc.nextHook()(v0, v1)
-	m.RollbackToSavepointFunc.appendCall(StoreRollbackToSavepointFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the RollbackToSavepoint
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreRollbackToSavepointFunc) SetDefaultHook(hook func(context.Context, string) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RollbackToSavepoint method of the parent MockStore instance inovkes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *StoreRollbackToSavepointFunc) PushHook(hook func(context.Context, string) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreRollbackToSavepointFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreRollbackToSavepointFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string) error {
-		return r0
-	})
-}
-
-func (f *StoreRollbackToSavepointFunc) nextHook() func(context.Context, string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreRollbackToSavepointFunc) appendCall(r0 StoreRollbackToSavepointFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreRollbackToSavepointFuncCall objects
-// describing the invocations of this function.
-func (f *StoreRollbackToSavepointFunc) History() []StoreRollbackToSavepointFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreRollbackToSavepointFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreRollbackToSavepointFuncCall is an object that describes an
-// invocation of method RollbackToSavepoint on an instance of MockStore.
-type StoreRollbackToSavepointFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreRollbackToSavepointFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreRollbackToSavepointFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // StoreSameRepoPagerFunc describes the behavior when the SameRepoPager
 // method of the parent MockStore instance is invoked.
 type StoreSameRepoPagerFunc struct {
@@ -4963,111 +4835,6 @@ func (c StoreSameRepoPagerFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreSameRepoPagerFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreSavepointFunc describes the behavior when the Savepoint method of
-// the parent MockStore instance is invoked.
-type StoreSavepointFunc struct {
-	defaultHook func(context.Context) (string, error)
-	hooks       []func(context.Context) (string, error)
-	history     []StoreSavepointFuncCall
-	mutex       sync.Mutex
-}
-
-// Savepoint delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) Savepoint(v0 context.Context) (string, error) {
-	r0, r1 := m.SavepointFunc.nextHook()(v0)
-	m.SavepointFunc.appendCall(StoreSavepointFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Savepoint method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreSavepointFunc) SetDefaultHook(hook func(context.Context) (string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Savepoint method of the parent MockStore instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreSavepointFunc) PushHook(hook func(context.Context) (string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreSavepointFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context) (string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreSavepointFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context) (string, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreSavepointFunc) nextHook() func(context.Context) (string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreSavepointFunc) appendCall(r0 StoreSavepointFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreSavepointFuncCall objects describing
-// the invocations of this function.
-func (f *StoreSavepointFunc) History() []StoreSavepointFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreSavepointFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreSavepointFuncCall is an object that describes an invocation of
-// method Savepoint on an instance of MockStore.
-type StoreSavepointFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreSavepointFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreSavepointFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreTransactFunc describes the behavior when the Transact method of the
