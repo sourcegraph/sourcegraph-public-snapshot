@@ -9,6 +9,7 @@ import (
 
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/general"
+	"github.com/prometheus/common/model"
 )
 
 // Prefix to serve alertmanager on. If you change this, make sure you update prometheus.yml as well
@@ -64,4 +65,9 @@ func reloadAlertmanager(ctx context.Context) error {
 		return fmt.Errorf("reload failed with status %d: %s", resp.StatusCode, string(data))
 	}
 	return nil
+}
+
+func duration(dur time.Duration) *model.Duration {
+	d := model.Duration(dur)
+	return &d
 }
