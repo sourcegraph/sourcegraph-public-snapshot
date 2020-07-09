@@ -52,18 +52,6 @@ describe('CampaignDetails', () => {
                 extensionsController={undefined as any}
                 platformContext={undefined as any}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                _fetchPatchSetById={() =>
-                    of({
-                        __typename: 'PatchSet' as const,
-                        id: 'c',
-                        diffStat: {
-                            added: 0,
-                            changed: 18,
-                            deleted: 999,
-                        },
-                        patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
-                    })
-                }
             />
         )
         expect(component).toMatchSnapshot()
@@ -88,7 +76,6 @@ describe('CampaignDetails', () => {
                     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                     author: { username: 'alice' } as GQL.IUser,
                     changesets: { totalCount: 2 },
-                    patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
                     hasUnpublishedPatches: false,

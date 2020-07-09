@@ -15,7 +15,6 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
 
 exports[`CampaignDetails creation form given existing patch set 1`] = `
 <CampaignDetails
-  _fetchPatchSetById={[Function]}
   authenticatedUser={
     Object {
       "avatarURL": null,
@@ -132,9 +131,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "patches": Object {
-          "totalCount": 2,
-        },
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -221,9 +217,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "patches": Object {
-          "totalCount": 2,
-        },
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -338,9 +331,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           "hasUnpublishedPatches": false,
           "id": "c",
           "name": "n",
-          "patches": Object {
-            "totalCount": 2,
-          },
           "status": Object {
             "completedCount": 3,
             "errors": Array [
@@ -439,9 +429,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "patches": Object {
-          "totalCount": 2,
-        },
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -517,9 +504,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "patches": Object {
-          "totalCount": 2,
-        },
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -747,9 +731,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "patches": Object {
-          "totalCount": 2,
-        },
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -864,9 +845,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           "hasUnpublishedPatches": false,
           "id": "c",
           "name": "n",
-          "patches": Object {
-            "totalCount": 2,
-          },
           "status": Object {
             "completedCount": 3,
             "errors": Array [
@@ -965,9 +943,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "patches": Object {
-          "totalCount": 2,
-        },
         "status": Object {
           "completedCount": 3,
           "errors": Array [
