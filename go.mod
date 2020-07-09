@@ -14,7 +14,6 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.9 // indirect
-	github.com/mmcloughlin/avo v0.0.0-20200523190732-4439b6b2c061
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
