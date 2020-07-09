@@ -115,6 +115,9 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		if !r.cloned {
 			opt2.NoCloned = true
 		} else if !r.notCloned || !r.cloneInProgress {
+			// notCloned and cloneInProgress are true by default.
+			// this condition is valid only if one of them has been
+			// explicitly set to false by the client.
 			opt2.OnlyCloned = true
 		}
 
