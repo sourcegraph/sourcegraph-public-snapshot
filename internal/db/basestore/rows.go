@@ -25,8 +25,6 @@ import (
 // ensure that the rows are always properly handled.
 //
 //     thing, err := ScanThings(store.Query(ctx, query))
-//
-//
 func CloseRows(rows *sql.Rows, err error) error {
 	if closeErr := rows.Close(); closeErr != nil {
 		err = multierror.Append(err, closeErr)
