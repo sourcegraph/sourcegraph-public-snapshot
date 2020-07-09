@@ -10,6 +10,7 @@ import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
+import { queryExternalChangesetWithFileDiffs } from '../backend'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: Changeset
@@ -20,6 +21,8 @@ export interface ChangesetNodeProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
+    /** For testing only. */
+    _queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ node, ...props }) => {

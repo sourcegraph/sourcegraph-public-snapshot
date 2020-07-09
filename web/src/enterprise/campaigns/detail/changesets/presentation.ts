@@ -9,12 +9,17 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import { CampaignsIcon } from '../../icons'
+import SyncIcon from 'mdi-react/SyncIcon'
 
 export const changesetStatusColorClasses: Record<ChangesetState, string> = {
     [ChangesetState.OPEN]: 'success',
     [ChangesetState.CLOSED]: 'danger',
     [ChangesetState.DELETED]: 'muted',
     [ChangesetState.MERGED]: 'merged',
+    [ChangesetState.PENDING]: 'muted',
+    [ChangesetState.PUBLISHING]: 'info',
+    [ChangesetState.ERRORED]: 'danger',
 }
 
 export const changesetReviewStateColors: Record<ChangesetReviewState, string> = {
@@ -33,11 +38,17 @@ export const changesetReviewStateIcons: Record<ChangesetReviewState, MdiReactIco
     [ChangesetReviewState.DISMISSED]: AccountQuestionIcon,
 }
 
-export const changesetStageLabels: Record<ChangesetReviewState | ChangesetState, string> = {
+export const changesetStateLabels: Record<ChangesetState, string> = {
     [ChangesetState.OPEN]: 'open',
     [ChangesetState.CLOSED]: 'closed',
     [ChangesetState.MERGED]: 'merged',
     [ChangesetState.DELETED]: 'deleted',
+    [ChangesetState.PENDING]: 'pending',
+    [ChangesetState.PUBLISHING]: 'publishing',
+    [ChangesetState.ERRORED]: 'errored',
+}
+
+export const changesetReviewStateLabels: Record<ChangesetReviewState, string> = {
     [ChangesetReviewState.APPROVED]: 'approved',
     [ChangesetReviewState.CHANGES_REQUESTED]: 'changes requested',
     [ChangesetReviewState.PENDING]: 'pending review',
@@ -50,6 +61,9 @@ export const changesetStateIcons: Record<ChangesetState, MdiReactIconComponentTy
     [ChangesetState.MERGED]: SourceMergeIcon,
     [ChangesetState.OPEN]: SourcePullIcon,
     [ChangesetState.DELETED]: DeleteIcon,
+    [ChangesetState.PENDING]: CampaignsIcon,
+    [ChangesetState.PUBLISHING]: SyncIcon,
+    [ChangesetState.ERRORED]: ErrorIcon,
 }
 
 export const changesetCheckStateIcons: Record<ChangesetCheckState, MdiReactIconComponentType> = {

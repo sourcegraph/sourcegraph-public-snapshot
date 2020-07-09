@@ -1,4 +1,4 @@
-import { changesetStateIcons, changesetStatusColorClasses, changesetStageLabels } from './presentation'
+import { changesetStateIcons, changesetStatusColorClasses, changesetStateLabels } from './presentation'
 import { ChangesetState } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import classNames from 'classnames'
@@ -12,7 +12,7 @@ export const ChangesetStateIcon: React.FunctionComponent<ChangesetStateIconProps
     return (
         <Icon
             className={classNames('mr-1 icon-inline', `text-${changesetStatusColorClasses[state]}`)}
-            data-tooltip={changesetStageLabels[state]}
+            data-tooltip={changesetStateLabels[state]}
         />
     )
 }

@@ -661,6 +661,79 @@ type CampaignSpec implements Node {
     viewerCanAdminister: Boolean!
 }
 
+type ChangesetUpdateEdge {
+    # When false, no operation will be performed on this changeset.
+    dirty: Boolean!
+    # When this is going to end up being a new pending changeset,
+    willPublish: Boolean!
+    # True, if the changeset will be closed on apply.
+    willClose: Boolean!
+    # The new title.
+    newTitle: String!
+    # The old title.
+    oldTitle: String!
+    # true, when newTitle != node.title.
+    titleChanged: Boolean!
+    # The new body value.
+    newBody: String!
+    # The old body value.
+    oldBody: String!
+    # true, when newBody != node.body.
+    bodyChanged: Boolean!
+    # true, when the patch changed.
+    patchChanged: Boolean!
+    # The new branch name, if set.
+    newBranch: String
+    # The old branch name, if set.
+    oldBranch: String
+    # True, when the branch name changed for this changeset.
+    branchChanged: Boolean!
+    # The new diff, can be preview only or null.
+    diff: PreviewRepositoryComparison
+    # The changeset to be updated. All values reflect the _old_ state.
+    node: Changeset!
+}
+
+type ChangesetUpdateConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    edges: [ChangesetUpdateEdge!]!
+}
+
+# The delta (difference) between a campaign's desired state (spec) and its actual state (status) at
+# a given point in time. Because the campaign delta is computed based on external state, it may
+# become out-of-date immediately after creation (e.g., if the external state changes), so it must be
+# treated as a snapshot only and not as a definitive plan.
+type CampaignDelta {
+    # The title of the campaign, after the spec is applied.
+    newTitle: String!
+    # The title of the campaign, before the spec is applied.
+    oldTitle: String!
+    # True, when newTitle != oldTitle.
+    titleChanged: Boolean!
+
+    # The description of the campaign, after the spec is applied.
+    newDescription: String!
+    # The description of the campaign, before the spec is applied.
+    oldDescription: String!
+    # True, when newDescription != oldDescription.
+    descriptionChanged: Boolean!
+
+    # The campaign that is changed here, if it exists already.
+    campaign: Campaign
+
+    changesets(
+        first: Int
+        after: String
+        dirtyOnly: Boolean = false
+        addedOnly: Boolean = false
+        willCloseOnly: Boolean = false
+    ): ChangesetUpdateConnection!
+
+    # Whether the viewer can also update, not just view.
+    viewerCanAdminister: Boolean!
+}
+
 # A user (identified either by username or email address) with its repository permission.
 input UserPermission {
     # Depending on the bindID option in the permissions.userMapping site configuration property,
@@ -1180,6 +1253,31 @@ type Query {
         # Only include campaigns that the viewer can administer.
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    # Preview the effect of applying a campaign spec. If an existing campaign exists in the
+    # namespace with the same name as that in the campaign spec, it returns the delta (difference)
+    # between the campaign's desired state (spec) and its actual state (status), as a list of
+    # changes to be applied to external state (such as repositories and changesets on code hosts).
+    # Otherwise, it returns the operations that need to be performed to create the campaign.
+    #
+    # The result is a snapshot and may immediately become stale because it is dependent on external
+    # state that can change at any time (e.g., a repository on a code host is updated).
+    #
+    # The result is computed using the viewer's credentials. Two viewers with different access
+    # levels to the associated repositories may see different results from this query.
+    campaignDelta(
+        # The namespace in which to compute the delta.
+        namespace: ID!
+
+        # The desired state of the campaign.
+        campaignSpec: ID!
+
+        # If set, return an error if the campaign identified using the namespace and campaignSpec
+        # parameters does not match the campaign with this ID. This lets callers use a stable ID
+        # that refers to a specific campaign during an edit session (and is not susceptible to
+        # conflicts if the underlying campaign is moved to a different namespace, renamed, or deleted).
+        ensureCampaign: ID
+    ): CampaignDelta!
 
     # Looks up a repository by either name or cloneURL.
     repository(

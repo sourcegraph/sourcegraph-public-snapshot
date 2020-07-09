@@ -18,7 +18,7 @@ import {
     changesetCheckStateColors,
     changesetCheckStateTooltips,
     changesetReviewStateColors,
-    changesetStageLabels,
+    changesetReviewStateLabels,
 } from './presentation'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
@@ -36,6 +36,7 @@ import { FileDiffConnection } from '../../../../components/diff/FileDiffConnecti
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { tap, map } from 'rxjs/operators'
 import { ChangesetStateIcon } from './ChangesetStateIcon'
+import { ErrorMessage } from '../../../../components/alerts'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset
@@ -46,6 +47,9 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
+
+    /** For testing only. */
+    _queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
 }
 
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
@@ -56,6 +60,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     history,
     location,
     extensionInfo,
+    _queryExternalChangesetWithFileDiffs = queryExternalChangesetWithFileDiffs,
 }) => {
     const ReviewStateIcon = changesetReviewStateIcons[node.reviewState]
     const ChangesetCheckStateIcon = node.checkState
@@ -70,6 +75,15 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     <div className="m-0 mb-2">
                         <h3 className="m-0 d-inline">
                             <ChangesetStateIcon state={changesetState} />
+                            <ReviewStateIcon
+                                className={classNames(
+                                    node.state === ChangesetState.DELETED
+                                        ? 'text-muted'
+                                        : `text-${changesetReviewStateColors[node.reviewState]}`,
+                                    'mr-1 icon-inline'
+                                )}
+                                data-tooltip={changesetReviewStateLabels[node.reviewState]}
+                            />
                             <LinkOrSpan
                                 /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
                                 to={
@@ -80,7 +94,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                {node.title} (#{node.externalID}){' '}
+                                {node.title} {node.externalID && <>(#{node.externalID}) </>}
                                 {node.externalURL && node.state !== ChangesetState.DELETED && (
                                     <ExternalLinkIcon size="1rem" />
                                 )}
@@ -122,16 +136,6 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
-            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
-                <ReviewStateIcon
-                    className={
-                        node.state === ChangesetState.DELETED
-                            ? 'text-muted'
-                            : `text-${changesetReviewStateColors[node.reviewState]}`
-                    }
-                    data-tooltip={changesetStageLabels[node.reviewState]}
-                />
-            </div>
         </div>
     )
 
@@ -140,7 +144,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            queryExternalChangesetWithFileDiffs(node.id, { ...args, isLightTheme }).pipe(
+            _queryExternalChangesetWithFileDiffs(node.id, { ...args, isLightTheme }).pipe(
                 map(changeset => {
                     if (!changeset.diff) {
                         throw new Error('The given changeset has no diff')
@@ -152,7 +156,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 }),
                 map(diff => diff.fileDiffs)
             ),
-        [node.id, isLightTheme]
+        [node.id, isLightTheme, _queryExternalChangesetWithFileDiffs]
     )
 
     const hydratedExtensionInfo = useMemo(() => {
@@ -180,13 +184,13 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     return (
         <li className="list-group-item e2e-changeset-node">
-            {node.diff?.fileDiffs ? (
-                <Collapsible
-                    titleClassName="changeset-node__content flex-fill"
-                    expandedButtonClassName="mb-3"
-                    title={changesetNodeRow}
-                    wholeTitleClickable={false}
-                >
+            <Collapsible
+                titleClassName="changeset-node__content flex-fill"
+                expandedButtonClassName="mb-3"
+                title={changesetNodeRow}
+                wholeTitleClickable={false}
+            >
+                {node.diff?.fileDiffs && (
                     <FileDiffConnection
                         listClassName="list-group list-group-flush"
                         noun="changed file"
@@ -210,12 +214,14 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         useURLQuery={false}
                         cursorPaging={true}
                     />
-                </Collapsible>
-            ) : (
-                <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
-                    {changesetNodeRow}
-                </div>
-            )}
+                )}
+                {node.error && (
+                    <div className="alert alert-danger my-4">
+                        <h3 className="alert-heading mb-0">Error while syncing changeset</h3>
+                        <ErrorMessage error={node.error} history={history} />
+                    </div>
+                )}
+            </Collapsible>
         </li>
     )
 }
