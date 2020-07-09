@@ -73,6 +73,7 @@
         height: fit-content;
         font-size: 12px;
         background-color: transparent;
+        border-radius: 2px 0 0 2px;
     }
 
     &__repo-item {
@@ -99,27 +100,27 @@
         }
 
         h1, h2 {
-            color: #39496A;
+            color: $gray-17;
         }
 
         h3, h4, h6 {
-            color: #566E9F;
+            color: $color-border-hover;
         }
 
         h5 {
-            color: #32405D;
+            color: $gray-18;
         }
 
         &__web-link {
-            color: #1C7CD6;
+            color: #1C7CD6; /*todo: i can't find the definition for this color*/
         }
 
         &__repo-list-icon {
-            color: #6D84B0;
+            color: $gray-11;
         }
 
         &__repo-list-icon {
-            color: #cad2e2;
+            color: $color-light-border;
         }
     }
 }
@@ -129,23 +130,19 @@
     .repogroup-page {
 
         h1, h2 {
-            color: #889ABF;
+            color: $gray-09;
         }
 
-        h3, h4, h6 {
-            color: #95A5C6;
-        }
-
-        span.h3 {
-            color: #889ABF;
+        h3, span.h3,  h4, h6 {
+            color: $gray-08;
         }
 
         h5 {
-            color: #D7DDEA;
+            color: $gray-03;
         }
 
         p, i {
-            color: #AFBCD4;
+            color: $gray-06;
         }
 
         &__web-link {
@@ -153,11 +150,11 @@
         }
 
         &__repo-list-icon {
-            color: #475C85;
+            color: $gray-15;
         }
 
         &__keyword-text {
-            color: #A2B0CD;
+            color: $color-text-1;
         }
 
     }

@@ -97,7 +97,7 @@
         display: grid;
         grid-template-columns: 2fr 1fr 2fr;
         column-gap: 2rem;
-        color: #475C85;
+        color: $gray-13;
 
 
         &-subheading {
@@ -132,15 +132,15 @@
         }
 
         h1, h2 {
-            color: #2B3750;
+            color: $gray-19;
         }
 
         h3, h4, h6 {
-            color: #566E9F;
+            color: $gray-13;
         }
 
         h5 {
-            color: #32405D;
+            color: $gray-18;
         }
 
         &__web-link {
@@ -152,19 +152,19 @@
 .theme-dark {
     .search-page {
         h1, h2 {
-            color: #889ABF;
+            color: $gray-09;
         }
 
         h3, h4, h6 {
-            color: #95A5C6;
+            color: $gray-08;
         }
 
         h5 {
-            color: #D7DDEA;
+            color: $gray-03;
         }
 
         p, i {
-            color: #AFBCD4;
+            color: $gray-06;
         }
 
         &__web-link {
