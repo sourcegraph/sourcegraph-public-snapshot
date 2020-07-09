@@ -2244,10 +2244,10 @@
     sourcegraph "^24.0.0"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.19.12":
-  version "0.19.12"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.19.12.tgz#09cf599147b5a668de4bf17e174e74f115d3809b"
-  integrity sha512-3n54p4jcRCJm0YtSe6KmCqnoC3i+4KNABgiJu0MoRUO5zXmHd2z9WdYjvuKrMhzhwYpxDJWtVPGQVw6XyUlFNQ==
+"@sourcegraph/eslint-config@^0.19.15":
+  version "0.19.15"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.19.15.tgz#99f826c8d9230aecddb28e1653a4ad8e652b6f9f"
+  integrity sha512-x76bN05kbFVDYInfrRFbup39Gprvp5kYp1GRbXjL4U/Ig6F0T6r93Mf0wLinl+asjp+04AVAlZ9umlA+DQzNFA==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^3.6.0"
@@ -2256,9 +2256,9 @@
     eslint-plugin-ban "^1.4.0"
     eslint-plugin-etc "^0.0.1-beta.34"
     eslint-plugin-import "^2.22.0"
-    eslint-plugin-jsdoc "^28.6.1"
+    eslint-plugin-jsdoc "^29.1.2"
     eslint-plugin-react "^7.20.3"
-    eslint-plugin-react-hooks "^4.0.5"
+    eslint-plugin-react-hooks "^4.0.6"
     eslint-plugin-rxjs "^0.0.2-beta.27"
     eslint-plugin-unicorn "^20.1.0"
 
@@ -9080,14 +9080,14 @@ eslint-plugin-import@^2.22.0:
     resolve "^1.17.0"
     tsconfig-paths "^3.9.0"
 
-eslint-plugin-jsdoc@^28.6.1:
-  version "28.6.1"
-  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-28.6.1.tgz#c9e9da59d0d3cef4fb45ffb91c0acde43af4e418"
-  integrity sha512-Z3y7hcNPDuhL339D1KOf9SY8pMAxYxhaG4QLtu3KVn20k/hNF1u6WQv44wvuSCb6OfPJ4say37RUlSNqIjR+mw==
+eslint-plugin-jsdoc@^29.1.2:
+  version "29.1.2"
+  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-29.1.2.tgz#542beba99946cb8d184e5261ebc632b24673f825"
+  integrity sha512-s1uJcPcjZQ4Z5i98T3zWkp/gzJ9AtHGXXg0zxd0wCnFzX8RQU6awdUokUlBFMoWZJZxdCAXDtEIQBRfr/Lrsjw==
   dependencies:
     comment-parser "^0.7.5"
     debug "^4.1.1"
-    jsdoctypeparser "^7.0.0"
+    jsdoctypeparser "^8.0.0"
     lodash "^4.17.15"
     regextras "^0.7.1"
     semver "^7.3.2"
@@ -9100,10 +9100,10 @@ eslint-plugin-no-unsafe-innerhtml@1.0.16:
   dependencies:
     eslint "^3.7.1"
 
-eslint-plugin-react-hooks@^4.0.5:
-  version "4.0.5"
-  resolved "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.0.5.tgz#4879003aa38e5d05d0312175beb6e4a1f617bfcf"
-  integrity sha512-3YLSjoArsE2rUwL8li4Yxx1SUg3DQWp+78N3bcJQGWVZckcp+yeQGsap/MSq05+thJk57o+Ww4PtZukXGL02TQ==
+eslint-plugin-react-hooks@^4.0.6:
+  version "4.0.6"
+  resolved "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.0.6.tgz#4027ae451b5cd219928edd0ff9eab54a8ea82901"
+  integrity sha512-RDrsUR/BjwCECcWS+5bc7mWiU/M1IOizKt40Zuei5mn0Eydubiooh87aSCiZ/BGMSUF7P8AqyMEqQL0RsAihmw==
 
 eslint-plugin-react@^7.20.3:
   version "7.20.3"
@@ -13261,10 +13261,10 @@ jsbn@~0.1.0:
   resolved "https://registry.npmjs.org/jsbn/-/jsbn-0.1.1.tgz#a5e654c2e5a2deb5f201d96cefbca80c0ef2f513"
   integrity sha1-peZUwuWi3rXyAdls77yoDA7y9RM=
 
-jsdoctypeparser@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.npmjs.org/jsdoctypeparser/-/jsdoctypeparser-7.0.0.tgz#957192fbcb8c574240092cca4635383a6ed706eb"
-  integrity sha512-6vWPn5qSy+MbgCVjXsQKVkRywhs+IxFU7Chw72DKsWoGueYp6QX8eTc55+EA0yPGYfhmglb1gfi283asXirfGQ==
+jsdoctypeparser@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.npmjs.org/jsdoctypeparser/-/jsdoctypeparser-8.0.0.tgz#a04a944539d3f86e30040c1ece6f6730f865f81a"
+  integrity sha512-eLCs6s4JqN8TjFJfgdiLHRvogLhOAJz+5RIA2FtoMe6ZDyuvghvppnlIToqAEnVbxRqLMrfnNXpW8FpmR6IMBw==
 
 jsdom@^11.5.1:
   version "11.12.0"
