@@ -54,9 +54,9 @@ type OrgResolver struct {
 
 func NewOrg(org *types.Org) *OrgResolver { return &OrgResolver{org: org} }
 
-func (o *OrgResolver) ID() graphql.ID { return marshalOrgID(o.org.ID) }
+func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 
-func marshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
+func MarshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
 
 func UnmarshalOrgID(id graphql.ID) (orgID int32, err error) {
 	err = relay.UnmarshalSpec(id, &orgID)
