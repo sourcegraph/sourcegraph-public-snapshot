@@ -754,7 +754,7 @@ type Campaign implements Node {
         to: DateTime
     ): [ChangesetCounts!]!
 
-    # The date and time when the campaign was closed.
+    # The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
     closedAt: DateTime
 
     # The diff stat for all the changesets in the campaign.
@@ -779,6 +779,8 @@ type ChangesetCounts {
     openChangesRequested: Int!
     # The number of changesets that are both open and are pending review.
     openPending: Int!
+    # The number of unpublished changesets. TODO: Do we want to track it? That way, the burndown chart would never be empty.
+    unpublished: Int!
 }
 
 # A list of campaigns.
@@ -795,6 +797,11 @@ type CampaignConnection {
 
 # The state of a changeset.
 enum ChangesetState {
+    PENDING
+    PUBLISHING
+    ERRORED
+    # STALE
+    # CONFLICTED
     OPEN
     CLOSED
     MERGED
@@ -885,8 +892,8 @@ type ExternalChangeset implements Node & Changeset {
     id: ID!
 
     # The external ID that uniquely identifies this ExternalChangeset on the
-    # code host. For example, on GitHub this is the pull request number.
-    externalID: String!
+    # code host. For example, on GitHub this is the pull request number. Set once published.
+    externalID: String
 
     # The repository changed by this changeset.
     repository: Repository!
@@ -925,8 +932,8 @@ type ExternalChangeset implements Node & Changeset {
     # The labels attached to the changeset on the code host.
     labels: [ChangesetLabel!]!
 
-    # The external URL of the changeset on the code host.
-    externalURL: ExternalLink!
+    # The external URL of the changeset on the code host. Not set when unpublished or deleted.
+    externalURL: ExternalLink
 
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
@@ -940,7 +947,7 @@ type ExternalChangeset implements Node & Changeset {
     head: GitRef
 
     # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
-    diff: RepositoryComparison
+    diff: RepositoryComparisonInterface
 
     # The diffstat of this changeset, or null if the changeset is closed
     # (without merging) or is already merged. This data is also available
@@ -951,6 +958,9 @@ type ExternalChangeset implements Node & Changeset {
     # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
     # checks have been configured.
     checkState: ChangesetCheckState
+
+    # Any error that can have occurred. Set, when state == ERRORED and the viewer can administer this changeset.
+    error: String
 }
 
 # A list of changesets.
@@ -2171,13 +2181,28 @@ type GitRefConnection {
     pageInfo: PageInfo!
 }
 
-# A not-yet-committed preview of a diff on a repository.
-type PreviewRepositoryComparison {
-    # The repository that this diff is targeting.
+# A repository comparison, with all the fields that exist on ALL kinds of comparisons.
+interface RepositoryComparisonInterface {
+    # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
-    # The preview of the file diffs for each file in the diff.
+    # The file diffs for each changed file.
     fileDiffs(
+        # Return the first n file diffs from the list.
+        first: Int
+        # Return file diffs after the given cursor.
+        after: String
+    ): FileDiffConnection!
+}
+
+# A not-yet-committed preview of a diff on a repository.
+type PreviewRepositoryComparison implements RepositoryComparisonInterface {
+    # The repository that is the base (left-hand side) of this comparison.
+    baseRepository: Repository!
+
+    # The file diffs for each changed file.
+    fileDiffs(
+        # Return the first n file diffs from the list.
         first: Int
         # Return file diffs after the given cursor.
         after: String
@@ -2185,7 +2210,7 @@ type PreviewRepositoryComparison {
 }
 
 # The differences between two concrete Git commits in a repository.
-type RepositoryComparison {
+type RepositoryComparison implements RepositoryComparisonInterface {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
