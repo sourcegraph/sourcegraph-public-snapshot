@@ -300,6 +300,60 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	return campaign, tx.UpdateCampaign(ctx, campaign)
 }
 
+type MoveCampaignOpts struct {
+	CampaignID int64
+
+	NewName string
+
+	NewNamespaceUserID int32
+	NewNamespaceOrgID  int32
+}
+
+func (o MoveCampaignOpts) String() string {
+	return fmt.Sprintf(
+		"CampaignID %d, NewName %q, NewNamespaceUserID %d, NewNamespaceOrgID %d",
+		o.CampaignID,
+		o.NewName,
+		o.NewNamespaceUserID,
+		o.NewNamespaceOrgID,
+	)
+}
+
+// MoveCampaign moves the campaign from one namespace to another and/or renames
+// the campaign.
+func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (campaign *campaigns.Campaign, err error) {
+	tr, ctx := trace.New(ctx, "Service.MoveCampaign", opts.String())
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: opts.CampaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	if opts.NewName != "" {
+		campaign.Name = opts.NewName
+	}
+
+	if opts.NewNamespaceOrgID != 0 {
+		campaign.NamespaceOrgID = opts.NewNamespaceOrgID
+		campaign.NamespaceUserID = 0
+	} else if opts.NewNamespaceUserID != 0 {
+		campaign.NamespaceUserID = opts.NewNamespaceUserID
+		campaign.NamespaceOrgID = 0
+	}
+
+	return campaign, tx.UpdateCampaign(ctx, campaign)
+}
+
 // ErrEnsureCampaignFailed is returned by ApplyCampaign when a ensureCampaignID
 // is provided but a campaign with the name specified the campaignSpec exists
 // in the given namespace but has a different ID.
