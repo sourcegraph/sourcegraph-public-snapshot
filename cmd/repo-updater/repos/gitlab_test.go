@@ -318,6 +318,31 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		return &invocations
 	}
 
+	mockGetMergeRequestPipelines := func(pipelines []*gitlab.Pipeline, pageSize int, err error) *int {
+		invocations := 0
+
+		gitlab.MockGetMergeRequestPipelines = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Pipeline, error) {
+			i := 0
+			return func() ([]*gitlab.Pipeline, error) {
+				defer func() { i++ }()
+
+				start := i * pageSize
+				if start >= len(pipelines) {
+					return []*gitlab.Pipeline{}, nil
+				}
+
+				end := (i + 1) * pageSize
+				if end >= len(pipelines) {
+					end = len(pipelines)
+				}
+
+				return pipelines[start:end], nil
+			}
+		}
+
+		return &invocations
+	}
+
 	mockGetOpenMergeRequestByRefs := func(mr *gitlab.MergeRequest, err error) *int {
 		invocations := 0
 
@@ -348,6 +373,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		gitlab.MockCreateMergeRequest = nil
 		gitlab.MockGetMergeRequest = nil
 		gitlab.MockGetMergeRequestNotes = nil
+		gitlab.MockGetMergeRequestPipelines = nil
 		gitlab.MockGetOpenMergeRequestByRefs = nil
 		gitlab.MockUpdateMergeRequest = nil
 	}
@@ -502,6 +528,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			inner := errors.New("foo")
 			mockGetMergeRequest(42, nil, inner)
 			mockGetMergeRequestNotes(nil, 20, nil)
+			mockGetMergeRequestPipelines(nil, 20, nil)
 			defer unmock()
 
 			if have := s.LoadChangesets(ctx, cs...); !errors.Is(have, inner) {
@@ -512,6 +539,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		t.Run("success", func(t *testing.T) {
 			inv := mockGetMergeRequest(42, &gitlab.MergeRequest{}, nil)
 			mockGetMergeRequestNotes(nil, 20, nil)
+			mockGetMergeRequestPipelines(nil, 20, nil)
 			defer unmock()
 
 			if err := s.LoadChangesets(ctx, cs...); err != nil {
