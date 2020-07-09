@@ -335,33 +335,25 @@ func TestRepos_List_cloned(t *testing.T) {
 	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Cloned: false}})
 	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Cloned: true}})
 
-	{
-		repos, err := Repos.List(ctx, ReposListOptions{OnlyCloned: true})
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertJSONEqual(t, yours, repos)
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, yours},
+		{"NoCloned", ReposListOptions{NoCloned: true}, mine},
+		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
+		{"Default", ReposListOptions{}, append(append([]*types.Repo(nil), mine...), yours...)},
 	}
-	{
-		repos, err := Repos.List(ctx, ReposListOptions{NoCloned: true})
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertJSONEqual(t, mine, repos)
-	}
-	{
-		repos, err := Repos.List(ctx, ReposListOptions{NoCloned: true, OnlyCloned: true})
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertJSONEqual(t, nil, repos)
-	}
-	{
-		repos, err := Repos.List(ctx, ReposListOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertJSONEqual(t, append(append([]*types.Repo(nil), mine...), yours...), repos)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := Repos.List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
 	}
 }
 
