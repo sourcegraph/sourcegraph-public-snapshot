@@ -34,7 +34,7 @@ var (
 	// Body templates
 	firingBodyTemplate = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'.
 
-	For possible solutions, please refer to %s`, alertSolutionsURLTemplate)
+For possible solutions, please refer to %s`, alertSolutionsURLTemplate)
 	resolvedBodyTemplate     = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.`
 	notificationBodyTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplate, resolvedBodyTemplate)
 )
