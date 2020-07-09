@@ -61,6 +61,34 @@ func TestRepositories(t *testing.T) {
 		},
 		{
 			Schema: mustParseGraphQLSchema(t),
+			// cloned and notCloned are true by default
+			// this test ensures the behavior is the same
+			// when setting them explicitly
+			Query: `
+				{
+					repositories(cloned: true, notCloned: true) {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo1" },
+							{ "name": "repo2" },
+							{ "name": "repo3" }
+						],
+						"totalCount": null,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					repositories(first: 2) {
