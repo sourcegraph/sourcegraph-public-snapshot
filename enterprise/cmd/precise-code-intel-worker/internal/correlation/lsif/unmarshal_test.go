@@ -1,4 +1,4 @@
-package jsonlines
+package lsif
 
 import (
 	"fmt"
@@ -6,17 +6,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 )
 
 func TestUnmarshalElement(t *testing.T) {
-	element, err := unmarshalElement([]byte(`{"id": "47", "type": "vertex", "label": "test"}`))
+	element, err := unmarshalElement(NewInterner(), []byte(`{"id": "47", "type": "vertex", "label": "test"}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling element data: %s", err)
 	}
 
-	expectedElement := lsif.Element{
-		ID:    "47",
+	expectedElement := Element{
+		ID:    47,
 		Type:  "vertex",
 		Label: "test",
 	}
@@ -26,13 +25,13 @@ func TestUnmarshalElement(t *testing.T) {
 }
 
 func TestUnmarshalElementNumericIDs(t *testing.T) {
-	element, err := unmarshalElement([]byte(`{"id": 47, "type": "vertex", "label": "test"}`))
+	element, err := unmarshalElement(NewInterner(), []byte(`{"id": 47, "type": "vertex", "label": "test"}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling element data: %s", err)
 	}
 
-	expectedElement := lsif.Element{
-		ID:    "47",
+	expectedElement := Element{
+		ID:    47,
 		Type:  "vertex",
 		Label: "test",
 	}
@@ -42,16 +41,16 @@ func TestUnmarshalElementNumericIDs(t *testing.T) {
 }
 
 func TestUnmarshalEdge(t *testing.T) {
-	edge, err := unmarshalEdge([]byte(`{"id": "35", "type": "edge", "label": "item", "outV": "12", "inVs": ["07"], "document": "03"}`))
+	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": "35", "type": "edge", "label": "item", "outV": "12", "inVs": ["07"], "document": "03"}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
 	}
 
-	expectedEdge := lsif.Edge{
-		OutV:     "12",
-		InV:      "",
-		InVs:     []string{"07"},
-		Document: "03",
+	expectedEdge := Edge{
+		OutV:     12,
+		InV:      0,
+		InVs:     []int{7},
+		Document: 3,
 	}
 	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
 		t.Errorf("unexpected edge (-want +got):\n%s", diff)
@@ -59,16 +58,16 @@ func TestUnmarshalEdge(t *testing.T) {
 }
 
 func TestUnmarshalEdgeNumericIDs(t *testing.T) {
-	edge, err := unmarshalEdge([]byte(`{"id": 35, "type": "edge", "label": "item", "outV": 12, "inVs": [7], "document": 3}`))
+	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": 35, "type": "edge", "label": "item", "outV": 12, "inVs": [7], "document": 3}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
 	}
 
-	expectedEdge := lsif.Edge{
-		OutV:     "12",
-		InV:      "",
-		InVs:     []string{"7"},
-		Document: "3",
+	expectedEdge := Edge{
+		OutV:     12,
+		InV:      0,
+		InVs:     []int{7},
+		Document: 3,
 	}
 	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
 		t.Errorf("unexpected edge (-want +got):\n%s", diff)
@@ -81,7 +80,7 @@ func TestUnmarshalMetaData(t *testing.T) {
 		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
 	}
 
-	expectedMetadata := lsif.MetaData{
+	expectedMetadata := MetaData{
 		Version:     "0.4.3",
 		ProjectRoot: "file:///test",
 	}
@@ -96,12 +95,12 @@ func TestUnmarshalDocument(t *testing.T) {
 		t.Fatalf("unexpected error unmarshalling document data: %s", err)
 	}
 
-	expectedDocument := lsif.Document{
+	expectedDocument := Document{
 		URI:         "file:///test/root/foo.go",
-		Contains:    datastructures.IDSet{},
-		Diagnostics: datastructures.IDSet{},
+		Contains:    datastructures.NewIDSet(),
+		Diagnostics: datastructures.NewIDSet(),
 	}
-	if diff := cmp.Diff(expectedDocument, document); diff != "" {
+	if diff := cmp.Diff(expectedDocument, document, datastructures.IDSetComparer); diff != "" {
 		t.Errorf("unexpected document (-want +got):\n%s", diff)
 	}
 }
@@ -112,17 +111,17 @@ func TestUnmarshalRange(t *testing.T) {
 		t.Fatalf("unexpected error unmarshalling range data: %s", err)
 	}
 
-	expectedRange := lsif.Range{
+	expectedRange := Range{
 		StartLine:          1,
 		StartCharacter:     2,
 		EndLine:            3,
 		EndCharacter:       4,
-		DefinitionResultID: "",
-		ReferenceResultID:  "",
-		HoverResultID:      "",
-		MonikerIDs:         datastructures.IDSet{},
+		DefinitionResultID: 0,
+		ReferenceResultID:  0,
+		HoverResultID:      0,
+		MonikerIDs:         datastructures.NewIDSet(),
 	}
-	if diff := cmp.Diff(expectedRange, r); diff != "" {
+	if diff := cmp.Diff(expectedRange, r, datastructures.IDSetComparer); diff != "" {
 		t.Errorf("unexpected range (-want +got):\n%s", diff)
 	}
 }
@@ -172,7 +171,7 @@ func TestUnmarshalMoniker(t *testing.T) {
 		t.Fatalf("unexpected error unmarshalling moniker data: %s", err)
 	}
 
-	expectedMoniker := lsif.Moniker{
+	expectedMoniker := Moniker{
 		Kind:       "import",
 		Scheme:     "scheme A",
 		Identifier: "ident A",
@@ -188,7 +187,7 @@ func TestUnmarshalPackageInformation(t *testing.T) {
 		t.Fatalf("unexpected error unmarshalling package information data: %s", err)
 	}
 
-	expectedPackageInformation := lsif.PackageInformation{
+	expectedPackageInformation := PackageInformation{
 		Name:    "pkg A",
 		Version: "v0.1.0",
 	}
@@ -203,8 +202,8 @@ func TestUnmarshalDiagnosticResult(t *testing.T) {
 		t.Fatalf("unexpected error unmarshalling diagnostic result data: %s", err)
 	}
 
-	expectedDiagnosticResult := lsif.DiagnosticResult{
-		Result: []lsif.Diagnostic{
+	expectedDiagnosticResult := DiagnosticResult{
+		Result: []Diagnostic{
 			{
 				Severity:       1,
 				Code:           "2322",
