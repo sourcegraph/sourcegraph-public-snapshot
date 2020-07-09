@@ -5,6 +5,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -106,9 +107,76 @@ func TestSearch(t *testing.T) {
 
 		// Make sure only got .go files and no .md files
 		for _, r := range results {
-			if !strings.HasSuffix(r.Name, ".go") {
-				t.Fatalf("Found file name does not end with .go: %s", r.Name)
+			if !strings.HasSuffix(r.File.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
 			}
+		}
+	})
+
+	t.Run("multiple revisions per repository", func(t *testing.T) {
+		results, err := client.SearchFiles("repo:sourcegraph/go-diff$@master:print-options:*refs/heads/ func NewHunksReader")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantExprs := map[string]struct{}{
+			"master":        {},
+			"print-options": {},
+
+			// These next 2 branches are included because of the *refs/heads/ in the query.
+			// If they are ever deleted from the actual live repository, replace them with
+			// any other branches that still exist.
+			"test-already-exist-pr": {},
+			"bug-fix-wip":           {},
+		}
+
+		for _, r := range results {
+			delete(wantExprs, r.RevSpec.Expr)
+		}
+
+		if len(wantExprs) > 0 {
+			missing := make([]string, 0, len(wantExprs))
+			for expr := range wantExprs {
+				missing = append(missing, expr)
+			}
+			t.Fatalf("Missing exprs: %v", missing)
+		}
+	})
+
+	t.Run("search statistics", func(t *testing.T) {
+		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchStats": true}}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		var lastResult *gqltestutil.SearchStatsResult
+		// Retry because the configuration update endpoint is eventually consistent
+		err = gqltestutil.Retry(5*time.Second, func() error {
+			// This is a substring that appears in the sourcegraph/go-diff repository.
+			// It is OK if it starts to appear in other repositories, the test just
+			// checks that it is found in at least 1 Go file.
+			result, err := client.SearchStats("Incomplete-Lines")
+			if err != nil {
+				t.Fatal(err)
+			}
+			lastResult = result
+
+			for _, lang := range result.Languages {
+				if strings.EqualFold(lang.Name, "Go") {
+					return nil
+				}
+			}
+
+			return gqltestutil.ErrContinueRetry
+		})
+		if err != nil {
+			t.Fatal(err, "lastResult:", lastResult)
 		}
 	})
 }

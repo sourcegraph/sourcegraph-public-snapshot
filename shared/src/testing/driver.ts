@@ -461,7 +461,7 @@ export class Driver {
     }
 
     public async getRepository(name: string): Promise<Pick<IRepository, 'id'>> {
-        const resp = await this.makeGraphQLRequest<IQuery>({
+        const response = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query($name: String!) {
                     repository(name: $name) {
@@ -471,7 +471,7 @@ export class Driver {
             `,
             variables: { name },
         })
-        const { repository } = dataOrThrowErrors(resp)
+        const { repository } = dataOrThrowErrors(response)
         if (!repository) {
             throw new Error(`repository not found: ${name}`)
         }
@@ -479,7 +479,7 @@ export class Driver {
     }
 
     public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
-        const resp = await this.makeGraphQLRequest<IMutation>({
+        const response = await this.makeGraphQLRequest<IMutation>({
             request: gql`
                 mutation($patches: [PatchInput!]!) {
                     createPatchSetFromPatches(patches: $patches) {
@@ -489,7 +489,7 @@ export class Driver {
             `,
             variables: { patches },
         })
-        const { createPatchSetFromPatches } = dataOrThrowErrors(resp)
+        const { createPatchSetFromPatches } = dataOrThrowErrors(response)
         return createPatchSetFromPatches
     }
 

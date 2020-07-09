@@ -63,9 +63,9 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(args),
-        }).then(resp => {
-            if (resp.status !== 200) {
-                return resp.text().then(text => Promise.reject(new Error(text)))
+        }).then(response => {
+            if (response.status !== 200) {
+                return response.text().then(text => Promise.reject(new Error(text)))
             }
             window.location.replace(getReturnTo(this.props.location))
             return Promise.resolve()

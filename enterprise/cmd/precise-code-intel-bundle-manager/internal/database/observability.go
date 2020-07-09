@@ -14,6 +14,7 @@ type ObservedDatabase struct {
 	database                    Database
 	filename                    string
 	existsOperation             *observation.Operation
+	rangesOperation             *observation.Operation
 	definitionsOperation        *observation.Operation
 	referencesOperation         *observation.Operation
 	hoverOperation              *observation.Operation
@@ -47,6 +48,11 @@ func NewObserved(database Database, filename string, observationContext *observa
 		existsOperation: observationContext.Operation(observation.Op{
 			Name:         "Database.Exists",
 			MetricLabels: []string{"exists"},
+			Metrics:      metrics,
+		}),
+		rangesOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Ranges",
+			MetricLabels: []string{"ranges"},
 			Metrics:      metrics,
 		}),
 		definitionsOperation: observationContext.Operation(observation.Op{
@@ -100,6 +106,20 @@ func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 	return db.database.Exists(ctx, path)
+}
+
+// Ranges calls into the inner Database and registers the observed results.
+func (db *ObservedDatabase) Ranges(ctx context.Context, path string, startLine, endLine int) (ranges []bundles.CodeIntelligenceRange, err error) {
+	ctx, endObservation := db.rangesOperation.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("filename", db.filename),
+			log.String("path", path),
+			log.Int("startLine", startLine),
+			log.Int("endLine", endLine),
+		},
+	})
+	defer func() { endObservation(float64(len(ranges)), observation.Args{}) }()
+	return db.database.Ranges(ctx, path, startLine, endLine)
 }
 
 // Definitions calls into the inner Database and registers the observed results.

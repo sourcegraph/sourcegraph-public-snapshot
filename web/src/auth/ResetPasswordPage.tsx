@@ -96,15 +96,16 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                 email: this.state.email,
             }),
         })
-            .then(resp => {
-                if (resp.status === 200) {
+            .then(response => {
+                if (response.status === 200) {
                     this.setState({ submitOrError: null })
-                } else if (resp.status === 429) {
+                } else if (response.status === 429) {
                     this.setState({
                         submitOrError: new Error('Too many password reset requests. Try again in a few minutes.'),
                     })
                 } else {
-                    resp.text()
+                    response
+                        .text()
                         .catch(() => null)
                         .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
                         .catch(error => console.error(error))
@@ -195,10 +196,10 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 password: this.state.password,
             }),
         })
-            .then(resp => {
-                if (resp.status === 200) {
+            .then(response => {
+                if (response.status === 200) {
                     this.setState({ submitOrError: null })
-                } else if (resp.status === 401) {
+                } else if (response.status === 401) {
                     this.setState({ submitOrError: new Error('Password reset code was invalid or expired.') })
                 } else {
                     this.setState({ submitOrError: new Error('Password reset failed.') })

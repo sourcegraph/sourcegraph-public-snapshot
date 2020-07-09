@@ -131,7 +131,7 @@ describe('e2e test suite', () => {
                 })
             ).jsonValue()
 
-            const resp = await got.post('.api/graphql', {
+            const response = await got.post('.api/graphql', {
                 prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
@@ -148,7 +148,7 @@ describe('e2e test suite', () => {
                 }),
             })
 
-            const username = JSON.parse(resp.body).data.currentUser.username
+            const username = JSON.parse(response.body).data.currentUser.username
             expect(username).toBe('test')
 
             await Promise.all([
