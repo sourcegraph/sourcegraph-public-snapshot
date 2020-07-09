@@ -954,15 +954,24 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if v := settings.SearchMigrateParser; v != nil && *v {
+		queryInfo, err := query.ProcessAndOr(r.originalQuery, r.patternType)
+		if err != nil {
+			return &SearchResultsResolver{alert: alertForQuery(r.originalQuery, err)}, nil
+		}
+		r.query = queryInfo
+	}
+
 	switch q := r.query.(type) {
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
 		// Get settings to check if `search.uppercase` is active. If so, run transformer.
-		settings, err := decodedViewerFinalSettings(ctx)
-		if err != nil {
-			return nil, err
-		}
 		if v := settings.SearchUppercase; v != nil && *v {
 			q.Query = query.SearchUppercase(q.Query)
 		}
