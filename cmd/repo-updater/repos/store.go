@@ -417,26 +417,43 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 		return nil
 	}
 
-	names := make([]*sqlf.Query, len(repoNames))
-	for i, v := range repoNames {
-		names[i] = sqlf.Sprintf("%s", v)
+	names, err := json.Marshal(repoNames)
+	if err != nil {
+		return nil
 	}
-	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Join(names, ","))
 
-	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)))
+
+	_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-WITH c AS (
-	UPDATE repo SET cloned = true
-	WHERE name IN (%s)
-	RETURNING id
- )
- UPDATE repo SET cloned = false
- FROM c
- WHERE cloned AND repo.id NOT IN (SELECT id FROM c);
+/*
+This query generates a diff by selecting only
+the repos that need to be updated.
+Selected repos will have their cloned column reversed if
+their cloned column is true but they are not in cloned_repos
+or they are in cloned_repos but their cloned column is false
+*/
+WITH cloned_repos AS (
+	SELECT jsonb_array_elements_text(%s)
+),
+diff AS (
+    SELECT id,
+        cloned
+    FROM repo
+	WHERE
+		NOT cloned
+			AND name IN (SELECT * FROM cloned_repos)
+		OR cloned
+			AND name NOT IN (SELECT * FROM cloned_repos)
+)
+UPDATE repo
+SET cloned = NOT diff.cloned
+FROM diff
+WHERE repo.id = diff.id;
 `
 
 // CountNotClonedRepos returns the number of repos whose cloned column is true.
