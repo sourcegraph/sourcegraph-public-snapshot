@@ -6,10 +6,15 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 type defaultRepos struct{}
+
+func (s *defaultRepos) BulkAdd(ctx context.Context, repos []api.RepoID) (errors map[api.RepoID]error) {
+
+}
 
 func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
 	const q = `
