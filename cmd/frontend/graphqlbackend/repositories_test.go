@@ -11,13 +11,14 @@ import (
 
 func TestRepositories(t *testing.T) {
 	resetMocks()
-	repos := make([]*types.Repo, 3)
-	repos[0] = &types.Repo{Name: "repo1"}
-	repos[1] = &types.Repo{Name: "repo2"}
-	repos[2] = &types.Repo{
-		Name: "repo3",
-		RepoFields: &types.RepoFields{
-			Cloned: true,
+	repos := []*types.Repo{
+		{Name: "repo1"},
+		{Name: "repo2"},
+		{
+			Name: "repo3",
+			RepoFields: &types.RepoFields{
+				Cloned: true,
+			},
 		},
 	}
 	db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
