@@ -12,14 +12,10 @@ import { shallow, mount } from 'enzyme'
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
 
-jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
-jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
 jest.mock('./CampaignStatus', () => ({
     CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.campaign.status.state})`,
 }))
 jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
-jest.mock('./patches/CampaignPatches', () => ({ CampaignPatches: 'CampaignPatches' }))
-jest.mock('./patches/PatchSetPatches', () => ({ PatchSetPatches: 'PatchSetPatches' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()
@@ -56,18 +52,6 @@ describe('CampaignDetails', () => {
                 extensionsController={undefined as any}
                 platformContext={undefined as any}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                _fetchPatchSetById={() =>
-                    of({
-                        __typename: 'PatchSet' as const,
-                        id: 'c',
-                        diffStat: {
-                            added: 0,
-                            changed: 18,
-                            deleted: 999,
-                        },
-                        patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
-                    })
-                }
             />
         )
         expect(component).toMatchSnapshot()
@@ -92,7 +76,6 @@ describe('CampaignDetails', () => {
                     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                     author: { username: 'alice' } as GQL.IUser,
                     changesets: { totalCount: 2 },
-                    patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
                     hasUnpublishedPatches: false,
@@ -124,11 +107,4 @@ describe('CampaignDetails', () => {
             })
         })
     }
-
-    test('editing existing', () => {
-        const component = mount(renderCampaignDetails({ viewerCanAdminister: true }))
-        component.find('#e2e-campaign-edit').simulate('click')
-
-        expect(component).toMatchSnapshot()
-    })
 })
