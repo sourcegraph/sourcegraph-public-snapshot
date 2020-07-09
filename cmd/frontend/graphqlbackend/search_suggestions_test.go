@@ -129,12 +129,9 @@ func TestSearchSuggestions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		srr, err := sr.Results(context.Background())
+		_, err = sr.Results(context.Background())
 		if err != nil {
 			t.Fatal(err)
-		}
-		if len(srr.alert.proposedQueries) == 0 {
-			t.Errorf("want an alert with some query suggestions")
 		}
 	})
 

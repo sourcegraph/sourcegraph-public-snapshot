@@ -101,7 +101,12 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	} else {
 		queryInfo, err = query.Process(queryString, searchType)
 		if err != nil {
-			return alertForQuery(queryString, err), nil
+			// Try parse the query with the new parser if the old one fails.
+			queryInfo, err = query.ProcessAndOr(args.Query, searchType)
+			if err != nil {
+				return alertForQuery(args.Query, err), nil
+			}
+			log15.Warn("AndOr Parser succeeded parsing previously unsupported query", "query", args.Query)
 		}
 	}
 
