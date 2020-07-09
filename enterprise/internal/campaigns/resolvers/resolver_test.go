@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -806,6 +807,7 @@ func TestNullIDResilience(t *testing.T) {
 		campaigns.MarshalCampaignID(0),
 		marshalExternalChangesetID(0),
 		marshalCampaignSpecRandID(""),
+		marshalChangesetSpecRandID(""),
 	}
 
 	for _, id := range ids {
@@ -823,6 +825,8 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalExternalChangesetID(0)),
+		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
+		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaigns.MarshalCampaignID(0)),
 	}
 
 	for _, m := range mutations {
@@ -1164,6 +1168,95 @@ fragment o on Org  { id, name }
 
 mutation($campaignSpec: ID!, $ensureCampaign: ID){
   applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
+	id, name, description, branch
+	author    { ...u }
+	namespace {
+		... on User { ...u }
+		... on Org  { ...o }
+	}
+  }
+}
+`
+
+func TestMoveCampaign(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	userID := insertTestUser(t, dbconn.Global, "move-campaign1", true)
+
+	org, err := db.Orgs.Create(ctx, "org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := ee.NewStore(dbconn.Global)
+
+	campaignSpec := &campaigns.CampaignSpec{
+		RawSpec:         ct.TestRawCampaignSpec,
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	campaign := &campaigns.Campaign{
+		CampaignSpecID:  campaignSpec.ID,
+		Name:            "old-name",
+		AuthorID:        userID,
+		NamespaceUserID: campaignSpec.UserID,
+	}
+	if err := store.CreateCampaign(ctx, campaign); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Move to a new name
+	input := map[string]interface{}{
+		"campaign": string(campaigns.MarshalCampaignID(campaign.ID)),
+		"newName":  "new-name",
+	}
+
+	var response struct{ MoveCampaign apitest.Campaign }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
+
+	haveCampaign := response.MoveCampaign
+	fmt.Printf("haveCampaign=%+v\n", haveCampaign)
+	if diff := cmp.Diff(input["newName"], haveCampaign.Name); diff != "" {
+		t.Fatalf("unexpected name (-want +got):\n%s", diff)
+	}
+
+	// Move to a new namespace
+	orgApiID := graphqlbackend.MarshalOrgID(org.ID)
+	input = map[string]interface{}{
+		"campaign":     string(campaigns.MarshalCampaignID(campaign.ID)),
+		"newNamespace": orgApiID,
+	}
+
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
+
+	haveCampaign = response.MoveCampaign
+	if diff := cmp.Diff(string(orgApiID), haveCampaign.Namespace.ID); diff != "" {
+		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
+	}
+}
+
+const mutationMoveCampaign = `
+fragment u on User { id, databaseID, siteAdmin }
+fragment o on Org  { id, name }
+
+mutation($campaign: ID!, $newName: String, $newNamespace: ID){
+  moveCampaign(campaign: $campaign, newName: $newName, newNamespace: $newNamespace) {
 	id, name, description, branch
 	author    { ...u }
 	namespace {

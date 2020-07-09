@@ -850,6 +850,84 @@ func TestService(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run("MoveCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *campaigns.Campaign {
+			t.Helper()
+
+			c := &campaigns.Campaign{
+				AuthorID:        authorID,
+				NamespaceUserID: userID,
+				NamespaceOrgID:  orgID,
+				Name:            name,
+			}
+
+			if err := store.CreateCampaign(ctx, c); err != nil {
+				t.Fatal(err)
+			}
+
+			return c
+		}
+
+		t.Run("new name", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewName: "new-name"}
+			moved, err := svc.MoveCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := moved.Name, opts.NewName; have != want {
+				t.Fatalf("wrong name. want=%q, have=%q", want, have)
+			}
+		})
+
+		t.Run("new user namespace", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+
+			user2 := createTestUser(ctx, t)
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
+			moved, err := svc.MoveCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := moved.NamespaceUserID, opts.NewNamespaceUserID; have != want {
+				t.Fatalf("wrong NamespaceUserID. want=%d, have=%d", want, have)
+			}
+
+			if have, want := moved.NamespaceOrgID, opts.NewNamespaceOrgID; have != want {
+				t.Fatalf("wrong NamespaceOrgID. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("new org namespace", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+
+			org, err := db.Orgs.Create(ctx, "org", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+			moved, err := svc.MoveCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := moved.NamespaceUserID, opts.NewNamespaceUserID; have != want {
+				t.Fatalf("wrong NamespaceUserID. want=%d, have=%d", want, have)
+			}
+
+			if have, want := moved.NamespaceOrgID, opts.NewNamespaceOrgID; have != want {
+				t.Fatalf("wrong NamespaceOrgID. want=%d, have=%d", want, have)
+			}
+		})
+	})
 }
 
 var testUser = db.NewUser{
