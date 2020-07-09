@@ -315,7 +315,7 @@ VALUES
 ON CONFLICT ON CONSTRAINT
   user_permissions_perm_object_unique
 DO UPDATE SET
-  object_ids = UNIQ(SORT(user_permissions.object_ids + excluded.object_ids)),
+  object_ids = user_permissions.object_ids | excluded.object_ids,
   updated_at = excluded.updated_at
 `
 
@@ -621,7 +621,7 @@ VALUES
 ON CONFLICT ON CONSTRAINT
   user_pending_permissions_service_perm_object_unique
 DO UPDATE SET
-  object_ids = UNIQ(SORT(user_pending_permissions.object_ids + excluded.object_ids)),
+  object_ids = user_pending_permissions.object_ids | excluded.object_ids,
   updated_at = excluded.updated_at
 `
 	if args.UpdatedAt.IsZero() {
@@ -789,7 +789,7 @@ VALUES
 ON CONFLICT ON CONSTRAINT
   repo_permissions_perm_unique
 DO UPDATE SET
-  user_ids = UNIQ(SORT(repo_permissions.user_ids + excluded.user_ids)),
+  user_ids = repo_permissions.user_ids | excluded.user_ids,
   updated_at = excluded.updated_at
 `
 
