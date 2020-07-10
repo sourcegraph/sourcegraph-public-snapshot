@@ -82,7 +82,17 @@ const ChangesetSpecSchemaJSON = `{
           "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host."
         }
       },
-      "required": ["baseRepository", "baseRef", "baseRev", "headRepository", "headRef", "title", "body", "commits", "published"],
+      "required": [
+        "baseRepository",
+        "baseRef",
+        "baseRev",
+        "headRepository",
+        "headRef",
+        "title",
+        "body",
+        "commits",
+        "published"
+      ],
       "additionalProperties": false
     }
   ]
