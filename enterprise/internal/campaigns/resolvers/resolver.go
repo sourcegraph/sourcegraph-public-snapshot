@@ -303,23 +303,18 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	changesetSpec := &campaigns.ChangesetSpec{
-		RawSpec: args.ChangesetSpec,
-		UserID:  user.ID,
-	}
-
 	svc := ee.NewService(r.store, r.httpFactory)
-	if err = svc.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+	spec, err := svc.CreateChangesetSpec(ctx, args.ChangesetSpec, user.ID)
+	if err != nil {
 		return nil, err
 	}
 
-	specResolver := &changesetSpecResolver{
+	resolver := &changesetSpecResolver{
 		store:         r.store,
 		httpFactory:   r.httpFactory,
-		changesetSpec: changesetSpec,
+		changesetSpec: spec,
 	}
-
-	return specResolver, nil
+	return resolver, nil
 }
 
 func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.CampaignResolver, error) {

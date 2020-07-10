@@ -412,7 +412,7 @@ func TestChangesetSyncStateEquals(t *testing.T) {
 	}
 }
 
-func TestChangesetSpecValidate(t *testing.T) {
+func TestChangesetSpecUnmarshalValidate(t *testing.T) {
 	tests := []struct {
 		name    string
 		rawSpec string
@@ -510,11 +510,8 @@ func TestChangesetSpecValidate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			spec, err := NewChangesetSpecFromRaw(tc.rawSpec)
-			if err != nil {
-				t.Fatal(err)
-			}
-			haveErr := fmt.Sprintf("%v", spec.Validate())
+			spec := &ChangesetSpec{RawSpec: tc.rawSpec}
+			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
 			if haveErr == "<nil>" {
 				haveErr = ""
 			}

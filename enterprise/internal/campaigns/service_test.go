@@ -674,8 +674,8 @@ func TestService(t *testing.T) {
 		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID))
 
 		t.Run("success", func(t *testing.T) {
-			spec := &campaigns.ChangesetSpec{UserID: user.ID, RawSpec: rawSpec}
-			if err := svc.CreateChangesetSpec(ctx, spec); err != nil {
+			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
+			if err != nil {
 				t.Fatal(err)
 			}
 
@@ -693,12 +693,26 @@ func TestService(t *testing.T) {
 			}
 		})
 
+		t.Run("invalid raw spec", func(t *testing.T) {
+			invalidRaw := `{"externalComputer": "beepboop"}`
+			_, err := svc.CreateChangesetSpec(ctx, invalidRaw, user.ID)
+			if err == nil {
+				t.Fatal("expected error but got nil")
+			}
+
+			haveErr := fmt.Sprintf("%v", err)
+			wantErr := "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed\n\n"
+			if diff := cmp.Diff(wantErr, haveErr); diff != "" {
+				t.Fatalf("unexpected error (-want +got):\n%s", diff)
+			}
+		})
+
 		t.Run("missing repository permissions", func(t *testing.T) {
 			// Single repository filtered out by authzFilter
 			authzFilterRepo(t, repo.ID)
 
-			spec := &campaigns.ChangesetSpec{UserID: user.ID, RawSpec: rawSpec}
-			if err := svc.CreateChangesetSpec(ctx, spec); !errcode.IsNotFound(err) {
+			_, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
+			if !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})

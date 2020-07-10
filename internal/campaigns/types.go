@@ -1559,7 +1559,7 @@ type CommitTemplate struct {
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 	c := &ChangesetSpec{RawSpec: rawSpec}
 
-	return c, json.Unmarshal([]byte(c.RawSpec), &c.Spec)
+	return c, c.UnmarshalValidate()
 }
 
 type ChangesetSpec struct {
@@ -1584,13 +1584,9 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 	return &cc
 }
 
-// UnmarshalRawSpec unmarshals the ChangesetSpec's RawSpec into the Spec
-// attribute.
-func (cs *ChangesetSpec) UnmarshalRawSpec() error {
-	return json.Unmarshal([]byte(cs.RawSpec), &cs.Spec)
-}
-
-func (cs *ChangesetSpec) Validate() error {
+// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
+// the ChangesetSpec schema and does additional semantic validation.
+func (cs *ChangesetSpec) UnmarshalValidate() error {
 	sl := gojsonschema.NewSchemaLoader()
 	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.ChangesetSpecSchemaJSON))
 	if err != nil {
@@ -1616,15 +1612,15 @@ func (cs *ChangesetSpec) Validate() error {
 		errs = multierror.Append(errs, errors.New(e))
 	}
 
-	var desc ChangesetSpecDescription
-	if err := json.Unmarshal(normalized, &desc); err != nil {
+	if err := json.Unmarshal(normalized, &cs.Spec); err != nil {
 		errs = multierror.Append(errs, err)
 		return errs.ErrorOrNil()
 	}
 
-	if desc.HeadRepository != "" && desc.BaseRepository != "" && desc.HeadRepository != desc.BaseRepository {
+	headRepo := cs.Spec.HeadRepository
+	baseRepo := cs.Spec.BaseRepository
+	if headRepo != "" && baseRepo != "" && headRepo != baseRepo {
 		errs = multierror.Append(errs, errors.New("headRepository does not match baseRepository"))
-		return errs.ErrorOrNil()
 	}
 
 	return errs.ErrorOrNil()

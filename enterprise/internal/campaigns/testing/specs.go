@@ -43,7 +43,7 @@ func NewRawChangesetSpecGitBranch(repo graphql.ID) string {
 		"headRef":"refs/heads/my-branch",
 
 		"title": "the title",
-		"description": "the description",
+		"body": "the body of the PR",
 
 		"published": false,
 

@@ -177,32 +177,31 @@ func (s *Service) CreateCampaignSpec(
 	return nil
 }
 
-// CreateChangesetSpec creates the ChangesetSpec.
-func (s *Service) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetSpec) (err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", c.UserID))
+// CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
+func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *campaigns.ChangesetSpec, err error) {
+	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if err := c.UnmarshalRawSpec(); err != nil {
-		return err
-	}
-
-	// TODO(mrnugget): Validate that c.Spec is valid
-
-	c.RepoID, err = graphqlbackend.UnmarshalRepositoryID(c.Spec.BaseRepository)
+	spec, err = campaigns.NewChangesetSpecFromRaw(rawSpec)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	spec.UserID = userID
+	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(spec.Spec.BaseRepository)
+	if err != nil {
+		return nil, err
 	}
 
 	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = db.Repos.Get(ctx, c.RepoID); err != nil {
-		return err
+	if _, err = db.Repos.Get(ctx, spec.RepoID); err != nil {
+		return nil, err
 	}
 
-	return s.store.CreateChangesetSpec(ctx, c)
+	return spec, s.store.CreateChangesetSpec(ctx, spec)
 }
 
 // changesetSpecNotFoundErr is returned by CreateCampaignSpec if a
