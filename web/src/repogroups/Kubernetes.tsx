@@ -6,12 +6,11 @@ export const kubernetes: RepogroupMetadata = {
     title: 'Kubernetes',
     name: 'kubernetes',
     url: '/kubernetes',
-    description:
-        'Search the trending and most starred Kubernetes repositories on GitHub. Explore with search examples below.',
+    description: 'Explore Kubernetes repositories on GitHub. Search with examples below.',
     examples: [
         {
             title:
-                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time:',
+                'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">file:</span>pod.yaml{' '}
@@ -22,7 +21,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'Look for outdated `apiVersions` of admission webhooks:',
+            title: 'Look for outdated `apiVersions` of admission webhooks',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">content:</span>"apiVersion:
@@ -35,7 +34,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'Find Prometheus usage in YAML files:',
+            title: 'Find Prometheus usage in YAML files',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>yaml prom/prometheus
@@ -45,7 +44,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'Search for examples of the sidecar pattern in Go:',
+            title: 'Search for examples of the sidecar pattern in Go',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>go sidecar
@@ -55,7 +54,7 @@ export const kubernetes: RepogroupMetadata = {
             patternType: SearchPatternType.literal,
         },
         {
-            title: 'Browse diffs for recent code changes in the community:',
+            title: 'Browse diffs for recent code changes',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">type:</span>diff{' '}
