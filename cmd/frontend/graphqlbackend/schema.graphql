@@ -511,10 +511,30 @@ type GitBranchChangesetDescription {
     # the Git branch "fix-foo").
     headRef: String!
 
+    # The title of the changeset on the code host.
+    #
+    # On Bitbucket Server or GitHub this is the title of the pull request.
+    title: String!
+
+    # The body of the changeset on the code host.
+    #
+    # On Bitbucket Server or GitHub this is the body/description of the pull request.
+    body: String!
+
     # The Git commits with the proposed changes. These commits are pushed to the head ref.
     #
     # Only 1 commit is supported.
     commits: [GitCommitDescription!]!
+
+    # Whether or not the changeset described here should be created right after
+    # applying the ChangesetSpec this description belongs to.
+    #
+    # If this is false, the changeset will only be created on Sourcegraph and
+    # can be previewed.
+    #
+    # Another ChangesetSpec with the same description, but "published: true",
+    # can later be applied publish the changeset.
+    published: Boolean!
 }
 
 # A description of a Git commit.
