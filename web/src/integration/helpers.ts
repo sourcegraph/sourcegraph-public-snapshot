@@ -245,8 +245,8 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         }),
                     ])
                 } finally {
-                    await recordCoverage(driver.browser)
                     await polly.stop()
+                    await recordCoverage(driver.browser)
                     await driver.page.close()
                 }
             }
