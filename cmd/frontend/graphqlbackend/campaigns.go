@@ -100,13 +100,40 @@ type CampaignSpecResolver interface {
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
 
-	// TODO: More fields, see PR
-	ExpiresAt() *DateTime
+	Description() ChangesetDescription
 
-	// TODO: This is a hack so that a CampaignSpecResolver cannot be cast into
-	// this interface in `(NodeResolver).ToChangesetSpec`
-	// This should be removed as soon as this resolver gets more methods.
-	OnlyChangesetSpec() bool
+	ExpiresAt() *DateTime
+}
+
+type ChangesetDescription interface {
+	ToExistingChangesetReference() (ExistingChangesetReferenceResolver, bool)
+	ToGitBranchChangesetDescription() (GitBranchChangesetDescriptionResolver, bool)
+}
+
+type ExistingChangesetReferenceResolver interface {
+	BaseRepository() graphql.ID
+	ExternalID() string
+}
+
+type GitBranchChangesetDescriptionResolver interface {
+	BaseRepository() graphql.ID
+	BaseRef() string
+	BaseRev() string
+
+	HeadRepository() graphql.ID
+	HeadRef() string
+
+	Title() string
+	Body() string
+
+	Commits() []GitCommitDescriptionResolver
+
+	Published() bool
+}
+
+type GitCommitDescriptionResolver interface {
+	Message() string
+	Diff() string
 }
 
 type CampaignDeltaResolver interface {

@@ -9,6 +9,19 @@ import (
 const TestRawCampaignSpec = `{
   "name": "The name",
   "description": "My description",
+  "on": [
+    {"repositoriesMatchingQuery": "lang:go func main"},
+	{"repository": "github.com/sourcegraph/src-cli"}
+  ],
+  "steps": [
+    {
+	  "run": "echo 'foobar'",
+	  "container": "alpine",
+	  "env": {
+	    "PATH": "/work/foobar:$PATH"
+	  }
+	}
+  ],
   "changesetTemplate": {
     "title": "Hello World",
     "body": "My first campaign!",
@@ -20,13 +33,33 @@ const TestRawCampaignSpec = `{
   }
 }`
 
-func NewRawChangesetSpec(repo graphql.ID) string {
+func NewRawChangesetSpecGitBranch(repo graphql.ID) string {
 	tmpl := `{
-		"repoID": %q,
-		"rev":"d34db33f",
+		"baseRepository": %q,
+		"baseRev":"d34db33f",
 		"baseRef":"refs/heads/master",
-		"diff":"+-"
+
+		"headRepository": %q,
+		"headRef":"refs/heads/my-branch",
+
+		"title": "the title",
+		"description": "the description",
+
+		"published": false,
+
+		"commits": [
+		  {"message": "git commit message", "diff": "+/- diff"}
+		]
 	}`
 
-	return fmt.Sprintf(tmpl, repo)
+	return fmt.Sprintf(tmpl, repo, repo)
+}
+
+func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {
+	tmpl := `{
+		"baseRepository": %q,
+		"externalID": %q
+	}`
+
+	return fmt.Sprintf(tmpl, repo, externalID)
 }

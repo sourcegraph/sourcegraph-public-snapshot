@@ -150,11 +150,11 @@ func (s *Service) CreateCampaignSpec(
 		}
 	}
 
-	// TODO: Handle YAML
+	// TODO(mrnugget): Handle YAML
 	if err := json.Unmarshal([]byte(c.RawSpec), &c.Spec); err != nil {
 		return err
 	}
-	// TODO: Validate that c.Spec is valid
+	// TODO(mrnugget): Validate that c.Spec is valid
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -185,13 +185,13 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, c *campaigns.Changese
 		tr.Finish()
 	}()
 
-	if err := json.Unmarshal([]byte(c.RawSpec), &c.Spec); err != nil {
+	if err := c.UnmarshalRawSpec(); err != nil {
 		return err
 	}
 
-	// TODO: Validate that c.Spec is valid
+	// TODO(mrnugget): Validate that c.Spec is valid
 
-	c.RepoID, err = graphqlbackend.UnmarshalRepositoryID(c.Spec.RepoID)
+	c.RepoID, err = graphqlbackend.UnmarshalRepositoryID(c.Spec.BaseRepository)
 	if err != nil {
 		return err
 	}
@@ -281,17 +281,15 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	campaign.CampaignSpecID = campaignSpec.ID
-
-	// Do we still need AuthorID on Campaign?
 	campaign.AuthorID = campaignSpec.UserID
-
-	// TODO Do we need these fields on Campaign or is it enough that
-	// we have them on CampaignSpec?
 	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
 	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
-	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
 	campaign.Name = campaignSpec.Spec.Name
 	campaign.Description = campaignSpec.Spec.Description
+
+	// TODO(mrnugget): This doesn't need to be populated, since the branch is
+	// now ChangesetSpec.Spec.HeadRef.
+	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
 
 	if campaign.ID == 0 {
 		return campaign, tx.CreateCampaign(ctx, campaign)

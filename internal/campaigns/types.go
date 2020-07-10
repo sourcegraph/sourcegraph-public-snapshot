@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -1521,21 +1522,40 @@ func (cs *CampaignSpec) Clone() *CampaignSpec {
 }
 
 type CampaignSpecFields struct {
-	Name              string            `json:"name"`
-	Description       string            `json:"description"`
-	ChangesetTemplate ChangesetTemplate `json:"changesetTemplate"`
+	Name              string             `json:"name,omitempty"`
+	Description       string             `json:"description,omitempty"`
+	On                []CampaignSpecOn   `json:"on,omitempty"`
+	Steps             []CampaignSpecStep `json:"steps,omitempty"`
+	ChangesetTemplate ChangesetTemplate  `json:"changesetTemplate,omitempty"`
+}
+
+type CampaignSpecOn struct {
+	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty"`
+	Repository                string `json:"repository,omitempty"`
+}
+
+type CampaignSpecStep struct {
+	Run       string            `json:"run,omitempty"`
+	Container string            `json:"container,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
 }
 
 type ChangesetTemplate struct {
-	Title     string         `json:"title"`
-	Body      string         `json:"body"`
-	Branch    string         `json:"branch"`
-	Commit    CommitTemplate `json:"commit"`
-	Published bool           `json:"published"`
+	Title     string         `json:"title,omitempty"`
+	Body      string         `json:"body,omitempty"`
+	Branch    string         `json:"branch,omitempty"`
+	Commit    CommitTemplate `json:"commit,omitempty"`
+	Published bool           `json:"published,omitempty"`
 }
 
 type CommitTemplate struct {
-	Message string `json:"message"`
+	Message string `json:"message,omitempty"`
+}
+
+func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
+	c := &ChangesetSpec{RawSpec: rawSpec}
+
+	return c, json.Unmarshal([]byte(c.RawSpec), &c.Spec)
 }
 
 type ChangesetSpec struct {
@@ -1543,7 +1563,8 @@ type ChangesetSpec struct {
 	RandID string
 
 	RawSpec string
-	Spec    ChangesetSpecFields
+	// TODO(mrnugget): should we rename the "spec" column to "description"?
+	Spec ChangesetSpecDescription
 
 	CampaignSpecID int64
 	RepoID         api.RepoID
@@ -1559,9 +1580,32 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 	return &cc
 }
 
-type ChangesetSpecFields struct {
-	RepoID  graphql.ID   `json:"repoID"`
-	Rev     api.CommitID `json:"rev"`
-	BaseRef string       `json:"baseRef"`
-	Diff    string       `json:"diff"`
+// UnmarshalRawSpec unmarshals the ChangesetSpec's RawSpec into the Spec
+// attribute.
+func (cs *ChangesetSpec) UnmarshalRawSpec() error {
+	return json.Unmarshal([]byte(cs.RawSpec), &cs.Spec)
+}
+
+type ChangesetSpecDescription struct {
+	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
+
+	ExternalID string `json:"externalId,omitempty"`
+
+	BaseRev string `json:"baseRev,omitempty"`
+	BaseRef string `json:"baseRef,omitempty"`
+
+	HeadRepository graphql.ID `json:"headRepository,omitempty"`
+	HeadRef        string     `json:"headRef,omitempty"`
+
+	Title string `json:"title,omitempty"`
+	Body  string `json:"body,omitempty"`
+
+	Commits []GitCommitDescription `json:"commits,omitempty"`
+
+	Published bool `json:"published,omitempty"`
+}
+
+type GitCommitDescription struct {
+	Message string `json:"message,omitempty"`
+	Diff    string `json:"diff,omitempty"`
 }

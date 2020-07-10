@@ -60,22 +60,11 @@ func TestCampaignSpecResolver(t *testing.T) {
 	userApiID := string(graphqlbackend.MarshalUserID(userID))
 
 	want := apitest.CampaignSpec{
-		Typename:      "CampaignSpec",
-		ID:            apiID,
+		Typename: "CampaignSpec",
+		ID:       apiID,
+
 		OriginalInput: spec.RawSpec,
-		ParsedInput: apitest.CampaignSpecParsedInput{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-			ChangesetTemplate: apitest.ChangesetTemplate{
-				Title:  spec.Spec.ChangesetTemplate.Title,
-				Body:   spec.Spec.ChangesetTemplate.Body,
-				Branch: spec.Spec.ChangesetTemplate.Branch,
-				Commit: apitest.CommitTemplate{
-					Message: spec.Spec.ChangesetTemplate.Commit.Message,
-				},
-				Published: spec.Spec.ChangesetTemplate.Published,
-			},
-		},
+
 		PreviewURL: "/campaigns/new?spec=" + apiID,
 		Namespace:  apitest.UserOrg{ID: userApiID, DatabaseID: userID},
 		Creator:    apitest.User{ID: userApiID, DatabaseID: userID},

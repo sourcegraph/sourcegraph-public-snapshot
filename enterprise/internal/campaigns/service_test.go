@@ -671,7 +671,7 @@ func TestService(t *testing.T) {
 		svc := NewServiceWithClock(store, cf, clock)
 
 		repo := rs[0]
-		rawSpec := ct.NewRawChangesetSpec(graphqlbackend.MarshalRepositoryID(repo.ID))
+		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID))
 
 		t.Run("success", func(t *testing.T) {
 			spec := &campaigns.ChangesetSpec{UserID: user.ID, RawSpec: rawSpec}
@@ -683,7 +683,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("ChangesetSpec ID is 0")
 			}
 
-			var wantFields campaigns.ChangesetSpecFields
+			var wantFields campaigns.ChangesetSpecDescription
 			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
