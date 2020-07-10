@@ -64,7 +64,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
 
-    // Fetch repogroups from settings.
+    // Get repogroups from settings.
     const repogroups: { [name: string]: string[] } = useMemo(
         () =>
             isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final['search.repositoryGroups'],
