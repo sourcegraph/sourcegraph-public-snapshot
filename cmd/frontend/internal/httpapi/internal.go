@@ -140,7 +140,14 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 // search specific endpoint is used rather than serving the entire site settings
 // from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	b, err := searchbackend.GetIndexOptions(&conf.Get().SiteConfiguration)
+	repo := r.URL.Query().Get("repo")
+	getVersion := func(branch string) (string, error) {
+		// Do not to trigger a repo-updater lookup since this is a batch job.
+		commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: api.RepoName(repo)}, nil, branch, git.ResolveRevisionOptions{})
+		return string(commitID), err
+	}
+
+	b, err := searchbackend.GetIndexOptions(&conf.Get().SiteConfiguration, repo, getVersion)
 	if err != nil {
 		return err
 	}
