@@ -11,6 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func Test_defaultRepos_BulkAdd(t *testing.T) {
+	DefaultRepos.BulkAdd(context.Background(), []api.RepoID{1, 2, 3})
+}
+
 func Test_defaultRepos_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

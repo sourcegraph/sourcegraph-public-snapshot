@@ -2,6 +2,9 @@ package db
 
 import (
 	"context"
+	"log"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -13,7 +16,14 @@ import (
 type defaultRepos struct{}
 
 func (s *defaultRepos) BulkAdd(ctx context.Context, repos []api.RepoID) (errors map[api.RepoID]error) {
+	repoStrs := make([]string, len(repos))
+	for i := 0; i < len(repos); i++ {
+		repoStrs[i] = strconv.Itoa(int(repos[i]))
+	}
 
+	const q = `INSERT INTO default_repos(repo_id) VALUES(` + strings.Join(repoStrs, ", ") + `)`
+	log.Printf("# q: %v", q)
+	return nil
 }
 
 func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
