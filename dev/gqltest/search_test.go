@@ -274,4 +274,39 @@ func TestSearch(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("global filename search", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			query          string
+			wantMinResults int
+			wantMaxResults int
+		}{
+			{
+				name:           "search for a non-existent file",
+				query:          "file:asdfasdf.go",
+				wantMaxResults: 0,
+			},
+			{
+				name:           "search for a common file",
+				query:          "file:doc.go",
+				wantMinResults: 5,
+				wantMaxResults: -1,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if test.wantMaxResults != -1 && len(results.Results) > test.wantMaxResults {
+					t.Fatalf("Want results to be less than %d but got %d", test.wantMaxResults, len(results.Results))
+				} else if len(results.Results) < test.wantMinResults {
+					t.Fatalf("Want at least %d results but got %d", test.wantMinResults, len(results.Results))
+				}
+			})
+		}
+	})
 }
