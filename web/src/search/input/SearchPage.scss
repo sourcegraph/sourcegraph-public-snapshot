@@ -93,6 +93,17 @@
         gap: $spacer * 0.75;
     }
 
+  // RULES
+  // Medium Screen
+  // Example searches full width, two other sections below it at 50%
+
+  // Small Screen
+  // All three wrap in a single column
+
+    &__search-a-language {
+       margin-bottom: 3rem;
+    }
+
     &__help-content {
         display: grid;
         grid-template-columns: 2fr 1fr 2fr;
@@ -101,7 +112,25 @@
         &-subheading {
             margin-bottom: 1rem;
         }
+
+        @media (max-width: $media-md) {
+            display: flex;
+            flex-direction: column;
+//                 background-color: rgba(217, 72, 15, 0.5);
+        }
+       @media (max-width: $media-lg) {
+            
+            display: flex;
+            flex-direction: column;
+//                 background-color: rgba(217, 72, 15, 0.5);
+        }
     }
+
+//     @media only screen and (max-width: 600px) {
+//       body {
+//         background-color: lightblue;
+//       }
+//     }
 
     &__keyword-value-text {
         color: #6078A9;
