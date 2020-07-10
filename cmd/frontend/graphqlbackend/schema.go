@@ -457,12 +457,96 @@ type ChangesetSpec implements Node {
     # between revealing the problem and merging the fixes is as short as possible.
     id: ID!
 
-    # TODO(sqs): add fields - the main requirements here will be imposed by the Campaign.changesets
-    # field and the CampaignDelta field describing the delta to changesets.
+    # The description of the changeset.
+    description: ChangesetDescription!
 
     # The date, if any, when this changeset spec expires and is automatically purged. A changeset
-    # spec never expires if its campaign spec has been applied.
+    # spec never expires (and this field is null) if its campaign spec has been applied.
     expiresAt: DateTime
+}
+
+# All possible types of changesets that can be specified in a changeset spec.
+union ChangesetDescription = ExistingChangesetReference | GitBranchChangesetDescription
+
+# A reference to a changeset that already exists on a code host (and was not created by the
+# campaign).
+type ExistingChangesetReference {
+    # The repository that contains the existing changeset on the code host.
+    baseRepository: ID!
+
+    # The ID that uniquely identifies the existing changeset on the code host.
+    #
+    # For GitHub and Bitbucket Server, this is the pull request number (as a string) in the
+    # base repository. For example, "1234" for PR #1234.
+    externalID: String!
+}
+
+# A description of a changeset that represents the proposal to merge one branch into another.
+#
+# This is used to describe a pull request (on GitHub and Bitbucket Server).
+type GitBranchChangesetDescription {
+    # The repository that this changeset spec is proposing to change.
+    baseRepository: ID!
+
+    # The full name of the Git ref in the base repository that this changeset is based on (and is
+    # proposing to be merged into). This ref must exist on the base repository. For example,
+    # "refs/heads/master" or "refs/heads/main".
+    baseRef: String!
+
+    # The base revision this changeset is based on. It is the latest commit in
+    # baseRef at the time when the changeset spec was created.
+    # For example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
+    baseRev: String!
+
+    # The repository that contains the branch with this changeset's changes.
+    #
+    # Fork repositories and cross-repository changesets are not yet supported. Therefore,
+    # headRepository must be equal to baseRepository.
+    headRepository: ID!
+
+    # The full name of the Git ref that holds the changes proposed by this changeset. This ref will
+    # be created or updated with the commits. For example, "refs/heads/fix-foo" (for
+    # the Git branch "fix-foo").
+    headRef: String!
+
+    # The title of the changeset on the code host.
+    #
+    # On Bitbucket Server or GitHub this is the title of the pull request.
+    title: String!
+
+    # The body of the changeset on the code host.
+    #
+    # On Bitbucket Server or GitHub this is the body/description of the pull request.
+    body: String!
+
+    # The Git commits with the proposed changes. These commits are pushed to the head ref.
+    #
+    # Only 1 commit is supported.
+    commits: [GitCommitDescription!]!
+
+    # Whether or not the changeset described here should be created right after
+    # applying the ChangesetSpec this description belongs to.
+    #
+    # If this is false, the changeset will only be created on Sourcegraph and
+    # can be previewed.
+    #
+    # Another ChangesetSpec with the same description, but "published: true",
+    # can later be applied publish the changeset.
+    published: Boolean!
+}
+
+# A description of a Git commit.
+#
+# TODO: Support specifying committer/author.
+type GitCommitDescription {
+    # The Git commit message.
+    message: String!
+
+    # The commit diff (in unified diff format).
+    #
+    # The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
+    # to omit the prefix.
+    diff: String!
 }
 
 # A campaign spec is an immutable description of the desired state of a campaign. To create a

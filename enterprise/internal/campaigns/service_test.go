@@ -601,13 +601,15 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("success", func(t *testing.T) {
-			spec := &campaigns.CampaignSpec{
-				UserID:          user.ID,
-				NamespaceUserID: user.ID,
-				RawSpec:         ct.TestRawCampaignSpec,
+			opts := CreateCampaignSpecOpts{
+				UserID:               user.ID,
+				NamespaceUserID:      user.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if err := svc.CreateCampaignSpec(ctx, spec, changesetSpecRandIDs); err != nil {
+			spec, err := svc.CreateCampaignSpec(ctx, opts)
+			if err != nil {
 				t.Fatal(err)
 			}
 
@@ -636,55 +638,24 @@ func TestService(t *testing.T) {
 			}
 		})
 
-		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			authzFilterRepo(t, changesetSpecs[0].RepoID)
-
-			spec := &campaigns.CampaignSpec{
+		t.Run("success with YAML raw spec", func(t *testing.T) {
+			opts := CreateCampaignSpecOpts{
 				UserID:          user.ID,
 				NamespaceUserID: user.ID,
-				RawSpec:         ct.TestRawCampaignSpec,
+				RawSpec:         ct.TestRawCampaignSpecYAML,
 			}
 
-			if err := svc.CreateCampaignSpec(ctx, spec, changesetSpecRandIDs); !errcode.IsNotFound(err) {
-				t.Fatalf("expected not-found error but got %s", err)
-			}
-
-		})
-
-		t.Run("invalid changesetspec id", func(t *testing.T) {
-			spec := &campaigns.CampaignSpec{
-				UserID:          user.ID,
-				NamespaceUserID: user.ID,
-				RawSpec:         ct.TestRawCampaignSpec,
-			}
-
-			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
-
-			if err := svc.CreateCampaignSpec(ctx, spec, containsInvalidID); !errcode.IsNotFound(err) {
-				t.Fatalf("expected not-found error but got %s", err)
-			}
-		})
-	})
-
-	t.Run("CreateChangesetSpec", func(t *testing.T) {
-		svc := NewServiceWithClock(store, cf, clock)
-
-		repo := rs[0]
-		rawSpec := ct.NewRawChangesetSpec(graphqlbackend.MarshalRepositoryID(repo.ID))
-
-		t.Run("success", func(t *testing.T) {
-			spec := &campaigns.ChangesetSpec{UserID: user.ID, RawSpec: rawSpec}
-			if err := svc.CreateChangesetSpec(ctx, spec); err != nil {
+			spec, err := svc.CreateCampaignSpec(ctx, opts)
+			if err != nil {
 				t.Fatal(err)
 			}
 
 			if spec.ID == 0 {
-				t.Fatalf("ChangesetSpec ID is 0")
+				t.Fatalf("CampaignSpec ID is 0")
 			}
 
-			var wantFields campaigns.ChangesetSpecFields
-			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
+			var wantFields campaigns.CampaignSpecFields
+			if err := json.Unmarshal([]byte(ct.TestRawCampaignSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
 
@@ -695,10 +666,82 @@ func TestService(t *testing.T) {
 
 		t.Run("missing repository permissions", func(t *testing.T) {
 			// Single repository filtered out by authzFilter
+			authzFilterRepo(t, changesetSpecs[0].RepoID)
+
+			opts := CreateCampaignSpecOpts{
+				UserID:               user.ID,
+				NamespaceUserID:      user.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
+			}
+
+			if _, err := svc.CreateCampaignSpec(ctx, opts); !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+
+		})
+
+		t.Run("invalid changesetspec id", func(t *testing.T) {
+			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
+			opts := CreateCampaignSpecOpts{
+				UserID:               user.ID,
+				NamespaceUserID:      user.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: containsInvalidID,
+			}
+
+			if _, err := svc.CreateCampaignSpec(ctx, opts); !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+		})
+	})
+
+	t.Run("CreateChangesetSpec", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		repo := rs[0]
+		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID))
+
+		t.Run("success", func(t *testing.T) {
+			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if spec.ID == 0 {
+				t.Fatalf("ChangesetSpec ID is 0")
+			}
+
+			var wantFields campaigns.ChangesetSpecDescription
+			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("invalid raw spec", func(t *testing.T) {
+			invalidRaw := `{"externalComputer": "beepboop"}`
+			_, err := svc.CreateChangesetSpec(ctx, invalidRaw, user.ID)
+			if err == nil {
+				t.Fatal("expected error but got nil")
+			}
+
+			haveErr := fmt.Sprintf("%v", err)
+			wantErr := "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed\n\n"
+			if diff := cmp.Diff(wantErr, haveErr); diff != "" {
+				t.Fatalf("unexpected error (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			// Single repository filtered out by authzFilter
 			authzFilterRepo(t, repo.ID)
 
-			spec := &campaigns.ChangesetSpec{UserID: user.ID, RawSpec: rawSpec}
-			if err := svc.CreateChangesetSpec(ctx, spec); !errcode.IsNotFound(err) {
+			_, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
+			if !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})

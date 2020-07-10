@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -105,22 +104,37 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) err
 	return nil
 }
 
+type CreateCampaignSpecOpts struct {
+	RawSpec string
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	UserID int32
+
+	ChangesetSpecRandIDs []string
+}
+
 // CreateCampaignSpec creates the CampaignSpec.
-func (s *Service) CreateCampaignSpec(
-	ctx context.Context,
-	c *campaigns.CampaignSpec,
-	changesetSpecRandIDs []string,
-) (err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("User %d", c.UserID))
+func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *campaigns.CampaignSpec, err error) {
+	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("User %d", opts.UserID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	opts := ListChangesetSpecsOpts{Limit: -1, RandIDs: changesetSpecRandIDs}
-	cs, _, err := s.store.ListChangesetSpecs(ctx, opts)
+	spec, err = campaigns.NewCampaignSpecFromRaw(opts.RawSpec)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	spec.UserID = opts.UserID
+
+	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
+	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
+	if err != nil {
+		return nil, err
 	}
 
 	repoIDs := make([]api.RepoID, 0, len(cs))
@@ -130,7 +144,7 @@ func (s *Service) CreateCampaignSpec(
 
 	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	byRandID := make(map[string]*campaigns.ChangesetSpec, len(cs))
@@ -138,71 +152,64 @@ func (s *Service) CreateCampaignSpec(
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
 		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
-			return &db.RepoNotFoundErr{ID: changesetSpec.RepoID}
+			return nil, &db.RepoNotFoundErr{ID: changesetSpec.RepoID}
 		}
 		byRandID[changesetSpec.RandID] = changesetSpec
 	}
 
 	// Check if a changesetSpec was not found
-	for _, randID := range changesetSpecRandIDs {
+	for _, randID := range opts.ChangesetSpecRandIDs {
 		if _, ok := byRandID[randID]; !ok {
-			return &changesetSpecNotFoundErr{RandID: randID}
+			return nil, &changesetSpecNotFoundErr{RandID: randID}
 		}
 	}
-
-	// TODO: Handle YAML
-	if err := json.Unmarshal([]byte(c.RawSpec), &c.Spec); err != nil {
-		return err
-	}
-	// TODO: Validate that c.Spec is valid
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Done(&err)
 
-	if err := tx.CreateCampaignSpec(ctx, c); err != nil {
-		return err
+	if err := tx.CreateCampaignSpec(ctx, spec); err != nil {
+		return nil, err
 	}
 
 	for _, changesetSpec := range cs {
-		changesetSpec.CampaignSpecID = c.ID
+		changesetSpec.CampaignSpecID = spec.ID
 
 		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return spec, nil
 }
 
-// CreateChangesetSpec creates the ChangesetSpec.
-func (s *Service) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetSpec) (err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", c.UserID))
+// CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
+func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *campaigns.ChangesetSpec, err error) {
+	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if err := json.Unmarshal([]byte(c.RawSpec), &c.Spec); err != nil {
-		return err
-	}
-
-	// TODO: Validate that c.Spec is valid
-
-	c.RepoID, err = graphqlbackend.UnmarshalRepositoryID(c.Spec.RepoID)
+	spec, err = campaigns.NewChangesetSpecFromRaw(rawSpec)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	spec.UserID = userID
+	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(spec.Spec.BaseRepository)
+	if err != nil {
+		return nil, err
 	}
 
 	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
 	// the repository or not.
-	if _, err = db.Repos.Get(ctx, c.RepoID); err != nil {
-		return err
+	if _, err = db.Repos.Get(ctx, spec.RepoID); err != nil {
+		return nil, err
 	}
 
-	return s.store.CreateChangesetSpec(ctx, c)
+	return spec, s.store.CreateChangesetSpec(ctx, spec)
 }
 
 // changesetSpecNotFoundErr is returned by CreateCampaignSpec if a
@@ -281,17 +288,15 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	campaign.CampaignSpecID = campaignSpec.ID
-
-	// Do we still need AuthorID on Campaign?
 	campaign.AuthorID = campaignSpec.UserID
-
-	// TODO Do we need these fields on Campaign or is it enough that
-	// we have them on CampaignSpec?
 	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
 	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
-	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
 	campaign.Name = campaignSpec.Spec.Name
 	campaign.Description = campaignSpec.Spec.Description
+
+	// TODO(mrnugget): This doesn't need to be populated, since the branch is
+	// now ChangesetSpec.Spec.HeadRef.
+	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
 
 	if campaign.ID == 0 {
 		return campaign, tx.CreateCampaign(ctx, campaign)

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -24,28 +25,17 @@ func TestCampaignSpecResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
+	store := ee.NewStore(dbconn.Global)
+
 	userID := insertTestUser(t, dbconn.Global, "campaign-spec-by-id", false)
 
-	spec := &campaigns.CampaignSpec{
-		RawSpec: ct.TestRawCampaignSpec,
-		Spec: campaigns.CampaignSpecFields{
-			Name:        "Foobar",
-			Description: "My description",
-			ChangesetTemplate: campaigns.ChangesetTemplate{
-				Title:  "Hello there",
-				Body:   "This is the body",
-				Branch: "my-branch",
-				Commit: campaigns.CommitTemplate{
-					Message: "Add hello world",
-				},
-				Published: false,
-			},
-		},
-		UserID:          userID,
-		NamespaceUserID: userID,
+	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
+	if err != nil {
+		t.Fatal(err)
 	}
+	spec.UserID = userID
+	spec.NamespaceUserID = userID
 
-	store := ee.NewStore(dbconn.Global)
 	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
@@ -59,33 +49,29 @@ func TestCampaignSpecResolver(t *testing.T) {
 	apiID := string(marshalCampaignSpecRandID(spec.RandID))
 	userApiID := string(graphqlbackend.MarshalUserID(userID))
 
+	input := map[string]interface{}{"campaignSpec": apiID}
+	var response struct{ Node apitest.CampaignSpec }
+	apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+
+	var unmarshaled interface{}
+	err = json.Unmarshal([]byte(spec.RawSpec), &unmarshaled)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	want := apitest.CampaignSpec{
-		Typename:      "CampaignSpec",
-		ID:            apiID,
+		Typename: "CampaignSpec",
+		ID:       apiID,
+
 		OriginalInput: spec.RawSpec,
-		ParsedInput: apitest.CampaignSpecParsedInput{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-			ChangesetTemplate: apitest.ChangesetTemplate{
-				Title:  spec.Spec.ChangesetTemplate.Title,
-				Body:   spec.Spec.ChangesetTemplate.Body,
-				Branch: spec.Spec.ChangesetTemplate.Branch,
-				Commit: apitest.CommitTemplate{
-					Message: spec.Spec.ChangesetTemplate.Commit.Message,
-				},
-				Published: spec.Spec.ChangesetTemplate.Published,
-			},
-		},
+		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
+
 		PreviewURL: "/campaigns/new?spec=" + apiID,
 		Namespace:  apitest.UserOrg{ID: userApiID, DatabaseID: userID},
 		Creator:    apitest.User{ID: userApiID, DatabaseID: userID},
 		CreatedAt:  &graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
 		ExpiresAt:  &graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second).Add(2 * time.Hour)},
 	}
-
-	input := map[string]interface{}{"campaignSpec": apiID}
-	var response struct{ Node apitest.CampaignSpec }
-	apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
 
 	if diff := cmp.Diff(want, response.Node); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
