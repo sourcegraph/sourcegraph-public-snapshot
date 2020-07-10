@@ -1568,11 +1568,11 @@ func (cs *CampaignSpec) UnmarshalValidate() error {
 }
 
 type CampaignSpecFields struct {
-	Name              string             `json:"name,omitempty"`
-	Description       string             `json:"description,omitempty"`
-	On                []CampaignSpecOn   `json:"on,omitempty"`
-	Steps             []CampaignSpecStep `json:"steps,omitempty"`
-	ChangesetTemplate ChangesetTemplate  `json:"changesetTemplate,omitempty"`
+	Name              string             `json:"name"`
+	Description       string             `json:"description"`
+	On                []CampaignSpecOn   `json:"on"`
+	Steps             []CampaignSpecStep `json:"steps"`
+	ChangesetTemplate ChangesetTemplate  `json:"changesetTemplate"`
 }
 
 type CampaignSpecOn struct {
@@ -1581,21 +1581,21 @@ type CampaignSpecOn struct {
 }
 
 type CampaignSpecStep struct {
-	Run       string            `json:"run,omitempty"`
-	Container string            `json:"container,omitempty"`
-	Env       map[string]string `json:"env,omitempty"`
+	Run       string            `json:"run"`
+	Container string            `json:"container"`
+	Env       map[string]string `json:"env"`
 }
 
 type ChangesetTemplate struct {
-	Title     string         `json:"title,omitempty"`
-	Body      string         `json:"body,omitempty"`
-	Branch    string         `json:"branch,omitempty"`
-	Commit    CommitTemplate `json:"commit,omitempty"`
-	Published bool           `json:"published,omitempty"`
+	Title     string         `json:"title"`
+	Body      string         `json:"body"`
+	Branch    string         `json:"branch"`
+	Commit    CommitTemplate `json:"commit"`
+	Published bool           `json:"published"`
 }
 
 type CommitTemplate struct {
-	Message string `json:"message,omitempty"`
+	Message string `json:"message"`
 }
 
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {

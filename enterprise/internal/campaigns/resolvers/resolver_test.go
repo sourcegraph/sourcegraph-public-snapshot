@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -912,9 +913,15 @@ func TestCreateCampaignSpec(t *testing.T) {
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaignSpec)
 
+	var unmarshaled interface{}
+	err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	want := apitest.CampaignSpec{
 		OriginalInput: rawSpec,
-		ParsedInput:   graphqlbackend.JSONValue{},
+		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 		PreviewURL:    "/campaigns/new?spec=",
 		Namespace:     apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
