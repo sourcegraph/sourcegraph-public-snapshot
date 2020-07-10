@@ -2,6 +2,7 @@ import { describe as mochaDescribe, test as mochaTest, before as mochaBefore } f
 import { Subscription, Subject, throwError } from 'rxjs'
 import { snakeCase } from 'lodash'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { afterEachRecordCoverage } from '../../../shared/src/testing/coverage'
 import mkdirp from 'mkdirp-promise'
 import express from 'express'
 import { Polly } from '@pollyjs/core'
@@ -306,6 +307,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 subscriptions.add(() => server.close())
             }
         })
+        afterEachRecordCoverage(() => driver)
         after(async () => {
             await driver?.close()
             // eslint-disable-next-line no-unused-expressions
