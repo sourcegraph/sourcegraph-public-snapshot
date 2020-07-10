@@ -557,7 +557,28 @@ func TestCampaignSpecUnmarshalValidate(t *testing.T) {
 				}
 			}`,
 		},
-
+		{
+			name: "valid YAML",
+			rawSpec: `
+name: my-unique-name
+description: My description
+'on':
+- repositoriesMatchingQuery: lang:go func main
+- repository: github.com/sourcegraph/src-cli
+steps:
+- run: echo 'foobar'
+  container: alpine
+  env:
+    PATH: "/work/foobar:$PATH"
+changesetTemplate:
+  title: Hello World
+  body: My first campaign!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+`,
+		},
 		{
 			name: "invalid name",
 			rawSpec: `{

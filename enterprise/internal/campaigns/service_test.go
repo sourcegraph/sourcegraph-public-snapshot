@@ -638,6 +638,32 @@ func TestService(t *testing.T) {
 			}
 		})
 
+		t.Run("success with YAML raw spec", func(t *testing.T) {
+			opts := CreateCampaignSpecOpts{
+				UserID:          user.ID,
+				NamespaceUserID: user.ID,
+				RawSpec:         ct.TestRawCampaignSpecYAML,
+			}
+
+			spec, err := svc.CreateCampaignSpec(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if spec.ID == 0 {
+				t.Fatalf("CampaignSpec ID is 0")
+			}
+
+			var wantFields campaigns.CampaignSpecFields
+			if err := json.Unmarshal([]byte(ct.TestRawCampaignSpec), &wantFields); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+		})
+
 		t.Run("missing repository permissions", func(t *testing.T) {
 			// Single repository filtered out by authzFilter
 			authzFilterRepo(t, changesetSpecs[0].RepoID)

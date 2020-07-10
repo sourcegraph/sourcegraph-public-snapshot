@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/hashicorp/go-multierror"
@@ -1540,7 +1541,7 @@ func (cs *CampaignSpec) UnmarshalValidate() error {
 		return errors.Wrap(err, "failed to compile CampaignSpec JSON schema")
 	}
 
-	normalized, err := jsonc.Parse(cs.RawSpec)
+	normalized, err := yaml.YAMLToJSON([]byte(cs.RawSpec))
 	if err != nil {
 		return errors.Wrapf(err, "failed to normalize JSON")
 	}
