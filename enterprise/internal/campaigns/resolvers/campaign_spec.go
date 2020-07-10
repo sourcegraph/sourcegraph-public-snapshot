@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -43,7 +42,6 @@ func (r *campaignSpecResolver) OriginalInput() (string, error) {
 }
 
 func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
-	fmt.Printf("r.campaignSpec.Spec=%+v\n", r.campaignSpec.Spec)
 	return graphqlbackend.JSONValue{Value: r.campaignSpec.Spec}, nil
 }
 
