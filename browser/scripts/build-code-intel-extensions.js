@@ -61,4 +61,4 @@ shelljs.cp(
   `${toDirectory}/extensions/${extensionName}`
 )
 
-signale.success('Done building extensions')
+signale.success('Done building Sourcegraph extensions')

@@ -106,7 +106,7 @@ function writeSchema(environment: BuildEnv, browser: Browser, writeDirectory: st
     fs.writeFileSync(`${writeDirectory}/schema.json`, JSON.stringify(schema, null, 4))
 }
 
-const version = utcVersion()
+const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
 
 const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
 
@@ -174,7 +174,7 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
                 shelljs.exec(`cd ${buildDirectory} && zip -q -r ${zipDestination} *`)
             }
 
-            signale.success(`Done building the ${title} ${environment} bundle`)
+            signale.success(`Done building the ${title} ${environment} bundle with version string ${version}`)
         }
     }
 }
