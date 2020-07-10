@@ -1,5 +1,6 @@
 import { GraphQLOverrides } from './helpers'
 import { IQuery, StatusMessage, IOrg, IAlert, IMutation } from '../../../shared/src/graphql/schema'
+import { builtinAuthProvider, siteID, siteGQLID } from './jscontext'
 
 export const testUserID = 'TestUserID'
 export const settingsID = 123
@@ -44,8 +45,8 @@ export const commonGraphQlResults: GraphQLOverrides = {
                     },
                     {
                         __typename: 'Site',
-                        id: 'U2l0ZToic2l0ZSI=',
-                        siteID: 'e00d94ff-adc1-432c-ab53-5181c664b1ed',
+                        id: siteGQLID,
+                        siteID,
                         latestSettings: {
                             id: 470,
                             contents: JSON.stringify({}),
@@ -78,16 +79,7 @@ export const commonGraphQlResults: GraphQLOverrides = {
                 freeUsersExceeded: false,
                 alerts: [] as IAlert[],
                 authProviders: {
-                    nodes: [
-                        {
-                            serviceType: 'builtin',
-                            serviceID: '',
-                            clientID: '',
-                            displayName: 'Builtin username-password authentication',
-                            isBuiltin: true,
-                            authenticationURL: null,
-                        },
-                    ],
+                    nodes: [builtinAuthProvider],
                 },
                 disableBuiltInSearches: false,
                 sendsEmailVerificationEmails: true,

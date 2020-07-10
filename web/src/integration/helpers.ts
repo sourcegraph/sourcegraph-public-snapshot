@@ -14,6 +14,9 @@ import * as path from 'path'
 import * as util from 'util'
 import { commonGraphQlResults } from './graphQlResults'
 import * as prettier from 'prettier'
+import html from 'tagged-template-noop'
+import { createJsContext } from './jscontext'
+import { SourcegraphContext } from '../jscontext'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -43,6 +46,11 @@ interface TestContext {
      * @param overrides The results to return, keyed by query name.
      */
     overrideGraphQL: (overrides: GraphQLOverrides) => void
+
+    /**
+     * Overrides `window.context` from the default created by `createJsContext()`.
+     */
+    overrideJsContext: (jsContext: SourcegraphContext) => void
 
     /**
      * Waits for a specific GraphQL query to happen and returns the variables passed to the request.
@@ -150,9 +158,10 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                     logging: false,
                 })
                 const { server } = polly
-                server.get('/.assets/*path').passthrough()
 
                 const errors = new Subject<never>()
+
+                server.get(new URL('/.assets/*path', sourcegraphBaseUrl).href).passthrough()
 
                 // GraphQL requests are not handled by HARs, but configured per-test.
                 let graphQlOverrides: GraphQLOverrides = commonGraphQlResults
@@ -175,6 +184,25 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                     response.json(result)
                 })
 
+                // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
+                let jsContext = createJsContext({ sourcegraphBaseUrl })
+                server.get(new URL('/*path', sourcegraphBaseUrl).href).intercept((request, response) => {
+                    response.type('text/html').send(html`
+                        <html>
+                            <head>
+                                <title>Sourcegraph Test</title>
+                            </head>
+                            <body>
+                                <div id="root"></div>
+                                <script>
+                                    window.context = ${JSON.stringify(jsContext)}
+                                </script>
+                                <script src="/.assets/scripts/app.bundle.js"></script>
+                            </body>
+                        </html>
+                    `)
+                })
+
                 // Filter out 'server' header filled in by Caddy before persisting responses,
                 // otherwise tests will hang when replayed from recordings.
                 server
@@ -195,6 +223,9 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                             driver,
                             overrideGraphQL: overrides => {
                                 graphQlOverrides = overrides
+                            },
+                            overrideJsContext: override => {
+                                jsContext = override
                             },
                             waitForGraphQLRequest: async (triggerRequest, queryName) => {
                                 const requestPromise = graphQlRequests
