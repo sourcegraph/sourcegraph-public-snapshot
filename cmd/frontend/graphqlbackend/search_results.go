@@ -975,7 +975,17 @@ func (r *searchResolver) setup(ctx context.Context) (*searchAlert, error) {
 		queryString = r.args.Query
 	}
 
-	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(r.args.Query)) || r.patternType == query.SearchTypeStructural {
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if v := settings.SearchMigrateParser; v != nil && *v {
+		r.query, err = query.ProcessAndOr(r.args.Query, r.patternType)
+		if err != nil {
+			return alertForQuery(r.args.Query, err), nil
+		}
+	} else if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(r.args.Query)) || r.patternType == query.SearchTypeStructural {
 		// To process the input as an and/or query, the flag must be
 		// enabled (default is on) and must contain either an 'and' or
 		// 'or' expression. Else, fallback to the older existing parser.
@@ -1054,6 +1064,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
+
 		return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
 	}
 	return rr, err
