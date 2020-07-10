@@ -20,7 +20,7 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 
 	url := fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid)
 	return func() ([]*Note, error) {
-		var page []*Note
+		page := []*Note{}
 
 		// If there aren't any further pages, we'll return the empty slice we
 		// just created.

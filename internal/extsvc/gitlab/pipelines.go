@@ -20,7 +20,7 @@ func (c *Client) GetMergeRequestPipelines(ctx context.Context, project *Project,
 
 	url := fmt.Sprintf("projects/%d/merge_requests/%d/pipelines", project.ID, iid)
 	return func() ([]*Pipeline, error) {
-		var page []*Pipeline
+		page := []*Pipeline{}
 
 		// If there aren't any further pages, we'll return the empty slice we
 		// just created.
