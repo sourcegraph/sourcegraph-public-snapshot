@@ -74,12 +74,6 @@ Note that to receive email notifications, the [`email.address`](../config/site_c
 ]
 ```
 
-
-
-
-
-
-
 #### Silencing alerts
 
 If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the `observability.silenceAlerts` field. For example:
