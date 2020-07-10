@@ -11,16 +11,16 @@ const TestRawCampaignSpec = `{
   "description": "My description",
   "on": [
     {"repositoriesMatchingQuery": "lang:go func main"},
-	{"repository": "github.com/sourcegraph/src-cli"}
+    {"repository": "github.com/sourcegraph/src-cli"}
   ],
   "steps": [
     {
-	  "run": "echo 'foobar'",
-	  "container": "alpine",
-	  "env": {
-	    "PATH": "/work/foobar:$PATH"
-	  }
-	}
+      "run": "echo 'foobar'",
+      "container": "alpine",
+      "env": {
+        "PATH": "/work/foobar:$PATH"
+      }
+    }
   ],
   "changesetTemplate": {
     "title": "Hello World",
