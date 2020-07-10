@@ -288,9 +288,44 @@ func TestSearch(t *testing.T) {
 				wantMaxResults: 0,
 			},
 			{
-				name:           "search for a common file",
+				name:           "search for a known file",
 				query:          "file:doc.go",
 				wantMinResults: 5,
+				wantMaxResults: -1,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if test.wantMaxResults != -1 && len(results.Results) > test.wantMaxResults {
+					t.Fatalf("Want results to be less than %d but got %d", test.wantMaxResults, len(results.Results))
+				} else if len(results.Results) < test.wantMinResults {
+					t.Fatalf("Want at least %d results but got %d", test.wantMinResults, len(results.Results))
+				}
+			})
+		}
+	})
+
+	t.Run("global symbol search", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			query          string
+			wantMinResults int
+			wantMaxResults int
+		}{
+			{
+				name:           "search for a non-existent symbol",
+				query:          "type:symbol asdfasdf",
+				wantMaxResults: 0,
+			},
+			{
+				name:           "search for a known symbol",
+				query:          "type:symbol count:100 patterntype:regexp ^newroute",
+				wantMinResults: 1,
 				wantMaxResults: -1,
 			},
 		}
