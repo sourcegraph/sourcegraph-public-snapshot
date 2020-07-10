@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
     - Webhook notifiers: `bearerToken`
   - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
 - Recently firing critical alerts are now displayed to admins in site alerts.
+- Specific alerts can now be silenced using `observability.silenceAlerts`.
 
 ### Changed
 
