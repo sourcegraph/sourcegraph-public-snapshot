@@ -39,6 +39,14 @@ type SourceMetrics struct {
 	ListRepos *metrics.OperationMetrics
 }
 
+// MustRegister registers all metrics in SourceMetrics in the given
+// prometheus.Registerer. It panics in case of failure.
+func (sm SourceMetrics) MustRegister(r prometheus.Registerer) {
+	r.MustRegister(sm.ListRepos.Count)
+	r.MustRegister(sm.ListRepos.Duration)
+	r.MustRegister(sm.ListRepos.Errors)
+}
+
 // NewSourceMetrics returns SourceMetrics that need to be registered
 // in a Prometheus registry.
 func NewSourceMetrics() SourceMetrics {
