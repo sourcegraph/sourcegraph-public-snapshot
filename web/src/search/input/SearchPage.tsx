@@ -198,7 +198,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 ))}
                             </div>
                         </div>
-                        <div>
+                        <div className="search-page__search-syntax">
                             <h3 className="search-page__help-content-header">Search syntax</h3>
                             <div className="search-page__lang-list mt-3">
                                 <dl>
