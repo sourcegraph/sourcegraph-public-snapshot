@@ -969,3 +969,216 @@ func TestChangeset_Labels(t *testing.T) {
 		})
 	}
 }
+
+func TestChangesetSpecUnmarshalValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawSpec string
+		err     string
+	}{
+		{
+			name: "valid ExistingChangesetReference",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"externalID": "1234"
+			}`,
+		},
+		{
+			name: "valid GitBranchChangesetDescription",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [{
+				  "message": "commit message",
+				  "diff": "the diff"
+				}]
+			}`,
+		},
+		{
+			name: "missing fields in GitBranchChangesetDescription",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"published": false,
+				"commits": [{
+				  "diff": "the diff"
+				}]
+			}`,
+			err: "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRev is required\n\t* body is required\n\t* commits.0: message is required\n\n",
+		},
+		{
+			name: "missing fields in ExistingChangesetReference",
+			rawSpec: `{
+				"baseRepository": "graphql-id"
+			}`,
+			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* externalID is required\n\n",
+		},
+		{
+			name: "headRepository in GitBranchChangesetDescription does not match baseRepository",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id999999",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [{
+				  "message": "commit message",
+				  "diff": "the diff"
+				}]
+			}`,
+			err: "1 error occurred:\n\t* headRepository does not match baseRepository\n\n",
+		},
+		{
+			name: "too many commits in GitBranchChangesetDescription",
+			rawSpec: `{
+				"baseRepository": "graphql-id",
+				"baseRef": "refs/heads/master",
+				"baseRev": "d34db33f",
+				"headRef": "refs/heads/my-branch",
+				"headRepository": "graphql-id",
+				"title": "my title",
+				"body": "my body",
+				"published": false,
+				"commits": [
+				  {
+				    "message": "commit message",
+				    "diff": "the diff"
+				  },
+                  {
+				    "message": "commit message2",
+				    "diff": "the diff2"
+				  }
+				]
+			}`,
+			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* commits: Array must have at most 1 items\n\n",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			spec := &ChangesetSpec{RawSpec: tc.rawSpec}
+			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
+			if haveErr == "<nil>" {
+				haveErr = ""
+			}
+			if diff := cmp.Diff(tc.err, haveErr); diff != "" {
+				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestCampaignSpecUnmarshalValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		rawSpec string
+		err     string
+	}{
+		{
+			name: "valid",
+			rawSpec: `{
+				"name": "my-unique-name",
+				"description": "My description",
+				"on": [
+				    {"repositoriesMatchingQuery": "lang:go func main"},
+					{"repository": "github.com/sourcegraph/src-cli"}
+				],
+				"steps": [
+				{
+					"run": "echo 'foobar'",
+					"container": "alpine",
+					"env": {
+						"PATH": "/work/foobar:$PATH"
+					}
+				}
+				],
+				"changesetTemplate": {
+					"title": "Hello World",
+					"body": "My first campaign!",
+					"branch": "hello-world",
+					"commit": {
+						"message": "Append Hello World to all README.md files"
+					},
+					"published": false
+				}
+			}`,
+		},
+		{
+			name: "valid YAML",
+			rawSpec: `
+name: my-unique-name
+description: My description
+'on':
+- repositoriesMatchingQuery: lang:go func main
+- repository: github.com/sourcegraph/src-cli
+steps:
+- run: echo 'foobar'
+  container: alpine
+  env:
+    PATH: "/work/foobar:$PATH"
+changesetTemplate:
+  title: Hello World
+  body: My first campaign!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+`,
+		},
+		{
+			name: "invalid name",
+			rawSpec: `{
+				"name": "this contains spaces",
+				"description": "My description",
+				"on": [
+				    {"repositoriesMatchingQuery": "lang:go func main"},
+					{"repository": "github.com/sourcegraph/src-cli"}
+				],
+				"steps": [
+				{
+					"run": "echo 'foobar'",
+					"container": "alpine",
+					"env": {
+						"PATH": "/work/foobar:$PATH"
+					}
+				}
+				],
+				"changesetTemplate": {
+					"title": "Hello World",
+					"body": "My first campaign!",
+					"branch": "hello-world",
+					"commit": {
+						"message": "Append Hello World to all README.md files"
+					},
+					"published": false
+				}
+			}`,
+			err: "1 error occurred:\n\t* name: Does not match pattern '^[\\w.-]+$'\n\n",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			spec := &CampaignSpec{RawSpec: tc.rawSpec}
+			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
+			if haveErr == "<nil>" {
+				haveErr = ""
+			}
+			if diff := cmp.Diff(tc.err, haveErr); diff != "" {
+				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
