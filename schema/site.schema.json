@@ -657,18 +657,28 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["service", "alert", "level"],
+        "required": ["service", "name", "level"],
         "properties": {
           "service": {
+            "description": "Name of the alert's associated service.",
+            "examples": ["gitserver"],
             "type": "string"
           },
           "level": {
+            "description": "Level of the alert to silence.",
             "type": "string",
             "enum": ["warning", "critical"]
           },
-          "alert": {
+          "name": {
+            "description": "Name of the alert.",
+            "examples": ["echo_command_duration_test"],
             "type": "string"
           }
+        },
+        "default": {
+          "service": "",
+          "name": "",
+          "level": ""
         }
       }
     },

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -104,15 +105,15 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
 	// convenience function for creating a prefixed problem - this reflects the relevant site configuration fields
 	newProblem := func(err error) {
-		result.Problems = append(result.Problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: %v", err)))
+		result.Problems = append(result.Problems, conf.NewSiteProblem(fmt.Sprintf("`observability.silenceAlerts`: %v", err)))
 	}
 
 	var (
 		createdBy      = "src-prom-wrapper"
-		comment        = "Applied via `observability.alerts` in site configuration"
+		comment        = "Applied via `observability.silenceAlerts` in site configuration"
 		startTime      = strfmt.DateTime(time.Now())
-		endTime        = strfmt.DateTime(time.Unix(1<<63-62135596801, 999999999)) // https://stackoverflow.com/questions/25065055/what-is-the-maximum-time-time-in-go/32620397
-		activeSilences = map[schema.ObservabilitySilenceAlerts]string{}           // map silence to alertmanager silence ID
+		endTime        = strfmt.DateTime(time.Now().Add(10 * 365 * 24 * time.Hour)) // 10 year expiry - TODO: do we need to worry about this?
+		activeSilences = map[schema.ObservabilitySilenceAlerts]string{}             // map silence to alertmanager silence ID
 	)
 
 	for _, s := range newConfig.SilencedAlerts {
@@ -120,28 +121,32 @@ func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext,
 	}
 
 	// delete existing silences that should no longer be silenced
-	existingSilences, err := change.AMClient.Silence.GetSilences(&silence.GetSilencesParams{})
+	existingSilences, err := change.AMClient.Silence.GetSilences(&silence.GetSilencesParams{Context: ctx})
 	if err != nil {
-		newProblem(err)
+		newProblem(fmt.Errorf("failed to get existing silences: %w", err))
 		return
 	}
 	for _, s := range existingSilences.Payload {
-		if *s.CreatedBy == createdBy && s.Comment != nil {
-			// if this silence should not exist, delete
-			silencedAlert := newSilenceFromMatchers(s.Matchers)
-			if _, shouldBeActive := activeSilences[silencedAlert]; shouldBeActive {
-				activeSilences[silencedAlert] = *s.ID
-			} else {
-				uid := strfmt.UUID(*s.ID)
-				if _, err := change.AMClient.Silence.DeleteSilence(&silence.DeleteSilenceParams{
-					SilenceID: uid,
-				}); err != nil {
-					newProblem(err)
-					return
-				}
+		if *s.CreatedBy != createdBy || *s.Status.State != "active" {
+			continue
+		}
+
+		// if this silence should not exist, delete
+		silencedAlert := newSilenceFromMatchers(s.Matchers)
+		if _, shouldBeActive := activeSilences[silencedAlert]; shouldBeActive {
+			activeSilences[silencedAlert] = *s.ID
+		} else {
+			uid := strfmt.UUID(*s.ID)
+			if _, err := change.AMClient.Silence.DeleteSilence(&silence.DeleteSilenceParams{
+				Context:   ctx,
+				SilenceID: uid,
+			}); err != nil {
+				newProblem(fmt.Errorf("failed to delete existing silence %q: %w", *s.ID, err))
+				return
 			}
 		}
 	}
+	log.Info("updating alert silences", "silences", activeSilences)
 
 	// create or update silences
 	for alert, existingSilence := range activeSilences {
@@ -170,7 +175,9 @@ func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext,
 			})
 		}
 		if err != nil {
-			newProblem(err)
+			silenceData, _ := json.Marshal(s)
+			log.Error("failed to update silence", "error", err, "silence", string(silenceData), "existingSilence", existingSilence)
+			newProblem(fmt.Errorf("failed to update silence: %w", err))
 			return
 		}
 	}

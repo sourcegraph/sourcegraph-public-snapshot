@@ -9,16 +9,23 @@ func stringP(v string) *string {
 	return &v
 }
 
+func boolP(v bool) *bool {
+	return &v
+}
+
 func newMatchersFromSilence(silence schema.ObservabilitySilenceAlerts) models.Matchers {
 	return models.Matchers{{
-		Name:  stringP("alert"),
-		Value: stringP(silence.Alert),
+		Name:    stringP("name"),
+		Value:   stringP(silence.Name),
+		IsRegex: boolP(false),
 	}, {
-		Name:  stringP("service"),
-		Value: stringP(silence.Service),
+		Name:    stringP("service_name"),
+		Value:   stringP(silence.Service),
+		IsRegex: boolP(false),
 	}, {
-		Name:  stringP("level"),
-		Value: stringP(silence.Level),
+		Name:    stringP("level"),
+		Value:   stringP(silence.Level),
+		IsRegex: boolP(false),
 	}}
 }
 
@@ -26,9 +33,9 @@ func newSilenceFromMatchers(matchers models.Matchers) schema.ObservabilitySilenc
 	var silencedAlert schema.ObservabilitySilenceAlerts
 	for _, m := range matchers {
 		switch *m.Name {
-		case "alert":
-			silencedAlert.Alert = *m.Value
-		case "service":
+		case "name":
+			silencedAlert.Name = *m.Value
+		case "service_name":
 			silencedAlert.Service = *m.Value
 		case "level":
 			silencedAlert.Level = *m.Value

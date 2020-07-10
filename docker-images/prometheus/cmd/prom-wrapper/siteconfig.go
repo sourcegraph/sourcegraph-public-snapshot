@@ -213,7 +213,7 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	}
 	for _, diff := range diffs {
 		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.Change(ctx, c.log, changeContext, newConfig)
+		result := diff.Change(ctx, c.log.New("change", diff.Type), changeContext, newConfig)
 		c.problems = append(c.problems, result.Problems...)
 	}
 
@@ -239,5 +239,5 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 
 	// update state
 	c.config = newConfig
-	c.log.Debug("configuration diffs applied", "diffs", diffs)
+	c.log.Debug("configuration diffs applied", "diffs", diffs, "problems", c.problems)
 }

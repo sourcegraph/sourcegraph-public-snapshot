@@ -803,8 +803,11 @@ type ObservabilityAlerts struct {
 	Notifier Notifier `json:"notifier"`
 }
 type ObservabilitySilenceAlerts struct {
-	Alert   string `json:"alert"`
-	Level   string `json:"level"`
+	// Level description: Level of the alert to silence.
+	Level string `json:"level"`
+	// Name description: Name of the alert.
+	Name string `json:"name"`
+	// Service description: Name of the alert's associated service.
 	Service string `json:"service"`
 }
 
