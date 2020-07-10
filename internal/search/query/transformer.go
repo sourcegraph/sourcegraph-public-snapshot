@@ -48,6 +48,18 @@ func translateGlobToRegex(value string) string {
 	value = regexp.QuoteMeta(value)
 	value = strings.ReplaceAll(value, "\\*", ".*?")
 	value = strings.ReplaceAll(value, "\\?", ".")
+
+	// add anchors ^ and/or $ if necessary
+	l := len(value)
+	for i, r := range value {
+		if i == 0 && r != '.' {
+			value = "^" + value
+		}
+		if i == l-1 && r != '?' {
+			value = value + "$"
+		}
+	}
+
 	return value
 }
 
