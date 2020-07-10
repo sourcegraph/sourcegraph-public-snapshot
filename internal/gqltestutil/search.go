@@ -67,6 +67,9 @@ type SearchFileResult struct {
 	File struct {
 		Name string `json:"name"`
 	} `json:"file"`
+	Repository struct {
+		Name string `json:"name"`
+	} `json:"repository"`
 	RevSpec struct {
 		Expr string `json:"expr"`
 	} `json:"revSpec"`
@@ -83,6 +86,9 @@ query Search($query: String!) {
 			results {
 				... on FileMatch {
 					file {
+						name
+					}
+					repository {
 						name
 					}
 					revSpec {
