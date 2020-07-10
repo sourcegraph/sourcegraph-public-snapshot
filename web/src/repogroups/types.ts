@@ -1,16 +1,5 @@
 import * as GQL from '../../../shared/src/graphql/schema'
 
-export enum CodeHosts {
-    GITHUB = 'github',
-    GITLAB = 'gitlab',
-    BITBUCKET = 'bitbucket',
-}
-
-export interface RepositoryType {
-    name: string
-    codehost: CodeHosts
-}
-
 export interface ExampleQuery {
     title: string
     description?: string
@@ -34,10 +23,6 @@ export interface RepogroupMetadata {
      * The URL pathname for the repogroup page.
      */
     url: string
-    /**
-     * The list of repositories this repogroup searches over.
-     */
-    repositories: RepositoryType[]
     /**
      * A list of example queries using the repogroup. Don't include the `repogroup:name` portion of the query. It will be automatically added.
      */

@@ -154,6 +154,7 @@ var getBySQLColumns = []string{
 	"language",
 	"fork",
 	"archived",
+	"cloned",
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
@@ -222,6 +223,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&r.Language,
 		&r.Fork,
 		&r.Archived,
+		&r.Cloned,
 	)
 }
 
@@ -263,6 +265,12 @@ type ReposListOptions struct {
 
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
+
+	// NoCloned excludes cloned repositories from the list.
+	NoCloned bool
+
+	// OnlyCloned excludes non-cloned repositories from the list.
+	OnlyCloned bool
 
 	// NoPrivate excludes private repositories from the list.
 	NoPrivate bool
@@ -457,6 +465,12 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	}
 	if opt.OnlyArchived {
 		conds = append(conds, sqlf.Sprintf("archived"))
+	}
+	if opt.NoCloned {
+		conds = append(conds, sqlf.Sprintf("NOT cloned"))
+	}
+	if opt.OnlyCloned {
+		conds = append(conds, sqlf.Sprintf("cloned"))
 	}
 	if opt.NoPrivate {
 		conds = append(conds, sqlf.Sprintf("NOT private"))
