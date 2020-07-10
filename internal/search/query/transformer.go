@@ -3,6 +3,7 @@ package query
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"unicode"
@@ -36,6 +37,45 @@ func SubstituteAliases(nodes []Node) []Node {
 func LowercaseFieldNames(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		return Parameter{Field: strings.ToLower(field), Value: value, Negated: negated, Annotation: annotation}
+	})
+}
+
+// translateGlobToRegex takes a Glob string and returns an equivalent regexp string.
+// Approach: We escape all regexp relevant characters, converting the input string
+// to a simple literal regexp. Next we replace all (escaped) glob-relevant characters
+// with the regexp equivalents.
+func translateGlobToRegex(value string) string {
+	value = regexp.QuoteMeta(value)
+	value = strings.ReplaceAll(value, "\\*", ".*?")
+	value = strings.ReplaceAll(value, "\\?", ".")
+	return value
+}
+
+func isValidRegexp(value string) bool {
+	if _, err := regexp.Compile(value); err != nil {
+		return false
+	}
+	return true
+}
+
+// globToRegex substitutes glob with regexp for fields supporting regexp
+// the value is left unchanged if
+// * is a valid regexp
+// * the translated value is not a valid regexp
+func globToRegex(nodes []Node) []Node {
+	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+		fieldType, ok := conf.FieldTypes[field]
+		if !ok {
+			// this should never happen, but we handle it gracefully just in case
+			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+		}
+		if reflect.DeepEqual(fieldType, regexpNegatableFieldType) && !isValidRegexp(value) {
+			tempValue := translateGlobToRegex(value)
+			if isValidRegexp(tempValue) {
+				value = tempValue
+			}
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
 }
 

@@ -313,3 +313,51 @@ func TestMap(t *testing.T) {
 		})
 	}
 }
+
+func TestTranslateGlobToRegex(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			input: "*",
+			want:  ".*?",
+		},
+		{
+			input: "*repo",
+			want:  ".*?repo",
+		},
+		{
+			input: "re*o",
+			want:  "re.*?o",
+		},
+		{
+			input: "repo*",
+			want:  "repo.*?",
+		},
+		{
+			input: "?",
+			want:  ".",
+		},
+		{
+			input: "?repo",
+			want:  ".repo",
+		},
+		{
+			input: "re?o",
+			want:  "re.o",
+		},
+		{
+			input: "repo?",
+			want:  "repo.",
+		},
+	}
+
+	for _, tt := range tests {
+		got := translateGlobToRegex(tt.input)
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Fatal(diff)
+		}
+	}
+}
