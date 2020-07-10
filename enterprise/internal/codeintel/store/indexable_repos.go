@@ -99,6 +99,10 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		))
 	}
 
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("true"))
+	}
+
 	return scanIndexableRepositories(s.query(ctx, sqlf.Sprintf(`
 		SELECT
 			repository_id,
@@ -129,16 +133,16 @@ func (s *store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 
 	var pairs []*sqlf.Query
 	if indexableRepository.SearchCount != nil {
-		pairs = append(pairs, sqlf.Sprintf("search_count=%s", indexableRepository.SearchCount))
+		pairs = append(pairs, sqlf.Sprintf("search_count = %s", indexableRepository.SearchCount))
 	}
 	if indexableRepository.PreciseCount != nil {
-		pairs = append(pairs, sqlf.Sprintf("precise_count=%s", indexableRepository.PreciseCount))
+		pairs = append(pairs, sqlf.Sprintf("precise_count = %s", indexableRepository.PreciseCount))
 	}
 	if indexableRepository.LastIndexEnqueuedAt != nil {
-		pairs = append(pairs, sqlf.Sprintf("last_index_enqueued_at=%s", indexableRepository.LastIndexEnqueuedAt))
+		pairs = append(pairs, sqlf.Sprintf("last_index_enqueued_at = %s", indexableRepository.LastIndexEnqueuedAt))
 	}
 	if indexableRepository.Enabled != nil {
-		pairs = append(pairs, sqlf.Sprintf("enabled=%s", indexableRepository.Enabled))
+		pairs = append(pairs, sqlf.Sprintf("enabled = %s", indexableRepository.Enabled))
 	}
 	if len(pairs) == 0 {
 		return nil
