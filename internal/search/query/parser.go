@@ -860,6 +860,11 @@ func ProcessAndOr(in string, searchType SearchType, globbing bool) (QueryInfo, e
 		}
 		query = EmptyGroupsToLiteral(query)
 	}
+
+	if globbing {
+		query = Map(query, globToRegex)
+	}
+
 	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {
