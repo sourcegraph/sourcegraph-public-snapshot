@@ -4,18 +4,47 @@ const path = require('path')
 const os = require('os')
 const signale = require('signale')
 
+/**
+ * Name of the extension to build, from code-intel-extensions. This script
+ * currently builds only a single extension.
+ */
 const extensionName = 'template'
+
+/**
+ * Revision of the github.com/sourcegraph/code-intel-extensions repo to build
+ * from.
+ *
+ * We freeze it at a particular revision because the XPI needs to be
+ * reproducible. The particular revision was chosen as the latest commit on
+ * master at the time of writing and should be updated accordingly.
+ */
+const codeIntelExtensionsRepoRevision = '057464f8a4b32ed9dd9fa62c7fd11587418f5637'
 
 const toDirectory = path.join(process.cwd(), 'build')
 
-signale.await('Building extensions for Firefox addon')
+signale.await('Building Sourcegraph extensions for Firefox add-on')
 
 const temporaryCloneDirectory = path.join(os.tmpdir(), 'code-intel-extensions')
 shelljs.mkdir('-p', temporaryCloneDirectory)
 
-// Clone and build
+// Get code-intel-extensions source snapshot and build
 shelljs.pushd(temporaryCloneDirectory)
-shelljs.exec('git clone git@github.com:sourcegraph/code-intel-extensions || (cd code-intel-extensions; git pull)')
+shelljs.exec(
+  `curl -OLs https://github.com/sourcegraph/code-intel-extensions/archive/${codeIntelExtensionsRepoRevision}.zip`
+)
+
+// Prepare code-intel-extensions for build:
+// - Clean: remove old directories
+shelljs.rm('-rf', 'code-intel-extensions')
+shelljs.rm('-rf', `code-intel-extensions-${codeIntelExtensionsRepoRevision}`)
+
+// - Unzip it, which creates a new directory: code-intel-extensions-{rev}
+shelljs.exec(`unzip -q ${codeIntelExtensionsRepoRevision}.zip`)
+
+// - Rename directory to remove revision suffix
+shelljs.mv(`code-intel-extensions-${codeIntelExtensionsRepoRevision}`, 'code-intel-extensions')
+
+// Install dependencies and build the specified code intel extenion
 shelljs.exec('yarn --cwd code-intel-extensions install')
 shelljs.exec(`yarn --cwd code-intel-extensions/extensions/${extensionName} run build`)
 shelljs.popd()
