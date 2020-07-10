@@ -6,9 +6,9 @@ import expect from 'expect'
 import { describeIntegration } from './helpers'
 import { commonGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository, ISearchResultMatch } from '../../../shared/src/graphql/schema'
-import { SearchOutput } from '../gql-operations'
+import { SearchResult } from '../gql-operations'
 
-const searchResults: SearchOutput = {
+const searchResults = (): SearchResult => ({
     search: {
         results: {
             __typename: 'SearchResults',
@@ -63,7 +63,7 @@ const searchResults: SearchOutput = {
             elapsedMilliseconds: 103,
         },
     },
-}
+})
 
 describeIntegration('Search', ({ initGeneration, describe }) => {
     initGeneration(async () => {
@@ -99,7 +99,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
         test('Filter buttons', async ({ sourcegraphBaseUrl, driver, overrideGraphQL }) => {
             overrideGraphQL({
                 ...commonGraphQlResults,
-                SearchSuggestions: {
+                SearchSuggestions: () => ({
                     search: {
                         suggestions: [
                             { __typename: 'Language' } as ILanguage,
@@ -108,14 +108,14 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
                             { __typename: 'Repository', name: 'github.com/gorilla/rpc' } as IRepository,
                         ],
                     },
-                },
+                }),
                 Search: searchResults,
-                RepoGroups: {
+                RepoGroups: () => ({
                     repoGroups: [
                         { __typename: 'RepoGroup', name: 'go2generics' },
                         { __typename: 'RepoGroup', name: 'city-of-amsterdam' },
                     ],
-                },
+                }),
             })
             await driver.page.goto(sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-search-mode-toggle', { visible: true })
@@ -209,7 +209,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
         }) => {
             overrideGraphQL({
                 ...commonGraphQlResults,
-                RepositoryRedirect: {
+                RepositoryRedirect: () => ({
                     repositoryRedirect: {
                         __typename: 'Repository',
                         id: 'SourcegraphJsonRpc2RepositoryID',
@@ -221,8 +221,8 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
                         viewerCanAdminister: true,
                         defaultBranch: { displayName: 'master' },
                     },
-                },
-                ResolveRev: {
+                }),
+                ResolveRev: () => ({
                     repositoryRedirect: {
                         __typename: 'Repository',
                         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
@@ -232,7 +232,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
                         },
                         defaultBranch: { abbrevName: 'master' },
                     },
-                },
+                }),
             })
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
             await driver.page.waitForSelector('.filter-input')

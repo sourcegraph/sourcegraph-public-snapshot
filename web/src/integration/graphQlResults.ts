@@ -100,12 +100,12 @@ export const commonGraphQlResults: GraphQLOverrides = {
             },
             productVersion: '0.0.0+dev',
         },
-    },
-    StatusMessages: {
+    }),
+    StatusMessages: () => ({
         statusMessages: [] as StatusMessage[],
-    },
+    }),
     // Note this is the response not for the admin
-    ActivationStatus: {
+    ActivationStatus: () => ({
         // externalServices: { totalCount: 3 },
         // repositories: { totalCount: 9 },
         // viewerSettings: {
@@ -119,15 +119,15 @@ export const commonGraphQlResults: GraphQLOverrides = {
                 codeIntelligenceActions: 670,
             },
         },
-    },
-    logEvent: {
+    }),
+    logEvent: () => ({
         logEvent: {
             alwaysNil: null,
         },
-    },
-    logUserEvent: {
+    }),
+    logUserEvent: () => ({
         logUserEvent: {
             alwaysNil: null,
         },
-    },
+    }),
 }

@@ -54,6 +54,13 @@ export const hasProperty = <O extends object, K extends string | number | symbol
 ): object is O & { [k in K]: unknown } => key in object
 
 /**
+ * Returns a function that returns `true` if the given `key` exists in the given object, narrowing down the type of the _key_.
+ *
+ * @param key The key of the property to check.
+ */
+export const keyExistsIn = <O extends object>(key: string | number | symbol, object: O): key is keyof O => key in object
+
+/**
  * Returns a function that returns `true` if the given `key` of the object passes the given type guard.
  *
  * @param key The key of the property to check.

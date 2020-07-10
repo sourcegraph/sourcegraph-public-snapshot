@@ -33,7 +33,7 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
         it('updates user settings', async ({ driver, sourcegraphBaseUrl, overrideGraphQL, waitForGraphQLRequest }) => {
             overrideGraphQL({
                 ...commonGraphQlResults,
-                SettingsCascade: {
+                SettingsCascade: () => ({
                     settingsSubject: {
                         settingsCascade: {
                             subjects: [
@@ -46,8 +46,8 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
                             ],
                         },
                     },
-                },
-                OverwriteSettings: {
+                }),
+                OverwriteSettings: () => ({
                     settingsMutation: {
                         overwriteSettings: {
                             empty: {
@@ -55,8 +55,8 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
                             },
                         },
                     },
-                },
-                User: {
+                }),
+                User: () => ({
                     user: {
                         __typename: 'User',
                         id: testUserID,
@@ -73,7 +73,7 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
                         organizations: { nodes: [] as IOrg[] } as IOrgConnection,
                         permissionsInfo: null,
                     },
-                },
+                }),
             })
 
             const getSettingsEditorContent = async (): Promise<string | null | undefined> => {

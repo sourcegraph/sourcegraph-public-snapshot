@@ -20,6 +20,8 @@ import { createJsContext } from './jscontext'
 import { SourcegraphContext } from '../jscontext'
 import { WebGQLOperations } from '../gql-operations'
 import { SharedGQLOperations } from '../../../shared/src/gql-operations'
+import { keyExistsIn } from '../../../shared/src/util/types'
+import { IGraphQLResponseError } from '../../../shared/src/graphql/schema'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -37,9 +39,16 @@ type IntegrationTestInitGeneration = () => Promise<{
     subscriptions?: Subscription
 }>
 
-type PotentialOverrides<T> = Partial<
-    { [K in keyof T]: T[K] extends (input: any) => infer Output ? Output | ErrorGraphQLResult : never }
->
+// type PotentialOverrides<T> = Partial<
+//     { [K in keyof T]: T[K] extends (input: any) => infer Result ? Result | StubbedErrorResponse : never }
+// >
+type PotentialOverrides<T> = Partial<T>
+
+export class IntegrationTestGqlError extends Error {
+    constructor(public errors: IGraphQLResponseError[]) {
+        super('graphql error for integration tests')
+    }
+}
 
 type AllGQLOperations = WebGQLOperations & SharedGQLOperations
 export type GraphQLOverrides = PotentialOverrides<AllGQLOperations>
@@ -105,9 +114,6 @@ type IntegrationTestSuite = (helpers: {
     test: IntegrationTestDefiner
     describe: IntegrationTestDescriber
 }) => void
-
-const isErrorResult = <T extends object>(result: ErrorGraphQLResult | T): result is ErrorGraphQLResult =>
-    'errors' in result && result.errors !== undefined && 'data' in result && result.data === undefined
 
 /**
  * Describes an integration test suite using wrappers over Mocha primitives.
@@ -182,9 +188,9 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 const graphQlRequests = new Subject<{ queryName: string; variables: unknown }>()
                 server.post(new URL('/.api/graphql', sourcegraphBaseUrl).href).intercept((request, response) => {
                     const queryName = new URL(request.absoluteUrl).search.slice(1)
-                    const { variables, query } = request.jsonBody() as { query: string; variables: string }
+                    const { variables, query } = request.jsonBody() as { query: string; variables: object }
                     graphQlRequests.next({ queryName, variables })
-                    if (!graphQlOverrides || !Object.prototype.hasOwnProperty.call(graphQlOverrides, queryName)) {
+                    if (!graphQlOverrides || !keyExistsIn(queryName, graphQlOverrides)) {
                         const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
                         const formattedVariables = util.inspect(variables)
                         const error = new Error(
@@ -194,13 +200,27 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         errors.error(error)
                         throw error
                     }
-                    const result = (graphQlOverrides as any)[queryName]
-                    if (isErrorResult(result)) {
-                        response.json(result)
-                    } else {
-                        // for successful results we need to wrap it in SuccessGraphQLResult
+                    const handler = graphQlOverrides[queryName]
+
+                    if (handler === undefined) {
+                        throw new Error('we technically check that above, so this error to make ts happy')
+                    }
+
+                    try {
+                        const result = handler(variables as any)
                         const gqlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
                         response.json(gqlResult)
+                    } catch (error) {
+                        if (!(error instanceof IntegrationTestGqlError)) {
+                            const error = new Error(
+                                `GraphQL query "${queryName}" threw an exception but it was not IntegrationTestGqlError, please use 'throw new IntegrationTestGqlError()' instead`
+                            )
+                            errors.error(error)
+                            throw error
+                        }
+
+                        const gqlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
+                        response.json(gqlError)
                     }
                 })
 
@@ -259,8 +279,8 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                                     .toPromise()
                                 await triggerRequest()
                                 const { variables } = await requestPromise
-                                // trust type system to infer the right shape
-                                return variables as any
+                                // trust type system to infer the right shape based on the usage
+                                return variables as ReturnType<TestContext['waitForGraphQLRequest']>
                             },
                         }),
                     ])
