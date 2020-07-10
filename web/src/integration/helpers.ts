@@ -8,7 +8,8 @@ import express from 'express'
 import { Polly } from '@pollyjs/core'
 import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
-import { ErrorGraphQLResult } from '../../../shared/src/graphql/graphql'
+import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../../shared/src/graphql/graphql'
+
 import { first, timeoutWith } from 'rxjs/operators'
 import * as path from 'path'
 import * as util from 'util'
@@ -17,7 +18,8 @@ import * as prettier from 'prettier'
 import html from 'tagged-template-noop'
 import { createJsContext } from './jscontext'
 import { SourcegraphContext } from '../jscontext'
-import { GQLWebOperations } from '../../gql-operations'
+import { WebGQLOperations } from '../gql-operations'
+import { SharedGQLOperations } from '../../../shared/src/gql-operations'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -39,8 +41,8 @@ type PotentialOverrides<T> = Partial<
     { [K in keyof T]: T[K] extends (input: any) => infer Output ? Output | ErrorGraphQLResult : never }
 >
 
-export type GraphQLOverrides = PotentialOverrides<GQLWebOperations>
-// export type GraphQLOverrides = Record<string, SuccessGraphQLResult<IQuery | IMutation> | ErrorGraphQLResult>
+type AllGQLOperations = WebGQLOperations & SharedGQLOperations
+export type GraphQLOverrides = PotentialOverrides<AllGQLOperations>
 
 interface TestContext {
     sourcegraphBaseUrl: string
@@ -66,7 +68,10 @@ interface TestContext {
      * @param queryName The name of the query to wait for.
      * @returns The GraphQL variables of the query.
      */
-    waitForGraphQLRequest: (triggerRequest: () => Promise<void> | void, queryName: string) => Promise<unknown>
+    waitForGraphQLRequest: <Operation extends keyof AllGQLOperations & string>(
+        triggerRequest: () => Promise<void> | void,
+        queryName: Operation
+    ) => Promise<AllGQLOperations[Operation] extends (input: infer InputVariables) => any ? InputVariables : never>
 }
 
 type TestBody = (context: TestContext) => Promise<void>
@@ -194,7 +199,8 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         response.json(result)
                     } else {
                         // for successful results we need to wrap it in SuccessGraphQLResult
-                        response.json({ data: result, errors: undefined })
+                        const gqlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
+                        response.json(gqlResult)
                     }
                 })
 
@@ -253,7 +259,8 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                                     .toPromise()
                                 await triggerRequest()
                                 const { variables } = await requestPromise
-                                return variables
+                                // trust type system to infer the right shape
+                                return variables as any
                             },
                         }),
                     ])

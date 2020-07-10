@@ -104,13 +104,14 @@ export const commonGraphQlResults: GraphQLOverrides = {
     StatusMessages: {
         statusMessages: [] as StatusMessage[],
     },
-    SiteAdminActivationStatus: {
-        externalServices: { totalCount: 3 },
-        repositories: { totalCount: 9 },
-        viewerSettings: {
-            final: JSON.stringify({}),
-        },
-        users: { totalCount: 2 },
+    // Note this is the response not for the admin
+    ActivationStatus: {
+        // externalServices: { totalCount: 3 },
+        // repositories: { totalCount: 9 },
+        // viewerSettings: {
+        //     final: JSON.stringify({}),
+        // },
+        // users: { totalCount: 2 },
         currentUser: {
             usageStatistics: {
                 searchQueries: 171,

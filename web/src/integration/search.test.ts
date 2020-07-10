@@ -6,7 +6,7 @@ import expect from 'expect'
 import { describeIntegration } from './helpers'
 import { commonGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository, ISearchResultMatch } from '../../../shared/src/graphql/schema'
-import { SearchOutput } from '../../gql-operations'
+import { SearchOutput } from '../gql-operations'
 
 const searchResults: SearchOutput = {
     search: {
@@ -297,7 +297,12 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
         test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async ({
             sourcegraphBaseUrl,
             driver,
+            overrideGraphQL,
         }) => {
+            overrideGraphQL({
+                ...commonGraphQlResults,
+                Search: searchResults,
+            })
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
@@ -307,7 +312,11 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
     })
 
     describe('Structural search toggle', ({ test }) => {
-        test('Clicking toggle turns on structural search', async ({ sourcegraphBaseUrl, driver }) => {
+        test('Clicking toggle turns on structural search', async ({ sourcegraphBaseUrl, driver, overrideGraphQL }) => {
+            overrideGraphQL({
+                ...commonGraphQlResults,
+                Search: searchResults,
+            })
             await driver.page.goto(sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-structural-search-toggle')
@@ -319,7 +328,12 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
         test('Clicking toggle turns on structural search and removes existing patternType parameter', async ({
             sourcegraphBaseUrl,
             driver,
+            overrideGraphQL,
         }) => {
+            overrideGraphQL({
+                ...commonGraphQlResults,
+                Search: searchResults,
+            })
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-structural-search-toggle')
@@ -330,7 +344,12 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
         test('Clicking toggle turns off structural saerch and reverts to default pattern type', async ({
             sourcegraphBaseUrl,
             driver,
+            overrideGraphQL,
         }) => {
+            overrideGraphQL({
+                ...commonGraphQlResults,
+                Search: searchResults,
+            })
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=structural')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-structural-search-toggle')

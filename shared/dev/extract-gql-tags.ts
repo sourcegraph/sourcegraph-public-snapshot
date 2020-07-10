@@ -11,6 +11,15 @@ import { TsGraphQLPluginConfigOptions } from 'ts-graphql-plugin/lib/types'
 import { extractTypes, createTsTypeDeclaration } from './gql2ts-transformer'
 import { memoize } from 'lodash'
 
+// NOTE borderline reasonable to define an interface here instead of duplicating
+const WEB_TSPROJECT_PATH = path.join(__dirname, '../../web')
+const WEB_OUTPUT_DIR = path.join(__dirname, '../../web/src')
+const WEB_INTERFACE_NAME = 'WebGQLOperations'
+
+const SHARED_TSPROJECT_PATH = path.join(__dirname, '../')
+const SHARED_OUTPUT_DIR = path.join(__dirname, '../src/')
+const SHARED_INTERFACE_NAME = 'SharedGQLOperations'
+
 const readSchema = (schemaPath: string): GraphQLSchema => {
     const isExists = fs.existsSync(schemaPath)
     if (!isExists) {
@@ -22,8 +31,8 @@ const readSchema = (schemaPath: string): GraphQLSchema => {
     return schema
 }
 
-const extractGQL = (projectPath: string = './'): void => {
-    const { pluginConfig, tsconfig, prjRootPath } = readTsconfig(projectPath)
+const extractGQL = (tsProjectPath: string, outputDirectory: string, interfaceName: string): void => {
+    const { pluginConfig, tsconfig, prjRootPath } = readTsconfig(tsProjectPath)
     if (typeof pluginConfig.schema !== 'string') {
         throw new TypeError('for now schema field needs to be a string path')
     }
@@ -129,7 +138,7 @@ const extractGQL = (projectPath: string = './'): void => {
         ts.createInterfaceDeclaration(
             undefined,
             ts.createModifiersFromModifierFlags(ts.ModifierFlags.Export),
-            'GQLWebOperations',
+            interfaceName,
             undefined,
             undefined,
             members
@@ -157,7 +166,7 @@ const extractGQL = (projectPath: string = './'): void => {
     )
 
     const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed, removeComments: false })
-    ts.sys.writeFile(outputFileName, printer.printFile(resultFile))
+    ts.sys.writeFile(path.join(outputDirectory, outputFileName), printer.printFile(resultFile))
 }
 
 interface Config {
@@ -224,4 +233,8 @@ function readTsconfig(project: string): Config {
     }
 }
 
-extractGQL()
+// web
+extractGQL(WEB_TSPROJECT_PATH, WEB_OUTPUT_DIR, WEB_INTERFACE_NAME)
+
+// shared
+extractGQL(SHARED_TSPROJECT_PATH, SHARED_OUTPUT_DIR, SHARED_INTERFACE_NAME)
