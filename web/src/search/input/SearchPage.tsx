@@ -181,11 +181,13 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         </div>
                         <div className="search-page__search-a-language">
                             <div className="align-items-baseline">
-                                <h3 className="search-page__help-content-header">Search a language <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                    <span className="search-page__keyword-text ml-1">lang:</span>
-                                    <i className="search-page__keyword-value-text">name</i>
-                                </span></h3>
-
+                                <h3 className="search-page__help-content-header">
+                                    Search a language{' '}
+                                    <span className="text-monospace font-weight-normal search-page__lang-ref">
+                                        <span className="search-page__keyword-text ml-1">lang:</span>
+                                        <i className="search-page__keyword-value-text">name</i>
+                                    </span>
+                                </h3>
                             </div>
                             <div className="search-page__lang-list mt-2">
                                 {homepageLanguageList.map(language => (
