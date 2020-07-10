@@ -1,6 +1,5 @@
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { extensionHoverAlertType } from '../../shared/code-hosts/shared/hoverAlerts'
 
 export interface PhabricatorMapping {
     callsign: string
