@@ -227,7 +227,7 @@ func (s *store) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 
 // queryForEffect performs a query and throws away the result.
 func (s *store) queryForEffect(ctx context.Context, query *sqlf.Query) error {
-	return s.Store.QueryForEffect(ctx, query)
+	return s.Store.Exec(ctx, query)
 }
 
 // scanStrings scans a slice of strings from the return value of `*store.query`.

@@ -91,8 +91,8 @@ func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	return s.handle.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
-// QueryForEffect performs a query and throws away the result.
-func (s *Store) QueryForEffect(ctx context.Context, query *sqlf.Query) error {
+// Exec performs a query and throws away the result.
+func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
 	rows, err := s.Query(ctx, query)
 	if err != nil {
 		return err

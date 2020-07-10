@@ -22,7 +22,7 @@ func TestTransaction(t *testing.T) {
 	store := testStore()
 
 	// Add record outside of transaction, ensure it's visible
-	if err := store.QueryForEffect(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 42)`)); err != nil {
+	if err := store.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 42)`)); err != nil {
 		t.Fatalf("unexpected error inserting count: %s", err)
 	}
 	assertCounts(t, dbconn.Global, map[int]int{1: 42})
@@ -32,7 +32,7 @@ func TestTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating transaction: %s", err)
 	}
-	if err := tx1.QueryForEffect(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (2, 43)`)); err != nil {
+	if err := tx1.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (2, 43)`)); err != nil {
 		t.Fatalf("unexpected error inserting count: %s", err)
 	}
 
@@ -41,7 +41,7 @@ func TestTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating transaction: %s", err)
 	}
-	if err := tx2.QueryForEffect(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (3, 44)`)); err != nil {
+	if err := tx2.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (3, 44)`)); err != nil {
 		t.Fatalf("unexpected error inserting count: %s", err)
 	}
 
@@ -108,7 +108,7 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 		}
 	}()
 
-	if err := tx.QueryForEffect(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, index, index*2)); err != nil {
+	if err := tx.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, index, index*2)); err != nil {
 		t.Fatalf("unexpected error inserting count: %s", err)
 	}
 
