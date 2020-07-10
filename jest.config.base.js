@@ -49,7 +49,6 @@ const config = {
 
   setupFiles: [
     path.join(__dirname, 'shared/dev/mockDate.js'),
-    path.join(__dirname, 'shared/dev/globalThis.js'),
     // Needed for reusing API functions that use fetch
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
