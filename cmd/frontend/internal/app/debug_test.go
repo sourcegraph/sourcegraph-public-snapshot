@@ -49,12 +49,26 @@ func Test_prometheusValidator(t *testing.T) {
 			wantProblemSubstring: "",
 		},
 		{
-			name: "prometheus not found",
+			name: "prometheus not found (with obs. alerts)",
 			args: args{
 				prometheusURL: "http://no-prometheus:9090",
 				config: conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
 						ObservabilityAlerts: []*schema.ObservabilityAlerts{{
+							Level: "critical",
+						}},
+					},
+				},
+			},
+			wantProblemSubstring: "Unable to fetch configuration status",
+		},
+		{
+			name: "prometheus not found (with obs. silences)",
+			args: args{
+				prometheusURL: "http://no-prometheus:9090",
+				config: conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						ObservabilitySilenceAlerts: []*schema.ObservabilitySilenceAlerts{{
 							Level: "critical",
 						}},
 					},

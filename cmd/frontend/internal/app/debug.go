@@ -147,7 +147,8 @@ func adminOnly(next http.Handler) http.Handler {
 // as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container if Prometheus is enabled.
 func newPrometheusValidator(prometheusURL string) conf.Validator {
 	return func(c conf.Unified) (problems conf.Problems) {
-		if len(prometheusURL) == 0 || len(c.ObservabilityAlerts) == 0 {
+		isObservabilityConfigured := len(c.ObservabilityAlerts) == 0 && len(c.ObservabilitySilenceAlerts) == 0
+		if prometheusURL == "" || isObservabilityConfigured {
 			return
 		}
 
