@@ -1245,6 +1245,39 @@ declare module 'sourcegraph' {
          * position or the current position itself.
          */
         range?: Range
+
+        /**
+         * Alerts related to this hover.
+         */
+        alerts?: Badged<HoverAlert>[]
+    }
+
+    export interface HoverAlert {
+        /**
+         * Text content to be shown on hovers.
+         */
+        summary: MarkupContent
+
+        /**
+         * Additional details to be shown on demand.
+         */
+        details?: string
+
+        /**
+         * Whether the alert is dismissible.
+         */
+        dismissible: bool
+
+        /**
+         * When a dismissible alert has a type, dismissing it will prevent all alerts
+         * of that type from being shown.
+         */
+        type?: string
+    }
+
+    export interface Link {
+        text: string
+        url: string
     }
 
     export interface HoverProvider {
