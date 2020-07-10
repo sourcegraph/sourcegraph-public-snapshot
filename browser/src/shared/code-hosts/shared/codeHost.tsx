@@ -78,7 +78,6 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '../../../../../shared/src/util/url'
-import { HoverAlert } from 'sourcegraph'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
@@ -107,7 +106,7 @@ import { handleTextFields, TextField } from './textFields'
 import { delayUntilIntersecting, ViewResolver } from './views'
 
 import { IS_LIGHT_THEME } from './consts'
-import { NotificationType } from 'sourcegraph'
+import { NotificationType, HoverAlert } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
