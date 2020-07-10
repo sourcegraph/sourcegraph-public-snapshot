@@ -251,5 +251,6 @@ Promise.all([
     // shared
     extractGQL(SHARED_TSPROJECT_PATH, SHARED_OUTPUT_DIR, SHARED_INTERFACE_NAME),
 ]).catch(error => {
-    throw error
+    console.error('Error happened during extraction', error)
+    process.exit(1)
 })
