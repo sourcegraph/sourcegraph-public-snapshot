@@ -1,7 +1,6 @@
 import { GraphQLOverrides } from './helpers'
-import { IQuery, StatusMessage, IOrg, IAlert, IMutation } from '../../../shared/src/graphql/schema'
-import { builtinAuthProvider, siteID, siteGQLID } from './jscontext'
 import { StatusMessage, IOrg, IAlert } from '../../../shared/src/graphql/schema'
+import { builtinAuthProvider, siteID, siteGQLID } from './jscontext'
 
 export const testUserID = 'TestUserID'
 export const settingsID = 123
@@ -37,70 +36,47 @@ export const commonGraphQlResults: GraphQLOverrides = {
                         id: 0,
                         contents: JSON.stringify({}),
                     },
-                    {
-                        __typename: 'Site',
-                        id: siteGQLID,
-                        siteID,
-                        latestSettings: {
-                            id: 470,
-                            contents: JSON.stringify({}),
-                        },
-                        settingsURL: '/site-admin/global-settings',
-                        viewerCanAdminister: true,
+                },
+                {
+                    __typename: 'Site',
+                    id: siteGQLID,
+                    siteID,
+                    latestSettings: {
+                        id: 470,
+                        contents: JSON.stringify({}),
                     },
-                    settingsURL: '/users/test/settings',
+                    settingsURL: '/site-admin/global-settings',
                     viewerCanAdminister: true,
                 },
             ] as any, // this is needed because ts-graphql-plugin has a bug in detecting types for unions in fragments
             final: JSON.stringify({}),
         },
     }),
-    SiteFlags: ()=> ({
+    SiteFlags: () => ({
         site: {
             needsRepositoryConfiguration: false,
             freeUsersExceeded: false,
             alerts: [] as IAlert[],
             authProviders: {
-                nodes: [
-                    {
-                        serviceType: 'builtin',
-                        serviceID: '',
-                        clientID: '',
-                        displayName: 'Builtin username-password authentication',
-                        isBuiltin: true,
-                        authenticationURL: null,
-                    },
-                ],
+                nodes: [builtinAuthProvider],
             },
-        } as IQuery,
-        errors: undefined,
-    }),
-    SiteFlags: {
-        data: {
-            site: {
-                needsRepositoryConfiguration: false,
-                freeUsersExceeded: false,
-                alerts: [] as IAlert[],
-                authProviders: {
-                    nodes: [builtinAuthProvider],
-                },
-                disableBuiltInSearches: false,
-                sendsEmailVerificationEmails: true,
-                updateCheck: {
-                    pending: false,
-                    checkedAt: '2020-07-07T12:31:16+02:00',
-                    errorMessage: null,
-                    updateVersionAvailable: null,
-                },
-                productSubscription: {
-                    license: { expiresAt: '3021-05-28T16:06:40Z' },
-                    noLicenseWarningUserCount: null,
-                },
-                productVersion: '0.0.0+dev',
+            disableBuiltInSearches: false,
+            sendsEmailVerificationEmails: true,
+            updateCheck: {
+                pending: false,
+                checkedAt: '2020-07-07T12:31:16+02:00',
+                errorMessage: null,
+                updateVersionAvailable: null,
+            },
+            productSubscription: {
+                license: { expiresAt: '3021-05-28T16:06:40Z' },
+                noLicenseWarningUserCount: null,
             },
             productVersion: '0.0.0+dev',
         },
+        productVersion: '0.0.0+dev',
     }),
+
     StatusMessages: () => ({
         statusMessages: [] as StatusMessage[],
     }),
