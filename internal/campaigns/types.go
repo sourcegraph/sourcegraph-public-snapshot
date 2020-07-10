@@ -1503,6 +1503,12 @@ func unixMilliToTime(ms int64) time.Time {
 // TODO: NEW CAMPAIGNS WORKFLOW BELOW
 // ****************************
 
+func NewCampaignSpecFromRaw(rawSpec string) (*CampaignSpec, error) {
+	c := &CampaignSpec{RawSpec: rawSpec}
+
+	return c, c.UnmarshalValidate()
+}
+
 type CampaignSpec struct {
 	ID     int64
 	RandID string
@@ -1523,6 +1529,41 @@ type CampaignSpec struct {
 func (cs *CampaignSpec) Clone() *CampaignSpec {
 	cc := *cs
 	return &cc
+}
+
+// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
+// the CampaignSpec schema and does additional semantic validation.
+func (cs *CampaignSpec) UnmarshalValidate() error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.CampaignSpecSchemaJSON))
+	if err != nil {
+		return errors.Wrap(err, "failed to compile CampaignSpec JSON schema")
+	}
+
+	normalized, err := jsonc.Parse(cs.RawSpec)
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate CampaignSpec against schema")
+	}
+
+	var errs *multierror.Error
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+
+	if err := json.Unmarshal(normalized, &cs.Spec); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	return errs.ErrorOrNil()
 }
 
 type CampaignSpecFields struct {

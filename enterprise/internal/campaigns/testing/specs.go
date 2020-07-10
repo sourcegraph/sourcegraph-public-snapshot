@@ -7,7 +7,7 @@ import (
 )
 
 const TestRawCampaignSpec = `{
-  "name": "The name",
+  "name": "my-unique-name",
   "description": "My description",
   "on": [
     {"repositoriesMatchingQuery": "lang:go func main"},

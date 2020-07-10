@@ -243,16 +243,13 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec: args.CampaignSpec,
-		UserID:  user.ID,
-	}
+	opts := ee.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec, UserID: user.ID}
 
 	switch relay.UnmarshalKind(args.Namespace) {
 	case "User":
-		err = relay.UnmarshalSpec(args.Namespace, &campaignSpec.NamespaceUserID)
+		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceUserID)
 	case "Org":
-		err = relay.UnmarshalSpec(args.Namespace, &campaignSpec.NamespaceOrgID)
+		err = relay.UnmarshalSpec(args.Namespace, &opts.NamespaceOrgID)
 	default:
 		err = errors.Errorf("Invalid namespace %q", args.Namespace)
 	}
@@ -261,17 +258,16 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	var changesetSpecRandIDs []string
 	for _, graphqlID := range args.ChangesetSpecs {
 		randID, err := unmarshalChangesetSpecID(graphqlID)
 		if err != nil {
 			return nil, err
 		}
-		changesetSpecRandIDs = append(changesetSpecRandIDs, randID)
+		opts.ChangesetSpecRandIDs = append(opts.ChangesetSpecRandIDs, randID)
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-	err = svc.CreateCampaignSpec(ctx, campaignSpec, changesetSpecRandIDs)
+	campaignSpec, err := svc.CreateCampaignSpec(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

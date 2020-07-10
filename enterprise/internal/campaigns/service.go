@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -105,22 +104,38 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) err
 	return nil
 }
 
+type CreateCampaignSpecOpts struct {
+	RawSpec string
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	UserID int32
+
+	ChangesetSpecRandIDs []string
+}
+
 // CreateCampaignSpec creates the CampaignSpec.
-func (s *Service) CreateCampaignSpec(
-	ctx context.Context,
-	c *campaigns.CampaignSpec,
-	changesetSpecRandIDs []string,
-) (err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("User %d", c.UserID))
+func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *campaigns.CampaignSpec, err error) {
+	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("User %d", opts.UserID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	opts := ListChangesetSpecsOpts{Limit: -1, RandIDs: changesetSpecRandIDs}
-	cs, _, err := s.store.ListChangesetSpecs(ctx, opts)
+	// TODO(mrnugget): Handle YAML
+	spec, err = campaigns.NewCampaignSpecFromRaw(opts.RawSpec)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	spec.UserID = opts.UserID
+
+	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
+	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
+	if err != nil {
+		return nil, err
 	}
 
 	repoIDs := make([]api.RepoID, 0, len(cs))
@@ -130,7 +145,7 @@ func (s *Service) CreateCampaignSpec(
 
 	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	byRandID := make(map[string]*campaigns.ChangesetSpec, len(cs))
@@ -138,43 +153,37 @@ func (s *Service) CreateCampaignSpec(
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
 		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
-			return &db.RepoNotFoundErr{ID: changesetSpec.RepoID}
+			return nil, &db.RepoNotFoundErr{ID: changesetSpec.RepoID}
 		}
 		byRandID[changesetSpec.RandID] = changesetSpec
 	}
 
 	// Check if a changesetSpec was not found
-	for _, randID := range changesetSpecRandIDs {
+	for _, randID := range opts.ChangesetSpecRandIDs {
 		if _, ok := byRandID[randID]; !ok {
-			return &changesetSpecNotFoundErr{RandID: randID}
+			return nil, &changesetSpecNotFoundErr{RandID: randID}
 		}
 	}
-
-	// TODO(mrnugget): Handle YAML
-	if err := json.Unmarshal([]byte(c.RawSpec), &c.Spec); err != nil {
-		return err
-	}
-	// TODO(mrnugget): Validate that c.Spec is valid
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Done(&err)
 
-	if err := tx.CreateCampaignSpec(ctx, c); err != nil {
-		return err
+	if err := tx.CreateCampaignSpec(ctx, spec); err != nil {
+		return nil, err
 	}
 
 	for _, changesetSpec := range cs {
-		changesetSpec.CampaignSpecID = c.ID
+		changesetSpec.CampaignSpecID = spec.ID
 
 		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return spec, nil
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.

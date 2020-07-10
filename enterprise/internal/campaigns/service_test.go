@@ -601,13 +601,15 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("success", func(t *testing.T) {
-			spec := &campaigns.CampaignSpec{
-				UserID:          user.ID,
-				NamespaceUserID: user.ID,
-				RawSpec:         ct.TestRawCampaignSpec,
+			opts := CreateCampaignSpecOpts{
+				UserID:               user.ID,
+				NamespaceUserID:      user.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if err := svc.CreateCampaignSpec(ctx, spec, changesetSpecRandIDs); err != nil {
+			spec, err := svc.CreateCampaignSpec(ctx, opts)
+			if err != nil {
 				t.Fatal(err)
 			}
 
@@ -640,28 +642,29 @@ func TestService(t *testing.T) {
 			// Single repository filtered out by authzFilter
 			authzFilterRepo(t, changesetSpecs[0].RepoID)
 
-			spec := &campaigns.CampaignSpec{
-				UserID:          user.ID,
-				NamespaceUserID: user.ID,
-				RawSpec:         ct.TestRawCampaignSpec,
+			opts := CreateCampaignSpecOpts{
+				UserID:               user.ID,
+				NamespaceUserID:      user.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if err := svc.CreateCampaignSpec(ctx, spec, changesetSpecRandIDs); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateCampaignSpec(ctx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 
 		})
 
 		t.Run("invalid changesetspec id", func(t *testing.T) {
-			spec := &campaigns.CampaignSpec{
-				UserID:          user.ID,
-				NamespaceUserID: user.ID,
-				RawSpec:         ct.TestRawCampaignSpec,
+			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
+			opts := CreateCampaignSpecOpts{
+				UserID:               user.ID,
+				NamespaceUserID:      user.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: containsInvalidID,
 			}
 
-			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
-
-			if err := svc.CreateCampaignSpec(ctx, spec, containsInvalidID); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateCampaignSpec(ctx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})
