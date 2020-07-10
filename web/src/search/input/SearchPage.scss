@@ -16,7 +16,7 @@
     padding-bottom: 4rem;
 
     &__web-link {
-        color: #1C7CD6;
+        color: #1c7cd6;
     }
 
     h5 {
@@ -104,7 +104,7 @@
     }
 
     &__keyword-value-text {
-        color: #6078A9;
+        color: #6078a9;
         font-size: 12px;
         line-height: 140%;
     }
@@ -129,11 +129,14 @@
             color: $color-light-text-4;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             color: $gray-19;
         }
 
-        h3, h4, h6 {
+        h3,
+        h4,
+        h6 {
             color: $gray-13;
         }
 
@@ -142,7 +145,7 @@
         }
 
         strong {
-            color: $gray-11
+            color: $gray-11;
         }
 
         &__help-content {
@@ -156,22 +159,25 @@
         }
 
         &__web-link {
-            color: #1C7CD6;
+            color: #1c7cd6;
         }
 
         &__keyword-text {
-            color: #1C7CD6;
+            color: #1c7cd6;
         }
     }
 }
 
 .theme-dark {
     .search-page {
-        h1, h2 {
+        h1,
+        h2 {
             color: $gray-09;
         }
 
-        h3, h4, h6 {
+        h3,
+        h4,
+        h6 {
             color: $gray-08;
         }
 
@@ -179,12 +185,13 @@
             color: $gray-03;
         }
 
-        p, i {
+        p,
+        i {
             color: $gray-06;
         }
 
         strong {
-            color: $gray-11
+            color: $gray-11;
         }
 
         &__example-searches {
@@ -194,11 +201,11 @@
         }
 
         &__web-link {
-            color: #329AF0;
+            color: #329af0;
         }
 
         &__keyword-text {
-            color: #329AF0;
+            color: #329af0;
         }
     }
 }
