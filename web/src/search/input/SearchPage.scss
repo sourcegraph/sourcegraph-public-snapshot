@@ -39,7 +39,7 @@
         max-width: 90%;
     }
 
-    &__container {
+    &__search-container {
         flex: 1 1 auto;
         margin-top: 4rem;
         width: 49rem;
@@ -75,7 +75,7 @@
     &__repogroup-list {
         &-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
             grid-auto-rows: minmax(4rem, auto);
             gap: $spacer * 0.75;
         }
@@ -86,6 +86,25 @@
             object-fit: contain;
         }
     }
+
+    @media (min-width: $media-lg) {
+
+        .search-page__search-syntax .search-page__lang-list {
+            display:inline;
+            grid-template-columns: 1fr;
+        }
+
+    }
+
+    @media (min-width: $media-xl) {
+
+        .search-page__search-syntax .search-page__lang-list {
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+    }
+
 
     &__lang-list {
         display: grid;
@@ -113,126 +132,6 @@
             margin-top: 4rem;
         }
 
-        @media (max-width: $media-md) {
-            display: grid;
-            column-gap: 2rem;
-            .search-page__example-searches {
-                grid-column-start: 1;
-                grid-column-end: 5;
-            }
-            .search-page__search-a-language {
-                grid-column-start: 1;
-                grid-column-end: 5;
-            }
-            .search-page__search-a-language .search-page__lang-list {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
-            .search-page__search-syntax .search-page__lang-list {
-                display: inline;
-            }
-
-            .search-page__help-content-subheading {
-                margin-top: 3rem;
-                margin-bottom: 1rem;
-            }
-        }
-
-        @media (min-width: $media-md) {
-            display: grid;
-            column-gap: 2rem;
-
-            .search-page__example-searches {
-                grid-column-start: 1;
-                grid-column-end: 5;
-            }
-            .search-page__search-a-language {
-                grid-column-start: 1;
-                grid-column-end: 4;
-            }
-            .search-page__search-a-language .search-page__lang-list {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .search-page__search-syntax {
-                grid-column-start: 4;
-                grid-column-end: 5;
-            }
-            .search-page__search-syntax .search-page__lang-list {
-                display: inline;
-            }
-
-            .search-page__help-content-subheading {
-                margin-top: 1rem;
-                margin-bottom: 1rem;
-            }
-        }
-
-        @media (min-width: $media-lg) {
-            display: grid;
-            column-gap: 2rem;
-
-            .search-page__example-searches {
-                grid-column-start: 1;
-                grid-column-end: 3;
-            }
-            .search-page__search-a-language {
-                grid-column-start: 3;
-                grid-column-end: 4;
-            }
-            .search-page__search-a-language .search-page__lang-list {
-                display: grid;
-                grid-template-columns: 2fr;
-            }
-
-            .search-page__search-syntax {
-                grid-column-start: 4;
-                grid-column-end: 5;
-            }
-            .search-page__search-syntax .search-page__lang-list {
-                display: inline;
-            }
-
-            .search-page__help-content-subheading {
-                margin-top: 1rem;
-                margin-bottom: 1rem;
-            }
-        }
-
-        @media (min-width: $media-xl) {
-            display: grid;
-            column-gap: 2rem;
-
-            .search-page__example-searches {
-                grid-column-start: 1;
-                grid-column-end: 3;
-            }
-
-            .search-page__search-a-language {
-                grid-column-start: 3;
-                grid-column-end: 4;
-            }
-            .search-page__search-a-language .search-page__lang-list {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .search-page__search-syntax {
-                grid-column-start: 4;
-                grid-column-end: 5;
-            }
-
-            .search-page__search-syntax .search-page__lang-list {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .search-page__help-content-subheading {
-                margin-top: 1rem;
-                margin-bottom: 1rem;
-            }
-        }
     }
 
     &__keyword-value-text {
