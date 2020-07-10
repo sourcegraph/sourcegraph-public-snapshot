@@ -150,7 +150,7 @@ query($id: ID!) {
 
           commits {
             message
-        	diff
+            diff
           }
 
           published
