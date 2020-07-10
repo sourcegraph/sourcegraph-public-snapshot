@@ -500,6 +500,11 @@ type GitBranchChangesetDescription {
     # "refs/heads/master" or "refs/heads/main".
     baseRef: String!
 
+    # The base revision this changeset is based on. It is the latest commit in
+    # baseRef at the time when the changeset spec was created.
+    # For example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
+    baseRev: String!
+
     # The repository that contains the branch with this changeset's changes.
     #
     # Fork repositories and cross-repository changesets are not yet supported. Therefore,
