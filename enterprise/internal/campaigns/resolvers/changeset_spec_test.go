@@ -109,19 +109,16 @@ func TestChangesetSpecResolver(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			apiID := marshalChangesetSpecRandID(spec.RandID)
-			want := tc.want(spec)
-
-			input := map[string]interface{}{"id": apiID}
+			input := map[string]interface{}{"id": marshalChangesetSpecRandID(spec.RandID)}
 			var response struct{ Node apitest.ChangesetSpec }
 			apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecNode)
 
+			want := tc.want(spec)
 			if diff := cmp.Diff(want, response.Node); diff != "" {
 				t.Fatalf("unexpected response (-want +got):\n%s", diff)
 			}
 		})
 	}
-
 }
 
 const queryChangesetSpecNode = `

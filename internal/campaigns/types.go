@@ -11,6 +11,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
@@ -18,7 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -1586,9 +1590,52 @@ func (cs *ChangesetSpec) UnmarshalRawSpec() error {
 	return json.Unmarshal([]byte(cs.RawSpec), &cs.Spec)
 }
 
+func (cs *ChangesetSpec) Validate() error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.ChangesetSpecSchemaJSON))
+	if err != nil {
+		return errors.Wrap(err, "failed to compile ChangesetSpec JSON schema")
+	}
+
+	normalized, err := jsonc.Parse(cs.RawSpec)
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate ChangesetSpec against schema")
+	}
+
+	var errs *multierror.Error
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+
+	var desc ChangesetSpecDescription
+	if err := json.Unmarshal(normalized, &desc); err != nil {
+		errs = multierror.Append(errs, err)
+		return errs.ErrorOrNil()
+	}
+
+	if desc.HeadRepository != "" && desc.BaseRepository != "" && desc.HeadRepository != desc.BaseRepository {
+		errs = multierror.Append(errs, errors.New("headRepository does not match baseRepository"))
+		return errs.ErrorOrNil()
+	}
+
+	return errs.ErrorOrNil()
+}
+
 type ChangesetSpecDescription struct {
 	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
 
+	// If this is not empty, the description is a reference to an existing
+	// changeset and the rest of these fields are empty.
+	// TODO(mrnugget): Id or ID, that is the question?
 	ExternalID string `json:"externalId,omitempty"`
 
 	BaseRev string `json:"baseRev,omitempty"`
