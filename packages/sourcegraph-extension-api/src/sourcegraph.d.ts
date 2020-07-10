@@ -1259,11 +1259,6 @@ declare module 'sourcegraph' {
         summary: MarkupContent
 
         /**
-         * Additional details to be shown on demand.
-         */
-        details?: string
-
-        /**
          * Whether the alert is dismissible.
          */
         dismissible: bool

@@ -67,7 +67,7 @@ const isEmptyHover = ({
     ((!hoverOrError || hoverOrError === LOADING || isErrorLike(hoverOrError)) &&
         (!actionsOrError || actionsOrError === LOADING || isErrorLike(actionsOrError)))
 
-export class HoverOverlay<A extends string> extends React.PureComponent<HoverOverlayProps, HoverOverlayState> {
+export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOverlayState> {
     private subscription = new Subscription()
 
     constructor(props: HoverOverlayProps) {

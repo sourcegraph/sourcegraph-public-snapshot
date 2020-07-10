@@ -1,27 +1,27 @@
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
-import { HoverAlert } from '../../../../../shared/src/hover/HoverOverlay'
+import { HoverAlert } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
 import { isInPage } from '../../context'
 
-export type ExtensionHoverAlertType = 'nativeTooltips'
+export const extensionHoverAlertType = 'nativeTooltips'
 
 /**
  * Returns an Observable of all hover alerts that have not yet
  * been dismissed by the user.
  */
 export function getActiveHoverAlerts(
-    allAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[]
-): Observable<HoverAlert<ExtensionHoverAlertType>[] | undefined> {
+    allAlerts: Observable<HoverAlert>[]
+): Observable<HoverAlert[] | undefined> {
     if (isInPage) {
         return of(undefined)
     }
     return observeStorageKey('sync', 'dismissedHoverAlerts').pipe(
         switchMap(dismissedAlerts =>
             combineLatestOrDefault(allAlerts).pipe(
-                map(alerts => (dismissedAlerts ? alerts.filter(({ type }) => !dismissedAlerts[type]) : alerts))
+                map(alerts => (dismissedAlerts ? alerts.filter(({ type }) => !type || !dismissedAlerts.includes(type)) : alerts))
             )
         ),
         catchError(error => {
@@ -34,13 +34,15 @@ export function getActiveHoverAlerts(
 /**
  * Marks a hover alert as dismissed in sync storage.
  */
-export async function onHoverAlertDismissed(alertType: ExtensionHoverAlertType): Promise<void> {
+export async function onHoverAlertDismissed(alertType: string): Promise<void> {
     try {
         const partialStorageItems: Pick<SyncStorageItems, 'dismissedHoverAlerts'> = {
-            dismissedHoverAlerts: {},
+            dismissedHoverAlerts: [],
             ...(await storage.sync.get('dismissedHoverAlerts')),
         }
-        partialStorageItems.dismissedHoverAlerts[alertType] = true
+        if (!partialStorageItems.dismissedHoverAlerts.includes(alertType)) {
+            partialStorageItems.dismissedHoverAlerts.push(alertType)
+        }
         await storage.sync.set(partialStorageItems)
     } catch (error) {
         console.error('Error dismissing alert', error)
