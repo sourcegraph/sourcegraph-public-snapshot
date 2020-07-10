@@ -123,7 +123,6 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		tr.Finish()
 	}()
 
-	// TODO(mrnugget): Handle YAML
 	spec, err = campaigns.NewCampaignSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
