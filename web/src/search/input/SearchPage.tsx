@@ -203,8 +203,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         </div>
                         <div className="search-page__search-syntax col-sm-12 col-md-6  col-lg-4 col-xl-4">
                             <h3 className="search-page__help-content-header">Search syntax</h3>
-                            <div className="search-page__lang-list mt-3">
-                                <dl>
+                            <div className="mt-3 row">
+                                <dl className="col-sm-5 col-md-12 col-lg-6 mb-4">
                                     <dt className="search-page__help-content-subheading">
                                         <h5>Common search keywords</h5>
                                     </dt>
@@ -220,9 +220,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <dd className="text-monospace">
                                         <p>lang:javascript</p>
                                     </dd>
-                                </dl>
-                                <dl>
-                                    <dt className="search-page__help-content-subheading">
+                                    <dt className="search-page__help-content-subheading mt-5">
                                         <h5>Diff/commit search keywords</h5>
                                     </dt>
                                     <dd className="text-monospace">
@@ -238,7 +236,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <p>repo:r@*refs/heads/ (all branches)</p>
                                     </dd>
                                 </dl>
-                                <dl>
+                                <dl className="col-sm-5 col-md-12 col-lg-12 col-xl-6">
                                     <dt className="search-page__help-content-subheading">
                                         <h5>Finding matches</h5>
                                     </dt>
