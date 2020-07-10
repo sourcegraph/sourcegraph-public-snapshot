@@ -179,7 +179,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </li>
                             </ul>
                         </div>
-                        <div>
+                        <div className="search-page__search-a-language">
                             <div className="d-flex align-items-baseline">
                                 <h3 className="search-page__help-content-header mr-2">Search a language</h3>
                                 <span className="text-monospace font-weight-normal search-page__lang-ref">
