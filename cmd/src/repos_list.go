@@ -39,7 +39,6 @@ Examples:
 		queryFlag = flagSet.String("query", "", `Returns repositories whose names match the query. (e.g. "myorg/")`)
 		// TODO: add support for "names" field.
 		clonedFlag           = flagSet.Bool("cloned", true, "Include cloned repositories.")
-		cloneInProgressFlag  = flagSet.Bool("clone-in-progress", true, "Include repositories that are currently being cloned.")
 		notClonedFlag        = flagSet.Bool("not-cloned", true, "Include repositories that are not yet cloned and for which cloning is not in progress.")
 		indexedFlag          = flagSet.Bool("indexed", true, "Include repositories that have a text search index.")
 		notIndexedFlag       = flagSet.Bool("not-indexed", true, "Include repositories that do not have a text search index.")
@@ -62,7 +61,6 @@ Examples:
   $first: Int,
   $query: String,
   $cloned: Boolean,
-  $cloneInProgress: Boolean,
   $notCloned: Boolean,
   $indexed: Boolean,
   $notIndexed: Boolean,
@@ -73,7 +71,6 @@ Examples:
     first: $first,
     query: $query,
     cloned: $cloned,
-    cloneInProgress: $cloneInProgress,
     notCloned: $notCloned,
     indexed: $indexed,
     notIndexed: $notIndexed,
@@ -105,15 +102,14 @@ Examples:
 		return (&apiRequest{
 			query: query,
 			vars: map[string]interface{}{
-				"first":           nullInt(*firstFlag),
-				"query":           nullString(*queryFlag),
-				"cloned":          *clonedFlag,
-				"cloneInProgress": *cloneInProgressFlag,
-				"notCloned":       *notClonedFlag,
-				"indexed":         *indexedFlag,
-				"notIndexed":      *notIndexedFlag,
-				"orderBy":         orderBy,
-				"descending":      *descendingFlag,
+				"first":      nullInt(*firstFlag),
+				"query":      nullString(*queryFlag),
+				"cloned":     *clonedFlag,
+				"notCloned":  *notClonedFlag,
+				"indexed":    *indexedFlag,
+				"notIndexed": *notIndexedFlag,
+				"orderBy":    orderBy,
+				"descending": *descendingFlag,
 			},
 			result: &result,
 			done: func() error {
