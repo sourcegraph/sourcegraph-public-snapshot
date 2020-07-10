@@ -210,9 +210,6 @@ func Main(enterpriseInit EnterpriseInit) {
 		)(server.Handler())
 	}
 
-	srv := &http.Server{Addr: addr, Handler: handler}
-	go func() { log.Fatal(srv.ListenAndServe()) }()
-
 	go debugserver.Start(debugserver.Endpoint{
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
@@ -234,7 +231,8 @@ func Main(enterpriseInit EnterpriseInit) {
 		}),
 	})
 
-	select {}
+	srv := &http.Server{Addr: addr, Handler: handler}
+	log.Fatal(srv.ListenAndServe())
 }
 
 type scheduler interface {
