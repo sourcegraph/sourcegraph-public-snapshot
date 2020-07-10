@@ -2,6 +2,7 @@ import { describe as mochaDescribe, test as mochaTest, before as mochaBefore } f
 import { Subscription, Subject, throwError } from 'rxjs'
 import { snakeCase } from 'lodash'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { recordCoverage } from '../../../shared/src/testing/coverage'
 import mkdirp from 'mkdirp-promise'
 import express from 'express'
 import { Polly } from '@pollyjs/core'
@@ -245,6 +246,7 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                     ])
                 } finally {
                     await polly.stop()
+                    await recordCoverage(driver.browser)
                     await driver.page.close()
                 }
             }
