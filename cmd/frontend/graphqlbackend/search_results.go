@@ -836,7 +836,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		tryCount *= tryCount
 		if tryCount > maxResultsForRetry {
 			// We've capped out what we're willing to do, throw alert.
-			return &SearchResultsResolver{alert: alertForCappedAndExpression()}, nil
+			return alertForCappedAndExpression().wrap(), nil
 		}
 	}
 	result.limitHit = !exhausted
@@ -939,7 +939,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
-		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
+		return alertForQuery("", err).wrap(), nil
 	}
 	if pattern == nil {
 		r.query.(*query.AndOrQuery).Query = scopeParameters
@@ -953,7 +953,69 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	return result, nil
 }
 
+// setup a function that processes arguments of the GQL Search endpoint, and thus
+// called by each method of the SearchImplementer interface. It parses the search
+// query and initializes pagination (if pagination is requested).
+func (r *searchResolver) setup(ctx context.Context) (*searchAlert, error) {
+	var err error
+	r.versionContext = r.args.VersionContext
+	r.patternType, err = detectSearchType(r.args.Version, r.args.PatternType, r.args.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.patternType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
+		return nil, errors.New("Structural search is disabled in the site configuration.")
+	}
+
+	var queryString string
+	if r.patternType == query.SearchTypeLiteral {
+		queryString = query.ConvertToLiteral(r.args.Query)
+	} else {
+		queryString = r.args.Query
+	}
+
+	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(r.args.Query)) || r.patternType == query.SearchTypeStructural {
+		// To process the input as an and/or query, the flag must be
+		// enabled (default is on) and must contain either an 'and' or
+		// 'or' expression. Else, fallback to the older existing parser.
+		r.query, err = query.ProcessAndOr(r.args.Query, r.patternType)
+		if err != nil {
+			return alertForQuery(r.args.Query, err), nil
+		}
+	} else {
+		r.query, err = query.Process(queryString, r.patternType)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
+	// If stable:truthy is specified, make the query return a stable result ordering.
+	if r.query.BoolValue(query.FieldStable) {
+		r.args, r.query, err = queryForStableResults(r.args, r.query)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
+	// If the request is a paginated one, decode those arguments now.
+	if r.args.First != nil {
+		r.pagination, err = processPaginationRequest(r.args, r.query)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+	alert, err := r.setup(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if alert != nil {
+		return alert.wrap(), nil
+	}
 	switch q := r.query.(type) {
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
@@ -992,7 +1054,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return &SearchResultsResolver{alert: alertForTimeout(usedTime, suggestTime, r)}, nil
+		return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
 	}
 	return rr, err
 }
@@ -1063,6 +1125,13 @@ func init() {
 }
 
 func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
+	alert, err := r.setup(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if alert != nil {
+		return nil, nil
+	}
 	// Override user context to ensure that stats for this query are cached
 	// regardless of the user context's cancellation. For example, if
 	// stats/sparklines are slow to load on the homepage and all users navigate
@@ -1363,7 +1432,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+			return nil, nil, nil, alert.wrap(), nil
 		}
 		return nil, nil, nil, nil, err
 	}
@@ -1371,11 +1440,11 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, nil, alert.wrap(), nil
 	}
 	if overLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, nil, alert.wrap(), nil
 	}
 	return repos, missingRepoRevs, excludedRepos, nil, nil
 }
@@ -1771,15 +1840,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = newAlert // takes higher precedence
 	}
 
-	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
-		alert = alertForStructuralSearchNotSet(r.originalQuery)
+	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.args.Query) {
+		alert = alertForStructuralSearchNotSet(r.args.Query)
 	}
 
 	if len(missingRepoRevs) > 0 {
 		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
+	if len(results) == 0 && strings.Contains(r.args.Query, `"`) && r.patternType == query.SearchTypeLiteral {
 		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
 	}
 

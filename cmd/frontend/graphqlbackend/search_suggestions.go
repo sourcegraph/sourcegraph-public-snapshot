@@ -44,6 +44,14 @@ var (
 )
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+	alert, err := r.setup(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if alert != nil {
+		return nil, nil
+	}
+	// Override user context to ensure that stats for this query are cached
 	args.applyDefaultsAndConstraints()
 
 	if len(r.query.ParseTree()) == 0 {

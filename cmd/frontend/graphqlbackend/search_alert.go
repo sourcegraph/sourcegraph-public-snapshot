@@ -312,7 +312,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			if reposExist(ctx, tryIncludeForks) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: "include forked repositories in your query.",
-					query:       r.originalQuery + " fork:yes",
+					query:       r.args.Query + " fork:yes",
 					patternType: r.patternType,
 				})
 			}
@@ -329,7 +329,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			if reposExist(ctx, tryIncludeArchived) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: "include archived repositories in your query.",
-					query:       r.originalQuery + " archived:yes",
+					query:       r.args.Query + " archived:yes",
 					patternType: r.patternType,
 				})
 			}
@@ -601,18 +601,10 @@ func addRegexpField(p syntax.ParseTree, field, pattern string) string {
 	return modified.String()
 }
 
-func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
-	alert := &searchAlert{
-		prometheusType:  a.prometheusType,
-		title:           a.title,
-		description:     a.description,
-		proposedQueries: a.proposedQueries,
-	}
-	// ElapsedMilliseconds() will calculate a very large value for duration if start takes on the nil-value of year 1. As a workaround, instantiate start with time.now(). TODO(rvantonder): #10801.
-	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
+// Wrap an alert in a SearchResultsResolver.
+func (a searchAlert) wrap() *SearchResultsResolver {
+	// ElapsedMilliseconds() will calculate a very large value for duration
+	// if start takes on the nil-value of year 1. As a workaround,
+	// instantiate start with time.now(). TODO(rvantonder): #10801.
+	return &SearchResultsResolver{alert: &a, start: time.Now()}
 }
-
-func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
-	return nil, nil
-}
-func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }

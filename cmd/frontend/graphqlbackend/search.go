@@ -73,63 +73,10 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
-	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
-	if err != nil {
-		return nil, err
-	}
-
-	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
-		return nil, errors.New("Structural search is disabled in the site configuration.")
-	}
-
-	var queryString string
-	if searchType == query.SearchTypeLiteral {
-		queryString = query.ConvertToLiteral(args.Query)
-	} else {
-		queryString = args.Query
-	}
-
-	var queryInfo query.QueryInfo
-	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || searchType == query.SearchTypeStructural {
-		// To process the input as an and/or query, the flag must be
-		// enabled (default is on) and must contain either an 'and' or
-		// 'or' expression. Else, fallback to the older existing parser.
-		queryInfo, err = query.ProcessAndOr(args.Query, searchType)
-		if err != nil {
-			return alertForQuery(args.Query, err), nil
-		}
-	} else {
-		queryInfo, err = query.Process(queryString, searchType)
-		if err != nil {
-			return alertForQuery(queryString, err), nil
-		}
-	}
-
-	// If stable:truthy is specified, make the query return a stable result ordering.
-	if queryInfo.BoolValue(query.FieldStable) {
-		args, queryInfo, err = queryForStableResults(args, queryInfo)
-		if err != nil {
-			return alertForQuery(queryString, err), nil
-		}
-	}
-
-	// If the request is a paginated one, decode those arguments now.
-	var pagination *searchPaginationInfo
-	if args.First != nil {
-		pagination, err = processPaginationRequest(args, queryInfo)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &searchResolver{
-		query:          queryInfo,
-		originalQuery:  args.Query,
-		versionContext: args.VersionContext,
-		pagination:     pagination,
-		patternType:    searchType,
-		zoekt:          search.Indexed(),
-		searcherURLs:   search.SearcherURLs(),
+		args:         args,
+		zoekt:        search.Indexed(),
+		searcherURLs: search.SearcherURLs(),
 	}, nil
 }
 
@@ -237,11 +184,13 @@ func detectSearchType(version string, patternType *string, input string) (query.
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery  string                // the raw string of the original search query
+	args *SearchArgs // the search args passed corresponding to the GQL schema.
+
+	// Processed search arguments yield the following data types.
+	query          query.QueryInfo       // the parsed and validated query, either containing and/or expressions or otherwise ordinary
+	patternType    query.SearchType      // the text search pattern type
 	pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType    query.SearchType
-	versionContext *string
+	versionContext *string               // if set, versionContext is a label for a set of repositories and revisions to search
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -250,13 +199,14 @@ type searchResolver struct {
 	repoOverLimit             bool
 	repoErr                   error
 
+	// Handles to search endpoints.
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
 }
 
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
-	return r.originalQuery
+	return r.args.Query
 }
 
 func (r *searchResolver) countIsSet() bool {

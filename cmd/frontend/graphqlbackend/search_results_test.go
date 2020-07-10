@@ -866,11 +866,13 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	ctx := context.Background()
 
-	q, err := query.ParseAndCheck(`foobar index:only count:350`)
-	if err != nil {
-		t.Fatal(err)
+	resolver := &searchResolver{
+		args: &SearchArgs{
+			Query:   `foobar index:only count:350`,
+			Version: "V2",
+		},
+		zoekt: z,
 	}
-	resolver := &searchResolver{query: q, zoekt: z}
 	results, err := resolver.Results(ctx)
 	if err != nil {
 		t.Fatal("Results:", err)

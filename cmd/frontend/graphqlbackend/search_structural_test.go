@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -88,13 +87,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 
 	ctx := context.Background()
 
-	q, err := query.ParseAndCheck(`patterntype:structural index:only foo`)
-	if err != nil {
-		t.Fatal(err)
-	}
+	queryInput := `patterntype:structural index:only foo`
 	resolver := &searchResolver{
-		query:        q,
-		patternType:  query.SearchTypeStructural,
+		args:         &SearchArgs{Query: queryInput, Version: "V2"},
 		zoekt:        z,
 		searcherURLs: endpoint.Static("test"),
 	}
