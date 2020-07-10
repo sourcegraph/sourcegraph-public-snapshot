@@ -185,7 +185,7 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
                 shelljs.exec(`cd ${buildDirectory} && zip -q -r ${zipDestination} *`)
             }
 
-            signale.success(`Done building the ${title} ${environment} bundle with version string ${version}`)
+            signale.success(`Done building the ${title} ${environment} bundle`)
         }
     }
 }
