@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -8,8 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
@@ -18,7 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -1632,6 +1638,12 @@ func unixMilliToTime(ms int64) time.Time {
 // TODO: NEW CAMPAIGNS WORKFLOW BELOW
 // ****************************
 
+func NewCampaignSpecFromRaw(rawSpec string) (*CampaignSpec, error) {
+	c := &CampaignSpec{RawSpec: rawSpec}
+
+	return c, c.UnmarshalValidate()
+}
+
 type CampaignSpec struct {
 	ID     int64
 	RandID string
@@ -1654,10 +1666,58 @@ func (cs *CampaignSpec) Clone() *CampaignSpec {
 	return &cc
 }
 
+// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
+// the CampaignSpec schema and does additional semantic validation.
+func (cs *CampaignSpec) UnmarshalValidate() error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.CampaignSpecSchemaJSON))
+	if err != nil {
+		return errors.Wrap(err, "failed to compile CampaignSpec JSON schema")
+	}
+
+	normalized, err := yaml.YAMLToJSON([]byte(cs.RawSpec))
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate CampaignSpec against schema")
+	}
+
+	var errs *multierror.Error
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+
+	if err := json.Unmarshal(normalized, &cs.Spec); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	return errs.ErrorOrNil()
+}
+
 type CampaignSpecFields struct {
-	Name              string            `json:"name"`
-	Description       string            `json:"description"`
-	ChangesetTemplate ChangesetTemplate `json:"changesetTemplate"`
+	Name              string             `json:"name"`
+	Description       string             `json:"description"`
+	On                []CampaignSpecOn   `json:"on"`
+	Steps             []CampaignSpecStep `json:"steps"`
+	ChangesetTemplate ChangesetTemplate  `json:"changesetTemplate"`
+}
+
+type CampaignSpecOn struct {
+	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty"`
+	Repository                string `json:"repository,omitempty"`
+}
+
+type CampaignSpecStep struct {
+	Run       string            `json:"run"`
+	Container string            `json:"container"`
+	Env       map[string]string `json:"env"`
 }
 
 type ChangesetTemplate struct {
@@ -1672,12 +1732,19 @@ type CommitTemplate struct {
 	Message string `json:"message"`
 }
 
+func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
+	c := &ChangesetSpec{RawSpec: rawSpec}
+
+	return c, c.UnmarshalValidate()
+}
+
 type ChangesetSpec struct {
 	ID     int64
 	RandID string
 
 	RawSpec string
-	Spec    ChangesetSpecFields
+	// TODO(mrnugget): should we rename the "spec" column to "description"?
+	Spec ChangesetSpecDescription
 
 	CampaignSpecID int64
 	RepoID         api.RepoID
@@ -1693,9 +1760,71 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 	return &cc
 }
 
-type ChangesetSpecFields struct {
-	RepoID  graphql.ID   `json:"repoID"`
-	Rev     api.CommitID `json:"rev"`
-	BaseRef string       `json:"baseRef"`
-	Diff    string       `json:"diff"`
+// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
+// the ChangesetSpec schema and does additional semantic validation.
+func (cs *ChangesetSpec) UnmarshalValidate() error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.ChangesetSpecSchemaJSON))
+	if err != nil {
+		return errors.Wrap(err, "failed to compile ChangesetSpec JSON schema")
+	}
+
+	normalized, err := jsonc.Parse(cs.RawSpec)
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate ChangesetSpec against schema")
+	}
+
+	var errs *multierror.Error
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+
+	if err := json.Unmarshal(normalized, &cs.Spec); err != nil {
+		errs = multierror.Append(errs, err)
+		return errs.ErrorOrNil()
+	}
+
+	headRepo := cs.Spec.HeadRepository
+	baseRepo := cs.Spec.BaseRepository
+	if headRepo != "" && baseRepo != "" && headRepo != baseRepo {
+		errs = multierror.Append(errs, errors.New("headRepository does not match baseRepository"))
+	}
+
+	return errs.ErrorOrNil()
+}
+
+type ChangesetSpecDescription struct {
+	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
+
+	// If this is not empty, the description is a reference to an existing
+	// changeset and the rest of these fields are empty.
+	// TODO(mrnugget): Id or ID, that is the question?
+	ExternalID string `json:"externalId,omitempty"`
+
+	BaseRev string `json:"baseRev,omitempty"`
+	BaseRef string `json:"baseRef,omitempty"`
+
+	HeadRepository graphql.ID `json:"headRepository,omitempty"`
+	HeadRef        string     `json:"headRef,omitempty"`
+
+	Title string `json:"title,omitempty"`
+	Body  string `json:"body,omitempty"`
+
+	Commits []GitCommitDescription `json:"commits,omitempty"`
+
+	Published bool `json:"published,omitempty"`
+}
+
+type GitCommitDescription struct {
+	Message string `json:"message,omitempty"`
+	Diff    string `json:"diff,omitempty"`
 }

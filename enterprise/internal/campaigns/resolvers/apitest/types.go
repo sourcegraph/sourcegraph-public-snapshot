@@ -187,30 +187,12 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
-type CommitTemplate struct {
-	Message string
-}
-
-type ChangesetTemplate struct {
-	Title     string
-	Body      string
-	Branch    string
-	Commit    CommitTemplate
-	Published bool
-}
-
-type CampaignSpecParsedInput struct {
-	Name              string
-	Description       string
-	ChangesetTemplate ChangesetTemplate
-}
-
 type CampaignSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
 
 	OriginalInput string
-	ParsedInput   CampaignSpecParsedInput
+	ParsedInput   graphqlbackend.JSONValue
 
 	PreviewURL string
 
@@ -227,5 +209,30 @@ type ChangesetSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
 
+	Description ChangesetSpecDescription
+
 	ExpiresAt *graphqlbackend.DateTime
+}
+
+type ChangesetSpecDescription struct {
+	Typename string `json:"__typename"`
+
+	BaseRepository string
+	ExternalID     string
+	BaseRef        string
+
+	HeadRepository string
+	HeadRef        string
+
+	Title string
+	Body  string
+
+	Commits []GitCommitDescription
+
+	Published bool
+}
+
+type GitCommitDescription struct {
+	Message string
+	Diff    string
 }
