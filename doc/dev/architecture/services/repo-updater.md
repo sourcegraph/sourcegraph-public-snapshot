@@ -2,8 +2,6 @@
 
 Link: https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater
 
-## TLDR
-
 Repo-updater tracks the state of repos, and is responsible for automatically scheduling updates ("git fetch" runs) using gitserver.
 
 ## Config

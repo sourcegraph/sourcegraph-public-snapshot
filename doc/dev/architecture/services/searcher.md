@@ -2,8 +2,6 @@
 
 Link: https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher
 
-## TLDR
-
 Provides on-demand unindexed search for repositories. It scans through a git archive fetched from gitserver to find results, similar in nature to `git grep`.
 
 ## Config

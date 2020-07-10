@@ -2,8 +2,6 @@
 
 Link: https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver
 
-## TLDR
-
 Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, go through repo-updater.
 
 ## Config
