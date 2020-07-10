@@ -653,11 +653,23 @@
       }
     },
     "observability.silenceAlerts": {
-      "description": "Silence individual Sourcegraph alerts by name.",
+      "description": "Silence individual Sourcegraph alerts.",
       "type": "array",
       "items": {
-        "type": "string",
-        "examples": ["critical_some-service_some_alert_name"]
+        "type": "object",
+        "required": ["service", "alert", "level"],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string",
+            "enum": ["warning", "critical"]
+          },
+          "alert": {
+            "type": "string"
+          }
+        }
       }
     },
     "observability.logSlowSearches": {

@@ -44,6 +44,7 @@ require (
 	github.com/gliderlabs/ssh v0.3.0 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/go-git/go-git/v5 v5.1.0 // indirect
+	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-playground/validator/v10 v10.3.0 // indirect
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3

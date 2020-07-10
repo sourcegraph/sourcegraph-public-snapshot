@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
+	"github.com/prometheus/alertmanager/api/v2/client/silence"
+	"github.com/prometheus/alertmanager/api/v2/models"
 	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/common/model"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -95,6 +99,78 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 }
 
 func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
-	// TODO
-	return
+	// convenience function for creating a prefixed problem - this reflects the relevant site configuration fields
+	newProblem := func(err error) {
+		result.Problems = append(result.Problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: %v", err)))
+	}
+
+	var (
+		createdBy      = "src-prom-wrapper"
+		comment        = "Applied via `observability.alerts` in site configuration"
+		startTime      = strfmt.DateTime(time.Now())
+		endTime        = strfmt.DateTime(time.Unix(1<<63-62135596801, 999999999)) // https://stackoverflow.com/questions/25065055/what-is-the-maximum-time-time-in-go/32620397
+		activeSilences = map[schema.ObservabilitySilenceAlerts]string{}           // map silence to alertmanager silence ID
+	)
+
+	for _, s := range newConfig.SilencedAlerts {
+		activeSilences[*s] = ""
+	}
+
+	// delete existing silences that should no longer be silenced
+	existingSilences, err := change.AMClient.Silence.GetSilences(&silence.GetSilencesParams{})
+	if err != nil {
+		newProblem(err)
+		return
+	}
+	for _, s := range existingSilences.Payload {
+		if *s.CreatedBy == createdBy && s.Comment != nil {
+			// if this silence should not exist, delete
+			silencedAlert := newSilenceFromMatchers(s.Matchers)
+			if _, shouldBeActive := activeSilences[silencedAlert]; shouldBeActive {
+				activeSilences[silencedAlert] = *s.ID
+			} else {
+				uid := strfmt.UUID(*s.ID)
+				if _, err := change.AMClient.Silence.DeleteSilence(&silence.DeleteSilenceParams{
+					SilenceID: uid,
+				}); err != nil {
+					newProblem(err)
+					return
+				}
+			}
+		}
+	}
+
+	// create or update silences
+	for alert, existingSilence := range activeSilences {
+		s := models.Silence{
+			CreatedBy: &createdBy,
+			Comment:   &comment,
+			StartsAt:  &startTime,
+			EndsAt:    &endTime,
+			Matchers:  newMatchersFromSilence(alert),
+		}
+		var err error
+		if existingSilence != "" {
+			_, err = change.AMClient.Silence.PostSilences(&silence.PostSilencesParams{
+				Context: ctx,
+				Silence: &models.PostableSilence{
+					ID:      existingSilence,
+					Silence: s,
+				},
+			})
+		} else {
+			_, err = change.AMClient.Silence.PostSilences(&silence.PostSilencesParams{
+				Context: ctx,
+				Silence: &models.PostableSilence{
+					Silence: s,
+				},
+			})
+		}
+		if err != nil {
+			newProblem(err)
+			return
+		}
+	}
+
+	return result
 }

@@ -802,6 +802,11 @@ type ObservabilityAlerts struct {
 	Level    string   `json:"level"`
 	Notifier Notifier `json:"notifier"`
 }
+type ObservabilitySilenceAlerts struct {
+	Alert   string `json:"alert"`
+	Level   string `json:"level"`
+	Service string `json:"service"`
+}
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.
 type ObservabilityTracing struct {
@@ -1136,8 +1141,8 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
-	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by name.
-	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
+	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts.
+	ObservabilitySilenceAlerts []*ObservabilitySilenceAlerts `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"

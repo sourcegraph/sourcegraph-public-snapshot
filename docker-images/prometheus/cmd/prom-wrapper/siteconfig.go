@@ -41,7 +41,7 @@ type subscribedSiteConfig struct {
 	Email    *siteEmailConfig
 	emailSum [32]byte
 
-	SilencedAlerts    []string
+	SilencedAlerts    []*schema.ObservabilitySilenceAlerts
 	silencedAlertsSum [32]byte
 }
 
