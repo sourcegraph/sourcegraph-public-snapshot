@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -880,8 +881,8 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	changesetSpec := &campaigns.ChangesetSpec{
-		Spec: campaigns.ChangesetSpecFields{
-			RepoID: graphqlbackend.MarshalRepositoryID(repo.ID),
+		Spec: campaigns.ChangesetSpecDescription{
+			BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
 		},
 		RepoID: repo.ID,
 		UserID: userID,
@@ -912,24 +913,18 @@ func TestCreateCampaignSpec(t *testing.T) {
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaignSpec)
 
+	var unmarshaled interface{}
+	err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	want := apitest.CampaignSpec{
 		OriginalInput: rawSpec,
-		ParsedInput: apitest.CampaignSpecParsedInput{
-			Name:        "The name",
-			Description: "My description",
-			ChangesetTemplate: apitest.ChangesetTemplate{
-				Title:  "Hello World",
-				Body:   "My first campaign!",
-				Branch: "hello-world",
-				Commit: apitest.CommitTemplate{
-					Message: "Append Hello World to all README.md files",
-				},
-				Published: false,
-			},
-		},
-		PreviewURL: "/campaigns/new?spec=",
-		Namespace:  apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
-		Creator:    apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
+		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
+		PreviewURL:    "/campaigns/new?spec=",
+		Namespace:     apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
+		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: []apitest.ChangesetSpec{
 			{ID: string(changesetSpecID)},
 		},
@@ -1000,7 +995,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"changesetSpec": ct.NewRawChangesetSpec(graphqlbackend.MarshalRepositoryID(repo.ID)),
+		"changesetSpec": ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID)),
 	}
 
 	var response struct{ CreateChangesetSpec apitest.ChangesetSpec }
@@ -1010,9 +1005,11 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	have := response.CreateChangesetSpec
 
-	want := apitest.ChangesetSpec{}
-	want.ID = have.ID
-	want.ExpiresAt = have.ExpiresAt
+	want := apitest.ChangesetSpec{
+		Typename:  "ChangesetSpec",
+		ID:        have.ID,
+		ExpiresAt: have.ExpiresAt,
+	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -1036,6 +1033,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 const mutationCreateChangesetSpec = `
 mutation($changesetSpec: String!){
   createChangesetSpec(changesetSpec: $changesetSpec) {
+    __typename
     id
     expiresAt
   }
@@ -1063,9 +1061,9 @@ func TestApplyCampaign(t *testing.T) {
 	repoApiID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	changesetSpec := &campaigns.ChangesetSpec{
-		RawSpec: ct.NewRawChangesetSpec(repoApiID),
-		Spec: campaigns.ChangesetSpecFields{
-			RepoID: repoApiID,
+		RawSpec: ct.NewRawChangesetSpecGitBranch(repoApiID),
+		Spec: campaigns.ChangesetSpecDescription{
+			BaseRepository: repoApiID,
 		},
 		RepoID: repo.ID,
 		UserID: userID,
@@ -1231,7 +1229,6 @@ func TestMoveCampaign(t *testing.T) {
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
 	haveCampaign := response.MoveCampaign
-	fmt.Printf("haveCampaign=%+v\n", haveCampaign)
 	if diff := cmp.Diff(input["newName"], haveCampaign.Name); diff != "" {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
