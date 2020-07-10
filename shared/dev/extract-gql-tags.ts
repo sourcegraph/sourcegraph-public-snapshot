@@ -1,5 +1,6 @@
 /* eslint-disable unicorn/consistent-function-scoping */
 /* eslint-disable no-sync */
+import * as prettier from 'prettier'
 import { Extractor } from 'ts-graphql-plugin/lib/analyzer/extractor'
 import { ScriptHost } from 'ts-graphql-plugin/lib/analyzer/analyzer-factory'
 import { createScriptSourceHelper } from 'ts-graphql-plugin/lib/ts-ast-util/script-source-helper'
@@ -31,7 +32,15 @@ const readSchema = (schemaPath: string): GraphQLSchema => {
     return schema
 }
 
-const extractGQL = (tsProjectPath: string, outputDirectory: string, interfaceName: string): void => {
+export async function formatSourceFile(fileContent: string, fileLocation: string): Promise<string> {
+    const config = await prettier.resolveConfig(fileLocation)
+    if (!config) {
+        throw new Error(`Prettier config not found for file ${fileLocation}`)
+    }
+    return prettier.format(fileContent, { ...config, parser: 'typescript' })
+}
+
+const extractGQL = async (tsProjectPath: string, outputDirectory: string, interfaceName: string): Promise<void> => {
     const { pluginConfig, tsconfig, prjRootPath } = readTsconfig(tsProjectPath)
     if (typeof pluginConfig.schema !== 'string') {
         throw new TypeError('for now schema field needs to be a string path')
@@ -166,8 +175,11 @@ const extractGQL = (tsProjectPath: string, outputDirectory: string, interfaceNam
         )
     }
 
+    const outputFilePath = path.join(outputDirectory, outputFileName)
     const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed, removeComments: false })
-    ts.sys.writeFile(path.join(outputDirectory, outputFileName), printer.printFile(resultFile))
+    const prettySource = await formatSourceFile(printer.printFile(resultFile), outputFilePath)
+
+    ts.sys.writeFile(outputFilePath, prettySource)
 }
 
 interface Config {
@@ -234,8 +246,11 @@ function readTsconfig(project: string): Config {
     }
 }
 
-// web
-extractGQL(WEB_TSPROJECT_PATH, WEB_OUTPUT_DIR, WEB_INTERFACE_NAME)
-
-// shared
-extractGQL(SHARED_TSPROJECT_PATH, SHARED_OUTPUT_DIR, SHARED_INTERFACE_NAME)
+Promise.all([
+    // web
+    extractGQL(WEB_TSPROJECT_PATH, WEB_OUTPUT_DIR, WEB_INTERFACE_NAME),
+    // shared
+    extractGQL(SHARED_TSPROJECT_PATH, SHARED_OUTPUT_DIR, SHARED_INTERFACE_NAME),
+]).catch(error => {
+    throw error
+})
