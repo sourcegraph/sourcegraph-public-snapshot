@@ -69,7 +69,7 @@
     }
 
     &__repogroup-content {
-        max-width: 80%;
+        max-width: 90%;
     }
 
     &__repogroup-list {
@@ -105,32 +105,130 @@
     }
 
     &__help-content {
-        display: grid;
-        grid-template-columns: 2fr 1fr 2fr;
-        column-gap: 2rem;
 
         &-subheading {
             margin-bottom: 1rem;
         }
 
-        @media (max-width: $media-md) {
-            display: flex;
-            flex-direction: column;
-//                 background-color: rgba(217, 72, 15, 0.5);
+        //--breakpoint-sm: 576px;
+        //--breakpoint-md: 768px;
+        //--breakpoint-lg: 992px;
+        //--breakpoint-xl: 1200px;
+
+
+        @media (max-width: 768px) {
+            display: grid;
+            column-gap: 2rem;
+            .search-page__example-searches{
+                grid-column-start:1;
+                grid-column-end:5;
+            }
+            .search-page__search-a-language{
+                grid-column-start:1;
+                grid-column-end:5;
+            }
+            .search-page__search-a-language .search-page__lang-list{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .search-page__search-syntax .search-page__lang-list{
+                display: inline;
+            }
         }
-       @media (max-width: $media-lg) {
-            
-            display: flex;
-            flex-direction: column;
-//                 background-color: rgba(217, 72, 15, 0.5);
+
+        @media (min-width: 768px) {
+            display: grid;
+            column-gap: 2rem;
+
+            .search-page__example-searches{
+                grid-column-start:1;
+                grid-column-end:5;
+            }
+            .search-page__search-a-language{
+                grid-column-start:1;
+                grid-column-end:4;
+            }
+            .search-page__search-a-language .search-page__lang-list{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .search-page__search-syntax{
+                grid-column-start:4;
+                grid-column-end:5;
+            }
+            .search-page__search-syntax .search-page__lang-list{
+                display: inline;
+            }
         }
+
+        @media (min-width: 992px) {
+
+            display: grid;
+            column-gap: 2rem;
+
+            .search-page__example-searches{
+                grid-column-start:1;
+                grid-column-end:3;
+            }
+            .search-page__search-a-language{
+                grid-column-start:3;
+                grid-column-end:4;
+            }
+            .search-page__search-a-language .search-page__lang-list{
+                display: grid;
+                grid-template-columns: 2fr;
+            }
+
+            .search-page__search-syntax{
+                grid-column-start:4;
+                grid-column-end:5;
+            }
+            .search-page__search-syntax .search-page__lang-list{
+                display: inline;
+            }
+        }
+
+
+        @media (min-width: 1200px) {
+
+            display: grid;
+            column-gap: 2rem;
+
+            .search-page__example-searches{
+                grid-column-start:1;
+                grid-column-end:3;
+            }
+
+            .search-page__search-a-language{
+                grid-column-start:3;
+                grid-column-end:4;
+            }
+            .search-page__search-a-language .search-page__lang-list{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+
+            .search-page__search-syntax{
+                grid-column-start:4;
+                grid-column-end:5;
+            }
+            .search-page__search-syntax{
+                grid-column-start:4;
+                grid-column-end:5;
+            }
+            .search-page__search-syntax .search-page__lang-list{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+
+        }
+
     }
 
-//     @media only screen and (max-width: 600px) {
-//       body {
-//         background-color: lightblue;
-//       }
-//     }
+
 
     &__keyword-value-text {
         color: #6078a9;

@@ -180,12 +180,12 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             </ul>
                         </div>
                         <div className="search-page__search-a-language">
-                            <div className="d-flex align-items-baseline">
-                                <h3 className="search-page__help-content-header mr-2">Search a language</h3>
-                                <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                    <span className="search-page__keyword-text">lang:</span>
+                            <div className="align-items-baseline">
+                                <h3 className="search-page__help-content-header">Search a language <span className="text-monospace font-weight-normal search-page__lang-ref">
+                                    <span className="search-page__keyword-text ml-1">lang:</span>
                                     <i className="search-page__keyword-value-text">name</i>
-                                </span>
+                                </span></h3>
+
                             </div>
                             <div className="search-page__lang-list mt-2">
                                 {homepageLanguageList.map(language => (
@@ -199,7 +199,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 ))}
                             </div>
                         </div>
-                        <div>
+                        <div className="search-page__search-syntax">
                             <h3 className="search-page__help-content-header">Search syntax</h3>
                             <div className="search-page__lang-list mt-3">
                                 <dl>
