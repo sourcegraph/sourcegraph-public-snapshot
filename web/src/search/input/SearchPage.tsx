@@ -133,7 +133,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <span className="search-page__keyword-text">lang:</span>javascript
                                         alert(:[variable])
                                     </Link>{' '}
-                                    <p className="mt-2">Find usages of the alert() method that displays an alert box.</p>
+                                    <p className="mt-2">
+                                        Find usages of the alert() method that displays an alert box.
+                                    </p>
                                 </li>
                                 <li className="list-group-item px-0 pt-3 pb-2">
                                     <Link
@@ -154,17 +156,12 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         className="text-monospace mb-2"
                                     >
                                         <span className="search-page__keyword-text">repo:</span>
-                                        ^github\.com/golang/go${' '}
-                                        <span className="search-page__keyword-text">type:</span>diff{' '}
-                                        <span className="search-page__keyword-text">after:</span>"1 week ago"
+                                        ^github\.com/golang/go$ <span className="search-page__keyword-text">type:</span>
+                                        diff <span className="search-page__keyword-text">after:</span>"1 week ago"
                                     </Link>{' '}
-<<<<<<< HEAD
-                                    <p>Browse diffs for recent code changes in the 'golang/go' GitHub repository.</p>
-=======
                                     <p className="mt-2">
                                         Browse diffs for recent code changes in the 'golang/go' GitHub repository.
                                     </p>
->>>>>>> 7f5eae3f9a... syntax help and color on links.
                                 </li>
                                 <li className="list-group-item px-0 pt-3 pb-2">
                                     <Link
@@ -245,7 +242,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     </dt>
                                     <dd>
                                         <p>
-                                            <strong>Regexp:</strong> <span className="text-monospace">(read|write)File</span>
+                                            <strong>Regexp:</strong>{' '}
+                                            <span className="text-monospace">(read|write)File</span>
                                         </p>
                                     </dd>{' '}
                                     <dd>
@@ -255,7 +253,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     </dd>
                                     <dd>
                                         <p>
-                                            <strong>Structural:</strong> <span className="text-monospace">if(:[my_match])</span>
+                                            <strong>Structural:</strong>{' '}
+                                            <span className="text-monospace">if(:[my_match])</span>
                                         </p>
                                     </dd>
                                 </dl>

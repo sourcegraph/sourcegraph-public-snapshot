@@ -92,8 +92,8 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 text={props.repogroupMetadata.title}
             />
             <div className="repogroup-page__subheading">
-                <span className="repogroup-page__keyword-text text-monospace">
-                    <span>repogroup:</span>
+                <span className="text-monospace">
+                    <span className="repogroup-page__keyword-text">repogroup:</span>
                     {props.repogroupMetadata.name}
                 </span>
             </div>
