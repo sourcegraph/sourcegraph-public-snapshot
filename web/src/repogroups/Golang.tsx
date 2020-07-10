@@ -6,10 +6,10 @@ export const golang: RepogroupMetadata = {
     title: 'Golang',
     name: 'golang',
     url: '/golang',
-    description: 'Search the most starred Go repositories on GitHub. Explore with search examples below.',
+    description: 'Use these search examples to explore Go repositories on GitHub.',
     examples: [
         {
-            title: 'Search for usages of the Retry-After header in non-vendor Go files:',
+            title: 'Search for usages of the Retry-After header in non-vendor Go files',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>go{' '}
@@ -20,7 +20,7 @@ export const golang: RepogroupMetadata = {
             rawQuery: 'lang:go -file:vendor/ Retry-After',
         },
         {
-            title: 'Find examples of sending JSON in a HTTP POST request:',
+            title: 'Find examples of sending JSON in a HTTP POST request',
             exampleQuery: (
                 <>
                     <span className="repogroup-page__keyword-text">lang:</span>go http.Post json
