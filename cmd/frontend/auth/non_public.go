@@ -116,12 +116,14 @@ func AllowAnonymousRequest(req *http.Request) bool {
 	}
 
 	// Authentication is performed in the webhook handler itself.
-	if strings.HasPrefix(req.URL.Path, "/.api/github-webhooks") {
-		return true
-	}
-
-	if strings.HasPrefix(req.URL.Path, "/.api/bitbucket-server-webhooks") {
-		return true
+	for _, prefix := range []string{
+		"/.api/github-webhooks",
+		"/.api/gitlab-webhooks",
+		"/.api/bitbucket-server-webhooks",
+	} {
+		if strings.HasPrefix(req.URL.Path, prefix) {
+			return true
+		}
 	}
 
 	apiRouteName := matchedRouteName(req, router.Router())
