@@ -103,6 +103,10 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 			if len(c.Webhooks) > 0 {
 				r.webhookURL = u
 			}
+		case *schema.GitLabConnection:
+			if len(c.Webhooks) > 0 {
+				r.webhookURL = u
+			}
 		}
 	})
 	if r.webhookURL == "" {

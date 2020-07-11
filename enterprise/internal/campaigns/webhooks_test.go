@@ -362,6 +362,8 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	}
 }
 
+// TODO: GitLab webhook test.
+
 func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*repos.Repo, error) {
 	repoChan := make(chan repos.SourceResult)
 	go func() {

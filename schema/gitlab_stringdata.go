@@ -186,6 +186,22 @@ const GitLabSchemaJSON = `{
           "default": "3h"
         }
       }
+    },
+    "webhooks": {
+      "description": "An array of webhook configurations",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "GitLabWebhook",
+        "required": ["secret"],
+        "properties": {
+          "secret": {
+            "description": "The secret used to authenticate incoming webhook requests",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
     }
   },
   "definitions": {
