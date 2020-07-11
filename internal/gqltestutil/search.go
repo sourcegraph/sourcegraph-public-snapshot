@@ -63,26 +63,35 @@ query Search($query: String!) {
 	return resp.Data.Search.Results.Results, nil
 }
 
-type SearchFileResult struct {
-	File struct {
-		Name string `json:"name"`
-	} `json:"file"`
-	RevSpec struct {
-		Expr string `json:"expr"`
-	} `json:"revSpec"`
+type SearchFileResults struct {
+	MatchCount int64 `json:"matchCount"`
+	Results    []*struct {
+		File struct {
+			Name string `json:"name"`
+		} `json:"file"`
+		Repository struct {
+			Name string `json:"name"`
+		} `json:"repository"`
+		RevSpec struct {
+			Expr string `json:"expr"`
+		} `json:"revSpec"`
+	} `json:"results"`
 }
 
-type SearchFileResults []*SearchFileResult
-
-// SearchFiles search files with given query.
-func (c *Client) SearchFiles(query string) (SearchFileResults, error) {
+// SearchFiles search files with given query. It returns the match count and
+// corresponding file matches.
+func (c *Client) SearchFiles(query string) (*SearchFileResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
 	search(query: $query) {
 		results {
+			matchCount
 			results {
 				... on FileMatch {
 					file {
+						name
+					}
+					repository {
 						name
 					}
 					revSpec {
@@ -103,7 +112,7 @@ query Search($query: String!) {
 		Data struct {
 			Search struct {
 				Results struct {
-					Results []*SearchFileResult `json:"results"`
+					*SearchFileResults
 				} `json:"results"`
 			} `json:"search"`
 		} `json:"data"`
@@ -113,7 +122,7 @@ query Search($query: String!) {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
 
-	return resp.Data.Search.Results.Results, nil
+	return resp.Data.Search.Results.SearchFileResults, nil
 }
 
 type SearchStatsResult struct {
