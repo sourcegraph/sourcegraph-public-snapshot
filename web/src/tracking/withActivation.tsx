@@ -20,7 +20,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
     queryGraphQL(
         isSiteAdmin
             ? gql`
-                  query ActivationStatus {
+                  query SiteAdminActivationStatus {
                       externalServices {
                           totalCount
                       }
@@ -83,7 +83,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
  */
 const fetchReferencesLink = (): Observable<string | null> =>
     queryGraphQL(gql`
-        query {
+        query LinksForRepositories {
             repositories(cloned: true, first: 100, indexed: true) {
                 nodes {
                     url

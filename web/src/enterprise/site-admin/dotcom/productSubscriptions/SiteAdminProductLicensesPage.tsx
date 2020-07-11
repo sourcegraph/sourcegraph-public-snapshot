@@ -62,7 +62,7 @@ function queryLicenses(args: { first?: number; query?: string }): Observable<GQL
     return args.query
         ? queryGraphQL(
               gql`
-                  query ProductLicenses($first: Int, $licenseKeySubstring: String) {
+                  query DotComProductLicenses($first: Int, $licenseKeySubstring: String) {
                       dotcom {
                           productLicenses(first: $first, licenseKeySubstring: $licenseKeySubstring) {
                               nodes {

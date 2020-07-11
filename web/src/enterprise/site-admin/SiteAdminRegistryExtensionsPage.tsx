@@ -214,7 +214,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
     }): Observable<GQL.IRegistryExtensionConnection> =>
         queryGraphQL(
             gql`
-                query RegistryExtensions(
+                query SiteAdminRegistryExtensions(
                     $first: Int
                     $publisher: ID
                     $query: String

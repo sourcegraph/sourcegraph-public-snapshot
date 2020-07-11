@@ -21,7 +21,7 @@ export function fetchLsifUploads({
 }: { repository: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<GQL.ILSIFUploadConnection> {
     return queryGraphQL(
         gql`
-            query LsifUploads(
+            query LsifUploadsForRepo(
                 $repository: ID!
                 $state: LSIFUploadState
                 $isLatestForRepo: Boolean
@@ -91,7 +91,7 @@ export function fetchLsifUploads({
 export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
     return queryGraphQL(
         gql`
-            query LsifUpload($id: ID!) {
+            query LsifUploadForRepo($id: ID!) {
                 node(id: $id) {
                     __typename
                     ... on LSIFUpload {
@@ -145,7 +145,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
 export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation DeleteLsifUpload($id: ID!) {
+            mutation DeleteLsifUploadForRepo($id: ID!) {
                 deleteLSIFUpload(id: $id) {
                     alwaysNil
                 }
@@ -174,7 +174,13 @@ export function fetchLsifIndexes({
 }: { repository: string } & GQL.ILsifIndexesOnRepositoryArguments): Observable<GQL.ILSIFIndexConnection> {
     return queryGraphQL(
         gql`
-            query LsifIndexes($repository: ID!, $state: LSIFIndexState, $first: Int, $after: String, $query: String) {
+            query LsifIndexesForRepo(
+                $repository: ID!
+                $state: LSIFIndexState
+                $first: Int
+                $after: String
+                $query: String
+            ) {
                 node(id: $repository) {
                     __typename
                     ... on Repository {
@@ -229,7 +235,7 @@ export function fetchLsifIndexes({
 export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFIndex | null> {
     return queryGraphQL(
         gql`
-            query LsifIndex($id: ID!) {
+            query LsifIndexForRepo($id: ID!) {
                 node(id: $id) {
                     __typename
                     ... on LSIFIndex {
@@ -280,7 +286,7 @@ export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFInde
 export function deleteLsifIndex({ id }: { id: string }): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation DeleteLsifIndex($id: ID!) {
+            mutation DeleteLsifIndexForRepo($id: ID!) {
                 deleteLSIFIndex(id: $id) {
                     alwaysNil
                 }
