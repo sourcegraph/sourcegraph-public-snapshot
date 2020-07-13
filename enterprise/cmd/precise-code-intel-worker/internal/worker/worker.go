@@ -63,7 +63,7 @@ func newWorker(
 	budgetMax int,
 	metrics metrics.WorkerMetrics,
 ) *Worker {
-	ctx, cancel := makeContext()
+	ctx, cancel := context.WithCancel(actor.WithActor(context.Background(), &actor.Actor{Internal: true}))
 
 	semaphore := make(chan struct{}, numProcessorRoutines)
 	for i := 0; i < numProcessorRoutines; i++ {
@@ -219,10 +219,4 @@ func (w *Worker) reserveProcessorRoutine(ctx context.Context) bool {
 // releaseProcessOrRoutine signals that a processor routine has finished.
 func (w *Worker) releaseProcessorRoutine() {
 	w.semaphore <- struct{}{}
-}
-
-// makeContext returns an internal context and a write-only channel. The context will
-// be closed when the user closes the channel.
-func makeContext() (context.Context, func()) {
-	return context.WithCancel(actor.WithActor(context.Background(), &actor.Actor{Internal: true}))
 }
