@@ -21,12 +21,13 @@ type Worker struct {
 	processor       Processor
 	pollInterval    time.Duration
 	metrics         metrics.WorkerMetrics
-	ctx             context.Context
-	done            chan<- struct{}
-	once            sync.Once
 	semaphore       chan struct{}
 	budgetMax       int
 	budgetRemaining int
+
+	ctx    context.Context
+	cancel func()
+	once   sync.Once
 }
 
 func NewWorker(
@@ -62,7 +63,7 @@ func newWorker(
 	budgetMax int,
 	metrics metrics.WorkerMetrics,
 ) *Worker {
-	ctx, done := makeContext()
+	ctx, cancel := makeContext()
 
 	semaphore := make(chan struct{}, numProcessorRoutines)
 	for i := 0; i < numProcessorRoutines; i++ {
@@ -74,11 +75,11 @@ func newWorker(
 		processor:       processor,
 		pollInterval:    pollInterval,
 		metrics:         metrics,
-		ctx:             ctx,
-		done:            done,
 		semaphore:       semaphore,
 		budgetMax:       budgetMax,
 		budgetRemaining: budgetMax,
+		ctx:             ctx,
+		cancel:          cancel,
 	}
 }
 
@@ -107,7 +108,7 @@ func (w *Worker) Start() {
 
 func (w *Worker) Stop() {
 	w.once.Do(func() {
-		close(w.done)
+		w.cancel()
 	})
 }
 
@@ -222,14 +223,6 @@ func (w *Worker) releaseProcessorRoutine() {
 
 // makeContext returns an internal context and a write-only channel. The context will
 // be closed when the user closes the channel.
-func makeContext() (context.Context, chan<- struct{}) {
-	ctx, cancel := context.WithCancel(actor.WithActor(context.Background(), &actor.Actor{Internal: true}))
-
-	done := make(chan struct{})
-	go func() {
-		<-done
-		defer cancel()
-	}()
-
-	return ctx, done
+func makeContext() (context.Context, func()) {
+	return context.WithCancel(actor.WithActor(context.Background(), &actor.Actor{Internal: true}))
 }
