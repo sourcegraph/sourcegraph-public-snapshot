@@ -17,15 +17,16 @@ import (
 )
 
 type Worker struct {
-	store        store.Store
-	processor    Processor
-	pollInterval time.Duration
-	metrics      metrics.WorkerMetrics
-	ctx          context.Context
-	done         chan<- struct{}
-	once         sync.Once
-	semaphore    chan struct{}
-	budget       int
+	store           store.Store
+	processor       Processor
+	pollInterval    time.Duration
+	metrics         metrics.WorkerMetrics
+	ctx             context.Context
+	done            chan<- struct{}
+	once            sync.Once
+	semaphore       chan struct{}
+	budgetMax       int
+	budgetRemaining int
 }
 
 func NewWorker(
@@ -34,7 +35,7 @@ func NewWorker(
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
-	budget int,
+	budgetMax int,
 	metrics metrics.WorkerMetrics,
 ) *Worker {
 	processor := &processor{
@@ -48,7 +49,7 @@ func NewWorker(
 		processor,
 		pollInterval,
 		numProcessorRoutines,
-		budget,
+		budgetMax,
 		metrics,
 	)
 }
@@ -58,7 +59,7 @@ func newWorker(
 	processor Processor,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
-	budget int,
+	budgetMax int,
 	metrics metrics.WorkerMetrics,
 ) *Worker {
 	ctx, done := makeContext()
@@ -69,14 +70,15 @@ func newWorker(
 	}
 
 	return &Worker{
-		store:        store,
-		processor:    processor,
-		pollInterval: pollInterval,
-		metrics:      metrics,
-		ctx:          ctx,
-		done:         done,
-		semaphore:    semaphore,
-		budget:       budget,
+		store:           store,
+		processor:       processor,
+		pollInterval:    pollInterval,
+		metrics:         metrics,
+		ctx:             ctx,
+		done:            done,
+		semaphore:       semaphore,
+		budgetMax:       budgetMax,
+		budgetRemaining: budgetMax,
 	}
 }
 
@@ -124,8 +126,17 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (dequeued bool, err erro
 		}
 	}()
 
+	maxSize := 0
+	if w.budgetMax > 0 {
+		if w.budgetRemaining <= 0 {
+			return false, nil
+		}
+
+		maxSize = w.budgetRemaining
+	}
+
 	// Select a queued upload to process and the transaction that holds it
-	upload, store, ok, err := w.store.Dequeue(ctx, w.budget)
+	upload, store, ok, err := w.store.Dequeue(ctx, maxSize)
 	if err != nil {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
@@ -138,11 +149,11 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (dequeued bool, err erro
 		size = *upload.UploadSize
 	}
 
-	w.budget -= size
+	w.budgetRemaining -= size
 
 	go func() {
 		defer func() {
-			w.budget += size
+			w.budgetRemaining += size
 			w.releaseProcessorRoutine()
 		}()
 

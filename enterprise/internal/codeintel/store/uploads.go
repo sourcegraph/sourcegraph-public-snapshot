@@ -397,13 +397,18 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
 // be returned along with a false valued flag. This method must not be called from within a transaction.
 func (s *store) Dequeue(ctx context.Context, maxSize int) (Upload, Store, bool, error) {
+	var conditions []*sqlf.Query
+	if maxSize != 0 {
+		conditions = append(conditions, sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", maxSize))
+	}
+
 	upload, tx, ok, err := s.dequeueRecord(
 		ctx,
 		"lsif_uploads_with_repository_name",
 		"lsif_uploads",
 		uploadColumnsWithNullRank,
 		sqlf.Sprintf("uploaded_at"),
-		[]*sqlf.Query{sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", maxSize)},
+		conditions,
 		scanFirstUploadInterface,
 	)
 	if err != nil || !ok {

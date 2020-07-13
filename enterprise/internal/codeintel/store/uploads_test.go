@@ -450,7 +450,7 @@ func TestDequeueConversionSuccess(t *testing.T) {
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
-	upload, tx, ok, err := store.Dequeue(context.Background(), 100)
+	upload, tx, ok, err := store.Dequeue(context.Background(), 0)
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -493,7 +493,7 @@ func TestDequeueConversionError(t *testing.T) {
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
-	upload, tx, ok, err := store.Dequeue(context.Background(), 100)
+	upload, tx, ok, err := store.Dequeue(context.Background(), 0)
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -543,7 +543,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued", Indexer: "lsif-go"})
 
 	ctx := context.Background()
-	upload, tx, ok, err := store.Dequeue(ctx, 100)
+	upload, tx, ok, err := store.Dequeue(ctx, 0)
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -609,7 +609,7 @@ func TestDequeueSkipsLocked(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	upload, tx2, ok, err := store.Dequeue(context.Background(), 100)
+	upload, tx2, ok, err := store.Dequeue(context.Background(), 0)
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -650,7 +650,7 @@ func TestDequeueSkipsDelayed(t *testing.T) {
 	}
 	defer func() { _ = tx1.Rollback() }()
 
-	upload, tx2, ok, err := store.Dequeue(context.Background(), 100)
+	upload, tx2, ok, err := store.Dequeue(context.Background(), 0)
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -720,7 +720,7 @@ func TestDequeueEmpty(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
-	_, tx, ok, err := store.Dequeue(context.Background(), 100)
+	_, tx, ok, err := store.Dequeue(context.Background(), 0)
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
