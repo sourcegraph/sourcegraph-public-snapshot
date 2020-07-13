@@ -3,7 +3,7 @@ import expect from 'expect'
 import { describeIntegration } from './helpers'
 import { commonGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
-import { SearchResult } from '../gql-operations'
+import { SearchResult } from '../graphql-operations'
 
 const searchResults = (): SearchResult => ({
     search: {

@@ -18,8 +18,8 @@ import * as prettier from 'prettier'
 import html from 'tagged-template-noop'
 import { createJsContext } from './jscontext'
 import { SourcegraphContext } from '../jscontext'
-import { WebGQLOperations } from '../gql-operations'
-import { SharedGQLOperations } from '../../../shared/src/gql-operations'
+import { WebGraphQlOperations } from '../graphql-operations'
+import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 import { keyExistsIn } from '../../../shared/src/util/types'
 import { IGraphQLResponseError } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/testing/config'
@@ -40,14 +40,14 @@ type IntegrationTestInitGeneration = () => Promise<{
     subscriptions?: Subscription
 }>
 
-export class IntegrationTestGqlError extends Error {
+export class IntegrationTestGraphQlError extends Error {
     constructor(public errors: IGraphQLResponseError[]) {
         super('graphql error for integration tests')
     }
 }
 
-type AllGQLOperations = WebGQLOperations & SharedGQLOperations
-export type GraphQLOverrides = Partial<AllGQLOperations>
+type AllGraphQlOperations = WebGraphQlOperations & SharedGraphQlOperations
+export type GraphQLOverrides = Partial<AllGraphQlOperations>
 
 interface TestContext {
     sourcegraphBaseUrl: string
@@ -73,10 +73,10 @@ interface TestContext {
      * @param queryName The name of the query to wait for.
      * @returns The GraphQL variables of the query.
      */
-    waitForGraphQLRequest: <Operation extends keyof AllGQLOperations & string>(
+    waitForGraphQLRequest: <Operation extends keyof AllGraphQlOperations & string>(
         triggerRequest: () => Promise<void> | void,
         queryName: Operation
-    ) => Promise<AllGQLOperations[Operation] extends (input: infer InputVariables) => any ? InputVariables : never>
+    ) => Promise<Parameters<AllGraphQlOperations[Operation]>[0]>
 }
 
 type TestBody = (context: TestContext) => Promise<void>
@@ -207,16 +207,16 @@ export function describeIntegration(description: string, testSuite: IntegrationT
 
                     try {
                         const result = handler(variables as any)
-                        const gqlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
-                        response.json(gqlResult)
+                        const graphQlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
+                        response.json(graphQlResult)
                     } catch (error) {
-                        if (!(error instanceof IntegrationTestGqlError)) {
+                        if (!(error instanceof IntegrationTestGraphQlError)) {
                             errors.error(error)
                             throw error
                         }
 
-                        const gqlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
-                        response.json(gqlError)
+                        const graphQlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
+                        response.json(graphQlError)
                     }
                 })
 
