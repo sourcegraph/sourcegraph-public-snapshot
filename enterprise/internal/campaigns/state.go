@@ -102,19 +102,7 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
 
 	case *gitlab.MergeRequest:
-		// GitLab gives us the most recent pipeline state for free in the merge
-		// request.
-		// TODO: iterate events in case we received a webhook later.
-		if m.HeadPipeline != nil {
-			switch m.HeadPipeline.Status {
-			case gitlab.PipelineStatusSuccess:
-				return cmpgn.ChangesetCheckStatePassed
-			case gitlab.PipelineStatusFailed:
-				return cmpgn.ChangesetCheckStateFailed
-			case gitlab.PipelineStatusPending:
-				return cmpgn.ChangesetCheckStatePending
-			}
-		}
+		return computeGitLabCheckState(m)
 	}
 
 	return campaigns.ChangesetCheckStateUnknown
@@ -361,6 +349,45 @@ func parseGithubCheckSuiteState(status, conclusion string) campaigns.ChangesetCh
 		return campaigns.ChangesetCheckStateFailed
 	}
 	return campaigns.ChangesetCheckStateUnknown
+}
+
+func computeGitLabCheckState(mr *gitlab.MergeRequest) cmpgn.ChangesetCheckState {
+	// GitLab pipelines aren't tied to commits in the same way that GitHub
+	// checks are. In the (current) absence of webhooks, the process here is
+	// pretty straightforward: the latest pipeline wins. They _should_ be in
+	// descending order, but we'll sort them just to be sure.
+
+	// First up, a special case: if there are no pipelines, we'll try to use
+	// HeadPipeline. If that's empty, then we'll shrug and say we don't know.
+	if len(mr.Pipelines) == 0 {
+		if mr.HeadPipeline != nil {
+			return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
+		}
+		return cmpgn.ChangesetCheckStateUnknown
+	}
+
+	// Sort into descending order so that the pipeline at index 0 is the latest.
+	pipelines := mr.Pipelines
+	sort.Slice(pipelines, func(i, j int) bool {
+		return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt)
+	})
+
+	// TODO: after webhooks, look at changeset events.
+
+	return parseGitLabPipelineStatus(pipelines[0].Status)
+}
+
+func parseGitLabPipelineStatus(status gitlab.PipelineStatus) cmpgn.ChangesetCheckState {
+	switch status {
+	case gitlab.PipelineStatusSuccess:
+		return cmpgn.ChangesetCheckStatePassed
+	case gitlab.PipelineStatusFailed:
+		return cmpgn.ChangesetCheckStateFailed
+	case gitlab.PipelineStatusPending:
+		return cmpgn.ChangesetCheckStatePending
+	default:
+		return cmpgn.ChangesetCheckStateUnknown
+	}
 }
 
 // computeSingleChangesetState of a Changeset based on the metadata.

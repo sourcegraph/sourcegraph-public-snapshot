@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 func TestComputeGithubCheckState(t *testing.T) {
@@ -256,6 +257,83 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 			have := computeBitbucketBuildStatus(lastSynced, pr, tc.events)
 			if diff := cmp.Diff(tc.want, have); diff != "" {
 				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
+func TestComputeGitLabCheckState(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mr   *gitlab.MergeRequest
+		want cmpgn.ChangesetCheckState
+	}{
+		"no pipelines at all": {
+			mr:   &gitlab.MergeRequest{},
+			want: cmpgn.ChangesetCheckStateUnknown,
+		},
+		"only a head pipeline": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+			},
+			want: cmpgn.ChangesetCheckStatePending,
+		},
+		"one pipeline only": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+				Pipelines: []*gitlab.Pipeline{
+					{
+						CreatedAt: time.Unix(10, 0),
+						Status:    gitlab.PipelineStatusFailed,
+					},
+				},
+			},
+			want: cmpgn.ChangesetCheckStateFailed,
+		},
+		"two pipelines in the expected order": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+				Pipelines: []*gitlab.Pipeline{
+					{
+						CreatedAt: time.Unix(10, 0),
+						Status:    gitlab.PipelineStatusFailed,
+					},
+					{
+						CreatedAt: time.Unix(5, 0),
+						Status:    gitlab.PipelineStatusSuccess,
+					},
+				},
+			},
+			want: cmpgn.ChangesetCheckStateFailed,
+		},
+		"two pipelines in an unexpected order": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+				Pipelines: []*gitlab.Pipeline{
+					{
+						CreatedAt: time.Unix(5, 0),
+						Status:    gitlab.PipelineStatusFailed,
+					},
+					{
+						CreatedAt: time.Unix(10, 0),
+						Status:    gitlab.PipelineStatusSuccess,
+					},
+				},
+			},
+			want: cmpgn.ChangesetCheckStatePassed,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have := computeGitLabCheckState(tc.mr)
+			if have != tc.want {
+				t.Errorf("unexpected check state: have %s; want %s", have, tc.want)
 			}
 		})
 	}
