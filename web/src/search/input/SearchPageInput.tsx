@@ -24,7 +24,6 @@ import {
     InteractiveSearchProps,
     SmartSearchFieldProps,
     CopyQueryButtonProps,
-    parseSearchURLQuery,
 } from '..'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -69,7 +68,7 @@ interface Props
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
     /** The query cursor position and value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
-        query: props.queryPrefix ?? props.queryPrefix,
+        query: props.queryPrefix ? props.queryPrefix : '',
         cursorPosition: props.queryPrefix ? props.queryPrefix.length : 0,
     })
 
