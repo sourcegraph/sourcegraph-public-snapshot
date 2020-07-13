@@ -29,6 +29,16 @@ func TestGetIndexOptions(t *testing.T) {
 	}{{
 		name: "default",
 		conf: schema.SiteConfiguration{},
+		repo: "repo",
+		want: zoektIndexOptions{
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+			},
+		},
+	}, {
+		name: "compat default",
+		conf: schema.SiteConfiguration{},
 		repo: "",
 		want: zoektIndexOptions{
 			Symbols: true,

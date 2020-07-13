@@ -22,11 +22,7 @@ type zoektIndexOptions struct {
 	// Symbols if true will make zoekt index the output of ctags.
 	Symbols bool
 
-	// Branches is a slice of branches to index. If empty it will be
-	// HEAD. These will be resolved, so you can pass in tags/refs/commits.
-	//
-	// Indexing multiple branches is still experimental. As such this should
-	// only be set if an admin has opted into it.
+	// Branches is a slice of branches to index.
 	Branches []zoekt.RepositoryBranch `json:",omitempty"`
 }
 
@@ -42,11 +38,15 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 	}
 
-	// Only set Branches if we have VersionContexts set. Using the presence as
-	// a feature flag for multi-branch indexing.
-	if repoName != "" && c.ExperimentalFeatures != nil && len(c.ExperimentalFeatures.VersionContexts) > 0 {
-		// Set of branch names. Always index HEAD
-		branches := map[string]struct{}{"HEAD": {}}
+	// Backwards compatibility for older Zoekt
+	if repoName == "" {
+		return json.Marshal(o)
+	}
+
+	// Set of branch names. Always index HEAD
+	branches := map[string]struct{}{"HEAD": {}}
+
+	if c.ExperimentalFeatures != nil && len(c.ExperimentalFeatures.VersionContexts) > 0 {
 		for _, vc := range c.ExperimentalFeatures.VersionContexts {
 			for _, rev := range vc.Revisions {
 				if rev.Repo == repoName && rev.Rev != "" {
@@ -54,38 +54,38 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 				}
 			}
 		}
+	}
 
-		for branch := range branches {
-			v, err := getVersion(branch)
-			if err != nil {
-				return nil, err
-			}
-
-			// If we failed to resolve a branch, skip it
-			if v == "" {
-				continue
-			}
-
-			o.Branches = append(o.Branches, zoekt.RepositoryBranch{
-				Name:    branch,
-				Version: v,
-			})
+	for branch := range branches {
+		v, err := getVersion(branch)
+		if err != nil {
+			return nil, err
 		}
 
-		sort.Slice(o.Branches, func(i, j int) bool {
-			a, b := o.Branches[i].Name, o.Branches[j].Name
-			// Zoekt treats first branch as default branch, so put HEAD first
-			if a == "HEAD" || b == "HEAD" {
-				return a == "HEAD"
-			}
-			return a < b
+		// If we failed to resolve a branch, skip it
+		if v == "" {
+			continue
+		}
+
+		o.Branches = append(o.Branches, zoekt.RepositoryBranch{
+			Name:    branch,
+			Version: v,
 		})
+	}
 
-		// If the first branch is not HEAD, do not index anything. This should
-		// not happen, since HEAD should always exist if other branches exist.
-		if len(o.Branches) == 0 || o.Branches[0].Name != "HEAD" {
-			o.Branches = nil
+	sort.Slice(o.Branches, func(i, j int) bool {
+		a, b := o.Branches[i].Name, o.Branches[j].Name
+		// Zoekt treats first branch as default branch, so put HEAD first
+		if a == "HEAD" || b == "HEAD" {
+			return a == "HEAD"
 		}
+		return a < b
+	})
+
+	// If the first branch is not HEAD, do not index anything. This should
+	// not happen, since HEAD should always exist if other branches exist.
+	if len(o.Branches) == 0 || o.Branches[0].Name != "HEAD" {
+		o.Branches = nil
 	}
 
 	return json.Marshal(o)
