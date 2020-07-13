@@ -191,7 +191,8 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                     const queryName = new URL(request.absoluteUrl).search.slice(1)
                     const { variables, query } = request.jsonBody() as { query: string; variables: object }
                     graphQlRequests.next({ queryName, variables })
-                    if (!graphQlOverrides || !keyExistsIn(queryName, graphQlOverrides)) {
+
+                    const missingOverrideError = (): Error => {
                         const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
                         const formattedVariables = util.inspect(variables)
                         const error = new Error(
@@ -199,12 +200,14 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         )
                         // Make test fail
                         errors.error(error)
-                        throw error
+                        return error
+                    }
+                    if (!graphQlOverrides || !keyExistsIn(queryName, graphQlOverrides)) {
+                        throw missingOverrideError()
                     }
                     const handler = graphQlOverrides[queryName]
-
-                    if (handler === undefined) {
-                        throw new Error('we technically check that above, so this error to make ts happy')
+                    if (!handler) {
+                        throw missingOverrideError()
                     }
 
                     try {
