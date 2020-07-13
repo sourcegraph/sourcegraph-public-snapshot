@@ -131,12 +131,8 @@ func isValidRegexp(value string) bool {
 // * the translated value is not a valid regexp
 func globToRegex(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		fieldType, ok := conf.FieldTypes[field]
-		if !ok {
-			// this should never happen, but we handle it gracefully just in case
-			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-		}
-		if reflect.DeepEqual(fieldType, regexpNegatableFieldType) && !isValidRegexp(value) {
+
+		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
 			tempValue := translateGlobToRegex(value)
 			if isValidRegexp(tempValue) {
 				value = tempValue
