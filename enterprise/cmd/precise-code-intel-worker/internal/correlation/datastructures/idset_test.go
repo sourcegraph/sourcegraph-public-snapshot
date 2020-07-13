@@ -1,50 +1,67 @@
 package datastructures
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestIDSetOperations(t *testing.T) {
+func TestIDSetAdd(t *testing.T) {
+	for _, max := range []int{SmallSetThreshold / 2, SmallSetThreshold, SmallSetThreshold * 16} {
+		name := fmt.Sprintf("max=%d", max)
+
+		t.Run(name, func(t *testing.T) {
+			ids := NewIDSet()
+			for i := 1; i <= max; i++ {
+				ids.Add(i)
+			}
+
+			if ids.Len() != max {
+				t.Errorf("unexpected length. want=%d have=%d", max, ids.Len())
+			}
+
+			for i := 1; i <= max; i++ {
+				if !ids.Contains(i) {
+					t.Errorf("unexpected contains. want=%v have=%v", true, ids.Contains(i))
+				}
+			}
+		})
+	}
+}
+
+func TestIDSetUnion(t *testing.T) {
 	for _, max := range []int{16, 10000} {
-		ids := NewIDSet()
-		for i := 0; i < max; i += 2 {
-			ids.Add(i)
-		}
+		name := fmt.Sprintf("max=%d", max)
 
-		if ids.Len() != max/2 {
-			t.Errorf("unexpected length. want=%d have=%d", max/2, ids.Len())
-		}
-
-		for i := 0; i < max; i++ {
-			expected := i%2 == 0
-
-			if ids.Contains(i) != expected {
-				t.Errorf("unexpected contains. want=%v have=%v", expected, ids.Contains(i))
+		t.Run(name, func(t *testing.T) {
+			ids1 := NewIDSet()
+			ids2 := NewIDSet()
+			for i := 1; i <= max; i++ {
+				if i%2 == 0 {
+					ids1.Add(i)
+				}
+				if i%3 == 0 {
+					ids2.Add(i)
+				}
 			}
-		}
 
-		ids2 := NewIDSet()
-		for i := 0; i < max; i += 3 {
-			ids2.Add(i)
-		}
+			ids1.Union(nil)
+			ids1.Union(ids2)
 
-		ids.Union(nil)
-		ids.Union(ids2)
-
-		if ids.Len() != max/2+max/3-(max/6) {
-			t.Errorf("unexpected length. want=%d have=%d", max/2+max/3-(max/6), ids.Len())
-		}
-
-		for i := 0; i < max/2; i++ {
-			expected := (i%2 == 0) || (i%3 == 0)
-
-			if ids.Contains(i) != expected {
-				t.Errorf("unexpected contains. want=%v have=%v", expected, ids.Contains(i))
+			if ids1.Len() != (max/2)+(max/3)-(max/6) {
+				t.Errorf("unexpected length. want=%d have=%d", (max/2)+(max/3)-(max/6), ids1.Len())
 			}
-		}
+
+			for i := 1; i <= max/2; i++ {
+				expected := (i%2 == 0) || (i%3 == 0)
+
+				if ids1.Contains(i) != expected {
+					t.Errorf("unexpected contains. want=%v have=%v", expected, ids1.Contains(i))
+				}
+			}
+		})
 	}
 }
 
@@ -61,7 +78,7 @@ func TestIDSetMin(t *testing.T) {
 	for _, numUpperValues := range []int{0, 1000} {
 		ids := NewIDSet()
 
-		for i := 0; i < numUpperValues; i++ {
+		for i := 1; i <= numUpperValues; i++ {
 			ids.Add(1000 + i)
 		}
 
@@ -87,7 +104,7 @@ func TestIDSetPop(t *testing.T) {
 	small := []int{1, 2, 3, 4, 5}
 
 	large := make([]int, 0, 10000)
-	for i := 0; i < 10000; i++ {
+	for i := 1; i <= 10000; i++ {
 		large = append(large, i)
 	}
 
@@ -95,7 +112,7 @@ func TestIDSetPop(t *testing.T) {
 		set := IDSetWith(values...)
 
 		popped := []int{}
-		for i := 0; i < len(values); i++ {
+		for i := 1; i <= len(values); i++ {
 			var v int
 			if !set.Pop(&v) {
 				t.Fatalf("failed to pop")

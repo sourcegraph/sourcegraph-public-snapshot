@@ -1,11 +1,5 @@
 package datastructures
 
-import (
-	"sort"
-
-	"github.com/google/go-cmp/cmp"
-)
-
 // IDSet is a space-efficient set of integer identifiers.
 //
 // The correlation process creates many sets (e.g., range/moniker relations), most of which
@@ -13,6 +7,31 @@ import (
 // number of elements (e.g., contains relations). This structure tries to hit a balance
 // between having a space-efficient representation of small sets, while not affecting the
 // add/contains performance of larger sets.
+//
+// For concrete numbers, here is the distribution of set sizes captured while processing an
+// index for aws-sdk-go:
+//
+// +-----------+----------+
+// | size      | num sets |
+// +-----------+----------+
+// | 1         |  2535310 |
+// | 2         |   337648 |
+// | 3         |   130404 |
+// | 4         |    36795 |
+// | 5         |    18968 |
+// | 6         |     4456 |
+// | 7         |     7060 |
+// | 8         |     2834 |
+// | 9         |     5327 |
+// | 10        |     5753 |
+// | 11        |     2795 |
+// | 12        |     2913 |
+// | 13        |     1404 |
+// | 14        |     2686 |
+// | 15        |     1089 |
+// | 16        |     1281 |
+// | 17-312329 |    13224 |
+// +-----------+----------+
 //
 // Each set starts out as "small", where operations operate on a slice. Insertion and contain
 // operations require a linear scan, but this is alright as the values are packed together and
@@ -27,17 +46,21 @@ type IDSet struct {
 	m map[int]struct{} // large set
 }
 
+// SmallSetThreshold is the maximum number of elements in a small set. If the size
+// of a set will exceed this size on insert, it will be converted into a large set.
+const SmallSetThreshold = 16
+
 // NewIDSet creates a new empty identifier set.
 func NewIDSet() *IDSet {
 	return &IDSet{}
 }
 
 // IDSetWith creates an identifier set populated with the given identifiers.
-func IDSetWith(identifiers ...int) *IDSet {
+func IDSetWith(ids ...int) *IDSet {
 	s := NewIDSet()
 
-	s.ensure(len(identifiers))
-	for _, id := range identifiers {
+	s.ensure(len(ids))
+	for _, id := range ids {
 		s.add(id)
 	}
 
@@ -83,13 +106,13 @@ func (s *IDSet) Union(other *IDSet) {
 		return
 	}
 
-	s.ensure(len(other.m))
-
 	if other.m == nil {
+		s.ensure(len(other.s))
 		for _, id := range other.s {
 			s.add(id)
 		}
 	} else {
+		s.ensure(len(other.m))
 		for id := range other.m {
 			s.add(id)
 		}
@@ -142,24 +165,6 @@ func (s *IDSet) Pop(id *int) bool {
 	return false
 }
 
-// Identifiers returns the identifiers of the set in sorted order. This method
-// should not be used in the correlation hot path and is here only to aid
-// in testing.
-func (s *IDSet) Identifiers() []int {
-	identifiers := make([]int, 0, s.Len())
-	identifiers = append(identifiers, s.s...)
-	for id := range s.m {
-		identifiers = append(identifiers, id)
-	}
-
-	sort.Ints(identifiers)
-	return identifiers
-}
-
-// SmallSetThreshold is the maximum number of elements in a small set. If the size
-// of a set will exceed this size on insert, it will be converted into a large set.
-const SmallSetThreshold = 16
-
 // ensure will convert a small set to a large set if adding n elements would cause
 // the set to exceed the small set threshold.
 func (s *IDSet) ensure(n int) {
@@ -176,10 +181,8 @@ func (s *IDSet) ensure(n int) {
 	s.s = nil
 }
 
-// IDSetComparer is a github.com/google/go-cmp/cmp comparer which can be
-// supplied to the cmp.Diff method to determine if two identifier sets
-// contain the same set of identifiers.
-var IDSetComparer = cmp.Comparer(func(x, y *IDSet) (found bool) {
+// compareIDSets returns true if the given identifier sets contains equivalent elements.
+func compareIDSets(x, y *IDSet) (found bool) {
 	if x == nil && y == nil {
 		return true
 	}
@@ -191,4 +194,4 @@ var IDSetComparer = cmp.Comparer(func(x, y *IDSet) (found bool) {
 	found = true
 	x.Each(func(i int) { found = found && y.Contains(i) })
 	return found
-})
+}
