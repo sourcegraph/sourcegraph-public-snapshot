@@ -79,7 +79,7 @@ func (h *TransactableHandle) Done(err error) error {
 		savepoint, h.savepoints = h.savepoints[n-1], h.savepoints[:n-1]
 
 		if err == nil {
-			return combineErrors(err, savepoint.Commit())
+			return savepoint.Commit()
 		}
 		return combineErrors(err, savepoint.Rollback())
 	}
