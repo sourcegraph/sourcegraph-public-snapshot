@@ -222,30 +222,31 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                 className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
                                 key={type}
                             >
-                                <div className="hover-overlay__alert-content">
-                                    <small
-                                        dangerouslySetInnerHTML={{ __html: summary.kind === 'plaintext' ? summary.value : renderMarkdown(summary.value) }}
+                                {badge &&
+                                    <BadgeAttachment
+                                        className="hover-overlay__badge e2e-hover-badge"
+                                        iconClassName={this.props.iconClassName}
+                                        iconButtonClassName={this.props.iconButtonClassName}
+                                        attachment={badge}
+                                        isLightTheme={this.props.isLightTheme}
                                     />
+                                }
 
-                                    {badge &&
-                                        <BadgeAttachment
-                                            className="hover-overlay__badge e2e-hover-badge"
-                                            iconClassName={this.props.iconClassName}
-                                            iconButtonClassName={this.props.iconButtonClassName}
-                                            attachment={badge}
-                                            isLightTheme={this.props.isLightTheme}
-                                        />
-                                    }
+                                {dismissible && type &&
+                                    <a
+                                        className="hover-overlay__alert-close"
+                                        href=""
+                                        onClick={this.onAlertDismissedCallback(type)}
+                                    >
+                                        <small>Dismiss</small>
+                                    </a>
+                                }
 
-                                    {dismissible && type &&
-                                        <a
-                                            className="hover-overlay__alert-close"
-                                            href=""
-                                            onClick={this.onAlertDismissedCallback(type)}
-                                        >
-                                            <small>Dismiss</small>
-                                        </a>}
-                                </div>
+
+                                <span
+                                    className="hover-overlay__content"
+                                    dangerouslySetInnerHTML={{ __html: summary.kind === 'plaintext' ? summary.value : renderMarkdown(summary.value) }}
+                                />
                             </div>
                         ))}
                     </div>
