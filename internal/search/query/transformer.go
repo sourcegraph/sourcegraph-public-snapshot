@@ -51,14 +51,14 @@ func translateRange(r []rune, ix int) (int, string) {
 		sb.WriteRune('!')
 	} else {
 		// since character sets cannot be empty,
-		// a [ followed direclty by a ] means ] has to
+		// a [ followed directly by a ] means ] has to
 		// be interpreted literally.
 		sb.WriteRune(r[ix])
 	}
-	ix += 1
+	ix++
 	for ix < len(r) && r[ix] != ']' {
 		sb.WriteRune(r[ix])
-		ix += 1
+		ix++
 	}
 
 	return len(sb.String()), sb.String()
@@ -83,18 +83,18 @@ func translateGlobToRegex(value string) string {
 			sb.WriteString(".*?")
 			// skip repeated '*'
 			for i < l-1 && r[i+1] == '*' {
-				i = i + 1
+				i++
 			}
 		case '?':
 			sb.WriteRune('.')
 		case '\\':
 			// handle escaped special characters
 			sb.WriteRune('\\')
-			i += 1
+			i++
 			sb.WriteRune(r[i])
 		case '[':
 			sb.WriteRune('[')
-			i += 1
+			i++
 
 			advanced, s := translateRange(r, i)
 			i += advanced
@@ -126,7 +126,6 @@ func isValidRegexp(value string) bool {
 // * the translated value is not a valid regexp
 func globToRegex(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-
 		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
 			tempValue := translateGlobToRegex(value)
 			if isValidRegexp(tempValue) {
@@ -311,7 +310,6 @@ func substituteConcat(nodes []Node, separator string) []Node {
 				new = append(new, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
 			}
 		}
-
 	}
 	return new
 }
