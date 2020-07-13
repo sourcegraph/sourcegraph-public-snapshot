@@ -154,7 +154,7 @@ func (s *Store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record i
 }
 
 const selectCandidateQuery = `
--- source: enterprise/internal/codeintel/store/workqueue/store.go:Dequeue
+-- source: internal/workerutil/store.go:Dequeue
 WITH candidate AS (
 	SELECT id FROM %s
 	WHERE
@@ -222,7 +222,7 @@ func (s *Store) lock(ctx context.Context, id int) (record interface{}, tx *Store
 }
 
 const lockQuery = `
--- source: enterprise/internal/codeintel/store/workqueue/store.go:lock
+-- source: internal/workerutil/store.go:lock
 SELECT 1 FROM %s
 WHERE id = %s
 FOR UPDATE SKIP LOCKED
@@ -230,7 +230,7 @@ LIMIT 1
 `
 
 const selectRecordQuery = `
--- source: enterprise/internal/codeintel/store/workqueue/store.go:lock
+-- source: internal/workerutil/store.go:lock
 SELECT %s FROM %s
 WHERE id = %s
 LIMIT 1
@@ -248,7 +248,7 @@ func (s *Store) Requeue(ctx context.Context, id int, after time.Time) error {
 }
 
 const requeueQuery = `
--- source: enterprise/internal/codeintel/store/workqueue/store.go:Requeue
+-- source: internal/workerutil/store.go:Requeue
 UPDATE %s
 SET state = 'queued', process_after = %s
 WHERE id = %s
@@ -286,7 +286,7 @@ func (s *Store) resetStalled(ctx context.Context, q string) ([]int, error) {
 }
 
 const resetStalledQuery = `
--- source: enterprise/internal/codeintel/store/workqueue/store.go:ResetStalled
+-- source: internal/workerutil/store.go:ResetStalled
 WITH stalled AS (
 	SELECT id FROM %s
 	WHERE
@@ -305,7 +305,7 @@ RETURNING id
 `
 
 const resetStalledMaxResetsQuery = `
--- source: enterprise/internal/codeintel/store/workqueue/store.go:ResetStalled
+-- source: internal/workerutil/store.go:ResetStalled
 WITH stalled AS (
 	SELECT id FROM %s
 	WHERE
