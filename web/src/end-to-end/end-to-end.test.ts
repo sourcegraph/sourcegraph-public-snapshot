@@ -213,7 +213,7 @@ describe('e2e test suite', () => {
 
             // Type in a new external service configuration.
             await driver.replaceText({
-                selector: '.monaco-editor',
+                selector: '.e2e-external-service-editor .monaco-editor',
                 newText:
                     '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
                 selectMethod: 'keyboard',
