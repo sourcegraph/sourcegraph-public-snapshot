@@ -31,8 +31,6 @@ type ActionLogger struct {
 	verbose  bool
 	keepLogs bool
 
-	highlight func(a ...interface{}) string
-
 	progress *progress
 	out      io.WriteCloser
 
@@ -50,10 +48,9 @@ func NewActionLogger(verbose, keepLogs bool) *ActionLogger {
 	progress := new(progress)
 
 	return &ActionLogger{
-		verbose:   verbose,
-		keepLogs:  keepLogs,
-		highlight: color.New(color.Bold, color.FgGreen).SprintFunc(),
-		progress:  progress,
+		verbose:  verbose,
+		keepLogs: keepLogs,
+		progress: progress,
 		out: &progressWriter{
 			p: progress,
 			w: os.Stderr,
@@ -355,7 +352,7 @@ func (w *progressWriter) Write(data []byte) (int, error) {
 		return w.w.Write(data)
 	}
 
-	if !bytes.HasSuffix(data, []byte("\n")) {
+	if !bytes.HasSuffix(data, []byte("\n")) && !bytes.HasSuffix(data, []byte("\n\x1b[0m")) {
 		w.shouldClear = false
 		return w.w.Write(data)
 	}
@@ -377,10 +374,10 @@ func (w *progressWriter) Write(data []byte) (int, error) {
 		bar += ">"
 	}
 	bar += strings.Repeat(" ", maxLength-len(bar))
-	progessText := fmt.Sprintf("[%s] Steps: %d/%d (%s, %s)", bar, w.p.StepsComplete(), w.p.TotalSteps(), boldRed.Sprintf("%d failed", w.p.TotalStepsFailed()), hiGreen.Sprintf("%d patches", w.p.PatchCount()))
-	fmt.Fprint(w.w, progessText)
+	progressText := fmt.Sprintf("[%s] Steps: %d/%d (%s, %s)", bar, w.p.StepsComplete(), w.p.TotalSteps(), boldRed.Sprintf("%d failed", w.p.TotalStepsFailed()), hiGreen.Sprintf("%d patches", w.p.PatchCount()))
+	fmt.Fprint(w.w, progressText)
 	w.shouldClear = true
-	w.progressLogLength = len(progessText)
+	w.progressLogLength = len(progressText)
 	return n, err
 }
 
