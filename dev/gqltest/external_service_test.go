@@ -118,3 +118,53 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
 	}
 }
+
+func TestExternalService_BitbucketServer(t *testing.T) {
+	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
+	}
+
+	// Set up external service
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindBitbucketServer,
+		DisplayName: "gqltest-bitbucket-server",
+		Config: mustMarshalJSONString(struct {
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Username              string   `json:"username"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+		}{
+			URL:                   *bbsURL,
+			Token:                 *bbsToken,
+			Username:              *bbsUsername,
+			Repos:                 []string{"SOURCEGRAPH/jsonrpc2"},
+			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
+		}),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := client.DeleteExternalService(esID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	const repoName = "bbs/SOURCEGRAPH/jsonrpc2"
+	err = client.WaitForReposToBeCloned(repoName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	blob, err := client.GitBlob(repoName, "master", ".travis.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantBlob := "language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...\n"
+	if diff := cmp.Diff(wantBlob, blob); diff != "" {
+		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+	}
+}
