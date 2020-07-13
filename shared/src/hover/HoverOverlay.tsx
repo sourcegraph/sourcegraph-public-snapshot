@@ -217,36 +217,46 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                 </div>
                 {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
                     <div className="hover-overlay__alerts">
-                        {hoverOrError.alerts.map(({ summary, badge, dismissible, type }) => (
-                            <div
-                                className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
-                                key={type}
-                            >
-                                {badge &&
-                                    <BadgeAttachment
-                                        className="hover-overlay__badge e2e-hover-badge"
-                                        iconClassName={this.props.iconClassName}
-                                        iconButtonClassName={this.props.iconButtonClassName}
-                                        attachment={badge}
-                                        isLightTheme={this.props.isLightTheme}
+                        {hoverOrError.alerts.map(({ summary, badge, dismissalType }, index) => (
+                            <div className="hover-overlay__alert-container" key={index}>
+                                <div
+                                    className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
+                                >
+                                    {badge && !dismissalType &&
+                                        <BadgeAttachment
+                                            className="hover-overlay__badge e2e-hover-badge"
+                                            iconClassName={this.props.iconClassName}
+                                            iconButtonClassName={this.props.iconButtonClassName}
+                                            attachment={badge}
+                                            isLightTheme={this.props.isLightTheme}
+                                        />
+                                    }
+
+                                    <span
+                                        className="hover-overlay__content"
+                                        dangerouslySetInnerHTML={{ __html: summary.kind === 'plaintext' ? summary.value : renderMarkdown(summary.value) }}
                                     />
-                                }
 
-                                {dismissible && type &&
-                                    <a
-                                        className="hover-overlay__alert-close"
-                                        href=""
-                                        onClick={this.onAlertDismissedCallback(type)}
-                                    >
-                                        <small>Dismiss</small>
-                                    </a>
-                                }
+                                    {badge && dismissalType &&
+                                        <BadgeAttachment
+                                            className="hover-overlay__badge e2e-hover-badge"
+                                            iconClassName={this.props.iconClassName}
+                                            iconButtonClassName={this.props.iconButtonClassName}
+                                            attachment={badge}
+                                            isLightTheme={this.props.isLightTheme}
+                                        />
+                                    }
 
-
-                                <span
-                                    className="hover-overlay__content"
-                                    dangerouslySetInnerHTML={{ __html: summary.kind === 'plaintext' ? summary.value : renderMarkdown(summary.value) }}
-                                />
+                                    {dismissalType &&
+                                        <a
+                                            className="hover-overlay__alert-close"
+                                            href=""
+                                            onClick={this.onAlertDismissedCallback(dismissalType)}
+                                        >
+                                            <small>Dismiss</small>
+                                        </a>
+                                    }
+                                </div>
                             </div>
                         ))}
                     </div>

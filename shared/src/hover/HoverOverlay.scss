@@ -85,17 +85,22 @@
         // stylelint-enable selector-max-compound-selectors
     }
 
+    &__alert-container {
+        display: flex;
+    }
+
     &__alert {
         padding: 0.25rem 0.5rem;
         margin: 0;
         border-radius: 0;
         border: none;
         border-bottom: 1px solid var(--border-color);
+        flex: auto;
     }
 
     &__alert-close {
         float: right;
-        margin-left: 0.25em;
+        margin-left: 0.75em;
     }
 
     &__actions {
