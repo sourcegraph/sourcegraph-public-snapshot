@@ -338,11 +338,11 @@ func TestTranslateGlobToRegex(t *testing.T) {
 		},
 		{
 			input: "?",
-			want:  ".$",
+			want:  "^.$",
 		},
 		{
 			input: "?repo",
-			want:  ".repo$",
+			want:  "^.repo$",
 		},
 		{
 			input: "re?o",
@@ -363,6 +363,42 @@ func TestTranslateGlobToRegex(t *testing.T) {
 		{
 			input: "*.go",
 			want:  ".*?\\.go$",
+		},
+		{
+			input: "h[a-z]llo",
+			want:  "^h[a-z]llo$",
+		},
+		{
+			input: "h[^a-z]llo",
+			want:  "^h[!a-z]llo$",
+		},
+		{
+			input: "h[^abcde]llo",
+			want:  "^h[!abcde]llo$",
+		},
+		{
+			input: "h[]-]llo",
+			want:  "^h[]-]llo$",
+		},
+		{
+			input: "h\\[llo",
+			want:  "^h\\[llo$",
+		},
+		{
+			input: "h\\*llo",
+			want:  "^h\\*llo$",
+		},
+		{
+			input: "h\\?llo",
+			want:  "^h\\?llo$",
+		},
+		{
+			input: "fo[a-z]baz",
+			want:  "^fo[a-z]baz$",
+		},
+		{
+			input: "foo/**",
+			want:  "^foo/.*?",
 		},
 	}
 

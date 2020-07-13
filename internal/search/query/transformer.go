@@ -3,7 +3,6 @@ package query
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 	"unicode"
@@ -40,27 +39,83 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
-// translateGlobToRegex takes a Glob string and returns an equivalent regexp string.
-// Approach: We escape all regexp relevant characters, converting the input string
-// to a simple literal regexp. Next we replace all (escaped) glob-relevant characters
-// with the regexp equivalents.
-func translateGlobToRegex(value string) string {
-	value = regexp.QuoteMeta(value)
-	value = strings.ReplaceAll(value, "\\*", ".*?")
-	value = strings.ReplaceAll(value, "\\?", ".")
+// translateRange translates character classes and ranges
+func translateRange(r []rune, ix int) (int, string) {
+	sb := strings.Builder{}
+	ix += 1
 
-	// add anchors ^ and/or $ if necessary
-	l := len(value)
-	for i, r := range value {
-		if i == 0 && r != '.' {
-			value = "^" + value
-		}
-		if i == l-1 && r != '?' {
-			value = value + "$"
+	// the first character of range or character set is special
+	// because
+	//   * ranges or character sets cannot be empty
+	//   * we have to translate negation from ^ to !
+	if r[ix] == '^' {
+		sb.WriteRune('!')
+	} else {
+		// character sets or ranges cannot be empty: this means
+		// a [ followed direclty by a ] means ] has to be interpreted
+		// literally.
+		sb.WriteRune(r[ix])
+	}
+	ix += 1
+	for ix < len(r) && r[ix] != ']' {
+		sb.WriteRune(r[ix])
+		ix += 1
+	}
+
+	return len(sb.String()) + 1, sb.String()
+
+	// if ix == len(r) {
+	// unmatched [
+	// return 0, "["
+	// } else {
+	// }
+}
+
+// translateGlobToRegex converts a globbing string to a regex
+// we support: *, ?, character classes [...], ranges [A-F]
+func translateGlobToRegex(value string) string {
+	r := []rune(value)
+	l := len(r)
+	sb := strings.Builder{}
+
+	i := 0
+	// add regex anchor "^" if glob does not start with *
+	if r[i] != '*' {
+		sb.WriteRune('^')
+	}
+
+	for i = 0; i < l; i++ {
+		switch r[i] {
+		case '*':
+			sb.WriteString(".*?")
+			// skip repeated '*'
+			for i < l-1 && r[i+1] == '*' {
+				i = i + 1
+			}
+		case '?':
+			sb.WriteRune('.')
+		case '\\':
+			// handle escaped special characters
+			sb.WriteRune('\\')
+			i += 1
+			sb.WriteRune(r[i])
+		case '[':
+			advanced, s := translateRange(r, i)
+			i += advanced
+
+			sb.WriteRune('[')
+			sb.WriteString(s)
+			sb.WriteRune(']')
+		default:
+			sb.WriteString(regexp.QuoteMeta(string(r[i])))
 		}
 	}
 
-	return value
+	// add regex anchor "$" if glob doesn't end with *
+	if r[len(r)-1] != '*' {
+		sb.WriteRune('$')
+	}
+	return sb.String()
 }
 
 func isValidRegexp(value string) bool {
