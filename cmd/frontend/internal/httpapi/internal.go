@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -144,6 +145,11 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	getVersion := func(branch string) (string, error) {
 		// Do not to trigger a repo-updater lookup since this is a batch job.
 		commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: api.RepoName(repo)}, nil, branch, git.ResolveRevisionOptions{})
+		if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+			// GetIndexOptions wants an empty rev for a missing rev or empty
+			// repo.
+			return "", nil
+		}
 		return string(commitID), err
 	}
 

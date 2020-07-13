@@ -119,20 +119,81 @@ func TestGetIndexOptions(t *testing.T) {
 	}
 }
 
-func TestGetIndexOptions_error(t *testing.T) {
+func TestGetIndexOptions_getVersion(t *testing.T) {
 	conf := schema.SiteConfiguration{
 		ExperimentalFeatures: &schema.ExperimentalFeatures{
 			VersionContexts: []*schema.VersionContext{
-				parseVersionContext("foo", "repo@a"),
+				parseVersionContext("foo", "repo@b1", "repo@b2"),
 			},
 		},
 	}
+
 	boom := errors.New("boom")
-	b, err := GetIndexOptions(&conf, "repo", func(branch string) (string, error) {
-		return "", boom
-	})
-	if err != boom {
-		t.Fatalf("expected error, got body %s and error %v", b, err)
+	cases := []struct {
+		name    string
+		f       func(string) (string, error)
+		want    []zoekt.RepositoryBranch
+		wantErr error
+	}{{
+		name: "error",
+		f: func(_ string) (string, error) {
+			return "", boom
+		},
+		wantErr: boom,
+	}, {
+		// no HEAD means we don't index anything. This leads to zoekt having
+		// an empty index.
+		name: "no HEAD",
+		f: func(branch string) (string, error) {
+			if branch == "HEAD" {
+				return "", nil
+			}
+			return "!" + branch, nil
+		},
+		want: nil,
+	}, {
+		name: "no branch",
+		f: func(branch string) (string, error) {
+			if branch == "b1" {
+				return "", nil
+			}
+			return "!" + branch, nil
+		},
+		want: []zoekt.RepositoryBranch{
+			{Name: "HEAD", Version: "!HEAD"},
+			{Name: "b2", Version: "!b2"},
+		},
+	}, {
+		name: "all",
+		f: func(branch string) (string, error) {
+			return "!" + branch, nil
+		},
+		want: []zoekt.RepositoryBranch{
+			{Name: "HEAD", Version: "!HEAD"},
+			{Name: "b1", Version: "!b1"},
+			{Name: "b2", Version: "!b2"},
+		},
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			b, err := GetIndexOptions(&conf, "repo", tc.f)
+			if err != tc.wantErr {
+				t.Fatalf("expected error %v, got body %s and error %v", tc.wantErr, b, err)
+			}
+			if tc.wantErr != nil {
+				return
+			}
+
+			var got zoektIndexOptions
+			if err := json.Unmarshal(b, &got); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(tc.want, got.Branches); diff != "" {
+				t.Fatal("mismatch (-want, +got):\n", diff)
+			}
+		})
 	}
 }
 

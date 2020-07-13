@@ -34,7 +34,8 @@ type zoektIndexOptions struct {
 // sourcegraph-zoekt-indexserver. It is for repoName based on site settings c.
 //
 // getVersion is used to resolve revisions for repoName. If it fails, the
-// error is returned.
+// error is returned. If the revision is missing, an empty string should be
+// returned rather than an error.
 func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion func(branch string) (string, error)) ([]byte, error) {
 	o := &zoektIndexOptions{
 		LargeFiles: c.SearchLargeFiles,
@@ -60,6 +61,11 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 				return nil, err
 			}
 
+			// If we failed to resolve a branch, skip it
+			if v == "" {
+				continue
+			}
+
 			o.Branches = append(o.Branches, zoekt.RepositoryBranch{
 				Name:    branch,
 				Version: v,
@@ -74,6 +80,12 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 			}
 			return a < b
 		})
+
+		// If the first branch is not HEAD, do not index anything. This should
+		// not happen, since HEAD should always exist if other branches exist.
+		if len(o.Branches) == 0 || o.Branches[0].Name != "HEAD" {
+			o.Branches = nil
+		}
 	}
 
 	return json.Marshal(o)
