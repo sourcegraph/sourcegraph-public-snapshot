@@ -39,6 +39,11 @@ func (h *TransactableHandle) InTransaction() bool {
 // Transact returns a new transactional database handle whose methods operate within the context of
 // a new transaction or a new savepoint. This method will return an error if the underlying connection
 // cannot be interface upgraded to a TxBeginner.
+//
+// Note that it is not valid to call Transact or Done on the same database handle from distinct goroutines.
+// Because we support properly nested transactions via savepoints, calling Transact from two different
+// goroutines on the same handle will not be deterministic: either transaction could nest the other one,
+// and callaing Done in one goroutine may not finalize the expected unit of work.
 func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle, error) {
 	if h.InTransaction() {
 		savepoint, err := newSavepoint(ctx, h.db)
@@ -85,7 +90,7 @@ func (h *TransactableHandle) Done(err error) error {
 	}
 
 	if err == nil {
-		return combineErrors(err, tx.Commit())
+		return tx.Commit()
 	}
 	return combineErrors(err, tx.Rollback())
 }

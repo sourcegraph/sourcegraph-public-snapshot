@@ -2,8 +2,6 @@ package basestore
 
 import (
 	"database/sql"
-
-	"github.com/hashicorp/go-multierror"
 )
 
 // CloseRows closes the given rows object. The resulting error is a multierror
@@ -26,15 +24,7 @@ import (
 //
 //     things, err := ScanThings(store.Query(ctx, query))
 func CloseRows(rows *sql.Rows, err error) error {
-	if closeErr := rows.Close(); closeErr != nil {
-		err = multierror.Append(err, closeErr)
-	}
-
-	if rowsErr := rows.Err(); rowsErr != nil {
-		err = multierror.Append(err, rowsErr)
-	}
-
-	return err
+	return combineErrors(err, rows.Close(), rows.Err())
 }
 
 // ScanStrings reads string values from the given row object.

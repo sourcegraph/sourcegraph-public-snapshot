@@ -141,6 +141,8 @@ func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {
 	}
 }
 
+// setupStoreTest creates a table used only for testing. This table does not need to be truncated
+// between tests as all tables in the test database are truncated by SetupGlobalTestDB.
 func setupStoreTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
