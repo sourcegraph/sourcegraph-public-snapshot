@@ -9,7 +9,7 @@ import { Polly } from '@pollyjs/core'
 import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../../shared/src/graphql/graphql'
-
+import MockDate from 'mockdate'
 import { first, timeoutWith } from 'rxjs/operators'
 import * as path from 'path'
 import * as util from 'util'
@@ -22,6 +22,7 @@ import { WebGQLOperations } from '../gql-operations'
 import { SharedGQLOperations } from '../../../shared/src/gql-operations'
 import { keyExistsIn } from '../../../shared/src/util/types'
 import { IGraphQLResponseError } from '../../../shared/src/graphql/schema'
+import { getConfig } from '../../../shared/src/testing/config'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -319,7 +320,21 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 })
             })
         }
-        let initGenerationCallback: IntegrationTestInitGeneration | null = null
+        let initGenerationCallback: IntegrationTestInitGeneration = async () => {
+            // Reset date mocking
+            MockDate.reset()
+            const { sourcegraphBaseUrl, headless, slowMo } = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo')
+
+            // Start browser
+            const driver = await createDriverForTest({
+                sourcegraphBaseUrl,
+                logBrowserConsole: true,
+                headless,
+                slowMo,
+            })
+            return { driver, sourcegraphBaseUrl }
+        }
+
         const initGeneration = (logic: IntegrationTestInitGeneration): void => {
             initGenerationCallback = logic
         }

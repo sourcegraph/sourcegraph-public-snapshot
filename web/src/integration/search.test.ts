@@ -1,6 +1,3 @@
-import { createDriverForTest } from '../../../shared/src/testing/driver'
-import MockDate from 'mockdate'
-import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import expect from 'expect'
 import { describeIntegration } from './helpers'
@@ -65,28 +62,7 @@ const searchResults = (): SearchResult => ({
     },
 })
 
-describeIntegration('Search', ({ initGeneration, describe }) => {
-    initGeneration(async () => {
-        // Reset date mocking
-        MockDate.reset()
-        const { sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
-            'sourcegraphBaseUrl',
-            'headless',
-            'slowMo',
-            'testUserPassword'
-        )
-
-        // Start browser
-        const driver = await createDriverForTest({
-            sourcegraphBaseUrl,
-            logBrowserConsole: true,
-            headless,
-            slowMo,
-        })
-        await driver.ensureLoggedIn({ username: 'test', password: testUserPassword, email: 'test@test.com' })
-        return { driver, sourcegraphBaseUrl }
-    })
-
+describeIntegration('Search', ({ describe }) => {
     describe('Interactive search mode', ({ test }) => {
         test('Search mode component appears', async ({ sourcegraphBaseUrl, driver }) => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
