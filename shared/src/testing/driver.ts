@@ -289,7 +289,7 @@ export class Driver {
         const { externalServices } = dataOrThrowErrors(
             await this.makeGraphQLRequest<IQuery>({
                 request: gql`
-                    query ExternalServices {
+                    query ExternalServicesForTests {
                         externalServices(first: 1) {
                             totalCount
                         }
@@ -499,7 +499,7 @@ export class Driver {
     ): Promise<void> {
         const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
-                query Site {
+                query SiteForTests {
                     site {
                         id
                         configuration {
@@ -517,7 +517,7 @@ export class Driver {
         const newConfig = modifyJSONC(currentConfig, path, editFunction)
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                mutation UpdateSiteConfigurationForTests($lastID: Int!, $input: String!) {
                     updateSiteConfiguration(lastID: $lastID, input: $input)
                 }
             `,
@@ -540,7 +540,7 @@ export class Driver {
     public async setUserSettings<S extends Settings>(settings: S): Promise<void> {
         const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
-                query UserSettings {
+                query UserSettingsForTests {
                     currentUser {
                         id
                         latestSettings {
@@ -560,7 +560,7 @@ export class Driver {
 
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                mutation OverwriteSettingsForTests($subject: ID!, $lastID: Int, $contents: String!) {
                     settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                         overwriteSettings(contents: $contents) {
                             empty {

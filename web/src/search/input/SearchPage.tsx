@@ -99,7 +99,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                     <div className="d-flex align-items-baseline mb-3">
                         <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
                         <span className="text-monospace font-weight-normal search-page__lang-ref">
-                            <span className="repogroup-page__keyword-text">repogroup:</span>
+                            <span className="search-page__keyword-text">repogroup:</span>
                             <i>name</i>
                         </span>
                     </div>
@@ -122,59 +122,60 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         ))}
                     </div>
                     <div className="search-page__help-content mt-5">
-                        <div>
+                        <div className="search-page__example-searches">
                             <h3 className="search-page__help-content-header">Example searches</h3>
-                            <ul className="list-group-flush p-0">
-                                <li className="list-group-item px-0 pb-3">
+                            <ul className="list-group-flush p-0 mt-2">
+                                <li className="list-group-item px-0 pt-3 pb-2">
                                     <Link
                                         to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural"
-                                        className="text-monospace mb-1"
+                                        className="text-monospace mb-2"
                                     >
-                                        <span className="repogroup-page__keyword-text">lang:</span>javascript
+                                        <span className="search-page__keyword-text">lang:</span>javascript
                                         alert(:[variable])
                                     </Link>{' '}
-                                    <div>Find usages of the alert() method that displays an alert box.</div>
+                                    <p className="mt-2">
+                                        Find usages of the alert() method that displays an alert box.
+                                    </p>
                                 </li>
-                                <li className="list-group-item px-0 py-3">
+                                <li className="list-group-item px-0 pt-3 pb-2">
                                     <Link
                                         to="/search?q=lang:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
-                                        className="text-monospace mb-1"
+                                        className="text-monospace mb-2"
                                     >
-                                        <span className="repogroup-page__keyword-text">lang:</span>python from \B\.\w+
+                                        <span className="search-page__keyword-text">lang:</span>python from \B\.\w+
                                         import \w+
                                     </Link>{' '}
-                                    <div>
+                                    <p className="mt-2">
                                         Search for explicit imports with one or more leading dots that indicate current
                                         and parent packages involved.
-                                    </div>
+                                    </p>
                                 </li>
-                                <li className="list-group-item px-0 py-3">
+                                <li className="list-group-item px-0 pt-3 pb-2">
                                     <Link
                                         to='/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
-                                        className="text-monospace mb-1"
+                                        className="text-monospace mb-2"
                                     >
-                                        <span className="repogroup-page__keyword-text">repo:</span>
-                                        ^github\.com/golang/go${' '}
-                                        <span className="repogroup-page__keyword-text">type:</span>diff{' '}
-                                        <span className="repogroup-page__keyword-text">after:</span>"1 week ago"
+                                        <span className="search-page__keyword-text">repo:</span>
+                                        ^github\.com/golang/go$ <span className="search-page__keyword-text">type:</span>
+                                        diff <span className="search-page__keyword-text">after:</span>"1 week ago"
                                     </Link>{' '}
-                                    <div>
+                                    <p className="mt-2">
                                         Browse diffs for recent code changes in the 'golang/go' GitHub repository.
-                                    </div>
+                                    </p>
                                 </li>
-                                <li className="list-group-item px-0 py-3">
+                                <li className="list-group-item px-0 pt-3 pb-2">
                                     <Link
                                         to='/search?q=file:pod.yaml+content:"kind:+ReplicationController"&patternType=literal'
-                                        className="text-monospace mb-1"
+                                        className="text-monospace mb-2"
                                     >
-                                        <span className="repogroup-page__keyword-text">file:</span>pod.yaml{' '}
-                                        <span className="repogroup-page__keyword-text">content:</span>"kind:
+                                        <span className="search-page__keyword-text">file:</span>pod.yaml{' '}
+                                        <span className="search-page__keyword-text">content:</span>"kind:
                                         ReplicationController"
                                     </Link>{' '}
-                                    <div>
+                                    <p className="mt-2">
                                         Use a ReplicationController configuration to ensure specified number of pod
                                         replicas are running at any one time.
-                                    </div>
+                                    </p>
                                 </li>
                             </ul>
                         </div>
@@ -182,49 +183,80 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             <div className="d-flex align-items-baseline">
                                 <h3 className="search-page__help-content-header mr-2">Search a language</h3>
                                 <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                    <span className="repogroup-page__keyword-text">lang:</span>
-                                    <i className="repogroup-page__keyword-value-text">name</i>
+                                    <span className="search-page__keyword-text">lang:</span>
+                                    <i className="search-page__keyword-value-text">name</i>
                                 </span>
                             </div>
-                            <div className="search-page__lang-list">
+                            <div className="search-page__lang-list mt-2">
                                 {homepageLanguageList.map(language => (
                                     <Link
                                         className="text-monospace search-page__web-link"
                                         to={`/search?q=lang:${language.filterName}`}
                                         key={language.name}
                                     >
-                                        {language.name}
+                                        {language.filterName}
                                     </Link>
                                 ))}
                             </div>
                         </div>
                         <div>
                             <h3 className="search-page__help-content-header">Search syntax</h3>
-                            <div className="search-page__lang-list">
+                            <div className="search-page__lang-list mt-3">
                                 <dl>
-                                    <dt className="search-page__help-content-subheading">Common search keywords</dt>
-                                    <dd className="text-monospace">repo:my/repo</dd>
-                                    <dd className="text-monospace">repo:github.com/myorg/</dd>
-                                    <dd className="text-monospace">file:my/file</dd>
-                                    <dd className="text-monospace">lang:javascript</dd>
+                                    <dt className="search-page__help-content-subheading">
+                                        <h5>Common search keywords</h5>
+                                    </dt>
+                                    <dd className="text-monospace">
+                                        <p>repo:my/repo</p>
+                                    </dd>
+                                    <dd className="text-monospace">
+                                        <p>repo:github.com/myorg/</p>
+                                    </dd>
+                                    <dd className="text-monospace">
+                                        <p>file:my/file</p>
+                                    </dd>
+                                    <dd className="text-monospace">
+                                        <p>lang:javascript</p>
+                                    </dd>
                                 </dl>
                                 <dl>
                                     <dt className="search-page__help-content-subheading">
-                                        Diff/commit search keywords:
+                                        <h5>Diff/commit search keywords</h5>
                                     </dt>
-                                    <dd className="text-monospace">type:diff or type:commit</dd>
-                                    <dd className="text-monospace">after:”2 weeks ago”</dd>
-                                    <dd className="text-monospace">author:alice@example.com</dd>{' '}
-                                    <dd className="text-monospace">repo:r@*refs/heads/ (all branches)</dd>
+                                    <dd className="text-monospace">
+                                        <p>type:diff or type:commit</p>
+                                    </dd>
+                                    <dd className="text-monospace">
+                                        <p>after:"2 weeks ago"</p>
+                                    </dd>
+                                    <dd className="text-monospace">
+                                        <p>author:alice@example.com</p>
+                                    </dd>{' '}
+                                    <dd className="text-monospace">
+                                        <p>repo:r@*refs/heads/ (all branches)</p>
+                                    </dd>
                                 </dl>
                                 <dl>
-                                    <dt className="search-page__help-content-subheading">Finding matches</dt>
-                                    <dd className="text-monospace">Regexp: (read|write)File</dd>{' '}
-                                    <dd className="text-monospace">Exact: “fs.open(f)”</dd>
-                                </dl>
-                                <dl>
-                                    <dt className="search-page__help-content-subheading">Structural Searches</dt>
-                                    <dd className="text-monospace">:[arg] matches arguments</dd>
+                                    <dt className="search-page__help-content-subheading">
+                                        <h5>Finding matches</h5>
+                                    </dt>
+                                    <dd>
+                                        <p>
+                                            <strong>Regexp:</strong>{' '}
+                                            <span className="text-monospace">(read|write)File</span>
+                                        </p>
+                                    </dd>{' '}
+                                    <dd>
+                                        <p>
+                                            <strong>Exact:</strong> <span className="text-monospace">"fs.open(f)"</span>
+                                        </p>
+                                    </dd>
+                                    <dd>
+                                        <p>
+                                            <strong>Structural:</strong>{' '}
+                                            <span className="text-monospace">if(:[my_match])</span>
+                                        </p>
+                                    </dd>
                                 </dl>
                             </div>
                         </div>

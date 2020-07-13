@@ -250,7 +250,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
 function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
     return queryGraphQL(
         gql`
-            query ProductSubscription($uuid: String!) {
+            query DotComProductSubscription($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
                         id
