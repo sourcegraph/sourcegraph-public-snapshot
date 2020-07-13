@@ -23,4 +23,6 @@ type MockStores struct {
 	ExternalServices MockExternalServices
 
 	Authz MockAuthz
+
+	CryptSecrets MockCryptSecrets
 }

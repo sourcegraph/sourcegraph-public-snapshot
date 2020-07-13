@@ -9,11 +9,11 @@ BEGIN;
 
 CREATE TABLE crypt_secrets (
     id bigint NOT NULL,
-    source varying(50) NOT NULL,
+    source_type varying(50) NOT NULL,
     source_id bigint NOT NULL,
     value text NOT NULL,
 );
 
-CREATE INDEX source_secret_idx ON crypt_secrets USING (source, source_id);
+CREATE INDEX source_secret_idx ON crypt_secrets USING (source_type, source_id);
 
 COMMIT;
