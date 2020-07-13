@@ -1,13 +1,30 @@
 import assert from 'assert'
-import { describeIntegration } from './helpers'
 import { retry } from '../../../shared/src/testing/utils'
-import { commonGraphQlResults, testUserID, settingsID } from './graphQlResults'
+import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { settingsID, testUserID } from '../../../shared/src/testing/integration/graphQlResults'
 
-describeIntegration('Settings', ({ describe }) => {
-    describe('User settings page', ({ it }) => {
-        it('updates user settings', async ({ driver, sourcegraphBaseUrl, overrideGraphQL, waitForGraphQLRequest }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+describe('Settings', () => {
+    let driver: Driver
+    before(async () => {
+        driver = await createDriverForTest()
+    })
+    after(() => driver?.close())
+    let testContext: WebIntegrationTestContext
+    beforeEach(async function () {
+        testContext = await createWebIntegrationTestContext({
+            driver,
+            currentTest: this.currentTest!,
+            directory: __dirname,
+        })
+    })
+    afterEach(() => testContext?.dispose())
+
+    describe('User settings page', () => {
+        it('updates user settings', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 SettingsCascade: () => ({
                     settingsSubject: {
                         settingsCascade: {
@@ -61,7 +78,7 @@ describeIntegration('Settings', ({ describe }) => {
                 )
             }
 
-            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings')
 
             await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
             await driver.page.waitForSelector('.e2e-save-toolbar-save')
@@ -96,7 +113,7 @@ describeIntegration('Settings', ({ describe }) => {
             )
 
             // Assert mutation is done when save button is clicked
-            const overrideSettingsVariables = await waitForGraphQLRequest(async () => {
+            const overrideSettingsVariables = await testContext.waitForGraphQLRequest(async () => {
                 await driver.findElementWithText('Save changes', { action: 'click' })
             }, 'OverwriteSettings')
 

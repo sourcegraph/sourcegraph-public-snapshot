@@ -1,9 +1,11 @@
 import assert from 'assert'
 import expect from 'expect'
-import { describeIntegration } from './helpers'
-import { commonGraphQlResults } from './graphQlResults'
+import { commonWebGraphQlResults } from './graphQlResults'
 import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
 import { SearchResult } from '../graphql-operations'
+import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { test } from 'mocha'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -62,19 +64,34 @@ const searchResults = (): SearchResult => ({
     },
 })
 
-describeIntegration('Search', ({ describe }) => {
-    describe('Interactive search mode', ({ test }) => {
-        test('Search mode component appears', async ({ sourcegraphBaseUrl, driver }) => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
+describe('Search', () => {
+    let driver: Driver
+    before(async () => {
+        driver = await createDriverForTest()
+    })
+    after(() => driver?.close())
+    let testContext: WebIntegrationTestContext
+    beforeEach(async function () {
+        testContext = await createWebIntegrationTestContext({
+            driver,
+            currentTest: this.currentTest!,
+            directory: __dirname,
+        })
+    })
+    afterEach(() => testContext?.dispose())
+
+    describe('Interactive search mode', () => {
+        test('Search mode component appears', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-search-mode-toggle')
             expect(await driver.page.evaluate(() => document.querySelectorAll('.e2e-search-mode-toggle').length)).toBe(
                 1
             )
         })
 
-        test('Filter buttons', async ({ sourcegraphBaseUrl, driver, overrideGraphQL }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+        test('Filter buttons', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 SearchSuggestions: () => ({
                     search: {
                         suggestions: [
@@ -94,7 +111,7 @@ describeIntegration('Search', ({ describe }) => {
                     ],
                 }),
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-search-mode-toggle', { visible: true })
             await driver.page.click('.e2e-search-mode-toggle')
             await driver.page.click('.e2e-search-mode-toggle__interactive-mode')
@@ -138,13 +155,13 @@ describeIntegration('Search', ({ describe }) => {
             await driver.assertWindowLocation('/search?q=repo:%22gorilla/mux%22+file:%22README%22&patternType=literal')
 
             // Delete filter
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:gorilla/mux&patternType=literal')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=repo:gorilla/mux&patternType=literal')
             await driver.page.waitForSelector('.e2e-filter-input__delete-button', { visible: true })
             await driver.page.click('.e2e-filter-input__delete-button')
             await driver.assertWindowLocation('/search?q=&patternType=literal')
 
             // Test suggestions
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-add-filter-button-repo', { visible: true })
             await driver.page.click('.e2e-add-filter-button-repo')
             await driver.page.waitForSelector('.filter-input', { visible: true })
@@ -179,13 +196,9 @@ describeIntegration('Search', ({ describe }) => {
             )
         })
 
-        test('Updates query when searching from directory page', async ({
-            sourcegraphBaseUrl,
-            driver,
-            overrideGraphQL,
-        }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+        test('Updates query when searching from directory page', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 RepositoryRedirect: () => ({
                     repositoryRedirect: {
                         __typename: 'Repository',
@@ -211,7 +224,7 @@ describeIntegration('Search', ({ describe }) => {
                     },
                 }),
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
             await driver.page.waitForSelector('.filter-input')
             const filterInputValue = () =>
                 driver.page.evaluate(() => {
@@ -221,16 +234,12 @@ describeIntegration('Search', ({ describe }) => {
             assert.strictEqual(await filterInputValue(), 'repo:^github\\.com/sourcegraph/jsonrpc2$')
         })
 
-        test('Filter dropdown and finite-option filter inputs', async ({
-            sourcegraphBaseUrl,
-            driver,
-            overrideGraphQL,
-        }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+        test('Filter dropdown and finite-option filter inputs', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 Search: searchResults,
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-filter-dropdown')
             await driver.page.type('.e2e-query-input', 'test')
@@ -261,9 +270,9 @@ describeIntegration('Search', ({ describe }) => {
         })
     })
 
-    describe('Case sensitivity toggle', ({ test }) => {
-        test('Clicking toggle turns on case sensitivity', async ({ sourcegraphBaseUrl, driver }) => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
+    describe('Case sensitivity toggle', () => {
+        test('Clicking toggle turns on case sensitivity', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
             await driver.page.type('.e2e-query-input', 'test')
@@ -271,16 +280,12 @@ describeIntegration('Search', ({ describe }) => {
             await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
         })
 
-        test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async ({
-            sourcegraphBaseUrl,
-            driver,
-            overrideGraphQL,
-        }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+        test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 Search: searchResults,
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
             await driver.page.click('.e2e-case-sensitivity-toggle')
@@ -288,13 +293,13 @@ describeIntegration('Search', ({ describe }) => {
         })
     })
 
-    describe('Structural search toggle', ({ test }) => {
-        test('Clicking toggle turns on structural search', async ({ sourcegraphBaseUrl, driver, overrideGraphQL }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+    describe('Structural search toggle', () => {
+        test('Clicking toggle turns on structural search', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 Search: searchResults,
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-structural-search-toggle')
             await driver.page.type('.e2e-query-input', 'test')
@@ -302,32 +307,24 @@ describeIntegration('Search', ({ describe }) => {
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
         })
 
-        test('Clicking toggle turns on structural search and removes existing patternType parameter', async ({
-            sourcegraphBaseUrl,
-            driver,
-            overrideGraphQL,
-        }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+        test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 Search: searchResults,
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-structural-search-toggle')
             await driver.page.click('.e2e-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=structural')
         })
 
-        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async ({
-            sourcegraphBaseUrl,
-            driver,
-            overrideGraphQL,
-        }) => {
-            overrideGraphQL({
-                ...commonGraphQlResults,
+        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
                 Search: searchResults,
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=structural')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-structural-search-toggle')
             await driver.page.click('.e2e-structural-search-toggle')
