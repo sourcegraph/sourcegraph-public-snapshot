@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -92,6 +93,23 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
+		if opt2.LimitOffset != nil {
+			tmp := *opt2.LimitOffset
+			opt2.LimitOffset = &tmp
+			// We purposefully load more repos into memory than requested in
+			// order to save roundtrips to gitserver in case we need to do
+			// filtering by clone status.
+			// The trade-off here is memory/cpu vs. network roundtrips to
+			// database/gitserver and we choose smaller latency over smaller
+			// memory footprint.
+			// At the end of this method we return the requested number of
+			// repos.
+			// As for the number: 1250 is the result of local benchmarks where
+			// it yielded the best performance/resources tradeoff, before
+			// diminishing returns set in
+			opt2.Limit += 1250
+		}
+
 		var indexed map[string]*zoekt.Repository
 		searchIndexEnabled := search.Indexed().Enabled()
 		isIndexed := func(repo api.RepoName) bool {
@@ -112,15 +130,6 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		if !r.cloned {
-			opt2.NoCloned = true
-		} else if !r.notCloned || !r.cloneInProgress {
-			// notCloned and cloneInProgress are true by default.
-			// this condition is valid only if one of them has been
-			// explicitly set to false by the client.
-			opt2.OnlyCloned = true
-		}
-
 		for {
 			repos, err := backend.Repos.List(ctx, opt2)
 			if err != nil {
@@ -128,6 +137,28 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				return
 			}
 			reposFromDB := len(repos)
+
+			if !r.cloned || !r.cloneInProgress || !r.notCloned {
+				// Query gitserver to filter by repository clone status.
+				repoNames := make([]api.RepoName, len(repos))
+				for i, repo := range repos {
+					repoNames[i] = repo.Name
+				}
+				response, err := gitserver.DefaultClient.RepoCloneProgress(ctx, repoNames...)
+				if err != nil {
+					r.err = err
+					return
+				}
+				keepRepos := repos[:0]
+				for _, repo := range repos {
+					if info := response.Results[repo.Name]; info == nil {
+						continue
+					} else if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
+						keepRepos = append(keepRepos, repo)
+					}
+				}
+				repos = keepRepos
+			}
 
 			if !r.indexed || !r.notIndexed {
 				keepRepos := repos[:0]
@@ -145,16 +176,22 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset == nil {
 				break
 			} else {
-				// check if we filtered some repos and if
-				// we need to get more from the DB
-				if len(repos) >= r.opt.Limit || reposFromDB < r.opt.Limit {
+				if len(r.repos) > r.opt.Limit {
+					// Cut off the repos we additionally loaded to save
+					// roundtrips to `gitserver` and only return the number
+					// that was requested.
+					// But, when possible, we add one more so we can detect if
+					// there is a "next page" that could be loaded
+					r.repos = r.repos[:r.opt.Limit+1]
+					break
+				}
+				if reposFromDB < r.opt.Limit {
 					break
 				}
 				opt2.Offset += opt2.Limit
 			}
 		}
 	})
-
 	return r.repos, r.err
 }
 
@@ -220,7 +257,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) >= r.opt.Limit), nil
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) > r.opt.Limit), nil
 }
 
 func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
