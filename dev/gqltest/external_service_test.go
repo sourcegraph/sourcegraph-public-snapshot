@@ -64,3 +64,57 @@ func TestExternalService(t *testing.T) {
 		}
 	})
 }
+
+func TestExternalService_AWSCodeCommit(t *testing.T) {
+	if len(*awsAccessKeyID) == 0 || len(*awsSecretAccessKey) == 0 ||
+		len(*awsCodeCommitUsername) == 0 || len(*awsCodeCommitPassword) == 0 {
+		t.Skip("Environment variable AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_CODE_COMMIT_USERNAME or AWS_CODE_COMMIT_PASSWORD is not set")
+	}
+
+	// Set up external service
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindAWSCodeCommit,
+		DisplayName: "gqltest-aws-code-commit",
+		Config: mustMarshalJSONString(struct {
+			Region                string            `json:"region"`
+			AccessKeyID           string            `json:"accessKeyID"`
+			SecretAccessKey       string            `json:"secretAccessKey"`
+			RepositoryPathPattern string            `json:"repositoryPathPattern"`
+			GitCredentials        map[string]string `json:"gitCredentials"`
+		}{
+			Region:                "us-west-1",
+			AccessKeyID:           *awsAccessKeyID,
+			SecretAccessKey:       *awsSecretAccessKey,
+			RepositoryPathPattern: "aws/{name}",
+			GitCredentials: map[string]string{
+				"username": *awsCodeCommitUsername,
+				"password": *awsCodeCommitPassword,
+			},
+		}),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := client.DeleteExternalService(esID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	const repoName = "aws/test"
+	err = client.WaitForReposToBeCloned(repoName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	blob, err := client.GitBlob(repoName, "master", "README")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantBlob := "README\n\nchange"
+	if diff := cmp.Diff(wantBlob, blob); diff != "" {
+		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+	}
+}
