@@ -528,6 +528,51 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 	})
 
+	t.Run("UpdateChangeset", func(t *testing.T) {
+		t.Run("invalid metadata", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+
+			err := p.source.UpdateChangeset(p.ctx, &Changeset{
+				Changeset: &campaigns.Changeset{Metadata: struct{}{}},
+			})
+			if err == nil {
+				t.Error("unexpected nil error")
+			}
+		})
+
+		t.Run("error from UpdateMergeRequest", func(t *testing.T) {
+			inner := errors.New("foo")
+			mr := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = mr
+			p.mockUpdateMergeRequest(mr, nil, inner)
+
+			have := p.source.UpdateChangeset(p.ctx, p.changeset)
+			if !errors.Is(have, inner) {
+				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			}
+			if p.changeset.Changeset.Metadata != mr {
+				t.Errorf("metadata unexpectedly updated: from %+v; to %+v", mr, p.changeset.Changeset.Metadata)
+			}
+		})
+
+		t.Run("success", func(t *testing.T) {
+			in := &gitlab.MergeRequest{}
+			out := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = in
+			p.mockUpdateMergeRequest(in, out, nil)
+
+			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected non-nil error: %+v", err)
+			}
+			if p.changeset.Changeset.Metadata != out {
+				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			}
+		})
+	})
 }
 
 func TestReadNotesUntilSeen(t *testing.T) {
