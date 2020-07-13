@@ -213,9 +213,6 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         response.json(gqlResult)
                     } catch (error) {
                         if (!(error instanceof IntegrationTestGqlError)) {
-                            const error = new Error(
-                                `GraphQL query "${queryName}" threw an exception but it was not IntegrationTestGqlError, please use 'throw new IntegrationTestGqlError()' instead`
-                            )
                             errors.error(error)
                             throw error
                         }
