@@ -216,7 +216,7 @@ describe('e2e test suite', () => {
                 selector: '.e2e-external-service-editor .monaco-editor',
                 newText:
                     '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
-                selectMethod: 'keyboard',
+                selectMethod: 'selectall',
                 enterTextMethod: 'paste',
             })
             await driver.page.click('.e2e-update-external-service-button')
