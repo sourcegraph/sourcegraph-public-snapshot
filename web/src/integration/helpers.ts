@@ -40,11 +40,6 @@ type IntegrationTestInitGeneration = () => Promise<{
     subscriptions?: Subscription
 }>
 
-// type PotentialOverrides<T> = Partial<
-//     { [K in keyof T]: T[K] extends (input: any) => infer Result ? Result | StubbedErrorResponse : never }
-// >
-type PotentialOverrides<T> = Partial<T>
-
 export class IntegrationTestGqlError extends Error {
     constructor(public errors: IGraphQLResponseError[]) {
         super('graphql error for integration tests')
@@ -52,7 +47,7 @@ export class IntegrationTestGqlError extends Error {
 }
 
 type AllGQLOperations = WebGQLOperations & SharedGQLOperations
-export type GraphQLOverrides = PotentialOverrides<AllGQLOperations>
+export type GraphQLOverrides = Partial<AllGQLOperations>
 
 interface TestContext {
     sourcegraphBaseUrl: string
