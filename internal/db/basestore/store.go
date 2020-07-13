@@ -105,7 +105,7 @@ func (s *Store) InTransaction() bool {
 	return s.handle.InTransaction()
 }
 
-// Transact returns a new store whose methods operate within the context of  a new transaction
+// Transact returns a new store whose methods operate within the context of a new transaction
 // or a new savepoint. This method will return an error if the underlying connection cannot be
 // interface upgraded to a TxBeginner.
 func (s *Store) Transact(ctx context.Context) (*Store, error) {
