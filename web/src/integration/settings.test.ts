@@ -1,5 +1,4 @@
 import assert from 'assert'
-import { IOrgConnection, IUserEmail, IOrg } from '../../../shared/src/graphql/schema'
 import { describeIntegration } from './helpers'
 import { retry } from '../../../shared/src/testing/utils'
 import { commonGraphQlResults, testUserID, settingsID } from './graphQlResults'
@@ -45,8 +44,8 @@ describeIntegration('Settings', ({ describe }) => {
                         siteAdmin: true,
                         builtinAuth: true,
                         createdAt: '2020-03-02T11:52:15Z',
-                        emails: [{ email: 'test@sourcegraph.test', verified: true } as IUserEmail],
-                        organizations: { nodes: [] as IOrg[] } as IOrgConnection,
+                        emails: [{ email: 'test@sourcegraph.test', verified: true }],
+                        organizations: { nodes: [] },
                         permissionsInfo: null,
                     },
                 }),
