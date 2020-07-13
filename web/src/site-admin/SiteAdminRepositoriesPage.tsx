@@ -85,6 +85,12 @@ const FILTERS: FilteredConnectionFilter[] = [
         args: { cloned: true, cloneInProgress: false, notCloned: false },
     },
     {
+        label: 'Cloning',
+        id: 'cloning',
+        tooltip: 'Show only repositories that are currently being cloned',
+        args: { cloned: false, cloneInProgress: true, notCloned: false },
+    },
+    {
         label: 'Not cloned',
         id: 'not-cloned',
         tooltip: 'Show only repositories that have not been cloned yet',
