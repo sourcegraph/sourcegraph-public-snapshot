@@ -131,7 +131,7 @@ describe('HoverOverlay', () => {
                                     kind: MarkupKind.Markdown,
                                     value: 'Testing `markdown` rendering.'
                                 },
-                                dismissible: true,
+                                dismissalType: 'test-alert-dismissalType',
                             },
                         ],
                     }}
