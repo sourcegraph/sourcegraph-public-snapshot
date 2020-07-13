@@ -49,9 +49,17 @@ COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5f
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835 /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:server /bin/prom-wrapper /bin
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835 /usr/share/prometheus /usr/share/prometheus
+COPY --from=sourcegraph/prometheus:server /bin/alertmanager /bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /alertmanager.sh /alertmanager.sh
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /bin/prometheus /bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \

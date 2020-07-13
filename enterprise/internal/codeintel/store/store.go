@@ -5,10 +5,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
 // Store is the interface to Postgres for precise-code-intel features.
@@ -17,15 +16,6 @@ type Store interface {
 	// This method will return an error if the underlying store cannot be interface upgraded
 	// to a TxBeginner.
 	Transact(ctx context.Context) (Store, error)
-
-	// Savepoint creates a named position in the transaction from which all additional work
-	// can be discarded. The returned identifier can be passed to RollbackToSavepont to undo
-	// all the work since this call.
-	Savepoint(ctx context.Context) (string, error)
-
-	// RollbackToSavepoint throws away all the work on the underlying transaction since the
-	// savepoint with the given name was created.
-	RollbackToSavepoint(ctx context.Context, savepointID string) error
 
 	// Done commits underlying the transaction on a nil error value and performs a rollback
 	// otherwise. If an error occurs during commit or rollback of the transaction, the error
@@ -198,109 +188,71 @@ type Store interface {
 type GetTipCommitFunc func(ctx context.Context, repositoryID int) (string, error)
 
 type store struct {
-	db           dbutil.DB
-	savepointIDs []string
+	*basestore.Store
 }
 
 var _ Store = &store{}
 
 // New creates a new instance of store connected to the given Postgres DSN.
 func New(postgresDSN string) (Store, error) {
-	db, err := dbutil.NewDB(postgresDSN, "codeintel")
+	base, err := basestore.New(postgresDSN, "codeintel")
 	if err != nil {
 		return nil, err
 	}
 
-	return &store{db: db}, nil
+	return &store{Store: base}, nil
 }
 
-func NewWithHandle(db *sql.DB) Store {
-	return &store{db: db}
+func NewWithHandle(handle *basestore.TransactableHandle) Store {
+	return &store{Store: basestore.NewWithHandle(handle)}
+}
+
+func (s *store) With(other basestore.ShareableStore) Store {
+	return &store{Store: s.Store.With(other)}
+}
+
+func (s *store) Transact(ctx context.Context) (Store, error) {
+	return s.transact(ctx)
+}
+
+func (s *store) transact(ctx context.Context) (*store, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &store{Store: txBase}, err
 }
 
 // query performs QueryContext on the underlying connection.
 func (s *store) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	return s.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return s.Store.Query(ctx, query)
 }
 
 // queryForEffect performs a query and throws away the result.
 func (s *store) queryForEffect(ctx context.Context, query *sqlf.Query) error {
-	rows, err := s.query(ctx, query)
-	if err != nil {
-		return err
-	}
-	return closeRows(rows, nil)
+	return s.Store.Exec(ctx, query)
 }
 
 // scanStrings scans a slice of strings from the return value of `*store.query`.
 func scanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = closeRows(rows, err) }()
-
-	var values []string
-	for rows.Next() {
-		var value string
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
+	return basestore.ScanStrings(rows, queryErr)
 }
 
 // scanFirstString scans a slice of strings from the return value of `*store.query` and returns the first.
 func scanFirstString(rows *sql.Rows, err error) (string, bool, error) {
-	values, err := scanStrings(rows, err)
-	if err != nil || len(values) == 0 {
-		return "", false, err
-	}
-	return values[0], true, nil
+	return basestore.ScanFirstString(rows, err)
 }
 
 // scanInts scans a slice of ints from the return value of `*store.query`.
 func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = closeRows(rows, err) }()
-
-	var values []int
-	for rows.Next() {
-		var value int
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
+	return basestore.ScanInts(rows, queryErr)
 }
 
 // scanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
 func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
-	values, err := scanInts(rows, err)
-	if err != nil || len(values) == 0 {
-		return 0, false, err
-	}
-	return values[0], true, nil
+	return basestore.ScanFirstInt(rows, err)
 }
 
 // closeRows closes the rows object and checks its error value.
 func closeRows(rows *sql.Rows, err error) error {
-	if closeErr := rows.Close(); closeErr != nil {
-		err = multierror.Append(err, closeErr)
-	}
-
-	if rowsErr := rows.Err(); rowsErr != nil {
-		err = multierror.Append(err, rowsErr)
-	}
-
-	return err
+	return basestore.CloseRows(rows, err)
 }
 
 // intsToQueries converts a slice of ints into a slice of queries.

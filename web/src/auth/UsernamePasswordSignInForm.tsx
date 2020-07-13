@@ -118,15 +118,15 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                 password: this.state.password,
             }),
         })
-            .then(resp => {
-                if (resp.status === 200) {
+            .then(response => {
+                if (response.status === 200) {
                     if (new URLSearchParams(this.props.location.search).get('close') === 'true') {
                         window.close()
                     } else {
                         const returnTo = getReturnTo(this.props.location)
                         window.location.replace(returnTo)
                     }
-                } else if (resp.status === 401) {
+                } else if (response.status === 401) {
                     throw new Error('User or password was incorrect')
                 } else {
                     throw new Error('Unknown Error')

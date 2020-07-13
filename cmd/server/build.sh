@@ -88,10 +88,11 @@ else
   pushd monitoring && go generate && popd
 fi
 
-echo "--- prometheus config"
+echo "--- prometheus"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
 mkdir "$OUTPUT/sg_prometheus_add_ons"
 cp dev/prometheus/linux/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
+IMAGE=sourcegraph/prometheus:server CACHE=true docker-images/prometheus/build.sh
 
 echo "--- grafana config"
 cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"

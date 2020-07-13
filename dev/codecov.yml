@@ -25,10 +25,10 @@ coverage:
 comment:
   require_changes: yes
   layout: 'diff, flags, files'
-  # We upload at least 5 times in CI (to confirm: https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22https://codecov.io/bash%22&patternType=regexp)
+  # We upload at least 6 times in CI (to confirm: https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22https://codecov.io/bash%22&patternType=regexp)
   # Exceptions:
   # - PRs that only update docs, we don't need Codecov there.
   # - e2e tests, which don't run on most PRs.
-  after_n_builds: 5
+  after_n_builds: 6
 ignore:
   - '**/bindata.go'

@@ -201,13 +201,11 @@ type GetUploadsOptions struct {
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	if started {
-		defer func() { err = tx.Done(err) }()
-	}
+	defer func() { err = tx.Done(err) }()
 
 	var conds []*sqlf.Query
 
@@ -435,13 +433,11 @@ func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error
 // the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 // commit on the default branch when invoked.
 func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (_ bool, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
 	}
-	if started {
-		defer func() { err = tx.Done(err) }()
-	}
+	defer func() { err = tx.Done(err) }()
 
 	visibilities, err := scanVisibilities(tx.query(
 		ctx,

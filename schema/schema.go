@@ -631,54 +631,6 @@ type GitoliteConnection struct {
 	Prefix string `json:"prefix"`
 }
 
-// GrafanaNotifierOpsGenie description: OpsGenie notifier - see https://docs.opsgenie.com/docs/grafana-integration
-type GrafanaNotifierOpsGenie struct {
-	ApiKey    string `json:"apiKey"`
-	ApiUrl    string `json:"apiUrl"`
-	AutoClose bool   `json:"autoClose,omitempty"`
-	Type      string `json:"type"`
-}
-
-// GrafanaNotifierPagerduty description: Pagerduty notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#pagerduty
-type GrafanaNotifierPagerduty struct {
-	// AutoResolve description: Resolve incidents in PagerDuty once the alert goes back to ok
-	AutoResolve bool `json:"autoResolve,omitempty"`
-	// IntegrationKey description: Integration key for PagerDuty.
-	IntegrationKey string `json:"integrationKey"`
-	Type           string `json:"type"`
-}
-
-// GrafanaNotifierSlack description: Slack notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#slack
-type GrafanaNotifierSlack struct {
-	// Icon_emoji description: Provide an emoji to use as the icon for the bot’s message. Ex :smile:
-	Icon_emoji string `json:"icon_emoji,omitempty"`
-	// Icon_url description: Provide a URL to an image to use as the icon for the bot’s message.
-	Icon_url string `json:"icon_url,omitempty"`
-	// MentionChannel description: Optionally mention either all channel members or just active ones.
-	MentionChannel string `json:"mentionChannel,omitempty"`
-	// MentionGroups description: Optionally mention one or more groups in the Slack notification sent by Grafana. You have to refer to groups, comma-separated, via their corresponding Slack IDs (which you can get from each group’s Slack profile URL).
-	MentionGroups string `json:"mentionGroups,omitempty"`
-	// MentionUsers description: Optionally mention one or more users in the Slack notification sent by Grafana. You have to refer to users, comma-separated, via their corresponding Slack IDs (which you can find by clicking the overflow button on each user’s Slack profile).
-	MentionUsers string `json:"mentionUsers,omitempty"`
-	// Recipient description: Allows you to override the Slack recipient. You must either provide a channel Slack ID, a user Slack ID, a username reference (@<user>, all lowercase, no whitespace), or a channel reference (#<channel>, all lowercase, no whitespace).
-	Recipient string `json:"recipient,omitempty"`
-	// Token description: If provided, Grafana will upload the generated image via Slack’s file.upload API method, not the external image destination.
-	Token string `json:"token,omitempty"`
-	Type  string `json:"type"`
-	// Url description: Slack incoming webhook URL.
-	Url string `json:"url,omitempty"`
-	// Username description: Set the username for the bot’s message.
-	Username string `json:"username,omitempty"`
-}
-
-// GrafanaNotifierWebhook description: Webhook notifier - see https://grafana.com/docs/grafana/latest/alerting/notifications/#webhook
-type GrafanaNotifierWebhook struct {
-	Password string `json:"password,omitempty"`
-	Type     string `json:"type"`
-	Url      string `json:"url"`
-	Username string `json:"username,omitempty"`
-}
-
 // HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
 type HTTPHeaderAuthProvider struct {
 	// StripUsernameHeaderPrefix description: The prefix that precedes the username portion of the HTTP header specified in `usernameHeader`. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to `accounts.google.com:`.
@@ -739,10 +691,11 @@ type Notice struct {
 	Message string `json:"message"`
 }
 type Notifier struct {
-	Slack     *GrafanaNotifierSlack
-	Pagerduty *GrafanaNotifierPagerduty
-	Webhook   *GrafanaNotifierWebhook
-	Opsgenie  *GrafanaNotifierOpsGenie
+	Slack     *NotifierSlack
+	Pagerduty *NotifierPagerduty
+	Webhook   *NotifierWebhook
+	Email     *NotifierEmail
+	Opsgenie  *NotifierOpsGenie
 }
 
 func (v Notifier) MarshalJSON() ([]byte, error) {
@@ -754,6 +707,9 @@ func (v Notifier) MarshalJSON() ([]byte, error) {
 	}
 	if v.Webhook != nil {
 		return json.Marshal(v.Webhook)
+	}
+	if v.Email != nil {
+		return json.Marshal(v.Email)
 	}
 	if v.Opsgenie != nil {
 		return json.Marshal(v.Opsgenie)
@@ -768,6 +724,8 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "email":
+		return json.Unmarshal(data, &v.Email)
 	case "opsgenie":
 		return json.Unmarshal(data, &v.Opsgenie)
 	case "pagerduty":
@@ -777,9 +735,59 @@ func (v *Notifier) UnmarshalJSON(data []byte) error {
 	case "webhook":
 		return json.Unmarshal(data, &v.Webhook)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "opsgenie"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "webhook", "email", "opsgenie"})
 }
 
+// NotifierEmail description: Email notifier
+type NotifierEmail struct {
+	// Address description: Address to send email to
+	Address string `json:"address"`
+	Type    string `json:"type"`
+}
+
+// NotifierOpsGenie description: OpsGenie notifier
+type NotifierOpsGenie struct {
+	ApiKey   string `json:"apiKey"`
+	ApiUrl   string `json:"apiUrl"`
+	Priority string `json:"priority,omitempty"`
+	// Responders description: List of responders responsible for notifications.
+	Responders []*Responders `json:"responders,omitempty"`
+	Type       string        `json:"type"`
+}
+
+// NotifierPagerduty description: PagerDuty notifier
+type NotifierPagerduty struct {
+	ApiUrl string `json:"apiUrl,omitempty"`
+	// IntegrationKey description: Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview
+	IntegrationKey string `json:"integrationKey,omitempty"`
+	// Severity description: Severity level for PagerDuty alert
+	Severity string `json:"severity,omitempty"`
+	Type     string `json:"type"`
+}
+
+// NotifierSlack description: Slack notifier
+type NotifierSlack struct {
+	// Icon_emoji description: Provide an emoji to use as the icon for the bot’s message. Ex :smile:
+	Icon_emoji string `json:"icon_emoji,omitempty"`
+	// Icon_url description: Provide a URL to an image to use as the icon for the bot’s message.
+	Icon_url string `json:"icon_url,omitempty"`
+	// Recipient description: Allows you to override the Slack recipient. You must either provide a channel Slack ID, a user Slack ID, a username reference (@<user>, all lowercase, no whitespace), or a channel reference (#<channel>, all lowercase, no whitespace).
+	Recipient string `json:"recipient,omitempty"`
+	Type      string `json:"type"`
+	// Url description: Slack incoming webhook URL.
+	Url string `json:"url,omitempty"`
+	// Username description: Set the username for the bot’s message.
+	Username string `json:"username,omitempty"`
+}
+
+// NotifierWebhook description: Webhook notifier
+type NotifierWebhook struct {
+	BearerToken string `json:"bearerToken,omitempty"`
+	Password    string `json:"password,omitempty"`
+	Type        string `json:"type"`
+	Url         string `json:"url"`
+	Username    string `json:"username,omitempty"`
+}
 type OAuthIdentity struct {
 	// MaxBatchRequests description: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
@@ -788,8 +796,8 @@ type OAuthIdentity struct {
 	Type                 string `json:"type"`
 }
 type ObservabilityAlerts struct {
-	// Id description: Unique identifier for this alert.
-	Id string `json:"id"`
+	// DisableSendResolved description: Disable notifications when alerts resolve themselves.
+	DisableSendResolved bool `json:"disableSendResolved,omitempty"`
 	// Level description: Sourcegraph alert level to subscribe to notifications for.
 	Level    string   `json:"level"`
 	Notifier Notifier `json:"notifier"`
@@ -887,6 +895,12 @@ type Repos struct {
 	// Path description: Display path for the url e.g. gitolite/my/repo
 	Path string `json:"path"`
 }
+type Responders struct {
+	Id       string `json:"id,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Type     string `json:"type,omitempty"`
+	Username string `json:"username,omitempty"`
+}
 
 // SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
 //
@@ -918,11 +932,13 @@ type SAMLAuthProvider struct {
 type SMTPServerConfig struct {
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
+	// DisableTLS description: Disable TLS verification - only compatible with observability.alerts today, see https://github.com/sourcegraph/sourcegraph/issues/10702
+	DisableTLS bool `json:"disableTLS,omitempty"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
 	Domain string `json:"domain,omitempty"`
 	// Host description: The SMTP server host.
 	Host string `json:"host"`
-	// Password description: The username to use when communicating with the SMTP server.
+	// Password description: The password to use when communicating with the SMTP server.
 	Password string `json:"password,omitempty"`
 	// Port description: The SMTP server port.
 	Port int `json:"port"`
@@ -964,6 +980,8 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
+	// AlertsHideObservabilitySiteAlerts description: Disables observability-related site alert banners.
+	AlertsHideObservabilitySiteAlerts bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).

@@ -55,6 +55,93 @@ func TestExistsBadResponse(t *testing.T) {
 	}
 }
 
+func TestRanges(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assertRequest(t, r, "GET", "/dbs/42/ranges", map[string]string{
+			"path":      "main.go",
+			"startLine": "15",
+			"endLine":   "20",
+		})
+
+		_, _ = w.Write([]byte(`[
+			{
+				"range": {"start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}},
+				"definitions": [],
+				"references": [],
+				"hoverText": ""
+			},
+			{
+				"range": {"start": {"line": 2, "character": 3}, "end": {"line": 4, "character": 5}},
+				"definitions": [{"path": "foo.go", "range": {"start": {"line": 10, "character": 20}, "end": {"line": 30, "character": 40}}}],
+				"references": [{"path": "bar.go", "range": {"start": {"line": 100, "character": 200}, "end": {"line": 300, "character": 400}}}],
+				"hoverText": "ht2"
+			},
+			{
+				"range": {"start": {"line": 3, "character": 4}, "end": {"line": 5, "character": 6}},
+				"definitions": [{"path": "bar.go", "range": {"start": {"line": 11, "character": 21}, "end": {"line": 31, "character": 41}}}],
+				"references": [{"path": "foo.go", "range": {"start": {"line": 101, "character": 201}, "end": {"line": 301, "character": 401}}}],
+				"hoverText": "ht3"
+			}
+		]`))
+	}))
+	defer ts.Close()
+
+	expected := []CodeIntelligenceRange{
+		{
+			Range:       Range{Start: Position{1, 2}, End: Position{3, 4}},
+			Definitions: []Location{},
+			References:  []Location{},
+			HoverText:   "",
+		},
+		{
+			Range:       Range{Start: Position{2, 3}, End: Position{4, 5}},
+			Definitions: []Location{{Path: "foo.go", Range: Range{Start: Position{10, 20}, End: Position{30, 40}}}},
+			References:  []Location{{Path: "bar.go", Range: Range{Start: Position{100, 200}, End: Position{300, 400}}}},
+			HoverText:   "ht2",
+		},
+		{
+			Range:       Range{Start: Position{3, 4}, End: Position{5, 6}},
+			Definitions: []Location{{Path: "bar.go", Range: Range{Start: Position{11, 21}, End: Position{31, 41}}}},
+			References:  []Location{{Path: "foo.go", Range: Range{Start: Position{101, 201}, End: Position{301, 401}}}},
+			HoverText:   "ht3",
+		},
+	}
+
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
+	ranges, err := client.Ranges(context.Background(), "main.go", 15, 20)
+	if err != nil {
+		t.Fatalf("unexpected error querying ranges: %s", err)
+	} else if diff := cmp.Diff(expected, ranges); diff != "" {
+		t.Errorf("unexpected ranges (-want +got):\n%s", diff)
+	}
+}
+
+func TestRangesNotFound(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
+	_, err := client.Ranges(context.Background(), "main.go", 15, 20)
+	if err != ErrNotFound {
+		t.Fatalf("unexpected error. want=%q have=%q", ErrNotFound, err)
+	}
+}
+
+func TestRangesBadResponse(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
+	_, err := client.Ranges(context.Background(), "main.go", 15, 20)
+	if err == nil {
+		t.Fatalf("unexpected nil error querying ranges")
+	}
+}
+
 func TestDefinitions(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertRequest(t, r, "GET", "/dbs/42/definitions", map[string]string{

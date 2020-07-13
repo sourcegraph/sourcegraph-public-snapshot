@@ -532,54 +532,6 @@ func TestDequeueConversionError(t *testing.T) {
 	}
 }
 
-func TestDequeueWithSavepointRollback(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Add dequeueable upload
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued", Indexer: "lsif-go"})
-
-	ctx := context.Background()
-	upload, tx, ok, err := store.Dequeue(ctx, 0)
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing upload: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-
-	savepointID, err := tx.Savepoint(ctx)
-	if err != nil {
-		t.Fatalf("unexpected error creating savepoint: %s", err)
-	}
-
-	// alter record in the underlying transacted store
-	if err := unwrapStore(tx).queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
-		t.Fatalf("unexpected error altering record: %s", err)
-	}
-
-	// undo alteration
-	if err := tx.RollbackToSavepoint(ctx, savepointID); err != nil {
-		t.Fatalf("unexpected error rolling back to savepoint: %s", err)
-	}
-
-	if err := tx.MarkComplete(ctx, upload.ID); err != nil {
-		t.Fatalf("unexpected error marking upload complete: %s", err)
-	}
-	if err := tx.Done(nil); err != nil {
-		t.Fatalf("unexpected error closing transaction: %s", err)
-	}
-
-	if indexerName, _, err := scanFirstString(dbconn.Global.Query("SELECT indexer FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting indexer: %s", err)
-	} else if indexerName != "lsif-go" {
-		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "lsif-go", indexerName)
-	}
-}
-
 func TestDequeueSkipsLocked(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
