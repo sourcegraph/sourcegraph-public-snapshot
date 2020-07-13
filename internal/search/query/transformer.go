@@ -42,18 +42,17 @@ func LowercaseFieldNames(nodes []Node) []Node {
 // translateRange translates character classes and ranges
 func translateRange(r []rune, ix int) (int, string) {
 	sb := strings.Builder{}
-	ix += 1
 
-	// the first character of range or character set is special
-	// because
+	// the first character of a range or character set
+	// is special because
 	//   * ranges or character sets cannot be empty
 	//   * we have to translate negation from ^ to !
 	if r[ix] == '^' {
 		sb.WriteRune('!')
 	} else {
-		// character sets or ranges cannot be empty: this means
-		// a [ followed direclty by a ] means ] has to be interpreted
-		// literally.
+		// since character sets cannot be empty,
+		// a [ followed direclty by a ] means ] has to
+		// be interpreted literally.
 		sb.WriteRune(r[ix])
 	}
 	ix += 1
@@ -62,13 +61,7 @@ func translateRange(r []rune, ix int) (int, string) {
 		ix += 1
 	}
 
-	return len(sb.String()) + 1, sb.String()
-
-	// if ix == len(r) {
-	// unmatched [
-	// return 0, "["
-	// } else {
-	// }
+	return len(sb.String()), sb.String()
 }
 
 // translateGlobToRegex converts a globbing string to a regex
@@ -100,10 +93,12 @@ func translateGlobToRegex(value string) string {
 			i += 1
 			sb.WriteRune(r[i])
 		case '[':
+			sb.WriteRune('[')
+			i += 1
+
 			advanced, s := translateRange(r, i)
 			i += advanced
 
-			sb.WriteRune('[')
 			sb.WriteString(s)
 			sb.WriteRune(']')
 		default:
