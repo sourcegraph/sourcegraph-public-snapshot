@@ -121,9 +121,7 @@ func isValidRegexp(value string) bool {
 }
 
 // globToRegex substitutes glob with regexp for fields supporting regexp
-// the value is left unchanged if
-// * is a valid regexp
-// * the translated value is not a valid regexp
+// the value is left unchanged if the translated value is not a valid regexp
 func globToRegex(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
