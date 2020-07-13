@@ -136,13 +136,11 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 }
 
-// Adds the Go test step. The runAcc parameter indicates whether to generate accurate
-// code coverage for these Go tests.
+// Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"),
-	)
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"))
 }
 
 // Builds the OSS and Enterprise Go commands.
