@@ -10,16 +10,9 @@ import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/Hover
 
 // Components from shared with web-styling class names applied
 
-interface WebHoverOverlayState {}
-export class WebHoverOverlay extends React.PureComponent<HoverOverlayProps, WebHoverOverlayState> {
-    constructor(props: HoverOverlayProps) {
-        super(props)
-    }
-
+export class WebHoverOverlay extends React.PureComponent<HoverOverlayProps, {}> {
     public render(): JSX.Element | null {
-        console.log(this.alertStorageKey('hi'))
-        const filteredAlerts = (this.props.hoverOrError?.alerts || []).filter((alert) => localStorage.getItem(this.alertStorageKey(alert.dismissalType)) !== 'true')
-        console.log(this.props.hoverOrError?.alerts || [], filteredAlerts)
+        const filteredAlerts = (this.props.hoverOrError?.alerts || []).filter(alert => localStorage.getItem(this.alertStorageKey(alert.dismissalType)) !== 'true')
         const props = this.props.hoverOrError?.alerts ? {...this.props, hoverOrError: {...this.props.hoverOrError, alerts: filteredAlerts}} : this.props
 
         return <HoverOverlay
@@ -35,10 +28,9 @@ export class WebHoverOverlay extends React.PureComponent<HoverOverlayProps, WebH
     }
 
     private onAlertDismissedCallback(): (alertType: string) => void {
-        const thisClass = this;
         return alertType => {
             localStorage.setItem(this.alertStorageKey(alertType), 'true')
-            thisClass.forceUpdate()
+            this.forceUpdate()
         }
     }
 
