@@ -1259,15 +1259,11 @@ declare module 'sourcegraph' {
         summary: MarkupContent
 
         /**
-         * Whether the alert is dismissible.
+         * When an alert has a dismissal type, dismissing it will prevent all alerts
+         * of that type from being shown. If no type is provided, the alert is not
+         * dismissible.
          */
-        dismissible: bool
-
-        /**
-         * When a dismissible alert has a type, dismissing it will prevent all alerts
-         * of that type from being shown.
-         */
-        type?: string
+        dismissalType?: string
     }
 
     export interface Link {
