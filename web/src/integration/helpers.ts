@@ -9,7 +9,7 @@ import { Polly } from '@pollyjs/core'
 import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../../shared/src/graphql/graphql'
-
+import MockDate from 'mockdate'
 import { first, timeoutWith } from 'rxjs/operators'
 import * as path from 'path'
 import * as util from 'util'
@@ -18,10 +18,11 @@ import * as prettier from 'prettier'
 import html from 'tagged-template-noop'
 import { createJsContext } from './jscontext'
 import { SourcegraphContext } from '../jscontext'
-import { WebGQLOperations } from '../gql-operations'
-import { SharedGQLOperations } from '../../../shared/src/gql-operations'
+import { WebGraphQlOperations } from '../graphql-operations'
+import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 import { keyExistsIn } from '../../../shared/src/util/types'
 import { IGraphQLResponseError } from '../../../shared/src/graphql/schema'
+import { getConfig } from '../../../shared/src/testing/config'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -39,19 +40,15 @@ type IntegrationTestInitGeneration = () => Promise<{
     subscriptions?: Subscription
 }>
 
-// type PotentialOverrides<T> = Partial<
-//     { [K in keyof T]: T[K] extends (input: any) => infer Result ? Result | StubbedErrorResponse : never }
-// >
-type PotentialOverrides<T> = Partial<T>
-
-export class IntegrationTestGqlError extends Error {
+export class IntegrationTestGraphQlError extends Error {
     constructor(public errors: IGraphQLResponseError[]) {
         super('graphql error for integration tests')
     }
 }
 
-type AllGQLOperations = WebGQLOperations & SharedGQLOperations
-export type GraphQLOverrides = PotentialOverrides<AllGQLOperations>
+type AllGraphQlOperations = WebGraphQlOperations & SharedGraphQlOperations
+type GraphQLOperationName = keyof AllGraphQlOperations & string
+export type GraphQLOverrides = Partial<AllGraphQlOperations>
 
 interface TestContext {
     sourcegraphBaseUrl: string
@@ -74,13 +71,13 @@ interface TestContext {
      * If the query does not happen within a few seconds, it throws a timeout error.
      *
      * @param triggerRequest A callback called to trigger the request (e.g. clicking a button). The request MUST be triggered within this callback.
-     * @param queryName The name of the query to wait for.
+     * @param operationName The name of the query to wait for.
      * @returns The GraphQL variables of the query.
      */
-    waitForGraphQLRequest: <Operation extends keyof AllGQLOperations & string>(
+    waitForGraphQLRequest: <O extends GraphQLOperationName>(
         triggerRequest: () => Promise<void> | void,
-        queryName: Operation
-    ) => Promise<AllGQLOperations[Operation] extends (input: infer InputVariables) => any ? InputVariables : never>
+        operationName: O
+    ) => Promise<Parameters<AllGraphQlOperations[O]>[0]>
 }
 
 type TestBody = (context: TestContext) => Promise<void>
@@ -184,43 +181,52 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 server.get(new URL('/.assets/*path', sourcegraphBaseUrl).href).passthrough()
 
                 // GraphQL requests are not handled by HARs, but configured per-test.
+                interface GraphQLRequestEvent<O extends GraphQLOperationName> {
+                    operationName: O
+                    variables: Parameters<AllGraphQlOperations[O]>[0]
+                }
                 let graphQlOverrides: GraphQLOverrides = commonGraphQlResults
-                const graphQlRequests = new Subject<{ queryName: string; variables: unknown }>()
+                const graphQlRequests = new Subject<GraphQLRequestEvent<GraphQLOperationName>>()
                 server.post(new URL('/.api/graphql', sourcegraphBaseUrl).href).intercept((request, response) => {
-                    const queryName = new URL(request.absoluteUrl).search.slice(1)
-                    const { variables, query } = request.jsonBody() as { query: string; variables: object }
-                    graphQlRequests.next({ queryName, variables })
-                    if (!graphQlOverrides || !keyExistsIn(queryName, graphQlOverrides)) {
+                    // False positive
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                    const operationName = new URL(request.absoluteUrl).search.slice(1) as GraphQLOperationName
+                    const { variables, query } = request.jsonBody() as {
+                        query: string
+                        variables: Parameters<AllGraphQlOperations[GraphQLOperationName]>[0]
+                    }
+                    graphQlRequests.next({ operationName, variables })
+
+                    const missingOverrideError = (): Error => {
                         const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
                         const formattedVariables = util.inspect(variables)
                         const error = new Error(
-                            `GraphQL query "${queryName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${queryName}" query:\n${formattedVariables} ⤵️\n${formattedQuery}`
+                            `GraphQL query "${operationName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${operationName}" query:\n${formattedVariables} ⤵️\n${formattedQuery}`
                         )
                         // Make test fail
                         errors.error(error)
-                        throw error
+                        return error
                     }
-                    const handler = graphQlOverrides[queryName]
-
-                    if (handler === undefined) {
-                        throw new Error('we technically check that above, so this error to make ts happy')
+                    if (!graphQlOverrides || !keyExistsIn(operationName, graphQlOverrides)) {
+                        throw missingOverrideError()
+                    }
+                    const handler = graphQlOverrides[operationName]
+                    if (!handler) {
+                        throw missingOverrideError()
                     }
 
                     try {
                         const result = handler(variables as any)
-                        const gqlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
-                        response.json(gqlResult)
+                        const graphQlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
+                        response.json(graphQlResult)
                     } catch (error) {
-                        if (!(error instanceof IntegrationTestGqlError)) {
-                            const error = new Error(
-                                `GraphQL query "${queryName}" threw an exception but it was not IntegrationTestGqlError, please use 'throw new IntegrationTestGqlError()' instead`
-                            )
+                        if (!(error instanceof IntegrationTestGraphQlError)) {
                             errors.error(error)
                             throw error
                         }
 
-                        const gqlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
-                        response.json(gqlError)
+                        const graphQlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
+                        response.json(graphQlError)
                     }
                 })
 
@@ -267,20 +273,29 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                             overrideJsContext: override => {
                                 jsContext = override
                             },
-                            waitForGraphQLRequest: async (triggerRequest, queryName) => {
+                            waitForGraphQLRequest: async <O extends GraphQLOperationName>(
+                                triggerRequest: () => Promise<void> | void,
+                                operationName: O
+                            ): Promise<Parameters<AllGraphQlOperations[O]>[0]> => {
                                 const requestPromise = graphQlRequests
                                     .pipe(
-                                        first(request => request.queryName === queryName),
+                                        first(
+                                            (
+                                                request: GraphQLRequestEvent<GraphQLOperationName>
+                                            ): request is GraphQLRequestEvent<O> =>
+                                                request.operationName === operationName
+                                        ),
                                         timeoutWith(
                                             4000,
-                                            throwError(new Error(`Timeout waiting for GraphQL request "${queryName}"`))
+                                            throwError(
+                                                new Error(`Timeout waiting for GraphQL request "${operationName}"`)
+                                            )
                                         )
                                     )
                                     .toPromise()
                                 await triggerRequest()
                                 const { variables } = await requestPromise
-                                // trust type system to infer the right shape based on the usage
-                                return variables as ReturnType<TestContext['waitForGraphQLRequest']>
+                                return variables
                             },
                         }),
                     ])
@@ -319,7 +334,21 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 })
             })
         }
-        let initGenerationCallback: IntegrationTestInitGeneration | null = null
+        let initGenerationCallback: IntegrationTestInitGeneration = async () => {
+            // Reset date mocking
+            MockDate.reset()
+            const { sourcegraphBaseUrl, headless, slowMo } = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo')
+
+            // Start browser
+            const driver = await createDriverForTest({
+                sourcegraphBaseUrl,
+                logBrowserConsole: true,
+                headless,
+                slowMo,
+            })
+            return { driver, sourcegraphBaseUrl }
+        }
+
         const initGeneration = (logic: IntegrationTestInitGeneration): void => {
             initGenerationCallback = logic
         }

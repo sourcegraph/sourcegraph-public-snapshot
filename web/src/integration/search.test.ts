@@ -1,12 +1,9 @@
-import { createDriverForTest } from '../../../shared/src/testing/driver'
-import MockDate from 'mockdate'
-import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import expect from 'expect'
 import { describeIntegration } from './helpers'
 import { commonGraphQlResults } from './graphQlResults'
-import { ILanguage, IRepository, ISearchResultMatch } from '../../../shared/src/graphql/schema'
-import { SearchResult } from '../gql-operations'
+import { ILanguage, IRepository } from '../../../shared/src/graphql/schema'
+import { SearchResult } from '../graphql-operations'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -15,10 +12,10 @@ const searchResults = (): SearchResult => ({
             limitHit: true,
             matchCount: 30,
             approximateResultCount: '30+',
-            missing: [] as IRepository[],
-            cloning: [] as IRepository[],
+            missing: [],
+            cloning: [],
             repositoriesCount: 372,
-            timedout: [] as IRepository[],
+            timedout: [],
             indexUnavailable: false,
             dynamicFilters: [
                 {
@@ -56,7 +53,7 @@ const searchResults = (): SearchResult => ({
                     icon:
                         'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K',
                     detail: { html: '\u003Cp\u003ERepository name match\u003C/p\u003E\n' },
-                    matches: [] as ISearchResultMatch[],
+                    matches: [],
                 },
             ],
             alert: null,
@@ -65,28 +62,7 @@ const searchResults = (): SearchResult => ({
     },
 })
 
-describeIntegration('Search', ({ initGeneration, describe }) => {
-    initGeneration(async () => {
-        // Reset date mocking
-        MockDate.reset()
-        const { sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
-            'sourcegraphBaseUrl',
-            'headless',
-            'slowMo',
-            'testUserPassword'
-        )
-
-        // Start browser
-        const driver = await createDriverForTest({
-            sourcegraphBaseUrl,
-            logBrowserConsole: true,
-            headless,
-            slowMo,
-        })
-        await driver.ensureLoggedIn({ username: 'test', password: testUserPassword, email: 'test@test.com' })
-        return { driver, sourcegraphBaseUrl }
-    })
-
+describeIntegration('Search', ({ describe }) => {
     describe('Interactive search mode', ({ test }) => {
         test('Search mode component appears', async ({ sourcegraphBaseUrl, driver }) => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
@@ -102,6 +78,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
                 SearchSuggestions: () => ({
                     search: {
                         suggestions: [
+                            // TODO the type generation is not correct for this query which causes the need for these casts
                             { __typename: 'Language' } as ILanguage,
                             { __typename: 'Repository', name: 'github.com/gorilla/mux' } as IRepository,
                             { __typename: 'Repository', name: 'github.com/gorilla/css' } as IRepository,

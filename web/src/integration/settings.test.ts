@@ -1,34 +1,9 @@
-import { createDriverForTest } from '../../../shared/src/testing/driver'
-import MockDate from 'mockdate'
-import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
-import { IOrgConnection, IUserEmail, IOrg } from '../../../shared/src/graphql/schema'
 import { describeIntegration } from './helpers'
 import { retry } from '../../../shared/src/testing/utils'
 import { commonGraphQlResults, testUserID, settingsID } from './graphQlResults'
 
-describeIntegration('Settings', ({ initGeneration, describe }) => {
-    initGeneration(async () => {
-        // Reset date mocking
-        MockDate.reset()
-        const { sourcegraphBaseUrl, headless, slowMo, testUserPassword } = getConfig(
-            'sourcegraphBaseUrl',
-            'headless',
-            'slowMo',
-            'testUserPassword'
-        )
-
-        // Start browser
-        const driver = await createDriverForTest({
-            sourcegraphBaseUrl,
-            logBrowserConsole: true,
-            headless,
-            slowMo,
-        })
-        await driver.ensureLoggedIn({ username: 'test', password: testUserPassword, email: 'test@test.com' })
-        return { driver, sourcegraphBaseUrl }
-    })
-
+describeIntegration('Settings', ({ describe }) => {
     describe('User settings page', ({ it }) => {
         it('updates user settings', async ({ driver, sourcegraphBaseUrl, overrideGraphQL, waitForGraphQLRequest }) => {
             overrideGraphQL({
@@ -69,8 +44,8 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
                         siteAdmin: true,
                         builtinAuth: true,
                         createdAt: '2020-03-02T11:52:15Z',
-                        emails: [{ email: 'test@sourcegraph.test', verified: true } as IUserEmail],
-                        organizations: { nodes: [] as IOrg[] } as IOrgConnection,
+                        emails: [{ email: 'test@sourcegraph.test', verified: true }],
+                        organizations: { nodes: [] },
                         permissionsInfo: null,
                     },
                 }),
