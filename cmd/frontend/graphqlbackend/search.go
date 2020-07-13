@@ -69,7 +69,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
+func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
@@ -133,8 +133,8 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}, nil
 }
 
-func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(args)
+func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
+	return NewSearchImplementer(ctx, args)
 }
 
 // queryForStableResults transforms a query that returns a stable result
