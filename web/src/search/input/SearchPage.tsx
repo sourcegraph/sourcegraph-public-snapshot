@@ -194,7 +194,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         to={`/search?q=lang:${language.filterName}`}
                                         key={language.name}
                                     >
-                                        {language.name}
+                                        {language.filterName}
                                     </Link>
                                 ))}
                             </div>
@@ -227,7 +227,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <p>type:diff or type:commit</p>
                                     </dd>
                                     <dd className="text-monospace">
-                                        <p>after:”2 weeks ago”</p>
+                                        <p>after:"2 weeks ago"</p>
                                     </dd>
                                     <dd className="text-monospace">
                                         <p>author:alice@example.com</p>

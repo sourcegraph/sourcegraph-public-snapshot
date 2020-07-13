@@ -2,7 +2,7 @@ import { createDriverForTest } from '../../../shared/src/testing/driver'
 import MockDate from 'mockdate'
 import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
-import { IQuery, IOrgConnection, IUserEmail, IOrg, IMutation } from '../../../shared/src/graphql/schema'
+import { IOrgConnection, IUserEmail, IOrg } from '../../../shared/src/graphql/schema'
 import { describeIntegration } from './helpers'
 import { retry } from '../../../shared/src/testing/utils'
 import { commonGraphQlResults, testUserID, settingsID } from './graphQlResults'
@@ -33,56 +33,47 @@ describeIntegration('Settings', ({ initGeneration, describe }) => {
         it('updates user settings', async ({ driver, sourcegraphBaseUrl, overrideGraphQL, waitForGraphQLRequest }) => {
             overrideGraphQL({
                 ...commonGraphQlResults,
-                SettingsCascade: {
-                    data: {
-                        settingsSubject: {
-                            settingsCascade: {
-                                subjects: [
-                                    {
-                                        latestSettings: {
-                                            id: settingsID,
-                                            contents: JSON.stringify({}),
-                                        },
+                SettingsCascade: () => ({
+                    settingsSubject: {
+                        settingsCascade: {
+                            subjects: [
+                                {
+                                    latestSettings: {
+                                        id: settingsID,
+                                        contents: JSON.stringify({}),
                                     },
-                                ],
-                            },
-                        },
-                    } as IQuery,
-                    errors: undefined,
-                },
-                OverwriteSettings: {
-                    data: {
-                        settingsMutation: {
-                            overwriteSettings: {
-                                empty: {
-                                    alwaysNil: null,
                                 },
+                            ],
+                        },
+                    },
+                }),
+                OverwriteSettings: () => ({
+                    settingsMutation: {
+                        overwriteSettings: {
+                            empty: {
+                                alwaysNil: null,
                             },
                         },
-                    } as IMutation,
-                    errors: undefined,
-                },
-                User: {
-                    data: {
-                        user: {
-                            __typename: 'User',
-                            id: testUserID,
-                            username: 'test',
-                            displayName: null,
-                            url: '/users/test',
-                            settingsURL: '/users/test/settings',
-                            avatarURL: null,
-                            viewerCanAdminister: true,
-                            siteAdmin: true,
-                            builtinAuth: true,
-                            createdAt: '2020-03-02T11:52:15Z',
-                            emails: [{ email: 'test@sourcegraph.test', verified: true } as IUserEmail],
-                            organizations: { nodes: [] as IOrg[] } as IOrgConnection,
-                            permissionsInfo: null,
-                        },
-                    } as IQuery,
-                    errors: undefined,
-                },
+                    },
+                }),
+                User: () => ({
+                    user: {
+                        __typename: 'User',
+                        id: testUserID,
+                        username: 'test',
+                        displayName: null,
+                        url: '/users/test',
+                        settingsURL: '/users/test/settings',
+                        avatarURL: null,
+                        viewerCanAdminister: true,
+                        siteAdmin: true,
+                        builtinAuth: true,
+                        createdAt: '2020-03-02T11:52:15Z',
+                        emails: [{ email: 'test@sourcegraph.test', verified: true } as IUserEmail],
+                        organizations: { nodes: [] as IOrg[] } as IOrgConnection,
+                        permissionsInfo: null,
+                    },
+                }),
             })
 
             const getSettingsEditorContent = async (): Promise<string | null | undefined> => {

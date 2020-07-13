@@ -23,7 +23,7 @@ import { ErrorAlert } from '../../../components/alerts'
 function queryUser(user: GQL.ID): Observable<GQL.IUser> {
     return queryGraphQL(
         gql`
-            query User($user: ID!) {
+            query UserForProfilePage($user: ID!) {
                 node(id: $user) {
                     ... on User {
                         id

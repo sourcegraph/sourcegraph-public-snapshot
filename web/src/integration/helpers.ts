@@ -2,18 +2,26 @@ import { describe as mochaDescribe, test as mochaTest, before as mochaBefore } f
 import { Subscription, Subject, throwError } from 'rxjs'
 import { snakeCase } from 'lodash'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { recordCoverage } from '../../../shared/src/testing/coverage'
 import mkdirp from 'mkdirp-promise'
 import express from 'express'
 import { Polly } from '@pollyjs/core'
 import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
+
 import { first, timeoutWith } from 'rxjs/operators'
 import * as path from 'path'
 import * as util from 'util'
 import { commonGraphQlResults } from './graphQlResults'
 import * as prettier from 'prettier'
+import html from 'tagged-template-noop'
+import { createJsContext } from './jscontext'
+import { SourcegraphContext } from '../jscontext'
+import { WebGQLOperations } from '../gql-operations'
+import { SharedGQLOperations } from '../../../shared/src/gql-operations'
+import { keyExistsIn } from '../../../shared/src/util/types'
+import { IGraphQLResponseError } from '../../../shared/src/graphql/schema'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -31,7 +39,19 @@ type IntegrationTestInitGeneration = () => Promise<{
     subscriptions?: Subscription
 }>
 
-export type GraphQLOverrides = Record<string, SuccessGraphQLResult<IQuery | IMutation> | ErrorGraphQLResult>
+// type PotentialOverrides<T> = Partial<
+//     { [K in keyof T]: T[K] extends (input: any) => infer Result ? Result | StubbedErrorResponse : never }
+// >
+type PotentialOverrides<T> = Partial<T>
+
+export class IntegrationTestGqlError extends Error {
+    constructor(public errors: IGraphQLResponseError[]) {
+        super('graphql error for integration tests')
+    }
+}
+
+type AllGQLOperations = WebGQLOperations & SharedGQLOperations
+export type GraphQLOverrides = PotentialOverrides<AllGQLOperations>
 
 interface TestContext {
     sourcegraphBaseUrl: string
@@ -45,6 +65,11 @@ interface TestContext {
     overrideGraphQL: (overrides: GraphQLOverrides) => void
 
     /**
+     * Overrides `window.context` from the default created by `createJsContext()`.
+     */
+    overrideJsContext: (jsContext: SourcegraphContext) => void
+
+    /**
      * Waits for a specific GraphQL query to happen and returns the variables passed to the request.
      * If the query does not happen within a few seconds, it throws a timeout error.
      *
@@ -52,7 +77,10 @@ interface TestContext {
      * @param queryName The name of the query to wait for.
      * @returns The GraphQL variables of the query.
      */
-    waitForGraphQLRequest: (triggerRequest: () => Promise<void> | void, queryName: string) => Promise<unknown>
+    waitForGraphQLRequest: <Operation extends keyof AllGQLOperations & string>(
+        triggerRequest: () => Promise<void> | void,
+        queryName: Operation
+    ) => Promise<AllGQLOperations[Operation] extends (input: infer InputVariables) => any ? InputVariables : never>
 }
 
 type TestBody = (context: TestContext) => Promise<void>
@@ -150,18 +178,19 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                     logging: false,
                 })
                 const { server } = polly
-                server.get('/.assets/*path').passthrough()
 
                 const errors = new Subject<never>()
+
+                server.get(new URL('/.assets/*path', sourcegraphBaseUrl).href).passthrough()
 
                 // GraphQL requests are not handled by HARs, but configured per-test.
                 let graphQlOverrides: GraphQLOverrides = commonGraphQlResults
                 const graphQlRequests = new Subject<{ queryName: string; variables: unknown }>()
                 server.post(new URL('/.api/graphql', sourcegraphBaseUrl).href).intercept((request, response) => {
                     const queryName = new URL(request.absoluteUrl).search.slice(1)
-                    const { variables, query } = request.jsonBody() as { query: string; variables: string }
+                    const { variables, query } = request.jsonBody() as { query: string; variables: object }
                     graphQlRequests.next({ queryName, variables })
-                    if (!graphQlOverrides || !Object.prototype.hasOwnProperty.call(graphQlOverrides, queryName)) {
+                    if (!graphQlOverrides || !keyExistsIn(queryName, graphQlOverrides)) {
                         const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
                         const formattedVariables = util.inspect(variables)
                         const error = new Error(
@@ -171,8 +200,47 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                         errors.error(error)
                         throw error
                     }
-                    const result = graphQlOverrides[queryName]
-                    response.json(result)
+                    const handler = graphQlOverrides[queryName]
+
+                    if (handler === undefined) {
+                        throw new Error('we technically check that above, so this error to make ts happy')
+                    }
+
+                    try {
+                        const result = handler(variables as any)
+                        const gqlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
+                        response.json(gqlResult)
+                    } catch (error) {
+                        if (!(error instanceof IntegrationTestGqlError)) {
+                            const error = new Error(
+                                `GraphQL query "${queryName}" threw an exception but it was not IntegrationTestGqlError, please use 'throw new IntegrationTestGqlError()' instead`
+                            )
+                            errors.error(error)
+                            throw error
+                        }
+
+                        const gqlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
+                        response.json(gqlError)
+                    }
+                })
+
+                // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
+                let jsContext = createJsContext({ sourcegraphBaseUrl })
+                server.get(new URL('/*path', sourcegraphBaseUrl).href).intercept((request, response) => {
+                    response.type('text/html').send(html`
+                        <html>
+                            <head>
+                                <title>Sourcegraph Test</title>
+                            </head>
+                            <body>
+                                <div id="root"></div>
+                                <script>
+                                    window.context = ${JSON.stringify(jsContext)}
+                                </script>
+                                <script src="/.assets/scripts/app.bundle.js"></script>
+                            </body>
+                        </html>
+                    `)
                 })
 
                 // Filter out 'server' header filled in by Caddy before persisting responses,
@@ -196,6 +264,9 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                             overrideGraphQL: overrides => {
                                 graphQlOverrides = overrides
                             },
+                            overrideJsContext: override => {
+                                jsContext = override
+                            },
                             waitForGraphQLRequest: async (triggerRequest, queryName) => {
                                 const requestPromise = graphQlRequests
                                     .pipe(
@@ -208,12 +279,14 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                                     .toPromise()
                                 await triggerRequest()
                                 const { variables } = await requestPromise
-                                return variables
+                                // trust type system to infer the right shape based on the usage
+                                return variables as ReturnType<TestContext['waitForGraphQLRequest']>
                             },
                         }),
                     ])
                 } finally {
                     await polly.stop()
+                    await recordCoverage(driver.browser)
                     await driver.page.close()
                 }
             }

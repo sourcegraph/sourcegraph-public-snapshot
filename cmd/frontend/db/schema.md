@@ -359,6 +359,7 @@ Check constraints:
  precise_count          | integer                  | not null default 0
  last_index_enqueued_at | timestamp with time zone | 
  last_updated_at        | timestamp with time zone | not null default now()
+ enabled                | boolean                  | 
 Indexes:
     "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
     "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)

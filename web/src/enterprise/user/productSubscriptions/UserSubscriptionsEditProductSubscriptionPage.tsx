@@ -137,7 +137,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
 function queryProductSubscription(uuid: string): Observable<ProductSubscription> {
     return queryGraphQL(
         gql`
-            query ProductSubscription($uuid: String!) {
+            query ProductSubscriptionOnEditPage($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
                         ...ProductSubscriptionFields
