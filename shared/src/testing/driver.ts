@@ -28,6 +28,7 @@ import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
 import { isDefined } from '../util/types'
+import { getConfig } from './config'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -685,15 +686,17 @@ interface DriverOptions extends LaunchOptions {
 
     sourcegraphBaseUrl: string
 
-    /** If true, print browser console messages to stdout. */
+    /** If not `false`, print browser console messages to stdout. */
     logBrowserConsole?: boolean
 
     /** If true, keep browser open when driver is closed */
     keepBrowser?: boolean
 }
 
-export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
-    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
+export async function createDriverForTest(
+    options: DriverOptions = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo')
+): Promise<Driver> {
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole = true, keepBrowser } = options
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
         ...options,
