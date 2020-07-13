@@ -65,7 +65,7 @@ func pruneWrapped(ctx context.Context, state *State, root string, getChildren ex
 func groupBundleDataWrapped(ctx context.Context, state *State, dumpID int, metrics metrics.WorkerMetrics) (_ *GroupedBundleData, err error) {
 	_, endOperation := metrics.GroupBundleDataOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
-	return groupBundleData(state, dumpID)
+	return groupBundleData(ctx, state, dumpID)
 }
 
 // correlateFromReader reads the given upload stream and returns a correlation state object.

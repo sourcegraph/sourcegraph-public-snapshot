@@ -1,6 +1,7 @@
 package correlation
 
 import (
+	"context"
 	"math"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
 
@@ -17,10 +19,10 @@ import (
 // persistent storage and what is read in the query path.
 type GroupedBundleData struct {
 	Meta              types.MetaData
-	Documents         map[string]types.DocumentData
-	ResultChunks      map[int]types.ResultChunkData
-	Definitions       []types.MonikerLocations
-	References        []types.MonikerLocations
+	Documents         chan persistence.KeyedDocumentData
+	ResultChunks      chan persistence.IndexedResultChunkData
+	Definitions       chan types.MonikerLocations
+	References        chan types.MonikerLocations
 	Packages          []types.Package
 	PackageReferences []types.PackageReference
 }
@@ -29,7 +31,7 @@ const MaxNumResultChunks = 1000
 const ResultsPerResultChunk = 500
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
+func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBundleData, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
 	numResultChunks := int(math.Min(
 		MaxNumResultChunks,
@@ -40,10 +42,10 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 	))
 
 	meta := types.MetaData{NumResultChunks: numResultChunks}
-	documents := serializeBundleDocuments(state)
-	resultChunks := serializeResultChunks(state, numResultChunks)
-	definitionRows := gatherMonikersLocations(state, state.DefinitionData, getDefinitionResultID)
-	referenceRows := gatherMonikersLocations(state, state.ReferenceData, getReferenceResultID)
+	documents := serializeBundleDocuments(ctx, state)
+	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
+	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, getDefinitionResultID)
+	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, getReferenceResultID)
 	packages := gatherPackages(state, dumpID)
 	packageReferences, err := gatherPackageReferences(state, dumpID)
 	if err != nil {
@@ -61,17 +63,31 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 	}, nil
 }
 
-func serializeBundleDocuments(state *State) map[string]types.DocumentData {
-	out := make(map[string]types.DocumentData, len(state.DocumentData))
-	for documentID, uri := range state.DocumentData {
-		if strings.HasPrefix(uri, "..") {
-			continue
+func serializeBundleDocuments(ctx context.Context, state *State) chan persistence.KeyedDocumentData {
+	ch := make(chan persistence.KeyedDocumentData)
+
+	go func() {
+		defer close(ch)
+
+		for documentID, uri := range state.DocumentData {
+			if strings.HasPrefix(uri, "..") {
+				continue
+			}
+
+			data := persistence.KeyedDocumentData{
+				Path:     uri,
+				Document: serializeDocument(state, documentID),
+			}
+
+			select {
+			case ch <- data:
+			case <-ctx.Done():
+				return
+			}
 		}
+	}()
 
-		out[uri] = serializeDocument(state, documentID)
-	}
-
-	return out
+	return ch
 }
 
 func serializeDocument(state *State, documentID int) types.DocumentData {
@@ -142,7 +158,7 @@ func serializeDocument(state *State, documentID int) types.DocumentData {
 	return document
 }
 
-func serializeResultChunks(state *State, numResultChunks int) map[int]types.ResultChunkData {
+func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan persistence.IndexedResultChunkData {
 	chunkAssignments := make(map[int][]int, numResultChunks)
 	for id := range state.DefinitionData {
 		index := types.HashKey(toID(id), numResultChunks)
@@ -153,48 +169,60 @@ func serializeResultChunks(state *State, numResultChunks int) map[int]types.Resu
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 
-	resultChunks := map[int]types.ResultChunkData{}
-	for id, resultIDs := range chunkAssignments {
-		if len(resultIDs) == 0 {
-			continue
-		}
+	ch := make(chan persistence.IndexedResultChunkData)
 
-		documentPaths := map[types.ID]string{}
-		documentIDRangeIDs := map[types.ID][]types.DocumentIDRangeID{}
+	go func() {
+		defer close(ch)
 
-		for _, resultID := range resultIDs {
-			documentRanges, ok := state.DefinitionData[resultID]
-			if !ok {
-				documentRanges = state.ReferenceData[resultID]
+		for index, resultIDs := range chunkAssignments {
+			if len(resultIDs) == 0 {
+				continue
 			}
 
-			// Ensure we always make an assignment for every definition and reference result,
-			// even if we've pruned all of the referenced documents and ranges. This prevents
-			// us from throwing an error in the bundle manager because we try to dereference
-			// a missing identifier.
-			documentIDRangeIDs[toID(resultID)] = nil
+			documentPaths := map[types.ID]string{}
+			documentIDRangeIDs := map[types.ID][]types.DocumentIDRangeID{}
 
-			documentRanges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-				documentPaths[toID(documentID)] = state.DocumentData[documentID]
+			for _, resultID := range resultIDs {
+				documentRanges, ok := state.DefinitionData[resultID]
+				if !ok {
+					documentRanges = state.ReferenceData[resultID]
+				}
 
-				rangeIDs.Each(func(rangeID int) {
-					documentIDRangeIDs[toID(resultID)] = append(documentIDRangeIDs[toID(resultID)], types.DocumentIDRangeID{
-						DocumentID: toID(documentID),
-						RangeID:    toID(rangeID),
+				// Ensure we always make an assignment for every definition and reference result,
+				// even if we've pruned all of the referenced documents and ranges. This prevents
+				// us from throwing an error in the bundle manager because we try to dereference
+				// a missing identifier.
+				documentIDRangeIDs[toID(resultID)] = nil
+
+				documentRanges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+					documentPaths[toID(documentID)] = state.DocumentData[documentID]
+
+					rangeIDs.Each(func(rangeID int) {
+						documentIDRangeIDs[toID(resultID)] = append(documentIDRangeIDs[toID(resultID)], types.DocumentIDRangeID{
+							DocumentID: toID(documentID),
+							RangeID:    toID(rangeID),
+						})
 					})
 				})
-			})
+			}
+
+			data := persistence.IndexedResultChunkData{
+				Index: index,
+				ResultChunk: types.ResultChunkData{
+					DocumentPaths:      documentPaths,
+					DocumentIDRangeIDs: documentIDRangeIDs,
+				},
+			}
+
+			select {
+			case ch <- data:
+			case <-ctx.Done():
+				return
+			}
 		}
+	}()
 
-		resultChunk := types.ResultChunkData{
-			DocumentPaths:      documentPaths,
-			DocumentIDRangeIDs: documentIDRangeIDs,
-		}
-
-		resultChunks[id] = resultChunk
-	}
-
-	return resultChunks
+	return ch
 }
 
 var (
@@ -202,7 +230,7 @@ var (
 	getReferenceResultID  = func(r lsif.Range) int { return r.ReferenceResultID }
 )
 
-func gatherMonikersLocations(state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) []types.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan types.MonikerLocations {
 	monikers := datastructures.NewDefaultIDSetMap()
 	for rangeID, r := range state.RangeData {
 		if resultID := getResultID(r); resultID != 0 {
@@ -228,42 +256,55 @@ func gatherMonikersLocations(state *State, data map[int]*datastructures.DefaultI
 		})
 	}
 
-	var out []types.MonikerLocations
-	for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
-		for identifier, ids := range idsByIdentifier {
-			var locations []types.Location
-			for _, id := range ids {
-				data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-					uri := state.DocumentData[documentID]
-					if strings.HasPrefix(uri, "..") {
-						return
-					}
+	ch := make(chan types.MonikerLocations)
 
-					rangeIDs.Each(func(id int) {
-						r := state.RangeData[id]
+	go func() {
+		defer close(ch)
 
-						locations = append(locations, types.Location{
-							URI:            uri,
-							StartLine:      r.StartLine,
-							StartCharacter: r.StartCharacter,
-							EndLine:        r.EndLine,
-							EndCharacter:   r.EndCharacter,
+		for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
+			for identifier, ids := range idsByIdentifier {
+				var locations []types.Location
+				for _, id := range ids {
+					data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+						uri := state.DocumentData[documentID]
+						if strings.HasPrefix(uri, "..") {
+							return
+						}
+
+						rangeIDs.Each(func(id int) {
+							r := state.RangeData[id]
+
+							locations = append(locations, types.Location{
+								URI:            uri,
+								StartLine:      r.StartLine,
+								StartCharacter: r.StartCharacter,
+								EndLine:        r.EndLine,
+								EndCharacter:   r.EndCharacter,
+							})
 						})
 					})
-				})
-			}
+				}
 
-			if len(locations) > 0 {
-				out = append(out, types.MonikerLocations{
+				if len(locations) == 0 {
+					continue
+				}
+
+				data := types.MonikerLocations{
 					Scheme:     scheme,
 					Identifier: identifier,
 					Locations:  locations,
-				})
+				}
+
+				select {
+				case ch <- data:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
-	}
+	}()
 
-	return out
+	return ch
 }
 
 func gatherPackages(state *State, dumpID int) []types.Package {
