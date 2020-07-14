@@ -366,7 +366,7 @@ add('With long markdown text badged dismissible alert.', () => (
                     alerts: [
                         {
                             summary: {
-                                kind: MarkupKind.Mardown,
+                                kind: MarkupKind.Markdown,
                                 value:
                                     'This is a test alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*',
                             },
