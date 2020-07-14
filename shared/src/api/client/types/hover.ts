@@ -33,7 +33,7 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
     }
 
     if (contents.length === 0) {
-        return null;
+        return null
     }
     return range ? { contents, alerts, range } : { contents, alerts }
 }
