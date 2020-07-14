@@ -3,15 +3,17 @@ import { Range } from '@sourcegraph/extension-api-types'
 import { fromHoverMerged } from './hover'
 
 const FIXTURE_RANGE: Range = { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }
+const EMPTY_HOVER: HoverMerged = {alerts: [], contents: []}
 
 describe('HoverMerged', () => {
     describe('from', () => {
-        test('0 hovers', () => expect(fromHoverMerged([])).toBeNull())
-        test('empty hovers', () => expect(fromHoverMerged([null, undefined])).toBeNull())
-        test('empty string hovers', () => expect(fromHoverMerged([{ contents: { value: '' } }])).toBeNull())
+        test('0 hovers', () => expect(fromHoverMerged([])).toEqual(EMPTY_HOVER))
+        test('empty hovers', () => expect(fromHoverMerged([null, undefined])).toEqual(EMPTY_HOVER))
+        test('empty string hovers', () => expect(fromHoverMerged([{ contents: { value: '' } }])).toEqual(EMPTY_HOVER))
         test('1 MarkupContent', () =>
             expect(fromHoverMerged([{ contents: { kind: MarkupKind.Markdown, value: 'x' } }])).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
+                alerts: [],
             }))
         test('2 MarkupContents', () =>
             expect(
@@ -25,6 +27,7 @@ describe('HoverMerged', () => {
                     { kind: MarkupKind.Markdown, value: 'y' },
                 ],
                 range: FIXTURE_RANGE,
+                alerts: [],
             }))
     })
 })

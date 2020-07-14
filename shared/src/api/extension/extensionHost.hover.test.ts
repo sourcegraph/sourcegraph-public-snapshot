@@ -10,24 +10,26 @@ import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { ExtensionDocuments } from './api/documents'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
 
+const EMPTY_HOVER = {alerts: [], contents: []}
+
 describe('mergeHoverResults', () => {
     it('merges non Hover values into nulls', () => {
-        expect(mergeHoverResults([LOADING])).toBe(null)
-        expect(mergeHoverResults([null])).toBe(null)
-        expect(mergeHoverResults([undefined])).toBe(null)
+        expect(mergeHoverResults([LOADING])).toEqual(EMPTY_HOVER)
+        expect(mergeHoverResults([null])).toEqual(EMPTY_HOVER)
+        expect(mergeHoverResults([undefined])).toEqual(EMPTY_HOVER)
         // and yes, there can be several
-        expect(mergeHoverResults([null, LOADING])).toBe(null)
+        expect(mergeHoverResults([null, LOADING])).toEqual(EMPTY_HOVER)
     })
 
     it('merges a Hover into result', () => {
         const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-        const merged: HoverMerged = { contents: [hover.contents] }
+        const merged: HoverMerged = { contents: [hover.contents], alerts: [] }
         expect(mergeHoverResults([hover])).toEqual(merged)
     })
 
     it('omits non Hover values from hovers result', () => {
         const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-        const merged: HoverMerged = { contents: [hover.contents] }
+        const merged: HoverMerged = { contents: [hover.contents], alerts: [] }
         expect(mergeHoverResults([hover, null, LOADING, undefined])).toEqual(merged)
     })
 
@@ -48,6 +50,7 @@ describe('mergeHoverResults', () => {
                 { value: 'c2', kind: MarkupKind.PlainText },
             ],
             range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+            alerts: [],
         }
 
         expect(mergeHoverResults([hover1, hover2])).toEqual(merged)
@@ -105,10 +108,10 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
 
         // first provider results
         expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
-            { isLoading: true, result: null },
+            { isLoading: true, result: EMPTY_HOVER },
             {
                 isLoading: false,
-                result: { contents: [textHover('a1').contents] },
+                result: { contents: [textHover('a1').contents], alerts: [] },
             },
         ])
         results = []
@@ -121,12 +124,13 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
         expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
             {
                 isLoading: true,
-                result: { contents: [textHover('a2').contents] },
+                result: { contents: [textHover('a2').contents], alerts: [] },
             },
             {
                 isLoading: false,
                 result: {
                     contents: ['a2', 'b'].map(value => textHover(value).contents),
+                    alerts: [],
                 },
             },
         ])
@@ -136,10 +140,10 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
 
         // just first was queried for the third time
         expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
-            { isLoading: true, result: null },
+            { isLoading: true, result: EMPTY_HOVER },
             {
                 isLoading: false,
-                result: { contents: [textHover('a3').contents] },
+                result: { contents: [textHover('a3').contents], alerts: [] },
             },
         ])
     })
