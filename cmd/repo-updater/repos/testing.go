@@ -331,12 +331,16 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		if repo == nil {
 			return errors.Errorf("upserting repo with non-existent ID: id=%v", r.ID)
 		}
+		// the cloned column shouldn't be modified by UpsertRepos
+		r.Cloned = repo.Cloned
 		s.repoByID[r.ID] = r
 	}
 
 	for _, r := range inserts {
 		s.repoIDSeq++
 		r.ID = s.repoIDSeq
+		// the cloned column shouldn't be modified by UpsertRepos
+		r.Cloned = false
 		s.repoByID[r.ID] = r
 	}
 

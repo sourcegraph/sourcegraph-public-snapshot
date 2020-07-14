@@ -515,6 +515,7 @@ func (s DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
 // The ID field is used to distinguish between Repos that need to be updated and Repos
 // that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
+// The cloned column is not updated by this function.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	if len(repos) == 0 {
 		return nil
@@ -612,7 +613,6 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		Archived            bool            `json:"archived"`
 		Fork                bool            `json:"fork"`
 		Private             bool            `json:"private"`
-		Cloned              bool            `json:"cloned"`
 		Sources             json.RawMessage `json:"sources"`
 		Metadata            json.RawMessage `json:"metadata"`
 	}
@@ -642,7 +642,6 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
 			Archived:            r.Archived,
-			Cloned:              r.Cloned,
 			Fork:                r.Fork,
 			Private:             r.Private,
 			Sources:             sources,
@@ -687,7 +686,6 @@ WITH batch AS (
       external_service_id   text,
       external_id           text,
       archived              boolean,
-      cloned                boolean,
       fork                  boolean,
       private               boolean,
       sources               jsonb,
@@ -711,7 +709,6 @@ SET
   external_service_id   = batch.external_service_id,
   external_id           = batch.external_id,
   archived              = batch.archived,
-  cloned                = batch.cloned,
   fork                  = batch.fork,
   private               = batch.private,
   sources               = batch.sources,
@@ -749,7 +746,6 @@ INSERT INTO repo (
   external_service_id,
   external_id,
   archived,
-  cloned,
   fork,
   private,
   sources,
@@ -767,7 +763,6 @@ SELECT
   external_service_id,
   external_id,
   archived,
-  cloned,
   fork,
   private,
   sources,

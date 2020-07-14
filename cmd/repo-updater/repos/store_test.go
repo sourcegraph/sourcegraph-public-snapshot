@@ -731,6 +731,41 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 		}))
+
+		t.Run("it shouldn't modify the cloned column", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			// UpsertRepos shouldn't set the cloned column to true
+			r := mkRepos(1, repositories...)[0]
+			r.Cloned = true
+			if err := tx.UpsertRepos(ctx, r); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			count, err := tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if count != 1 {
+				t.Fatalf("Wrong number of not cloned repos: %d", count)
+			}
+
+			// UpsertRepos shouldn't set the cloned column to false either
+			if err := tx.SetClonedRepos(ctx, r.Name); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+			r = r.Clone()
+			r.Cloned = false
+			if err := tx.UpsertRepos(ctx, r); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			count, err = tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if count != 0 {
+				t.Fatalf("Wrong number of not cloned repos: %d", count)
+			}
+		}))
 	}
 }
 
@@ -918,8 +953,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	}
 
 	github := repos.Repo{
-		Name:   "github.com/bar/foo",
-		Cloned: true,
+		Name: "github.com/bar/foo",
 		Sources: map[string]*repos.SourceInfo{
 			"extsvc:123": {
 				ID:       "extsvc:123",
@@ -1132,17 +1166,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	})
 
 	testCases = append(testCases, testCase{
-		name: "only include cloned",
-		args: func(repos.Repos) repos.StoreListReposArgs {
-			return repos.StoreListReposArgs{
-				ClonedOnly: true,
-			}
-		},
-		stored: repositories,
-		repos:  repos.Assert.ReposEqual(&github),
-	})
-
-	testCases = append(testCases, testCase{
 		name:   "use or",
 		stored: repositories,
 		args: func(repos.Repos) repos.StoreListReposArgs {
@@ -1171,9 +1194,10 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
+		ctx := context.Background()
+
 		for _, tc := range testCases {
 			tc := tc
-			ctx := context.Background()
 
 			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
 				stored := tc.stored.Clone()
@@ -1196,6 +1220,35 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 				}
 			}))
 		}
+
+		t.Run("only include cloned", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(5, repositories...).Clone()
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			sort.Sort(stored)
+
+			cloned := stored[:3]
+			if err := tx.SetClonedRepos(ctx, cloned.Names()...); err != nil {
+				t.Fatalf("failed to set cloned repos: %v", err)
+			}
+
+			args := repos.StoreListReposArgs{
+				ClonedOnly: true,
+			}
+
+			rs, err := tx.ListRepos(ctx, args)
+			if err != nil {
+				t.Errorf("failed to list repos: %v", err)
+			}
+
+			want := cloned.With(func(r *repos.Repo) {
+				r.Cloned = true
+			})
+
+			repos.Assert.ReposEqual(want...)(t, rs)
+		}))
 	}
 }
 
