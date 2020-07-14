@@ -13,11 +13,11 @@ import { useLocalStorage } from '../util/useLocalStorage'
 
 export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
-    const onAlertDismissed = useCallback((alertType) => {
+    const onAlertDismissed = useCallback(alertType => {
         if (!dismissedAlerts.includes(alertType)) {
             setDismissedAlerts([alertType, ...dismissedAlerts])
         }
-    }, [setDismissedAlerts])
+    }, [dismissedAlerts, setDismissedAlerts])
 
     const filteredAlerts = (props.hoverOrError?.alerts || []).filter(alert => !dismissedAlerts.includes(alert.type))
     const filteredProps = props.hoverOrError?.alerts ? { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } } : props
