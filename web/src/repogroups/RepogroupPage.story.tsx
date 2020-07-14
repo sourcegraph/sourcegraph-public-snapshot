@@ -18,7 +18,9 @@ import webStyles from '../SourcegraphWebApp.scss'
 const { add } = storiesOf('web/RepogroupPage', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">{story()}</div>
+        <div className="theme-light" style={{ caretColor: 'transparent' }}>
+            {story()}
+        </div>
     </>
 ))
 
@@ -139,7 +141,7 @@ const commonProps: RepogroupPageProps = {
     keyboardShortcuts: [],
     onFiltersInQueryChange: sinon.spy(() => {}),
     setCaseSensitivity: sinon.spy(() => {}),
-    smartSearchField: true,
+    smartSearchField: false,
     splitSearchModes: true,
     telemetryService: ({
         ...NOOP_TELEMETRY_SERVICE,
