@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -99,6 +100,9 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 
 	case *bitbucketserver.PullRequest:
 		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
+
+	case *gitlab.MergeRequest:
+		return computeGitLabCheckState(m)
 	}
 
 	return campaigns.ChangesetCheckStateUnknown
@@ -347,6 +351,45 @@ func parseGithubCheckSuiteState(status, conclusion string) campaigns.ChangesetCh
 	return campaigns.ChangesetCheckStateUnknown
 }
 
+func computeGitLabCheckState(mr *gitlab.MergeRequest) campaigns.ChangesetCheckState {
+	// GitLab pipelines aren't tied to commits in the same way that GitHub
+	// checks are. In the (current) absence of webhooks, the process here is
+	// pretty straightforward: the latest pipeline wins. They _should_ be in
+	// descending order, but we'll sort them just to be sure.
+
+	// First up, a special case: if there are no pipelines, we'll try to use
+	// HeadPipeline. If that's empty, then we'll shrug and say we don't know.
+	if len(mr.Pipelines) == 0 {
+		if mr.HeadPipeline != nil {
+			return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
+		}
+		return campaigns.ChangesetCheckStateUnknown
+	}
+
+	// Sort into descending order so that the pipeline at index 0 is the latest.
+	pipelines := mr.Pipelines
+	sort.Slice(pipelines, func(i, j int) bool {
+		return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt)
+	})
+
+	// TODO: after webhooks, look at changeset events.
+
+	return parseGitLabPipelineStatus(pipelines[0].Status)
+}
+
+func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.ChangesetCheckState {
+	switch status {
+	case gitlab.PipelineStatusSuccess:
+		return campaigns.ChangesetCheckStatePassed
+	case gitlab.PipelineStatusFailed:
+		return campaigns.ChangesetCheckStateFailed
+	case gitlab.PipelineStatusPending:
+		return campaigns.ChangesetCheckStatePending
+	default:
+		return campaigns.ChangesetCheckStateUnknown
+	}
+}
+
 // computeSingleChangesetState of a Changeset based on the metadata.
 // It does NOT reflect the final calculated state, use `ExternalState` instead.
 func computeSingleChangesetState(c *campaigns.Changeset) (s campaigns.ChangesetState, err error) {
@@ -362,6 +405,18 @@ func computeSingleChangesetState(c *campaigns.Changeset) (s campaigns.ChangesetS
 			s = campaigns.ChangesetStateClosed
 		} else {
 			s = campaigns.ChangesetState(m.State)
+		}
+	case *gitlab.MergeRequest:
+		// TODO: implement webhook support
+		switch m.State {
+		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
+			s = campaigns.ChangesetStateClosed
+		case gitlab.MergeRequestStateMerged:
+			s = campaigns.ChangesetStateMerged
+		case gitlab.MergeRequestStateOpened:
+			s = campaigns.ChangesetStateOpen
+		default:
+			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
 		}
 	default:
 		return "", errors.New("unknown changeset type")
@@ -399,6 +454,28 @@ func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.Chan
 				states[campaigns.ChangesetReviewStateApproved] = true
 			}
 		}
+
+	case *gitlab.MergeRequest:
+		// GitLab has an elaborate approvers workflow, but this doesn't map
+		// terribly closely to the GitHub/Bitbucket workflow: most notably,
+		// there's no analog of the Changes Requested or Dismissed states.
+		//
+		// Instead, we'll take a different tack: if we see an approval before
+		// any unapproval event, then we'll consider the MR approved. If we see
+		// an unapproval, then changes were requested. If we don't see anything,
+		// then we're pending.
+		for _, note := range m.Notes {
+			if r := note.ToReview(); r != nil {
+				switch r.(type) {
+				case *gitlab.ReviewApproved:
+					return campaigns.ChangesetReviewStateApproved, nil
+				case *gitlab.ReviewUnapproved:
+					return campaigns.ChangesetReviewStateChangesRequested, nil
+				}
+			}
+		}
+		return campaigns.ChangesetReviewStatePending, nil
+
 	default:
 		return "", errors.New("unknown changeset type")
 	}

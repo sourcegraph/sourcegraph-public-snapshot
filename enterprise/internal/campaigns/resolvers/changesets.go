@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -325,9 +326,11 @@ func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.Changese
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
-	// Only GitHub supports labels on pull requests so don't make a DB call unless we need to
+	// Only GitHub and Gitlab support labels on changesets so don't make a DB call unless we need to.
 	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
-		return []graphqlbackend.ChangesetLabelResolver{}, nil
+		if _, ok := r.Changeset.Metadata.(*gitlab.MergeRequest); !ok {
+			return []graphqlbackend.ChangesetLabelResolver{}, nil
+		}
 	}
 	es, err := r.computeEvents(ctx)
 	if err != nil {
