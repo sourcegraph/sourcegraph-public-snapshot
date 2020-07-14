@@ -3,16 +3,10 @@
 package usagestats
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
-	"encoding/csv"
-	"strconv"
-	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
@@ -24,7 +18,7 @@ func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
             MAX(timestamp) as latest_usage
         FROM
             event_logs
-        GROUP BY   
+        GROUP BY
             user_id
     ),
 	sub AS (
@@ -79,14 +73,14 @@ func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
 		OR deleted_month IS NULL)) AS retained_users
 
   FROM
-	sub	
+	sub
 	`
 	var (
-		createdUsers int
-		deletedUsers int
+		createdUsers     int
+		deletedUsers     int
 		resurrectedUsers int
-		churnedUsers int
-		retainedUsers int
+		churnedUsers     int
+		retainedUsers    int
 	)
 	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
 		&createdUsers,
@@ -99,10 +93,10 @@ func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
 	}
 
 	return &types.GrowthStatistics{
-		DeletedUsers:      	int32(deletedUsers),
-		CreatedUsers:       int32(createdUsers),
-		ResurrectedUsers: 	int32(resurrectedUsers),
-		ChurnedUsers:       int32(churnedUsers),
-		RetainedUsers:		int32(retainedUsers),
+		DeletedUsers:     int32(deletedUsers),
+		CreatedUsers:     int32(createdUsers),
+		ResurrectedUsers: int32(resurrectedUsers),
+		ChurnedUsers:     int32(churnedUsers),
+		RetainedUsers:    int32(retainedUsers),
 	}, nil
 }

@@ -141,10 +141,10 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (_ json.RawMessage, er
 	return json.Marshal(campaignsUsage)
 }
 
-func getAndMarshalGrowthStatistics(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalGrowthStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalGrowthStatisticsJSON")(&err)
 
-	campaignsUsage, err := usagestats.GetGrowthStatistics(ctx)
+	growthStatistics, err := usagestats.GetGrowthStatistics(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		CodeIntelUsage:      []byte("{}"),
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
-		GrowthStatistics	 []byte("{}"),
+		GrowthStatistics:    []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -279,6 +279,8 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(string(contents))
 
 	return bytes.NewReader(contents), nil
 }
