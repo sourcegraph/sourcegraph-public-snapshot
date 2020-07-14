@@ -250,13 +250,16 @@ add('With alert', () => (
                 {...webHoverOverlayClassProps}
                 hoverOrError={{
                     contents: [FIXTURE_CONTENT],
-                    alerts: [{
-                        summary: {
-                            kind: MarkupKind.PlainText,
-                            value: 'This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.',
+                    alerts: [
+                        {
+                            summary: {
+                                kind: MarkupKind.PlainText,
+                                value:
+                                    'This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.',
+                            },
+                            type: 'test-alert-type',
                         },
-                        type: 'test-alert-type',
-                        }],
+                    ],
                 }}
                 actionsOrError={FIXTURE_ACTIONS}
                 onAlertDismissed={action('onAlertDismissed')}
@@ -278,10 +281,9 @@ add('With nothing alert', () => (
                         {
                             summary: {
                                 kind: MarkupKind.PlainText,
-                                value:
-                                    'This is a test alert.',
-                            }
-                        }
+                                value: 'This is a test alert.',
+                            },
+                        },
                     ],
                 }}
                 actionsOrError={FIXTURE_ACTIONS}
@@ -304,13 +306,12 @@ add('Withbadged alert', () => (
                         {
                             summary: {
                                 kind: MarkupKind.PlainText,
-                                value:
-                                    'This is a test alert.',
+                                value: 'This is a test alert.',
                             },
                             badge: {
                                 kind: 'info',
-                            }
-                        }
+                            },
+                        },
                     ],
                 }}
                 actionsOrError={FIXTURE_ACTIONS}
@@ -333,14 +334,13 @@ add('With badged dismissible alert', () => (
                         {
                             summary: {
                                 kind: MarkupKind.PlainText,
-                                value:
-                                    'This is a test alert.',
+                                value: 'This is a test alert.',
                             },
                             type: 'test-alert-type',
                             badge: {
                                 kind: 'info',
-                            }
-                        }
+                            },
+                        },
                     ],
                 }}
                 actionsOrError={FIXTURE_ACTIONS}
@@ -369,8 +369,8 @@ add('With long markdown text badged dismissible alert.', () => (
                             type: 'test-alert-type',
                             badge: {
                                 kind: 'info',
-                            }
-                        }
+                            },
+                        },
                     ],
                 }}
                 actionsOrError={FIXTURE_ACTIONS}

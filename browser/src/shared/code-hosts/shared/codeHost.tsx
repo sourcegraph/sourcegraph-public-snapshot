@@ -58,11 +58,7 @@ import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/li
 import { Controller } from '../../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
-import {
-    HoverContext,
-    HoverOverlay,
-    HoverOverlayClassProps,
-} from '../../../../../shared/src/hover/HoverOverlay'
+import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../../shared/src/languages'
 import { URLToFileContext } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -341,11 +337,7 @@ function initCodeIntelligence({
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
 }): {
-    hoverifier: Hoverifier<
-        RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
-        HoverMerged,
-        ActionItemAction
-    >
+    hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
     const subscription = new Subscription()
@@ -420,10 +412,7 @@ function initCodeIntelligence({
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
-    class HoverOverlayContainer extends React.Component<
-        {},
-        HoverState<HoverContext, HoverMerged, ActionItemAction>
-    > {
+    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemAction>> {
         private subscription = new Subscription()
         private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
         private nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
@@ -463,11 +452,7 @@ function initCodeIntelligence({
                 />
             ) : null
         }
-        private getHoverOverlayProps(): HoverState<
-            HoverContext,
-            HoverMerged,
-            ActionItemAction
-        >['hoverOverlayProps'] {
+        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
             }

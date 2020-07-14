@@ -3,7 +3,7 @@ import { Range } from '@sourcegraph/extension-api-types'
 import { fromHoverMerged, HoverMerged } from './hover'
 
 const FIXTURE_RANGE: Range = { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }
-const EMPTY_HOVER: HoverMerged = {alerts: [], contents: []}
+const EMPTY_HOVER: HoverMerged = { alerts: [], contents: [] }
 
 describe('HoverMerged', () => {
     describe('from', () => {
@@ -31,34 +31,32 @@ describe('HoverMerged', () => {
             }))
         test('1 Alert', () =>
             expect(
-                fromHoverMerged([{
-                    contents: { kind: MarkupKind.Markdown, value: 'x' },
-                    alerts: [{ summary: { kind: MarkupKind.PlainText, value: 'x' }}],
-                }])
+                fromHoverMerged([
+                    {
+                        contents: { kind: MarkupKind.Markdown, value: 'x' },
+                        alerts: [{ summary: { kind: MarkupKind.PlainText, value: 'x' } }],
+                    },
+                ])
             ).toEqual({
-                contents: [
-                    { kind: MarkupKind.Markdown, value: 'x' },
-                ],
-                alerts: [
-                    { summary: { kind: MarkupKind.PlainText, value: 'x' }},
-                ],
+                contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
+                alerts: [{ summary: { kind: MarkupKind.PlainText, value: 'x' } }],
             }))
         test('2 Alerts', () =>
             expect(
-                fromHoverMerged([{
-                    contents: { kind: MarkupKind.Markdown, value: 'x' },
-                    alerts: [
-                        { summary: { kind: MarkupKind.PlainText, value: 'x' }},
-                        { summary: { kind: MarkupKind.PlainText, value: 'y' }},
-                    ],
-                }])
+                fromHoverMerged([
+                    {
+                        contents: { kind: MarkupKind.Markdown, value: 'x' },
+                        alerts: [
+                            { summary: { kind: MarkupKind.PlainText, value: 'x' } },
+                            { summary: { kind: MarkupKind.PlainText, value: 'y' } },
+                        ],
+                    },
+                ])
             ).toEqual({
-                contents: [
-                    { kind: MarkupKind.Markdown, value: 'x' },
-                ],
+                contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
                 alerts: [
-                    { summary: { kind: MarkupKind.PlainText, value: 'x' }},
-                    { summary: { kind: MarkupKind.PlainText, value: 'y' }},
+                    { summary: { kind: MarkupKind.PlainText, value: 'x' } },
+                    { summary: { kind: MarkupKind.PlainText, value: 'y' } },
                 ],
             }))
     })

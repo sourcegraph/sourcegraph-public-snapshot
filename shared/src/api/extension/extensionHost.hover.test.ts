@@ -10,7 +10,7 @@ import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { ExtensionDocuments } from './api/documents'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
 
-const EMPTY_HOVER = {alerts: [], contents: []}
+const EMPTY_HOVER = { alerts: [], contents: [] }
 
 describe('mergeHoverResults', () => {
     it('merges non Hover values into nulls', () => {

@@ -10,9 +10,7 @@ import { isInPage } from '../../context'
  * Returns an Observable of all hover alerts that have not yet
  * been dismissed by the user.
  */
-export function getActiveHoverAlerts(
-    allAlerts: Observable<HoverAlert>[]
-): Observable<HoverAlert[] | undefined> {
+export function getActiveHoverAlerts(allAlerts: Observable<HoverAlert>[]): Observable<HoverAlert[] | undefined> {
     if (isInPage) {
         return of(undefined)
     }

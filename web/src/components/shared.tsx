@@ -13,31 +13,36 @@ import { useLocalStorage } from '../util/useLocalStorage'
 // Components from shared with web-styling class names applied
 
 export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
-    const [dismissedAlerts, setDismissedAlerts] =
-        useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
-    const onAlertDismissed = useCallback((alertType: string) => {
-        if (!dismissedAlerts.includes(alertType)) {
-            setDismissedAlerts([...dismissedAlerts, alertType])
-        }
-    }, [dismissedAlerts, setDismissedAlerts])
+    const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
+    const onAlertDismissed = useCallback(
+        (alertType: string) => {
+            if (!dismissedAlerts.includes(alertType)) {
+                setDismissedAlerts([...dismissedAlerts, alertType])
+            }
+        },
+        [dismissedAlerts, setDismissedAlerts]
+    )
 
     let propsToUse = props
     if (props.hoverOrError && props.hoverOrError !== 'loading' && !isErrorLike(props.hoverOrError)) {
-        const filteredAlerts = (props.hoverOrError?.alerts || [])
-            .filter(alert => !alert.type || !dismissedAlerts.includes(alert.type))
+        const filteredAlerts = (props.hoverOrError?.alerts || []).filter(
+            alert => !alert.type || !dismissedAlerts.includes(alert.type)
+        )
         propsToUse = { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } }
     }
 
-    return <HoverOverlay
-        {...propsToUse}
-        className="card"
-        iconClassName="icon-inline"
-        iconButtonClassName="btn btn-icon"
-        actionItemClassName="btn btn-secondary"
-        infoAlertClassName="alert alert-info"
-        errorAlertClassName="alert alert-danger"
-        onAlertDismissed={onAlertDismissed}
-    />
+    return (
+        <HoverOverlay
+            {...propsToUse}
+            className="card"
+            iconClassName="icon-inline"
+            iconButtonClassName="btn btn-icon"
+            actionItemClassName="btn btn-secondary"
+            infoAlertClassName="alert alert-info"
+            errorAlertClassName="alert alert-danger"
+            onAlertDismissed={onAlertDismissed}
+        />
+    )
 }
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 
@@ -64,14 +69,14 @@ export const WebActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> =
     actionItemIconClass,
     ...props
 }) => (
-        <ActionsNavItems
-            {...props}
-            listClass={classNames(listClass, 'nav')}
-            listItemClass={classNames(listItemClass, 'nav-item')}
-            actionItemClass={classNames(actionItemClass, 'nav-link')}
-            actionItemIconClass={classNames(actionItemIconClass, 'icon-inline')}
-        />
-    )
+    <ActionsNavItems
+        {...props}
+        listClass={classNames(listClass, 'nav')}
+        listItemClass={classNames(listItemClass, 'nav-item')}
+        actionItemClass={classNames(actionItemClass, 'nav-link')}
+        actionItemIconClass={classNames(actionItemIconClass, 'icon-inline')}
+    />
+)
 WebActionsNavItems.displayName = 'WebActionsNavItems'
 
 const completionWidgetListItemClassName = 'completion-widget-dropdown__item d-flex align-items-center p-2'
