@@ -263,6 +263,9 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		if args.PrivateOnly {
 			preds = append(preds, r.Private)
 		}
+		if args.ClonedOnly {
+			preds = append(preds, r.Cloned)
+		}
 
 		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
 			repos = append(repos, r)
