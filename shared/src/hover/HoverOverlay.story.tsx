@@ -253,7 +253,7 @@ add('With small-text alert', () => (
                     alerts: [
                         {
                             summary: {
-                                kind: MarkupKind.PlainText,
+                                kind: MarkupKind.Markdown,
                                 value:
                                     '<small>This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.</small>',
                             },
