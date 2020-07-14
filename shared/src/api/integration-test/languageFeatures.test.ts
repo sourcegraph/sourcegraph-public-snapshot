@@ -33,7 +33,7 @@ describe('LanguageFeatures (integration)', () => {
                     position: { line: 1, character: 2 },
                 })
             ),
-        emptyResultValue: { contents: [], alerts: [] },
+        emptyResultValue: null,
     })
     testLocationProvider<sourcegraph.DefinitionProvider>({
         name: 'registerDefinitionProvider',

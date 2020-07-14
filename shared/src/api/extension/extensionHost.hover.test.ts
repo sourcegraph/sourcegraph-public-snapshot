@@ -10,15 +10,13 @@ import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { ExtensionDocuments } from './api/documents'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
 
-const EMPTY_HOVER = { alerts: [], contents: [] }
-
 describe('mergeHoverResults', () => {
     it('merges non Hover values into nulls', () => {
-        expect(mergeHoverResults([LOADING])).toEqual(EMPTY_HOVER)
-        expect(mergeHoverResults([null])).toEqual(EMPTY_HOVER)
-        expect(mergeHoverResults([undefined])).toEqual(EMPTY_HOVER)
+        expect(mergeHoverResults([LOADING])).toBe(null)
+        expect(mergeHoverResults([null])).toBe(null)
+        expect(mergeHoverResults([undefined])).toBe(null)
         // and yes, there can be several
-        expect(mergeHoverResults([null, LOADING])).toEqual(EMPTY_HOVER)
+        expect(mergeHoverResults([null, LOADING])).toBe(null)
     })
 
     it('merges a Hover into result', () => {
@@ -108,7 +106,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
 
         // first provider results
         expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
-            { isLoading: true, result: EMPTY_HOVER },
+            { isLoading: true, result: null },
             {
                 isLoading: false,
                 result: { contents: [textHover('a1').contents], alerts: [] },
@@ -140,7 +138,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
 
         // just first was queried for the third time
         expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
-            { isLoading: true, result: EMPTY_HOVER },
+            { isLoading: true, result: null },
             {
                 isLoading: false,
                 result: { contents: [textHover('a3').contents], alerts: [] },
