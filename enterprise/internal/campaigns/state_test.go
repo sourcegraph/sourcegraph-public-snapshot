@@ -397,13 +397,13 @@ func TestComputeReviewState(t *testing.T) {
 		},
 		{
 			name:      "gitlab - no events, no approvals",
-			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{}),
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{}),
 			history:   []changesetStatesAtTime{},
 			want:      cmpgn.ChangesetReviewStatePending,
 		},
 		{
 			name: "gitlab - no events, one approval",
-			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
 				{
 					System: true,
 					Body:   "approved this merge request",
@@ -414,7 +414,7 @@ func TestComputeReviewState(t *testing.T) {
 		},
 		{
 			name: "gitlab - no events, one unapproval",
-			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
 				{
 					System: true,
 					Body:   "unapproved this merge request",
@@ -425,7 +425,7 @@ func TestComputeReviewState(t *testing.T) {
 		},
 		{
 			name: "gitlab - no events, several notes",
-			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
 				{Body: "this is a user note"},
 				{
 					System: true,
@@ -442,7 +442,7 @@ func TestComputeReviewState(t *testing.T) {
 		},
 		{
 			name: "gitlab - changeset older than events",
-			changeset: gitLabChangeset(daysAgo(10), []*gitlab.Note{
+			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, []*gitlab.Note{
 				{
 					System: true,
 					Body:   "unapproved this merge request",
@@ -455,7 +455,7 @@ func TestComputeReviewState(t *testing.T) {
 		},
 		{
 			name: "gitlab - changeset newer than events",
-			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
 				{
 					System: true,
 					Body:   "unapproved this merge request",
@@ -554,6 +554,46 @@ func TestComputeChangesetState(t *testing.T) {
 			},
 			want: cmpgn.ChangesetStateDeleted,
 		},
+		{
+			name:      "gitlab - no events, opened",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateOpen,
+		},
+		{
+			name:      "gitlab - no events, closed",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateClosed, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "gitlab - no events, locked",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateLocked, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "gitlab - no events, merged",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateMerged,
+		},
+		{
+			name:      "gitlab - changeset older than events",
+			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateMerged, nil),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "gitlab - changeset newer than events",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateMerged,
+		},
 	}
 
 	for i, tc := range tests {
@@ -600,12 +640,13 @@ func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
 	}
 }
 
-func gitLabChangeset(updatedAt time.Time, notes []*gitlab.Note) *campaigns.Changeset {
+func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes []*gitlab.Note) *campaigns.Changeset {
 	return &campaigns.Changeset{
 		ExternalServiceType: extsvc.TypeGitLab,
 		UpdatedAt:           updatedAt,
 		Metadata: &gitlab.MergeRequest{
 			Notes: notes,
+			State: state,
 		},
 	}
 }
