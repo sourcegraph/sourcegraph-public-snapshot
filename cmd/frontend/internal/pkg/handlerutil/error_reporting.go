@@ -11,7 +11,7 @@ import (
 
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
