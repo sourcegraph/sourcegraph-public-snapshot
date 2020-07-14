@@ -836,7 +836,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		tryCount *= tryCount
 		if tryCount > maxResultsForRetry {
 			// We've capped out what we're willing to do, throw alert.
-			return &SearchResultsResolver{alert: alertForCappedAndExpression()}, nil
+			return alertForCappedAndExpression().wrap(), nil
 		}
 	}
 	result.limitHit = !exhausted
@@ -939,7 +939,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
-		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
+		return alertForQuery("", err).wrap(), nil
 	}
 	if pattern == nil {
 		r.query.(*query.AndOrQuery).Query = scopeParameters
@@ -992,7 +992,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return &SearchResultsResolver{alert: alertForTimeout(usedTime, suggestTime, r)}, nil
+		return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
 	}
 	return rr, err
 }
