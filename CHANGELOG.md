@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Revisions listed in `experimentalFeatures.versionContext` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
 - Revisions listed in `experimentalFeatures.versionContext` or `experimentalFeatures.search.index.branches` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
 - Campaigns are now supported on GitLab.
+- Campaigns now support GitLab and allow users to create, update and track merge requests on GitLab instances.
 
 ### Changed
 
