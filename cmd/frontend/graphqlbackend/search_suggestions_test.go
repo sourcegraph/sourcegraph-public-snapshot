@@ -50,6 +50,9 @@ func TestSearchSuggestions(t *testing.T) {
 	}
 	defer func() { mockSearchSymbols = nil }()
 
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
 	searchVersions := []string{"V1", "V2"}
 
 	t.Run("empty", func(t *testing.T) {
@@ -125,6 +128,9 @@ func TestSearchSuggestions(t *testing.T) {
 
 	// This test is only valid for Regexp searches. Literal searches won't return suggestions for an invalid regexp.
 	t.Run("single term invalid regex", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		sr, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {
 			t.Fatal(err)
