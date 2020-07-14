@@ -43,13 +43,14 @@ describe('Repository', () => {
             const repositorySourcegraphUrl = `/${repositoryName}`
             const clickedFileName = 'async.go'
             const clickedCommit = ''
+            const fileEntries = ['jsonrpc2.go', clickedFileName]
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 RepositoryRedirect: ({ repoName }) => makeRepositoryRedirectResult(repoName),
                 ResolveRev: () => makeResolveRevisionResult(repositorySourcegraphUrl),
                 FileExternalLinks: ({ filePath }) => makeFileExternalLinksResult(filePath),
-                TreeEntries: () => makeTreeEntriesResult(repositorySourcegraphUrl, ['jsonrpc2.go', clickedFileName]),
+                TreeEntries: () => makeTreeEntriesResult(repositorySourcegraphUrl, fileEntries),
                 Blob: () => makeBlobContentResult('mock file blob'),
                 TreeCommits: () => ({
                     node: {
@@ -342,17 +343,16 @@ describe('Repository', () => {
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
-
             await driver.page.waitForSelector('h2.tree-page__title')
 
             // Assert that the directory listing displays properly
-            await driver.page.waitForSelector('.tree-page__entries--columns')
+            await driver.page.waitForSelector('.e2e-tree-entries')
 
             const numberOfFileEntries = await driver.page.evaluate(
-                () => document.querySelector<HTMLButtonElement>('.tree-page__entries--columns')?.children.length
+                () => document.querySelectorAll<HTMLButtonElement>('.e2e-tree-entry-file')?.length
             )
 
-            assert.strictEqual(numberOfFileEntries, 2, 'Number of files in directory listing')
+            assert.strictEqual(numberOfFileEntries, fileEntries.length, 'Number of files in directory listing')
 
             await testContext.waitForGraphQLRequest(async () => {
                 await driver.findElementWithText(clickedFileName, { selector: '.e2e-tree-entry-file', action: 'click' })
