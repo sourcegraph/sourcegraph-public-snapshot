@@ -49,7 +49,7 @@ func Test_prometheusValidator(t *testing.T) {
 			wantProblemSubstring: "",
 		},
 		{
-			name: "prometheus not found (with obs. alerts)",
+			name: "prometheus not found (with only observability.alerts configured)",
 			args: args{
 				prometheusURL: "http://no-prometheus:9090",
 				config: conf.Unified{
@@ -63,7 +63,7 @@ func Test_prometheusValidator(t *testing.T) {
 			wantProblemSubstring: "Unable to fetch configuration status",
 		},
 		{
-			name: "prometheus not found (with obs. silences)",
+			name: "prometheus not found (with only observability.silenceAlerts configured)",
 			args: args{
 				prometheusURL: "http://no-prometheus:9090",
 				config: conf.Unified{
