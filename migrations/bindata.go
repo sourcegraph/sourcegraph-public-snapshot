@@ -78,6 +78,8 @@
 // 1528395687_lsif_indexable_repositories_last_updated.up.sql (280B)
 // 1528395688_add_cloned_column_to_repo.down.sql (88B)
 // 1528395688_add_cloned_column_to_repo.up.sql (154B)
+// 1528395689_lsif_indexable_repositories_enable.down.sql (78B)
+// 1528395689_lsif_indexable_repositories_enable.up.sql (85B)
 
 package migrations
 
@@ -1706,6 +1708,46 @@ func _1528395688_add_cloned_column_to_repoUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395689_lsif_indexable_repositories_enableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x4c\xca\x49\x8d\x2f\x4a\x2d\xc8\x2f\xce\x2c\xc9\x2f\xca\x4c\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xcd\x03\xc9\xa7\x58\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x03\x5f\x07\xd2\x4e\x00\x00\x00")
+
+func _1528395689_lsif_indexable_repositories_enableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395689_lsif_indexable_repositories_enableDownSql,
+		"1528395689_lsif_indexable_repositories_enable.down.sql",
+	)
+}
+
+func _1528395689_lsif_indexable_repositories_enableDownSql() (*asset, error) {
+	bytes, err := _1528395689_lsif_indexable_repositories_enableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395689_lsif_indexable_repositories_enable.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb3, 0x1b, 0x0, 0x37, 0x35, 0xf5, 0x56, 0xf, 0xc8, 0xcc, 0xa7, 0x7d, 0xb, 0x70, 0x3a, 0x6c, 0x14, 0x1e, 0xf3, 0xed, 0xf8, 0x51, 0xde, 0x93, 0x41, 0x38, 0x2b, 0xb7, 0x3e, 0x18, 0x6c, 0x2d}}
+	return a, nil
+}
+
+var __1528395689_lsif_indexable_repositories_enableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x4c\xca\x49\x8d\x2f\x4a\x2d\xc8\x2f\xce\x2c\xc9\x2f\xca\x4c\x2d\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x48\xcd\x03\x49\xa7\x28\x24\xe5\xe7\xe7\xa4\x26\xe6\x59\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x5f\xd8\x4e\xab\x55\x00\x00\x00")
+
+func _1528395689_lsif_indexable_repositories_enableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395689_lsif_indexable_repositories_enableUpSql,
+		"1528395689_lsif_indexable_repositories_enable.up.sql",
+	)
+}
+
+func _1528395689_lsif_indexable_repositories_enableUpSql() (*asset, error) {
+	bytes, err := _1528395689_lsif_indexable_repositories_enableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395689_lsif_indexable_repositories_enable.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x70, 0xae, 0xa7, 0xd2, 0xbb, 0x97, 0x8d, 0x24, 0xc0, 0xf3, 0x6b, 0xbf, 0x37, 0x8c, 0x85, 0xf2, 0x2f, 0x63, 0xd9, 0xdd, 0xc8, 0x72, 0xf, 0x40, 0x30, 0xea, 0x26, 0x2e, 0x3, 0x4f, 0x79, 0x8d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1875,6 +1917,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395687_lsif_indexable_repositories_last_updated.up.sql":              _1528395687_lsif_indexable_repositories_last_updatedUpSql,
 	"1528395688_add_cloned_column_to_repo.down.sql":                           _1528395688_add_cloned_column_to_repoDownSql,
 	"1528395688_add_cloned_column_to_repo.up.sql":                             _1528395688_add_cloned_column_to_repoUpSql,
+	"1528395689_lsif_indexable_repositories_enable.down.sql":                  _1528395689_lsif_indexable_repositories_enableDownSql,
+	"1528395689_lsif_indexable_repositories_enable.up.sql":                    _1528395689_lsif_indexable_repositories_enableUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1999,6 +2043,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395687_lsif_indexable_repositories_last_updated.up.sql":              {_1528395687_lsif_indexable_repositories_last_updatedUpSql, map[string]*bintree{}},
 	"1528395688_add_cloned_column_to_repo.down.sql":                           {_1528395688_add_cloned_column_to_repoDownSql, map[string]*bintree{}},
 	"1528395688_add_cloned_column_to_repo.up.sql":                             {_1528395688_add_cloned_column_to_repoUpSql, map[string]*bintree{}},
+	"1528395689_lsif_indexable_repositories_enable.down.sql":                  {_1528395689_lsif_indexable_repositories_enableDownSql, map[string]*bintree{}},
+	"1528395689_lsif_indexable_repositories_enable.up.sql":                    {_1528395689_lsif_indexable_repositories_enableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
