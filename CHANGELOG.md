@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Specific alerts can now be silenced using `observability.silenceAlerts`. [#12087](https://github.com/sourcegraph/sourcegraph/pull/12087)
 - Revisions listed in `experimentalFeatures.versionContext` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
 - Revisions listed in `experimentalFeatures.versionContext` or `experimentalFeatures.search.index.branches` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
+- Campaigns are now supported on GitLab.
 
 ### Changed
 
