@@ -46,13 +46,17 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 	// Set of branch names. Always index HEAD
 	branches := map[string]struct{}{"HEAD": {}}
 
-	if c.ExperimentalFeatures != nil && len(c.ExperimentalFeatures.VersionContexts) > 0 {
+	if c.ExperimentalFeatures != nil {
 		for _, vc := range c.ExperimentalFeatures.VersionContexts {
 			for _, rev := range vc.Revisions {
 				if rev.Repo == repoName && rev.Rev != "" {
 					branches[rev.Rev] = struct{}{}
 				}
 			}
+		}
+
+		for _, rev := range c.ExperimentalFeatures.SearchIndexBranches[repoName] {
+			branches[rev] = struct{}{}
 		}
 	}
 
