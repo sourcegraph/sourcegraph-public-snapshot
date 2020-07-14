@@ -467,7 +467,7 @@ func (s DBStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 
 const CountNotClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.CountNotClonedRepos
-SELECT COUNT(*) FROM repo WHERE NOT cloned
+SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 `
 
 // a paginatedQuery returns a query with the given pagination

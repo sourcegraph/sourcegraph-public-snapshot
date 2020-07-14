@@ -919,6 +919,38 @@ func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("CountNotClonedRepos:\n%s", diff)
 			}
 		}))
+
+		t.Run("deleted cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(10, repositories...)
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+			cloned := stored[:3].Names()
+
+			if err := tx.SetClonedRepos(ctx, cloned...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			sort.Strings(cloned)
+			deletedCloned := stored[8:].With(func(r *repos.Repo) {
+				r.DeletedAt = time.Now()
+			})
+
+			if err := tx.UpsertRepos(ctx, deletedCloned...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			count, err := tx.CountNotClonedRepos(ctx)
+			if err != nil {
+				t.Fatalf("CountNotClonedRepos error: %s", err)
+			}
+			if diff := cmp.Diff(count, uint64(5)); diff != "" {
+				t.Fatalf("CountNotClonedRepos:\n%s", diff)
+			}
+		}))
 	}
 }
 
