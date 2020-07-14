@@ -29,6 +29,7 @@ type Upload struct {
 	Indexer        string     `json:"indexer"`
 	NumParts       int        `json:"numParts"`
 	UploadedParts  []int      `json:"uploadedParts"`
+	UploadSize     *int64     `json:"uploadSize"`
 	Rank           *int       `json:"placeInQueue"`
 }
 
@@ -60,6 +61,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.Indexer,
 			&upload.NumParts,
 			pq.Array(&rawUploadedParts),
+			&upload.UploadSize,
 			&upload.Rank,
 		); err != nil {
 			return nil, err
@@ -174,6 +176,7 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			u.indexer,
 			u.num_parts,
 			u.uploaded_parts,
+			u.upload_size,
 			s.rank
 		FROM lsif_uploads_with_repository_name u
 		LEFT JOIN (
@@ -198,13 +201,11 @@ type GetUploadsOptions struct {
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	if started {
-		defer func() { err = tx.Done(err) }()
-	}
+	defer func() { err = tx.Done(err) }()
 
 	var conds []*sqlf.Query
 
@@ -256,6 +257,7 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.indexer,
 				u.num_parts,
 				u.uploaded_parts,
+				u.upload_size,
 				s.rank
 			FROM lsif_uploads_with_repository_name u
 			LEFT JOIN (
@@ -315,8 +317,9 @@ func (s *store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 				indexer,
 				state,
 				num_parts,
-				uploaded_parts
-			) VALUES (%s, %s, %s, %s, %s, %s, %s)
+				uploaded_parts,
+				upload_size
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 		`,
 			upload.Commit,
@@ -326,6 +329,7 @@ func (s *store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 			upload.State,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
 		),
 	))
 
@@ -342,9 +346,9 @@ func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) erro
 	`, partIndex, uploadID))
 }
 
-// MarkQueued updates the state of the upload to queued.
-func (s *store) MarkQueued(ctx context.Context, id int) error {
-	return s.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, id))
+// MarkQueued updates the state of the upload to queued and updates the upload size.
+func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int) error {
+	return s.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
 }
 
 // MarkComplete updates the state of the upload to complete.
@@ -382,20 +386,27 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.indexer"),
 	sqlf.Sprintf("u.num_parts"),
 	sqlf.Sprintf("u.uploaded_parts"),
+	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("NULL"),
 }
 
-// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-// upload is returned along with a store instance which wraps the transaction. This transaction must be closed.
-// If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
-// valued flag. This method must not be called from within a transaction.
-func (s *store) Dequeue(ctx context.Context) (Upload, Store, bool, error) {
+// Dequeue selects the oldest queued upload smaller than the given maximum size and locks it with a transaction.
+// If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
+// This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
+// be returned along with a false valued flag. This method must not be called from within a transaction.
+func (s *store) Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error) {
+	var conditions []*sqlf.Query
+	if maxSize != 0 {
+		conditions = append(conditions, sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", maxSize))
+	}
+
 	upload, tx, ok, err := s.dequeueRecord(
 		ctx,
 		"lsif_uploads_with_repository_name",
 		"lsif_uploads",
 		uploadColumnsWithNullRank,
 		sqlf.Sprintf("uploaded_at"),
+		conditions,
 		scanFirstUploadInterface,
 	)
 	if err != nil || !ok {
@@ -422,13 +433,11 @@ func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error
 // the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 // commit on the default branch when invoked.
 func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (_ bool, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
 	}
-	if started {
-		defer func() { err = tx.Done(err) }()
-	}
+	defer func() { err = tx.Done(err) }()
 
 	visibilities, err := scanVisibilities(tx.query(
 		ctx,
@@ -450,7 +459,7 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTi
 			}
 
 			if err := tx.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-				return false, errors.Wrap(err, "s.UpdateDumpsVisibleFromTip")
+				return false, errors.Wrap(err, "store.UpdateDumpsVisibleFromTip")
 			}
 		}
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -259,15 +259,15 @@ func NewStoreMetrics() StoreMetrics {
 		CountNotClonedRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_store_count_not_cloned_repos_duration_seconds",
-				Help: "Time spent counting not-cloned repos",
+				Help: "Time spent counting cloned repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_count_not_cloned_repos_total",
-				Help: "Total number of count not-cloned repos calls",
+				Help: "Total number of count cloned repos calls",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_count_not_cloned_repos_errors_total",
-				Help: "Total number of errors when counting not-cloned repos",
+				Help: "Total number of errors when counting cloned repos",
 			}, []string{}),
 		},
 	}

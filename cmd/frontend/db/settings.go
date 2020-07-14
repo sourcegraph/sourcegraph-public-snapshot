@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/internal/api"

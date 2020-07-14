@@ -17,7 +17,7 @@ import (
 	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
 	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -44,6 +44,10 @@ func TestProcess(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	gitserverClient := gitservermocks.NewMockClient()
+
+	// Set default transaction behavior
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Give correlation package a valid input dump
 	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
@@ -170,6 +174,10 @@ func TestProcessError(t *testing.T) {
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	gitserverClient := gitservermocks.NewMockClient()
 
+	// Set default transaction behavior
+	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
+	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
 	// Give correlation package a valid input dump
 	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
 
@@ -191,12 +199,12 @@ func TestProcessError(t *testing.T) {
 		t.Errorf("unexpected requeue")
 	}
 
-	if len(mockStore.RollbackToSavepointFunc.History()) != 1 {
-		t.Errorf("unexpected number of RollbackToLastSavepoint calls. want=%d have=%d", 1, len(mockStore.RollbackToSavepointFunc.History()))
+	if len(mockStore.DoneFunc.History()) != 1 {
+		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockStore.DoneFunc.History()))
 	}
 
 	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(mockStore.RollbackToSavepointFunc.History()))
+		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(bundleManagerClient.DeleteUploadFunc.History()))
 	}
 }
 

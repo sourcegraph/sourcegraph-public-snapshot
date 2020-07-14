@@ -87,15 +87,15 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
         <div className="search-page">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
             <div
-                className={classNames('search-page__container', {
-                    'search-page__container--with-repogroups': props.isSourcegraphDotCom,
+                className={classNames('search-page__search-container', {
+                    'search-page__search-container--with-repogroups': props.isSourcegraphDotCom,
                 })}
             >
                 <SearchPageInput {...props} source="home" />
                 {views && <ViewGrid {...props} className="mt-5" views={views} />}
             </div>
             {props.isSourcegraphDotCom && props.showRepogroupHomepage && (
-                <div className="search-page__repogroup-content mt-5">
+                <div className="search-page__repogroup-content container-fluid mt-5">
                     <div className="d-flex align-items-baseline mb-3">
                         <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
                         <span className="text-monospace font-weight-normal search-page__lang-ref">
@@ -121,8 +121,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                             </div>
                         ))}
                     </div>
-                    <div className="search-page__help-content mt-5">
-                        <div className="search-page__example-searches">
+                    <div className="search-page__help-content row mt-5">
+                        <div className="search-page__example-searches col-xs-12 col-lg-5 col-xl-6">
                             <h3 className="search-page__help-content-header">Example searches</h3>
                             <ul className="list-group-flush p-0 mt-2">
                                 <li className="list-group-item px-0 pt-3 pb-2">
@@ -179,30 +179,49 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </li>
                             </ul>
                         </div>
-                        <div>
-                            <div className="d-flex align-items-baseline">
-                                <h3 className="search-page__help-content-header mr-2">Search a language</h3>
-                                <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                    <span className="search-page__keyword-text">lang:</span>
-                                    <i className="search-page__keyword-value-text">name</i>
-                                </span>
+                        <div className="search-page__search-a-language col-xs-12 col-md-6 col-lg-3 col-xl-2">
+                            <div className="align-items-baseline mb-4">
+                                <h3 className="search-page__help-content-header">
+                                    Search a language{' '}
+                                    <span className="text-monospace font-weight-normal search-page__lang-ref">
+                                        <span className="search-page__keyword-text ml-1">lang:</span>
+                                        <i className="search-page__keyword-value-text">name</i>
+                                    </span>
+                                </h3>
                             </div>
-                            <div className="search-page__lang-list mt-2">
-                                {homepageLanguageList.map(language => (
-                                    <Link
-                                        className="text-monospace search-page__web-link"
-                                        to={`/search?q=lang:${language.filterName}`}
-                                        key={language.name}
-                                    >
-                                        {language.name}
-                                    </Link>
-                                ))}
+                            <div className="d-flex row-cols-2 mt-2">
+                                <div className="d-flex flex-column col mr-auto">
+                                    {homepageLanguageList
+                                        .slice(0, Math.ceil(homepageLanguageList.length / 2))
+                                        .map(language => (
+                                            <Link
+                                                className="search-page__web-link search-page__lang-link text-monospace mb-3"
+                                                to={`/search?q=lang:${language.filterName}`}
+                                                key={language.name}
+                                            >
+                                                {language.name}
+                                            </Link>
+                                        ))}
+                                </div>
+                                <div className="d-flex flex-column col">
+                                    {homepageLanguageList
+                                        .slice(Math.ceil(homepageLanguageList.length / 2), homepageLanguageList.length)
+                                        .map(language => (
+                                            <Link
+                                                className="search-page__web-link search-page__lang-link text-monospace mb-3"
+                                                to={`/search?q=lang:${language.filterName}`}
+                                                key={language.name}
+                                            >
+                                                {language.name}
+                                            </Link>
+                                        ))}
+                                </div>
                             </div>
                         </div>
-                        <div>
+                        <div className="search-page__search-syntax col-xs-12 col-md-6  col-lg-4">
                             <h3 className="search-page__help-content-header">Search syntax</h3>
-                            <div className="search-page__lang-list mt-3">
-                                <dl>
+                            <div className="mt-3 row">
+                                <dl className="col-xs-12 col-lg-6 mb-4">
                                     <dt className="search-page__help-content-subheading">
                                         <h5>Common search keywords</h5>
                                     </dt>
@@ -218,16 +237,14 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <dd className="text-monospace">
                                         <p>lang:javascript</p>
                                     </dd>
-                                </dl>
-                                <dl>
-                                    <dt className="search-page__help-content-subheading">
+                                    <dt className="search-page__help-content-subheading mt-5">
                                         <h5>Diff/commit search keywords</h5>
                                     </dt>
                                     <dd className="text-monospace">
                                         <p>type:diff or type:commit</p>
                                     </dd>
                                     <dd className="text-monospace">
-                                        <p>after:”2 weeks ago”</p>
+                                        <p>after:"2 weeks ago"</p>
                                     </dd>
                                     <dd className="text-monospace">
                                         <p>author:alice@example.com</p>
@@ -236,7 +253,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <p>repo:r@*refs/heads/ (all branches)</p>
                                     </dd>
                                 </dl>
-                                <dl>
+                                <dl className="col-xs-12 col-xl-6">
                                     <dt className="search-page__help-content-subheading">
                                         <h5>Finding matches</h5>
                                     </dt>

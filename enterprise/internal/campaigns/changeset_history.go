@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 // changesetHistory is a collection of a changesets states (open/closed/merged
@@ -39,14 +38,14 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 
 type changesetStatesAtTime struct {
 	t           time.Time
-	state       cmpgn.ChangesetState
-	reviewState cmpgn.ChangesetReviewState
+	state       campaigns.ChangesetState
+	reviewState campaigns.ChangesetReviewState
 }
 
 // computeHistory calculates the changesetHistory for the given Changeset and
 // its ChangesetEvents.
 // The ChangesetEvents MUST be sorted by their Timestamp.
-func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, error) {
+func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHistory, error) {
 	if !sort.IsSorted(ce) {
 		return nil, errors.New("changeset events not sorted")
 	}
@@ -54,8 +53,8 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 	var (
 		states = []changesetStatesAtTime{}
 
-		currentState       = cmpgn.ChangesetStateOpen
-		currentReviewState = cmpgn.ChangesetReviewStatePending
+		currentState       = campaigns.ChangesetStateOpen
+		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
 	)
@@ -81,21 +80,21 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 		}
 
 		switch e.Kind {
-		case cmpgn.ChangesetEventKindGitHubClosed, cmpgn.ChangesetEventKindBitbucketServerDeclined:
+		case campaigns.ChangesetEventKindGitHubClosed, campaigns.ChangesetEventKindBitbucketServerDeclined:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != cmpgn.ChangesetStateMerged {
-				currentState = cmpgn.ChangesetStateClosed
+			if currentState != campaigns.ChangesetStateMerged {
+				currentState = campaigns.ChangesetStateClosed
 				pushStates(et)
 			}
 
-		case cmpgn.ChangesetEventKindGitHubMerged, cmpgn.ChangesetEventKindBitbucketServerMerged:
-			currentState = cmpgn.ChangesetStateMerged
+		case campaigns.ChangesetEventKindGitHubMerged, campaigns.ChangesetEventKindBitbucketServerMerged:
+			currentState = campaigns.ChangesetStateMerged
 			pushStates(et)
 
-		case cmpgn.ChangesetEventKindGitHubReopened, cmpgn.ChangesetEventKindBitbucketServerReopened:
+		case campaigns.ChangesetEventKindGitHubReopened, campaigns.ChangesetEventKindBitbucketServerReopened:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != cmpgn.ChangesetStateMerged {
-				currentState = cmpgn.ChangesetStateOpen
+			if currentState != campaigns.ChangesetStateMerged {
+				currentState = campaigns.ChangesetStateOpen
 				pushStates(et)
 			}
 
@@ -198,7 +197,7 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 	// ExternalDeletedAt manually in the Syncer.
 	deletedAt := ch.ExternalDeletedAt
 	if !deletedAt.IsZero() {
-		currentState = cmpgn.ChangesetStateClosed
+		currentState = campaigns.ChangesetStateClosed
 		pushStates(deletedAt)
 	}
 

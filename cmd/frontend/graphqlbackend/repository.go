@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -228,10 +228,6 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
-// No clients that we know of read this field. Additionally on performance profiles
-// the marshalling of timestamps is significant in our postgres client. So we
-// deprecate the fields and return fake data for created_at.
-// https://github.com/sourcegraph/sourcegraph/pull/4668
 func (r *RepositoryResolver) CreatedAt() DateTime {
 	return DateTime{Time: time.Now()}
 }
