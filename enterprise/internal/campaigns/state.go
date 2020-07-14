@@ -351,7 +351,7 @@ func parseGithubCheckSuiteState(status, conclusion string) campaigns.ChangesetCh
 	return campaigns.ChangesetCheckStateUnknown
 }
 
-func computeGitLabCheckState(mr *gitlab.MergeRequest) cmpgn.ChangesetCheckState {
+func computeGitLabCheckState(mr *gitlab.MergeRequest) campaigns.ChangesetCheckState {
 	// GitLab pipelines aren't tied to commits in the same way that GitHub
 	// checks are. In the (current) absence of webhooks, the process here is
 	// pretty straightforward: the latest pipeline wins. They _should_ be in
@@ -363,7 +363,7 @@ func computeGitLabCheckState(mr *gitlab.MergeRequest) cmpgn.ChangesetCheckState 
 		if mr.HeadPipeline != nil {
 			return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
 		}
-		return cmpgn.ChangesetCheckStateUnknown
+		return campaigns.ChangesetCheckStateUnknown
 	}
 
 	// Sort into descending order so that the pipeline at index 0 is the latest.
@@ -377,16 +377,16 @@ func computeGitLabCheckState(mr *gitlab.MergeRequest) cmpgn.ChangesetCheckState 
 	return parseGitLabPipelineStatus(pipelines[0].Status)
 }
 
-func parseGitLabPipelineStatus(status gitlab.PipelineStatus) cmpgn.ChangesetCheckState {
+func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.ChangesetCheckState {
 	switch status {
 	case gitlab.PipelineStatusSuccess:
-		return cmpgn.ChangesetCheckStatePassed
+		return campaigns.ChangesetCheckStatePassed
 	case gitlab.PipelineStatusFailed:
-		return cmpgn.ChangesetCheckStateFailed
+		return campaigns.ChangesetCheckStateFailed
 	case gitlab.PipelineStatusPending:
-		return cmpgn.ChangesetCheckStatePending
+		return campaigns.ChangesetCheckStatePending
 	default:
-		return cmpgn.ChangesetCheckStateUnknown
+		return campaigns.ChangesetCheckStateUnknown
 	}
 }
 
@@ -410,11 +410,11 @@ func computeSingleChangesetState(c *campaigns.Changeset) (s campaigns.ChangesetS
 		// TODO: implement webhook support
 		switch m.State {
 		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
-			s = cmpgn.ChangesetStateClosed
+			s = campaigns.ChangesetStateClosed
 		case gitlab.MergeRequestStateMerged:
-			s = cmpgn.ChangesetStateMerged
+			s = campaigns.ChangesetStateMerged
 		case gitlab.MergeRequestStateOpened:
-			s = cmpgn.ChangesetStateOpen
+			s = campaigns.ChangesetStateOpen
 		default:
 			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
 		}
@@ -468,13 +468,13 @@ func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.Chan
 			if r := note.ToReview(); r != nil {
 				switch r.(type) {
 				case *gitlab.ReviewApproved:
-					return cmpgn.ChangesetReviewStateApproved, nil
+					return campaigns.ChangesetReviewStateApproved, nil
 				case *gitlab.ReviewUnapproved:
-					return cmpgn.ChangesetReviewStateChangesRequested, nil
+					return campaigns.ChangesetReviewStateChangesRequested, nil
 				}
 			}
 		}
-		return cmpgn.ChangesetReviewStatePending, nil
+		return campaigns.ChangesetReviewStatePending, nil
 
 	default:
 		return "", errors.New("unknown changeset type")
