@@ -19,7 +19,7 @@ export function getActiveHoverAlerts(
     return observeStorageKey('sync', 'dismissedHoverAlerts').pipe(
         switchMap(dismissedAlerts =>
             combineLatestOrDefault(allAlerts).pipe(
-                map(alerts => (dismissedAlerts ? alerts.filter(({ type }) => !type || !dismissedAlerts.includes(type)) : alerts))
+                map(alerts => (dismissedAlerts ? alerts.filter(({ type }) => !type || !dismissedAlerts[type]) : alerts))
             )
         ),
         catchError(error => {
@@ -35,12 +35,10 @@ export function getActiveHoverAlerts(
 export async function onHoverAlertDismissed(alertType: string): Promise<void> {
     try {
         const partialStorageItems: Pick<SyncStorageItems, 'dismissedHoverAlerts'> = {
-            dismissedHoverAlerts: [],
+            dismissedHoverAlerts: {},
             ...(await storage.sync.get('dismissedHoverAlerts')),
         }
-        if (!partialStorageItems.dismissedHoverAlerts.includes(alertType)) {
-            partialStorageItems.dismissedHoverAlerts.push(alertType)
-        }
+        partialStorageItems.dismissedHoverAlerts[alertType] = true
         await storage.sync.set(partialStorageItems)
     } catch (error) {
         console.error('Error dismissing alert', error)
