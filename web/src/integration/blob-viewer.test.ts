@@ -27,7 +27,7 @@ describe('Blob viewer', () => {
     })
     afterEach(() => testContext?.dispose())
 
-    describe('tests a general layout for viewing a file', () => {
+    describe('general layout for viewing a file', () => {
         const repositoryName = 'github.com/sourcegraph/jsonrpc2'
         const repositorySourcegraphUrl = `/${repositoryName}`
         const fileName = 'async.go'
