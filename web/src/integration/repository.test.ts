@@ -342,7 +342,7 @@ describe('Repository', () => {
                 }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
             await driver.page.waitForSelector('h2.tree-page__title')
 
             // Assert that the directory listing displays properly
@@ -359,7 +359,7 @@ describe('Repository', () => {
             }, 'Blob')
 
             await driver.page.waitForSelector('.e2e-repo-blob')
-            await driver.assertWindowLocation(`/github.com/sourcegraph/jsonrpc2/-/blob/${clickedFileName}`)
+            await driver.assertWindowLocation(`${repositorySourcegraphUrl}/-/blob/${clickedFileName}`)
 
             // Assert that the file is loaded
             await assertSelectorHasText('.breadcrumb .part-last', clickedFileName)
@@ -367,8 +367,8 @@ describe('Repository', () => {
             // Return to repo page
             await driver.page.click('a.repo-header__repo')
             await driver.page.waitForSelector('h2.tree-page__title')
-            await assertSelectorHasText('h2.tree-page__title', ' sourcegraph/jsonrpc2')
-            await driver.assertWindowLocation('/github.com/sourcegraph/jsonrpc2')
+            await assertSelectorHasText('h2.tree-page__title', ' ' + shortRepositoryName)
+            await driver.assertWindowLocation(repositorySourcegraphUrl)
 
             await driver.findElementWithText(clickedCommit, { selector: '.git-commit-node__oid', action: 'click' })
             await driver.page.waitForSelector('.git-commit-node__message-subject')

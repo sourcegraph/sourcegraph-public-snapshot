@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
@@ -58,8 +59,10 @@ describe('User profile page', () => {
             selectMethod: 'selectall',
         })
 
-        await testContext.waitForGraphQLRequest(async () => {
+        const requestVariables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('.e2e-user-settings-profile-page-update-profile')
         }, 'updateUser')
+
+        assert.strictEqual(requestVariables.displayName, 'Test2')
     })
 })
