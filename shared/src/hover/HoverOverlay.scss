@@ -93,6 +93,9 @@
         border: none;
         border-bottom: 1px solid var(--border-color);
 
+        // this is necessary otherwise single line alerts will render on two lines
+        // if they are dismissible. it makes multi-paragraph alerts impossible but
+        // this is a UX anti-pattern.
         p {
             display: inline;
         }
