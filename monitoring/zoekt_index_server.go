@@ -13,7 +13,7 @@ func ZoektIndexServer() *Container {
 						{
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m]))`,
+							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 15},
 							Critical:          Alert{GreaterOrEqual: 30},
