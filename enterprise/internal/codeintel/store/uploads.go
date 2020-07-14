@@ -29,7 +29,7 @@ type Upload struct {
 	Indexer        string     `json:"indexer"`
 	NumParts       int        `json:"numParts"`
 	UploadedParts  []int      `json:"uploadedParts"`
-	UploadSize     *int       `json:"uploadSize"`
+	UploadSize     *int64     `json:"uploadSize"`
 	Rank           *int       `json:"placeInQueue"`
 }
 
@@ -394,7 +394,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
 // This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
 // be returned along with a false valued flag. This method must not be called from within a transaction.
-func (s *store) Dequeue(ctx context.Context, maxSize int) (Upload, Store, bool, error) {
+func (s *store) Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error) {
 	var conditions []*sqlf.Query
 	if maxSize != 0 {
 		conditions = append(conditions, sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", maxSize))

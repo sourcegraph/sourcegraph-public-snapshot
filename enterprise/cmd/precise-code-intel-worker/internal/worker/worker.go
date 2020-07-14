@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -22,8 +23,8 @@ type Worker struct {
 	pollInterval    time.Duration
 	metrics         metrics.WorkerMetrics
 	semaphore       chan struct{}
-	budgetMax       int
-	budgetRemaining int
+	enableBudget    bool
+	budgetRemaining int64
 
 	ctx    context.Context
 	cancel func()
@@ -36,7 +37,7 @@ func NewWorker(
 	gitserverClient gitserver.Client,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
-	budgetMax int,
+	budgetMax int64,
 	metrics metrics.WorkerMetrics,
 ) *Worker {
 	processor := &processor{
@@ -60,7 +61,7 @@ func newWorker(
 	processor Processor,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
-	budgetMax int,
+	budgetMax int64,
 	metrics metrics.WorkerMetrics,
 ) *Worker {
 	ctx, cancel := context.WithCancel(actor.WithActor(context.Background(), &actor.Actor{Internal: true}))
@@ -76,7 +77,7 @@ func newWorker(
 		pollInterval:    pollInterval,
 		metrics:         metrics,
 		semaphore:       semaphore,
-		budgetMax:       budgetMax,
+		enableBudget:    budgetMax > 0,
 		budgetRemaining: budgetMax,
 		ctx:             ctx,
 		cancel:          cancel,
@@ -127,13 +128,14 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (dequeued bool, err erro
 		}
 	}()
 
-	maxSize := 0
-	if w.budgetMax > 0 {
-		if w.budgetRemaining <= 0 {
+	var maxSize int64
+	if w.enableBudget {
+		budgetRemaining := atomic.LoadInt64(&w.budgetRemaining)
+		if budgetRemaining <= 0 {
 			return false, nil
 		}
 
-		maxSize = w.budgetRemaining
+		maxSize = budgetRemaining
 	}
 
 	// Select a queued upload to process and the transaction that holds it
@@ -145,16 +147,16 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (dequeued bool, err erro
 		return false, nil
 	}
 
-	size := 0
+	var size int64
 	if upload.UploadSize != nil {
 		size = *upload.UploadSize
 	}
 
-	w.budgetRemaining -= size
+	atomic.AddInt64(&w.budgetRemaining, -size)
 
 	go func() {
 		defer func() {
-			w.budgetRemaining += size
+			atomic.AddInt64(&w.budgetRemaining, size)
 			w.releaseProcessorRoutine()
 		}()
 

@@ -430,7 +430,7 @@ func (s *ObservedStore) MarkErrored(ctx context.Context, id int, failureMessage 
 }
 
 // Dequeue calls into the inner store and registers the observed results.
-func (s *ObservedStore) Dequeue(ctx context.Context, maxSize int) (_ Upload, _ Store, _ bool, err error) {
+func (s *ObservedStore) Dequeue(ctx context.Context, maxSize int64) (_ Upload, _ Store, _ bool, err error) {
 	ctx, endObservation := s.dequeueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

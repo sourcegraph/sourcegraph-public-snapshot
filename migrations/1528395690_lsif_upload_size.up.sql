@@ -4,7 +4,7 @@ DROP VIEW lsif_dumps_with_repository_name;
 DROP VIEW lsif_uploads_with_repository_name;
 DROP VIEW lsif_dumps;
 
-ALTER TABLE lsif_uploads ADD COLUMN upload_size integer;
+ALTER TABLE lsif_uploads ADD COLUMN upload_size bigint;
 
 -- Recreate views with new columns
 CREATE VIEW lsif_dumps AS SELECT u.*, u.finished_at as processed_at FROM lsif_uploads u WHERE state = 'completed';

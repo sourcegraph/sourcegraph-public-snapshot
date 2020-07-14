@@ -630,9 +630,9 @@ func TestDequeueSkipsOversizedUploads(t *testing.T) {
 	t2 := t1.Add(time.Minute)
 	t3 := t2.Add(time.Minute)
 
-	s1 := 90
-	s2 := 45
-	s3 := 50
+	s1 := int64(90)
+	s2 := int64(45)
+	s3 := int64(50)
 
 	insertUploads(
 		t,

@@ -52,7 +52,7 @@ type Store interface {
 	// If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
 	// This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
 	// be returned along with a false valued flag. This method must not be called from within a transaction.
-	Dequeue(ctx context.Context, maxSize int) (Upload, Store, bool, error)
+	Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error)
 
 	// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
 	Requeue(ctx context.Context, id int, after time.Time) error

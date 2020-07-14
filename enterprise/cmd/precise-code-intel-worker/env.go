@@ -27,12 +27,17 @@ func mustGet(rawValue, name string) string {
 
 // mustParseInt returns the integer version of the given raw value fatally logs on failure.
 func mustParseInt(rawValue, name string) int {
+	return int(mustParseInt64(rawValue, name))
+}
+
+// mustParseInt64 returns the integer version of the given raw value fatally logs on failure.
+func mustParseInt64(rawValue, name string) int64 {
 	i, err := strconv.ParseInt(rawValue, 10, 64)
 	if err != nil {
 		log.Fatalf("invalid int %q for %s: %s", rawValue, name, err)
 	}
 
-	return int(i)
+	return i
 }
 
 // mustParseInterval returns the interval version of the given raw value fatally logs on failure.
