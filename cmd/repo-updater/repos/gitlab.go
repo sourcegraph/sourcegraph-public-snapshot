@@ -418,6 +418,9 @@ func (s idSet) has(id gitlab.ID) bool {
 	return ok
 }
 
+// getMergeRequestNotes retrieves the notes attached to a merge request in
+// descending time order. The old merge request is used to prevent retrieving
+// notes that have already been seen.
 func (s *GitLabSource) getMergeRequestNotes(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Note, error) {
 	// Firstly, we'll set up a set containing the old note IDs so that we know
 	// where we can stop iterating: on a MR with lots of notes, this will mean
@@ -476,8 +479,9 @@ func readNotesUntilSeen(it func() ([]*gitlab.Note, error), extant idSet) ([]*git
 	}
 }
 
-// getMergeRequestPipelines hopes you enjoyed getMergeRequestNotes, because it's
-// going to look eerily similar.
+// getMergeRequestPipelines retrieves the pipelines attached to a merge request
+// in descending time order. The old merge request is used to prevent
+// retrieving pipelines that have already been seen.
 func (s *GitLabSource) getMergeRequestPipelines(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Pipeline, error) {
 	// Firstly, we'll set up a set containing the old pipeline IDs so that we
 	// know where we can stop iterating: on a MR with lots of pipelines, this
