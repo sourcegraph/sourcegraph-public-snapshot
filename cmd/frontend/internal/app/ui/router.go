@@ -139,8 +139,10 @@ func newRouter() *mux.Router {
 	// the routing is hacked into the webapp code. Before launch this should
 	// be thought through. Copying behaviour from webapp. Must mirror
 	// web/src/Layout.tsx
-	repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
-	r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+	if envvar.SourcegraphDotComMode() {
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
+		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+	}
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -238,7 +240,6 @@ func initRouter() {
 		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
-		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
 	}
 
 	// search
@@ -263,6 +264,7 @@ func initRouter() {
 			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
+		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
 	}
 
 	// repo
