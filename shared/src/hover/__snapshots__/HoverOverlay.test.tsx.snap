@@ -395,15 +395,18 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
           }
         }
       />
-      <a
-        className="hover-overlay__alert-close"
-        href=""
-        onClick={[Function]}
+      <div
+        className="hover-overlay__alert-actions"
       >
-        <small>
-          Dismiss
-        </small>
-      </a>
+        <a
+          href=""
+          onClick={[Function]}
+        >
+          <small>
+            Dismiss
+          </small>
+        </a>
+      </div>
     </div>
   </div>
   <div
