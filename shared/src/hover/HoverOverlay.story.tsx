@@ -252,7 +252,6 @@ add('With alert', () => (
                     contents: [FIXTURE_CONTENT],
                     alerts: [
                         {
-                            type: 'info',
                             summary: {
                                 kind: MarkupKind.PlainText,
                                 value:

@@ -126,7 +126,6 @@ describe('HoverOverlay', () => {
                         contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
                         alerts: [
                             {
-                                type: 'a' as const,
                                 summary: {
                                     kind: MarkupKind.Markdown,
                                     value: 'Testing `markdown` rendering.'
