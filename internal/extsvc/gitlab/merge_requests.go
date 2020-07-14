@@ -168,8 +168,15 @@ type UpdateMergeRequestOpts struct {
 type UpdateMergeRequestStateEvent string
 
 const (
-	UpdateMergeRequestStateEventClose     UpdateMergeRequestStateEvent = "close"
-	UpdateMergeRequestStateEventReopen    UpdateMergeRequestStateEvent = "reopen"
+	UpdateMergeRequestStateEventClose  UpdateMergeRequestStateEvent = "close"
+	UpdateMergeRequestStateEventReopen UpdateMergeRequestStateEvent = "reopen"
+
+	// GitLab's update MR API is also used to perform state transitions on MRs:
+	// they can be closed or reopened by setting a specific field exposed via
+	// UpdateMergeRequestOpts above. To update a merge request _without_
+	// changing the state, you omit that field, which is done via the
+	// combination of this empty string constant and the omitempty JSON option
+	// above on the relevant field.
 	UpdateMergeRequestStateEventUnchanged UpdateMergeRequestStateEvent = ""
 )
 
