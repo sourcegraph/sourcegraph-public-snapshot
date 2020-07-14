@@ -222,6 +222,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                 className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
                                 key={index}
                             >
+                                {/* Show badge in the top-right if there is no "Dismiss" action */}
                                 {badge && !type && (
                                     <BadgeAttachment
                                         className="hover-overlay__badge e2e-hover-badge"
@@ -241,33 +242,22 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     />
                                 )}
 
-                                {type && !badge && (
-                                    <a
-                                        className="hover-overlay__alert-close"
-                                        href=""
-                                        onClick={this.onAlertDismissedCallback(type)}
-                                    >
-                                        <small>Dismiss</small>
-                                    </a>
-                                )}
-
-                                {type && badge && (
-                                    <span >
-                                        <BadgeAttachment
-                                            className="hover-overlay__badge e2e-hover-badge"
-                                            iconClassName={this.props.iconClassName}
-                                            iconButtonClassName={this.props.iconButtonClassName}
-                                            attachment={badge}
-                                            isLightTheme={this.props.isLightTheme}
-                                        />
-                                        <a
-                                            className="hover-overlay__alert-close"
-                                            href=""
-                                            onClick={this.onAlertDismissedCallback(type)}
-                                        >
+                                {/* Show badge and "Dismiss" in the bottom-right if there is a dismiss button */}
+                                {type && (
+                                    <div className="hover-overlay__alert-actions">
+                                        {badge && (
+                                            <BadgeAttachment
+                                                className="hover-overlay__badge e2e-hover-badge"
+                                                iconClassName={this.props.iconClassName}
+                                                iconButtonClassName={this.props.iconButtonClassName}
+                                                attachment={badge}
+                                                isLightTheme={this.props.isLightTheme}
+                                            />
+                                        )}
+                                        <a href="" onClick={this.onAlertDismissedCallback(type)}>
                                             <small>Dismiss</small>
                                         </a>
-                                    </span>
+                                    </div>
                                 )}
                             </div>
                         ))}

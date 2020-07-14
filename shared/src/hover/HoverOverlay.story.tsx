@@ -268,7 +268,7 @@ add('With alert', () => (
     </>
 ))
 
-add('With nothing alert', () => (
+add('With alert', () => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light">
@@ -293,7 +293,7 @@ add('With nothing alert', () => (
     </>
 ))
 
-add('Withbadged alert', () => (
+add('With badged alert', () => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light">
