@@ -140,7 +140,7 @@ func newRouter() *mux.Router {
 	// be thought through. Copying behaviour from webapp. Must mirror
 	// web/src/Layout.tsx
 	repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
-	r.Path("/Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+	r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
