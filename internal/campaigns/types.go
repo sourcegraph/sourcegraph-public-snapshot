@@ -25,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
+
+	yamlv3 "gopkg.in/yaml.v3"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -1675,7 +1677,7 @@ func (cs *CampaignSpec) UnmarshalValidate() error {
 		return errors.Wrap(err, "failed to compile CampaignSpec JSON schema")
 	}
 
-	normalized, err := yaml.YAMLToJSON([]byte(cs.RawSpec))
+	normalized, err := yaml.YAMLToJSONCustom([]byte(cs.RawSpec), yamlv3.Unmarshal)
 	if err != nil {
 		return errors.Wrapf(err, "failed to normalize JSON")
 	}
