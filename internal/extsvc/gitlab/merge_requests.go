@@ -48,11 +48,6 @@ type MergeRequest struct {
 	// to do it the old fashioned way with lots of REST requests.
 	Notes     []*Note
 	Pipelines []*Pipeline
-
-	// TODO: labels
-
-	// TODO: other fields at
-	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
 }
 
 type DiffRefs struct {
@@ -169,8 +164,6 @@ type UpdateMergeRequestOpts struct {
 	Title        string                       `json:"title"`
 	Description  string                       `json:"description,omitempty"`
 	StateEvent   UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
-	// TODO: other fields at
-	// https://docs.gitlab.com/ee/api/merge_requests.html#update-mr as needed.
 }
 
 type UpdateMergeRequestStateEvent string
