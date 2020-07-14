@@ -200,7 +200,7 @@ When you submit the PR, Percy will fail until you approve the new snapshot.
 
 Flakiness in snapshot tests can be caused by the search response time, order of results, animations, premature snapshots while the page is still loading, etc.
 
-This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`.
+This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` CSS class to the problematic element and it will be hidden from Percy.
 
 ## Continuous Integration
 
