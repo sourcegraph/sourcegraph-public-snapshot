@@ -562,7 +562,7 @@ func TestCampaignSpecUnmarshalValidate(t *testing.T) {
 			rawSpec: `
 name: my-unique-name
 description: My description
-'on':
+on:
 - repositoriesMatchingQuery: lang:go func main
 - repository: github.com/sourcegraph/src-cli
 steps:
