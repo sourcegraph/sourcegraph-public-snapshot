@@ -95,6 +95,7 @@ export const renderMarkdown = (
                 'h1',
                 'h2',
                 'span',
+                'small',
                 'img',
                 'picture',
                 'source',
