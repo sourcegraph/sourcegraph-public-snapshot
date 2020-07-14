@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	gophermail "gopkg.in/jpoehls/gophermail.v0"
+	"gopkg.in/jpoehls/gophermail.v0"
 )
 
 func TestParseTemplate(t *testing.T) {

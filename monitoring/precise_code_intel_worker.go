@@ -165,8 +165,8 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsage1d("precise-code-intel-worker"),
+						sharedProvisioningCPUUsage7d("precise-code-intel-worker"),
+						sharedProvisioningMemoryUsage7d("precise-code-intel-worker"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),

@@ -441,6 +441,7 @@ Foreign-key constraints:
  uploaded_parts  | integer[]                | not null
  process_after   | timestamp with time zone | 
  num_resets      | integer                  | not null default 0
+ upload_size     | bigint                   | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state

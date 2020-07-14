@@ -3028,7 +3028,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 
 		for i, tc := range tests {
-			var campaignID int64 = int64(9999 + i)
+			var campaignID = int64(9999 + i)
 
 			for _, j := range tc.jobs {
 				j.CampaignID = campaignID

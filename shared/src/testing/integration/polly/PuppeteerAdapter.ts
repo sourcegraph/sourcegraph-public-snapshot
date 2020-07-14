@@ -1,8 +1,7 @@
 import { Polly, Request as PollyRequest } from '@pollyjs/core'
-import Puppeteer from 'puppeteer'
+import type * as Puppeteer from 'puppeteer'
 import PollyAdapter from '@pollyjs/adapter'
 import { Subscription, fromEvent } from 'rxjs'
-import puppeteer from '../../../../shared/src/types/puppeteer-firefox'
 
 interface Response {
     statusCode: number
@@ -44,7 +43,7 @@ export class PuppeteerAdapter extends PollyAdapter {
      * A map of all intercepted requests to their respond function, which will be called by the
      * 'response' event listener, causing Polly to record the response content.
      */
-    private pendingRequests = new Map<puppeteer.Request, { respond: (response: Puppeteer.Response) => void }>()
+    private pendingRequests = new Map<Puppeteer.Request, { respond: (response: Puppeteer.Response) => void }>()
 
     /**
      * Maps passthrough requests to an object containing:
@@ -132,8 +131,8 @@ export class PuppeteerAdapter extends PollyAdapter {
         const {
             requestArguments: { request },
         } = (pollyRequest as unknown) as PollyRequestArguments
-        let respond: (response: puppeteer.Response) => void
-        const responsePromise = new Promise<puppeteer.Response>(resolve => (respond = resolve))
+        let respond: (response: Puppeteer.Response) => void
+        const responsePromise = new Promise<Puppeteer.Response>(resolve => (respond = resolve))
         this.passThroughRequests.set(request, { respond: response => respond(response), responsePromise })
         await request.continue()
         const response = await responsePromise

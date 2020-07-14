@@ -10,7 +10,7 @@ Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/
 
 Once configured, Sourcegraph alerts will automatically be routed to the appropriate notification channels by severity level.
 
-#### Examples
+#### Example notifiers
 
 ##### Slack
 
@@ -27,7 +27,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
-#### PagerDuty
+##### PagerDuty
 
 ```json
 "observability.alerts": [
@@ -42,7 +42,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
-#### Webhook
+##### Webhook
 
 ```json
 "observability.alerts": [
@@ -57,7 +57,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
-#### Email
+##### Email
 
 Note that to receive email notifications, the [`email.address`](../config/site_config.md#email-address) and [`email.smtp`](../config/site_config.md#email-smtp) fields must be configured in site configuration.
 
@@ -73,6 +73,20 @@ Note that to receive email notifications, the [`email.address`](../config/site_c
   }
 ]
 ```
+
+#### Silencing alerts
+
+If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the `observability.silenceAlerts` field. For example:
+
+```json
+{
+  "observability.silenceAlerts": [
+    "warning_gitserver_disk_space_remaining"
+  ]
+}
+```
+
+You can find the appropriate identifier for each alert in [alert solutions](./alert_solutions.md).
 
 ### Before 3.17: Configure alert channels in Grafana
 

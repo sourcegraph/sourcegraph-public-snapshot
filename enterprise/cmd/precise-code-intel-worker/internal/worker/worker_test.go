@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
@@ -28,11 +29,14 @@ func TestDequeueAndProcessNoUpload(t *testing.T) {
 	mockProcessor := NewMockProcessor()
 	mockStore.DequeueFunc.SetDefaultReturn(store.Upload{}, nil, false, nil)
 
-	worker := &Worker{
-		store:     mockStore,
-		processor: mockProcessor,
-		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
-	}
+	worker := newWorker(
+		mockStore,
+		mockProcessor,
+		time.Minute,
+		1,
+		1000,
+		metrics.NewWorkerMetrics(&observation.TestContext),
+	)
 
 	dequeued, err := worker.dequeueAndProcess(context.Background())
 	if err != nil {
@@ -56,11 +60,14 @@ func TestDequeueAndProcessSuccess(t *testing.T) {
 	mockProcessor := NewMockProcessor()
 	mockStore.DequeueFunc.SetDefaultReturn(upload, mockStore, true, nil)
 
-	worker := &Worker{
-		store:     mockStore,
-		processor: mockProcessor,
-		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
-	}
+	worker := newWorker(
+		mockStore,
+		mockProcessor,
+		time.Minute,
+		1,
+		1000,
+		metrics.NewWorkerMetrics(&observation.TestContext),
+	)
 
 	dequeued, err := worker.dequeueAndProcess(context.Background())
 	if err != nil {
@@ -69,13 +76,17 @@ func TestDequeueAndProcessSuccess(t *testing.T) {
 	if !dequeued {
 		t.Errorf("expected upload dequeue")
 	}
+
+	// Wait for processor to exit
+	<-worker.semaphore
+
 	if len(mockStore.MarkErroredFunc.History()) != 0 {
 		t.Errorf("unexpected call to MarkErrored")
 	}
 	if len(mockStore.DoneFunc.History()) != 1 {
 		t.Errorf("expected call to Done")
 	} else if doneErr := mockStore.DoneFunc.History()[0].Arg0; doneErr != nil {
-		t.Errorf("unexpected error to Done: %s", doneErr)
+		t.Errorf("unexpected error passed to done: %s", doneErr)
 	}
 }
 
@@ -93,11 +104,14 @@ func TestDequeueAndProcessProcessFailure(t *testing.T) {
 	mockStore.DequeueFunc.SetDefaultReturn(upload, mockStore, true, nil)
 	mockProcessor.ProcessFunc.SetDefaultReturn(false, fmt.Errorf("process failure"))
 
-	worker := &Worker{
-		store:     mockStore,
-		processor: mockProcessor,
-		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
-	}
+	worker := newWorker(
+		mockStore,
+		mockProcessor,
+		time.Minute,
+		1,
+		1000,
+		metrics.NewWorkerMetrics(&observation.TestContext),
+	)
 
 	dequeued, err := worker.dequeueAndProcess(context.Background())
 	if err != nil {
@@ -106,6 +120,10 @@ func TestDequeueAndProcessProcessFailure(t *testing.T) {
 	if !dequeued {
 		t.Errorf("expected upload dequeue")
 	}
+
+	// Wait for processor to exit
+	<-worker.semaphore
+
 	if len(mockStore.MarkErroredFunc.History()) != 1 {
 		t.Errorf("expected call to MarkErrored")
 	} else if errText := mockStore.MarkErroredFunc.History()[0].Arg2; errText != "process failure" {
@@ -114,11 +132,11 @@ func TestDequeueAndProcessProcessFailure(t *testing.T) {
 	if len(mockStore.DoneFunc.History()) != 1 {
 		t.Errorf("expected call to Done")
 	} else if doneErr := mockStore.DoneFunc.History()[0].Arg0; doneErr != nil {
-		t.Errorf("unexpected error to Done: %s", doneErr)
+		t.Errorf("unexpected error passed to done: %s", doneErr)
 	}
 }
 
-func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
+func TestHandleMarkErrorFailure(t *testing.T) {
 	upload := store.Upload{
 		ID:           42,
 		Root:         "root/",
@@ -130,28 +148,29 @@ func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
 	mockStore := storemocks.NewMockStore()
 	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockProcessor := NewMockProcessor()
-	mockStore.DequeueFunc.SetDefaultReturn(upload, mockStore, true, nil)
 	mockStore.MarkErroredFunc.SetDefaultReturn(fmt.Errorf("store failure"))
 	mockProcessor.ProcessFunc.SetDefaultReturn(false, fmt.Errorf("failed"))
 
-	worker := &Worker{
-		store:     mockStore,
-		processor: mockProcessor,
-		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
-	}
+	worker := newWorker(
+		mockStore,
+		mockProcessor,
+		time.Minute,
+		1,
+		1000,
+		metrics.NewWorkerMetrics(&observation.TestContext),
+	)
 
-	_, err := worker.dequeueAndProcess(context.Background())
-	if err == nil || !strings.Contains(err.Error(), "store failure") {
-		t.Errorf("unexpected error to Done. want=%q have=%q", "store failure", err)
+	if err := worker.handle(context.Background(), mockStore, upload); err == nil || !strings.Contains(err.Error(), "store failure") {
+		t.Errorf("unexpected error passed to done. want=%q have=%q", "store failure", err)
 	}
 	if len(mockStore.DoneFunc.History()) != 1 {
 		t.Errorf("expected call to Done")
 	} else if doneErr := mockStore.DoneFunc.History()[0].Arg0; doneErr != nil && !strings.Contains(doneErr.Error(), "store failure") {
-		t.Errorf("unexpected error to Done. want=%q have=%q", "store failure", doneErr)
+		t.Errorf("unexpected error passed to done. want=%q have=%q", "store failure", doneErr)
 	}
 }
 
-func TestDequeueAndProcessDoneFailure(t *testing.T) {
+func TestHandleDoneFailure(t *testing.T) {
 	upload := store.Upload{
 		ID:           42,
 		Root:         "root/",
@@ -162,18 +181,19 @@ func TestDequeueAndProcessDoneFailure(t *testing.T) {
 
 	mockStore := storemocks.NewMockStore()
 	mockProcessor := NewMockProcessor()
-	mockStore.DequeueFunc.SetDefaultReturn(upload, mockStore, true, nil)
 	mockStore.DoneFunc.SetDefaultReturn(fmt.Errorf("store failure"))
 	mockProcessor.ProcessFunc.SetDefaultReturn(false, fmt.Errorf("failed"))
 
-	worker := &Worker{
-		store:     mockStore,
-		processor: mockProcessor,
-		metrics:   metrics.NewWorkerMetrics(&observation.TestContext),
-	}
+	worker := newWorker(
+		mockStore,
+		mockProcessor,
+		time.Minute,
+		1,
+		1000,
+		metrics.NewWorkerMetrics(&observation.TestContext),
+	)
 
-	_, err := worker.dequeueAndProcess(context.Background())
-	if err == nil || !strings.Contains(err.Error(), "store failure") {
-		t.Errorf("unexpected error to Done. want=%q have=%q", "store failure", err)
+	if err := worker.handle(context.Background(), mockStore, upload); err == nil || !strings.Contains(err.Error(), "store failure") {
+		t.Errorf("unexpected error passed to done. want=%q have=%q", "store failure", err)
 	}
 }
