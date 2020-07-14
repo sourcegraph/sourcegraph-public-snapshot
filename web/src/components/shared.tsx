@@ -21,7 +21,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props
         }
     }, [dismissedAlerts, setDismissedAlerts])
 
-    var propsToUse = props
+    let propsToUse = props
     if (props.hoverOrError && props.hoverOrError !== 'loading' && !isErrorLike(props.hoverOrError)) {
         const filteredAlerts = (props.hoverOrError?.alerts || [])
             .filter(alert => !alert.type || !dismissedAlerts.includes(alert.type))
