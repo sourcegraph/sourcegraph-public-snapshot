@@ -222,7 +222,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                 className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
                                 key={index}
                             >
-                                {badge && (
+                                {badge && !type && (
                                     <BadgeAttachment
                                         className="hover-overlay__badge e2e-hover-badge"
                                         iconClassName={this.props.iconClassName}
@@ -241,7 +241,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     />
                                 )}
 
-                                {type && (
+                                {type && !badge && (
                                     <a
                                         className="hover-overlay__alert-close"
                                         href=""
@@ -249,6 +249,25 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     >
                                         <small>Dismiss</small>
                                     </a>
+                                )}
+
+                                {type && badge && (
+                                    <span >
+                                        <BadgeAttachment
+                                            className="hover-overlay__badge e2e-hover-badge"
+                                            iconClassName={this.props.iconClassName}
+                                            iconButtonClassName={this.props.iconButtonClassName}
+                                            attachment={badge}
+                                            isLightTheme={this.props.isLightTheme}
+                                        />
+                                        <a
+                                            className="hover-overlay__alert-close"
+                                            href=""
+                                            onClick={this.onAlertDismissedCallback(type)}
+                                        >
+                                            <small>Dismiss</small>
+                                        </a>
+                                    </span>
                                 )}
                             </div>
                         ))}
