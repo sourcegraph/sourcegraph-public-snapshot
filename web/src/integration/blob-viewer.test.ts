@@ -2,7 +2,6 @@ import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { it } from 'mocha'
 import {
     createRepositoryRedirectResult,
     createResolveRevisionResult,
