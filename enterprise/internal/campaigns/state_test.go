@@ -395,6 +395,51 @@ func TestComputeReviewState(t *testing.T) {
 			},
 			want: cmpgn.ChangesetReviewStateChangesRequested,
 		},
+		{
+			name:      "gitlab - no events, no approvals",
+			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{}),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetReviewStatePending,
+		},
+		{
+			name: "gitlab - no events, one approval",
+			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+				{
+					System: true,
+					Body:   "approved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{},
+			want:    cmpgn.ChangesetReviewStateApproved,
+		},
+		{
+			name: "gitlab - no events, one unapproval",
+			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{},
+			want:    cmpgn.ChangesetReviewStateChangesRequested,
+		},
+		{
+			name: "gitlab - no events, several notes",
+			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+				{Body: "this is a user note"},
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+				{Body: "this is a user note"},
+				{
+					System: true,
+					Body:   "approved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{},
+			want:    cmpgn.ChangesetReviewStateChangesRequested,
+		},
 	}
 
 	for i, tc := range tests {
@@ -526,6 +571,16 @@ func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
 		ExternalServiceType: extsvc.TypeGitHub,
 		UpdatedAt:           updatedAt,
 		Metadata:            &github.PullRequest{State: state},
+	}
+}
+
+func gitLabChangeset(updatedAt time.Time, notes []*gitlab.Note) *campaigns.Changeset {
+	return &campaigns.Changeset{
+		ExternalServiceType: extsvc.TypeGitLab,
+		UpdatedAt:           updatedAt,
+		Metadata: &gitlab.MergeRequest{
+			Notes: notes,
+		},
 	}
 }
 

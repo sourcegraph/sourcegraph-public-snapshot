@@ -459,14 +459,22 @@ func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.Chan
 		// GitLab has an elaborate approvers workflow, but this doesn't map
 		// terribly closely to the GitHub/Bitbucket workflow: most notably,
 		// there's no analogue of the Changes Requested or Dismissed states.
-		// Instead, we'll use the heuristic of: if there are one or more
-		// approvals, but not a sufficient number, we'll call the MR Commented;
-		// if there are zero, we'll call it Pending.
-
-		// TODO: actually implement; this data is not available through GraphQL,
-		// and requires additional API calls to access on each MR. Need to
-		// figure out if we should do this via events or by stashing it in the
-		// metadata.
+		//
+		// Instead, we'll take a different tack: if we see an approval before
+		// any unapproval event, then we'll consider the MR approved. If we see
+		// an unapproval, then changes were requested. If we don't see anything,
+		// then we're pending.
+		for _, note := range m.Notes {
+			if r := note.ToReview(); r != nil {
+				switch r.(type) {
+				case *gitlab.ReviewApproved:
+					return cmpgn.ChangesetReviewStateApproved, nil
+				case *gitlab.ReviewUnapproved:
+					return cmpgn.ChangesetReviewStateChangesRequested, nil
+				}
+			}
+		}
+		return cmpgn.ChangesetReviewStatePending, nil
 
 	default:
 		return "", errors.New("unknown changeset type")
