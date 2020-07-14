@@ -253,7 +253,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <p>repo:r@*refs/heads/ (all branches)</p>
                                     </dd>
                                 </dl>
-                                <dl className="col-sm-5 col-md-12 col-lg-12 col-xl-6">
+                                <dl className="col-sm-5 col-md-12 col-xl-6">
                                     <dt className="search-page__help-content-subheading">
                                         <h5>Finding matches</h5>
                                     </dt>
