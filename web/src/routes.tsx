@@ -33,6 +33,12 @@ export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string 
     condition?: (props: LayoutRouteComponentProps<Params>) => boolean
 }
 
+// Force a hard reload so that we delegate to the serverside HTTP handler for a route.
+function passThroughToServer(): React.ReactNode {
+    window.location.reload()
+    return null
+}
+
 /**
  * Holds all top-level routes for the app because both the navbar and the main content area need to
  * switch over matched path.
@@ -142,13 +148,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/help',
-        render: () => {
-            // Force a hard reload so that we delegate to the HTTP handler for /help, which handles
-            // redirecting /help to https://docs.sourcegraph.com. That logic is not duplicated in
-            // the web app because that would add complexity with no user benefit.
-            window.location.reload()
-            return null
-        },
+        render: passThroughToServer,
+    },
+    {
+        path: '/-/debug/*',
+        render: passThroughToServer,
     },
     {
         path: '/snippets',

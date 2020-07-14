@@ -31,8 +31,8 @@ export const BrandLogo: React.FunctionComponent<Props> = ({
     assetsRoot = window.context?.assetsRoot || '',
     ...props
 }) => {
-    const sourcegraphLogoUrl = `${assetsRoot}/img/sourcegraph${isLightTheme ? '-light' : ''}-head-logo.svg`
-    const customBrandingLogoUrl = branding && branding[isLightTheme ? 'light' : 'dark']?.logo
+    const sourcegraphLogoUrl = `${assetsRoot}/img/sourcegraph${isLightTheme ? '-light' : ''}-head-logo.svg?v2`
+    const customBrandingLogoUrl = branding?.[isLightTheme ? 'light' : 'dark']?.logo
     return props.customIcon && props.customText ? (
         <div className="d-flex align-items-center mt-6">
             <img {...props} src={props.customIcon} />

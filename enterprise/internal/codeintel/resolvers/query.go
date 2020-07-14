@@ -27,11 +27,21 @@ type AdjustedDiagnostic struct {
 	AdjustedRange  bundles.Range
 }
 
+// AdjustedCodeIntelligenceRange is similar to a codeintelapi.CodeIntelligenceRange,
+// but with adjusted definition and reference locations.
+type AdjustedCodeIntelligenceRange struct {
+	Range       bundles.Range
+	Definitions []AdjustedLocation
+	References  []AdjustedLocation
+	HoverText   string
+}
+
 // QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver consolidates the logic for bundle operations and is not itself concerned with GraphQL/API
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
 // in this package's graphql subpackage, which is exposed directly by the API.
 type QueryResolver interface {
+	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Hover(ctx context.Context, line, character int) (string, bundles.Range, bool, error)
@@ -72,6 +82,53 @@ func NewQueryResolver(
 		path:                path,
 		uploads:             uploads,
 	}
+}
+
+// Ranges returns code intelligence for the ranges that fall within the given range of lines. These
+// results do not include any data that requires cross-linking of bundles (cross-repo or cross-root).
+func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error) {
+	var adjustedRanges []AdjustedCodeIntelligenceRange
+	for i := range r.uploads {
+		adjustedPath, ok, err := r.positionAdjuster.AdjustPath(ctx, r.uploads[i].Commit, r.path, false)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			continue
+		}
+
+		// TODO(efritz) - determine how to do best-effort line adjustments for this case
+		ranges, err := r.codeIntelAPI.Ranges(ctx, adjustedPath, startLine, endLine, r.uploads[i].ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, rn := range ranges {
+			adjustedDefinitions, err := r.adjustLocations(ctx, rn.Definitions)
+			if err != nil {
+				return nil, err
+			}
+
+			adjustedReferences, err := r.adjustLocations(ctx, rn.References)
+			if err != nil {
+				return nil, err
+			}
+
+			_, adjustedRange, err := r.adjustRange(ctx, r.uploads[i].RepositoryID, r.uploads[i].Commit, adjustedPath, rn.Range)
+			if err != nil {
+				return nil, err
+			}
+
+			adjustedRanges = append(adjustedRanges, AdjustedCodeIntelligenceRange{
+				Range:       adjustedRange,
+				Definitions: adjustedDefinitions,
+				References:  adjustedReferences,
+				HoverText:   rn.HoverText,
+			})
+		}
+	}
+
+	return adjustedRanges, nil
 }
 
 // Definitions returns the list of source locations that define the symbol at the given position.

@@ -131,19 +131,17 @@ func buildQuery(args *search.TextParameters, newRepoSet *zoektquery.RepoSet, fil
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos) == 0 {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repoMap map[string]*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+	if len(repoMap) == 0 {
 		return nil, false, nil, nil
 	}
 
-	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[string]*search.RepositoryRevisions, len(repos))
-	for _, repoRev := range repos {
-		repoSet.Set[string(repoRev.Repo.Name)] = true
-		repoMap[string(repoRev.Repo.Name)] = repoRev
+	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repoMap))}
+	for name := range repoMap {
+		repoSet.Set[name] = true
 	}
 
-	k := zoektResultCountFactor(len(repos), args.PatternInfo)
+	k := zoektResultCountFactor(len(repoMap), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
 
 	if args.UseFullDeadline {

@@ -46,3 +46,9 @@ func comparePosition(r types.RangeData, line, character int) int {
 
 	return 0
 }
+
+// rangeIntersectsSpan determines fi the given range falls within the window denoted by the
+// given start and end lines.
+func rangeIntersectsSpan(r types.RangeData, startLine, endLine int) bool {
+	return (startLine <= r.StartLine && r.StartLine < endLine) || (startLine <= r.EndLine && r.EndLine < endLine)
+}

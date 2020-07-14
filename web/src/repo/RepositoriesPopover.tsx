@@ -15,7 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
         gql`
-            query Repositories($first: Int, $query: String) {
+            query RepositoriesForPopover($first: Int, $query: String) {
                 repositories(first: $first, query: $query) {
                     nodes {
                         id

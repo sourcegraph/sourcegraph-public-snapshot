@@ -261,6 +261,31 @@ func TestSubstituteConcat(t *testing.T) {
 	}
 }
 
+func TestConvertEmptyGroupsToLiteral(t *testing.T) {
+	cases := []struct {
+		input      string
+		wantLabels labels
+	}{
+		{
+			input:      "func()",
+			wantLabels: HeuristicParensAsPatterns | Literal,
+		},
+		{
+			input:      "func(.*)",
+			wantLabels: HeuristicParensAsPatterns | Regexp,
+		},
+	}
+	for _, c := range cases {
+		t.Run("Map query", func(t *testing.T) {
+			query, _ := ParseAndOr(c.input)
+			got := EmptyGroupsToLiteral(query)[0].(Pattern)
+			if diff := cmp.Diff(c.wantLabels, got.Annotation.Labels); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestMap(t *testing.T) {
 	cases := []struct {
 		input string

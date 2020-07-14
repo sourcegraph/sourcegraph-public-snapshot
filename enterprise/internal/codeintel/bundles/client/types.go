@@ -47,3 +47,11 @@ type Diagnostic struct {
 	EndLine        int    `json:"endLine"`
 	EndCharacter   int    `json:"endCharacter"`
 }
+
+// CodeIntelligenceRange pairs a range with its definitions, reference, and hover text.
+type CodeIntelligenceRange struct {
+	Range       Range      `json:"range"`
+	Definitions []Location `json:"definitions"`
+	References  []Location `json:"references"`
+	HoverText   string     `json:"hoverText"`
+}

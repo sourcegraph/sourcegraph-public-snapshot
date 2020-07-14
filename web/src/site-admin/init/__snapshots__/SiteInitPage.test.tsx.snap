@@ -12,7 +12,7 @@ exports[`SiteInitPage normal 1`] = `
     >
       <img
         className="w-100 mb-3"
-        src="/img/sourcegraph-light-head-logo.svg"
+        src="/img/sourcegraph-light-head-logo.svg?v2"
       />
       <h2
         className="site-init-page__header"
@@ -107,7 +107,7 @@ exports[`SiteInitPage unexpected authed user 1`] = `
     >
       <img
         className="w-100 mb-3"
-        src="/img/sourcegraph-light-head-logo.svg"
+        src="/img/sourcegraph-light-head-logo.svg?v2"
       />
       <p>
         You're signed in as 

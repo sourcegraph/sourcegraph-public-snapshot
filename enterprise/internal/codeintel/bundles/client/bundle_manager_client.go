@@ -23,7 +23,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/tar"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
 )
@@ -59,7 +58,7 @@ type BundleManagerClient interface {
 	// from the bundle manager.
 	GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error)
 
-	// SendDB transfers a converted database archive to the bundle manager to be stored on disk.
+	// SendDB transfers a converted database to the bundle manager to be stored on disk.
 	SendDB(ctx context.Context, bundleID int, path string) error
 
 	// Exists determines if a file exists on disk for all the supplied identifiers.
@@ -236,9 +235,9 @@ func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Write
 	return c.ioCopy(w, body)
 }
 
-// SendDB transfers a converted database archive to the bundle manager to be stored on disk.
+// SendDB transfers a converted database to the bundle manager to be stored on disk.
 func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, path string) (err error) {
-	files, cleanup, err := codeintelutils.SplitReader(tar.Archive(path), c.maxPayloadSizeBytes)
+	files, cleanup, err := codeintelutils.SplitFile(path, c.maxPayloadSizeBytes)
 	if err != nil {
 		return err
 	}
@@ -351,11 +350,8 @@ func writeToTempFile(r io.Reader) (_ string, err error) {
 		}
 	}()
 
-	if _, err := io.Copy(file, r); err != nil {
-		return "", err
-	}
-
-	return file.Name(), nil
+	_, err = io.Copy(file, r)
+	return file.Name(), err
 }
 
 // doAndDrop performs an HTTP request to the bundle manager and ignores the body contents.

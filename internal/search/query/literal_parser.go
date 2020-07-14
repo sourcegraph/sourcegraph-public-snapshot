@@ -35,6 +35,13 @@ func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
 	return scanned, count
 }
 
+// isParameter returns whether the token is a parameter.
+func isParameter(token []byte) bool {
+	parser := &parser{buf: token}
+	_, ok, _ := parser.ParseParameter()
+	return ok
+}
+
 // ScanBalancedPatternLiteral attempts to scan parentheses as literal patterns.
 // It returns the scanned string, how much to advance, and whether it succeeded.
 // Basically it scans any literal string, including whitespace, but ensures that
@@ -50,6 +57,8 @@ func ScanBalancedPatternLiteral(buf []byte) (scanned string, count int, ok bool)
 		buf = buf[advance:]
 		return r
 	}
+
+	var token []byte
 
 loop:
 	for len(buf) > 0 {
@@ -75,13 +84,26 @@ loop:
 			}
 			result = append(result, r)
 		case unicode.IsSpace(r):
+			if isParameter(token) {
+				// This is not a pattern, one of the tokens is parameter.
+				return "", 0, false
+			}
+			token = []byte{}
+
 			// We see a space and the pattern is unbalanced, so assume this
 			// this space is still part of the pattern.
 			result = append(result, r)
 		default:
+			token = append(token, []byte(string(r))...)
 			result = append(result, r)
 		}
 	}
+
+	if isParameter(token) {
+		// This is not a pattern, one of the tokens is parameter.
+		return "", 0, false
+	}
+
 	scanned = string(result)
 	if ContainsAndOrKeyword(scanned) {
 		// Reject if we scanned 'and' or 'or'. Preceding parentheses

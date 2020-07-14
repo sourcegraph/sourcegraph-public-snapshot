@@ -39,7 +39,7 @@ var (
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.17.3")
+	latestReleaseKubernetesBuild = newBuild("3.17.3-1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be

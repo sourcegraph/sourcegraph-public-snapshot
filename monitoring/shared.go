@@ -61,7 +61,7 @@ func promCadvisorContainerMatchers(containerName string) string {
 var sharedContainerRestarts sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "container_restarts",
-		Description:     "container restarts every 5m by instance (not available on server)",
+		Description:     "container restarts every 5m by instance",
 		Query:           fmt.Sprintf(`increase(cadvisor_container_restart_count{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 1},
@@ -80,7 +80,7 @@ var sharedContainerRestarts sharedObservable = func(containerName string) Observ
 var sharedContainerMemoryUsage sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "container_memory_usage",
-		Description:     "container memory usage by instance (not available on server)",
+		Description:     "container memory usage by instance",
 		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
@@ -95,7 +95,7 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 var sharedContainerCPUUsage sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "container_cpu_usage",
-		Description:     "container cpu usage total (1m average) across all cores by instance (not available on server)",
+		Description:     "container cpu usage total (1m average) across all cores by instance",
 		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
@@ -112,7 +112,7 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "provisioning_container_cpu_usage_5m",
-		Description:     "container cpu usage total (5m average) across all cores by instance (not available on server)",
+		Description:     "container cpu usage total (5m average) across all cores by instance",
 		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
@@ -127,7 +127,7 @@ var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) O
 var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "provisioning_container_memory_usage_5m",
-		Description:     "container memory usage (5m average) by instance (not available on server)",
+		Description:     "container memory usage (5m average) by instance",
 		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
@@ -141,36 +141,36 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 
 // Warn that instances might need more/less resources if long-term usage is high or low.
 
-var sharedProvisioningCPUUsage1d sharedObservable = func(containerName string) Observable {
+var sharedProvisioningCPUUsage7d sharedObservable = func(containerName string) Observable {
 	return Observable{
-		Name:            "provisioning_container_cpu_usage_1d",
-		Description:     "container cpu usage total (1d average) across all cores by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
+		Name:            "provisioning_container_cpu_usage_7d",
+		Description:     "container cpu usage total (7d average) across all cores by instance",
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
 		PossibleSolutions: strings.Replace(`
-			If usage is high:
-			- **Kubernetes:** Consider decreasing CPU limits in the the relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider descreasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			If usage is low, consider decreasing the above values.
+			- If usage is high:
+				- **Kubernetes:** Consider decreasing CPU limits in the the relevant 'Deployment.yaml'.
+				- **Docker Compose:** Consider descreasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+			- If usage is low, consider decreasing the above values.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }
 
-var sharedProvisioningMemoryUsage1d sharedObservable = func(containerName string) Observable {
+var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string) Observable {
 	return Observable{
-		Name:            "provisioning_container_memory_usage_1d",
-		Description:     "container memory usage (1d average) by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
+		Name:            "provisioning_container_memory_usage_7d",
+		Description:     "container memory usage (7d average) by instance",
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
 		PossibleSolutions: strings.Replace(`
-			If usage is high:
-			- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider decreasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			If usage is low, consider decreasing the above values.
+			- If usage is high:
+				- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.
+				- **Docker Compose:** Consider decreasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+			- If usage is low, consider decreasing the above values.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }

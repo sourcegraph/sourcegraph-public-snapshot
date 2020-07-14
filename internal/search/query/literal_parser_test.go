@@ -21,8 +21,8 @@ func collectLabels(nodes []Node) (result labels) {
 }
 
 func heuristicLabels(nodes []Node) string {
-	labels := Strings(collectLabels(nodes))
-	return strings.Join(labels, ",")
+	labels := collectLabels(nodes)
+	return strings.Join(labels.String(), ",")
 }
 
 func TestParseAndOrLiteral(t *testing.T) {

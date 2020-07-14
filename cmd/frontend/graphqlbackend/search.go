@@ -943,43 +943,6 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	return suggestions, nil
 }
 
-// SearchRepos searches for the provided query but only the the unique list of
-// repositories belonging to the search results.
-// It's used by campaigns to search.
-func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
-	queryString := query.ConvertToLiteral(plainQuery)
-
-	var queryInfo query.QueryInfo
-	var err error
-	if conf.AndOrQueryEnabled() {
-		andOrQuery, err := query.ParseAndOr(plainQuery)
-		if err != nil {
-			return nil, err
-		}
-		queryInfo = &query.AndOrQuery{Query: andOrQuery}
-	} else {
-		queryInfo, err = query.ParseAndCheck(queryString)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	sr := &searchResolver{
-		query:         queryInfo,
-		originalQuery: plainQuery,
-		pagination:    nil,
-		patternType:   query.SearchTypeLiteral,
-		zoekt:         search.Indexed(),
-		searcherURLs:  search.SearcherURLs(),
-	}
-
-	results, err := sr.Results(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return results.Repositories(), nil
-}
-
 func unionRegExps(patterns []string) string {
 	if len(patterns) == 0 {
 		return ""
@@ -1130,5 +1093,3 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 	}
 	return nil
 }
-
-var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")

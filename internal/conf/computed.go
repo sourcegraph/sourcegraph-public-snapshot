@@ -219,14 +219,6 @@ func SearchIndexEnabled() bool {
 	return DeployType() != DeploySingleDocker
 }
 
-func SymbolIndexEnabled() bool {
-	enabled := SearchIndexEnabled()
-	if v := Get().SearchIndexSymbolsEnabled; v != nil {
-		enabled = enabled && *v
-	}
-	return enabled
-}
-
 func CampaignsReadAccessEnabled() bool {
 	if v := Get().CampaignsReadAccessEnabled; v != nil {
 		return *v

@@ -80,7 +80,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 
 	z := &searchbackend.Zoekt{
 		Client: &fakeSearcher{
-			repos:  &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{zoektRepo}},
+			repos:  []*zoekt.RepoListEntry{zoektRepo},
 			result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 		DisableCache: true,

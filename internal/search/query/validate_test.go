@@ -45,6 +45,14 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "count:-1",
 			want:  "field count requires a positive number",
 		},
+		{
+			input: "+",
+			want:  "error parsing regexp: missing argument to repetition operator: `+`",
+		},
+		{
+			input: `\\\`,
+			want:  "error parsing regexp: trailing backslash at end of expression: ``",
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
@@ -177,7 +185,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 		},
 		{
 			input: "file:foo (x y)",
-			want:  `"file:foo" (concat "(x" "y)")`,
+			want:  `"file:foo" "(x y)"`,
 		},
 		{
 			input: "(file:foo x) y",

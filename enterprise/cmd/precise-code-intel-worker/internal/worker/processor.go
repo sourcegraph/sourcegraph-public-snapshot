@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -96,21 +95,21 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 		return false, err
 	}
 
-	// At this point we haven't touched the database. We're going to start a nested transaction
+	// Start a nested transaction. In the event that something after this point fails, we want to
+	// update the upload record with an error message but do not want to alter any other data in
+	// the database. Rolling back to this savepoint will allow us to discard any other changes
+	// but still commit the transaction as a whole.
+
 	// with Postgres savepoints. In the event that something after this point fails, we want to
 	// update the upload record with an error message but do not want to alter any other data in
 	// the database. Rolling back to this savepoint will allow us to discard any other changes
 	// but still commit the transaction as a whole.
-	savepointID, err := store.Savepoint(ctx)
+	tx, err := store.Transact(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "store.Savepoint")
+		return false, errors.Wrap(err, "store.Transact")
 	}
 	defer func() {
-		if err != nil {
-			if rollbackErr := store.RollbackToSavepoint(ctx, savepointID); rollbackErr != nil {
-				err = multierror.Append(err, rollbackErr)
-			}
-		}
+		err = tx.Done(err)
 	}()
 
 	if err := p.updateXrepoData(ctx, store, upload, groupedBundleData.Packages, groupedBundleData.PackageReferences); err != nil {
@@ -118,7 +117,7 @@ func (p *processor) Process(ctx context.Context, store store.Store, upload store
 	}
 
 	// Send converted database file to bundle manager
-	if err := p.sendDB(ctx, upload.ID, tempDir); err != nil {
+	if err := p.sendDB(ctx, upload.ID, filepath.Join(tempDir, "sqlite.db")); err != nil {
 		return false, err
 	}
 

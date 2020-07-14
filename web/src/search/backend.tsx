@@ -10,10 +10,10 @@ import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
+import { DeployType } from '../jscontext'
 
 // TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
 const genericSearchResultInterfaceFields = `
-    __typename
     label {
         html
     }

@@ -15,11 +15,23 @@ All notable changes to Sourcegraph are documented in this file.
 
 - To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Previously this was only supported for diff and commit searches and only available via the experimental site setting `searchMultipleRevisionsPerRepository`.
 - The "Add repositories" page (/site-admin/external-services/new) now displays a dismissable notification explaining how and why we access code host data. [#11789](https://github.com/sourcegraph/sourcegraph/pull/11789).
+- New `observability.alerts` features:
+  - Notifications now provide more details about relevant alerts.
+  - Support for email and OpsGenie notifications has been added. Note that to receive email alerts, `email.address` and `email.smtp` must be configured.
+  - Some notifiers now have new options:
+    - PagerDuty notifiers: `severity` and `apiUrl`
+    - Webhook notifiers: `bearerToken`
+  - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
+- Recently firing critical alerts are now displayed to admins in site alerts.
+- Revisions listed in `experimentalFeatures.versionContext` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
 
 ### Changed
 
 - Some monitoring alerts now have more useful descriptions. [#11542](https://github.com/sourcegraph/sourcegraph/pull/11542)
 - Searching `fork:true` or `archived:true` has the same behaviour as searching `fork:yes` or `archived:yes` respectively. Previously it incorrectly had the same behaviour as `fork:only` and `archived:only` respectively. [#11740](https://github.com/sourcegraph/sourcegraph/pull/11740)
+- Configuration for `observability.alerts` has changed and notifications are now provided by Prometheus Alertmanager. [#11832](https://github.com/sourcegraph/sourcegraph/pull/11832)
+  - Removed: `observability.alerts.id`.
+  - Removed: Slack notifiers no longer accept `mentionUsers`, `mentionGroups`, `mentionChannel`, and `token` options.
 
 ### Fixed
 
