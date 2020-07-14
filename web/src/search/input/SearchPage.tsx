@@ -122,7 +122,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         ))}
                     </div>
                     <div className="search-page__help-content row mt-5">
-                        <div className="search-page__example-searches col-sm-12 col-md-12 col-lg-5 col-xl-6">
+                        <div className="search-page__example-searches col-xs-12 col-lg-5 col-xl-6">
                             <h3 className="search-page__help-content-header">Example searches</h3>
                             <ul className="list-group-flush p-0 mt-2">
                                 <li className="list-group-item px-0 pt-3 pb-2">
