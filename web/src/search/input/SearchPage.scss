@@ -91,6 +91,11 @@
         margin-bottom: 3rem;
     }
 
+    &__lang-link {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     &__help-content {
         &-subheading {
             margin-bottom: 1rem;

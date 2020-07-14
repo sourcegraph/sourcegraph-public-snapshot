@@ -195,7 +195,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         .slice(0, Math.ceil(homepageLanguageList.length / 2))
                                         .map(language => (
                                             <Link
-                                                className="text-monospace search-page__web-link mb-3"
+                                                className="search-page__web-link search-page__lang-link text-monospace mb-3"
                                                 to={`/search?q=lang:${language.filterName}`}
                                                 key={language.name}
                                             >
@@ -208,7 +208,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         .slice(Math.ceil(homepageLanguageList.length / 2), homepageLanguageList.length)
                                         .map(language => (
                                             <Link
-                                                className="text-monospace search-page__web-link mb-3"
+                                                className="search-page__web-link search-page__lang-link text-monospace mb-3"
                                                 to={`/search?q=lang:${language.filterName}`}
                                                 key={language.name}
                                             >
