@@ -363,7 +363,8 @@ func TestDetectSearchType(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(*testing.T) {
-			got, err := detectSearchType(test.version, test.patternType, test.input)
+			got, err := detectSearchType(test.version, test.patternType)
+			got = overrideSearchType(test.input, got)
 			if err != nil {
 				t.Fatal(err)
 			}

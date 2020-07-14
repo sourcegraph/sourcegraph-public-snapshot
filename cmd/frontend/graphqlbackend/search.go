@@ -73,10 +73,11 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
-	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
+	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
 		return nil, err
 	}
+	searchType = overrideSearchType(args.Query, searchType)
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
@@ -191,7 +192,7 @@ func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*sea
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
 // overrides the searchType, if present.
-func detectSearchType(version string, patternType *string, input string) (query.SearchType, error) {
+func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
@@ -214,7 +215,10 @@ func detectSearchType(version string, patternType *string, input string) (query.
 			return -1, fmt.Errorf("unrecognized version: %v", version)
 		}
 	}
+	return searchType, nil
+}
 
+func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
 	// The patterntype field is Singular, but not enforced since we do not
 	// properly parse the input. The regex extraction, takes the left-most
 	// "patterntype:value" match.
@@ -231,8 +235,7 @@ func detectSearchType(version string, patternType *string, input string) (query.
 			searchType = query.SearchTypeStructural
 		}
 	}
-
-	return searchType, nil
+	return searchType
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
