@@ -22,7 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
     - PagerDuty notifiers: `severity` and `apiUrl`
     - Webhook notifiers: `bearerToken`
   - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
-- Recently firing critical alerts can now displayed to admins via site alerts with the flag `alerts.hideObservabilitySiteAlerts` in user configuration.
+- Recently firing critical alerts can now be displayed to admins via site alerts, use the flag `{ "alerts.hideObservabilitySiteAlerts": false }` to enable these alerts in user configuration.
 - Specific alerts can now be silenced using `observability.silenceAlerts`. [#12087](https://github.com/sourcegraph/sourcegraph/pull/12087)
 - Revisions listed in `experimentalFeatures.versionContext` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
 
