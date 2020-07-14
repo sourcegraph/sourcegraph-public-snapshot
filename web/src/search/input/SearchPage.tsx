@@ -221,7 +221,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         <div className="search-page__search-syntax col-xs-12 col-md-6  col-lg-4">
                             <h3 className="search-page__help-content-header">Search syntax</h3>
                             <div className="mt-3 row">
-                                <dl className="col-sm-5 col-md-12 col-lg-6 mb-4">
+                                <dl className="col-xs-12 col-lg-6 mb-4">
                                     <dt className="search-page__help-content-subheading">
                                         <h5>Common search keywords</h5>
                                     </dt>
@@ -253,7 +253,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <p>repo:r@*refs/heads/ (all branches)</p>
                                     </dd>
                                 </dl>
-                                <dl className="col-sm-5 col-md-12 col-xl-6">
+                                <dl className="col-xs-12 col-xl-6">
                                     <dt className="search-page__help-content-subheading">
                                         <h5>Finding matches</h5>
                                     </dt>
