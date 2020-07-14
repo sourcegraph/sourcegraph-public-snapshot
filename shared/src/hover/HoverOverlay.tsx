@@ -222,7 +222,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                 className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
                                 key={index}
                             >
-                                {badge && !type && (
+                                {badge && (
                                     <BadgeAttachment
                                         className="hover-overlay__badge e2e-hover-badge"
                                         iconClassName={this.props.iconClassName}
@@ -238,16 +238,6 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     <span
                                         className="hover-overlay__content"
                                         dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.value) }}
-                                    />
-                                )}
-
-                                {badge && type && (
-                                    <BadgeAttachment
-                                        className="hover-overlay__badge e2e-hover-badge"
-                                        iconClassName={this.props.iconClassName}
-                                        iconButtonClassName={this.props.iconButtonClassName}
-                                        attachment={badge}
-                                        isLightTheme={this.props.isLightTheme}
                                     />
                                 )}
 
