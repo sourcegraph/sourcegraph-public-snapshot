@@ -480,7 +480,7 @@ func TestChangesetSpecUnmarshalValidate(t *testing.T) {
 				  "diff": "the diff"
 				}]
 			}`,
-			err: "1 error occurred:\n\t* headRepository does not match baseRepository\n\n",
+			err: ErrHeadBaseMismatch.Error(),
 		},
 		{
 			name: "too many commits in GitBranchChangesetDescription",
