@@ -568,9 +568,11 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 			continue
 		}
 
-		ok = indexed.Add(reporev, repo)
-		if !ok {
-			unindexed = append(unindexed, reporev)
+		unindexedRevs := indexed.Add(reporev, repo)
+		if len(unindexedRevs) > 0 {
+			copy := *reporev
+			copy.Revs = unindexedRevs
+			unindexed = append(unindexed, &copy)
 		}
 	}
 
@@ -599,61 +601,75 @@ type indexedRepoRevs struct {
 }
 
 // Add will add reporev and repo to the list of repository and branches to
-// search if reporev's refs are a subset of repo's branches.
-func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) bool {
+// search if reporev's refs are a subset of repo's branches. It will return
+// the revision specifiers it can't add.
+func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) []search.RevisionSpecifier {
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
 	if _, ok := rb.repoBranches[string(reporev.Repo.Name)]; ok {
-		return false
+		return reporev.Revs
 	}
 
 	if !reporev.OnlyExplicit() {
 		// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
 		// search on it.
-		return false
+		//
+		// TODO we could only process the explicit revs and return the non
+		// explicit ones as unindexed.
+		return reporev.Revs
 	}
 
 	// notHEADOnlySearch is set to true if we search any branch other than
 	// repo.Branches[0]
 	notHEADOnlySearch := false
 
+	// Assume for large searches they will mostly involve indexed
+	// revisions. So avoid allocations for that case by reuseing reporev.Revs
+	var unindexed []search.RevisionSpecifier
+	indexed := reporev.Revs[:0]
+
 	branches := make([]string, 0, len(reporev.Revs))
 	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
 			// Zoekt convention that first branch is HEAD
 			branches = append(branches, repo.Branches[0].Name)
+			indexed = append(indexed, rev)
 			continue
 		}
 
+		found := false
 		for i, branch := range repo.Branches {
 			if branch.Name == rev.RevSpec {
 				branches = append(branches, branch.Name)
 				notHEADOnlySearch = notHEADOnlySearch || i > 0
+				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 				branches = append(branches, branch.Name)
 				notHEADOnlySearch = notHEADOnlySearch || i > 0
+				found = true
 				break
 			}
 		}
+
+		if found {
+			indexed = append(indexed, rev)
+		} else {
+			unindexed = append(unindexed, rev)
+		}
 	}
 
-	// Only search zoekt if we can search all revisions on it. TODO see if
-	// anything breaks if we do split out the search. Educated guess: the
-	// lists of repos in searchResultsCommon may not like it.
-	//
-	// NOTE: notHEADOnlySearch depends on this assumptions
-	if len(branches) != len(reporev.Revs) {
-		return false
+	// We found indexed branches! Track them.
+	if len(indexed) > 0 {
+		rb.repoRevs[string(reporev.Repo.Name)] = reporev
+		rb.repoBranches[string(reporev.Repo.Name)] = branches
+		rb.NotHEADOnlySearch = rb.NotHEADOnlySearch || notHEADOnlySearch
 	}
 
-	rb.repoRevs[string(reporev.Repo.Name)] = reporev
-	rb.repoBranches[string(reporev.Repo.Name)] = branches
-	rb.NotHEADOnlySearch = rb.NotHEADOnlySearch || notHEADOnlySearch
-	return true
+	return unindexed
 }
 
 // GetRepoInputRev returns the repo and inputRev associated with file.

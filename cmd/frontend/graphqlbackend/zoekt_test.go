@@ -224,7 +224,8 @@ func TestIndexedSearch(t *testing.T) {
 		},
 		{
 			// if we search a branch that is indexed and unindexed, we should
-			// use unindexed search.
+			// split the repository revision into the indexed and unindexed
+			// parts.
 			name: "split branch",
 			args: args{
 				ctx:             context.Background(),
@@ -239,7 +240,10 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
-			wantUnindexed: makeRepositoryRevisions("foo/bar@HEAD:unindexed"),
+			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
+			wantMatchURLs: []string{
+				"git://foo/bar?HEAD#baz.go",
+			},
 		},
 	}
 	for _, tt := range tests {
