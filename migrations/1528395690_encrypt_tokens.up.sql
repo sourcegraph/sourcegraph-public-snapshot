@@ -1,19 +1,18 @@
 BEGIN;
 
--- Insert migration here. See README.md. Highlights:
---  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
---  * All migrations must be backward-compatible. Old versions of Sourcegraph
---    need to be able to read/write post migration.
---  * Historically we advised against transactions since we thought the
---    migrate library handled it. However, it does not! /facepalm
-
-CREATE TABLE crypt_secrets (
-    id bigint NOT NULL,
-    source_type varying(50) NOT NULL,
-    source_id bigint NOT NULL,
-    value text NOT NULL,
+CREATE TABLE secrets (
+    id BIGSERIAL PRIMARY KEY,
+    source_type varying(50),
+    source_id bigint,
+    key_name varying(100),
+    value text NOT NULL
 );
 
-CREATE INDEX source_secret_idx ON crypt_secrets USING (source_type, source_id);
+-- A source_type/source_id combination should always be unique, otherwise we
+-- can have duplicate token entries
+CREATE UNIQUE INDEX secret_sourcetype_idx ON secrets USING btree (source_type, source_id);
+
+-- PostgreSQL treats NULL as distinct values
+CREATE UNIQUE INDEX secret_key_idx ON secrets USING btree (key_name);
 
 COMMIT;

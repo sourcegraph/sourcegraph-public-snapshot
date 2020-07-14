@@ -376,9 +376,10 @@ type Event struct {
 	Timestamp       time.Time
 }
 
-type CryptSecret struct {
+type Secret struct {
 	ID         int32
 	SourceType string // the table providing the object we're encrypting
 	SourceID   int32  // the id in the external table
+	KeyName    string
 	Value      string
 }

@@ -24,5 +24,5 @@ type MockStores struct {
 
 	Authz MockAuthz
 
-	CryptSecrets MockCryptSecrets
+	Secrets MockSecrets
 }
