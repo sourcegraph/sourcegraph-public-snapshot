@@ -652,6 +652,13 @@
         }
       }
     },
+    "observability.silenceAlerts": {
+      "description": "Silence individual Sourcegraph alerts by identifier.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",

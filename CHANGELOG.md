@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
     - Webhook notifiers: `bearerToken`
   - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
 - Recently firing critical alerts are now displayed to admins in site alerts.
+- Specific alerts can now be silenced using `observability.silenceAlerts`. [#12087](https://github.com/sourcegraph/sourcegraph/pull/12087)
 - Revisions listed in `experimentalFeatures.versionContext` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
 
 ### Changed
