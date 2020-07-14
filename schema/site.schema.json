@@ -152,6 +152,20 @@
             ]
           ]
         },
+        "search.index.branches": {
+          "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index HEAD and revisions in version contexts. This allows specifying additional revisions.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "examples": [
+            {
+              "github.com/sourcegraph/sourcegraph": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"],
+              "name/of/repo": ["develop"]
+            }
+          ]
+        },
         "versionContexts": {
           "description": "JSON array of version context configuration",
           "type": "array",

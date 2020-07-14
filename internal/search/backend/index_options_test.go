@@ -20,6 +20,13 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		}
 	}
+	withBranches := func(c schema.SiteConfiguration, b map[string][]string) schema.SiteConfiguration {
+		if c.ExperimentalFeatures == nil {
+			c.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+		}
+		c.ExperimentalFeatures.SearchIndexBranches = b
+		return c
+	}
 
 	cases := []struct {
 		name string
@@ -104,6 +111,32 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 				{Name: "a", Version: "!a"},
+			},
+		},
+	}, {
+		name: "conf index branches",
+		conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": {"a"}}),
+		repo: "repo",
+		want: zoektIndexOptions{
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+				{Name: "a", Version: "!a"},
+			},
+		},
+	}, {
+		name: "conf index branches and vc",
+		conf: withBranches(
+			vcConf(vc("foo", "repo", "repo@a", "repo@b")),
+			map[string][]string{"repo": {"b", "c"}}),
+		repo: "repo",
+		want: zoektIndexOptions{
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+				{Name: "a", Version: "!a"},
+				{Name: "b", Version: "!b"},
+				{Name: "c", Version: "!c"},
 			},
 		},
 	}}
