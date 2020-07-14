@@ -158,10 +158,39 @@ func (s *secrets) GetBySourceTypeAndID(ctx context.Context, sourceType string, s
 		FROM
 			secrets
 		WHERE
-			source_type=$1 AND source_id=$2
-	`, sourceType, sourceID)
+		`, sourceType, sourceID)
 
 	return s.getBySQL(ctx, sqlQ)
+
+}
+
+func (s *secrets) insert(ctx context.Context, query *sqlf.Query) error {
+
+	_, err := dbconn.Global.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return err
+
+}
+
+// Insert a new key-value secret
+func (s *secrets) InsertKeyValue(ctx context.Context, keyName string, value string) error {
+
+	sqlQ := sqlf.Sprintf(
+		`INSERT INTO
+			secrets(key_name, value)
+		VALUES($1, $2)
+		`, keyName, value)
+	return s.insert(ctx, sqlQ)
+
+}
+
+// Insert a new secret referenced by another table type
+func (s *secrets) InsertSourceTypeValue(ctx context.Context, sourceType string, sourceID int32, value string) error {
+	sqlQ := sqlf.Sprintf(
+		`INSERT INTO
+			secrets(source_type, source_id, value)
+		VALUES($1, $2, $3)
+		`, sourceType, sourceID, value)
+	return s.insert(ctx, sqlQ)
 
 }
 
