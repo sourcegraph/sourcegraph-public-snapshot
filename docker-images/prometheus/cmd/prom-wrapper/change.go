@@ -109,6 +109,7 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 	return
 }
 
+// changeSilences syncs Alertmanager silences with silences configured in observability.silenceAlerts
 func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
 	// convenience function for creating a prefixed problem - this reflects the relevant site configuration fields
 	newProblem := func(err error) {
@@ -116,12 +117,12 @@ func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext,
 	}
 
 	var (
-		createdBy      = "src-prom-wrapper"
-		comment        = "Applied via `observability.silenceAlerts` in site configuration"
-		startTime      = strfmt.DateTime(time.Now())
-        // 10 year expiry, we don't want it to expire and will remove the silence once it is removed from site config
+		createdBy = "src-prom-wrapper"
+		comment   = "Applied via `observability.silenceAlerts` in site configuration"
+		startTime = strfmt.DateTime(time.Now())
+		// 10 year expiry, we don't want it to expire and will remove the silence once it is removed from site config
 		endTime        = strfmt.DateTime(time.Now().Add(10 * 365 * 24 * time.Hour))
-		activeSilences = map[schema.ObservabilitySilenceAlerts]string{}             // map silence to alertmanager silence ID
+		activeSilences = map[schema.ObservabilitySilenceAlerts]string{} // map silence to alertmanager silence ID
 	)
 
 	for _, s := range newConfig.SilencedAlerts {
