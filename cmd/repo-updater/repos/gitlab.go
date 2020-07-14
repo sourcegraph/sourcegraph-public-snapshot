@@ -302,8 +302,8 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	return u.String(), nil
 }
 
-// CreateChangeset will create the Changeset on the source. If it already
-// exists, *Changeset will be populated and the return value will be true.
+// CreateChangeset creates a GitLab merge request. If it already exists,
+// *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	project := c.Repo.Metadata.(*gitlab.Project)
 	exists := false
@@ -335,9 +335,7 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	return exists, nil
 }
 
-// CloseChangeset will close the Changeset on the source, where "close" means
-// the appropriate final state on the codehost (e.g. "declined" on Bitbucket
-// Server).
+// CloseChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
@@ -350,7 +348,7 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		Title:        mr.Title,
 		TargetBranch: mr.TargetBranch,
 		StateEvent:   gitlab.UpdateMergeRequestStateEventClose,
-	})
+	})closed
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
 	}
@@ -361,7 +359,9 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	return nil
 }
 
-// LoadChangesets loads the given Changesets from the sources and updates them.
+// LoadChangesets loads the given merge requests from GitLab and updates them.
+// Note that this is an O(n) operation due to limitations in the GitLab REST
+// API.
 func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
 	// When we require GitLab 12.0+, we should migrate to the GraphQL API, which
 	// will allow us to query multiple MRs at once.
@@ -535,7 +535,8 @@ func readPipelinesUntilSeen(it func() ([]*gitlab.Pipeline, error), extant idSet)
 	}
 }
 
-// UpdateChangeset can update Changesets.
+// UpdateChangeset updates the merge request on GitLab to reflect the local
+// state of the Changeset.
 func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
