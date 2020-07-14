@@ -64,7 +64,7 @@ const authUser = {
         __typename: 'SettingsCascade',
         ...NOOP_SETTINGS_CASCADE,
         subjects: [],
-        final: '{}',
+        final: '{search.repositoryGroups: "python": ["github.com/python/test"]}',
         merged: NOOP_CONFIG,
     },
     configurationCascade: NOOP_CONFIG_CASCADE,
@@ -110,7 +110,20 @@ const authUser = {
 } as GQL.IUser
 
 const commonProps: RepogroupPageProps = {
-    settingsCascade: NOOP_SETTINGS_CASCADE,
+    settingsCascade: {
+        ...NOOP_SETTINGS_CASCADE,
+        subjects: [],
+        final: {
+            'search.repositoryGroups': {
+                python: [
+                    'github.com/python/test',
+                    'github.com/python/test2',
+                    'github.com/python/test3',
+                    'github.com/python/test4',
+                ],
+            },
+        },
+    },
     isLightTheme: true,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: sinon.spy(() => {}),

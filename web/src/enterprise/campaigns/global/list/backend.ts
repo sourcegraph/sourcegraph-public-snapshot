@@ -49,7 +49,7 @@ export const queryCampaigns = ({
 export const queryCampaignsCount = (): Observable<number> =>
     queryGraphQL(
         gql`
-            query Campaigns {
+            query CampaignsCount {
                 campaigns(first: 1) {
                     totalCount
                 }

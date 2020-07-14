@@ -12,69 +12,189 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
 )
 
-func TestConvert(t *testing.T) {
+func TestGroupBundleData(t *testing.T) {
 	state := &State{
-		DocumentData: map[string]lsif.Document{
-			"d01": {
+		DocumentData: map[int]lsif.Document{
+			1001: {
 				URI:         "foo.go",
-				Contains:    datastructures.IDSet{"r01": {}, "r02": {}, "r03": {}},
-				Diagnostics: datastructures.IDSet{"d01": {}, "d02": {}},
+				Contains:    datastructures.IDSetWith(2001, 2002, 2003),
+				Diagnostics: datastructures.IDSetWith(1001, 1002),
 			},
-			"d02": {
+			1002: {
 				URI:         "bar.go",
-				Contains:    datastructures.IDSet{"r04": {}, "r05": {}, "r06": {}},
-				Diagnostics: datastructures.IDSet{"d03": {}},
+				Contains:    datastructures.IDSetWith(2004, 2005, 2006),
+				Diagnostics: datastructures.IDSetWith(1003),
 			},
-			"d03": {
+			1003: {
 				URI:         "baz.go",
-				Contains:    datastructures.IDSet{"r07": {}, "r08": {}, "r09": {}},
-				Diagnostics: datastructures.IDSet{}, // TODO
+				Contains:    datastructures.IDSetWith(2007, 2008, 2009),
+				Diagnostics: datastructures.NewIDSet(),
 			},
 		},
-		RangeData: map[string]lsif.Range{
-			"r01": {StartLine: 1, StartCharacter: 2, EndLine: 3, EndCharacter: 4, DefinitionResultID: "x01", MonikerIDs: datastructures.IDSet{"m01": {}, "m02": {}}},
-			"r02": {StartLine: 2, StartCharacter: 3, EndLine: 4, EndCharacter: 5, ReferenceResultID: "x06", MonikerIDs: datastructures.IDSet{"m03": {}, "m04": {}}},
-			"r03": {StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6, DefinitionResultID: "x02"},
-			"r04": {StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7, ReferenceResultID: "x07"},
-			"r05": {StartLine: 5, StartCharacter: 6, EndLine: 7, EndCharacter: 8, DefinitionResultID: "x03"},
-			"r06": {StartLine: 6, StartCharacter: 7, EndLine: 8, EndCharacter: 9, HoverResultID: "x08"},
-			"r07": {StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0, DefinitionResultID: "x04"},
-			"r08": {StartLine: 8, StartCharacter: 9, EndLine: 0, EndCharacter: 1, HoverResultID: "x09"},
-			"r09": {StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2, DefinitionResultID: "x05"},
+		RangeData: map[int]lsif.Range{
+			2001: {
+				StartLine:          1,
+				StartCharacter:     2,
+				EndLine:            3,
+				EndCharacter:       4,
+				DefinitionResultID: 3001,
+				ReferenceResultID:  0,
+				MonikerIDs:         datastructures.IDSetWith(4001, 4002),
+			},
+			2002: {
+				StartLine:          2,
+				StartCharacter:     3,
+				EndLine:            4,
+				EndCharacter:       5,
+				DefinitionResultID: 0,
+				ReferenceResultID:  3006,
+				MonikerIDs:         datastructures.IDSetWith(4003, 4004)},
+			2003: {
+				StartLine:          3,
+				StartCharacter:     4,
+				EndLine:            5,
+				EndCharacter:       6,
+				DefinitionResultID: 3002,
+				ReferenceResultID:  0,
+				MonikerIDs:         datastructures.NewIDSet(),
+			},
+			2004: {
+				StartLine:          4,
+				StartCharacter:     5,
+				EndLine:            6,
+				EndCharacter:       7,
+				DefinitionResultID: 0,
+				ReferenceResultID:  3007,
+				MonikerIDs:         datastructures.NewIDSet()},
+			2005: {
+				StartLine:          5,
+				StartCharacter:     6,
+				EndLine:            7,
+				EndCharacter:       8,
+				DefinitionResultID: 3003,
+				ReferenceResultID:  0,
+				MonikerIDs:         datastructures.NewIDSet(),
+			},
+			2006: {
+				StartLine:          6,
+				StartCharacter:     7,
+				EndLine:            8,
+				EndCharacter:       9,
+				DefinitionResultID: 0,
+				HoverResultID:      3008,
+				MonikerIDs:         datastructures.NewIDSet()},
+			2007: {
+				StartLine:          7,
+				StartCharacter:     8,
+				EndLine:            9,
+				EndCharacter:       0,
+				DefinitionResultID: 3004,
+				ReferenceResultID:  0,
+				MonikerIDs:         datastructures.NewIDSet(),
+			},
+			2008: {
+				StartLine:          8,
+				StartCharacter:     9,
+				EndLine:            0,
+				EndCharacter:       1,
+				DefinitionResultID: 0,
+				HoverResultID:      3009,
+				MonikerIDs:         datastructures.NewIDSet()},
+			2009: {
+				StartLine:          9,
+				StartCharacter:     0,
+				EndLine:            1,
+				EndCharacter:       2,
+				DefinitionResultID: 3005,
+				ReferenceResultID:  0,
+				MonikerIDs:         datastructures.NewIDSet(),
+			},
 		},
-		DefinitionData: map[string]datastructures.DefaultIDSetMap{
-			"x01": {"d01": {"r03": {}}, "d02": {"r04": {}}, "d03": {"r07": {}}},
-			"x02": {"d01": {"r02": {}}, "d02": {"r05": {}}, "d03": {"r08": {}}},
-			"x03": {"d01": {"r01": {}}, "d02": {"r06": {}}, "d03": {"r09": {}}},
-			"x04": {"d01": {"r03": {}}, "d02": {"r05": {}}, "d03": {"r07": {}}},
-			"x05": {"d01": {"r02": {}}, "d02": {"r06": {}}, "d03": {"r08": {}}},
+		DefinitionData: map[int]datastructures.DefaultIDSetMap{
+			3001: {
+				1001: datastructures.IDSetWith(2003),
+				1002: datastructures.IDSetWith(2004),
+				1003: datastructures.IDSetWith(2007),
+			},
+			3002: {
+				1001: datastructures.IDSetWith(2002),
+				1002: datastructures.IDSetWith(2005),
+				1003: datastructures.IDSetWith(2008),
+			},
+			3003: {
+				1001: datastructures.IDSetWith(2001),
+				1002: datastructures.IDSetWith(2006),
+				1003: datastructures.IDSetWith(2009),
+			},
+			3004: {
+				1001: datastructures.IDSetWith(2003),
+				1002: datastructures.IDSetWith(2005),
+				1003: datastructures.IDSetWith(2007),
+			},
+			3005: {
+				1001: datastructures.IDSetWith(2002),
+				1002: datastructures.IDSetWith(2006),
+				1003: datastructures.IDSetWith(2008),
+			},
 		},
-		ReferenceData: map[string]datastructures.DefaultIDSetMap{
-			"x06": {"d01": {"r03": {}}, "d03": {"r07": {}, "r09": {}}},
-			"x07": {"d01": {"r02": {}}, "d03": {"r07": {}, "r09": {}}},
+		ReferenceData: map[int]datastructures.DefaultIDSetMap{
+			3006: {
+				1001: datastructures.IDSetWith(2003),
+				1003: datastructures.IDSetWith(2007, 2009),
+			},
+			3007: {
+				1001: datastructures.IDSetWith(2002),
+				1003: datastructures.IDSetWith(2007, 2009),
+			},
 		},
-		HoverData: map[string]string{
-			"x08": "foo",
-			"x09": "bar",
+		HoverData: map[int]string{
+			3008: "foo",
+			3009: "bar",
 		},
-		MonikerData: map[string]lsif.Moniker{
-			"m01": {Kind: "import", Scheme: "scheme A", Identifier: "ident A", PackageInformationID: "p01"},
-			"m02": {Kind: "import", Scheme: "scheme B", Identifier: "ident B"},
-			"m03": {Kind: "export", Scheme: "scheme C", Identifier: "ident C", PackageInformationID: "p02"},
-			"m04": {Kind: "export", Scheme: "scheme D", Identifier: "ident D"},
+		MonikerData: map[int]lsif.Moniker{
+			4001: {
+				Kind:                 "import",
+				Scheme:               "scheme A",
+				Identifier:           "ident A",
+				PackageInformationID: 5001,
+			},
+			4002: {
+				Kind:                 "import",
+				Scheme:               "scheme B",
+				Identifier:           "ident B",
+				PackageInformationID: 0,
+			},
+			4003: {
+				Kind:                 "export",
+				Scheme:               "scheme C",
+				Identifier:           "ident C",
+				PackageInformationID: 5002,
+			},
+			4004: {
+				Kind:                 "export",
+				Scheme:               "scheme D",
+				Identifier:           "ident D",
+				PackageInformationID: 0,
+			},
 		},
-		PackageInformationData: map[string]lsif.PackageInformation{
-			"p01": {Name: "pkg A", Version: "0.1.0"},
-			"p02": {Name: "pkg B", Version: "1.2.3"},
+		PackageInformationData: map[int]lsif.PackageInformation{
+			5001: {
+				Name:    "pkg A",
+				Version: "0.1.0",
+			},
+			5002: {
+				Name:    "pkg B",
+				Version: "1.2.3",
+			},
 		},
-		Diagnostics: map[string]lsif.DiagnosticResult{
-			"d01": {
+		Diagnostics: map[int]lsif.DiagnosticResult{
+			1001: {
 				Result: []lsif.Diagnostic{
 					{
 						Severity:       1,
 						Code:           "1234",
-						Message:        "M1",
-						Source:         "S1",
+						Message:        "m1",
+						Source:         "s1",
 						StartLine:      11,
 						StartCharacter: 12,
 						EndLine:        13,
@@ -82,13 +202,13 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			"d02": {
+			1002: {
 				Result: []lsif.Diagnostic{
 					{
 						Severity:       2,
 						Code:           "2",
-						Message:        "M2",
-						Source:         "S2",
+						Message:        "m2",
+						Source:         "s2",
 						StartLine:      21,
 						StartCharacter: 22,
 						EndLine:        23,
@@ -96,13 +216,13 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			"d03": {
+			1003: {
 				Result: []lsif.Diagnostic{
 					{
 						Severity:       3,
 						Code:           "3234",
-						Message:        "M3",
-						Source:         "S3",
+						Message:        "m3",
+						Source:         "s3",
 						StartLine:      31,
 						StartCharacter: 32,
 						EndLine:        33,
@@ -111,8 +231,8 @@ func TestConvert(t *testing.T) {
 					{
 						Severity:       4,
 						Code:           "4234",
-						Message:        "M4",
-						Source:         "S4",
+						Message:        "m4",
+						Source:         "s4",
 						StartLine:      41,
 						StartCharacter: 42,
 						EndLine:        43,
@@ -121,8 +241,8 @@ func TestConvert(t *testing.T) {
 				},
 			},
 		},
-		ImportedMonikers: datastructures.IDSet{"m01": {}},
-		ExportedMonikers: datastructures.IDSet{"m03": {}},
+		ImportedMonikers: datastructures.IDSetWith(4001),
+		ExportedMonikers: datastructures.IDSetWith(4003),
 	}
 
 	actualBundleData, err := groupBundleData(state, 42)
@@ -144,27 +264,80 @@ func TestConvert(t *testing.T) {
 		Documents: map[string]types.DocumentData{
 			"foo.go": {
 				Ranges: map[types.ID]types.RangeData{
-					"r01": {StartLine: 1, StartCharacter: 2, EndLine: 3, EndCharacter: 4, DefinitionResultID: "x01", MonikerIDs: []types.ID{"m01", "m02"}},
-					"r02": {StartLine: 2, StartCharacter: 3, EndLine: 4, EndCharacter: 5, ReferenceResultID: "x06", MonikerIDs: []types.ID{"m03", "m04"}},
-					"r03": {StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6, DefinitionResultID: "x02"},
+					"2001": {
+						StartLine:          1,
+						StartCharacter:     2,
+						EndLine:            3,
+						EndCharacter:       4,
+						DefinitionResultID: "3001",
+						ReferenceResultID:  "",
+						HoverResultID:      "",
+						MonikerIDs:         []types.ID{"4001", "4002"},
+					},
+					"2002": {
+						StartLine:          2,
+						StartCharacter:     3,
+						EndLine:            4,
+						EndCharacter:       5,
+						DefinitionResultID: "",
+						ReferenceResultID:  "3006",
+						HoverResultID:      "",
+						MonikerIDs:         []types.ID{"4003", "4004"},
+					},
+					"2003": {
+						StartLine:          3,
+						StartCharacter:     4,
+						EndLine:            5,
+						EndCharacter:       6,
+						DefinitionResultID: "3002",
+						ReferenceResultID:  "",
+						HoverResultID:      "",
+						MonikerIDs:         []types.ID{},
+					},
 				},
 				HoverResults: map[types.ID]string{},
 				Monikers: map[types.ID]types.MonikerData{
-					"m01": {Kind: "import", Scheme: "scheme A", Identifier: "ident A", PackageInformationID: "p01"},
-					"m02": {Kind: "import", Scheme: "scheme B", Identifier: "ident B"},
-					"m03": {Kind: "export", Scheme: "scheme C", Identifier: "ident C", PackageInformationID: "p02"},
-					"m04": {Kind: "export", Scheme: "scheme D", Identifier: "ident D"},
+					"4001": {
+						Kind:                 "import",
+						Scheme:               "scheme A",
+						Identifier:           "ident A",
+						PackageInformationID: "5001",
+					},
+					"4002": {
+						Kind:                 "import",
+						Scheme:               "scheme B",
+						Identifier:           "ident B",
+						PackageInformationID: "",
+					},
+					"4003": {
+						Kind:                 "export",
+						Scheme:               "scheme C",
+						Identifier:           "ident C",
+						PackageInformationID: "5002",
+					},
+					"4004": {
+						Kind:                 "export",
+						Scheme:               "scheme D",
+						Identifier:           "ident D",
+						PackageInformationID: "",
+					},
 				},
 				PackageInformation: map[types.ID]types.PackageInformationData{
-					"p01": {Name: "pkg A", Version: "0.1.0"},
-					"p02": {Name: "pkg B", Version: "1.2.3"},
+					"5001": {
+						Name:    "pkg A",
+						Version: "0.1.0",
+					},
+					"5002": {
+						Name:    "pkg B",
+						Version: "1.2.3",
+					},
 				},
 				Diagnostics: []types.DiagnosticData{
 					{
 						Severity:       1,
 						Code:           "1234",
-						Message:        "M1",
-						Source:         "S1",
+						Message:        "m1",
+						Source:         "s1",
 						StartLine:      11,
 						StartCharacter: 12,
 						EndLine:        13,
@@ -173,8 +346,8 @@ func TestConvert(t *testing.T) {
 					{
 						Severity:       2,
 						Code:           "2",
-						Message:        "M2",
-						Source:         "S2",
+						Message:        "m2",
+						Source:         "s2",
 						StartLine:      21,
 						StartCharacter: 22,
 						EndLine:        23,
@@ -184,19 +357,46 @@ func TestConvert(t *testing.T) {
 			},
 			"bar.go": {
 				Ranges: map[types.ID]types.RangeData{
-					"r04": {StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7, ReferenceResultID: "x07"},
-					"r05": {StartLine: 5, StartCharacter: 6, EndLine: 7, EndCharacter: 8, DefinitionResultID: "x03"},
-					"r06": {StartLine: 6, StartCharacter: 7, EndLine: 8, EndCharacter: 9, HoverResultID: "x08"},
+					"2004": {
+						StartLine:          4,
+						StartCharacter:     5,
+						EndLine:            6,
+						EndCharacter:       7,
+						DefinitionResultID: "",
+						ReferenceResultID:  "3007",
+						HoverResultID:      "",
+						MonikerIDs:         []types.ID{},
+					},
+					"2005": {
+						StartLine:          5,
+						StartCharacter:     6,
+						EndLine:            7,
+						EndCharacter:       8,
+						DefinitionResultID: "3003",
+						ReferenceResultID:  "",
+						HoverResultID:      "",
+						MonikerIDs:         []types.ID{},
+					},
+					"2006": {
+						StartLine:          6,
+						StartCharacter:     7,
+						EndLine:            8,
+						EndCharacter:       9,
+						DefinitionResultID: "",
+						ReferenceResultID:  "",
+						HoverResultID:      "3008",
+						MonikerIDs:         []types.ID{},
+					},
 				},
-				HoverResults:       map[types.ID]string{"x08": "foo"},
+				HoverResults:       map[types.ID]string{"3008": "foo"},
 				Monikers:           map[types.ID]types.MonikerData{},
 				PackageInformation: map[types.ID]types.PackageInformationData{},
 				Diagnostics: []types.DiagnosticData{
 					{
 						Severity:       3,
 						Code:           "3234",
-						Message:        "M3",
-						Source:         "S3",
+						Message:        "m3",
+						Source:         "s3",
 						StartLine:      31,
 						StartCharacter: 32,
 						EndLine:        33,
@@ -205,8 +405,8 @@ func TestConvert(t *testing.T) {
 					{
 						Severity:       4,
 						Code:           "4234",
-						Message:        "M4",
-						Source:         "S4",
+						Message:        "m4",
+						Source:         "s4",
 						StartLine:      41,
 						StartCharacter: 42,
 						EndLine:        43,
@@ -216,11 +416,38 @@ func TestConvert(t *testing.T) {
 			},
 			"baz.go": {
 				Ranges: map[types.ID]types.RangeData{
-					"r07": {StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0, DefinitionResultID: "x04"},
-					"r08": {StartLine: 8, StartCharacter: 9, EndLine: 0, EndCharacter: 1, HoverResultID: "x09"},
-					"r09": {StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2, DefinitionResultID: "x05"},
+					"2007": {
+						StartLine:          7,
+						StartCharacter:     8,
+						EndLine:            9,
+						EndCharacter:       0,
+						DefinitionResultID: "3004",
+						ReferenceResultID:  "",
+						HoverResultID:      "",
+						MonikerIDs:         []types.ID{},
+					},
+					"2008": {
+						StartLine:          8,
+						StartCharacter:     9,
+						EndLine:            0,
+						EndCharacter:       1,
+						DefinitionResultID: "",
+						ReferenceResultID:  "",
+						HoverResultID:      "3009",
+						MonikerIDs:         []types.ID{},
+					},
+					"2009": {
+						StartLine:          9,
+						StartCharacter:     0,
+						EndLine:            1,
+						EndCharacter:       2,
+						DefinitionResultID: "3005",
+						ReferenceResultID:  "",
+						HoverResultID:      "",
+						MonikerIDs:         []types.ID{},
+					},
 				},
-				HoverResults:       map[types.ID]string{"x09": "bar"},
+				HoverResults:       map[types.ID]string{"3009": "bar"},
 				Monikers:           map[types.ID]types.MonikerData{},
 				PackageInformation: map[types.ID]types.PackageInformationData{},
 				Diagnostics:        []types.DiagnosticData{},
@@ -229,45 +456,45 @@ func TestConvert(t *testing.T) {
 		ResultChunks: map[int]types.ResultChunkData{
 			0: {
 				DocumentPaths: map[types.ID]string{
-					"d01": "foo.go",
-					"d02": "bar.go",
-					"d03": "baz.go",
+					"1001": "foo.go",
+					"1002": "bar.go",
+					"1003": "baz.go",
 				},
 				DocumentIDRangeIDs: map[types.ID][]types.DocumentIDRangeID{
-					"x01": {
-						{DocumentID: "d01", RangeID: "r03"},
-						{DocumentID: "d02", RangeID: "r04"},
-						{DocumentID: "d03", RangeID: "r07"},
+					"3001": {
+						{DocumentID: "1001", RangeID: "2003"},
+						{DocumentID: "1002", RangeID: "2004"},
+						{DocumentID: "1003", RangeID: "2007"},
 					},
-					"x02": {
-						{DocumentID: "d01", RangeID: "r02"},
-						{DocumentID: "d02", RangeID: "r05"},
-						{DocumentID: "d03", RangeID: "r08"},
+					"3002": {
+						{DocumentID: "1001", RangeID: "2002"},
+						{DocumentID: "1002", RangeID: "2005"},
+						{DocumentID: "1003", RangeID: "2008"},
 					},
-					"x03": {
-						{DocumentID: "d01", RangeID: "r01"},
-						{DocumentID: "d02", RangeID: "r06"},
-						{DocumentID: "d03", RangeID: "r09"},
+					"3003": {
+						{DocumentID: "1001", RangeID: "2001"},
+						{DocumentID: "1002", RangeID: "2006"},
+						{DocumentID: "1003", RangeID: "2009"},
 					},
-					"x04": {
-						{DocumentID: "d01", RangeID: "r03"},
-						{DocumentID: "d02", RangeID: "r05"},
-						{DocumentID: "d03", RangeID: "r07"},
+					"3004": {
+						{DocumentID: "1001", RangeID: "2003"},
+						{DocumentID: "1002", RangeID: "2005"},
+						{DocumentID: "1003", RangeID: "2007"},
 					},
-					"x05": {
-						{DocumentID: "d01", RangeID: "r02"},
-						{DocumentID: "d02", RangeID: "r06"},
-						{DocumentID: "d03", RangeID: "r08"},
+					"3005": {
+						{DocumentID: "1001", RangeID: "2002"},
+						{DocumentID: "1002", RangeID: "2006"},
+						{DocumentID: "1003", RangeID: "2008"},
 					},
-					"x06": {
-						{DocumentID: "d01", RangeID: "r03"},
-						{DocumentID: "d03", RangeID: "r07"},
-						{DocumentID: "d03", RangeID: "r09"},
+					"3006": {
+						{DocumentID: "1001", RangeID: "2003"},
+						{DocumentID: "1003", RangeID: "2007"},
+						{DocumentID: "1003", RangeID: "2009"},
 					},
-					"x07": {
-						{DocumentID: "d01", RangeID: "r02"},
-						{DocumentID: "d03", RangeID: "r07"},
-						{DocumentID: "d03", RangeID: "r09"},
+					"3007": {
+						{DocumentID: "1001", RangeID: "2002"},
+						{DocumentID: "1003", RangeID: "2007"},
+						{DocumentID: "1003", RangeID: "2009"},
 					},
 				},
 			},
@@ -320,7 +547,7 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(expectedBundleData, actualBundleData); diff != "" {
+	if diff := cmp.Diff(expectedBundleData, actualBundleData, datastructures.IDSetComparer); diff != "" {
 		t.Errorf("unexpected bundle data (-want +got):\n%s", diff)
 	}
 }
