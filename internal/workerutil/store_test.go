@@ -15,14 +15,14 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "workqueue"
+	dbtesting.DBNameSuffix = "workerutil"
 }
 
 func TestDequeueState(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -41,7 +41,7 @@ func TestDequeueOrder(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
 			(2, 'queued', NOW() - '5 minute'::interval),
@@ -60,7 +60,7 @@ func TestDequeueConditions(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -80,7 +80,7 @@ func TestDequeueDelay(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state, uploaded_at, process_after)
+		INSERT INTO workerutil_test (id, state, uploaded_at, process_after)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval, NULL),
 			(2, 'queued', NOW() - '2 minute'::interval, NULL),
@@ -99,7 +99,7 @@ func TestDequeueView(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -111,8 +111,8 @@ func TestDequeueView(t *testing.T) {
 	}
 
 	options := StoreOptions{
-		TableName:         "workqueue_test w",
-		ViewName:          "workqueue_test_view v",
+		TableName:         "workerutil_test w",
+		ViewName:          "workerutil_test_view v",
 		Scan:              testScanFirstRecordView,
 		OrderByExpression: sqlf.Sprintf("v.uploaded_at"),
 		ColumnExpressions: []*sqlf.Query{
@@ -133,7 +133,7 @@ func TestDequeueConcurrent(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
 			(2, 'queued', NOW() - '1 minute'::interval)
@@ -184,7 +184,7 @@ func TestRequeue(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state)
+		INSERT INTO workerutil_test (id, state)
 		VALUES
 			(1, 'processing')
 	`); err != nil {
@@ -197,7 +197,7 @@ func TestRequeue(t *testing.T) {
 		t.Fatalf("unexpected error requeueing index: %s", err)
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, process_after FROM workqueue_test WHERE id = 1`)
+	rows, err := dbconn.Global.Query(`SELECT state, process_after FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -225,7 +225,7 @@ func TestResetStalled(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
-		INSERT INTO workqueue_test (id, state, started_at, num_resets)
+		INSERT INTO workerutil_test (id, state, started_at, num_resets)
 		VALUES
 			(1, 'processing', NOW() - '6 second'::interval, 1),
 			(2, 'processing', NOW() - '2 second'::interval, 0),
@@ -244,14 +244,14 @@ func TestResetStalled(t *testing.T) {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// Row lock upload 5 in a transaction which should be skipped by ResetStalled
-	if _, err := tx.Exec(`SELECT * FROM workqueue_test WHERE id = 5 FOR UPDATE`); err != nil {
+	// Row lock record 5 in a transaction which should be skipped by ResetStalled
+	if _, err := tx.Exec(`SELECT * FROM workerutil_test WHERE id = 5 FOR UPDATE`); err != nil {
 		t.Fatal(err)
 	}
 
 	resetIDs, erroredIDs, err := testStore(defaultTestStoreOptions).ResetStalled(context.Background())
 	if err != nil {
-		t.Fatalf("unexpected error resetting stalled uploads: %s", err)
+		t.Fatalf("unexpected error resetting stalled records: %s", err)
 	}
 	sort.Ints(resetIDs)
 	sort.Ints(erroredIDs)
@@ -264,7 +264,7 @@ func TestResetStalled(t *testing.T) {
 		t.Errorf("unexpected errored ids (-want +got):\n%s", diff)
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, num_resets FROM workqueue_test WHERE id = 1`)
+	rows, err := dbconn.Global.Query(`SELECT state, num_resets FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -286,7 +286,7 @@ func TestResetStalled(t *testing.T) {
 		t.Errorf("unexpected num resets. want=%d have=%d", 2, numResets)
 	}
 
-	rows, err = dbconn.Global.Query(`SELECT state FROM workqueue_test WHERE id = 6`)
+	rows, err = dbconn.Global.Query(`SELECT state FROM workerutil_test WHERE id = 6`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -362,7 +362,7 @@ func setupStoreTest(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	if _, err := dbconn.Global.Exec(`
-		CREATE TABLE IF NOT EXISTS workqueue_test (
+		CREATE TABLE IF NOT EXISTS workerutil_test (
 			id              integer NOT NULL,
 			state           text NOT NULL,
 			failure_message text,
@@ -377,8 +377,8 @@ func setupStoreTest(t *testing.T) {
 	}
 
 	if _, err := dbconn.Global.Exec(`
-		CREATE OR REPLACE VIEW workqueue_test_view AS (
-			SELECT w.*, (w.id * 7) as new_field FROM workqueue_test w
+		CREATE OR REPLACE VIEW workerutil_test_view AS (
+			SELECT w.*, (w.id * 7) as new_field FROM workerutil_test w
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -386,7 +386,7 @@ func setupStoreTest(t *testing.T) {
 }
 
 var defaultTestStoreOptions = StoreOptions{
-	TableName:         "workqueue_test w",
+	TableName:         "workerutil_test w",
 	Scan:              testScanFirstRecord,
 	OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
 	ColumnExpressions: []*sqlf.Query{

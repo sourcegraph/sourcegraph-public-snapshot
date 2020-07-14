@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
-// Store is the database layer for the workqueue package that handles worker-side operations.
+// Store is the database layer for the workerutil package that handles worker-side operations.
 type Store struct {
 	*basestore.Store
 	options StoreOptions
@@ -34,18 +34,20 @@ type StoreOptions struct {
 	// dequeue operations.
 	TableName string
 
-	// ViewName is the name of the table or view to query when selecting a candidate and when selecting
-	// the record after it has been locked. If this value is not supplied, `TableName` will be used. The
-	// value supplied may also indicate a table alias, which can be referenced in `OrderByExpression`,
-	// `ColumnExpressions`, and the conditions suplied to `Dequeue`.
+	// ViewName is an optional name of a view on top of the table containing work records to query when
+	// selecting a candidate and when selecting the record after it has been locked. If this value is
+	// not supplied, `TableName` will be used. The value supplied may also indicate a table alias, which
+	// can be referenced in `OrderByExpression`, `ColumnExpressions`, and the conditions suplied to
+	// `Dequeue`.
 	//
-	// The target of this field must be a view on top of the configured table, otherwise locking and
-	// querying will not behave in a well-defined manner.
+	// The target of this field must be a view on top of the configured table with the same column
+	// requirements as the base table descried above.
 	//
-	// Use case:
-	// The processor for LSIF uploads supplies a view wrapper for this field which joins the `lsif_uploads`
-	// and `repo` tables. This allows the repository name to be brought back from `Dequeue` without an
-	// additional query.
+	// Example use case:
+	// The processor for LSIF uploads supplies `lsif_uploads_with_repository_name`, a view on top of the
+	// `lsif_uploads` table that joins work records with the `repo` table and adds an additional repository
+	// name column. This allows `Dequeue` to return a record with additional data so that a second query
+	// is not necessary by the caller.
 	ViewName string
 
 	// Scan is the function used to convert a rows object into a record of the expected shape.
@@ -62,12 +64,12 @@ type StoreOptions struct {
 
 	// StalledMaxAge is the maximum allow duration between updating the state of a record as "processing"
 	// and locking the record row during processing. An unlocked row that is marked as processing likely
-	// indicates that the worker that dequeued the upload has died. There should be a nearly-zero delay
+	// indicates that the worker that dequeued the record has died. There should be a nearly-zero delay
 	// between these states during normal operation.
 	StalledMaxAge time.Duration
 
 	// MaxNumResets is the maximum number of times a record can be implicitly reset back to the queued
-	// state (via `ResetStalled`). If a record's failed attempts counter reaches this threshold, ti will
+	// state (via `ResetStalled`). If a record's failed attempts counter reaches this threshold, it will
 	// be moved into the errored state rather than queued on its next reset to prevent an infinite retry
 	// cycle of the same input.
 	MaxNumResets int
@@ -106,7 +108,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
-// should be held by the worker process If there is such an record, it is returned along with a new store instance
+// should be held by the worker process. If there is such an record, it is returned along with a new store instance
 // that wraps the transaction. The resulting transaction must be closed by the caller, and the transaction should
 // include a state transition of the record into a terminal state. If there is no such unlocked record, a nil record
 // and a nil store will be returned along with a  false-valued flag. This method must not be called from within a
@@ -114,6 +116,10 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 func (s *Store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record interface{}, tx *Store, exists bool, err error) {
+	if s.InTransaction() {
+		return nil, nil, false, ErrDequeueTransaction
+	}
+
 	query := sqlf.Sprintf(
 		selectCandidateQuery,
 		quote(s.options.ViewName),
@@ -135,9 +141,27 @@ func (s *Store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record i
 
 		// Once we have an eligible identifier, we try to create a transaction and select the
 		// record in a way that takes a row lock for the duration of the transaction.
-		record, tx, ok, err := s.lock(ctx, id)
+		tx, err = s.Transact(ctx)
 		if err != nil {
-			if err != ErrDequeueRace {
+			return nil, nil, false, err
+		}
+
+		// Select the candidate record within the transaction to lock it from other processes. Note
+		// that SKIP LOCKED here is necessary, otherwise this query would block on race conditions
+		// until the other process has finished with the record.
+		_, exists, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+			lockQuery,
+			quote(s.options.TableName),
+			id,
+		)))
+		if err != nil {
+			return nil, nil, false, tx.Done(err)
+		}
+		if !exists {
+			// Due to SKIP LOCKED, This query will return a sql.ErrNoRows error if the record has
+			// already been locked in another process's transaction. We'll return a special error
+			// that is checked by the caller to try to select a different record.
+			if err := tx.Done(ErrDequeueRace); err != ErrDequeueRace {
 				return nil, nil, false, err
 			}
 
@@ -147,9 +171,27 @@ func (s *Store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record i
 			// by selecting another identifier - this one will be skipped on a second attempt as
 			// it is now locked.
 			continue
+
 		}
 
-		return record, tx, ok, nil
+		// The record is now locked in this transaction. As `TableName` and `ViewName` may have distinct
+		// values, we need to perform a second select in order to pass the correct data to the scan
+		// function.
+		record, exists, err = s.options.Scan(tx.Query(ctx, sqlf.Sprintf(
+			selectRecordQuery,
+			sqlf.Join(s.options.ColumnExpressions, ", "),
+			quote(s.options.ViewName),
+			id,
+		)))
+		if err != nil {
+			return nil, nil, false, tx.Done(err)
+		}
+		if !exists {
+			// This only happens on a programming error (mismatch between `TableName` and `ViewName`).
+			return nil, nil, false, tx.Done(ErrNoRecord)
+		}
+
+		return record, tx, true, nil
 	}
 }
 
@@ -173,56 +215,8 @@ WHERE id IN (SELECT id FROM candidate)
 RETURNING id
 `
 
-func (s *Store) lock(ctx context.Context, id int) (record interface{}, tx *Store, exists bool, err error) {
-	if s.InTransaction() {
-		return nil, nil, false, ErrDequeueTransaction
-	}
-
-	tx, err = s.Transact(ctx)
-	if err != nil {
-		return nil, nil, false, err
-	}
-
-	// Select the candidate record within the transaction to lock it from other processes. Note
-	// that SKIP LOCKED here is necessary, otherwise this query would block on race conditions
-	// until the other process has finished with the record.
-	_, exists, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		lockQuery,
-		quote(s.options.TableName),
-		id,
-	)))
-	if err != nil {
-		return nil, nil, false, tx.Done(err)
-	}
-	if !exists {
-		// Due to SKIP LOCKED, This query will return a sql.ErrNoRows error if the record has
-		// already been locked in another process's transaction. We'll return a special error
-		// that is checked by the caller to try to select a different record.
-		return nil, nil, false, tx.Done(ErrDequeueRace)
-	}
-
-	// The record is now locked in this transaction. As `TableName` and `ViewName` may have distinct
-	// values, we need to perform a second select in order to pass the correct data to the scan
-	// function.
-	record, exists, err = s.options.Scan(tx.Query(ctx, sqlf.Sprintf(
-		selectRecordQuery,
-		sqlf.Join(s.options.ColumnExpressions, ", "),
-		quote(s.options.ViewName),
-		id,
-	)))
-	if err != nil {
-		return nil, nil, false, tx.Done(err)
-	}
-	if !exists {
-		// This only happens on a programming error (mismatch between `TableName` and `ViewName`).
-		return nil, nil, false, tx.Done(ErrNoRecord)
-	}
-
-	return record, tx, true, nil
-}
-
 const lockQuery = `
--- source: internal/workerutil/store.go:lock
+-- source: internal/workerutil/store.go:Dequeue
 SELECT 1 FROM %s
 WHERE id = %s
 FOR UPDATE SKIP LOCKED
@@ -230,7 +224,7 @@ LIMIT 1
 `
 
 const selectRecordQuery = `
--- source: internal/workerutil/store.go:lock
+-- source: internal/workerutil/store.go:Dequeue
 SELECT %s FROM %s
 WHERE id = %s
 LIMIT 1
@@ -255,7 +249,7 @@ WHERE id = %s
 `
 
 // ResetStalled moves all unlocked records in the processing state for more than `StalledMaxAge` back to the queued
-// state. In order to prevent input that continually crashes worker instances, records that have bene reset more
+// state. In order to prevent input that continually crashes worker instances, records that have been reset more
 // than `MaxNumResets` times will be marked as errored. This method returns a list of record identifiers that have
 // been reset and a list of record identifiers that have been marked as errored.
 func (s *Store) ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error) {
