@@ -3,11 +3,11 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
-    makeRepositoryRedirectResult,
-    makeResolveRevisionResult,
-    makeFileExternalLinksResult,
-    makeTreeEntriesResult,
-    makeBlobContentResult,
+    createRepositoryRedirectResult,
+    createResolveRevisionResult,
+    createFileExternalLinksResult,
+    createTreeEntriesResult,
+    createBlobContentResult,
 } from './graphQlResponseHelpers'
 
 describe('Repository', () => {
@@ -47,11 +47,11 @@ describe('Repository', () => {
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: ({ repoName }) => makeRepositoryRedirectResult(repoName),
-                ResolveRev: () => makeResolveRevisionResult(repositorySourcegraphUrl),
-                FileExternalLinks: ({ filePath }) => makeFileExternalLinksResult(filePath),
-                TreeEntries: () => makeTreeEntriesResult(repositorySourcegraphUrl, fileEntries),
-                Blob: () => makeBlobContentResult('mock file blob'),
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+                FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
+                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileEntries),
+                Blob: () => createBlobContentResult('mock file blob'),
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',

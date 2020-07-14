@@ -2,13 +2,13 @@ import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { test } from 'mocha'
+import { it } from 'mocha'
 import {
-    makeRepositoryRedirectResult,
-    makeResolveRevisionResult,
-    makeFileExternalLinksResult,
-    makeTreeEntriesResult,
-    makeBlobContentResult,
+    createRepositoryRedirectResult,
+    createResolveRevisionResult,
+    createFileExternalLinksResult,
+    createTreeEntriesResult,
+    createBlobContentResult,
 } from './graphQlResponseHelpers'
 
 describe('Blob viewer', () => {
@@ -28,40 +28,49 @@ describe('Blob viewer', () => {
     afterEach(() => testContext?.dispose())
 
     describe('tests a general layout for viewing a file', () => {
-        test('it populates editor content and FILES tab', async () => {
-            const repositoryName = 'github.com/sourcegraph/jsonrpc2'
-            const repositorySourcegraphUrl = `/${repositoryName}`
-            const fileName = 'async.go'
+        const repositoryName = 'github.com/sourcegraph/jsonrpc2'
+        const repositorySourcegraphUrl = `/${repositoryName}`
+        const fileName = 'async.go'
+        const files = ['README.md', fileName]
 
+        const prepareTwoFilesStubs = () =>
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: ({ repoName }) => makeRepositoryRedirectResult(repoName),
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
 
-                ResolveRev: () => makeResolveRevisionResult(repositorySourcegraphUrl),
+                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
 
                 FileExternalLinks: ({ filePath }) =>
-                    makeFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
+                    createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
 
-                TreeEntries: () => makeTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
+                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, files),
 
-                Blob: ({ filePath }) => makeBlobContentResult(`content for: ${filePath}`),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
             })
+
+        it('populates blob viewer with file content', async () => {
+            prepareTwoFilesStubs()
 
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
             await driver.page.waitForSelector('.e2e-repo-blob')
             const blobContent = await driver.page.evaluate(() => {
                 const editorArea = document.querySelector<HTMLDivElement>('.e2e-repo-blob')
-                document.querySelector('a')
                 return editorArea ? editorArea.textContent : null
             })
 
             // editor shows the return string content from Blob request
             assert.strictEqual(blobContent, `content for: ${fileName}`)
+        })
 
-            // collect all files/links visible the the FILES tab
+        it('populates files tree view', async () => {
+            prepareTwoFilesStubs()
+
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
+            await driver.page.waitForSelector('.e2e-tree-file-link')
+
+            // collect all files/links visible the the "Files" tab
             const allFilesInTheTree = await driver.page.evaluate(() => {
-                // TODO is there a better way to get all of them?
-                const allFiles = document.querySelectorAll<HTMLAnchorElement>('.tree__row-contents')
+                const allFiles = document.querySelectorAll<HTMLAnchorElement>('.e2e-tree-file-link')
 
                 return [...allFiles].map(fileAnchor => ({
                     content: fileAnchor.textContent,
@@ -72,7 +81,7 @@ describe('Blob viewer', () => {
             // files from TreeEntries request
             assert.deepStrictEqual(
                 allFilesInTheTree,
-                ['README.md', fileName].map(name => ({
+                files.map(name => ({
                     content: name,
                     href: `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${name}`,
                 }))

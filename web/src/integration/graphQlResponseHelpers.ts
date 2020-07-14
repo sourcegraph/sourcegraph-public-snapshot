@@ -6,7 +6,7 @@ import {
     ResolveRevResult,
 } from '../graphql-operations'
 
-export const makeTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
+export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
     repository: {
         commit: {
             tree: {
@@ -25,7 +25,7 @@ export const makeTreeEntriesResult = (url: string, toplevelFiles: string[]): Tre
     },
 })
 
-export const makeBlobContentResult = (
+export const createBlobContentResult = (
     content: string,
     html: string = `<div style="color:red">${content}<div>`
 ): BlobResult => ({
@@ -43,7 +43,10 @@ export const makeBlobContentResult = (
     },
 })
 
-export const makeFileExternalLinksResult = (url: string, serviceType: string = 'github'): FileExternalLinksResult => ({
+export const createFileExternalLinksResult = (
+    url: string,
+    serviceType: string = 'github'
+): FileExternalLinksResult => ({
     repository: {
         commit: {
             file: {
@@ -53,7 +56,7 @@ export const makeFileExternalLinksResult = (url: string, serviceType: string = '
     },
 })
 
-export const makeRepositoryRedirectResult = (
+export const createRepositoryRedirectResult = (
     repoUrl: string,
     serviceType: string = 'github'
 ): RepositoryRedirectResult => ({
@@ -69,7 +72,7 @@ export const makeRepositoryRedirectResult = (
     },
 })
 
-export const makeResolveRevisionResult = (treeUrl: string): ResolveRevResult => ({
+export const createResolveRevisionResult = (treeUrl: string): ResolveRevResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
