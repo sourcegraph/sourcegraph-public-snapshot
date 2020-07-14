@@ -222,7 +222,6 @@ func initRouter() {
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions")))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats")))
 	router.Get(routeViews).Handler(handler(serveBrandedPageString("View")))
-	router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings")))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User")))
@@ -239,6 +238,7 @@ func initRouter() {
 		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
+		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
 	}
 
 	// search

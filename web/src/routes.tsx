@@ -173,22 +173,27 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/refactor-python2-to-3',
         render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/kubernetes',
         render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/golang',
         render: props => <RepogroupPage {...props} repogroupMetadata={golang} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/react-hooks',
         render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/android',
         render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/:repoRevAndRest+',
