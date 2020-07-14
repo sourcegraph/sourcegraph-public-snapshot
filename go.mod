@@ -185,7 +185,6 @@ require (
 replace (
 	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200622101713-7b13614a083e
 
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
@@ -197,6 +196,9 @@ replace (
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
+
+// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200713223616-6c04e2e54f66
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 

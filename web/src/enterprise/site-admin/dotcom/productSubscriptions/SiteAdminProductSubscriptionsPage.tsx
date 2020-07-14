@@ -61,7 +61,7 @@ function queryProductSubscriptions(args: {
 }): Observable<GQL.IProductSubscriptionConnection> {
     return queryGraphQL(
         gql`
-            query ProductSubscriptions($first: Int, $account: ID, $query: String) {
+            query ProductSubscriptionsDotCom($first: Int, $account: ID, $query: String) {
                 dotcom {
                     productSubscriptions(first: $first, account: $account, query: $query) {
                         nodes {

@@ -28,6 +28,7 @@ import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
 import { isDefined } from '../util/types'
+import { getConfig } from './config'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -289,7 +290,7 @@ export class Driver {
         const { externalServices } = dataOrThrowErrors(
             await this.makeGraphQLRequest<IQuery>({
                 request: gql`
-                    query ExternalServices {
+                    query ExternalServicesForTests {
                         externalServices(first: 1) {
                             totalCount
                         }
@@ -461,7 +462,7 @@ export class Driver {
     }
 
     public async getRepository(name: string): Promise<Pick<IRepository, 'id'>> {
-        const resp = await this.makeGraphQLRequest<IQuery>({
+        const response = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query($name: String!) {
                     repository(name: $name) {
@@ -471,7 +472,7 @@ export class Driver {
             `,
             variables: { name },
         })
-        const { repository } = dataOrThrowErrors(resp)
+        const { repository } = dataOrThrowErrors(response)
         if (!repository) {
             throw new Error(`repository not found: ${name}`)
         }
@@ -479,7 +480,7 @@ export class Driver {
     }
 
     public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
-        const resp = await this.makeGraphQLRequest<IMutation>({
+        const response = await this.makeGraphQLRequest<IMutation>({
             request: gql`
                 mutation($patches: [PatchInput!]!) {
                     createPatchSetFromPatches(patches: $patches) {
@@ -489,7 +490,7 @@ export class Driver {
             `,
             variables: { patches },
         })
-        const { createPatchSetFromPatches } = dataOrThrowErrors(resp)
+        const { createPatchSetFromPatches } = dataOrThrowErrors(response)
         return createPatchSetFromPatches
     }
 
@@ -499,7 +500,7 @@ export class Driver {
     ): Promise<void> {
         const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
-                query Site {
+                query SiteForTests {
                     site {
                         id
                         configuration {
@@ -517,7 +518,7 @@ export class Driver {
         const newConfig = modifyJSONC(currentConfig, path, editFunction)
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                mutation UpdateSiteConfigurationForTests($lastID: Int!, $input: String!) {
                     updateSiteConfiguration(lastID: $lastID, input: $input)
                 }
             `,
@@ -540,7 +541,7 @@ export class Driver {
     public async setUserSettings<S extends Settings>(settings: S): Promise<void> {
         const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
-                query UserSettings {
+                query UserSettingsForTests {
                     currentUser {
                         id
                         latestSettings {
@@ -560,7 +561,7 @@ export class Driver {
 
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                mutation OverwriteSettingsForTests($subject: ID!, $lastID: Int, $contents: String!) {
                     settingsMutation(input: { subject: $subject, lastID: $lastID }) {
                         overwriteSettings(contents: $contents) {
                             empty {
@@ -685,15 +686,17 @@ interface DriverOptions extends LaunchOptions {
 
     sourcegraphBaseUrl: string
 
-    /** If true, print browser console messages to stdout. */
+    /** If not `false`, print browser console messages to stdout. */
     logBrowserConsole?: boolean
 
     /** If true, keep browser open when driver is closed */
     keepBrowser?: boolean
 }
 
-export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
-    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
+export async function createDriverForTest(
+    options: DriverOptions = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo')
+): Promise<Driver> {
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole = true, keepBrowser } = options
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
         ...options,

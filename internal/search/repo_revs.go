@@ -138,20 +138,6 @@ func (r *RepositoryRevisions) String() string {
 	return string(r.Repo.Name) + "@" + strings.Join(parts, ":")
 }
 
-// OnlyHEAD returns true iff there is only one ref and it is explicitly the
-// default branch.
-//
-// Note: This doesn't resolve what the default branch is. It relies on the rev
-// being "" (Sourcegraph convention for default) or "HEAD" (git symref for
-// default).
-func (r *RepositoryRevisions) OnlyHEAD() bool {
-	if !r.OnlyExplicit() || len(r.Revs) != 1 {
-		return false
-	}
-	rev := r.Revs[0].RevSpec
-	return rev == "" || rev == "HEAD"
-}
-
 // OnlyExplicit returns true if all revspecs in Revs are explicit.
 func (r *RepositoryRevisions) OnlyExplicit() bool {
 	for _, rev := range r.Revs {

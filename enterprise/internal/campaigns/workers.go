@@ -77,7 +77,7 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 			case <-ctx.Done():
 				return
 			default:
-				didRun, err := s.ProcessPendingChangesetJobs(context.Background(), process)
+				didRun, err := s.ProcessPendingChangesetJobs(ctx, process)
 				if err != nil {
 					log15.Error("Running changeset job", "err", err)
 				}

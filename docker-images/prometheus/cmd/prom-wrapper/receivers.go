@@ -18,15 +18,25 @@ const (
 const (
 	colorWarning  = "#FFFF00" // yellow
 	colorCritical = "#FF0000" // red
+	colorGood     = "#00FF00" // green
 )
 
 var (
-	// alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
-	alertSolutionsTemplate    = `https://docs.sourcegraph.com/admin/observability/alert_solutions#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
-	notificationTitleTemplate = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
-	notificationBodyTemplate  = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'.
+	// Alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
+	// All labels used in these templates should be included in route.GroupByStr
+	alertSolutionsURLTemplate = `https://docs.sourcegraph.com/admin/observability/alert_solutions#{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "(_low|_high)$" "" | reReplaceAll "_" "-" }}`
 
-For possible solutions, please refer to %s`, alertSolutionsTemplate)
+	// Title templates
+	firingTitleTemplate       = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
+	resolvedTitleTemplate     = "[RESOLVED] {{ .CommonLabels.description }}"
+	notificationTitleTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingTitleTemplate, resolvedTitleTemplate)
+
+	// Body templates
+	firingBodyTemplate = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'.
+
+For possible solutions, please refer to %s`, alertSolutionsURLTemplate)
+	resolvedBodyTemplate     = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.`
+	notificationBodyTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplate, resolvedBodyTemplate)
 )
 
 // newReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers.
@@ -47,6 +57,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 			receiver = warningReceiver
 			color = colorWarning
 		}
+		colorTemplate := fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, color, colorGood)
 
 		notifierConfig := amconfig.NotifierConfig{
 			VSendResolved: !alert.DisableSendResolved,
@@ -73,12 +84,12 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 		case notifier.Opsgenie != nil:
 			var apiURL *amconfig.URL
 			if notifier.Opsgenie.ApiUrl != "" {
-				url, err := url.Parse(notifier.Opsgenie.ApiUrl)
+				u, err := url.Parse(notifier.Opsgenie.ApiUrl)
 				if err != nil {
 					newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
 					continue
 				}
-				apiURL = &amconfig.URL{URL: url}
+				apiURL = &amconfig.URL{URL: u}
 			}
 			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
 			for i, resp := range notifier.Opsgenie.Responders {
@@ -104,12 +115,12 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 		case notifier.Pagerduty != nil:
 			var apiURL *amconfig.URL
 			if notifier.Pagerduty.ApiUrl != "" {
-				url, err := url.Parse(notifier.Pagerduty.ApiUrl)
+				u, err := url.Parse(notifier.Pagerduty.ApiUrl)
 				if err != nil {
 					newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
 					continue
 				}
-				apiURL = &amconfig.URL{URL: url}
+				apiURL = &amconfig.URL{URL: u}
 			}
 			receiver.PagerdutyConfigs = append(receiver.PagerdutyConfigs, &amconfig.PagerdutyConfig{
 				RoutingKey: amconfig.Secret(notifier.Pagerduty.IntegrationKey),
@@ -119,7 +130,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				Description: notificationTitleTemplate,
 				Links: []amconfig.PagerdutyLink{{
 					Text: "Alert solutions",
-					Href: alertSolutionsTemplate,
+					Href: alertSolutionsURLTemplate,
 				}},
 
 				NotifierConfig: notifierConfig,
@@ -127,7 +138,7 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 		// https://prometheus.io/docs/alerting/latest/configuration/#slack_config
 		case notifier.Slack != nil:
-			url, err := url.Parse(notifier.Slack.Url)
+			u, err := url.Parse(notifier.Slack.Url)
 			if err != nil {
 				newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
 				continue
@@ -137,29 +148,29 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 			}
 
 			receiver.SlackConfigs = append(receiver.SlackConfigs, &amconfig.SlackConfig{
-				APIURL:    &amconfig.SecretURL{URL: url},
+				APIURL:    &amconfig.SecretURL{URL: u},
 				Username:  notifier.Slack.Username,
 				Channel:   notifier.Slack.Recipient,
 				IconEmoji: notifier.Slack.Icon_emoji,
 				IconURL:   notifier.Slack.Icon_url,
 
 				Title:     notificationTitleTemplate,
-				TitleLink: alertSolutionsTemplate,
+				TitleLink: alertSolutionsURLTemplate,
 				Text:      notificationBodyTemplate,
-				Color:     color,
+				Color:     colorTemplate,
 
 				NotifierConfig: notifierConfig,
 			})
 
 		// https://prometheus.io/docs/alerting/latest/configuration/#webhook_config
 		case notifier.Webhook != nil:
-			url, err := url.Parse(notifier.Webhook.Url)
+			u, err := url.Parse(notifier.Webhook.Url)
 			if err != nil {
 				newProblem(fmt.Errorf("failed to apply notifier %d: %w", i, err))
 				continue
 			}
 			receiver.WebhookConfigs = append(receiver.WebhookConfigs, &amconfig.WebhookConfig{
-				URL: &amconfig.URL{URL: url},
+				URL: &amconfig.URL{URL: u},
 				HTTPConfig: &commoncfg.HTTPClientConfig{
 					BasicAuth: &commoncfg.BasicAuth{
 						Username: notifier.Webhook.Username,

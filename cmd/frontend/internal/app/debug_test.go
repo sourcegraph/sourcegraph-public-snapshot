@@ -12,7 +12,6 @@ func Test_prometheusValidator(t *testing.T) {
 	// test some simple problem cases
 	type args struct {
 		prometheusURL string
-		deployType    string
 		config        conf.Unified
 	}
 	tests := []struct {
@@ -47,10 +46,10 @@ func Test_prometheusValidator(t *testing.T) {
 					},
 				},
 			},
-			wantProblemSubstring: "Prometheus configuration is invalid",
+			wantProblemSubstring: "",
 		},
 		{
-			name: "prometheus 404",
+			name: "prometheus not found",
 			args: args{
 				prometheusURL: "http://no-prometheus:9090",
 				config: conf.Unified{
@@ -61,12 +60,12 @@ func Test_prometheusValidator(t *testing.T) {
 					},
 				},
 			},
-			wantProblemSubstring: "Prometheus is unreachable",
+			wantProblemSubstring: "Unable to fetch configuration status",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := newPrometheusValidator(tt.args.prometheusURL, tt.args.deployType)
+			fn := newPrometheusValidator(tt.args.prometheusURL)
 			problems := fn(tt.args.config)
 			if tt.wantProblemSubstring == "" {
 				if len(problems) > 0 {

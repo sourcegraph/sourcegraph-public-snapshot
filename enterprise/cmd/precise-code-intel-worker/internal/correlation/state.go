@@ -9,18 +9,18 @@ import (
 type State struct {
 	LSIFVersion            string
 	ProjectRoot            string
-	DocumentData           map[string]lsif.Document
-	RangeData              map[string]lsif.Range
-	ResultSetData          map[string]lsif.ResultSet
-	DefinitionData         map[string]datastructures.DefaultIDSetMap
-	ReferenceData          map[string]datastructures.DefaultIDSetMap
-	HoverData              map[string]string
-	MonikerData            map[string]lsif.Moniker
-	PackageInformationData map[string]lsif.PackageInformation
-	Diagnostics            map[string]lsif.DiagnosticResult
-	NextData               map[string]string            // maps vertices related via next edges
-	ImportedMonikers       datastructures.IDSet         // moniker ids that have kind "import"
-	ExportedMonikers       datastructures.IDSet         // moniker ids that have kind "export"
+	DocumentData           map[int]lsif.Document
+	RangeData              map[int]lsif.Range
+	ResultSetData          map[int]lsif.ResultSet
+	DefinitionData         map[int]datastructures.DefaultIDSetMap
+	ReferenceData          map[int]datastructures.DefaultIDSetMap
+	HoverData              map[int]string
+	MonikerData            map[int]lsif.Moniker
+	PackageInformationData map[int]lsif.PackageInformation
+	Diagnostics            map[int]lsif.DiagnosticResult
+	NextData               map[int]int                  // maps vertices related via next edges
+	ImportedMonikers       *datastructures.IDSet        // moniker ids that have kind "import"
+	ExportedMonikers       *datastructures.IDSet        // moniker ids that have kind "export"
 	LinkedMonikers         datastructures.DisjointIDSet // tracks which moniker ids are related via next edges
 	LinkedReferenceResults datastructures.DisjointIDSet // tracks which reference result ids are related via next edges
 }
@@ -28,18 +28,18 @@ type State struct {
 // newState create a new State with zero-valued map fields.
 func newState() *State {
 	return &State{
-		DocumentData:           map[string]lsif.Document{},
-		RangeData:              map[string]lsif.Range{},
-		ResultSetData:          map[string]lsif.ResultSet{},
-		DefinitionData:         map[string]datastructures.DefaultIDSetMap{},
-		ReferenceData:          map[string]datastructures.DefaultIDSetMap{},
-		HoverData:              map[string]string{},
-		MonikerData:            map[string]lsif.Moniker{},
-		PackageInformationData: map[string]lsif.PackageInformation{},
-		Diagnostics:            map[string]lsif.DiagnosticResult{},
-		NextData:               map[string]string{},
-		ImportedMonikers:       datastructures.IDSet{},
-		ExportedMonikers:       datastructures.IDSet{},
+		DocumentData:           map[int]lsif.Document{},
+		RangeData:              map[int]lsif.Range{},
+		ResultSetData:          map[int]lsif.ResultSet{},
+		DefinitionData:         map[int]datastructures.DefaultIDSetMap{},
+		ReferenceData:          map[int]datastructures.DefaultIDSetMap{},
+		HoverData:              map[int]string{},
+		MonikerData:            map[int]lsif.Moniker{},
+		PackageInformationData: map[int]lsif.PackageInformation{},
+		Diagnostics:            map[int]lsif.DiagnosticResult{},
+		NextData:               map[int]int{},
+		ImportedMonikers:       datastructures.NewIDSet(),
+		ExportedMonikers:       datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.DisjointIDSet{},
 		LinkedReferenceResults: datastructures.DisjointIDSet{},
 	}

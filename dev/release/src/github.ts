@@ -101,11 +101,11 @@ async function getContent(
         path: string
     }
 ): Promise<string> {
-    const resp = await octokit.repos.getContents(parameters)
-    if (Array.isArray(resp.data)) {
+    const response = await octokit.repos.getContents(parameters)
+    if (Array.isArray(response.data)) {
         throw new TypeError(`${parameters.path} is a directory`)
     }
-    return Buffer.from(resp.data.content as string, 'base64').toString()
+    return Buffer.from(response.data.content as string, 'base64').toString()
 }
 
 async function ensureIssue(
@@ -162,12 +162,12 @@ export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
 }
 
 export async function getIssueByTitle(octokit: Octokit, title: string): Promise<string | null> {
-    const resp = await octokit.search.issuesAndPullRequests({
+    const response = await octokit.search.issuesAndPullRequests({
         per_page: 100,
         q: `type:issue repo:sourcegraph/sourcegraph is:open ${JSON.stringify(title)}`,
     })
 
-    const matchingIssues = resp.data.items.filter(issue => issue.title === title)
+    const matchingIssues = response.data.items.filter(issue => issue.title === title)
     if (matchingIssues.length === 0) {
         return null
     }

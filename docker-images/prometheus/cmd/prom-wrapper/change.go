@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	amconfig "github.com/prometheus/alertmanager/config"
-	"github.com/prometheus/common/model"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -38,20 +38,31 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 	})
 
 	// make sure alerts are routed appropriately
-	groupBy := []model.LabelName{"level", "service_name", "name"}
 	change.AMConfig.Route = &amconfig.Route{
 		Receiver: alertmanagerNoopReceiver,
+		// include `alertname` for now to accommodate non-generator alerts - in the long run, we want to remove grouping on `alertname`
+		// because all alerts should have some predefined labels
+		// https://github.com/sourcegraph/sourcegraph/issues/5370
+		GroupByStr: []string{"alertname", "level", "service_name", "name"},
+
+		// How long to initially wait to send a notification for a group - each group matches exactly one alert, so fire immediately
+		GroupWait: duration(1 * time.Second),
+
+		// How long to wait before sending a notification about new alerts that are added to a group of alerts - in this case,
+		// equivalent to how long to wait until notifying about an alert re-firing
+		GroupInterval:  duration(1 * time.Minute),
+		RepeatInterval: duration(48 * time.Hour),
+
+		// Route alerts to notifications
 		Routes: []*amconfig.Route{
 			{
 				Receiver: alertmanagerWarningReceiver,
-				GroupBy:  groupBy,
 				Match: map[string]string{
 					"level": "warning",
 				},
 			},
 			{
 				Receiver: alertmanagerCriticalReceiver,
-				GroupBy:  groupBy,
 				Match: map[string]string{
 					"level": "critical",
 				},

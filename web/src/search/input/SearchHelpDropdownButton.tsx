@@ -29,6 +29,12 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                 <DropdownItem header={true}>Finding matches:</DropdownItem>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
+                        <span className="text-muted small">Structural:</span>{' '}
+                        <code>
+                            <strong>if(:[my_match]) </strong>
+                        </code>
+                    </li>
+                    <li>
                         <span className="text-muted small">Regexp:</span>{' '}
                         <code>
                             <strong>(read|write)File</strong>

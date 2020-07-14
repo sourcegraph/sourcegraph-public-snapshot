@@ -14,7 +14,7 @@ func (c *Client) WaitForReposToBeCloned(repos ...string) error {
 	return Retry(30*time.Second, func() error {
 		const query = `
 query Repositories($first: Int) {
-	repositories(first: $first, cloned: true) {
+	repositories(first: $first, cloned: true, cloneInProgress: false, notCloned: false) {
 		nodes {
 			name
 		}

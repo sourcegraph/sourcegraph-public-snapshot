@@ -59,8 +59,8 @@ func PreciseCodeIntelBundleManager() *Container {
 							Description:     "disk space remaining by instance",
 							Query:           `(src_disk_space_available_bytes{job="precise-code-intel-bundle-manager"} / src_disk_space_total_bytes{job="precise-code-intel-bundle-manager"}) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert{LessOrEqual: 15},
-							Critical:        Alert{LessOrEqual: 5},
+							Warning:         Alert{LessOrEqual: 25},
+							Critical:        Alert{LessOrEqual: 15},
 							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
 							PossibleSolutions: `
 								- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.

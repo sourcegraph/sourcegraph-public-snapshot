@@ -107,12 +107,12 @@ function createConduitRequestForm(): FormData {
  */
 export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string> {
     const bundleUID = process.env.BUNDLE_UID!
-    const resp = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
+    const response = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
         method: 'GET',
         credentials: 'include',
         headers: new Headers({ Accept: 'text/html' }),
     })
-    return resp.text()
+    return response.text()
 }
 
 type ConduitResponse<T> =

@@ -14,6 +14,7 @@ type IndexableRepository struct {
 	SearchCount         int
 	PreciseCount        int
 	LastIndexEnqueuedAt *time.Time
+	Enabled             *bool
 }
 
 // UpdateableIndexableRepository is a version of IndexableRepository with pointer
@@ -23,6 +24,7 @@ type UpdateableIndexableRepository struct {
 	SearchCount         *int
 	PreciseCount        *int
 	LastIndexEnqueuedAt *time.Time
+	Enabled             *bool
 }
 
 // IndexableRepositoryQueryOptions controls the result filter for IndexableRepositories.
@@ -50,6 +52,7 @@ func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRep
 			&indexableRepository.SearchCount,
 			&indexableRepository.PreciseCount,
 			&indexableRepository.LastIndexEnqueuedAt,
+			&indexableRepository.Enabled,
 		); err != nil {
 			return nil, err
 		}
@@ -74,7 +77,7 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 	if opts.MinimumSearchCount > 0 || opts.MinimumSearchRatio > 0 {
 		// Select which repositories with little/no precise code intel to begin indexing
 		triggers = append(triggers, sqlf.Sprintf(
-			"(search_count >= %s AND search_count::float / (search_count + precise_count) >= %s)",
+			"(search_count >= %s AND search_count::float / NULLIF(search_count + precise_count, 0) >= %s)",
 			opts.MinimumSearchCount,
 			opts.MinimumSearchRatio,
 		))
@@ -96,11 +99,8 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		))
 	}
 
-	var whereClause *sqlf.Query
-	if len(conds) > 0 {
-		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, " AND "))
-	} else {
-		whereClause = sqlf.Sprintf("")
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("true"))
 	}
 
 	return scanIndexableRepositories(s.query(ctx, sqlf.Sprintf(`
@@ -108,11 +108,12 @@ func (s *store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 			repository_id,
 			search_count,
 			precise_count,
-			last_index_enqueued_at
+			last_index_enqueued_at,
+			enabled
 		FROM lsif_indexable_repositories
-		%s
+		WHERE enabled is not false AND (enabled is true OR (%s))
 		LIMIT %s
-	`, whereClause, opts.Limit)))
+	`, sqlf.Join(conds, " AND "), opts.Limit)))
 }
 
 // UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
@@ -132,13 +133,16 @@ func (s *store) UpdateIndexableRepository(ctx context.Context, indexableReposito
 
 	var pairs []*sqlf.Query
 	if indexableRepository.SearchCount != nil {
-		pairs = append(pairs, sqlf.Sprintf("search_count=%s", indexableRepository.SearchCount))
+		pairs = append(pairs, sqlf.Sprintf("search_count = %s", indexableRepository.SearchCount))
 	}
 	if indexableRepository.PreciseCount != nil {
-		pairs = append(pairs, sqlf.Sprintf("precise_count=%s", indexableRepository.PreciseCount))
+		pairs = append(pairs, sqlf.Sprintf("precise_count = %s", indexableRepository.PreciseCount))
 	}
 	if indexableRepository.LastIndexEnqueuedAt != nil {
-		pairs = append(pairs, sqlf.Sprintf("last_index_enqueued_at=%s", indexableRepository.LastIndexEnqueuedAt))
+		pairs = append(pairs, sqlf.Sprintf("last_index_enqueued_at = %s", indexableRepository.LastIndexEnqueuedAt))
+	}
+	if indexableRepository.Enabled != nil {
+		pairs = append(pairs, sqlf.Sprintf("enabled = %s", indexableRepository.Enabled))
 	}
 	if len(pairs) == 0 {
 		return nil
