@@ -250,16 +250,13 @@ add('With alert', () => (
                 {...webHoverOverlayClassProps}
                 hoverOrError={{
                     contents: [FIXTURE_CONTENT],
-                    alerts: [
-                        {
-                            summary: {
-                                kind: MarkupKind.PlainText,
-                                value:
-                                    'This is a test alert.',
-                            },
-                            type: 'test-alert-type',
-                        }
-                    ],
+                    alerts: [{
+                        summary: {
+                            kind: MarkupKind.PlainText,
+                            value: 'This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.',
+                        },
+                        type: 'test-alert-type',
+                        }],
                 }}
                 actionsOrError={FIXTURE_ACTIONS}
                 onAlertDismissed={action('onAlertDismissed')}
@@ -268,7 +265,7 @@ add('With alert', () => (
     </>
 ))
 
-add('With dismissible alert', () => (
+add('With nothing alert', () => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light">
@@ -283,8 +280,7 @@ add('With dismissible alert', () => (
                                 kind: MarkupKind.PlainText,
                                 value:
                                     'This is a test alert.',
-                            },
-                            type: 'test-alert-type',
+                            }
                         }
                     ],
                 }}
@@ -295,7 +291,7 @@ add('With dismissible alert', () => (
     </>
 ))
 
-add('With badged alert', () => (
+add('Withbadged alert', () => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light">
