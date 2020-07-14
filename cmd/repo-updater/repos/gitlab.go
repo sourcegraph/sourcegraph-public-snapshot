@@ -348,7 +348,7 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		Title:        mr.Title,
 		TargetBranch: mr.TargetBranch,
 		StateEvent:   gitlab.UpdateMergeRequestStateEventClose,
-	})closed
+	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
 	}
