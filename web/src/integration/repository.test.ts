@@ -2,6 +2,13 @@ import assert from 'assert'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import {
+    makeRepositoryRedirectResult,
+    makeResolveRevisionResult,
+    makeFileExternalLinksResult,
+    makeTreeEntriesResult,
+    makeBlobContentResult,
+} from './graphQlResponseHelpers'
 
 describe('Repository', () => {
     let driver: Driver
@@ -31,200 +38,19 @@ describe('Repository', () => {
 
     describe('index page', () => {
         it('loads when accessed with a repo url', async () => {
+            const shortRepositoryName = 'sourcegraph/jsonrpc2'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/${repositoryName}`
+            const clickedFileName = 'async.go'
+            const clickedCommit = ''
+
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: () => ({
-                    repositoryRedirect: {
-                        __typename: 'Repository',
-                        id: 'UmVwb3NpdG9yeTo0MDk1Mzg=',
-                        name: 'github.com/sourcegraph/jsonrpc2',
-                        url: '/github.com/sourcegraph/jsonrpc2',
-                        externalURLs: [{ url: 'https://github.com/sourcegraph/jsonrpc2', serviceType: 'github' }],
-                        description:
-                            'Package jsonrpc2 provides a client and server implementation of JSON-RPC 2.0 (http://www.jsonrpc.org/specification)',
-                        viewerCanAdminister: true,
-                        defaultBranch: { displayName: 'master' },
-                    },
-                }),
-                ResolveRev: () => ({
-                    repositoryRedirect: {
-                        __typename: 'Repository',
-                        mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
-                        commit: {
-                            oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                            tree: { url: '/github.com/sourcegraph/jsonrpc2' },
-                        },
-                        defaultBranch: { abbrevName: 'master' },
-                    },
-                }),
-                FileExternalLinks: () => ({
-                    repository: {
-                        commit: {
-                            file: {
-                                externalURLs: [
-                                    {
-                                        url: 'https://github.com/sourcegraph/jsonrpc2/blob/master/async.go',
-                                        serviceType: 'github',
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
-                TreeEntries: () => ({
-                    repository: {
-                        commit: {
-                            tree: {
-                                isRoot: true,
-                                url: '/github.com/sourcegraph/jsonrpc2',
-                                entries: [
-                                    {
-                                        name: '.github',
-                                        path: '.github',
-                                        isDirectory: true,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/tree/.github',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'websocket',
-                                        path: 'websocket',
-                                        isDirectory: true,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/tree/websocket',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: '.travis.yml',
-                                        path: '.travis.yml',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/.travis.yml',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'LICENSE',
-                                        path: 'LICENSE',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/LICENSE',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'README.md',
-                                        path: 'README.md',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/README.md',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'async.go',
-                                        path: 'async.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/async.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'call_opt.go',
-                                        path: 'call_opt.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/call_opt.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'codec_test.go',
-                                        path: 'codec_test.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/codec_test.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'conn_opt.go',
-                                        path: 'conn_opt.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/conn_opt.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'go.mod',
-                                        path: 'go.mod',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/go.mod',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'go.sum',
-                                        path: 'go.sum',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/go.sum',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'handler_with_error.go',
-                                        path: 'handler_with_error.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/handler_with_error.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'jsonrpc2.go',
-                                        path: 'jsonrpc2.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/jsonrpc2.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'jsonrpc2_test.go',
-                                        path: 'jsonrpc2_test.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/jsonrpc2_test.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'object_test.go',
-                                        path: 'object_test.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/object_test.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                    {
-                                        name: 'stream.go',
-                                        path: 'stream.go',
-                                        isDirectory: false,
-                                        url: '/github.com/sourcegraph/jsonrpc2/-/blob/stream.go',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
-                Blob: () => ({
-                    repository: {
-                        commit: {
-                            file: {
-                                content: '',
-                                richHTML: '',
-                                highlight: {
-                                    aborted: false,
-                                    html: '',
-                                },
-                            },
-                        },
-                    },
-                }),
+                RepositoryRedirect: ({ repoName }) => makeRepositoryRedirectResult(repoName),
+                ResolveRev: () => makeResolveRevisionResult(repositorySourcegraphUrl),
+                FileExternalLinks: ({ filePath }) => makeFileExternalLinksResult(filePath),
+                TreeEntries: () => makeTreeEntriesResult(repositorySourcegraphUrl, ['jsonrpc2.go', clickedFileName]),
+                Blob: () => makeBlobContentResult('mock file blob'),
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
@@ -526,17 +352,17 @@ describe('Repository', () => {
                 () => document.querySelector<HTMLButtonElement>('.tree-page__entries--columns')?.children.length
             )
 
-            assert.strictEqual(numberOfFileEntries, 16, 'Number of files in directory listing')
+            assert.strictEqual(numberOfFileEntries, 2, 'Number of files in directory listing')
 
             await testContext.waitForGraphQLRequest(async () => {
-                await driver.findElementWithText('async.go', { selector: '.e2e-tree-entry-file', action: 'click' })
+                await driver.findElementWithText(clickedFileName, { selector: '.e2e-tree-entry-file', action: 'click' })
             }, 'Blob')
 
             await driver.page.waitForSelector('.e2e-repo-blob')
-            await driver.assertWindowLocation('/github.com/sourcegraph/jsonrpc2/-/blob/async.go')
+            await driver.assertWindowLocation(`/github.com/sourcegraph/jsonrpc2/-/blob/${clickedFileName}`)
 
             // Assert that the file is loaded
-            await assertSelectorHasText('.breadcrumb .part-last', 'async.go')
+            await assertSelectorHasText('.breadcrumb .part-last', clickedFileName)
 
             // Return to repo page
             await driver.page.click('a.repo-header__repo')
@@ -544,7 +370,7 @@ describe('Repository', () => {
             await assertSelectorHasText('h2.tree-page__title', ' sourcegraph/jsonrpc2')
             await driver.assertWindowLocation('/github.com/sourcegraph/jsonrpc2')
 
-            await driver.findElementWithText('15c2290', { selector: '.git-commit-node__oid', action: 'click' })
+            await driver.findElementWithText(clickedCommit, { selector: '.git-commit-node__oid', action: 'click' })
             await driver.page.waitForSelector('.git-commit-node__message-subject')
             await assertSelectorHasText('.git-commit-node__message-subject', 'update LSIF indexing CI workflow')
         })
