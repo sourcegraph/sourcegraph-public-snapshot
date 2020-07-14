@@ -346,7 +346,7 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.
-const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
+const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
 // exactlyOneRepo returns whether exactly one repo: literal field is specified and
 // delineated by regex anchors ^ and $. This function helps determine whether we
