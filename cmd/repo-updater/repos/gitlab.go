@@ -148,7 +148,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
 	}
-	if s.config.Token == "" {
+	if s.config.Token == "" || !proj.RequiresAuthentication() {
 		return proj.HTTPURLToRepo
 	}
 	u, err := url.Parse(proj.HTTPURLToRepo)

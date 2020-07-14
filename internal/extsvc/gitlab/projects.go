@@ -38,6 +38,12 @@ type ProjectCommon struct {
 	SSHURLToRepo      string `json:"ssh_url_to_repo"`     // SSH clone URL ("git@example.com:foo/bar.git")
 }
 
+// RequiresAuthentication reports whether this project requires authentication to view (i.e., its visibility is
+// "private" or "internal").
+func (p Project) RequiresAuthentication() bool {
+	return p.Visibility == "private" || p.Visibility == "internal"
+}
+
 func idCacheKey(id int) string                                  { return "1:" + strconv.Itoa(id) }
 func pathWithNamespaceCacheKey(pathWithNamespace string) string { return "1:" + pathWithNamespace }
 
