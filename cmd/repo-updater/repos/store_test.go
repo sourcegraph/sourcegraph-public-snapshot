@@ -739,28 +739,79 @@ func isCloned(r *repos.Repo) bool {
 }
 
 func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
 	return func(t *testing.T) {
 		t.Helper()
 
-		var repositories repos.Repos
-		for i := 0; i < 3; i++ {
-			repositories = append(repositories, &repos.Repo{
-				Name:   fmt.Sprintf("github.com/%d/%d", i, i),
-				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
-				Cloned: false,
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          fmt.Sprintf("%d", i),
-					ServiceType: extsvc.TypeGitHub,
-					ServiceID:   "http://github.com",
+		github := repos.Repo{
+			Name:        "github.com/foo/bar",
+			URI:         "github.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "AAAAA==",
+				ServiceType: "github",
+				ServiceID:   "http://github.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:1": {
+					ID:       "extsvc:1",
+					CloneURL: "git@github.com:foo/bar.git",
 				},
-				Sources: map[string]*repos.SourceInfo{
-					"extsvc:3": {
-						ID:       "extsvc:3",
-						CloneURL: "git@github.com:foo/bar.git",
-					},
+			},
+			Metadata: new(github.Repository),
+		}
+
+		gitlab := repos.Repo{
+			Name:        "gitlab.com/foo/bar",
+			URI:         "gitlab.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      false,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "http://gitlab.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:2": {
+					ID:       "extsvc:2",
+					CloneURL: "git@gitlab.com:foo/bar.git",
 				},
-				Metadata: new(github.Repository),
-			})
+			},
+			Metadata: new(gitlab.Project),
+		}
+
+		bitbucketServer := repos.Repo{
+			Name:        "bitbucketserver.mycorp.com/foo/bar",
+			URI:         "bitbucketserver.mycorp.com/foo/bar",
+			Description: "The description",
+			Language:    "barlang",
+			CreatedAt:   now,
+			Cloned:      true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "1234",
+				ServiceType: "bitbucketServer",
+				ServiceID:   "http://bitbucketserver.mycorp.com",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:3": {
+					ID:       "extsvc:3",
+					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
+				},
+			},
+			Metadata: new(bitbucketserver.Repo),
+		}
+
+		repositories := repos.Repos{
+			&github,
+			&gitlab,
+			&bitbucketServer,
 		}
 
 		ctx := context.Background()
@@ -781,44 +832,23 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 			sort.Sort(stored)
 
 			names := stored[:3].Names()
+
+			if err := tx.SetClonedRepos(ctx, names...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			stored, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			cloned := stored.Filter(isCloned).Names()
+			sort.Strings(cloned)
 			sort.Strings(names)
 
-			check := func() {
-				t.Helper()
-
-				res, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
-				if err != nil {
-					t.Fatalf("ListRepos error: %s", err)
-				}
-
-				cloned := repos.Repos(res).Filter(isCloned).Names()
-				sort.Strings(cloned)
-
-				if got, want := cloned, names; !cmp.Equal(got, want) {
-					t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
-				}
+			if got, want := cloned, names; !cmp.Equal(got, want) {
+				t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
 			}
-
-			if err := tx.SetClonedRepos(ctx, names...); err != nil {
-				t.Fatalf("SetClonedRepos error: %s", err)
-			}
-			check()
-
-			// setClonedRepositories should be idempotent and have the same behavior
-			// when called with the same repos
-			if err := tx.SetClonedRepos(ctx, names...); err != nil {
-				t.Fatalf("SetClonedRepos error: %s", err)
-			}
-			check()
-
-			// when adding another repo to the list, the other repos must be set as well
-			names = stored[:4].Names()
-			sort.Strings(names)
-			if err := tx.SetClonedRepos(ctx, names...); err != nil {
-				t.Fatalf("SetClonedRepos error: %s", err)
-			}
-
-			check()
 		}))
 	}
 }
@@ -918,8 +948,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	}
 
 	github := repos.Repo{
-		Name:   "github.com/bar/foo",
-		Cloned: true,
+		Name: "github.com/bar/foo",
 		Sources: map[string]*repos.SourceInfo{
 			"extsvc:123": {
 				ID:       "extsvc:123",
@@ -1129,17 +1158,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		},
 		stored: repositories,
 		repos:  repos.Assert.ReposEqual(&gitlab),
-	})
-
-	testCases = append(testCases, testCase{
-		name: "only include cloned",
-		args: func(repos.Repos) repos.StoreListReposArgs {
-			return repos.StoreListReposArgs{
-				ClonedOnly: true,
-			}
-		},
-		stored: repositories,
-		repos:  repos.Assert.ReposEqual(&github),
 	})
 
 	testCases = append(testCases, testCase{

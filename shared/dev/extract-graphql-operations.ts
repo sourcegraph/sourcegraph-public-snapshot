@@ -15,11 +15,11 @@ import { memoize } from 'lodash'
 // NOTE borderline reasonable to define an interface here instead of duplicating
 const WEB_TSPROJECT_PATH = path.join(__dirname, '../../web')
 const WEB_OUTPUT_DIR = path.join(__dirname, '../../web/src')
-const WEB_INTERFACE_NAME = 'WebGQLOperations'
+const WEB_INTERFACE_NAME = 'WebGraphQlOperations'
 
 const SHARED_TSPROJECT_PATH = path.join(__dirname, '../')
 const SHARED_OUTPUT_DIR = path.join(__dirname, '../src/')
-const SHARED_INTERFACE_NAME = 'SharedGQLOperations'
+const SHARED_INTERFACE_NAME = 'SharedGraphQlOperations'
 
 const readSchema = (schemaPath: string): GraphQLSchema => {
     const isExists = fs.existsSync(schemaPath)
@@ -156,7 +156,7 @@ const extractGQL = async (tsProjectPath: string, outputDirectory: string, interf
     ]
 
     // TODO as an option
-    const outputFileName = 'gql-operations.ts'
+    const outputFileName = 'graphql-operations.ts'
 
     const sourceFile = ts.createSourceFile(outputFileName, '', ts.ScriptTarget.Latest, false, ts.ScriptKind.TS)
     const resultFile = ts.updateSourceFileNode(sourceFile, typeDeclarations)

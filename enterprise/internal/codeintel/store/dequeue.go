@@ -60,12 +60,12 @@ func (s *store) dequeueByID(
 	scan dequeueScanner,
 	id int,
 ) (_ interface{}, _ Store, _ bool, err error) {
-	tx, started, err := s.transact(ctx)
+	if s.InTransaction() {
+		return nil, nil, false, ErrDequeueTransaction
+	}
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, nil, false, err
-	}
-	if !started {
-		return nil, nil, false, ErrDequeueTransaction
 	}
 
 	// SKIP LOCKED is necessary not to block on this select. We allow the database driver to return

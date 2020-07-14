@@ -41,8 +41,6 @@ func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
 	if repo.RepoFields != nil {
 		op.Description = repo.Description
 		op.Fork = repo.Fork
-		op.Cloned = repo.Cloned
-		op.Archived = repo.Archived
 	}
 
 	if err := Repos.Upsert(ctx, op); err != nil {
@@ -77,7 +75,6 @@ type InsertRepoOp struct {
 	Description  string
 	Fork         bool
 	Archived     bool
-	Cloned       bool
 	ExternalRepo api.ExternalRepoSpec
 }
 
@@ -91,8 +88,7 @@ WITH upsert AS (
     external_id           = NULLIF(BTRIM($4), ''),
     external_service_type = NULLIF(BTRIM($5), ''),
     external_service_id   = NULLIF(BTRIM($6), ''),
-    archived              = $8,
-    cloned                = $9
+    archived              = $8
   WHERE name = $1 OR (
     external_id IS NOT NULL
     AND external_service_type IS NOT NULL
@@ -115,8 +111,7 @@ INSERT INTO repo (
   external_id,
   external_service_type,
   external_service_id,
-  archived,
-  cloned
+  archived
 ) (
   SELECT
     $1 AS name,
@@ -126,8 +121,7 @@ INSERT INTO repo (
     NULLIF(BTRIM($4), '') AS external_id,
     NULLIF(BTRIM($5), '') AS external_service_type,
     NULLIF(BTRIM($6), '') AS external_service_id,
-    $8 AS archived,
-    $9 AS cloned
+    $8 AS archived
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
@@ -173,7 +167,6 @@ func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 		op.ExternalRepo.ServiceID,
 		language,
 		op.Archived,
-		op.Cloned,
 	)
 
 	return err
@@ -198,14 +191,7 @@ func TestRepos_Get(t *testing.T) {
 			ServiceType: "b",
 			ServiceID:   "c",
 		},
-		RepoFields: &types.RepoFields{
-			URI:         "u",
-			Description: "d",
-			Language:    "l",
-			Fork:        true,
-			Archived:    true,
-			Cloned:      true,
-		},
+		RepoFields: &types.RepoFields{URI: "u"},
 	})
 
 	repo, err := Repos.Get(ctx, want[0].ID)
@@ -317,44 +303,6 @@ func TestRepos_List_fork(t *testing.T) {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, append(append([]*types.Repo(nil), mine...), yours...), repos)
-	}
-}
-
-func TestRepos_List_cloned(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
-
-	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Cloned: false}})
-	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Cloned: true}})
-
-	tests := []struct {
-		name string
-		opt  ReposListOptions
-		want []*types.Repo
-	}{
-		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, yours},
-		{"NoCloned", ReposListOptions{NoCloned: true}, mine},
-		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
-		{"Default", ReposListOptions{}, append(append([]*types.Repo(nil), mine...), yours...)},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos.List(ctx, test.opt)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assertJSONEqual(t, test.want, repos)
-		})
 	}
 }
 
