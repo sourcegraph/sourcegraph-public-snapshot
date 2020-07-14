@@ -13,7 +13,8 @@ import { useLocalStorage } from '../util/useLocalStorage'
 // Components from shared with web-styling class names applied
 
 export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
-    const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
+    const [dismissedAlerts, setDismissedAlerts] =
+        useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback((alertType: string) => {
         if (!dismissedAlerts.includes(alertType)) {
             setDismissedAlerts([...dismissedAlerts, alertType])
@@ -22,7 +23,8 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props
 
     var propsToUse = props
     if (props.hoverOrError && props.hoverOrError !== 'loading' && !isErrorLike(props.hoverOrError)) {
-        const filteredAlerts = (props.hoverOrError?.alerts || []).filter(alert => !dismissedAlerts.includes(alert.type))
+        const filteredAlerts = (props.hoverOrError?.alerts || [])
+            .filter(alert => !alert.type || !dismissedAlerts.includes(alert.type))
         propsToUse = { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } }
     }
 
