@@ -28,7 +28,7 @@ describe('Blob viewer', () => {
     afterEach(() => testContext?.dispose())
 
     describe('tests a general layout for viewing a file', () => {
-        test.only('it populates editor content and FILES tab', async () => {
+        test('it populates editor content and FILES tab', async () => {
             const repositoryName = 'github.com/sourcegraph/jsonrpc2'
             const repositorySourcegraphUrl = `/${repositoryName}`
             const fileName = 'async.go'
