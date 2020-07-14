@@ -189,16 +189,33 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     </span>
                                 </h3>
                             </div>
-                            <div className="search-page__lang-list mt-2">
-                                {homepageLanguageList.map(language => (
-                                    <Link
-                                        className="text-monospace search-page__web-link"
-                                        to={`/search?q=lang:${language.filterName}`}
-                                        key={language.name}
-                                    >
-                                        {language.name}
-                                    </Link>
-                                ))}
+                            <div className="d-flex row-cols-2 mt-2">
+                                <div className="d-flex flex-column col mr-auto">
+                                    {homepageLanguageList
+                                        .slice(0, Math.ceil(homepageLanguageList.length / 2))
+                                        .map(language => (
+                                            <Link
+                                                className="text-monospace search-page__web-link mb-3"
+                                                to={`/search?q=lang:${language.filterName}`}
+                                                key={language.name}
+                                            >
+                                                {language.name}
+                                            </Link>
+                                        ))}
+                                </div>
+                                <div className="d-flex flex-column col">
+                                    {homepageLanguageList
+                                        .slice(Math.ceil(homepageLanguageList.length / 2), homepageLanguageList.length)
+                                        .map(language => (
+                                            <Link
+                                                className="text-monospace search-page__web-link mb-3"
+                                                to={`/search?q=lang:${language.filterName}`}
+                                                key={language.name}
+                                            >
+                                                {language.name}
+                                            </Link>
+                                        ))}
+                                </div>
                             </div>
                         </div>
                         <div className="search-page__search-syntax col-sm-12 col-md-6  col-lg-4 col-xl-4">

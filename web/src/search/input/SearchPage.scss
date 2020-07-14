@@ -87,38 +87,6 @@
         }
     }
 
-    @media (min-width: $media-lg) {
-
-        .search-page__search-syntax .search-page__lang-list {
-            display:inline;
-            grid-template-columns: 1fr;
-        }
-
-    }
-
-    @media (min-width: $media-xl) {
-
-        .search-page__search-syntax .search-page__lang-list {
-            display:grid;
-            grid-template-columns: 1fr 1fr;
-        }
-
-    }
-
-
-    &__lang-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(min-content, 1fr));
-        gap: $spacer * 0.75;
-    }
-
-    // RULES
-    // Medium Screen
-    // Example searches full width, two other sections below it at 50%
-
-    // Small Screen
-    // All three wrap in a single column
-
     &__search-a-language {
         margin-bottom: 3rem;
     }
@@ -131,7 +99,6 @@
         .search-page__lang-list {
             margin-top: 4rem;
         }
-
     }
 
     &__keyword-value-text {
