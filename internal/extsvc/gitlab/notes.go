@@ -48,8 +48,6 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 }
 
 type Note struct {
-	// As with the other types here, we're only decoding enough fields here for
-	// the required campaign functionality.
 	ID        ID        `json:"id"`
 	Body      string    `json:"body"`
 	Author    User      `json:"author"`
