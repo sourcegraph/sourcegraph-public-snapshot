@@ -956,8 +956,8 @@ func TestChangeset_Labels(t *testing.T) {
 				Labels: []string{"black", "green"},
 			},
 			want: []ChangesetLabel{
-				{Name: "black"},
-				{Name: "green"},
+				{Name: "black", Color: "000000"},
+				{Name: "green", Color: "000000"},
 			},
 		},
 	} {

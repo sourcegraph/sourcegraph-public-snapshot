@@ -763,7 +763,7 @@ func (c *Changeset) Labels() []ChangesetLabel {
 		// richer label data.
 		labels := make([]ChangesetLabel, len(m.Labels))
 		for i, l := range m.Labels {
-			labels[i] = ChangesetLabel{Name: l}
+			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
 		}
 		return labels
 	default:
