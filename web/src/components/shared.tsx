@@ -6,6 +6,7 @@ import {
     EditorCompletionWidget,
     EditorCompletionWidgetProps,
 } from '../../../shared/src/components/completion/EditorCompletionWidget'
+import { isErrorLike } from '../../../shared/src/util/errors'
 import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/HoverOverlay'
 import { useLocalStorage } from '../util/useLocalStorage'
 
@@ -15,15 +16,18 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(alertType => {
         if (!dismissedAlerts.includes(alertType)) {
-            setDismissedAlerts([alertType, ...dismissedAlerts])
+            setDismissedAlerts(dismissedAlerts + [alertType])
         }
     }, [dismissedAlerts, setDismissedAlerts])
 
-    const filteredAlerts = (props.hoverOrError?.alerts || []).filter(alert => !dismissedAlerts.includes(alert.type))
-    const filteredProps = props.hoverOrError?.alerts ? { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } } : props
+    var propsToUse = props
+    if (props.hoverOrError && props.hoverOrError !== 'loading' && !isErrorLike(hoverOrError)) {
+        const filteredAlerts = (props.hoverOrError?.alerts || []).filter(alert => !dismissedAlerts.includes(alert.type))
+        propsToUse = { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } }
+    }
 
     return <HoverOverlay
-        {...filteredProps}
+        {...propsToUse}
         className="card"
         iconClassName="icon-inline"
         iconButtonClassName="btn btn-icon"

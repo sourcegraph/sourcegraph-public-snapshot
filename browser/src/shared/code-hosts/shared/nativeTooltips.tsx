@@ -35,9 +35,12 @@ export function handleNativeTooltips(
             type: NATIVE_TOOLTIP_TYPE,
             summary: {
                 kind: MarkupKind.Markdown,
-                value: 'Sourcegraph has hidden ' + (name || 'the code host') + '\'s native hover tooltips. You can toggle this at any time: to enable the native tooltips run "Code host: prefer non-Sourcegraph hover tooltips" from the command palette or set `"codeHost.useNativeTooltips": true` in your user settings.'
+                value: (name || 'Code host') + ' native hovers overridden.'
             },
-            dismissible: true,
+            badge: {
+                kind: 'info',
+                hoverMessage: 'Sourcegraph has hidden ' + (name || 'the code host') + '\'s native hover tooltips. You can toggle this at any time: to enable the native tooltips run "Code host: prefer non-Sourcegraph hover tooltips" from the command palette or set {"codeHost.useNativeTooltips": true} in your user settings.'
+            }
         }),
         publishReplay(1),
         refCount()
