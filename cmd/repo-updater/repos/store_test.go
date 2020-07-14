@@ -920,7 +920,7 @@ func testStoreCountNotClonedRepos(store repos.Store) func(*testing.T) {
 			}
 		}))
 
-		t.Run("deleted cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+		t.Run("deleted non cloned repos", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			stored := mkRepos(10, repositories...)
 
 			if err := tx.UpsertRepos(ctx, stored...); err != nil {
