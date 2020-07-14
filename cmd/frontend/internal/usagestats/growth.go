@@ -15,20 +15,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func GetDeletedUsers(ctx context.Context) (*types.MonthlyGrowthStatistics, error) {
+func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
 	const q = `
 	WITH
+    latest_usage_by_user AS (
+        SELECT
+            user_id,
+            MAX(timestamp) as latest_usage
+        FROM
+            event_logs
+        GROUP BY   
+            user_id
+    ),
 	sub AS (
 	SELECT
 	  DISTINCT users.id,
 	  CASE
-		WHEN DATE_TRUNC('month', timestamp) = DATE_TRUNC('month', now()) THEN TRUE
+		WHEN DATE_TRUNC('month', latest_usage) = DATE_TRUNC('month', now()) THEN TRUE
 	  ELSE
 	  FALSE
 	END
 	  AS current_month,
 	  CASE
-		WHEN DATE_TRUNC('month', timestamp) = DATE_TRUNC('month', now()) - INTERVAL '1 month' THEN TRUE
+		WHEN DATE_TRUNC('month', latest_usage) = DATE_TRUNC('month', now()) - INTERVAL '1 month' THEN TRUE
 	  ELSE
 	  FALSE
 	END
@@ -38,9 +47,9 @@ func GetDeletedUsers(ctx context.Context) (*types.MonthlyGrowthStatistics, error
 	FROM
 	  users
 	LEFT JOIN
-	  event_logs
+	  latest_usage_by_user
 	ON
-	  event_logs.user_id = users.id)
+	  latest_usage_by_user.user_id = users.id)
   SELECT
 	COUNT(*) FILTER (
 	WHERE
@@ -61,7 +70,14 @@ func GetDeletedUsers(ctx context.Context) (*types.MonthlyGrowthStatistics, error
 	  AND previous_month = TRUE
 	  AND created_month < DATE_TRUNC('month', now())
 	  AND (deleted_month < DATE_TRUNC('month', now())
-		OR deleted_month IS NULL)) AS churned_users
+		OR deleted_month IS NULL)) AS churned_users,
+    	COUNT(*) FILTER (WHERE
+	  current_month = TRUE
+	  AND previous_month = TRUE
+	  AND created_month < DATE_TRUNC('month', now())
+	  AND (deleted_month < DATE_TRUNC('month', now())
+		OR deleted_month IS NULL)) AS retained_users
+
   FROM
 	sub	
 	`
@@ -82,7 +98,7 @@ func GetDeletedUsers(ctx context.Context) (*types.MonthlyGrowthStatistics, error
 		return nil, err
 	}
 
-	return &types.MonthlyGrowthStatistics{
+	return &types.GrowthStatistics{
 		DeletedUsers:      	int32(deletedUsers),
 		CreatedUsers:       int32(createdUsers),
 		ResurrectedUsers: 	int32(resurrectedUsers),
