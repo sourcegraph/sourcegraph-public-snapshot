@@ -220,6 +220,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                         {hoverOrError.alerts.map(({ summary, badge, type }, index) => (
                             <div
                                 className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
+                                key={index}
                             >
                                 {badge && !type &&
                                     <BadgeAttachment
@@ -231,10 +232,13 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     />
                                 }
 
-                                <span
-                                    className="hover-overlay__content"
-                                    dangerouslySetInnerHTML={{ __html: summary.kind === 'plaintext' ? summary.value : renderMarkdown(summary.value) }}
-                                />
+                                {summary.kind === 'plaintext' ?
+                                    <span className="hover-overlay__content">{summary.value}</span> :
+                                    <span
+                                        className="hover-overlay__content"
+                                        dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.value) }}
+                                    />
+                                 }
 
                                 {badge && type &&
                                     <BadgeAttachment

@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { ActionsNavItems, ActionsNavItemsProps } from '../../../shared/src/actions/ActionsNavItems'
 import { CommandListPopoverButton, CommandListPopoverButtonProps } from '../../../shared/src/commandPalette/CommandList'
 import {
@@ -7,36 +7,31 @@ import {
     EditorCompletionWidgetProps,
 } from '../../../shared/src/components/completion/EditorCompletionWidget'
 import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/HoverOverlay'
+import { useLocalStorage } from '../util/useLocalStorage'
 
 // Components from shared with web-styling class names applied
 
-export class WebHoverOverlay extends React.PureComponent<HoverOverlayProps, {}> {
-    public render(): JSX.Element | null {
-        const filteredAlerts = (this.props.hoverOrError?.alerts || []).filter(alert => localStorage.getItem(this.alertStorageKey(alert.dismissalType)) !== 'true')
-        const props = this.props.hoverOrError?.alerts ? {...this.props, hoverOrError: {...this.props.hoverOrError, alerts: filteredAlerts}} : this.props
-
-        return <HoverOverlay
-            {...props}
-            className="card"
-            iconClassName="icon-inline"
-            iconButtonClassName="btn btn-icon"
-            actionItemClassName="btn btn-secondary"
-            infoAlertClassName="alert alert-info"
-            errorAlertClassName="alert alert-danger"
-            onAlertDismissed={this.onAlertDismissedCallback()}
-        />
-    }
-
-    private onAlertDismissedCallback(): (alertType: string) => void {
-        return alertType => {
-            localStorage.setItem(this.alertStorageKey(alertType), 'true')
-            this.forceUpdate()
+export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
+    const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
+    const onAlertDismissed = useCallback((alertType) => {
+        if (!dismissedAlerts.includes(alertType)) {
+            setDismissedAlerts([alertType, ...dismissedAlerts])
         }
-    }
+    }, [setDismissedAlerts])
 
-    private alertStorageKey(alertType: string): string {
-        return `WebHoverOverlay/alert/${alertType}/dismissed`
-    }
+    const filteredAlerts = (props.hoverOrError?.alerts || []).filter(alert => !dismissedAlerts.includes(alert.type))
+    const filteredProps = props.hoverOrError?.alerts ? { ...props, hoverOrError: { ...props.hoverOrError, alerts: filteredAlerts } } : props
+
+    return <HoverOverlay
+        {...filteredProps}
+        className="card"
+        iconClassName="icon-inline"
+        iconButtonClassName="btn btn-icon"
+        actionItemClassName="btn btn-secondary"
+        infoAlertClassName="alert alert-info"
+        errorAlertClassName="alert alert-danger"
+        onAlertDismissed={onAlertDismissed}
+    />
 }
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 
