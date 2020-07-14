@@ -52,7 +52,7 @@ export interface SyncStorageItems extends SourcegraphURL {
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
-    dismissedHoverAlerts: string[]
+    dismissedHoverAlerts: Record<string, boolean | undefined>
 }
 
 export interface LocalStorageItems {

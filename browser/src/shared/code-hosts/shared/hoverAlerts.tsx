@@ -1,12 +1,10 @@
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
-import { HoverAlert } from 'sourcegraph'
+import type { HoverAlert } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
 import { isInPage } from '../../context'
-
-export const extensionHoverAlertType = 'nativeTooltips'
 
 /**
  * Returns an Observable of all hover alerts that have not yet

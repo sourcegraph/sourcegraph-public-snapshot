@@ -63,9 +63,6 @@
         // Descendant selectors are needed here to style rendered markdown
         // stylelint-disable selector-max-compound-selectors
 
-        p {
-            display: inline;
-        }
         p,
         pre {
             margin-bottom: 0.5rem;
@@ -85,17 +82,20 @@
         // stylelint-enable selector-max-compound-selectors
     }
 
-    &__alert-container {
+    &__alerts {
         display: flex;
+        flex-direction: column;
     }
-
     &__alert {
         padding: 0.25rem 0.5rem;
         margin: 0;
         border-radius: 0;
         border: none;
         border-bottom: 1px solid var(--border-color);
-        flex: auto;
+
+        p {
+            display: inline;
+        }
     }
 
     &__alert-close {

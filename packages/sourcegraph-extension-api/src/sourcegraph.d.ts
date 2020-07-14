@@ -1247,14 +1247,17 @@ declare module 'sourcegraph' {
         range?: Range
 
         /**
-         * Alerts related to this hover.
+         * Alerts that should be shown in this hover.
          */
         alerts?: Badged<HoverAlert>[]
     }
 
     export interface HoverAlert {
         /**
-         * Text content to be shown on hovers.
+         * Text content to be shown on hovers. Since the alert is displayed inline,
+         * multiparagraph content will be rendered on one line. It's recommended to
+         * provide a brief message here, and place futher details in the badge or
+         * provide a link.
          */
         summary: MarkupContent
 
@@ -1263,12 +1266,7 @@ declare module 'sourcegraph' {
          * of that type from being shown. If no type is provided, the alert is not
          * dismissible.
          */
-        dismissalType?: string
-    }
-
-    export interface Link {
-        text: string
-        url: string
+        type?: string
     }
 
     export interface HoverProvider {
