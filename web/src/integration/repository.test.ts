@@ -30,7 +30,7 @@ describe('Repository', () => {
     }
 
     describe('index page', () => {
-        it.only('loads when accessed with a repo url', async () => {
+        it('loads when accessed with a repo url', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 RepositoryRedirect: () => ({
@@ -459,6 +459,56 @@ describe('Repository', () => {
                             tree: {
                                 canonicalURL:
                                     '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                            },
+                        },
+                    },
+                }),
+                RepositoryComparisonDiff: () => ({
+                    node: {
+                        comparison: {
+                            fileDiffs: {
+                                nodes: [
+                                    {
+                                        __typename: 'FileDiff',
+                                        oldPath: '.github/workflows/lsif.yml',
+                                        oldFile: { __typename: 'GitBlob', binary: false, byteSize: 381 },
+                                        newFile: { __typename: 'GitBlob', binary: false, byteSize: 304 },
+                                        newPath: '.github/workflows/lsif.yml',
+                                        mostRelevantFile: {
+                                            __typename: 'GitBlob',
+                                            url:
+                                                '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81/-/blob/.github/workflows/lsif.yml',
+                                        },
+                                        hunks: [
+                                            {
+                                                oldRange: { startLine: 2, lines: 15 },
+                                                oldNoNewlineAt: false,
+                                                newRange: { startLine: 2, lines: 12 },
+                                                section: 'name: LSIF',
+                                                highlight: {
+                                                    aborted: false,
+                                                    lines: [
+                                                        {
+                                                            kind: 'DELETED',
+                                                            html:
+                                                                '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">build</span><span style="color:#657b83;">:\n</span></div>',
+                                                        },
+                                                        {
+                                                            kind: 'ADDED',
+                                                            html:
+                                                                '<div><span style="color:#657b83;">  </span><span style="color:#268bd2;">lsif-go</span><span style="color:#657b83;">:\n</span></div>',
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                        stat: { added: 1, changed: 3, deleted: 4 },
+                                        internalID: '084bcb27838a8adbbbe10f664420f2d2',
+                                    },
+                                ],
+                                totalCount: 1,
+                                pageInfo: { endCursor: null, hasNextPage: false },
+                                diffStat: { added: 1, changed: 3, deleted: 4 },
                             },
                         },
                     },
