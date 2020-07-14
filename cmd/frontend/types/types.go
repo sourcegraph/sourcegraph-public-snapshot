@@ -372,3 +372,11 @@ type Event struct {
 	Version         string
 	Timestamp       time.Time
 }
+
+type GrowthStatistics struct {
+	DeletedUsers 		int32
+	CreatedUsers 		int32
+	ResurrectedUsers 	int32
+	ChurnedUsers		int32
+	RetainedUsers 		int32
+}

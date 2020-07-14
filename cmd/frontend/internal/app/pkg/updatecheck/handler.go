@@ -176,6 +176,7 @@ type pingRequest struct {
 	UniqueUsers          int32           `json:"u"`
 	Activity             json.RawMessage `json:"act"`
 	CampaignsUsage       json.RawMessage `json:"automationUsage"`
+	GrowthStatistics	 json.RawMessage `json:"growthStatistics"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
 	InitialAdminEmail    string          `json:"initAdmin"`

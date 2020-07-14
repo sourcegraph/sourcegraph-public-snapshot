@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
     - Webhook notifiers: `bearerToken`
   - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
 - Recently firing critical alerts are now displayed to admins in site alerts.
+- The count of retained, churned, resurrected, new and deleted users will be sent back in pings.
 
 ### Changed
 
