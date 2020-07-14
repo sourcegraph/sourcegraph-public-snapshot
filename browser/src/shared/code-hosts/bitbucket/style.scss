@@ -52,6 +52,11 @@
     }
 }
 
+// Fix for vertical alignment on bitbucket-server
+.actions-nav-items__action-item.action-item--bitbucket-server {
+    overflow: visible;
+}
+
 .btn-icon--bitbucket-server {
     padding: 0 !important;
     background: transparent !important;
