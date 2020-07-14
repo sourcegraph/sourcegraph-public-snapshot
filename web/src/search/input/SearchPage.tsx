@@ -218,7 +218,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </div>
                             </div>
                         </div>
-                        <div className="search-page__search-syntax col-sm-12 col-md-6  col-lg-4 col-xl-4">
+                        <div className="search-page__search-syntax col-xs-12 col-md-6  col-lg-4">
                             <h3 className="search-page__help-content-header">Search syntax</h3>
                             <div className="mt-3 row">
                                 <dl className="col-sm-5 col-md-12 col-lg-6 mb-4">
