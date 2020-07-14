@@ -120,9 +120,11 @@ func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext,
 		createdBy = "src-prom-wrapper"
 		comment   = "Applied via `observability.silenceAlerts` in site configuration"
 		startTime = strfmt.DateTime(time.Now())
-		// 10 year expiry, we don't want it to expire and will remove the silence once it is removed from site config
-		endTime        = strfmt.DateTime(time.Now().Add(10 * 365 * 24 * time.Hour))
-		activeSilences = map[string]string{} // map silence to alertmanager silence ID
+		// set 10 year expiry (expiry required, but we don't want it to expire)
+		// silences removed from config will be removed from alertmanager
+		endTime = strfmt.DateTime(time.Now().Add(10 * 365 * 24 * time.Hour))
+		// map configured silences to alertmanager silence IDs
+		activeSilences = map[string]string{}
 	)
 
 	for _, s := range newConfig.SilencedAlerts {

@@ -12,6 +12,7 @@ func boolP(v bool) *bool {
 	return &v
 }
 
+// newMatchersFromSilence creates Alertmanager alert matchers from a configured silence
 func newMatchersFromSilence(silence string) models.Matchers {
 	return models.Matchers{{
 		Name:    stringP("alertname"),
@@ -20,6 +21,7 @@ func newMatchersFromSilence(silence string) models.Matchers {
 	}}
 }
 
+// newSilenceFromMatchers returns the silenced alert from Alertmanager alert matchers
 func newSilenceFromMatchers(matchers models.Matchers) string {
 	for _, m := range matchers {
 		if *m.Name == "alertname" {
