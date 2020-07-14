@@ -409,10 +409,10 @@ func (s *ObservedStore) AddUploadPart(ctx context.Context, uploadID, partIndex i
 }
 
 // MarkQueued calls into the inner store and registers the observed result.
-func (s *ObservedStore) MarkQueued(ctx context.Context, uploadID int) (err error) {
+func (s *ObservedStore) MarkQueued(ctx context.Context, uploadID int, uploadSize *int) (err error) {
 	ctx, endObservation := s.markQueuedOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.MarkQueued(ctx, uploadID)
+	return s.store.MarkQueued(ctx, uploadID, uploadSize)
 }
 
 // MarkComplete calls into the inner store and registers the observed results.
@@ -430,11 +430,11 @@ func (s *ObservedStore) MarkErrored(ctx context.Context, id int, failureMessage 
 }
 
 // Dequeue calls into the inner store and registers the observed results.
-func (s *ObservedStore) Dequeue(ctx context.Context) (_ Upload, _ Store, _ bool, err error) {
+func (s *ObservedStore) Dequeue(ctx context.Context, maxSize int64) (_ Upload, _ Store, _ bool, err error) {
 	ctx, endObservation := s.dequeueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	upload, tx, ok, err := s.store.Dequeue(ctx)
+	upload, tx, ok, err := s.store.Dequeue(ctx, maxSize)
 	return upload, s.wrap(tx), ok, err
 }
 
