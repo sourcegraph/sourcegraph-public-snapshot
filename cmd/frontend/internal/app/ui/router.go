@@ -135,10 +135,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 
-	// Repogroup hacks! We don't have a subroute for them at the moment and
-	// the routing is hacked into the webapp code. Before launch this should
-	// be thought through. Copying behaviour from webapp. Must mirror
-	// web/src/Layout.tsx
+	// Repogroup pages. Must mirror web/src/routes.tsx
 	if envvar.SourcegraphDotComMode() {
 		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
