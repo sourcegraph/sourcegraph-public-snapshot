@@ -122,11 +122,11 @@ func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext,
 		startTime = strfmt.DateTime(time.Now())
 		// 10 year expiry, we don't want it to expire and will remove the silence once it is removed from site config
 		endTime        = strfmt.DateTime(time.Now().Add(10 * 365 * 24 * time.Hour))
-		activeSilences = map[schema.ObservabilitySilenceAlerts]string{} // map silence to alertmanager silence ID
+		activeSilences = map[string]string{} // map silence to alertmanager silence ID
 	)
 
 	for _, s := range newConfig.SilencedAlerts {
-		activeSilences[*s] = ""
+		activeSilences[s] = ""
 	}
 
 	// delete existing silences that should no longer be silenced

@@ -658,33 +658,10 @@ const SiteSchemaJSON = `{
       }
     },
     "observability.silenceAlerts": {
-      "description": "Silence individual Sourcegraph alerts.",
+      "description": "Silence individual Sourcegraph alerts by identifier.",
       "type": "array",
       "items": {
-        "type": "object",
-        "required": ["service", "name", "level"],
-        "properties": {
-          "service": {
-            "description": "Name of the alert's associated service.",
-            "examples": ["gitserver"],
-            "type": "string"
-          },
-          "level": {
-            "description": "Level of the alert to silence.",
-            "type": "string",
-            "enum": ["warning", "critical"]
-          },
-          "name": {
-            "description": "Name of the alert.",
-            "examples": ["echo_command_duration_test"],
-            "type": "string"
-          }
-        },
-        "default": {
-          "service": "",
-          "name": "",
-          "level": ""
-        }
+        "type": "string"
       }
     },
     "observability.logSlowSearches": {

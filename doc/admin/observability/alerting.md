@@ -81,11 +81,7 @@ If there is an alert you are aware of and you wish to silence notifications for 
 ```json
 {
   "observability.silenceAlerts": [
-    {
-      "name": "disk_space_remaining",
-      "level": "warning",
-      "service": "gitserver"
-    }
+    "warning_gitserver_disk_space_remaining"
   ]
 }
 ```

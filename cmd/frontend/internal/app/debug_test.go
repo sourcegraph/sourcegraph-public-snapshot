@@ -68,9 +68,7 @@ func Test_prometheusValidator(t *testing.T) {
 				prometheusURL: "http://no-prometheus:9090",
 				config: conf.Unified{
 					SiteConfiguration: schema.SiteConfiguration{
-						ObservabilitySilenceAlerts: []*schema.ObservabilitySilenceAlerts{{
-							Level: "critical",
-						}},
+						ObservabilitySilenceAlerts: []string{"warning_gitserver_disk_space_remaining"},
 					},
 				},
 			},
