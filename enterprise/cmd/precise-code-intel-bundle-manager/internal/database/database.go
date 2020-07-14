@@ -329,7 +329,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
 func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (_ []bundles.Location, _ int, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByResultID")
+	span, ctx := ot.StartSpanFromContext(ctx, "MonikerResults")
 	span.SetTag("filename", db.filename)
 	span.SetTag("tableName", tableName)
 	span.SetTag("scheme", scheme)
@@ -459,8 +459,8 @@ func (db *databaseImpl) getRangeByPosition(ctx context.Context, path string, lin
 }
 
 // locations returns the locations for the given definition or reference identifiers.
-func (db *databaseImpl) locations(ctx context.Context, id []types.ID) (map[types.ID][]bundles.Location, error) {
-	results, err := db.getResultsByIDs(ctx, id)
+func (db *databaseImpl) locations(ctx context.Context, ids []types.ID) (map[types.ID][]bundles.Location, error) {
+	results, err := db.getResultsByIDs(ctx, ids)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "db.getResultByID")
 	}
@@ -535,11 +535,6 @@ func (db *databaseImpl) getResultsByIDs(ctx context.Context, ids []types.ID) (ma
 	}
 
 	return data, nil
-}
-
-// getResultChunkByResultID fetches and unmarshals the result chunk data containing the given identifier.
-func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.ID) (_ types.ResultChunkData, _ bool, err error) {
-	return db.getResultChunkByID(ctx, db.resultChunkID(id))
 }
 
 // getResultChunkByID fetches and unmarshals the result chunk data with the given identifier.
