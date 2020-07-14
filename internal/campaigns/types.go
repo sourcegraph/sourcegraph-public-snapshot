@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -1671,36 +1670,7 @@ func (cs *CampaignSpec) Clone() *CampaignSpec {
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the CampaignSpec schema and does additional semantic validation.
 func (cs *CampaignSpec) UnmarshalValidate() error {
-	sl := gojsonschema.NewSchemaLoader()
-	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.CampaignSpecSchemaJSON))
-	if err != nil {
-		return errors.Wrap(err, "failed to compile CampaignSpec JSON schema")
-	}
-
-	normalized, err := yaml.YAMLToJSONCustom([]byte(cs.RawSpec), yamlv3.Unmarshal)
-	if err != nil {
-		return errors.Wrapf(err, "failed to normalize JSON")
-	}
-
-	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
-	if err != nil {
-		return errors.Wrap(err, "failed to validate CampaignSpec against schema")
-	}
-
-	var errs *multierror.Error
-	for _, err := range res.Errors() {
-		e := err.String()
-		// Remove `(root): ` from error formatting since these errors are
-		// presented to users.
-		e = strings.TrimPrefix(e, "(root): ")
-		errs = multierror.Append(errs, errors.New(e))
-	}
-
-	if err := json.Unmarshal(normalized, &cs.Spec); err != nil {
-		errs = multierror.Append(errs, err)
-	}
-
-	return errs.ErrorOrNil()
+	return unmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
 type CampaignSpecFields struct {
@@ -1765,44 +1735,24 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the ChangesetSpec schema and does additional semantic validation.
 func (cs *ChangesetSpec) UnmarshalValidate() error {
-	sl := gojsonschema.NewSchemaLoader()
-	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.ChangesetSpecSchemaJSON))
+	err := unmarshalValidate(schema.ChangesetSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 	if err != nil {
-		return errors.Wrap(err, "failed to compile ChangesetSpec JSON schema")
-	}
-
-	normalized, err := jsonc.Parse(cs.RawSpec)
-	if err != nil {
-		return errors.Wrapf(err, "failed to normalize JSON")
-	}
-
-	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
-	if err != nil {
-		return errors.Wrap(err, "failed to validate ChangesetSpec against schema")
-	}
-
-	var errs *multierror.Error
-	for _, err := range res.Errors() {
-		e := err.String()
-		// Remove `(root): ` from error formatting since these errors are
-		// presented to users.
-		e = strings.TrimPrefix(e, "(root): ")
-		errs = multierror.Append(errs, errors.New(e))
-	}
-
-	if err := json.Unmarshal(normalized, &cs.Spec); err != nil {
-		errs = multierror.Append(errs, err)
-		return errs.ErrorOrNil()
+		return err
 	}
 
 	headRepo := cs.Spec.HeadRepository
 	baseRepo := cs.Spec.BaseRepository
 	if headRepo != "" && baseRepo != "" && headRepo != baseRepo {
-		errs = multierror.Append(errs, errors.New("headRepository does not match baseRepository"))
+		return ErrHeadBaseMismatch
 	}
 
-	return errs.ErrorOrNil()
+	return nil
 }
+
+// ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if
+// the head and base repositories do not match (a case which we do not support
+// yet).
+var ErrHeadBaseMismatch = errors.New("headRepository does not match baseRepository")
 
 type ChangesetSpecDescription struct {
 	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
@@ -1829,4 +1779,40 @@ type ChangesetSpecDescription struct {
 type GitCommitDescription struct {
 	Message string `json:"message,omitempty"`
 	Diff    string `json:"diff,omitempty"`
+}
+
+// unmarshalValidate validates the input, which can be YAML or JSON, against
+// the provided JSON schema. If the validation is successful is unmarshals the
+// validated input into the target.
+func unmarshalValidate(schema string, input []byte, target interface{}) error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema))
+	if err != nil {
+		return errors.Wrap(err, "failed to compile JSON schema")
+	}
+
+	normalized, err := yaml.YAMLToJSONCustom(input, yamlv3.Unmarshal)
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate input against schema")
+	}
+
+	var errs *multierror.Error
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+
+	if err := json.Unmarshal(normalized, target); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	return errs.ErrorOrNil()
 }
