@@ -440,6 +440,32 @@ func TestComputeReviewState(t *testing.T) {
 			history: []changesetStatesAtTime{},
 			want:    cmpgn.ChangesetReviewStateChangesRequested,
 		},
+		{
+			name: "gitlab - changeset older than events",
+			changeset: gitLabChangeset(daysAgo(10), []*gitlab.Note{
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateApproved,
+		},
+		{
+			name: "gitlab - changeset newer than events",
+			changeset: gitLabChangeset(daysAgo(0), []*gitlab.Note{
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateChangesRequested,
+		},
 	}
 
 	for i, tc := range tests {
