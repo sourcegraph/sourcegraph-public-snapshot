@@ -8,10 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// A general note: no effort has been made to test the mock functionality within
-// the exported functions. This might look bad on code coverage reports, but
-// these are thoroughly exercised elsewhere in our codebase.
-
 func TestCreateMergeRequest(t *testing.T) {
 	ctx := context.Background()
 	project := &Project{}
