@@ -29,5 +29,37 @@ describe('HoverMerged', () => {
                 range: FIXTURE_RANGE,
                 alerts: [],
             }))
+        test('1 Alert', () =>
+            expect(
+                fromHoverMerged([{
+                    contents: { kind: MarkupKind.Markdown, value: 'x' },
+                    alerts: [{ summary: { kind: MarkupKind.PlainText, value: 'x' }}],
+                }])
+            ).toEqual({
+                contents: [
+                    { kind: MarkupKind.Markdown, value: 'x' },
+                ],
+                alerts: [
+                    { summary: { kind: MarkupKind.PlainText, value: 'x' }},
+                ],
+            }))
+        test('2 Alerts', () =>
+            expect(
+                fromHoverMerged([{
+                    contents: { kind: MarkupKind.Markdown, value: 'x' },
+                    alerts: [
+                        { summary: { kind: MarkupKind.PlainText, value: 'x' }},
+                        { summary: { kind: MarkupKind.PlainText, value: 'y' }},
+                    ],
+                }])
+            ).toEqual({
+                contents: [
+                    { kind: MarkupKind.Markdown, value: 'x' },
+                ],
+                alerts: [
+                    { summary: { kind: MarkupKind.PlainText, value: 'x' }},
+                    { summary: { kind: MarkupKind.PlainText, value: 'y' }},
+                ],
+            }))
     })
 })
