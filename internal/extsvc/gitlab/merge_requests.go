@@ -122,12 +122,11 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 	}
 
 	values := make(url.Values)
-	// Since we're only expecting one merge request, we don't need to enumerate
-	// the full list of merge requests if more than one matches: just the
-	// existence of a second merge request is sufficient for us to return an
-	// error from this function.
+	// Since GitLab only allows one merge request per source/target branch pair,
+	// we don't need to enumerate the full list of merge requests if more than
+	// one matches: just the existence of a second merge request is sufficient
+	// for us to return an error from this function.
 	values.Add("per_page", "2")
-	values.Add("state", "opened")
 	values.Add("source_branch", source)
 	values.Add("target_branch", target)
 	// The list endpoint doesn't return the full set of fields that we get from
