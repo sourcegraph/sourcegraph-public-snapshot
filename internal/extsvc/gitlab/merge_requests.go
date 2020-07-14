@@ -40,11 +40,7 @@ type MergeRequest struct {
 	TargetBranch string            `json:"target_branch"`
 	WebURL       string            `json:"web_url"`
 
-	DiffRefs struct {
-		BaseSHA  string `json:"base_sha"`
-		HeadSHA  string `json:"head_sha"`
-		StartSHA string `json:"start_sha"`
-	} `json:"diff_refs"`
+	DiffRefs DiffRefs `json:"diff_refs"`
 
 	// The fields below are computed from other REST API requests when getting a
 	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
@@ -57,6 +53,12 @@ type MergeRequest struct {
 
 	// TODO: other fields at
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
+}
+
+type DiffRefs struct {
+	BaseSHA  string `json:"base_sha"`
+	HeadSHA  string `json:"head_sha"`
+	StartSHA string `json:"start_sha"`
 }
 
 var (
