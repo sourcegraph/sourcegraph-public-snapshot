@@ -39,34 +39,98 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
-// translateRange translates character classes and ranges
-func translateRange(r []rune, ix int) (int, string) {
+var ErrBadGlobPattern = errors.New("syntax error in glob pattern")
+
+// translateCharacterClass translates character classes like [A-Z] or [!0-9]
+func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 	sb := strings.Builder{}
+	i := startIx
+Loop:
+	for i < len(r) {
+		switch r[i] {
+		case '!':
+			if i == startIx {
+				sb.WriteRune('^')
+			} else {
+				sb.WriteRune(r[i])
+			}
+			i++
+		case ']':
+			if i > startIx {
+				break Loop
+			}
+			sb.WriteRune(r[i])
+			i++
+		default: // range lo-hi
 
-	// the first character of a range or character set
-	// is special because
-	//   * ranges or character sets cannot be empty
-	//   * we have to translate negation from ^ to !
-	if r[ix] == '^' {
-		sb.WriteRune('!')
-	} else {
-		// since character sets cannot be empty,
-		// a [ followed directly by a ] means ] has to
-		// be interpreted literally.
-		sb.WriteRune(r[ix])
-	}
-	ix++
-	for ix < len(r) && r[ix] != ']' {
-		sb.WriteRune(r[ix])
-		ix++
+		// '-' is treated literally at the start and end of
+		// of a character class.
+			if r[i] == '-' {
+				if i == len(r) -1 {
+					// no closing bracket
+					return -1, "", ErrBadGlobPattern
+				}
+
+				if i > startIx && r[i+1] != ']' {
+					// "-" cannot be the lower end of a range
+					// unless it is the first character within the range
+					return -1, "", ErrBadGlobPattern
+				}
+			}
+			lo := r[i]
+			sb.WriteRune(r[i]) // lo
+			i++
+
+			if i == len(r) {
+				// no closing bracket
+				return -1, "", ErrBadGlobPattern
+			}
+
+			// lo = hi
+			if r[i] != '-' {
+				continue
+			}
+
+			sb.WriteRune(r[i]) // -
+			i++
+
+			if i == len(r) {
+				// no closing bracket
+				return -1, "", ErrBadGlobPattern
+			}
+
+			if r[i] == ']' {
+				continue
+			}
+
+			hi:=r[i]
+			if lo>hi {
+				return -1, "", ErrBadGlobPattern
+			}
+			sb.WriteRune(r[i]) // hi
+			i++
+		}
+
 	}
 
-	return len(sb.String()), sb.String()
+	if i == len(r) {
+		return -1, "", ErrBadGlobPattern
+	}
+
+	return i - startIx, sb.String(), nil
+
 }
 
-// translateGlobToRegex converts a globbing string to a regex
+var globSpecialSymbols = map[rune]struct{}{
+	'\\': struct{}{},
+	'*':  struct{}{},
+	'?':  struct{}{},
+	'[':  struct{}{},
+}
+
+// globToRegex converts a glob to a regex
 // we support: *, ?, character classes [...], ranges [A-F]
-func translateGlobToRegex(value string) string {
+func globToRegex(value string) (string, error) {
 	r := []rune(value)
 	l := len(r)
 	sb := strings.Builder{}
@@ -76,7 +140,6 @@ func translateGlobToRegex(value string) string {
 	if r[i] != '*' {
 		sb.WriteRune('^')
 	}
-
 	for i = 0; i < l; i++ {
 		switch r[i] {
 		case '*':
@@ -91,12 +154,19 @@ func translateGlobToRegex(value string) string {
 			// handle escaped special characters
 			sb.WriteRune('\\')
 			i++
+			if _, ok := globSpecialSymbols[r[i]]; !ok {
+				return "", ErrBadGlobPattern
+			}
 			sb.WriteRune(r[i])
 		case '[':
 			sb.WriteRune('[')
 			i++
 
-			advanced, s := translateRange(r, i)
+			advanced, s, err := translateCharacterClass(r, i)
+			if err != nil {
+				return "", err
+			}
+
 			i += advanced
 
 			sb.WriteString(s)
@@ -110,7 +180,7 @@ func translateGlobToRegex(value string) string {
 	if r[len(r)-1] != '*' {
 		sb.WriteRune('$')
 	}
-	return sb.String()
+	return sb.String(), nil
 }
 
 func isValidRegexp(value string) bool {
@@ -120,18 +190,25 @@ func isValidRegexp(value string) bool {
 	return true
 }
 
-// globToRegex substitutes glob with regexp for fields supporting regexp
-// the value is left unchanged if the translated value is not a valid regexp
-func globToRegex(nodes []Node) []Node {
-	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+// mapGlobToRegex translates glob with regexp for fields supporting regexp
+func mapGlobToRegex(nodes []Node) ([]Node, error) {
+	errs := []error{}
+	var err error
+
+	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
-			tempValue := translateGlobToRegex(value)
-			if isValidRegexp(tempValue) {
-				value = tempValue
+			value, err = globToRegex(value)
+			if err != nil {
+				errs = append(errs, err)
 			}
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
+
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("invalid glob syntax")
+	}
+	return nodes, nil
 }
 
 // Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It

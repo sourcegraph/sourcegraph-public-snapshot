@@ -316,7 +316,6 @@ func TestMap(t *testing.T) {
 
 func TestTranslateGlobToRegex(t *testing.T) {
 	tests := []struct {
-		name  string
 		input string
 		want  string
 	}{
@@ -369,12 +368,12 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			want:  "^h[a-z]llo$",
 		},
 		{
-			input: "h[^a-z]llo",
-			want:  "^h[!a-z]llo$",
+			input: "h[!a-z]llo",
+			want:  "^h[^a-z]llo$",
 		},
 		{
-			input: "h[^abcde]llo",
-			want:  "^h[!abcde]llo$",
+			input: "h[!abcde]llo",
+			want:  "^h[^abcde]llo$",
 		},
 		{
 			input: "h[]-]llo",
@@ -400,11 +399,45 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			input: "foo/**",
 			want:  "^foo/.*?",
 		},
+		{
+			input: "[a-z0-9]",
+			want:  "^[a-z0-9]$",
+		},
+		{
+			input: "[abc-]",
+			want:  "^[abc-]$",
+		},
+		{
+			input: "[--0]",
+			want: "^[--0]$",
+		},
 	}
 
 	for _, tt := range tests {
-		got := translateGlobToRegex(tt.input)
-		if diff := cmp.Diff(tt.want, got); diff != "" {
+		t.Run(tt.want, func(t *testing.T) {
+			got, err := globToRegex(tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestTranslateBadGlobPattern(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{input: "fo[a-b-c]"},
+		{input: "fo\\o"},
+		{input: "fo[o"},
+		{input: "[z-a]"},
+	}
+	for _, tt := range tests {
+		_, err := globToRegex(tt.input)
+		if diff := cmp.Diff(ErrBadGlobPattern.Error(), err.Error()); diff != "" {
 			t.Fatal(diff)
 		}
 	}
