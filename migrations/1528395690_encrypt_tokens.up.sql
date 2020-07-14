@@ -2,9 +2,9 @@ BEGIN;
 
 CREATE TABLE secrets (
     id BIGSERIAL PRIMARY KEY,
-    source_type varying(50),
+    source_type varchar(50),
     source_id bigint,
-    key_name varying(100),
+    key_name varchar(100),
     value text NOT NULL
 );
 
