@@ -223,7 +223,7 @@ func TestChangesetEvents(t *testing.T) {
 		})
 	}
 
-	{ // Bitbucket Server
+	{ // bitbucketserver
 
 		user := bitbucketserver.User{Name: "john-doe"}
 		reviewer := bitbucketserver.User{Name: "jane-doe"}
@@ -468,7 +468,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 		meta interface{}
 		want *Changeset
 	}{
-		"BitBucket Server": {
+		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
 				ID:          12345,
 				FromRef:     bitbucketserver.Ref{ID: "refs/heads/branch"},
@@ -526,7 +526,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 func TestChangeset_Title(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]interface{}{
-		"BitBucket Server": &bitbucketserver.PullRequest{
+		"bitbucketserver": &bitbucketserver.PullRequest{
 			Title: want,
 		},
 		"GitHub": &github.PullRequest{
@@ -559,7 +559,7 @@ func TestChangeset_Title(t *testing.T) {
 func TestChangeset_ExternalCreatedAt(t *testing.T) {
 	want := time.Unix(10, 0)
 	for name, meta := range map[string]interface{}{
-		"BitBucket Server": &bitbucketserver.PullRequest{
+		"bitbucketserver": &bitbucketserver.PullRequest{
 			CreatedDate: 10 * 1000,
 		},
 		"GitHub": &github.PullRequest{
@@ -589,7 +589,7 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 func TestChangeset_Body(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]interface{}{
-		"BitBucket Server": &bitbucketserver.PullRequest{
+		"bitbucketserver": &bitbucketserver.PullRequest{
 			Description: want,
 		},
 		"GitHub": &github.PullRequest{
@@ -624,13 +624,13 @@ func TestChangeset_state(t *testing.T) {
 		meta interface{}
 		want ChangesetState
 	}{
-		"BitBucket Server: declined": {
+		"bitbucketserver: declined": {
 			meta: &bitbucketserver.PullRequest{
 				State: "DECLINED",
 			},
 			want: ChangesetStateClosed,
 		},
-		"BitBucket Server: open": {
+		"bitbucketserver: open": {
 			meta: &bitbucketserver.PullRequest{
 				State: "OPEN",
 			},
@@ -710,7 +710,7 @@ func TestChangeset_state(t *testing.T) {
 func TestChangeset_URL(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]interface{}{
-		"BitBucket Server": &bitbucketserver.PullRequest{
+		"bitbucketserver": &bitbucketserver.PullRequest{
 			Links: struct {
 				Self []struct {
 					Href string `json:"href"`
@@ -753,7 +753,7 @@ func TestChangeset_HeadRefOid(t *testing.T) {
 		meta interface{}
 		want string
 	}{
-		"BitBucket Server": {
+		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
 			want: "",
 		},
@@ -793,7 +793,7 @@ func TestChangeset_HeadRef(t *testing.T) {
 		meta interface{}
 		want string
 	}{
-		"BitBucket Server": {
+		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
 				FromRef: bitbucketserver.Ref{ID: "foo"},
 			},
@@ -835,7 +835,7 @@ func TestChangeset_BaseRefOid(t *testing.T) {
 		meta interface{}
 		want string
 	}{
-		"BitBucket Server": {
+		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
 			want: "",
 		},
@@ -875,7 +875,7 @@ func TestChangeset_BaseRef(t *testing.T) {
 		meta interface{}
 		want string
 	}{
-		"BitBucket Server": {
+		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
 				ToRef: bitbucketserver.Ref{ID: "foo"},
 			},
@@ -917,7 +917,7 @@ func TestChangeset_Labels(t *testing.T) {
 		meta interface{}
 		want []ChangesetLabel
 	}{
-		"BitBucket Server": {
+		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
 			want: []ChangesetLabel{},
 		},
