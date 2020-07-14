@@ -458,7 +458,7 @@ func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.Chan
 	case *gitlab.MergeRequest:
 		// GitLab has an elaborate approvers workflow, but this doesn't map
 		// terribly closely to the GitHub/Bitbucket workflow: most notably,
-		// there's no analogue of the Changes Requested or Dismissed states.
+		// there's no analog of the Changes Requested or Dismissed states.
 		//
 		// Instead, we'll take a different tack: if we see an approval before
 		// any unapproval event, then we'll consider the MR approved. If we see
