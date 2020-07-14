@@ -183,11 +183,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
 
-# frontend: provisioning_container_cpu_usage_1d
+# frontend: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_1d`)
+- _frontend: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -196,11 +196,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# frontend: provisioning_container_memory_usage_1d
+# frontend: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_frontend_provisioning_container_memory_usage_1d`)
+- _frontend: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_frontend_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -235,10 +235,10 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: less than 25% disk space remaining by instance_ (`warning_gitserver_disk_space_remaining`)
-
-
 - _gitserver: less than 15% disk space remaining by instance_ (`critical_gitserver_disk_space_remaining`)
+
+
+- _gitserver: less than 25% disk space remaining by instance_ (`warning_gitserver_disk_space_remaining`)
 
 **Possible solutions:**
 
@@ -286,10 +286,10 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 2s+ echo command duration test_ (`critical_gitserver_echo_command_duration_test`)
-
-
 - _gitserver: 1s+ echo command duration test_ (`warning_gitserver_echo_command_duration_test`)
+
+
+- _gitserver: 2s+ echo command duration test_ (`critical_gitserver_echo_command_duration_test`)
 
 **Possible solutions:**
 
@@ -350,11 +350,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 
-# gitserver: provisioning_container_cpu_usage_1d
+# gitserver: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_1d`)
+- _gitserver: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -363,11 +363,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# gitserver: provisioning_container_memory_usage_1d
+# gitserver: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_gitserver_provisioning_container_memory_usage_1d`)
+- _gitserver: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -435,11 +435,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 
-# github-proxy: provisioning_container_cpu_usage_1d
+# github-proxy: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_1d`)
+- _github-proxy: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -448,11 +448,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# github-proxy: provisioning_container_memory_usage_1d
+# github-proxy: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_1d`)
+- _github-proxy: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -487,10 +487,10 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_ (`warning_precise-code-intel-bundle-manager_disk_space_remaining`)
-
-
 - _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_ (`critical_precise-code-intel-bundle-manager_disk_space_remaining`)
+
+
+- _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_ (`warning_precise-code-intel-bundle-manager_disk_space_remaining`)
 
 **Possible solutions:**
 
@@ -549,11 +549,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 
-# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_1d
+# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_1d`)
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -562,11 +562,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-bundle-manager: provisioning_container_memory_usage_1d
+# precise-code-intel-bundle-manager: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_1d`)
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -650,11 +650,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 
-# precise-code-intel-worker: provisioning_container_cpu_usage_1d
+# precise-code-intel-worker: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_1d`)
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -663,11 +663,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-worker: provisioning_container_memory_usage_1d
+# precise-code-intel-worker: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_1d`)
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -751,11 +751,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 
-# precise-code-intel-indexer: provisioning_container_cpu_usage_1d
+# precise-code-intel-indexer: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_1d`)
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -764,11 +764,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-indexer: provisioning_container_memory_usage_1d
+# precise-code-intel-indexer: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_1d`)
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -852,11 +852,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
 
-# query-runner: provisioning_container_cpu_usage_1d
+# query-runner: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_1d`)
+- _query-runner: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -865,11 +865,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# query-runner: provisioning_container_memory_usage_1d
+# query-runner: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_query-runner_provisioning_container_memory_usage_1d`)
+- _query-runner: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_query-runner_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -953,11 +953,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
 
-# replacer: provisioning_container_cpu_usage_1d
+# replacer: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_1d`)
+- _replacer: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -966,11 +966,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# replacer: provisioning_container_memory_usage_1d
+# replacer: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_replacer_provisioning_container_memory_usage_1d`)
+- _replacer: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_replacer_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1054,11 +1054,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 
-# repo-updater: provisioning_container_cpu_usage_1d
+# repo-updater: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_1d`)
+- _repo-updater: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1067,11 +1067,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# repo-updater: provisioning_container_memory_usage_1d
+# repo-updater: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_1d`)
+- _repo-updater: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1155,11 +1155,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
 
-# searcher: provisioning_container_cpu_usage_1d
+# searcher: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_1d`)
+- _searcher: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1168,11 +1168,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# searcher: provisioning_container_memory_usage_1d
+# searcher: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_searcher_provisioning_container_memory_usage_1d`)
+- _searcher: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_searcher_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1256,11 +1256,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
 
-# symbols: provisioning_container_cpu_usage_1d
+# symbols: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_1d`)
+- _symbols: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1269,11 +1269,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# symbols: provisioning_container_memory_usage_1d
+# symbols: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_symbols_provisioning_container_memory_usage_1d`)
+- _symbols: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_symbols_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1341,11 +1341,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 
-# syntect-server: provisioning_container_cpu_usage_1d
+# syntect-server: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_1d`)
+- _syntect-server: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1354,11 +1354,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# syntect-server: provisioning_container_memory_usage_1d
+# syntect-server: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_1d`)
+- _syntect-server: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1426,11 +1426,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 
-# zoekt-indexserver: provisioning_container_cpu_usage_1d
+# zoekt-indexserver: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_1d`)
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1439,11 +1439,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-indexserver: provisioning_container_memory_usage_1d
+# zoekt-indexserver: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_1d`)
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1511,11 +1511,11 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 
-# zoekt-webserver: provisioning_container_cpu_usage_1d
+# zoekt-webserver: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_1d`)
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1524,11 +1524,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-webserver: provisioning_container_memory_usage_1d
+# zoekt-webserver: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d average) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_1d`)
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
