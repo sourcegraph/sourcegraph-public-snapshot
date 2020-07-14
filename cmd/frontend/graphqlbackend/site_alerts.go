@@ -275,7 +275,7 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 // observabilityActiveAlertsAlert directs admins to check Grafana if critical alerts are firing
 func observabilityActiveAlertsAlert(prometheusURL string) func(AlertFuncArgs) []*Alert {
 	return func(args AlertFuncArgs) []*Alert {
-		observabilitySiteAlertsDisabled := (args.ViewerFinalSettings != nil && args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts)
+		observabilitySiteAlertsDisabled := args.ViewerFinalSettings != nil && args.ViewerFinalSettings.AlertsHideObservabilitySiteAlerts
 		if !args.IsSiteAdmin || len(prometheusURL) == 0 || observabilitySiteAlertsDisabled {
 			return nil
 		}

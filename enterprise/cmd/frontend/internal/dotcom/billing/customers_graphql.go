@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 )
 
