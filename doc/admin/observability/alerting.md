@@ -86,6 +86,8 @@ If there is an alert you are aware of and you wish to silence notifications for 
 }
 ```
 
+You can find the appropriate identifier for each alert in [alert solutions](./alert_solutions.md).
+
 ### Before 3.17: Configure alert channels in Grafana
 
 Before configuring specific alerts in Grafana, you must set up alert channels. Each channel
