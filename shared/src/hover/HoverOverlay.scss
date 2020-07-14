@@ -85,6 +85,10 @@
     &__alerts {
         display: flex;
         flex-direction: column;
+
+        // Make sure HoverOverlay doesn't get too large even with large alerts.
+        overflow-y: auto;
+        max-height: 10rem;
     }
     &__alert {
         padding: 0.25rem 0.5rem;
