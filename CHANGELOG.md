@@ -11,6 +11,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+## 3.18.0
+
 ### Added
 
 - To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Previously this was only supported for diff and commit searches and only available via the experimental site setting `searchMultipleRevisionsPerRepository`.
