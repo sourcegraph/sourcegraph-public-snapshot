@@ -766,16 +766,19 @@ for assistance.
 					fmt.Fprintf(&b, "# %s: %s\n\n", c.Name, o.Name)
 
 					fmt.Fprintf(&b, "**Descriptions:**\n")
-					for level, alert := range map[string]Alert{
-						"warning":  o.Warning,
-						"critical": o.Critical,
+					for _, alert := range []struct {
+						level     string
+						threshold Alert
+					}{
+						{level: "warning", threshold: o.Warning},
+						{level: "critical", threshold: o.Critical},
 					} {
-						if alert.isEmpty() {
+						if alert.threshold.isEmpty() {
 							continue
 						}
 						fmt.Fprintf(&b, "\n- _%s_ (`%s`)\n\n",
-							c.alertDescription(o, alert),
-							prometheusAlertName(level, c.Name, o.Name))
+							c.alertDescription(o, alert.threshold),
+							prometheusAlertName(alert.level, c.Name, o.Name))
 					}
 
 					fmt.Fprintf(&b, "**Possible solutions:**\n\n")

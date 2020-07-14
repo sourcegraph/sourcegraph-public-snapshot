@@ -235,10 +235,10 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: less than 15% disk space remaining by instance_ (`critical_gitserver_disk_space_remaining`)
-
-
 - _gitserver: less than 25% disk space remaining by instance_ (`warning_gitserver_disk_space_remaining`)
+
+
+- _gitserver: less than 15% disk space remaining by instance_ (`critical_gitserver_disk_space_remaining`)
 
 **Possible solutions:**
 
@@ -487,10 +487,10 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_ (`critical_precise-code-intel-bundle-manager_disk_space_remaining`)
-
-
 - _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_ (`warning_precise-code-intel-bundle-manager_disk_space_remaining`)
+
+
+- _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_ (`critical_precise-code-intel-bundle-manager_disk_space_remaining`)
 
 **Possible solutions:**
 
