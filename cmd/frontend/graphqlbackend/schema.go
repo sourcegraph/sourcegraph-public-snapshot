@@ -686,9 +686,6 @@ type Campaign implements Node {
         checkState: ChangesetCheckState
     ): ChangesetConnection!
 
-    # All the changesets in this campaign whose state is ChangesetState.OPEN.
-    openChangesets: ChangesetConnection!
-
     # The changeset counts over time, in 1-day intervals backwards from the point in time given in
     # the "to" parameter.
     changesetCountsOverTime(
