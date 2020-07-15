@@ -489,9 +489,8 @@ func TestRepositoryPermissions(t *testing.T) {
 		"campaign": string(campaigns.MarshalCampaignID(campaign.ID)),
 	}
 	testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
-		changesetTypes:     map[string]int{"ExternalChangeset": 2},
-		changesetsCount:    2,
-		openChangesetTypes: map[string]int{"ExternalChangeset": 2},
+		changesetTypes:  map[string]int{"ExternalChangeset": 2},
+		changesetsCount: 2,
 		campaignDiffStat: apitest.DiffStat{
 			Added:   2 * changesetDiffStat.Added,
 			Changed: 2 * changesetDiffStat.Changed,
@@ -532,10 +531,6 @@ func TestRepositoryPermissions(t *testing.T) {
 			"HiddenExternalChangeset": 1,
 		},
 		changesetsCount: 2,
-		openChangesetTypes: map[string]int{
-			"ExternalChangeset":       1,
-			"HiddenExternalChangeset": 1,
-		},
 		campaignDiffStat: apitest.DiffStat{
 			Added:   1 * changesetDiffStat.Added,
 			Changed: 1 * changesetDiffStat.Changed,
@@ -582,10 +577,9 @@ func TestRepositoryPermissions(t *testing.T) {
 }
 
 type wantCampaignResponse struct {
-	changesetTypes     map[string]int
-	changesetsCount    int
-	openChangesetTypes map[string]int
-	campaignDiffStat   apitest.DiffStat
+	changesetTypes   map[string]int
+	changesetsCount  int
+	campaignDiffStat apitest.DiffStat
 }
 
 func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]interface{}, w wantCampaignResponse) {
