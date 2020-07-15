@@ -489,9 +489,8 @@ func TestRepositoryPermissions(t *testing.T) {
 		"campaign": string(campaigns.MarshalCampaignID(campaign.ID)),
 	}
 	testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
-		changesetTypes:     map[string]int{"ExternalChangeset": 2},
-		changesetsCount:    2,
-		openChangesetTypes: map[string]int{"ExternalChangeset": 2},
+		changesetTypes:  map[string]int{"ExternalChangeset": 2},
+		changesetsCount: 2,
 		campaignDiffStat: apitest.DiffStat{
 			Added:   2 * changesetDiffStat.Added,
 			Changed: 2 * changesetDiffStat.Changed,
@@ -532,10 +531,6 @@ func TestRepositoryPermissions(t *testing.T) {
 			"HiddenExternalChangeset": 1,
 		},
 		changesetsCount: 2,
-		openChangesetTypes: map[string]int{
-			"ExternalChangeset":       1,
-			"HiddenExternalChangeset": 1,
-		},
 		campaignDiffStat: apitest.DiffStat{
 			Added:   1 * changesetDiffStat.Added,
 			Changed: 1 * changesetDiffStat.Changed,
@@ -582,10 +577,9 @@ func TestRepositoryPermissions(t *testing.T) {
 }
 
 type wantCampaignResponse struct {
-	changesetTypes     map[string]int
-	changesetsCount    int
-	openChangesetTypes map[string]int
-	campaignDiffStat   apitest.DiffStat
+	changesetTypes   map[string]int
+	changesetsCount  int
+	campaignDiffStat apitest.DiffStat
 }
 
 func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]interface{}, w wantCampaignResponse) {
@@ -610,14 +604,6 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
 	}
 
-	openChangesetTypes := map[string]int{}
-	for _, c := range response.Node.OpenChangesets.Nodes {
-		openChangesetTypes[c.Typename]++
-	}
-	if diff := cmp.Diff(w.openChangesetTypes, openChangesetTypes); diff != "" {
-		t.Fatalf("unexpected open changeset types (-want +got):\n%s", diff)
-	}
-
 	if diff := cmp.Diff(w.campaignDiffStat, response.Node.DiffStat); diff != "" {
 		t.Fatalf("unexpected campaign diff stat (-want +got):\n%s", diff)
 	}
@@ -636,22 +622,6 @@ query($campaign: ID!, $state: ChangesetState, $reviewState: ChangesetReviewState
 
       changesets(first: 100, state: $state, reviewState: $reviewState, checkState: $checkState) {
         totalCount
-        nodes {
-          __typename
-          ... on HiddenExternalChangeset {
-            id
-          }
-          ... on ExternalChangeset {
-            id
-            repository {
-              id
-              name
-            }
-          }
-        }
-      }
-
-      openChangesets {
         nodes {
           __typename
           ... on HiddenExternalChangeset {
