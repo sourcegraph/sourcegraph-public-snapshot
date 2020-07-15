@@ -2,7 +2,7 @@
 
 This documentation is intended for developers who are developing Sourcegraph integrations.
 
-For installation and usage instructions, see the [Integrations section](../integration/index.md).
+For a guide on usage of integrations, see the [Integrations section](../integration/index.md).
 
 ## What are code host integrations?
 
