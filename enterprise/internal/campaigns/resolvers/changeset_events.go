@@ -86,7 +86,13 @@ func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
 }
 
 func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
-	return &changesetResolver{store: r.store, httpFactory: r.httpFactory, Changeset: r.changeset}, nil
+	return &changesetResolver{
+		// Just to be explicit we always return external changesets here.
+		isHidden:    false,
+		store:       r.store,
+		httpFactory: r.httpFactory,
+		Changeset:   r.changeset,
+	}, nil
 }
 
 type changesetCountsResolver struct {

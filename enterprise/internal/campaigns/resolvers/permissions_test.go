@@ -221,7 +221,7 @@ func TestPermissionLevels(t *testing.T) {
 							campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
 						}
 					}
-					}`, tc.viewerCanAdminister, marshalExternalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					}`, tc.viewerCanAdminister, marshalChangesetID(changeset.ID), tc.viewerCanAdminister)
 					var res struct {
 						Campaigns apitest.CampaignConnection
 						Node      apitest.Changeset
@@ -314,7 +314,7 @@ func TestPermissionLevels(t *testing.T) {
 
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
-							string(marshalExternalChangesetID(changeset.ID)),
+							string(marshalChangesetID(changeset.ID)),
 						)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
@@ -651,7 +651,7 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 	t.Helper()
 
 	var res struct{ Node apitest.Changeset }
-	query := fmt.Sprintf(queryChangesetPermLevels, marshalExternalChangesetID(id))
+	query := fmt.Sprintf(queryChangesetPermLevels, marshalChangesetID(id))
 	apitest.MustExec(ctx, t, s, nil, &res, query)
 
 	if have, want := res.Node.Typename, wantType; have != want {
