@@ -38,6 +38,7 @@ export class Extensions implements ExtExtensionsAPI, Unsubscribable, ProxyMarked
             const exports = {}
             self.exports = exports
             self.module = { exports }
+            console.log('calling importScripts', bundleURL)
             self.importScripts(bundleURL)
         } catch (error) {
             throw new Error(
