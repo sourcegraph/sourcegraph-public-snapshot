@@ -18,7 +18,6 @@ import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { switchMap, distinctUntilChanged } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { CampaignStatus } from './CampaignStatus'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { CampaignDiffStat } from './CampaignDiffStat'
@@ -46,7 +45,6 @@ interface Campaign
         | 'branch'
     > {
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
-    status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     diffStat: Pick<GQL.ICampaign['diffStat'], 'added' | 'deleted' | 'changed'>
 }
 
@@ -105,7 +103,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 switchMap(() =>
                     _fetchCampaignById(campaignID).pipe(
                         // repeat fetching the campaign as long as the state is still processing
-                        repeatUntil(campaign => campaign?.status?.state !== GQL.BackgroundProcessState.PROCESSING, {
+                        // TODO: only refetch when it's still processing
+                        repeatUntil(campaign => campaign?.branch === 'processing', {
                             delay: 2000,
                         })
                     )
@@ -206,9 +205,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 formID={campaignFormID}
             />
             {alertError && <ErrorAlert error={alertError} history={history} />}
-            {campaign && !['saving', 'editing'].includes(mode) && (
-                <CampaignStatus campaign={campaign} history={history} />
-            )}
             {campaign && !['saving', 'editing'].includes(mode) && (
                 <>
                     <div className="card mt-2">

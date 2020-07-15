@@ -188,19 +188,30 @@ type ChangesetState string
 
 // ChangesetState constants.
 const (
-	ChangesetStateOpen    ChangesetState = "OPEN"
-	ChangesetStateClosed  ChangesetState = "CLOSED"
-	ChangesetStateMerged  ChangesetState = "MERGED"
-	ChangesetStateDeleted ChangesetState = "DELETED"
+	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
+	ChangesetStatePublishing  ChangesetState = "PUBLISHING"
+	ChangesetStateErrored     ChangesetState = "ERRORED"
+	ChangesetStateSynced      ChangesetState = "SYNCED"
+)
+
+// ChangesetState defines the possible states of a Changeset.
+type ChangesetExternalState string
+
+// ChangesetState constants.
+const (
+	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
+	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"
+	ChangesetExternalStateMerged  ChangesetExternalState = "MERGED"
+	ChangesetExternalStateDeleted ChangesetExternalState = "DELETED"
 )
 
 // Valid returns true if the given Changeset is valid.
-func (s ChangesetState) Valid() bool {
+func (s ChangesetExternalState) Valid() bool {
 	switch s {
-	case ChangesetStateOpen,
-		ChangesetStateClosed,
-		ChangesetStateMerged,
-		ChangesetStateDeleted:
+	case ChangesetExternalStateOpen,
+		ChangesetExternalStateClosed,
+		ChangesetExternalStateMerged,
+		ChangesetExternalStateDeleted:
 		return true
 	default:
 		return false
@@ -221,41 +232,6 @@ const (
 	CampaignStateAny    CampaignState = "ANY"
 	CampaignStateOpen   CampaignState = "OPEN"
 	CampaignStateClosed CampaignState = "CLOSED"
-)
-
-// BackgroundProcessStatus defines the status of a background process.
-type BackgroundProcessStatus struct {
-	Canceled      bool
-	Total         int32
-	Completed     int32
-	Pending       int32
-	Failed        int32
-	ProcessState  BackgroundProcessState
-	ProcessErrors []string
-}
-
-func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Completed }
-func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
-func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
-func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
-func (b BackgroundProcessStatus) Finished() bool {
-	return b.ProcessState != BackgroundProcessStateProcessing
-}
-func (b BackgroundProcessStatus) Processing() bool {
-	return b.ProcessState == BackgroundProcessStateProcessing
-}
-
-// BackgroundProcessState defines the possible states of a background process.
-type BackgroundProcessState string
-
-// BackgroundProcessState constants
-const (
-	BackgroundProcessStateProcessing BackgroundProcessState = "PROCESSING"
-	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
-	BackgroundProcessStateCompleted  BackgroundProcessState = "COMPLETED"
-	BackgroundProcessStateCanceled   BackgroundProcessState = "CANCELED"
-
-	// Remember to update Finished() above if a new state is added
 )
 
 // ChangesetReviewState defines the possible states of a Changeset's review.
@@ -372,7 +348,7 @@ type Changeset struct {
 	ExternalBranch      string
 	ExternalDeletedAt   time.Time
 	ExternalUpdatedAt   time.Time
-	ExternalState       ChangesetState
+	ExternalState       ChangesetExternalState
 	ExternalReviewState ChangesetReviewState
 	ExternalCheckState  ChangesetCheckState
 	CreatedByCampaign   bool
@@ -513,30 +489,30 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// state of a Changeset based on the metadata.
-// It does NOT reflect the final calculated state, use `ExternalState` instead.
-func (c *Changeset) state() (s ChangesetState, err error) {
+// externalState of a Changeset based on the metadata.
+// It does NOT reflect the final calculated externalState, use `ExternalState` instead.
+func (c *Changeset) externalState() (s ChangesetExternalState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
-		return ChangesetStateDeleted, nil
+		return ChangesetExternalStateDeleted, nil
 	}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		s = ChangesetState(m.State)
+		s = ChangesetExternalState(m.State)
 	case *bitbucketserver.PullRequest:
 		if m.State == "DECLINED" {
-			s = ChangesetStateClosed
+			s = ChangesetExternalStateClosed
 		} else {
-			s = ChangesetState(m.State)
+			s = ChangesetExternalState(m.State)
 		}
 	case *gitlab.MergeRequest:
 		switch m.State {
 		case gitlab.MergeRequestStateOpened:
-			s = ChangesetStateOpen
+			s = ChangesetExternalStateOpen
 		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
-			s = ChangesetStateClosed
+			s = ChangesetExternalStateClosed
 		case gitlab.MergeRequestStateMerged:
-			s = ChangesetStateMerged
+			s = ChangesetExternalStateMerged
 		default:
 			return "", errors.Errorf("unknown merge request state: %s", m.State)
 		}

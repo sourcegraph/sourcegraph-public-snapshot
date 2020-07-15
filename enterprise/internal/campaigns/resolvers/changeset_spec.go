@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -111,9 +110,9 @@ func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
 func (r *changesetDescriptionResolver) Published() bool { return r.desc.Published }
 
-func (r *changesetDescriptionResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	// TODO: Implement.
-	return nil, errors.New("not implemented")
+func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
+	patch := r.desc.Commits[0].Diff
+	return NewPreviewRepositoryComparisonResolver(ctx, r.repoResolver, r.desc.BaseRev, patch)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {

@@ -76,7 +76,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, campaign.ID, campaign.ID, campaigns.ChangesetStateOpen)
+		changeset := testChangeset(rs[0].ID, campaign.ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
 		if err = s.CreateChangesets(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -411,104 +411,6 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("GetCampaignStatus", func(t *testing.T) {
-		// Make sure that user is an admin
-		if !user.SiteAdmin {
-			t.Fatalf("user is not an admin")
-		}
-
-		otherUser := createTestUser(ctx, t)
-		if otherUser.SiteAdmin {
-			t.Fatalf("otherUser is admin")
-		}
-
-		patchSet := &campaigns.PatchSet{UserID: otherUser.ID}
-		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
-			t.Fatal(err)
-		}
-
-		patches := make([]*campaigns.Patch, 0, len(rs))
-		for _, repo := range rs {
-			patch := testPatch(patchSet.ID, repo.ID, now)
-			if err := store.CreatePatch(ctx, patch); err != nil {
-				t.Fatal(err)
-			}
-			patches = append(patches, patch)
-		}
-
-		campaign := testCampaign(otherUser.ID, patchSet.ID)
-		if err = store.CreateCampaign(ctx, campaign); err != nil {
-			t.Fatal(err)
-		}
-
-		changesetJobs := make([]*campaigns.ChangesetJob, 0, len(patches))
-		for _, p := range patches {
-			job := &campaigns.ChangesetJob{
-				CampaignID: campaign.ID,
-				PatchID:    p.ID,
-				StartedAt:  clock(),
-				FinishedAt: clock(),
-				Error:      "error",
-			}
-			if err = store.CreateChangesetJob(ctx, job); err != nil {
-				t.Fatal(err)
-			}
-			changesetJobs = append(changesetJobs, job)
-		}
-
-		// As site-admin
-		userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-		svc := NewService(store, cf)
-		status, err := svc.GetCampaignStatus(userCtx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if have, want := len(status.ProcessErrors), len(changesetJobs); have != want {
-			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
-		}
-
-		// As author of campaign and non-site-admin
-		otherUserCtx := actor.WithActor(context.Background(), actor.FromUser(otherUser.ID))
-		status, err = svc.GetCampaignStatus(otherUserCtx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if have, want := len(status.ProcessErrors), len(changesetJobs); have != want {
-			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
-		}
-
-		// As author of campaign and non-site-admin with filtered out repositories
-		authzFilterRepo(t, patches[0].RepoID)
-
-		status, err = svc.GetCampaignStatus(otherUserCtx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// One less error
-		if have, want := len(status.ProcessErrors), len(changesetJobs)-1; have != want {
-			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
-		}
-
-		// Change author of campaign to site-admin
-		campaign.AuthorID = user.ID
-		if err = store.UpdateCampaign(ctx, campaign); err != nil {
-			t.Fatal(err)
-		}
-
-		// As non-author and non-site-admin
-		status, err = svc.GetCampaignStatus(otherUserCtx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if have, want := len(status.ProcessErrors), 0; have != want {
-			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
-		}
-	})
-
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
 		svc := NewServiceWithClock(store, cf, clock)
 
@@ -517,7 +419,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, campaign.ID, 0, campaigns.ChangesetStateOpen)
+		changeset := testChangeset(rs[0].ID, campaign.ID, 0, campaigns.ChangesetExternalStateOpen)
 		if err = store.CreateChangesets(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -555,8 +457,8 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseOpenChangesets", func(t *testing.T) {
-		changeset1 := testChangeset(rs[0].ID, 0, 121314, campaigns.ChangesetStateOpen)
-		changeset2 := testChangeset(rs[1].ID, 0, 141516, campaigns.ChangesetStateOpen)
+		changeset1 := testChangeset(rs[0].ID, 0, 121314, campaigns.ChangesetExternalStateOpen)
+		changeset2 := testChangeset(rs[1].ID, 0, 141516, campaigns.ChangesetExternalStateOpen)
 		if err = store.CreateChangesets(ctx, changeset1, changeset2); err != nil {
 			t.Fatal(err)
 		}
@@ -1027,7 +929,7 @@ func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
 	return c
 }
 
-func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetState) *campaigns.Changeset {
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetExternalState) *campaigns.Changeset {
 	changeset := &campaigns.Changeset{
 		RepoID:              repoID,
 		ExternalServiceType: extsvc.TypeGitHub,

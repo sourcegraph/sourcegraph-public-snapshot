@@ -405,7 +405,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			RepoID:              r.ID,
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalID:          fmt.Sprintf("external-%d", r.ID),
-			ExternalState:       campaigns.ChangesetStateOpen,
+			ExternalState:       campaigns.ChangesetExternalStateOpen,
 			ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 			ExternalReviewState: campaigns.ChangesetReviewStateChangesRequested,
 			Metadata: &github.PullRequest{
@@ -615,11 +615,6 @@ query($campaign: ID!, $state: ChangesetState, $reviewState: ChangesetReviewState
     ... on Campaign {
       id
 
-	  status {
-	    state
-		errors
-	  }
-
       changesets(first: 100, state: $state, reviewState: $reviewState, checkState: $checkState) {
         totalCount
         nodes {
@@ -658,7 +653,7 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
 	}
 
-	if have, want := res.Node.State, string(campaigns.ChangesetStateOpen); have != want {
+	if have, want := res.Node.ExternalState, string(campaigns.ChangesetExternalStateOpen); have != want {
 		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
 	}
 
@@ -687,7 +682,7 @@ query {
     ... on HiddenExternalChangeset {
       id
 
-      state
+	  externalState
 	  createdAt
 	  updatedAt
 	  nextSyncAt
@@ -698,7 +693,7 @@ query {
     ... on ExternalChangeset {
       id
 
-      state
+      externalState
 	  createdAt
 	  updatedAt
 	  nextSyncAt

@@ -29,12 +29,12 @@ type campaignsConnectionResolver struct {
 }
 
 func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignResolver, error) {
-	campaigns, _, err := r.compute(ctx)
+	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(campaigns))
-	for _, c := range campaigns {
+	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(nodes))
+	for _, c := range nodes {
 		resolvers = append(resolvers, &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: c})
 	}
 	return resolvers, nil
@@ -224,10 +224,4 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 	}
 
 	return totalStat, nil
-}
-
-func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
-	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: GetCampaignStatus checks whether current user is authorized.
-	return svc.GetCampaignStatus(ctx, r.Campaign)
 }

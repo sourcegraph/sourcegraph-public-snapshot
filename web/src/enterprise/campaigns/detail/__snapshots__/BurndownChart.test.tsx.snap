@@ -14,6 +14,7 @@ exports[`CampaignBurndownChart renders an alert when data for less than 2 days i
         "openChangesRequested": 1,
         "openPending": 1,
         "total": 10,
+        "unpublished": 0,
       },
     ]
   }
@@ -42,6 +43,7 @@ exports[`CampaignBurndownChart renders an alert when no datapoints are in a set 
         "openChangesRequested": 0,
         "openPending": 0,
         "total": 0,
+        "unpublished": 0,
       },
       Object {
         "__typename": "ChangesetCounts",
@@ -53,6 +55,7 @@ exports[`CampaignBurndownChart renders an alert when no datapoints are in a set 
         "openChangesRequested": 0,
         "openPending": 0,
         "total": 0,
+        "unpublished": 0,
       },
     ]
   }
@@ -81,6 +84,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         "openChangesRequested": 1,
         "openPending": 1,
         "total": 10,
+        "unpublished": 0,
       },
       Object {
         "__typename": "ChangesetCounts",
@@ -92,6 +96,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         "openChangesRequested": 1,
         "openPending": 1,
         "total": 10,
+        "unpublished": 0,
       },
     ]
   }
@@ -130,6 +135,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
               "openChangesRequested": 1,
               "openPending": 1,
               "total": 10,
+              "unpublished": 0,
             },
             Object {
               "__typename": "ChangesetCounts",
@@ -141,6 +147,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
               "openChangesRequested": 1,
               "openPending": 1,
               "total": 10,
+              "unpublished": 0,
             },
           ]
         }
@@ -833,6 +840,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         0,
@@ -852,6 +860,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         0,
@@ -1023,6 +1032,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   0,
@@ -1042,6 +1052,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   0,
@@ -1184,6 +1195,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   0,
@@ -1203,6 +1215,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   0,
@@ -1281,6 +1294,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         1,
@@ -1300,6 +1314,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         1,
@@ -1471,6 +1486,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   1,
@@ -1490,6 +1506,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   1,
@@ -1632,6 +1649,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   1,
@@ -1651,6 +1669,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   1,
@@ -1729,6 +1748,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         2,
@@ -1748,6 +1768,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         2,
@@ -1919,6 +1940,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   2,
@@ -1938,6 +1960,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   2,
@@ -2080,6 +2103,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   2,
@@ -2099,6 +2123,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   2,
@@ -2177,6 +2202,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         3,
@@ -2196,6 +2222,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         3,
@@ -2367,6 +2394,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   3,
@@ -2386,6 +2414,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   3,
@@ -2528,6 +2557,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   3,
@@ -2547,6 +2577,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   3,
@@ -2625,6 +2656,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         4,
@@ -2644,6 +2676,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         "openChangesRequested": 1,
                         "openPending": 1,
                         "total": 10,
+                        "unpublished": 0,
                       },
                       "value": Array [
                         4,
@@ -2815,6 +2848,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   4,
@@ -2834,6 +2868,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   4,
@@ -2976,6 +3011,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   4,
@@ -2995,6 +3031,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                   "openChangesRequested": 1,
                                   "openPending": 1,
                                   "total": 10,
+                                  "unpublished": 0,
                                 },
                                 "value": Array [
                                   4,

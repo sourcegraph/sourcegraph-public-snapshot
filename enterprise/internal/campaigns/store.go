@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -383,26 +382,26 @@ func (s *Store) createChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, e
 
 func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query, error) {
 	type record struct {
-		ID                  int64                           `json:"id"`
-		RepoID              api.RepoID                      `json:"repo_id"`
-		CreatedAt           time.Time                       `json:"created_at"`
-		UpdatedAt           time.Time                       `json:"updated_at"`
-		Metadata            json.RawMessage                 `json:"metadata"`
-		CampaignIDs         json.RawMessage                 `json:"campaign_ids"`
-		ExternalID          string                          `json:"external_id"`
-		ExternalServiceType string                          `json:"external_service_type"`
-		ExternalBranch      string                          `json:"external_branch"`
-		ExternalDeletedAt   *time.Time                      `json:"external_deleted_at"`
-		ExternalUpdatedAt   *time.Time                      `json:"external_updated_at"`
-		ExternalState       *campaigns.ChangesetState       `json:"external_state"`
-		ExternalReviewState *campaigns.ChangesetReviewState `json:"external_review_state"`
-		ExternalCheckState  *campaigns.ChangesetCheckState  `json:"external_check_state"`
-		CreatedByCampaign   bool                            `json:"created_by_campaign"`
-		AddedToCampaign     bool                            `json:"added_to_campaign"`
-		DiffStatAdded       *int32                          `json:"diff_stat_added"`
-		DiffStatChanged     *int32                          `json:"diff_stat_changed"`
-		DiffStatDeleted     *int32                          `json:"diff_stat_deleted"`
-		SyncState           json.RawMessage                 `json:"sync_state"`
+		ID                  int64                             `json:"id"`
+		RepoID              api.RepoID                        `json:"repo_id"`
+		CreatedAt           time.Time                         `json:"created_at"`
+		UpdatedAt           time.Time                         `json:"updated_at"`
+		Metadata            json.RawMessage                   `json:"metadata"`
+		CampaignIDs         json.RawMessage                   `json:"campaign_ids"`
+		ExternalID          string                            `json:"external_id"`
+		ExternalServiceType string                            `json:"external_service_type"`
+		ExternalBranch      string                            `json:"external_branch"`
+		ExternalDeletedAt   *time.Time                        `json:"external_deleted_at"`
+		ExternalUpdatedAt   *time.Time                        `json:"external_updated_at"`
+		ExternalState       *campaigns.ChangesetExternalState `json:"external_state"`
+		ExternalReviewState *campaigns.ChangesetReviewState   `json:"external_review_state"`
+		ExternalCheckState  *campaigns.ChangesetCheckState    `json:"external_check_state"`
+		CreatedByCampaign   bool                              `json:"created_by_campaign"`
+		AddedToCampaign     bool                              `json:"added_to_campaign"`
+		DiffStatAdded       *int32                            `json:"diff_stat_added"`
+		DiffStatChanged     *int32                            `json:"diff_stat_changed"`
+		DiffStatDeleted     *int32                            `json:"diff_stat_deleted"`
+		SyncState           json.RawMessage                   `json:"sync_state"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -482,7 +481,7 @@ DELETE FROM changesets WHERE id = %s
 // counting changesets.
 type CountChangesetsOpts struct {
 	CampaignID          int64
-	ExternalState       *campaigns.ChangesetState
+	ExternalState       *campaigns.ChangesetExternalState
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
 }
@@ -681,7 +680,7 @@ type ListChangesetsOpts struct {
 	CampaignID           int64
 	IDs                  []int64
 	WithoutDeleted       bool
-	ExternalState        *campaigns.ChangesetState
+	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
 	OnlyWithoutDiffStats bool
@@ -1825,108 +1824,6 @@ func getPatchSetQuery(opts *GetPatchSetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getPatchSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetCampaignStatusOpts captures the query options needed for getting the
-// BackgroundProcessStatus for a Campaign.
-type GetCampaignStatusOpts struct {
-	ID int64
-	// When ExcludeErrors is set the ProcessErrors slice of the
-	// BackgroundProcessStatus returned by GetCampaignStatus won't be
-	// populated.
-	ExcludeErrors bool
-
-	// ExcludeErrorsInRepos filters out error messages from ChangesetJobs that
-	// are associated with Patches that have the given repository IDs set in
-	// `patches.repo_id`.
-	// This is used to filter out error messages from repositories the user
-	// doesn't have access to.
-	ExcludeErrorsInRepos []api.RepoID
-}
-
-// GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
-func (s *Store) GetCampaignStatus(ctx context.Context, opts GetCampaignStatusOpts) (*campaigns.BackgroundProcessStatus, error) {
-	q := getCampaignStatusQuery(&opts)
-	return s.queryBackgroundProcessStatus(ctx, q)
-}
-
-func getCampaignStatusQuery(opts *GetCampaignStatusOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.ID))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
-	var errorsPreds []*sqlf.Query
-	if opts.ExcludeErrors {
-		errorsPreds = append(errorsPreds, sqlf.Sprintf("FALSE"))
-	}
-
-	if len(opts.ExcludeErrorsInRepos) > 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.ExcludeErrorsInRepos))
-
-		for _, repoID := range opts.ExcludeErrorsInRepos {
-			ids = append(ids, sqlf.Sprintf("%s", repoID))
-		}
-
-		joined := sqlf.Join(ids, ",")
-
-		errorsPreds = append(errorsPreds, sqlf.Sprintf("patches.repo_id NOT IN (%s)", joined))
-		errorsPreds = append(errorsPreds, sqlf.Sprintf("error != ''"))
-	}
-
-	if len(errorsPreds) == 0 {
-		errorsPreds = append(errorsPreds, sqlf.Sprintf("error != ''"))
-	}
-
-	return sqlf.Sprintf(
-		getCampaignStatusQueryFmtstr,
-		sqlf.Join(errorsPreds, " AND "),
-		sqlf.Join(preds, "\n AND "),
-	)
-}
-
-func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*campaigns.BackgroundProcessStatus, error) {
-	var status campaigns.BackgroundProcessStatus
-
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanBackgroundProcessStatus(&status, sc)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	status.ProcessState = campaigns.BackgroundProcessStateCompleted
-	switch {
-	case status.Canceled:
-		status.ProcessState = campaigns.BackgroundProcessStateCanceled
-	case status.Pending > 0:
-		status.ProcessState = campaigns.BackgroundProcessStateProcessing
-	case status.Completed == status.Total && status.Failed == 0:
-		status.ProcessState = campaigns.BackgroundProcessStateCompleted
-	case status.Completed == status.Total && status.Failed > 0:
-		status.ProcessState = campaigns.BackgroundProcessStateErrored
-	}
-	return &status, nil
-}
-
-var getCampaignStatusQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:GetCampaignStatus
-SELECT
-  -- canceled is here so that this can be used with scanBackgroundProcessStatus
-  false AS canceled,
-  COUNT(*) AS total,
-  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-  COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
-  COUNT(*) FILTER (WHERE error != '') AS failed,
-  array_agg(error) FILTER (WHERE %s) AS errors
-FROM changeset_jobs
-JOIN patches ON patches.id = changeset_jobs.patch_id
-WHERE %s
-LIMIT 1
-`
-
 // ListPatchSetsOpts captures the query options needed for
 // listing code mods.
 type ListPatchSetsOpts struct {
@@ -2909,7 +2806,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 
 	var (
 		externalState       string
-		externamReviewState string
+		externalReviewState string
 		externalCheckState  string
 	)
 	err := s.Scan(
@@ -2925,7 +2822,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
 		&dbutil.NullString{S: &externalState},
-		&dbutil.NullString{S: &externamReviewState},
+		&dbutil.NullString{S: &externalReviewState},
 		&dbutil.NullString{S: &externalCheckState},
 		&t.CreatedByCampaign,
 		&t.AddedToCampaign,
@@ -2938,8 +2835,8 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		return errors.Wrap(err, "scanning changeset")
 	}
 
-	t.ExternalState = campaigns.ChangesetState(externalState)
-	t.ExternalReviewState = campaigns.ChangesetReviewState(externamReviewState)
+	t.ExternalState = campaigns.ChangesetExternalState(externalState)
+	t.ExternalReviewState = campaigns.ChangesetReviewState(externalReviewState)
 	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
 
 	switch t.ExternalServiceType {
@@ -3041,17 +2938,6 @@ func scanChangesetJob(c *campaigns.ChangesetJob, s scanner) error {
 		&dbutil.NullTime{Time: &c.FinishedAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
-	)
-}
-
-func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner) error {
-	return s.Scan(
-		&b.Canceled,
-		&b.Total,
-		&b.Pending,
-		&b.Completed,
-		&b.Failed,
-		pq.Array(&b.ProcessErrors),
 	)
 }
 

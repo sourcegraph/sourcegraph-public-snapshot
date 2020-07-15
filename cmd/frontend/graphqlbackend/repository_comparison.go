@@ -26,6 +26,19 @@ type RepositoryComparisonInput struct {
 	FetchMissing bool
 }
 
+type FileDiffsConnectionArgs struct {
+	First *int32
+	After *string
+}
+
+type RepositoryComparisonInterface interface {
+	BaseRepository() *RepositoryResolver
+	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
+
+	ToRepositoryComparison() (*RepositoryComparisonResolver, bool)
+	ToPreviewRepositoryComparison() (PreviewRepositoryComparisonResolver, bool)
+}
+
 type FileDiffConnection interface {
 	Nodes(ctx context.Context) ([]FileDiff, error)
 	TotalCount(ctx context.Context) (*int32, error)
@@ -138,9 +151,18 @@ func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryCom
 }
 
 type RepositoryComparisonResolver struct {
+	RepositoryComparisonInterface
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
 	repo                     *RepositoryResolver
+}
+
+func (r *RepositoryComparisonResolver) ToPreviewRepositoryComparison() (PreviewRepositoryComparisonResolver, bool) {
+	return nil, false
+}
+
+func (r *RepositoryComparisonResolver) ToRepositoryComparison() (*RepositoryComparisonResolver, bool) {
+	return r, true
 }
 
 func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { return r.repo }
@@ -166,16 +188,14 @@ func (r *RepositoryComparisonResolver) Commits(
 	}
 }
 
-func (r *RepositoryComparisonResolver) FileDiffs(
-	args *FileDiffsConnectionArgs,
-) FileDiffConnection {
+func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
 	return NewFileDiffConnectionResolver(
 		r.base,
 		r.head,
 		args,
 		computeRepositoryComparisonDiff(r),
 		repositoryComparisonNewFile,
-	)
+	), nil
 }
 
 // repositoryComparisonNewFile is the default NewFileFunc used by

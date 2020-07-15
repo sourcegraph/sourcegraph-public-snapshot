@@ -20,6 +20,7 @@ describe('CampaignBurndownChart', () => {
                             openPending: 1,
                             total: 10,
                             open: 8,
+                            unpublished: 0,
                         },
                         {
                             __typename: 'ChangesetCounts',
@@ -31,6 +32,7 @@ describe('CampaignBurndownChart', () => {
                             openPending: 1,
                             total: 10,
                             open: 4,
+                            unpublished: 0,
                         },
                     ]}
                     history={history}
@@ -55,6 +57,7 @@ describe('CampaignBurndownChart', () => {
                             openPending: 1,
                             total: 10,
                             open: 8,
+                            unpublished: 0,
                         },
                     ]}
                     history={history}
@@ -79,6 +82,7 @@ describe('CampaignBurndownChart', () => {
                             openPending: 0,
                             total: 0,
                             open: 0,
+                            unpublished: 0,
                         },
                         {
                             __typename: 'ChangesetCounts',
@@ -90,6 +94,7 @@ describe('CampaignBurndownChart', () => {
                             openPending: 0,
                             total: 0,
                             open: 0,
+                            unpublished: 0,
                         },
                     ]}
                     history={history}

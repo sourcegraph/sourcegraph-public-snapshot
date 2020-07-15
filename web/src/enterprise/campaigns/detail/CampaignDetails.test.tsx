@@ -3,7 +3,6 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignDetails } from './CampaignDetails'
 import * as H from 'history'
 import { of } from 'rxjs'
-import { CampaignStatusProps } from './CampaignStatus'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { PageTitle } from '../../../components/PageTitle'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
@@ -12,9 +11,6 @@ import { shallow, mount } from 'enzyme'
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
 
-jest.mock('./CampaignStatus', () => ({
-    CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.campaign.status.state})`,
-}))
 jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
@@ -80,12 +76,6 @@ describe('CampaignDetails', () => {
                     viewerCanAdminister,
                     hasUnpublishedPatches: false,
                     branch: 'awesome-branch',
-                    status: {
-                        completedCount: 3,
-                        pendingCount: 3,
-                        errors: ['a'],
-                        state: GQL.BackgroundProcessState.PROCESSING,
-                    },
                     createdAt: '2020-01-01',
                     updatedAt: '2020-01-01',
                     closedAt: null,
