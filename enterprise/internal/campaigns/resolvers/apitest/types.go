@@ -198,9 +198,9 @@ type CampaignSpec struct {
 	Namespace UserOrg
 	Creator   User
 
-	ChangesetSpecs []ChangesetSpec
+	ChangesetSpecs ChangesetSpecConnection
 
-	CreatedAt *graphqlbackend.DateTime
+	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 }
 
@@ -213,14 +213,23 @@ type ChangesetSpec struct {
 	ExpiresAt *graphqlbackend.DateTime
 }
 
+type ChangesetSpecConnection struct {
+	Nodes      []ChangesetSpec
+	TotalCount int
+	PageInfo   struct {
+		HasNextPage bool
+		EndCursor   *string
+	}
+}
+
 type ChangesetSpecDescription struct {
 	Typename string `json:"__typename"`
 
-	BaseRepository string
+	BaseRepository Repository
 	ExternalID     string
 	BaseRef        string
 
-	HeadRepository string
+	HeadRepository Repository
 	HeadRef        string
 
 	Title string
