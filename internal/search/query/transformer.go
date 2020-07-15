@@ -45,8 +45,9 @@ var ErrBadGlobPattern = errors.New("syntax error in glob pattern")
 func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 	sb := strings.Builder{}
 	i := startIx
+	lenR := len(r)
 Loop:
-	for i < len(r) {
+	for i < lenR {
 		switch r[i] {
 		case '!':
 			if i == startIx {
@@ -66,14 +67,15 @@ Loop:
 		// '-' is treated literally at the start and end of
 		// of a character class.
 			if r[i] == '-' {
-				if i == len(r) -1 {
+				if i == lenR-1 {
 					// no closing bracket
 					return -1, "", ErrBadGlobPattern
 				}
 
 				if i > startIx && r[i+1] != ']' {
 					// "-" cannot be the lower end of a range
-					// unless it is the first character within the range
+					// unless it is the first character within
+					// the character class
 					return -1, "", ErrBadGlobPattern
 				}
 			}
@@ -81,7 +83,7 @@ Loop:
 			sb.WriteRune(r[i]) // lo
 			i++
 
-			if i == len(r) {
+			if i == lenR {
 				// no closing bracket
 				return -1, "", ErrBadGlobPattern
 			}
@@ -94,7 +96,7 @@ Loop:
 			sb.WriteRune(r[i]) // -
 			i++
 
-			if i == len(r) {
+			if i == lenR {
 				// no closing bracket
 				return -1, "", ErrBadGlobPattern
 			}
@@ -105,15 +107,14 @@ Loop:
 
 			hi:=r[i]
 			if lo>hi {
+				// range is reversed
 				return -1, "", ErrBadGlobPattern
 			}
 			sb.WriteRune(r[i]) // hi
 			i++
 		}
-
 	}
-
-	if i == len(r) {
+	if i == lenR {
 		return -1, "", ErrBadGlobPattern
 	}
 
@@ -168,8 +169,8 @@ func globToRegex(value string) (string, error) {
 			}
 
 			i += advanced
-
 			sb.WriteString(s)
+
 			sb.WriteRune(']')
 		default:
 			sb.WriteString(regexp.QuoteMeta(string(r[i])))
@@ -183,6 +184,8 @@ func globToRegex(value string) (string, error) {
 	return sb.String(), nil
 }
 
+// globError caries the actual error plus the name of field where the
+// error occurred.
 type globError struct {
 	field string
 	err error
@@ -194,28 +197,28 @@ func (g globError) Error() string {
 
 // mapGlobToRegex translates glob to regexp for fields repo, file, repohasfile
 func mapGlobToRegex(nodes []Node) ([]Node, error) {
-	errs := []globError{}
+	var globErrors []globError
 	var err error
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
 			value, err = globToRegex(value)
 			if err != nil {
-				errs = append(errs, globError{field:field, err: err})
+				globErrors = append(globErrors, globError{field: field, err: err})
 			}
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
 
 	// error formatting
-	if len(errs) == 1 {
-		return nil, fmt.Errorf("invalid glob syntax in field %s:", errs[0].field)
+	if len(globErrors) == 1 {
+		return nil, fmt.Errorf("invalid glob syntax in field %s: ", globErrors[0].field)
 	}
 
-	if len(errs) > 1 {
-		fields :=  errs[0].field + ":"
+	if len(globErrors) > 1 {
+		fields :=  globErrors[0].field + ":"
 
-		for _, e := range errs[1:] {
+		for _, e := range globErrors[1:] {
 			fields += fmt.Sprintf(", %s:", e.field)
 		}
 		return nil, fmt.Errorf("invalid glob syntax in fields %s", fields)
