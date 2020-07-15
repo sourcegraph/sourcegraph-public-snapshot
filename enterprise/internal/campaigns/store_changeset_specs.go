@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
@@ -274,6 +275,38 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 		sqlf.Join(preds, "\n AND "),
 	)
 }
+
+// ChangsetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
+// attached to a CampaignSpec.
+// It's lower than CampaignSpecTTL because ChangesetSpecs should be attached to
+// a CampaignSpec immediately after having been created, whereas a CampaignSpec
+// might take a while to be complete and might also go through a lengthy review
+// phase.
+const ChangesetSpecTTL = 2 * 24 * time.Hour
+
+// DeleteExpiredChangesetSpecs deletes ChangesetSpecs that have not been
+// attached to a CampaignSpec within ChangesetSpecTTL.
+func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
+	expirationTime := s.now().Add(-ChangesetSpecTTL)
+	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, expirationTime)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteExpiredChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:DeleteExpiredChangesetSpecs
+DELETE FROM
+  changeset_specs
+WHERE
+  created_at < %s
+AND
+  campaign_spec_id IS NULL
+;
+`
 
 func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 	var spec json.RawMessage
