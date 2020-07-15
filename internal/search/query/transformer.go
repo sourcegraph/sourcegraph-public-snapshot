@@ -183,11 +183,6 @@ func globToRegex(value string) (string, error) {
 	return sb.String(), nil
 }
 
-func isValidRegexp(value string) bool {
-	if _, err := regexp.Compile(value); err != nil {
-		return false
-	}
-	return true
 }
 
 // mapGlobToRegex translates glob with regexp for fields supporting regexp
