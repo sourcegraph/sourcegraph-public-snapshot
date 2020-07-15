@@ -871,7 +871,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 
 	if options.Globbing {
 		query, err = mapGlobToRegex(query)
-		if err!=nil {
+		if err != nil {
 			return nil, err
 		}
 	}

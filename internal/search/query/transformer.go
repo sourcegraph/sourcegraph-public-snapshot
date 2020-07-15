@@ -64,8 +64,8 @@ Loop:
 			i++
 		default: // range lo-hi
 
-		// '-' is treated literally at the start and end of
-		// of a character class.
+			// '-' is treated literally at the start and end of
+			// of a character class.
 			if r[i] == '-' {
 				if i == lenR-1 {
 					// no closing bracket
@@ -105,8 +105,8 @@ Loop:
 				continue
 			}
 
-			hi:=r[i]
-			if lo>hi {
+			hi := r[i]
+			if lo > hi {
 				// range is reversed
 				return -1, "", ErrBadGlobPattern
 			}
@@ -123,10 +123,10 @@ Loop:
 }
 
 var globSpecialSymbols = map[rune]struct{}{
-	'\\': struct{}{},
-	'*':  struct{}{},
-	'?':  struct{}{},
-	'[':  struct{}{},
+	'\\': {},
+	'*':  {},
+	'?':  {},
+	'[':  {},
 }
 
 // globToRegex converts a glob to a regex
@@ -188,7 +188,7 @@ func globToRegex(value string) (string, error) {
 // error occurred.
 type globError struct {
 	field string
-	err error
+	err   error
 }
 
 func (g globError) Error() string {
@@ -216,7 +216,7 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	}
 
 	if len(globErrors) > 1 {
-		fields :=  globErrors[0].field + ":"
+		fields := globErrors[0].field + ":"
 
 		for _, e := range globErrors[1:] {
 			fields += fmt.Sprintf(", %s:", e.field)
