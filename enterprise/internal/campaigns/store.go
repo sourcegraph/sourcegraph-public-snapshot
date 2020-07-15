@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 // Store exposes methods to read and write campaigns domain models
@@ -2902,6 +2903,8 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		t.Metadata = new(github.PullRequest)
 	case extsvc.TypeBitbucketServer:
 		t.Metadata = new(bitbucketserver.PullRequest)
+	case extsvc.TypeGitLab:
+		t.Metadata = new(gitlab.MergeRequest)
 	default:
 		return errors.New("unknown external service type")
 	}

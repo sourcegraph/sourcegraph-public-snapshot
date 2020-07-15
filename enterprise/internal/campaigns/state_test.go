@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 func TestComputeGithubCheckState(t *testing.T) {
@@ -261,6 +262,83 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 	}
 }
 
+func TestComputeGitLabCheckState(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mr   *gitlab.MergeRequest
+		want cmpgn.ChangesetCheckState
+	}{
+		"no pipelines at all": {
+			mr:   &gitlab.MergeRequest{},
+			want: cmpgn.ChangesetCheckStateUnknown,
+		},
+		"only a head pipeline": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+			},
+			want: cmpgn.ChangesetCheckStatePending,
+		},
+		"one pipeline only": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+				Pipelines: []*gitlab.Pipeline{
+					{
+						CreatedAt: time.Unix(10, 0),
+						Status:    gitlab.PipelineStatusFailed,
+					},
+				},
+			},
+			want: cmpgn.ChangesetCheckStateFailed,
+		},
+		"two pipelines in the expected order": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+				Pipelines: []*gitlab.Pipeline{
+					{
+						CreatedAt: time.Unix(10, 0),
+						Status:    gitlab.PipelineStatusFailed,
+					},
+					{
+						CreatedAt: time.Unix(5, 0),
+						Status:    gitlab.PipelineStatusSuccess,
+					},
+				},
+			},
+			want: cmpgn.ChangesetCheckStateFailed,
+		},
+		"two pipelines in an unexpected order": {
+			mr: &gitlab.MergeRequest{
+				HeadPipeline: &gitlab.Pipeline{
+					Status: gitlab.PipelineStatusPending,
+				},
+				Pipelines: []*gitlab.Pipeline{
+					{
+						CreatedAt: time.Unix(5, 0),
+						Status:    gitlab.PipelineStatusFailed,
+					},
+					{
+						CreatedAt: time.Unix(10, 0),
+						Status:    gitlab.PipelineStatusSuccess,
+					},
+				},
+			},
+			want: cmpgn.ChangesetCheckStatePassed,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have := computeGitLabCheckState(tc.mr)
+			if have != tc.want {
+				t.Errorf("unexpected check state: have %s; want %s", have, tc.want)
+			}
+		})
+	}
+}
+
 func TestComputeReviewState(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
@@ -312,6 +390,77 @@ func TestComputeReviewState(t *testing.T) {
 		{
 			name:      "bitbucketserver - changeset newer than events",
 			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateChangesRequested,
+		},
+		{
+			name:      "gitlab - no events, no approvals",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{}),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetReviewStatePending,
+		},
+		{
+			name: "gitlab - no events, one approval",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+				{
+					System: true,
+					Body:   "approved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{},
+			want:    cmpgn.ChangesetReviewStateApproved,
+		},
+		{
+			name: "gitlab - no events, one unapproval",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{},
+			want:    cmpgn.ChangesetReviewStateChangesRequested,
+		},
+		{
+			name: "gitlab - no events, several notes",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+				{Body: "this is a user note"},
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+				{Body: "this is a user note"},
+				{
+					System: true,
+					Body:   "approved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{},
+			want:    cmpgn.ChangesetReviewStateChangesRequested,
+		},
+		{
+			name: "gitlab - changeset older than events",
+			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+			}),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateApproved,
+		},
+		{
+			name: "gitlab - changeset newer than events",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+				{
+					System: true,
+					Body:   "unapproved this merge request",
+				},
+			}),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
@@ -405,6 +554,46 @@ func TestComputeChangesetState(t *testing.T) {
 			},
 			want: cmpgn.ChangesetStateDeleted,
 		},
+		{
+			name:      "gitlab - no events, opened",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateOpen,
+		},
+		{
+			name:      "gitlab - no events, closed",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateClosed, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "gitlab - no events, locked",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateLocked, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "gitlab - no events, merged",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateMerged,
+		},
+		{
+			name:      "gitlab - changeset older than events",
+			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateMerged, nil),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "gitlab - changeset newer than events",
+			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateMerged,
+		},
 	}
 
 	for i, tc := range tests {
@@ -448,6 +637,17 @@ func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
 		ExternalServiceType: extsvc.TypeGitHub,
 		UpdatedAt:           updatedAt,
 		Metadata:            &github.PullRequest{State: state},
+	}
+}
+
+func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes []*gitlab.Note) *campaigns.Changeset {
+	return &campaigns.Changeset{
+		ExternalServiceType: extsvc.TypeGitLab,
+		UpdatedAt:           updatedAt,
+		Metadata: &gitlab.MergeRequest{
+			Notes: notes,
+			State: state,
+		},
 	}
 }
 

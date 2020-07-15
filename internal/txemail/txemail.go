@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	gophermail "gopkg.in/jpoehls/gophermail.v0"
+	"gopkg.in/jpoehls/gophermail.v0"
 )
 
 // Message describes an email message to be sent.

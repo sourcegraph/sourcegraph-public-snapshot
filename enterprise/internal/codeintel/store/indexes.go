@@ -273,6 +273,7 @@ func (s *store) DequeueIndex(ctx context.Context) (Index, Store, bool, error) {
 		"lsif_indexes",
 		indexColumnsWithNullRank,
 		sqlf.Sprintf("queued_at"),
+		nil,
 		scanFirstIndexInterface,
 	)
 	if err != nil || !ok {

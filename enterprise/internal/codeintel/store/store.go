@@ -39,8 +39,8 @@ type Store interface {
 	// (the resulting array is deduplicated on update).
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 
-	// MarkQueued updates the state of the upload to queued.
-	MarkQueued(ctx context.Context, uploadID int) error
+	// MarkQueued updates the state of the upload to queued and updates the upload size.
+	MarkQueued(ctx context.Context, uploadID int, uploadSize *int) error
 
 	// MarkComplete updates the state of the upload to complete.
 	MarkComplete(ctx context.Context, id int) error
@@ -48,11 +48,11 @@ type Store interface {
 	// MarkErrored updates the state of the upload to errored and updates the failure summary data.
 	MarkErrored(ctx context.Context, id int, failureMessage string) error
 
-	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-	// upload is returned along with a store instance which wraps the transaction. This transaction must be closed.
-	// If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
-	// valued flag. This method must not be called from within a transaction.
-	Dequeue(ctx context.Context) (Upload, Store, bool, error)
+	// Dequeue selects the oldest queued upload smaller than the given maximum size and locks it with a transaction.
+	// If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
+	// This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
+	// be returned along with a false valued flag. This method must not be called from within a transaction.
+	Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error)
 
 	// Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
 	Requeue(ctx context.Context, id int, after time.Time) error

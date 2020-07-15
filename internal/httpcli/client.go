@@ -50,7 +50,7 @@ func NewMiddleware(mws ...Middleware) Middleware {
 type Opt func(*http.Client) error
 
 // A Factory constructs an http.Client with the given functional
-// options applied, returning an aggreagte error of the errors returned by
+// options applied, returning an aggregate error of the errors returned by
 // all those options.
 type Factory struct {
 	stack  Middleware

@@ -17,7 +17,7 @@ func TestExternalService(t *testing.T) {
 	}
 
 	t.Run("repositoryPathPattern", func(t *testing.T) {
-		const repo = "sourcegraph/go-blame" // Tiny repo, fast to clone
+		const repo = "sgtest/go-diff" // Tiny repo, fast to clone
 		const slug = "github.com/" + repo
 		// Set up external service
 		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
@@ -58,7 +58,7 @@ func TestExternalService(t *testing.T) {
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		wantURL := *baseURL + "/foobar/" + slug // <baseURL>/foobar/github.com/sourcegraph/go-blame
+		wantURL := *baseURL + "/foobar/" + slug // <baseURL>/foobar/github.com/sgtest/go-diff
 		if diff := cmp.Diff(wantURL, resp.Request.URL.String()); diff != "" {
 			t.Fatalf("URL mismatch (-want +got):\n%s", diff)
 		}

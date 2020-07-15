@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 func TestChangesetMetadata(t *testing.T) {
@@ -222,7 +223,7 @@ func TestChangesetEvents(t *testing.T) {
 		})
 	}
 
-	{ // Bitbucket Server
+	{ // bitbucketserver
 
 		user := bitbucketserver.User{Name: "john-doe"}
 		reviewer := bitbucketserver.User{Name: "jane-doe"}
@@ -282,6 +283,56 @@ func TestChangesetEvents(t *testing.T) {
 				Key:         activities[4].Key(),
 				Metadata:    activities[4],
 			}},
+		})
+	}
+
+	{ // GitLab
+		notes := []*gitlab.Note{
+			{ID: 11, System: false, Body: "this is a user note"},
+			{ID: 12, System: true, Body: "approved this merge request"},
+			{ID: 13, System: true, Body: "unapproved this merge request"},
+		}
+
+		pipelines := []*gitlab.Pipeline{
+			{ID: 21},
+			{ID: 22},
+		}
+
+		cases = append(cases, testCase{
+			name: "gitlab",
+			changeset: Changeset{
+				ID: 1234,
+				Metadata: &gitlab.MergeRequest{
+					Notes:     notes,
+					Pipelines: pipelines,
+				},
+			},
+			events: []*ChangesetEvent{
+				{
+					ChangesetID: 1234,
+					Kind:        ChangesetEventKindGitLabApproved,
+					Key:         notes[1].Key(),
+					Metadata:    notes[1].ToReview(),
+				},
+				{
+					ChangesetID: 1234,
+					Kind:        ChangesetEventKindGitLabUnapproved,
+					Key:         notes[2].Key(),
+					Metadata:    notes[2].ToReview(),
+				},
+				{
+					ChangesetID: 1234,
+					Kind:        ChangesetEventKindGitLabPipeline,
+					Key:         pipelines[0].Key(),
+					Metadata:    pipelines[0],
+				},
+				{
+					ChangesetID: 1234,
+					Kind:        ChangesetEventKindGitLabPipeline,
+					Key:         pipelines[1].Key(),
+					Metadata:    pipelines[1],
+				},
+			},
 		})
 	}
 
@@ -409,5 +460,512 @@ func TestChangesetSyncStateEquals(t *testing.T) {
 		if have := tc.state[0].Equals(&tc.state[1]); have != tc.want {
 			t.Errorf("%s: unexpected Equals result: have %v; want %v", name, have, tc.want)
 		}
+	}
+}
+
+func TestChangeset_SetMetadata(t *testing.T) {
+	for name, tc := range map[string]struct {
+		meta interface{}
+		want *Changeset
+	}{
+		"bitbucketserver": {
+			meta: &bitbucketserver.PullRequest{
+				ID:          12345,
+				FromRef:     bitbucketserver.Ref{ID: "refs/heads/branch"},
+				UpdatedDate: 10 * 1000,
+			},
+			want: &Changeset{
+				ExternalID:          "12345",
+				ExternalServiceType: extsvc.TypeBitbucketServer,
+				ExternalBranch:      "branch",
+				ExternalUpdatedAt:   time.Unix(10, 0),
+			},
+		},
+		"GitHub": {
+			meta: &github.PullRequest{
+				Number:      12345,
+				HeadRefName: "branch",
+				UpdatedAt:   time.Unix(10, 0),
+			},
+			want: &Changeset{
+				ExternalID:          "12345",
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalBranch:      "branch",
+				ExternalUpdatedAt:   time.Unix(10, 0),
+			},
+		},
+		"GitLab": {
+			meta: &gitlab.MergeRequest{
+				IID:          12345,
+				SourceBranch: "branch",
+				UpdatedAt:    time.Unix(10, 0),
+			},
+			want: &Changeset{
+				ExternalID:          "12345",
+				ExternalServiceType: extsvc.TypeGitLab,
+				ExternalBranch:      "branch",
+				ExternalUpdatedAt:   time.Unix(10, 0),
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have := &Changeset{}
+			want := tc.want
+			want.Metadata = tc.meta
+
+			if err := have.SetMetadata(tc.meta); err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if d := cmp.Diff(have, want); d != "" {
+				t.Errorf("metadata not updated as expected: %s", d)
+			}
+		})
+	}
+}
+
+func TestChangeset_Title(t *testing.T) {
+	want := "foo"
+	for name, meta := range map[string]interface{}{
+		"bitbucketserver": &bitbucketserver.PullRequest{
+			Title: want,
+		},
+		"GitHub": &github.PullRequest{
+			Title: want,
+		},
+		"GitLab": &gitlab.MergeRequest{
+			Title: want,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: meta}
+			have, err := c.Title()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != want {
+				t.Errorf("unexpected title: have %s; want %s", have, want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.Title(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_ExternalCreatedAt(t *testing.T) {
+	want := time.Unix(10, 0)
+	for name, meta := range map[string]interface{}{
+		"bitbucketserver": &bitbucketserver.PullRequest{
+			CreatedDate: 10 * 1000,
+		},
+		"GitHub": &github.PullRequest{
+			CreatedAt: want,
+		},
+		"GitLab": &gitlab.MergeRequest{
+			CreatedAt: want,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: meta}
+			if have := c.ExternalCreatedAt(); have != want {
+				t.Errorf("unexpected external creation date: have %+v; want %+v", have, want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		want := time.Time{}
+		if have := c.ExternalCreatedAt(); have != want {
+			t.Errorf("unexpected external creation date: have %+v; want %+v", have, want)
+		}
+	})
+}
+
+func TestChangeset_Body(t *testing.T) {
+	want := "foo"
+	for name, meta := range map[string]interface{}{
+		"bitbucketserver": &bitbucketserver.PullRequest{
+			Description: want,
+		},
+		"GitHub": &github.PullRequest{
+			Body: want,
+		},
+		"GitLab": &gitlab.MergeRequest{
+			Description: want,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: meta}
+			have, err := c.Body()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != want {
+				t.Errorf("unexpected body: have %s; want %s", have, want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.Body(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_state(t *testing.T) {
+	for name, tc := range map[string]struct {
+		meta interface{}
+		want ChangesetState
+	}{
+		"bitbucketserver: declined": {
+			meta: &bitbucketserver.PullRequest{
+				State: "DECLINED",
+			},
+			want: ChangesetStateClosed,
+		},
+		"bitbucketserver: open": {
+			meta: &bitbucketserver.PullRequest{
+				State: "OPEN",
+			},
+			want: ChangesetStateOpen,
+		},
+		"GitHub: open": {
+			meta: &github.PullRequest{
+				State: "OPEN",
+			},
+			want: ChangesetStateOpen,
+		},
+		"GitLab: opened": {
+			meta: &gitlab.MergeRequest{
+				State: gitlab.MergeRequestStateOpened,
+			},
+			want: ChangesetStateOpen,
+		},
+		"GitLab: closed": {
+			meta: &gitlab.MergeRequest{
+				State: gitlab.MergeRequestStateClosed,
+			},
+			want: ChangesetStateClosed,
+		},
+		"GitLab: locked": {
+			meta: &gitlab.MergeRequest{
+				State: gitlab.MergeRequestStateLocked,
+			},
+			want: ChangesetStateClosed,
+		},
+		"GitLab: merged": {
+			meta: &gitlab.MergeRequest{
+				State: gitlab.MergeRequestStateMerged,
+			},
+			want: ChangesetStateMerged,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: tc.meta}
+			have, err := c.state()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != tc.want {
+				t.Errorf("unexpected state: have %s; want %s", have, tc.want)
+			}
+		})
+	}
+
+	t.Run("deleted", func(t *testing.T) {
+		c := &Changeset{ExternalDeletedAt: time.Unix(10, 0)}
+		have, err := c.state()
+		if err != nil {
+			t.Errorf("unexpected error: %+v", err)
+		}
+		if want := ChangesetStateDeleted; have != want {
+			t.Errorf("unexpected state: have %s; want %s", have, want)
+		}
+	})
+
+	t.Run("invalid state", func(t *testing.T) {
+		c := &Changeset{Metadata: &github.PullRequest{
+			State: "FOO",
+		}}
+		if _, err := c.state(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.state(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_URL(t *testing.T) {
+	want := "foo"
+	for name, meta := range map[string]interface{}{
+		"bitbucketserver": &bitbucketserver.PullRequest{
+			Links: struct {
+				Self []struct {
+					Href string `json:"href"`
+				} `json:"self"`
+			}{
+				Self: []struct {
+					Href string `json:"href"`
+				}{{Href: want}},
+			},
+		},
+		"GitHub": &github.PullRequest{
+			URL: want,
+		},
+		"GitLab": &gitlab.MergeRequest{
+			WebURL: want,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: meta}
+			have, err := c.URL()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != want {
+				t.Errorf("unexpected URL: have %s; want %s", have, want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.URL(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_HeadRefOid(t *testing.T) {
+	for name, tc := range map[string]struct {
+		meta interface{}
+		want string
+	}{
+		"bitbucketserver": {
+			meta: &bitbucketserver.PullRequest{},
+			want: "",
+		},
+		"GitHub": {
+			meta: &github.PullRequest{HeadRefOid: "foo"},
+			want: "foo",
+		},
+		"GitLab": {
+			meta: &gitlab.MergeRequest{
+				DiffRefs: gitlab.DiffRefs{HeadSHA: "foo"},
+			},
+			want: "foo",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: tc.meta}
+			have, err := c.HeadRefOid()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != tc.want {
+				t.Errorf("unexpected head ref OID: have %s; want %s", have, tc.want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.HeadRefOid(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_HeadRef(t *testing.T) {
+	for name, tc := range map[string]struct {
+		meta interface{}
+		want string
+	}{
+		"bitbucketserver": {
+			meta: &bitbucketserver.PullRequest{
+				FromRef: bitbucketserver.Ref{ID: "foo"},
+			},
+			want: "foo",
+		},
+		"GitHub": {
+			meta: &github.PullRequest{HeadRefName: "foo"},
+			want: "refs/heads/foo",
+		},
+		"GitLab": {
+			meta: &gitlab.MergeRequest{
+				SourceBranch: "foo",
+			},
+			want: "refs/heads/foo",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: tc.meta}
+			have, err := c.HeadRef()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != tc.want {
+				t.Errorf("unexpected head ref: have %s; want %s", have, tc.want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.HeadRef(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_BaseRefOid(t *testing.T) {
+	for name, tc := range map[string]struct {
+		meta interface{}
+		want string
+	}{
+		"bitbucketserver": {
+			meta: &bitbucketserver.PullRequest{},
+			want: "",
+		},
+		"GitHub": {
+			meta: &github.PullRequest{BaseRefOid: "foo"},
+			want: "foo",
+		},
+		"GitLab": {
+			meta: &gitlab.MergeRequest{
+				DiffRefs: gitlab.DiffRefs{BaseSHA: "foo"},
+			},
+			want: "foo",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: tc.meta}
+			have, err := c.BaseRefOid()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != tc.want {
+				t.Errorf("unexpected base ref OID: have %s; want %s", have, tc.want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.BaseRefOid(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_BaseRef(t *testing.T) {
+	for name, tc := range map[string]struct {
+		meta interface{}
+		want string
+	}{
+		"bitbucketserver": {
+			meta: &bitbucketserver.PullRequest{
+				ToRef: bitbucketserver.Ref{ID: "foo"},
+			},
+			want: "foo",
+		},
+		"GitHub": {
+			meta: &github.PullRequest{BaseRefName: "foo"},
+			want: "refs/heads/foo",
+		},
+		"GitLab": {
+			meta: &gitlab.MergeRequest{
+				TargetBranch: "foo",
+			},
+			want: "refs/heads/foo",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: tc.meta}
+			have, err := c.BaseRef()
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if have != tc.want {
+				t.Errorf("unexpected base ref: have %s; want %s", have, tc.want)
+			}
+		})
+	}
+
+	t.Run("unknown changeset type", func(t *testing.T) {
+		c := &Changeset{}
+		if _, err := c.BaseRef(); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+}
+
+func TestChangeset_Labels(t *testing.T) {
+	for name, tc := range map[string]struct {
+		meta interface{}
+		want []ChangesetLabel
+	}{
+		"bitbucketserver": {
+			meta: &bitbucketserver.PullRequest{},
+			want: []ChangesetLabel{},
+		},
+		"GitHub": {
+			meta: &github.PullRequest{
+				Labels: struct{ Nodes []github.Label }{
+					Nodes: []github.Label{
+						{
+							Name:        "red door",
+							Color:       "black",
+							Description: "paint it black",
+						},
+						{
+							Name:        "grün",
+							Color:       "green",
+							Description: "groan",
+						},
+					},
+				},
+			},
+			want: []ChangesetLabel{
+				{
+					Name:        "red door",
+					Color:       "black",
+					Description: "paint it black",
+				},
+				{
+					Name:        "grün",
+					Color:       "green",
+					Description: "groan",
+				},
+			},
+		},
+		"GitLab": {
+			meta: &gitlab.MergeRequest{
+				Labels: []string{"black", "green"},
+			},
+			want: []ChangesetLabel{
+				{Name: "black", Color: "000000"},
+				{Name: "green", Color: "000000"},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := &Changeset{Metadata: tc.meta}
+			if d := cmp.Diff(c.Labels(), tc.want); d != "" {
+				t.Errorf("unexpected labels: %s", d)
+			}
+		})
 	}
 }

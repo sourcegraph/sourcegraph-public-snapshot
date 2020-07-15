@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -141,8 +142,8 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 	}
 }
 
-// authenticatedRemoteURL returns the GitLab projects's Git remote URL with the configured GitLab personal access
-// token inserted in the URL userinfo, for repositories needing authentication.
+// authenticatedRemoteURL returns the GitLab projects's Git remote URL with the
+// configured GitLab personal access token inserted in the URL userinfo.
 func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
@@ -299,4 +300,258 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil
+}
+
+// CreateChangeset creates a GitLab merge request. If it already exists,
+// *Changeset will be populated and the return value will be true.
+func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	project := c.Repo.Metadata.(*gitlab.Project)
+	exists := false
+	source := git.AbbreviateRef(c.HeadRef)
+	target := git.AbbreviateRef(c.BaseRef)
+
+	mr, err := s.client.CreateMergeRequest(ctx, project, gitlab.CreateMergeRequestOpts{
+		SourceBranch: source,
+		TargetBranch: target,
+		Title:        c.Title,
+		Description:  c.Body,
+	})
+	if err != nil {
+		if err == gitlab.ErrMergeRequestAlreadyExists {
+			exists = true
+
+			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, project, source, target)
+			if err != nil {
+				return exists, errors.Wrap(err, "retrieving an extant merge request")
+			}
+		} else {
+			return exists, errors.Wrap(err, "creating the merge request")
+		}
+	}
+
+	if err := c.SetMetadata(mr); err != nil {
+		return exists, errors.Wrap(err, "setting changeset metadata")
+	}
+	return exists, nil
+}
+
+// CloseChangeset closes the merge request on GitLab, leaving it unlocked.
+func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// Title and TargetBranch are required, even though we're not actually
+	// changing them.
+	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+		Title:        mr.Title,
+		TargetBranch: mr.TargetBranch,
+		StateEvent:   gitlab.UpdateMergeRequestStateEventClose,
+	})
+	if err != nil {
+		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	if err := c.SetMetadata(updated); err != nil {
+		return errors.Wrap(err, "setting changeset metadata")
+	}
+	return nil
+}
+
+// LoadChangesets loads the given merge requests from GitLab and updates them.
+// Note that this is an O(n) operation due to limitations in the GitLab REST
+// API.
+func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	// When we require GitLab 12.0+, we should migrate to the GraphQL API, which
+	// will allow us to query multiple MRs at once.
+	for _, c := range cs {
+		old := c.Changeset.Metadata.(*gitlab.MergeRequest)
+		project := c.Repo.Metadata.(*gitlab.Project)
+
+		iid, err := strconv.ParseInt(c.ExternalID, 10, 64)
+		if err != nil {
+			return errors.Wrapf(err, "parsing changeset external ID %s", c.ExternalID)
+		}
+
+		mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
+		if err != nil {
+			return errors.Wrapf(err, "retrieving merge request %d", iid)
+		}
+
+		// As above, these additional API calls can go away once we can use
+		// GraphQL.
+		if err := s.decorateMergeRequestData(ctx, project, mr, old); err != nil {
+			return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
+		}
+
+		if err := c.SetMetadata(mr); err != nil {
+			return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
+		}
+	}
+
+	return nil
+}
+
+func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) error {
+	notes, err := s.getMergeRequestNotes(ctx, project, mr, old)
+	if err != nil {
+		return errors.Wrap(err, "retrieving notes")
+	}
+
+	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr, old)
+	if err != nil {
+		return errors.Wrap(err, "retrieving pipelines")
+	}
+
+	mr.Notes = notes
+	mr.Pipelines = pipelines
+	return nil
+}
+
+type idSet map[gitlab.ID]struct{}
+
+func (s idSet) add(id gitlab.ID) { s[id] = struct{}{} }
+
+func (s idSet) has(id gitlab.ID) bool {
+	_, ok := s[id]
+	return ok
+}
+
+// getMergeRequestNotes retrieves the notes attached to a merge request in
+// descending time order. The old merge request is used to prevent retrieving
+// notes that have already been seen.
+func (s *GitLabSource) getMergeRequestNotes(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Note, error) {
+	// Firstly, we'll set up a set containing the old note IDs so that we know
+	// where we can stop iterating: on a MR with lots of notes, this will mean
+	// we shouldn't need to load all pages on every sync.
+	extant := make(idSet)
+	for _, note := range old.Notes {
+		extant.add(note.ID)
+	}
+
+	// Secondly, we'll get the forward iterator that gives us a note page at a
+	// time.
+	it := s.client.GetMergeRequestNotes(ctx, project, mr.IID)
+
+	// Now we can iterate over the pages of notes and fill in the slice to be
+	// returned.
+	notes, err := readNotesUntilSeen(it, extant)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading note pages")
+	}
+
+	// Finally, we should append the old notes to the new notes. Doing so after
+	// handling the new notes means that all the notes should be in descending
+	// order without needing to explicitly sort.
+	notes = append(notes, old.Notes...)
+
+	return notes, nil
+}
+
+func readNotesUntilSeen(it func() ([]*gitlab.Note, error), extant idSet) ([]*gitlab.Note, error) {
+	var notes []*gitlab.Note
+
+	for {
+		page, err := it()
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving note page")
+		}
+		if len(page) == 0 {
+			// The terminal condition for the iterator is returning an empty
+			// slice with no error, so we can stop iterating here.
+			return notes, nil
+		}
+
+		for _, note := range page {
+			// We're only interested in system notes for campaigns, since they
+			// include the review state changes we need; let's not even bother
+			// storing the non-system ones.
+			if note.System {
+				if extant.has(note.ID) {
+					// We've seen this note before, which means that nothing
+					// after this point should be new.
+					return notes, nil
+				}
+				notes = append(notes, note)
+			}
+		}
+	}
+}
+
+// getMergeRequestPipelines retrieves the pipelines attached to a merge request
+// in descending time order. The old merge request is used to prevent
+// retrieving pipelines that have already been seen.
+func (s *GitLabSource) getMergeRequestPipelines(ctx context.Context, project *gitlab.Project, mr, old *gitlab.MergeRequest) ([]*gitlab.Pipeline, error) {
+	// Firstly, we'll set up a set containing the old pipeline IDs so that we
+	// know where we can stop iterating: on a MR with lots of pipelines, this
+	// will mean we shouldn't need to load all pages on every sync.
+	extant := make(idSet)
+	for _, pipeline := range old.Pipelines {
+		extant.add(pipeline.ID)
+	}
+
+	// Secondly, we'll get the forward iterator that gives us a pipeline page at
+	// a time.
+	it := s.client.GetMergeRequestPipelines(ctx, project, mr.IID)
+
+	// Now we can iterate over the pages of pipelines and fill in the slice to
+	// be returned.
+	pipelines, err := readPipelinesUntilSeen(it, extant)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading pipeline pages")
+	}
+
+	// Finally, we should append the old pipelines to the new pipelines. Doing
+	// so after handling the new pipelines means that all the pipelines should
+	// be in descending order without needing to explicitly sort.
+	pipelines = append(pipelines, old.Pipelines...)
+
+	return pipelines, nil
+}
+
+func readPipelinesUntilSeen(it func() ([]*gitlab.Pipeline, error), extant idSet) ([]*gitlab.Pipeline, error) {
+	var pipelines []*gitlab.Pipeline
+
+	for {
+		page, err := it()
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving pipeline page")
+		}
+		if len(page) == 0 {
+			// The terminal condition for the iterator is returning an empty
+			// slice with no error, so we can stop iterating here.
+			return pipelines, nil
+		}
+
+		for _, pipeline := range page {
+			if extant.has(pipeline.ID) {
+				// We've seen this pipeline before, which means that nothing
+				// after this point should be new.
+				return pipelines, nil
+			}
+			pipelines = append(pipelines, pipeline)
+		}
+	}
+}
+
+// UpdateChangeset updates the merge request on GitLab to reflect the local
+// state of the Changeset.
+func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+		Title:        c.Title,
+		Description:  c.Body,
+		TargetBranch: git.AbbreviateRef(c.BaseRef),
+	})
+	if err != nil {
+		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	c.Changeset.Metadata = updated
+	return nil
 }
