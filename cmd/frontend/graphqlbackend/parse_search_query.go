@@ -84,7 +84,7 @@ func (*schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 	default:
 		searchType = query.SearchTypeLiteral
 	}
-	q, err := query.ProcessAndOr(args.Query, searchType)
+	q, err := query.ProcessAndOr(args.Query, searchType, false)
 	if err != nil {
 		return nil, err
 	}

@@ -842,7 +842,7 @@ func ParseAndOr(in string) ([]Node, error) {
 }
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
+func ProcessAndOr(in string, searchType SearchType, globbing bool) (QueryInfo, error) {
 	var query []Node
 	var err error
 
