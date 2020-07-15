@@ -60,7 +60,7 @@ func (s *PermsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 
 func loadUserPermissionsQuery(p *authz.UserPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPermissionsQuery
+-- source: enterprise/internal/db/perms_store.go:loadUserPermissionsQuery
 SELECT user_id, object_ids, updated_at, synced_at
 FROM user_permissions
 WHERE user_id = %s
@@ -98,7 +98,7 @@ func (s *PermsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 
 func loadRepoPermissionsQuery(p *authz.RepoPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPermissionsQuery
+-- source: enterprise/internal/db/perms_store.go:loadRepoPermissionsQuery
 SELECT repo_id, user_ids, updated_at, synced_at
 FROM repo_permissions
 WHERE repo_id = %s
@@ -232,7 +232,7 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 // column to the value of p.SyncedAt field.
 func upsertUserPermissionsQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPermissionsQuery
+-- source: enterprise/internal/db/perms_store.go:upsertUserPermissionsQuery
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids, updated_at, synced_at)
 VALUES
@@ -395,7 +395,7 @@ func loadUserPermissionsBatchQuery(
 	lock string,
 ) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPermissionsBatchQuery
+-- source: enterprise/internal/db/perms_store.go:loadUserPermissionsBatchQuery
 SELECT user_id, object_ids
 FROM user_permissions
 WHERE user_id IN (%s)
@@ -417,7 +417,7 @@ AND object_type = %s
 
 func upsertUserPermissionsBatchQuery(ps ...*authz.UserPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPermissionsBatchQuery
+-- source: enterprise/internal/db/perms_store.go:upsertUserPermissionsBatchQuery
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids, updated_at)
 VALUES
@@ -461,7 +461,7 @@ DO UPDATE SET
 // "synced_at" column to the value of p.SyncedAt field.
 func upsertRepoPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:upsertRepoPermissionsQuery
+-- source: enterprise/internal/db/perms_store.go:upsertRepoPermissionsQuery
 INSERT INTO repo_permissions
   (repo_id, permission, user_ids, updated_at, synced_at)
 VALUES
@@ -517,7 +517,7 @@ func (s *PermsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 
 func loadUserPendingPermissionsQuery(p *authz.UserPendingPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPendingPermissionsQuery
+-- source: enterprise/internal/db/perms_store.go:loadUserPendingPermissionsQuery
 SELECT id, object_ids, updated_at, NULL
 FROM user_pending_permissions
 WHERE service_type = %s
@@ -762,7 +762,7 @@ func insertUserPendingPermissionsBatchQuery(
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:insertUserPendingPermissionsBatchQuery
+-- source: enterprise/internal/db/perms_store.go:insertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
   (service_type, service_id, bind_id, permission, object_type, object_ids, updated_at)
 VALUES
@@ -799,7 +799,7 @@ RETURNING id
 
 func loadRepoPendingPermissionsQuery(p *authz.RepoPermissions, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPendingPermissionsQuery
+-- source: enterprise/internal/db/perms_store.go:loadRepoPendingPermissionsQuery
 SELECT repo_id, user_ids, updated_at, NULL
 FROM repo_pending_permissions
 WHERE repo_id = %s
@@ -814,7 +814,7 @@ AND permission = %s
 
 func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ authz.PermType, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPendingPermissionsByIDBatchQuery
+-- source: enterprise/internal/db/perms_store.go:loadUserPendingPermissionsByIDBatchQuery
 SELECT id, service_type, service_id, bind_id, object_ids
 FROM user_pending_permissions
 WHERE id IN (%s)
@@ -836,7 +836,7 @@ AND object_type = %s
 
 func upsertUserPendingPermissionsBatchQuery(ps ...*authz.UserPendingPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPendingPermissionsBatchQuery
+-- source: enterprise/internal/db/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
   (service_type, service_id, bind_id, permission, object_type, object_ids, updated_at)
 VALUES
@@ -879,7 +879,7 @@ DO UPDATE SET
 
 func upsertRepoPendingPermissionsBatchQuery(ps ...*authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:upsertRepoPendingPermissionsBatchQuery
+-- source: enterprise/internal/db/perms_store.go:upsertRepoPendingPermissionsBatchQuery
 INSERT INTO repo_pending_permissions
   (repo_id, permission, user_ids, updated_at)
 VALUES
@@ -1038,7 +1038,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 
 func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, lock string) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPermissionsBatchQuery
+-- source: enterprise/internal/db/perms_store.go:loadRepoPermissionsBatchQuery
 SELECT repo_id, user_ids
 FROM repo_permissions
 WHERE repo_id IN (%s)
@@ -1058,7 +1058,7 @@ AND permission = %s
 
 func upsertRepoPermissionsBatchQuery(ps ...*authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:upsertRepoPermissionsBatchQuery
+-- source: enterprise/internal/db/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
   (repo_id, permission, user_ids, updated_at)
 VALUES
@@ -1098,7 +1098,7 @@ DO UPDATE SET
 
 func deleteUserPendingPermissionsQuery(p *authz.UserPendingPermissions) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/db/perms_store.go:deleteUserPendingPermissionsQuery
+-- source: enterprise/internal/db/perms_store.go:deleteUserPendingPermissionsQuery
 DELETE FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
@@ -1196,7 +1196,7 @@ func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accoun
 		items[i] = sqlf.Sprintf("%s", accounts.AccountIDs[i])
 	}
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.DeleteAllUserPendingPermissions
+-- source: enterprise/internal/db/perms_store.go:PermsStore.DeleteAllUserPendingPermissions
 DELETE FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
@@ -1353,7 +1353,7 @@ func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (ac
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ListExternalAccounts
+-- source: enterprise/internal/db/perms_store.go:PermsStore.ListExternalAccounts
 SELECT id, user_id,
        service_type, service_id, client_id, account_id,
        auth_data, account_data,
@@ -1405,7 +1405,7 @@ func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts 
 	}
 
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.GetUserIDsByExternalAccounts
+-- source: enterprise/internal/db/perms_store.go:PermsStore.GetUserIDsByExternalAccounts
 SELECT user_id, account_id
 FROM user_external_accounts
 WHERE service_type = %s
@@ -1438,7 +1438,7 @@ AND account_id IN (%s)
 // the database.
 func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithNoPerms
+-- source: enterprise/internal/db/perms_store.go:PermsStore.UserIDsWithNoPerms
 SELECT users.id, NULL FROM users
 WHERE users.site_admin = FALSE
 AND users.deleted_at IS NULL
@@ -1461,7 +1461,7 @@ AND users.id NOT IN
 // found in the database.
 func (s *PermsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.RepoIDsWithNoPerms
+-- source: enterprise/internal/db/perms_store.go:PermsStore.RepoIDsWithNoPerms
 SELECT repo.id, NULL FROM repo
 WHERE repo.deleted_at IS NULL
 AND repo.private = TRUE
@@ -1487,7 +1487,7 @@ AND repo.id NOT IN
 // have the least recent synced permissions in the database and capped results by the limit.
 func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
+-- source: enterprise/internal/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
 SELECT perms.user_id, perms.synced_at FROM user_permissions AS perms
 WHERE perms.user_id IN
 	(SELECT users.id FROM users
@@ -1503,7 +1503,7 @@ LIMIT %s
 // results by the limit.
 func (s *PermsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ReposIDsWithOldestPerms
+-- source: enterprise/internal/db/perms_store.go:PermsStore.ReposIDsWithOldestPerms
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
 WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo

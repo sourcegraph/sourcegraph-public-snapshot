@@ -436,7 +436,7 @@ func (l *eventLogs) UsersUsageCounts(ctx context.Context) (counts []types.UserUs
 }
 
 const usersUsageCountsQuery = `
--- source: cmd/frontend/db/event_logs.go:UsersUsageCounts
+-- source: internal/db/event_logs.go:UsersUsageCounts
 SELECT
   DATE(timestamp),
   user_id,
