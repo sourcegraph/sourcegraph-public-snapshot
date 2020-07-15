@@ -430,13 +430,13 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-/*
-This query generates a diff by selecting only
-the repos that need to be updated.
-Selected repos will have their cloned column reversed if
-their cloned column is true but they are not in cloned_repos
-or they are in cloned_repos but their cloned column is false
-*/
+--
+-- This query generates a diff by selecting only
+-- the repos that need to be updated.
+-- Selected repos will have their cloned column reversed if
+-- their cloned column is true but they are not in cloned_repos
+-- or they are in cloned_repos but their cloned column is false.
+--
 WITH cloned_repos AS (
   SELECT jsonb_array_elements_text(%s) AS name
 ),
