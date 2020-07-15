@@ -183,26 +183,44 @@ func globToRegex(value string) (string, error) {
 	return sb.String(), nil
 }
 
+type globError struct {
+	field string
+	err error
 }
 
-// mapGlobToRegex translates glob with regexp for fields supporting regexp
+func (g globError) Error() string {
+	return g.err.Error()
+}
+
+// mapGlobToRegex translates glob to regexp for fields repo, file, repohasfile
 func mapGlobToRegex(nodes []Node) ([]Node, error) {
-	errs := []error{}
+	errs := []globError{}
 	var err error
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
 			value, err = globToRegex(value)
 			if err != nil {
-				errs = append(errs, err)
+				errs = append(errs, globError{field:field, err: err})
 			}
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
 
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("invalid glob syntax")
+	// error formatting
+	if len(errs) == 1 {
+		return nil, fmt.Errorf("invalid glob syntax in field %s:", errs[0].field)
 	}
+
+	if len(errs) > 1 {
+		fields :=  errs[0].field + ":"
+
+		for _, e := range errs[1:] {
+			fields += fmt.Sprintf(", %s:", e.field)
+		}
+		return nil, fmt.Errorf("invalid glob syntax in fields %s", fields)
+	}
+
 	return nodes, nil
 }
 
