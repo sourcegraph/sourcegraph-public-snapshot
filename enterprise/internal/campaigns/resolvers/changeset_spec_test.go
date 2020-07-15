@@ -53,17 +53,21 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename: "ChangesetSpec",
+					Typename: "VisibleChangesetSpec",
 					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
-						Typename:       "GitBranchChangesetDescription",
-						BaseRepository: string(spec.Spec.BaseRepository),
-						ExternalID:     "",
-						BaseRef:        spec.Spec.BaseRef,
-						HeadRepository: string(spec.Spec.HeadRepository),
-						HeadRef:        spec.Spec.HeadRef,
-						Title:          spec.Spec.Title,
-						Body:           spec.Spec.Body,
+						Typename: "GitBranchChangesetDescription",
+						BaseRepository: apitest.Repository{
+							ID: string(spec.Spec.BaseRepository),
+						},
+						ExternalID: "",
+						BaseRef:    spec.Spec.BaseRef,
+						HeadRepository: apitest.Repository{
+							ID: string(spec.Spec.HeadRepository),
+						},
+						HeadRef: spec.Spec.HeadRef,
+						Title:   spec.Spec.Title,
+						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
 							{Diff: spec.Spec.Commits[0].Diff, Message: spec.Spec.Commits[0].Message},
 						},
@@ -80,13 +84,15 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecExisting(repoID, "9999"),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename: "ChangesetSpec",
+					Typename: "VisibleChangesetSpec",
 					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
-						Typename:       "ExistingChangesetReference",
-						BaseRepository: string(spec.Spec.BaseRepository),
-						ExternalID:     spec.Spec.ExternalID,
-						Published:      false,
+						Typename: "ExistingChangesetReference",
+						BaseRepository: apitest.Repository{
+							ID: string(spec.Spec.BaseRepository),
+						},
+						ExternalID: spec.Spec.ExternalID,
+						Published:  false,
 					},
 					ExpiresAt: &graphqlbackend.DateTime{
 						Time: spec.CreatedAt.Truncate(time.Second).Add(2 * time.Hour),
@@ -126,23 +132,29 @@ query($id: ID!) {
   node(id: $id) {
     __typename
 
-    ... on ChangesetSpec {
+    ... on VisibleChangesetSpec {
       id
 
       description {
         __typename
 
         ... on ExistingChangesetReference {
-          baseRepository
+          baseRepository {
+			  id
+		  }
           externalID
         }
 
         ... on GitBranchChangesetDescription {
-          baseRepository
+          baseRepository {
+			  id
+		  }
           baseRef
           baseRev
 
-          headRepository
+          headRepository {
+			  id
+		  }
           headRef
 
           title

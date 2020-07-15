@@ -423,8 +423,7 @@ type Mutation {
     ): ChangesetSpec!
 
     # Create a campaign spec that will be used to create a campaign (with the createCampaign
-    # mutation), to update to a campaign (with the applyCampaign mutation), or to preview either
-    # operation (with the campaignDelta query).
+    # mutation), or to update a campaign (with the applyCampaign mutation).
     #
     # The returned CampaignSpec is immutable and expires after a certain period of time (if not used
     # in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
@@ -444,9 +443,28 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 }
 
+# The type of the changeset spec.
+enum ChangesetSpecType {
+    # References an existing changeset on a code host to be imported.
+    EXISTING
+    # References a branch and a patch to be applied to create the changeset from.
+    BRANCH
+}
+
 # A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
 # create a changeset spec, use the createChangesetSpec mutation.
-type ChangesetSpec implements Node {
+interface ChangesetSpec {
+    # The type of changeset spec.
+    type: ChangesetSpecType!
+
+    # The date, if any, when this changeset spec expires and is automatically purged. A changeset
+    # spec never expires (and this field is null) if its campaign spec has been applied.
+    expiresAt: DateTime
+}
+
+# A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+# create a changeset spec, use the createChangesetSpec mutation.
+type HiddenChangesetSpec implements ChangesetSpec & Node {
     # The unique ID for a changeset spec.
     #
     # The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
@@ -456,6 +474,30 @@ type ChangesetSpec implements Node {
     # campaign author may prefer to prepare all of the changesets in private so that the window
     # between revealing the problem and merging the fixes is as short as possible.
     id: ID!
+
+    # The type of changeset spec.
+    type: ChangesetSpecType!
+
+    # The date, if any, when this changeset spec expires and is automatically purged. A changeset
+    # spec never expires (and this field is null) if its campaign spec has been applied.
+    expiresAt: DateTime
+}
+
+# A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+# create a changeset spec, use the createChangesetSpec mutation.
+type VisibleChangesetSpec implements ChangesetSpec & Node {
+    # The unique ID for a changeset spec.
+    #
+    # The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
+    # even though repository permissions also apply to viewers of changeset specs, because being
+    # allowed to view a repository should not entitle a person to view all not-yet-published
+    # changesets for that repository. Consider a campaign to fix a security vulnerability: the
+    # campaign author may prefer to prepare all of the changesets in private so that the window
+    # between revealing the problem and merging the fixes is as short as possible.
+    id: ID!
+
+    # The type of changeset spec.
+    type: ChangesetSpecType!
 
     # The description of the changeset.
     description: ChangesetDescription!
@@ -472,7 +514,7 @@ union ChangesetDescription = ExistingChangesetReference | GitBranchChangesetDesc
 # campaign).
 type ExistingChangesetReference {
     # The repository that contains the existing changeset on the code host.
-    baseRepository: ID!
+    baseRepository: Repository!
 
     # The ID that uniquely identifies the existing changeset on the code host.
     #
@@ -486,7 +528,7 @@ type ExistingChangesetReference {
 # This is used to describe a pull request (on GitHub and Bitbucket Server).
 type GitBranchChangesetDescription {
     # The repository that this changeset spec is proposing to change.
-    baseRepository: ID!
+    baseRepository: Repository!
 
     # The full name of the Git ref in the base repository that this changeset is based on (and is
     # proposing to be merged into). This ref must exist on the base repository. For example,
@@ -502,7 +544,7 @@ type GitBranchChangesetDescription {
     #
     # Fork repositories and cross-repository changesets are not yet supported. Therefore,
     # headRepository must be equal to baseRepository.
-    headRepository: ID!
+    headRepository: Repository!
 
     # The full name of the Git ref that holds the changes proposed by this changeset. This ref will
     # be created or updated with the commits. For example, "refs/heads/fix-foo" (for
@@ -523,6 +565,9 @@ type GitBranchChangesetDescription {
     #
     # Only 1 commit is supported.
     commits: [GitCommitDescription!]!
+
+    # The total diff of the changeset diff.
+    diff: PreviewRepositoryComparison!
 
     # Whether or not the changeset described here should be created right after
     # applying the ChangesetSpec this description belongs to.
@@ -549,6 +594,25 @@ type GitCommitDescription {
     diff: String!
 }
 
+# A list of changeset specs.
+type ChangesetSpecConnection {
+    # The total number of changeset specs in the connection.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+    # A list of changeset specs.
+    nodes: [ChangesetSpec!]!
+}
+
+# A CampaignDescription describes a campaign.
+type CampaignDescription {
+    # The name as parsed from the input.
+    name: String!
+
+    # The description as parsed from the input.
+    description: String!
+}
+
 # A campaign spec is an immutable description of the desired state of a campaign. To create a
 # campaign spec, use the createCampaignSpec mutation.
 type CampaignSpec implements Node {
@@ -564,14 +628,17 @@ type CampaignSpec implements Node {
     # converted to the equivalent JSON.
     parsedInput: JSONValue!
 
+    # The CampaignDescription that describes this campaign.
+    description: CampaignDescription!
+
     # The specs for changesets associated with this campaign.
-    changesetSpecs: [ChangesetSpec!]!
+    changesetSpecs(first: Int, after: String): ChangesetSpecConnection!
 
     # The user who created this campaign spec (or null if the user no longer exists).
     creator: User
 
     # The date when this campaign spec was created.
-    createdAt: DateTime
+    createdAt: DateTime!
 
     # The namespace (either a user or organization) of the campaign spec.
     namespace: Namespace
@@ -580,27 +647,11 @@ type CampaignSpec implements Node {
     # never expires if it has been applied.
     expiresAt: DateTime
 
-    # The URL of a web page that displays a preview of applying this campaign spec. If the campaign
-    # spec's name refers to an existing campaign in the namespace, the preview shows what will be
-    # updated. Otherwise it shows what will be created.
+    # The URL of a web page that displays a preview of creating a campaign from this spec.
     previewURL: String!
-}
 
-# The delta (difference) between a campaign's desired state (spec) and its actual state (status) at
-# a given point in time. Because the campaign delta is computed based on external state, it may
-# become out-of-date immediately after creation (e.g., if the external state changes), so it must be
-# treated as a snapshot only and not as a definitive plan.
-type CampaignDelta {
-    # TODO(sqs): add more fields here to describe the delta
-
-    # The point in time when the delta was created and the actual state was captured. Since this
-    # time, the actual state may have changed; those changes are not captured in this delta.
-    createdAt: DateTime!
-
-    # The date when this campaign delta expires and is automatically purged. Campaign deltas are
-    # temporary to avoid consuming resources when they are no longer relevant. Purging a campaign
-    # delta does not modify the campaign or any changesets.
-    expiresAt: DateTime!
+    # When true, the viewing user can apply this spec.
+    viewerCanAdminister: Boolean!
 }
 
 # A user (identified either by username or email address) with its repository permission.

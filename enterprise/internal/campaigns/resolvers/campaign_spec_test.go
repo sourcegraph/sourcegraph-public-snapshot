@@ -69,7 +69,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		PreviewURL: "/campaigns/new?spec=" + apiID,
 		Namespace:  apitest.UserOrg{ID: userApiID, DatabaseID: userID},
 		Creator:    apitest.User{ID: userApiID, DatabaseID: userID},
-		CreatedAt:  &graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		CreatedAt:  graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
 		ExpiresAt:  &graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second).Add(2 * time.Hour)},
 	}
 
