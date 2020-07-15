@@ -105,7 +105,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     interactiveModeHomepageMode={true}
                 />
             </div>
-            <div className="repogroup-page__content row">
+            <div className="row">
                 <div className="repogroup-page__column col-xs-12 col-lg-7">
                     <p className="repogroup-page__content-description h5 font-weight-normal mb-4">
                         {props.repogroupMetadata.description}
