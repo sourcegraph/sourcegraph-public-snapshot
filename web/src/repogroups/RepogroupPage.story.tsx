@@ -18,9 +18,7 @@ import webStyles from '../SourcegraphWebApp.scss'
 const { add } = storiesOf('web/RepogroupPage', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light" style={{ caretColor: 'transparent' }}>
-            {story()}
-        </div>
+        <div className="theme-light">{story()}</div>
     </>
 ))
 
@@ -141,7 +139,7 @@ const commonProps: RepogroupPageProps = {
     keyboardShortcuts: [],
     onFiltersInQueryChange: sinon.spy(() => {}),
     setCaseSensitivity: sinon.spy(() => {}),
-    smartSearchField: false,
+    smartSearchField: true,
     splitSearchModes: true,
     telemetryService: ({
         ...NOOP_TELEMETRY_SERVICE,
@@ -161,10 +159,17 @@ const commonProps: RepogroupPageProps = {
     showCampaigns: false,
     authenticatedUser: authUser,
     repogroupMetadata: python2To3Metadata,
+    noAutoFocus: true,
 }
 
-add('Site admin', () => (
+add('Repogroup page with smart search field', () => (
     <MemoryRouter>
         <RepogroupPage {...commonProps} />
+    </MemoryRouter>
+))
+
+add('Repogroup page without smart search field', () => (
+    <MemoryRouter>
+        <RepogroupPage {...commonProps} smartSearchField={false} />
     </MemoryRouter>
 ))
