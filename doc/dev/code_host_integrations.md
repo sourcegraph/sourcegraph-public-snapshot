@@ -1,0 +1,42 @@
+# Developing code host integrations
+
+This documentation is intended for developers who are developing Sourcegraph integrations.
+
+For installation and usage instructions, see the [Integrations section](../integration/index.md).
+
+## What are code host integrations?
+
+**Code host integrations** are how Sourcegraph delivers features directly into the interface of code hosts. These integrations allow users to benefit from Sourcegraph without leaving their code host as they navigate repositories, source code files, commits, and diffs.
+
+## How code host integrations are delivered
+
+Code host integrations are implemented as a JavaScript bundle that is injected directly into the code host's web interface.
+
+Sourcegraph has two channels available to deliver this JavaScript bundle:
+
+- **Native integrations** which configure the code host to natively load the JavaScript as an additional resource on every page. These integrations can be configured once by an administrator (typically on a self-hosted code host instance) and are then automatically available to all users.
+- [**Browser extensions**](../integration/browser_extension.md) for Chrome and Firefox, which inject the JavaScript bundle on all code host pages. These integrations don't require any central configuration of the code host, but they require each user to individually install the browser extension in order to benefit from it.
+
+## Code views
+
+Code host integrations mainly operate on code views.
+
+A code view is any instance of source code being displayed on any code host page. It can be an entire source file, a snippet of a file, or a diff view. There may be many code views on a single page, for example on a pull request page.
+
+Code host integrations work by first identifying all code views on a given page, and then by adding interface elements (such as action buttons), and listening for hover events over specific code tokens in order to show hover pop-ups.
+
+
+## Relationship to the web interface
+
+Sourcegraph code host integrations share some functionality and source code with the Sourcegraph web interface.
+
+Namely, they both support [Sourcegraph extensions](../extensions/index.md), which is how Sourcegraph provides code intelligence hovers, code decorations, action buttons, and other features. 
+
+
+The browser extensions, native integrations, and the web interface are collectively labeled as the [web clients](./web/index.md).
+
+## Contributing to code host integrations
+
+The source code for code host integrations is located in the [`browser`](https://github.com/sourcegraph/sourcegraph/tree/master/browser) directory of the Sourcegraph repository.
+
+For build steps and details of the directory layout, see [`browser/README.md`](https://github.com/sourcegraph/sourcegraph/tree/master/browser/README.md)
