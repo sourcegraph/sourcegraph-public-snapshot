@@ -689,7 +689,7 @@ func (*users) ListDates(ctx context.Context) (dates []types.UserDates, _ error) 
 }
 
 const listDatesQuery = `
--- source: cmd/frontend/db/users.go:ListDates
+-- source: internal/db/users.go:ListDates
 SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
