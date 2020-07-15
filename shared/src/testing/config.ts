@@ -170,8 +170,8 @@ const configFields: ConfigFields = {
     logBrowserConsole: {
         envVar: 'LOG_BROWSER_CONSOLE',
         parser: parseBool,
-        description: 'If true, log browser console to stdout.',
-        defaultValue: false,
+        description: "If false, don't log browser console to stdout.",
+        defaultValue: true,
     },
     logStatusMessages: {
         envVar: 'LOG_STATUS_MESSAGES',
