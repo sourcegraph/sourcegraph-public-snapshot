@@ -145,19 +145,6 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
-func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	state := campaigns.ChangesetStateOpen
-	return &changesetsConnectionResolver{
-		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			CampaignID:    r.Campaign.ID,
-			ExternalState: &state,
-			Limit:         -1,
-		},
-		optsSafe: true,
-	}, nil
-}
-
 func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
