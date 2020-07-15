@@ -798,6 +798,22 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 			})
 		}
 
+		check := func(t testing.TB, ctx context.Context, tx repos.Store, wantNames []string) {
+			t.Helper()
+
+			res, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
+			if err != nil {
+				t.Fatalf("ListRepos error: %s", err)
+			}
+
+			cloned := repos.Repos(res).Filter(isCloned).Names()
+			sort.Strings(cloned)
+
+			if got, want := cloned, wantNames; !cmp.Equal(got, want) {
+				t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
+			}
+		}
+
 		ctx := context.Background()
 
 		t.Run("no repo name", func(t *testing.T) {
@@ -818,33 +834,17 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 			names := stored[:3].Names()
 			sort.Strings(names)
 
-			check := func() {
-				t.Helper()
-
-				res, err := tx.ListRepos(ctx, repos.StoreListReposArgs{})
-				if err != nil {
-					t.Fatalf("ListRepos error: %s", err)
-				}
-
-				cloned := repos.Repos(res).Filter(isCloned).Names()
-				sort.Strings(cloned)
-
-				if got, want := cloned, names; !cmp.Equal(got, want) {
-					t.Fatalf("got=%v, want=%v: %s", got, want, cmp.Diff(got, want))
-				}
-			}
-
 			if err := tx.SetClonedRepos(ctx, names...); err != nil {
 				t.Fatalf("SetClonedRepos error: %s", err)
 			}
-			check()
+			check(t, ctx, tx, names)
 
 			// setClonedRepositories should be idempotent and have the same behavior
 			// when called with the same repos
 			if err := tx.SetClonedRepos(ctx, names...); err != nil {
 				t.Fatalf("SetClonedRepos error: %s", err)
 			}
-			check()
+			check(t, ctx, tx, names)
 
 			// when adding another repo to the list, the other repos must be set as well
 			names = stored[:4].Names()
@@ -853,7 +853,36 @@ func testStoreSetClonedRepos(store repos.Store) func(*testing.T) {
 				t.Fatalf("SetClonedRepos error: %s", err)
 			}
 
-			check()
+			check(t, ctx, tx, names)
+		}))
+
+		t.Run("repo names in mixed case", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			stored := mkRepos(9, repositories...)
+			for i := range stored {
+				if i%2 == 0 {
+					stored[i].Name = strings.ToUpper(stored[i].Name)
+				}
+			}
+
+			if err := tx.UpsertRepos(ctx, stored...); err != nil {
+				t.Fatalf("UpsertRepos error: %s", err)
+			}
+
+			sort.Sort(stored)
+
+			originalNames := stored.Names()
+			sort.Strings(originalNames)
+
+			lowerCaseNames := make([]string, 0, len(originalNames))
+			for _, n := range originalNames {
+				lowerCaseNames = append(lowerCaseNames, strings.ToLower(n))
+			}
+
+			if err := tx.SetClonedRepos(ctx, lowerCaseNames...); err != nil {
+				t.Fatalf("SetClonedRepos error: %s", err)
+			}
+
+			check(t, ctx, tx, originalNames)
 		}))
 	}
 }

@@ -370,7 +370,7 @@ func (s *FakeStore) SetClonedRepos(ctx context.Context, repoNames ...string) err
 
 		var found bool
 		for _, repoName := range repoNames {
-			if repoName == r.Name {
+			if strings.ToLower(repoName) == strings.ToLower(r.Name) {
 				found = true
 				break
 			}
