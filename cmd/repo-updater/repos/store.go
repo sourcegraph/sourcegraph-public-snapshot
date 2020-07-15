@@ -446,9 +446,9 @@ diff AS (
   FROM repo
   WHERE
     NOT cloned
-      AND lower(name) IN (SELECT lower(name) FROM cloned_repos)
+      AND name IN (SELECT name::citext FROM cloned_repos)
     OR cloned
-      AND lower(name) NOT IN (SELECT lower(name) FROM cloned_repos)
+      AND name NOT IN (SELECT name::citext FROM cloned_repos)
 )
 UPDATE repo
 SET cloned = NOT diff.cloned
