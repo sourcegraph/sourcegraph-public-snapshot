@@ -119,7 +119,6 @@ type Campaign struct {
 	Patches                 PatchConnection
 	HasUnpublishedPatches   bool
 	Changesets              ChangesetConnection
-	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
 	PatchSet                PatchSet
