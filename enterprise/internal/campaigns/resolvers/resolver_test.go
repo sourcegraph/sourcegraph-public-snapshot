@@ -925,8 +925,10 @@ func TestCreateCampaignSpec(t *testing.T) {
 		PreviewURL:    "/campaigns/new?spec=",
 		Namespace:     apitest.UserOrg{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
-		ChangesetSpecs: []apitest.ChangesetSpec{
-			{ID: string(changesetSpecID)},
+		ChangesetSpecs: apitest.ChangesetSpecConnection{
+			Nodes: []apitest.ChangesetSpec{
+				{ID: string(changesetSpecID)},
+			},
 		},
 	}
 	have := response.CreateCampaignSpec
@@ -960,7 +962,11 @@ mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
     previewURL
 
 	changesetSpecs {
-	  id
+	  nodes {
+		  ... on VisibleChangesetSpec {
+			  id
+		  }
+	  }
 	}
 
     createdAt
@@ -1006,7 +1012,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	have := response.CreateChangesetSpec
 
 	want := apitest.ChangesetSpec{
-		Typename:  "ChangesetSpec",
+		Typename:  "VisibleChangesetSpec",
 		ID:        have.ID,
 		ExpiresAt: have.ExpiresAt,
 	}
@@ -1033,9 +1039,11 @@ func TestCreateChangesetSpec(t *testing.T) {
 const mutationCreateChangesetSpec = `
 mutation($changesetSpec: String!){
   createChangesetSpec(changesetSpec: $changesetSpec) {
-    __typename
-    id
-    expiresAt
+	__typename
+	... on VisibleChangesetSpec {
+		id
+		expiresAt
+	}
   }
 }
 `
