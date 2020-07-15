@@ -9,17 +9,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
-// This object provides access to the encrypted secrets table
+// This object provides access to the secrets table
 type secrets struct{}
 
 // Returned when we can't retrieve the specific crypt object that we need
-type secretNotFoundError struct {
-	args []interface{}
+type SecretNotFoundError struct {
 }
 
 // We always try to find *one* object.
-func (err secretNotFoundError) Error() string {
-	return "Failed to find matching token."
+func (err *SecretNotFoundError) Error() string {
+	return "failed to find matching secret"
 }
 
 // Delete by object id
@@ -67,7 +66,7 @@ func (s *secrets) DeleteByKeyName(ctx context.Context, keyName string) error {
 }
 
 // Delete the object by sourceType (i.e a repo style object) and the source id.
-func (s *secrets) DeleteBySourceTypeAndId(ctx context.Context, sourceType string, sourceID int32) error {
+func (s *secrets) DeleteBySourceTypeAndID(ctx context.Context, sourceType string, sourceID int32) error {
 	if Mocks.Secrets.DeleteBySourceTypeAndID != nil {
 		return Mocks.Secrets.DeleteBySourceTypeAndID(ctx, sourceType, sourceID)
 	}
@@ -106,7 +105,7 @@ func (s *secrets) getBySQL(ctx context.Context, query *sqlf.Query) (*types.Secre
 	}
 
 	if len(results) != 1 {
-		return nil, secretNotFoundError{}
+		return nil, &SecretNotFoundError{}
 	}
 
 	return results[0], nil
@@ -131,9 +130,8 @@ func (s *secrets) Get(ctx context.Context, id int32) (*types.Secret, error) {
 	return s.getBySQL(ctx, sqlQ)
 }
 
-// Get the secret by the key name - for key/value pair secerts
+// Get the secret by the key name - for key/value pair secrets
 func (s *secrets) GetByKeyName(ctx context.Context, keyName string) (*types.Secret, error) {
-
 	if Mocks.Secrets.GetByKeyName != nil {
 		return Mocks.Secrets.GetByKeyName(ctx, keyName)
 	}
@@ -148,7 +146,6 @@ func (s *secrets) GetByKeyName(ctx context.Context, keyName string) (*types.Secr
 		`, keyName)
 
 	return s.getBySQL(ctx, sqlQ)
-
 }
 
 // Get the secret by the sourceType and source id (i.e the specific repo entity)
@@ -161,14 +158,11 @@ func (s *secrets) GetBySourceTypeAndID(ctx context.Context, sourceType string, s
 		`, sourceType, sourceID)
 
 	return s.getBySQL(ctx, sqlQ)
-
 }
 
 func (s *secrets) insert(ctx context.Context, query *sqlf.Query) error {
-
 	_, err := dbconn.Global.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return err
-
 }
 
 // Insert a new key-value secret
@@ -180,7 +174,6 @@ func (s *secrets) InsertKeyValue(ctx context.Context, keyName string, value stri
 		VALUES($1, $2)
 		`, keyName, value)
 	return s.insert(ctx, sqlQ)
-
 }
 
 // Insert a new secret referenced by another table type
@@ -191,7 +184,6 @@ func (s *secrets) InsertSourceTypeValue(ctx context.Context, sourceType string, 
 		VALUES($1, $2, $3)
 		`, sourceType, sourceID, value)
 	return s.insert(ctx, sqlQ)
-
 }
 
 // Update object id to value
@@ -246,10 +238,9 @@ func (s *secrets) UpdateByKeyName(ctx context.Context, keyName string, value str
 	}
 
 	return nil
-
 }
 
-func (s *secrets) UpdateBySourceTypeAndId(ctx context.Context, sourceType string, sourceID int32, value string) error {
+func (s *secrets) UpdateBySourceTypeAndID(ctx context.Context, sourceType string, sourceID int32, value string) error {
 	sqlQ := sqlf.Sprintf(
 		`UPDATE
 			secrets
@@ -273,5 +264,4 @@ func (s *secrets) UpdateBySourceTypeAndId(ctx context.Context, sourceType string
 	}
 
 	return nil
-
 }
