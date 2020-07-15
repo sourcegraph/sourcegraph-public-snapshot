@@ -38,22 +38,25 @@ export const createWebIntegrationTestContext = async ({
 
     // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
     let jsContext = createJsContext({ sourcegraphBaseUrl: sharedTestContext.driver.sourcegraphBaseUrl })
-    sharedTestContext.server.get(new URL('/*path', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
-        response.type('text/html').send(html`
-            <html>
-                <head>
-                    <title>Sourcegraph Test</title>
-                </head>
-                <body>
-                    <div id="root"></div>
-                    <script>
-                        window.context = ${JSON.stringify(jsContext)}
-                    </script>
-                    <script src="/.assets/scripts/app.bundle.js"></script>
-                </body>
-            </html>
-        `)
-    })
+    sharedTestContext.server
+        .get(new URL('/*path', driver.sourcegraphBaseUrl).href)
+        .filter(request => !request.pathname.startsWith('/-/'))
+        .intercept((request, response) => {
+            response.type('text/html').send(html`
+                <html>
+                    <head>
+                        <title>Sourcegraph Test</title>
+                    </head>
+                    <body>
+                        <div id="root"></div>
+                        <script>
+                            window.context = ${JSON.stringify(jsContext)}
+                        </script>
+                        <script src="/.assets/scripts/app.bundle.js"></script>
+                    </body>
+                </html>
+            `)
+        })
 
     return {
         ...sharedTestContext,
