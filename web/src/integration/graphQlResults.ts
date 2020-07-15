@@ -1,14 +1,14 @@
-import { GraphQLOverrides } from './helpers'
-import { StatusMessage, IOrg, IAlert } from '../../../shared/src/graphql/schema'
-import { builtinAuthProvider, siteID, siteGQLID } from './jscontext'
-
-export const testUserID = 'TestUserID'
-export const settingsID = 123
+import { StatusMessage } from '../../../shared/src/graphql/schema'
+import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
+import { WebGraphQlOperations } from '../graphql-operations'
+import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { testUserID, sharedGraphQlResults } from '../../../shared/src/testing/integration/graphQlResults'
 
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
  */
-export const commonGraphQlResults: GraphQLOverrides = {
+export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+    ...sharedGraphQlResults,
     CurrentAuthState: () => ({
         currentUser: {
             __typename: 'User',
@@ -19,10 +19,10 @@ export const commonGraphQlResults: GraphQLOverrides = {
             email: 'felix@sourcegraph.com',
             displayName: null,
             siteAdmin: true,
-            tags: [] as string[],
+            tags: [],
             url: '/users/test',
             settingsURL: '/users/test/settings',
-            organizations: { nodes: [] as IOrg[] },
+            organizations: { nodes: [] },
             session: { canSignOut: true },
             viewerCanAdminister: true,
         },
@@ -56,7 +56,7 @@ export const commonGraphQlResults: GraphQLOverrides = {
         site: {
             needsRepositoryConfiguration: false,
             freeUsersExceeded: false,
-            alerts: [] as IAlert[],
+            alerts: [],
             authProviders: {
                 nodes: [builtinAuthProvider],
             },

@@ -24,7 +24,6 @@ import {
     InteractiveSearchProps,
     SmartSearchFieldProps,
     CopyQueryButtonProps,
-    parseSearchURLQuery,
 } from '..'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -58,6 +57,8 @@ interface Props
 
     /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
     interactiveModeHomepageMode?: boolean
+    /** A query fragment to appear at the beginning of the input. */
+    queryPrefix?: string
 
     // For NavLinks
     authRequired?: boolean
@@ -65,12 +66,10 @@ interface Props
 }
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
-    const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
-
     /** The query cursor position and value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
-        query: queryFromUrl,
-        cursorPosition: queryFromUrl.length,
+        query: props.queryPrefix ? props.queryPrefix : '',
+        cursorPosition: props.queryPrefix ? props.queryPrefix.length : 0,
     })
 
     const quickLinks =

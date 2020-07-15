@@ -14,6 +14,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
 
             <div className="text-center">
                 <iframe
+                    className="percy-hide"
                     width="560"
                     height="315"
                     src="https://www.youtube.com/embed/aqcCrqRB17w"

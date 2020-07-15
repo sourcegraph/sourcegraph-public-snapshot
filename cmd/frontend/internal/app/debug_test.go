@@ -49,7 +49,7 @@ func Test_prometheusValidator(t *testing.T) {
 			wantProblemSubstring: "",
 		},
 		{
-			name: "prometheus not found",
+			name: "prometheus not found (with only observability.alerts configured)",
 			args: args{
 				prometheusURL: "http://no-prometheus:9090",
 				config: conf.Unified{
@@ -57,6 +57,18 @@ func Test_prometheusValidator(t *testing.T) {
 						ObservabilityAlerts: []*schema.ObservabilityAlerts{{
 							Level: "critical",
 						}},
+					},
+				},
+			},
+			wantProblemSubstring: "Unable to fetch configuration status",
+		},
+		{
+			name: "prometheus not found (with only observability.silenceAlerts configured)",
+			args: args{
+				prometheusURL: "http://no-prometheus:9090",
+				config: conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						ObservabilitySilenceAlerts: []string{"warning_gitserver_disk_space_remaining"},
 					},
 				},
 			},

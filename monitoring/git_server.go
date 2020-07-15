@@ -97,8 +97,8 @@ func GitServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("gitserver"),
-						sharedProvisioningMemoryUsage1d("gitserver"),
+						sharedProvisioningCPUUsage7d("gitserver"),
+						sharedProvisioningMemoryUsage7d("gitserver"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("gitserver"),

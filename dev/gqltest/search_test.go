@@ -31,16 +31,13 @@ func TestSearch(t *testing.T) {
 			URL:   "http://github.com",
 			Token: *githubToken,
 			Repos: []string{
-				"sourcegraph/java-langserver",
-				"sourcegraph/jsonrpc2",
-				"sourcegraph/go-diff",
-				"sourcegraph/appdash",
-				"sourcegraph/sourcegraph-typescript",
-				"sourcegraph-testing/automation-e2e-test",
-				"sourcegraph/e2e-test-private-repository",
+				"sgtest/java-langserver",
+				"sgtest/jsonrpc2",
+				"sgtest/go-diff",
+				"sgtest/appdash",
+				"sgtest/sourcegraph-typescript",
+				"sgtest/private",
 				"sgtest/mux", // Fork
-				"gorilla/mux",
-				"gorilla/securecookie",
 			},
 		}),
 	})
@@ -55,16 +52,13 @@ func TestSearch(t *testing.T) {
 	}()
 
 	err = client.WaitForReposToBeCloned(
-		"github.com/sourcegraph/java-langserver",
-		"github.com/sourcegraph/jsonrpc2",
-		"github.com/sourcegraph/go-diff",
-		"github.com/sourcegraph/appdash",
-		"github.com/sourcegraph/sourcegraph-typescript",
-		"github.com/sourcegraph-testing/automation-e2e-test",
-		"github.com/sourcegraph/e2e-test-private-repository",
+		"github.com/sgtest/java-langserver",
+		"github.com/sgtest/jsonrpc2",
+		"github.com/sgtest/go-diff",
+		"github.com/sgtest/appdash",
+		"github.com/sgtest/sourcegraph-typescript",
+		"github.com/sgtest/private",
 		"github.com/sgtest/mux", // Fork
-		"github.com/gorilla/mux",
-		"github.com/gorilla/securecookie",
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -81,7 +75,7 @@ func TestSearch(t *testing.T) {
 			},
 			{
 				query:       "type:repo visibility:public",
-				wantMissing: []string{"github.com/sourcegraph/e2e-test-private-repository"},
+				wantMissing: []string{"github.com/sgtest/private"},
 			},
 			{
 				query:       "type:repo visibility:any",
@@ -94,7 +88,7 @@ func TestSearch(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				missing := results.Exists("github.com/sourcegraph/e2e-test-private-repository")
+				missing := results.Exists("github.com/sgtest/private")
 				if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
 					t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
 				}
@@ -103,7 +97,7 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("execute search with search parameters", func(t *testing.T) {
-		results, err := client.SearchFiles("repo:^github.com/sourcegraph/go-diff$ type:file file:.go -file:.md")
+		results, err := client.SearchFiles("repo:^github.com/sgtest/go-diff$ type:file file:.go -file:.md")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +111,7 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("multiple revisions per repository", func(t *testing.T) {
-		results, err := client.SearchFiles("repo:sourcegraph/go-diff$@master:print-options:*refs/heads/ func NewHunksReader")
+		results, err := client.SearchFiles("repo:sgtest/go-diff$@master:print-options:*refs/heads/ func NewHunksReader")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -127,8 +121,6 @@ func TestSearch(t *testing.T) {
 			"print-options": {},
 
 			// These next 2 branches are included because of the *refs/heads/ in the query.
-			// If they are ever deleted from the actual live repository, replace them with
-			// any other branches that still exist.
 			"test-already-exist-pr": {},
 			"bug-fix-wip":           {},
 		}
@@ -147,7 +139,7 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("repository groups", func(t *testing.T) {
-		const repoName = "github.com/gorilla/mux"
+		const repoName = "github.com/sgtest/go-diff"
 		err := client.OverwriteSettings(client.AuthenticatedUserID(), fmt.Sprintf(`{"search.repositoryGroups":{"gql_test_group": ["%s"]}}`, repoName))
 		if err != nil {
 			t.Fatal(err)
@@ -159,7 +151,7 @@ func TestSearch(t *testing.T) {
 			}
 		}()
 
-		results, err := client.SearchFiles("repogroup:gql_test_group route")
+		results, err := client.SearchFiles("repogroup:gql_test_group diff.")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -190,7 +182,7 @@ func TestSearch(t *testing.T) {
 		var lastResult *gqltestutil.SearchStatsResult
 		// Retry because the configuration update endpoint is eventually consistent
 		err = gqltestutil.Retry(5*time.Second, func() error {
-			// This is a substring that appears in the sourcegraph/go-diff repository.
+			// This is a substring that appears in the sgtest/go-diff repository.
 			// It is OK if it starts to appear in other repositories, the test just
 			// checks that it is found in at least 1 Go file.
 			result, err := client.SearchStats("Incomplete-Lines")
@@ -290,7 +282,7 @@ func TestSearch(t *testing.T) {
 			{
 				name:           "search for a known file",
 				query:          "file:doc.go",
-				wantMinResults: 5,
+				wantMinResults: 4,
 				wantMaxResults: -1,
 			},
 		}

@@ -239,6 +239,10 @@ func ExecChangesetJob(
 				if cfg.Token != "" {
 					externalService = e
 				}
+			case *schema.GitLabConnection:
+				if cfg.Token != "" {
+					externalService = e
+				}
 			}
 			if externalService != nil {
 				break

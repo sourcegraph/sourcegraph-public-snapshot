@@ -224,6 +224,14 @@ body,
     box-shadow: $btn-focus-box-shadow;
 }
 
+// Hide the given element from Percy.
+.percy-hide {
+    @media only percy {
+        visibility: hidden;
+        display: none;
+    }
+}
+
 // Pages
 @import './Layout';
 @import './api/ApiConsole';

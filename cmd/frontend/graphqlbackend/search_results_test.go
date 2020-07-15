@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -34,7 +34,7 @@ func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := (&schemaResolver{}).Search(&SearchArgs{Query: query, Version: version})
+		r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -246,7 +246,7 @@ func TestSearchResults(t *testing.T) {
 
 	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
 		for _, v := range searchVersions {
-			r, err := (&schemaResolver{}).Search(&SearchArgs{Query: `repo:*`, Version: v})
+			r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: `repo:*`, Version: v})
 			if err != nil {
 				t.Fatal("Search:", err)
 			}

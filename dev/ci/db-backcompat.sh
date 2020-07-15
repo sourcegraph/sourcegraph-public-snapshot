@@ -46,7 +46,7 @@ CURRENT_DB_SCHEMA=$(psql -t -d sourcegraph-test-db -c 'select version from schem
 if [ "$LATEST_SCHEMA" != "$CURRENT_DB_SCHEMA" ]; then
   echo "Latest migration schema version ($LATEST_SCHEMA) does not match schema in test DB ($CURRENT_DB_SCHEMA)."
   # shellcheck disable=SC2016
-  echo '    You can run `go test -count=1 -v ./cmd/frontend/db/  -run=TestMigrations` to update the test DB schema.'
+  echo '    You can run `go test -count=1 -v ./internal/db/  -run=TestMigrations` to update the test DB schema.'
   exit 1
 fi
 

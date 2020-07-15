@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )

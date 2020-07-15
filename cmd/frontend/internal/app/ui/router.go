@@ -16,7 +16,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
@@ -62,6 +62,7 @@ const (
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
 	routeExplore        = "explore"
+	routeRepoGroups     = "repo-groups"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
@@ -133,6 +134,12 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+
+	// Repogroup pages. Must mirror web/src/Layout.tsx
+	if envvar.SourcegraphDotComMode() {
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
+		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+	}
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -254,6 +261,7 @@ func initRouter() {
 			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
+		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
 	}
 
 	// repo

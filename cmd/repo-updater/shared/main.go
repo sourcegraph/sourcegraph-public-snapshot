@@ -271,6 +271,12 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // update the scheduler with the list.
 func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(repos.GetUpdateInterval() / 2):
+		}
+
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
 			log15.Warn("failed to update git fetch scheduler with list of cloned repositories", "error", err)
@@ -283,12 +289,6 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		if err != nil {
 			log15.Warn("failed to set cloned repository list", "error", err)
 			continue
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(10 * time.Second):
 		}
 	}
 }

@@ -1,6 +1,5 @@
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { ExtensionHoverAlertType } from '../../shared/code-hosts/shared/hoverAlerts'
 
 export interface PhabricatorMapping {
     callsign: string
@@ -53,9 +52,7 @@ export interface SyncStorageItems extends SourcegraphURL {
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
-    dismissedHoverAlerts: {
-        [alertType in ExtensionHoverAlertType]?: boolean
-    }
+    dismissedHoverAlerts: Record<string, boolean | undefined>
 }
 
 export interface LocalStorageItems {

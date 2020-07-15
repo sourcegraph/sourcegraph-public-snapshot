@@ -18,11 +18,11 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -69,7 +69,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
+func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
@@ -133,8 +133,8 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}, nil
 }
 
-func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(args)
+func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
+	return NewSearchImplementer(ctx, args)
 }
 
 // queryForStableResults transforms a query that returns a stable result
@@ -346,7 +346,7 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.
-const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
+const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
 // exactlyOneRepo returns whether exactly one repo: literal field is specified and
 // delineated by regex anchors ^ and $. This function helps determine whether we

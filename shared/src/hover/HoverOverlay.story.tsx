@@ -241,7 +241,7 @@ add('Multiple MarkupContents', () => (
     </>
 ))
 
-add('With alert', () => (
+add('With small-text alert', () => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light">
@@ -252,17 +252,124 @@ add('With alert', () => (
                     contents: [FIXTURE_CONTENT],
                     alerts: [
                         {
-                            type: 'info',
-                            content: (
-                                <>
-                                    This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officia
-                                    irure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Lorem
-                                    proident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore ad
-                                    laboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecat
-                                    sint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisi
-                                    labore labore nulla laboris.
-                                </>
-                            ),
+                            summary: {
+                                kind: MarkupKind.Markdown,
+                                value:
+                                    '<small>This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.</small>',
+                            },
+                            type: 'test-alert-type',
+                        },
+                    ],
+                }}
+                actionsOrError={FIXTURE_ACTIONS}
+                onAlertDismissed={action('onAlertDismissed')}
+            />
+        </div>
+    </>
+))
+
+add('With one-line alert', () => (
+    <>
+        <style>{webStyles}</style>
+        <div className="theme-light">
+            <HoverOverlay
+                {...commonProps()}
+                {...webHoverOverlayClassProps}
+                hoverOrError={{
+                    contents: [FIXTURE_CONTENT],
+                    alerts: [
+                        {
+                            summary: {
+                                kind: MarkupKind.PlainText,
+                                value: 'This is a test alert.',
+                            },
+                        },
+                    ],
+                }}
+                actionsOrError={FIXTURE_ACTIONS}
+                onAlertDismissed={action('onAlertDismissed')}
+            />
+        </div>
+    </>
+))
+
+add('With badged alert', () => (
+    <>
+        <style>{webStyles}</style>
+        <div className="theme-light">
+            <HoverOverlay
+                {...commonProps()}
+                {...webHoverOverlayClassProps}
+                hoverOrError={{
+                    contents: [FIXTURE_CONTENT],
+                    alerts: [
+                        {
+                            summary: {
+                                kind: MarkupKind.PlainText,
+                                value: 'This is a test alert.',
+                            },
+                            badge: {
+                                kind: 'info',
+                            },
+                        },
+                    ],
+                }}
+                actionsOrError={FIXTURE_ACTIONS}
+                onAlertDismissed={action('onAlertDismissed')}
+            />
+        </div>
+    </>
+))
+
+add('With badged dismissible alert', () => (
+    <>
+        <style>{webStyles}</style>
+        <div className="theme-light">
+            <HoverOverlay
+                {...commonProps()}
+                {...webHoverOverlayClassProps}
+                hoverOrError={{
+                    contents: [FIXTURE_CONTENT],
+                    alerts: [
+                        {
+                            summary: {
+                                kind: MarkupKind.Markdown,
+                                value: 'This is a test alert.',
+                            },
+                            type: 'test-alert-type',
+                            badge: {
+                                kind: 'info',
+                            },
+                        },
+                    ],
+                }}
+                actionsOrError={FIXTURE_ACTIONS}
+                onAlertDismissed={action('onAlertDismissed')}
+            />
+        </div>
+    </>
+))
+
+add('With long markdown text badged dismissible alert.', () => (
+    <>
+        <style>{webStyles}</style>
+        <div className="theme-light">
+            <HoverOverlay
+                {...commonProps()}
+                {...webHoverOverlayClassProps}
+                hoverOrError={{
+                    contents: [FIXTURE_CONTENT],
+                    alerts: [
+                        {
+                            summary: {
+                                kind: MarkupKind.Markdown,
+                                value:
+                                    'This is a test alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*',
+                            },
+                            type: 'test-alert-type',
+                            badge: {
+                                kind: 'info',
+                            },
                         },
                     ],
                 }}

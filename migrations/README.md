@@ -40,7 +40,7 @@ or, to only run the DB generate scripts (subset of the command above):
 
 ```
 go generate ./migrations/
-go generate ./cmd/frontend/db/
+go generate ./internal/db/
 ```
 
 Verify that the migration is backward-compatible:
