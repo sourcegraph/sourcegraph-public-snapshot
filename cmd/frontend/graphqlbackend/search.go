@@ -73,6 +73,11 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
 	if err != nil {
 		return nil, err
@@ -94,6 +99,11 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		// To process the input as an and/or query, the flag must be
 		// enabled (default is on) and must contain either an 'and' or
 		// 'or' expression. Else, fallback to the older existing parser.
+		queryInfo, err = query.ProcessAndOr(args.Query, searchType)
+		if err != nil {
+			return alertForQuery(args.Query, err), nil
+		}
+	} else if v := settings.SearchMigrateParser; v != nil && *v {
 		queryInfo, err = query.ProcessAndOr(args.Query, searchType)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
