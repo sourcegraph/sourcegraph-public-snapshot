@@ -80,10 +80,10 @@
 // 1528395688_add_cloned_column_to_repo.up.sql (154B)
 // 1528395689_lsif_indexable_repositories_enable.down.sql (78B)
 // 1528395689_lsif_indexable_repositories_enable.up.sql (85B)
-// 1528395690_encrypt_tokens.down.sql (128B)
-// 1528395690_encrypt_tokens.up.sql (496B)
 // 1528395690_lsif_upload_size.down.sql (697B)
 // 1528395690_lsif_upload_size.up.sql (703B)
+// 1528395691_encrypt_tokens.down.sql (128B)
+// 1528395691_encrypt_tokens.up.sql (496B)
 
 package migrations
 
@@ -1752,42 +1752,42 @@ func _1528395689_lsif_indexable_repositories_enableUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395690_encrypt_tokensDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xc8\x4c\x53\x48\xad\xc8\x2c\x2e\x29\x56\x28\x4e\x4d\x2e\x4a\x2d\x89\x2f\xce\x2f\x2d\x4a\x4e\x2d\xa9\x2c\x48\x8d\xcf\x4c\xa9\xb0\xc6\xab\x36\x3b\xb5\x12\x49\x51\x49\x62\x52\x4e\x2a\x86\xa2\x62\x6b\x2e\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xf3\xa7\x65\xa2\x80\x00\x00\x00")
+var __1528395691_encrypt_tokensDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xc8\x4c\x53\x48\xad\xc8\x2c\x2e\x29\x56\x28\x4e\x4d\x2e\x4a\x2d\x89\x2f\xce\x2f\x2d\x4a\x4e\x2d\xa9\x2c\x48\x8d\xcf\x4c\xa9\xb0\xc6\xab\x36\x3b\xb5\x12\x49\x51\x49\x62\x52\x4e\x2a\x86\xa2\x62\x6b\x2e\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xf3\xa7\x65\xa2\x80\x00\x00\x00")
 
-func _1528395690_encrypt_tokensDownSqlBytes() ([]byte, error) {
+func _1528395691_encrypt_tokensDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395690_encrypt_tokensDownSql,
-		"1528395690_encrypt_tokens.down.sql",
+		__1528395691_encrypt_tokensDownSql,
+		"1528395691_encrypt_tokens.down.sql",
 	)
 }
 
-func _1528395690_encrypt_tokensDownSql() (*asset, error) {
-	bytes, err := _1528395690_encrypt_tokensDownSqlBytes()
+func _1528395691_encrypt_tokensDownSql() (*asset, error) {
+	bytes, err := _1528395691_encrypt_tokensDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395690_encrypt_tokens.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395691_encrypt_tokens.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xeb, 0xd3, 0x30, 0x4b, 0x50, 0xcf, 0xee, 0x7f, 0x0, 0x6a, 0x3d, 0xfc, 0xe8, 0xbf, 0x20, 0x70, 0x9c, 0x17, 0x6e, 0x55, 0x9f, 0x85, 0x53, 0x4, 0x2d, 0xf4, 0xff, 0xf, 0x44, 0x1a, 0x8f, 0xb3}}
 	return a, nil
 }
 
-var __1528395690_encrypt_tokensUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xbd\x8e\xea\x30\x10\x85\xfb\x3c\xc5\x29\x41\x02\x5d\x6e\x71\x2b\xaa\xc0\xb5\x90\xb5\x21\x40\x48\xa4\xa5\x8a\x9c\x64\x44\x2c\x82\xcd\xda\x13\x7e\xde\x7e\x15\x7e\x16\xb6\xa1\xf5\x78\xe6\x7c\xe7\x9b\x88\x99\x8c\xc7\x41\x30\x4d\x44\x98\x0a\xa4\xe1\x24\x12\xf0\x54\x3a\x62\x8f\x5e\x00\x00\xba\xc2\x44\xce\xd6\x22\x91\x61\x84\x65\x22\xe7\x61\xb2\xc1\x87\xd8\x0c\xae\x53\x6f\x5b\x57\x52\xce\x97\x03\xe1\xa8\x5c\x59\x2b\xd7\xfb\x37\xea\xff\x1a\xea\x0a\x85\xde\x6a\xc3\xb7\xd7\x1d\x5d\x72\xa3\xf6\xcf\xff\x7f\x47\x8f\x85\xa3\x6a\x5a\x02\xd3\x99\x11\x2f\x52\xc4\x59\x14\x05\xfd\x71\x10\x0c\x87\x08\x5f\xa3\xfe\x3c\x2f\x97\x76\x5f\x68\xa3\x58\x5b\x03\x5f\xdb\xb6\xa9\xa0\x9a\x93\xba\x78\x14\x84\xd6\xe8\xaf\x96\x06\xb0\x5c\x93\x3b\x69\x4f\x38\x51\x77\xac\x54\x06\xb5\x3a\x12\xaa\xf6\xd0\xe8\x52\x31\x81\xed\x8e\x0c\xc8\xb0\xd3\xe4\x1f\x3e\xb2\x58\xae\x32\x01\x19\xff\x17\x9f\x77\x2d\xf9\x2d\xba\xa3\xc8\x75\x75\xc6\x22\xfe\xf1\x95\xad\x65\x3c\x43\xc1\x8e\x08\xbd\x17\xda\xc1\x53\xc4\xbd\xcc\xd2\x7a\xde\x3a\x5a\xaf\x22\xb0\x23\xc5\xfe\x5a\x15\xca\xa3\xd2\x9e\xb5\x29\xf9\xa6\xe2\x2d\x48\xe7\xf1\x1d\xc1\xc3\x73\x97\x39\x5d\xcc\xe7\x32\x1d\x07\xdf\x01\x00\x00\xff\xff\xc9\x53\xb9\xe5\xf0\x01\x00\x00")
+var __1528395691_encrypt_tokensUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xbd\x8e\xea\x30\x10\x85\xfb\x3c\xc5\x29\x41\x02\x5d\x6e\x71\x2b\xaa\xc0\xb5\x90\xb5\x21\x40\x48\xa4\xa5\x8a\x9c\x64\x44\x2c\x82\xcd\xda\x13\x7e\xde\x7e\x15\x7e\x16\xb6\xa1\xf5\x78\xe6\x7c\xe7\x9b\x88\x99\x8c\xc7\x41\x30\x4d\x44\x98\x0a\xa4\xe1\x24\x12\xf0\x54\x3a\x62\x8f\x5e\x00\x00\xba\xc2\x44\xce\xd6\x22\x91\x61\x84\x65\x22\xe7\x61\xb2\xc1\x87\xd8\x0c\xae\x53\x6f\x5b\x57\x52\xce\x97\x03\xe1\xa8\x5c\x59\x2b\xd7\xfb\x37\xea\xff\x1a\xea\x0a\x85\xde\x6a\xc3\xb7\xd7\x1d\x5d\x72\xa3\xf6\xcf\xff\x7f\x47\x8f\x85\xa3\x6a\x5a\x02\xd3\x99\x11\x2f\x52\xc4\x59\x14\x05\xfd\x71\x10\x0c\x87\x08\x5f\xa3\xfe\x3c\x2f\x97\x76\x5f\x68\xa3\x58\x5b\x03\x5f\xdb\xb6\xa9\xa0\x9a\x93\xba\x78\x14\x84\xd6\xe8\xaf\x96\x06\xb0\x5c\x93\x3b\x69\x4f\x38\x51\x77\xac\x54\x06\xb5\x3a\x12\xaa\xf6\xd0\xe8\x52\x31\x81\xed\x8e\x0c\xc8\xb0\xd3\xe4\x1f\x3e\xb2\x58\xae\x32\x01\x19\xff\x17\x9f\x77\x2d\xf9\x2d\xba\xa3\xc8\x75\x75\xc6\x22\xfe\xf1\x95\xad\x65\x3c\x43\xc1\x8e\x08\xbd\x17\xda\xc1\x53\xc4\xbd\xcc\xd2\x7a\xde\x3a\x5a\xaf\x22\xb0\x23\xc5\xfe\x5a\x15\xca\xa3\xd2\x9e\xb5\x29\xf9\xa6\xe2\x2d\x48\xe7\xf1\x1d\xc1\xc3\x73\x97\x39\x5d\xcc\xe7\x32\x1d\x07\xdf\x01\x00\x00\xff\xff\xc9\x53\xb9\xe5\xf0\x01\x00\x00")
 
-func _1528395690_encrypt_tokensUpSqlBytes() ([]byte, error) {
+func _1528395691_encrypt_tokensUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395690_encrypt_tokensUpSql,
-		"1528395690_encrypt_tokens.up.sql",
+		__1528395691_encrypt_tokensUpSql,
+		"1528395691_encrypt_tokens.up.sql",
 	)
 }
 
-func _1528395690_encrypt_tokensUpSql() (*asset, error) {
-	bytes, err := _1528395690_encrypt_tokensUpSqlBytes()
+func _1528395691_encrypt_tokensUpSql() (*asset, error) {
+	bytes, err := _1528395691_encrypt_tokensUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395690_encrypt_tokens.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395691_encrypt_tokens.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd3, 0x2b, 0x24, 0xe, 0x9e, 0x3b, 0xcd, 0x5b, 0x68, 0x75, 0x88, 0xdb, 0xfe, 0xa6, 0xca, 0x9a, 0x6e, 0xef, 0x9f, 0xd4, 0xae, 0x28, 0xaa, 0xa4, 0xe8, 0x80, 0x32, 0x2f, 0x98, 0xaa, 0xc2, 0x68}}
 	return a, nil
 }
@@ -2003,10 +2003,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395688_add_cloned_column_to_repo.up.sql":                             _1528395688_add_cloned_column_to_repoUpSql,
 	"1528395689_lsif_indexable_repositories_enable.down.sql":                  _1528395689_lsif_indexable_repositories_enableDownSql,
 	"1528395689_lsif_indexable_repositories_enable.up.sql":                    _1528395689_lsif_indexable_repositories_enableUpSql,
-	"1528395690_encrypt_tokens.down.sql":                                      _1528395690_encrypt_tokensDownSql,
-	"1528395690_encrypt_tokens.up.sql":                                        _1528395690_encrypt_tokensUpSql,
 	"1528395690_lsif_upload_size.down.sql":                                    _1528395690_lsif_upload_sizeDownSql,
 	"1528395690_lsif_upload_size.up.sql":                                      _1528395690_lsif_upload_sizeUpSql,
+	"1528395691_encrypt_tokens.down.sql":                                      _1528395691_encrypt_tokensDownSql,
+	"1528395691_encrypt_tokens.up.sql":                                        _1528395691_encrypt_tokensUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2133,10 +2133,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395688_add_cloned_column_to_repo.up.sql":                             {_1528395688_add_cloned_column_to_repoUpSql, map[string]*bintree{}},
 	"1528395689_lsif_indexable_repositories_enable.down.sql":                  {_1528395689_lsif_indexable_repositories_enableDownSql, map[string]*bintree{}},
 	"1528395689_lsif_indexable_repositories_enable.up.sql":                    {_1528395689_lsif_indexable_repositories_enableUpSql, map[string]*bintree{}},
-	"1528395690_encrypt_tokens.down.sql":                                      {_1528395690_encrypt_tokensDownSql, map[string]*bintree{}},
-	"1528395690_encrypt_tokens.up.sql":                                        {_1528395690_encrypt_tokensUpSql, map[string]*bintree{}},
 	"1528395690_lsif_upload_size.down.sql":                                    {_1528395690_lsif_upload_sizeDownSql, map[string]*bintree{}},
 	"1528395690_lsif_upload_size.up.sql":                                      {_1528395690_lsif_upload_sizeUpSql, map[string]*bintree{}},
+	"1528395691_encrypt_tokens.down.sql":                                      {_1528395691_encrypt_tokensDownSql, map[string]*bintree{}},
+	"1528395691_encrypt_tokens.up.sql":                                        {_1528395691_encrypt_tokensUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
