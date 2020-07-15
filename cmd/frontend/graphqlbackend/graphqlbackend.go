@@ -555,9 +555,7 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.CampaignSpecByID(ctx, id)
 	case "ChangesetSpec":
 		return r.ChangesetSpecByID(ctx, id)
-	case "ExternalChangeset":
-		return r.ChangesetByID(ctx, id)
-	case "HiddenExternalChangeset":
+	case "Changeset":
 		return r.ChangesetByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {

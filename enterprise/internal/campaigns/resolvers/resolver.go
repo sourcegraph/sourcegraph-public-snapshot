@@ -72,20 +72,12 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
 	repo, err := db.Repos.Get(ctx, changeset.RepoID)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
-			return &hiddenChangesetResolver{
-				store:       r.store,
-				httpFactory: r.httpFactory,
-				Changeset:   changeset,
-			}, nil
-		}
+	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
 
 	return &changesetResolver{
-		// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
+		isHidden:      errcode.IsNotFound(err),
 		store:         r.store,
 		httpFactory:   r.httpFactory,
 		Changeset:     changeset,
@@ -438,8 +430,6 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 			return opts, false, errors.New("changeset state not valid")
 		}
 		opts.ExternalState = &state
-		// hiddenChangesetResolver has a State property so filtering based on
-		// that is safe.
 	}
 	if args.ReviewState != nil {
 		state := campaigns.ChangesetReviewState(*args.ReviewState)
