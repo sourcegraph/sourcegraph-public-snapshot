@@ -40,7 +40,6 @@ func (s *secrets) Delete(ctx context.Context, id int32) error {
 	}
 
 	return nil
-
 }
 
 // Delete by key name
@@ -62,7 +61,6 @@ func (s *secrets) DeleteByKeyName(ctx context.Context, keyName string) error {
 	}
 
 	return nil
-
 }
 
 // Delete the object by sourceType (i.e a repo style object) and the source id.
@@ -84,7 +82,6 @@ func (s *secrets) DeleteBySourceTypeAndID(ctx context.Context, sourceType string
 	}
 
 	return nil
-
 }
 
 func (s *secrets) getBySQL(ctx context.Context, query *sqlf.Query) (*types.Secret, error) {
@@ -109,7 +106,6 @@ func (s *secrets) getBySQL(ctx context.Context, query *sqlf.Query) (*types.Secre
 	}
 
 	return results[0], nil
-
 }
 
 // Get by object id
@@ -166,8 +162,7 @@ func (s *secrets) insert(ctx context.Context, query *sqlf.Query) error {
 }
 
 // Insert a new key-value secret
-func (s *secrets) InsertKeyValue(ctx context.Context, keyName string, value string) error {
-
+func (s *secrets) InsertKeyValue(ctx context.Context, keyName, value string) error {
 	sqlQ := sqlf.Sprintf(
 		`INSERT INTO
 			secrets(key_name, value)
@@ -214,7 +209,7 @@ func (s *secrets) Update(ctx context.Context, id int32, value string) error {
 }
 
 // Update function for key-value pairs
-func (s *secrets) UpdateByKeyName(ctx context.Context, keyName string, value string) error {
+func (s *secrets) UpdateByKeyName(ctx context.Context, keyName, value string) error {
 	sqlQ := sqlf.Sprintf(
 		`UPDATE
 			secrets
