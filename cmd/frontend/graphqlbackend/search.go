@@ -78,20 +78,16 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		return nil, err
 	}
 
-	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
+	useNewParser := getBoolPtr(settings.SearchMigrateParser, false)
+
+	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
 		return nil, err
 	}
+	searchType = overrideSearchType(args.Query, searchType, useNewParser)
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
-	}
-
-	var queryString string
-	if searchType == query.SearchTypeLiteral {
-		queryString = query.ConvertToLiteral(args.Query)
-	} else {
-		queryString = args.Query
 	}
 
 	var queryInfo query.QueryInfo
@@ -103,12 +99,18 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
-	} else if v := settings.SearchMigrateParser; v != nil && *v {
+	} else if useNewParser {
 		queryInfo, err = query.ProcessAndOr(args.Query, searchType)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
 	} else {
+		var queryString string
+		if searchType == query.SearchTypeLiteral {
+			queryString = query.ConvertToLiteral(args.Query)
+		} else {
+			queryString = args.Query
+		}
 		queryInfo, err = query.Process(queryString, searchType)
 		if err != nil {
 			return alertForQuery(queryString, err), nil
@@ -119,7 +121,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	if queryInfo.BoolValue(query.FieldStable) {
 		args, queryInfo, err = queryForStableResults(args, queryInfo)
 		if err != nil {
-			return alertForQuery(queryString, err), nil
+			return alertForQuery(args.Query, err), nil
 		}
 	}
 
@@ -201,7 +203,7 @@ func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*sea
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
 // overrides the searchType, if present.
-func detectSearchType(version string, patternType *string, input string) (query.SearchType, error) {
+func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
@@ -224,25 +226,54 @@ func detectSearchType(version string, patternType *string, input string) (query.
 			return -1, fmt.Errorf("unrecognized version: %v", version)
 		}
 	}
+	return searchType, nil
+}
 
-	// The patterntype field is Singular, but not enforced since we do not
-	// properly parse the input. The regex extraction, takes the left-most
-	// "patterntype:value" match.
-	var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
-	patternFromField := patternTypeRegex.FindStringSubmatch(input)
-	if len(patternFromField) > 1 {
-		extracted := patternFromField[1]
-		if match, _ := regexp.MatchString("regex", extracted); match {
-			searchType = query.SearchTypeRegex
-		} else if match, _ := regexp.MatchString("literal", extracted); match {
-			searchType = query.SearchTypeLiteral
+var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 
-		} else if match, _ := regexp.MatchString("structural", extracted); match {
-			searchType = query.SearchTypeStructural
+func overrideSearchType(input string, searchType query.SearchType, useNewParser bool) query.SearchType {
+	if useNewParser {
+		q, err := query.ParseAndOrLiteral(input)
+		if err != nil {
+			// If parsing fails, return the default search type. Any actual
+			// parse errors will be raised by subsequent parser calls.
+			return searchType
+		}
+		query.VisitField(q, "patterntype", func(value string, _ bool) {
+			switch value {
+			case "regex", "regexp":
+				searchType = query.SearchTypeRegex
+			case "literal":
+				searchType = query.SearchTypeLiteral
+			case "structural":
+				searchType = query.SearchTypeStructural
+			}
+		})
+	} else {
+		// The patterntype field is Singular, but not enforced since we do not
+		// properly parse the input. The regex extraction, takes the left-most
+		// "patterntype:value" match.
+		patternFromField := patternTypeRegex.FindStringSubmatch(input)
+		if len(patternFromField) > 1 {
+			extracted := patternFromField[1]
+			if match, _ := regexp.MatchString("regex", extracted); match {
+				searchType = query.SearchTypeRegex
+			} else if match, _ := regexp.MatchString("literal", extracted); match {
+				searchType = query.SearchTypeLiteral
+
+			} else if match, _ := regexp.MatchString("structural", extracted); match {
+				searchType = query.SearchTypeStructural
+			}
 		}
 	}
+	return searchType
+}
 
-	return searchType, nil
+func getBoolPtr(b *bool, def bool) bool {
+	if b == nil {
+		return def
+	}
+	return *b
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
