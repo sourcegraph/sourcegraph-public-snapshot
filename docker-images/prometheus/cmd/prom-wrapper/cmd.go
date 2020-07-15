@@ -22,6 +22,7 @@ func runCmd(log log15.Logger, errs chan<- error, cmd *exec.Cmd) {
 func NewPrometheusCmd(promArgs []string, promPort string) *exec.Cmd {
 	promFlags := []string{
 		fmt.Sprintf("--web.listen-address=0.0.0.0:%s", promPort),
+		("--web.enable-lifecycle"),
 	}
 	cmd := exec.Command("/prometheus.sh", append(promFlags, promArgs...)...)
 	cmd.Env = os.Environ()
