@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
-// This object providers access to the encrypted secrets table
+// This object provides access to the encrypted secrets table
 type secrets struct{}
 
 // Returned when we can't retrieve the specific crypt object that we need
