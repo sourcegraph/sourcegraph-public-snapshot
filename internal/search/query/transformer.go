@@ -144,7 +144,11 @@ func globToRegex(value string) (string, error) {
 	for i = 0; i < l; i++ {
 		switch r[i] {
 		case '*':
-			sb.WriteString(".*?")
+			if i < l-1 && r[i+1] == '*' {
+				sb.WriteString(".*?")
+			} else {
+				sb.WriteString("[^/]*?")
+			}
 			// skip repeated '*'
 			for i < l-1 && r[i+1] == '*' {
 				i++
@@ -202,7 +206,9 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+			fmt.Println("before: ", value)
 			value, err = globToRegex(value)
+			fmt.Println("after: ", value)
 			if err != nil {
 				globErrors = append(globErrors, globError{field: field, err: err})
 			}
