@@ -38,8 +38,10 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-func IsKindSupported(kind string) bool {
-	_, ok := SupportedExternalServices[extsvc.KindToType(kind)]
+// IsKindSupported returns whether the given extsvc Kind is supported by
+// campaigns.
+func IsKindSupported(extSvcKind string) bool {
+	_, ok := SupportedExternalServices[extsvc.KindToType(extSvcKind)]
 	return ok
 }
 
@@ -737,6 +739,18 @@ func (c *Changeset) BaseRef() (string, error) {
 		return "refs/heads/" + m.TargetBranch, nil
 	default:
 		return "", errors.New("unknown changeset type")
+	}
+}
+
+// SupportsLabels returns whether the code host on which the changeset is
+// hosted supports labels and whether it's safe to call the
+// (*Changeset).Labels() method.
+func (c *Changeset) SupportsLabels() bool {
+	switch c.Metadata.(type) {
+	case *github.PullRequest, *gitlab.MergeRequest:
+		return true
+	default:
+		return false
 	}
 }
 
