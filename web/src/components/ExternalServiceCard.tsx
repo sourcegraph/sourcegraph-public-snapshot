@@ -48,7 +48,7 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
         <Link
             className="d-block text-left text-body text-decoration-none"
             to={to}
-            data-e2e-external-service-card-link={kind}
+            data-test-external-service-card-link={kind}
         >
             {children}
         </Link>

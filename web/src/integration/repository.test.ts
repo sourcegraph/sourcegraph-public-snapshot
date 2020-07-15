@@ -346,19 +346,22 @@ describe('Repository', () => {
             await driver.page.waitForSelector('h2.tree-page__title')
 
             // Assert that the directory listing displays properly
-            await driver.page.waitForSelector('.e2e-tree-entries')
+            await driver.page.waitForSelector('.test-tree-entries')
 
             const numberOfFileEntries = await driver.page.evaluate(
-                () => document.querySelectorAll<HTMLButtonElement>('.e2e-tree-entry-file')?.length
+                () => document.querySelectorAll<HTMLButtonElement>('.test-tree-entry-file')?.length
             )
 
             assert.strictEqual(numberOfFileEntries, fileEntries.length, 'Number of files in directory listing')
 
             await testContext.waitForGraphQLRequest(async () => {
-                await driver.findElementWithText(clickedFileName, { selector: '.e2e-tree-entry-file', action: 'click' })
+                await driver.findElementWithText(clickedFileName, {
+                    selector: '.test-tree-entry-file',
+                    action: 'click',
+                })
             }, 'Blob')
 
-            await driver.page.waitForSelector('.e2e-repo-blob')
+            await driver.page.waitForSelector('.test-repo-blob')
             await driver.assertWindowLocation(`${repositorySourcegraphUrl}/-/blob/${clickedFileName}`)
 
             // Assert that the file is loaded

@@ -20,7 +20,7 @@ import { TestResourceManager } from './util/TestResourceManager'
 import delay from 'delay'
 import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
-const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
+const activationNavBarSelector = '.test-activation-nav-item-toggle'
 
 /**
  * Gets the activation status for the current user from the GUI. There's no easy way to fetch this
@@ -183,8 +183,8 @@ describe('Onboarding', () => {
         )
 
         // Do a search
-        await driver.page.waitForSelector('.e2e-query-input')
-        await driver.page.type('.e2e-query-input', 'asdf')
+        await driver.page.waitForSelector('.test-query-input')
+        await driver.page.type('.test-query-input', 'asdf')
         await driver.page.keyboard.press(Key.Enter)
         await delay(500) // allow some time for confetti to play
         await screenshots.verifyScreenshot({
@@ -207,10 +207,10 @@ describe('Onboarding', () => {
         const elements = await driver.page.$x(defTokenXPath)
         await Promise.all(elements.map(element => element.click()))
         await Promise.all(elements.map(element => element.dispose()))
-        const findReferencesSelector = '.e2e-tooltip-find-references'
+        const findReferencesSelector = '.test-tooltip-find-references'
         await driver.page.waitForSelector(findReferencesSelector)
         await driver.page.click(findReferencesSelector)
-        await driver.page.waitForSelector('.e2e-search-result')
+        await driver.page.waitForSelector('.test-search-result')
 
         await delay(500) // allow some time for confetti to play
         await screenshots.verifyScreenshot({

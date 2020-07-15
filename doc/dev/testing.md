@@ -125,18 +125,18 @@ The easiest way to write CSS selectors is to inspect the element in your browser
 
 ![image](https://user-images.githubusercontent.com/1387653/54873834-6c605400-4d9c-11e9-823b-faa8871df395.png)
 
-CSS selectors in e2e tests should always refer to CSS classes prefixed with `e2e-`. This makes them easy to spot in the implementation and therefor less likely to accidentally break. `e2e-` classes are never referenced in stylesheets, they are added _in addition_ to styling classes. If an element you are trying to select does not have an `e2e-` class yet, modify the implementation to add it.
+CSS selectors in e2e tests should always refer to CSS classes prefixed with `test-`. This makes them easy to spot in the implementation and therefor less likely to accidentally break. `test-` classes are never referenced in stylesheets, they are added _in addition_ to styling classes. If an element you are trying to select does not have a `test-` class yet, modify the implementation to add it.
 
-If the element you are trying to select appears multiple times on the page (e.g. a button in a list) and you need to select a specific instance, you can use `data-e2e-*` attributes in the implementation:
+If the element you are trying to select appears multiple times on the page (e.g. a button in a list) and you need to select a specific instance, you can use `data-test-*` attributes in the implementation:
 
 ```HTML
-<div data-e2e-item-name={this.props.name}>
+<div data-test-item-name={this.props.name}>
   <span>{this.props.name}</span>
-  <button className="e2e-item-delete-button">Delete</button>
+  <button className="test-item-delete-button">Delete</button>
 </div>
 ```
 
-Then you can select the button with `[data-e2e-item-name="foo"] .e2e-item-delete-button`.
+Then you can select the button with `[data-test-item-name="foo"] .test-item-delete-button`.
 
 **Important**: it's generally unreliable to hold references to items that are acted upon later.
 In other words, don't do this:
@@ -187,7 +187,7 @@ Open `web/src/e2e/index.e2e.test.tsx` and add a new e2e test:
 ```TypeScript
 test('Repositories list', async () => {
     await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-    await page.waitForSelector('[e2e-repository-name="/github.com/gorilla/mux"]', { visible: true })
+    await page.waitForSelector('[test-repository-name="/github.com/gorilla/mux"]', { visible: true })
     await percySnapshot(page, 'Repositories list')
 })
 ```

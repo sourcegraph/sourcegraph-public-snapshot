@@ -14,7 +14,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
     previewingPatchSet={false}
   />
   <Form
-    className="e2e-campaign-form"
+    className="test-campaign-form"
     id="campaign-form"
     onReset={[Function]}
     onSubmit={[Function]}
@@ -36,7 +36,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
       className="mt-2"
     >
       <button
-        className="btn btn-primary e2e-campaign-create-btn"
+        className="btn btn-primary test-campaign-create-btn"
         disabled={false}
         form="campaign-form"
         type="submit"
@@ -120,13 +120,13 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
     </div>
   </CampaignActionsBar>
   <Form
-    className="e2e-campaign-form"
+    className="test-campaign-form"
     id="campaign-form"
     onReset={[Function]}
     onSubmit={[Function]}
   >
     <form
-      className="e2e-campaign-form "
+      className="test-campaign-form "
       id="campaign-form"
       onInvalid={[Function]}
       onReset={[Function]}
@@ -193,7 +193,7 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
         className="mt-2"
       >
         <button
-          className="btn btn-primary e2e-campaign-create-btn"
+          className="btn btn-primary test-campaign-create-btn"
           disabled={false}
           form="campaign-form"
           type="submit"
@@ -429,7 +429,7 @@ exports[`CampaignDetails editing existing 1`] = `
         <button
           className="btn btn-secondary mr-1"
           disabled={true}
-          id="e2e-campaign-edit"
+          id="test-campaign-edit"
           onClick={[Function]}
           type="button"
         >
@@ -624,13 +624,13 @@ exports[`CampaignDetails editing existing 1`] = `
     CampaignStatus(state=PROCESSING)
   </CampaignStatus>
   <Form
-    className="e2e-campaign-form"
+    className="test-campaign-form"
     id="campaign-form"
     onReset={[Function]}
     onSubmit={[Function]}
   >
     <form
-      className="e2e-campaign-form "
+      className="test-campaign-form "
       id="campaign-form"
       onInvalid={[Function]}
       onReset={[Function]}
@@ -734,7 +734,7 @@ exports[`CampaignDetails editing existing 1`] = `
               Repository path
             </label>
             <input
-              className="form-control mr-1 e2e-track-changeset-repo"
+              className="form-control mr-1 test-track-changeset-repo"
               id="changeset-repo"
               onChange={[Function]}
               placeholder="codehost.example.com/example-org/example-repository"
@@ -768,7 +768,7 @@ exports[`CampaignDetails editing existing 1`] = `
               Changeset number
             </label>
             <input
-              className="form-control mr-1 e2e-track-changeset-id"
+              className="form-control mr-1 test-track-changeset-id"
               id="changeset-number"
               min={1}
               onChange={[Function]}
@@ -782,7 +782,7 @@ exports[`CampaignDetails editing existing 1`] = `
           </div>
         </div>
         <button
-          className="btn btn-primary mr-1 e2e-track-changeset-btn"
+          className="btn btn-primary mr-1 test-track-changeset-btn"
           disabled={false}
           type="submit"
         >
@@ -1168,13 +1168,13 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     CampaignStatus(state=PROCESSING)
   </CampaignStatus>
   <Form
-    className="e2e-campaign-form"
+    className="test-campaign-form"
     id="campaign-form"
     onReset={[Function]}
     onSubmit={[Function]}
   >
     <form
-      className="e2e-campaign-form "
+      className="test-campaign-form "
       id="campaign-form"
       onInvalid={[Function]}
       onReset={[Function]}
@@ -1580,7 +1580,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         <button
           className="btn btn-secondary mr-1"
           disabled={true}
-          id="e2e-campaign-edit"
+          id="test-campaign-edit"
           onClick={[Function]}
           type="button"
         >
@@ -1775,13 +1775,13 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     CampaignStatus(state=PROCESSING)
   </CampaignStatus>
   <Form
-    className="e2e-campaign-form"
+    className="test-campaign-form"
     id="campaign-form"
     onReset={[Function]}
     onSubmit={[Function]}
   >
     <form
-      className="e2e-campaign-form "
+      className="test-campaign-form "
       id="campaign-form"
       onInvalid={[Function]}
       onReset={[Function]}
@@ -1885,7 +1885,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
               Repository path
             </label>
             <input
-              className="form-control mr-1 e2e-track-changeset-repo"
+              className="form-control mr-1 test-track-changeset-repo"
               id="changeset-repo"
               onChange={[Function]}
               placeholder="codehost.example.com/example-org/example-repository"
@@ -1919,7 +1919,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
               Changeset number
             </label>
             <input
-              className="form-control mr-1 e2e-track-changeset-id"
+              className="form-control mr-1 test-track-changeset-id"
               id="changeset-number"
               min={1}
               onChange={[Function]}
@@ -1933,7 +1933,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           </div>
         </div>
         <button
-          className="btn btn-primary mr-1 e2e-track-changeset-btn"
+          className="btn btn-primary mr-1 test-track-changeset-btn"
           disabled={false}
           type="submit"
         >

@@ -152,7 +152,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
     className="pt-3 mb-4"
   >
     <div
-      className="p-0 list-group-item font-weight-normal e2e-site-admin-overview-menu"
+      className="p-0 list-group-item font-weight-normal test-site-admin-overview-menu"
     >
       <div
         className="d-flex justify-content-between align-items-center position-relative mb-0 py-3 px-3"

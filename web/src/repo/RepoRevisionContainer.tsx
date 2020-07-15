@@ -250,7 +250,7 @@ export class RepoRevisionContainer extends React.PureComponent<RepoRevisionConta
                     priority={100}
                     element={
                         <div className="d-flex align-items-center" key="repo-revision">
-                            <span className="e2e-revision">
+                            <span className="test-revision">
                                 {(this.props.revision &&
                                 this.props.revision === this.props.resolvedRevisionOrError.commitID
                                     ? this.props.resolvedRevisionOrError.commitID.slice(0, 7)

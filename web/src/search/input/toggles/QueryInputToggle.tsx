@@ -69,7 +69,7 @@ export class QueryInputToggle extends React.Component<ToggleProps> {
                 ref={this.toggleCheckbox}
                 onClick={this.props.onToggle}
                 className={classNames(
-                    'btn btn-icon icon-inline toggle-container__toggle e2e-regexp-toggle',
+                    'btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle',
                     this.props.className,
                     { disabled: this.props.disabledCondition },
                     { 'toggle-container__toggle--active': this.props.isActive },
