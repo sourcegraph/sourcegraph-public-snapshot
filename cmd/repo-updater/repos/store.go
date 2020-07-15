@@ -438,7 +438,7 @@ their cloned column is true but they are not in cloned_repos
 or they are in cloned_repos but their cloned column is false
 */
 WITH cloned_repos AS (
-  SELECT jsonb_array_elements_text(%s)
+  SELECT jsonb_array_elements_text(%s) AS name
 ),
 diff AS (
   SELECT id,
@@ -446,9 +446,9 @@ diff AS (
   FROM repo
   WHERE
     NOT cloned
-      AND name IN (SELECT * FROM cloned_repos)
+      AND lower(name) IN (SELECT lower(name) FROM cloned_repos)
     OR cloned
-      AND name NOT IN (SELECT * FROM cloned_repos)
+      AND lower(name) NOT IN (SELECT lower(name) FROM cloned_repos)
 )
 UPDATE repo
 SET cloned = NOT diff.cloned
