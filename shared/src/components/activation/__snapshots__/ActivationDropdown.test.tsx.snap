@@ -87,12 +87,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
       set={[Function]}
     >
       <MenuButton
-        className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+        className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
       >
         <button
           aria-controls="menu--1"
           aria-haspopup={true}
-          className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+          className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
           data-reach-menu-button=""
           id="menu-button--menu--1"
           onKeyDown={[Function]}
@@ -276,7 +276,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               "current": <button
                 aria-controls="menu--1"
                 aria-haspopup="true"
-                class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+                class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
                 data-reach-menu-button=""
                 id="menu-button--menu--1"
                 type="button"
@@ -742,7 +742,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                     "current": <button
                       aria-controls="menu--1"
                       aria-haspopup="true"
-                      class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+                      class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
                       data-reach-menu-button=""
                       id="menu-button--menu--1"
                       type="button"

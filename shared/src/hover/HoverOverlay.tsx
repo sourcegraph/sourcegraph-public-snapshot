@@ -183,7 +183,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
 
                                             {content.badge && this.state.showBadges && (
                                                 <BadgeAttachment
-                                                    className="hover-overlay__badge e2e-hover-badge"
+                                                    className="hover-overlay__badge test-hover-badge"
                                                     iconClassName={this.props.iconClassName}
                                                     iconButtonClassName={this.props.iconButtonClassName}
                                                     attachment={content.badge}
@@ -192,7 +192,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                             )}
 
                                             <span
-                                                className="hover-overlay__content e2e-tooltip-content"
+                                                className="hover-overlay__content test-tooltip-content"
                                                 dangerouslySetInnerHTML={{
                                                     __html: renderMarkdown(content.value),
                                                 }}
@@ -225,7 +225,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                 {/* Show badge in the top-right if there is no "Dismiss" action */}
                                 {badge && !type && (
                                     <BadgeAttachment
-                                        className="hover-overlay__badge e2e-hover-badge"
+                                        className="hover-overlay__badge test-hover-badge"
                                         iconClassName={this.props.iconClassName}
                                         iconButtonClassName={this.props.iconButtonClassName}
                                         attachment={badge}
@@ -247,7 +247,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     <div className="hover-overlay__alert-actions">
                                         {badge && (
                                             <BadgeAttachment
-                                                className="hover-overlay__badge e2e-hover-badge"
+                                                className="hover-overlay__badge test-hover-badge"
                                                 iconClassName={this.props.iconClassName}
                                                 iconButtonClassName={this.props.iconButtonClassName}
                                                 attachment={badge}
@@ -276,7 +276,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     className={classNames(
                                         'hover-overlay__action',
                                         actionItemClassName,
-                                        `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                        `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
                                     )}
                                     iconClassName={this.props.iconClassName}
                                     pressedClassName={actionItemPressedClassName}

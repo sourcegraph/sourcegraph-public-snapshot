@@ -123,7 +123,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                 </div>
                                 <div className="d-flex">
                                     <button
-                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn e2e-search-button btn-secondary"
+                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn test-search-button btn-secondary"
                                         type="button"
                                         aria-label="Search"
                                         onClick={onSubmitExample(

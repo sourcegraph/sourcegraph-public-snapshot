@@ -44,7 +44,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="global-alerts e2e-global-alert">
+            <div className="global-alerts test-global-alert">
                 {this.state.siteFlags && (
                     <>
                         {this.state.siteFlags.needsRepositoryConfiguration && (

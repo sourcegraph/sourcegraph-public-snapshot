@@ -94,7 +94,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                 <>
                                     <button
                                         type="button"
-                                        id="e2e-campaign-edit"
+                                        id="test-campaign-edit"
                                         className="btn btn-secondary mr-1"
                                         onClick={onEdit}
                                         disabled={actionsDisabled}

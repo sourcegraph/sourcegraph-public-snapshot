@@ -16,7 +16,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
           partialVisibility={true}
         >
           <div
-            className="e2e-search-result result-container"
+            className="test-search-result result-container"
             data-testid="result-container"
           >
             <div
@@ -69,10 +69,10 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               className="file-match-children"
             >
               <div
-                className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
+                className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
               >
                 <a
-                  className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                  className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                   href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
                   onClick={[Function]}
                 >
@@ -120,7 +120,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </VisibilitySensor>
                 </a>
                 <div
-                  className="file-match-children__item-badge-row e2e-badge-row"
+                  className="file-match-children__item-badge-row test-badge-row"
                 />
               </div>
             </div>
@@ -153,7 +153,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         onMouseUp={[Function]}
       />
       <div
-        className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list"
+        className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list"
       >
         <span
           className="list-group-item hierarchical-locations-view__item active"
@@ -216,7 +216,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           partialVisibility={true}
         >
           <div
-            className="e2e-search-result result-container"
+            className="test-search-result result-container"
             data-testid="result-container"
           >
             <div
@@ -269,10 +269,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               className="file-match-children"
             >
               <div
-                className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
+                className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
               >
                 <a
-                  className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                  className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                   href="/github.com/foo/bar/-/blob/file1.txt?subtree=true#L2:1"
                   onClick={[Function]}
                 >
@@ -344,7 +344,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </VisibilitySensor>
                 </a>
                 <div
-                  className="file-match-children__item-badge-row e2e-badge-row"
+                  className="file-match-children__item-badge-row test-badge-row"
                 />
               </div>
             </div>
@@ -372,7 +372,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
           partialVisibility={true}
         >
           <div
-            className="e2e-search-result result-container"
+            className="test-search-result result-container"
             data-testid="result-container"
           >
             <div
@@ -425,10 +425,10 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               className="file-match-children"
             >
               <div
-                className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
+                className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
               >
                 <a
-                  className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                  className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                   href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
                   onClick={[Function]}
                 >
@@ -476,7 +476,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </VisibilitySensor>
                 </a>
                 <div
-                  className="file-match-children__item-badge-row e2e-badge-row"
+                  className="file-match-children__item-badge-row test-badge-row"
                 />
               </div>
             </div>
@@ -490,12 +490,12 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <div
-  className="loading-spinner icon-inline m-1 e2e-loading-spinner"
+  className="loading-spinner icon-inline m-1 test-loading-spinner"
 />
 `;
 
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <div
-  className="loading-spinner icon-inline m-1 e2e-loading-spinner"
+  className="loading-spinner icon-inline m-1 test-loading-spinner"
 />
 `;

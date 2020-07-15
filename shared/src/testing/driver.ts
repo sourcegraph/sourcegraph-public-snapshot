@@ -163,7 +163,7 @@ export class Driver {
         })
         const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
-            await this.page.waitForSelector('.e2e-signup-form')
+            await this.page.waitForSelector('.test-signup-form')
             if (email) {
                 await this.page.type('input[name=email]', email)
             }
@@ -172,7 +172,7 @@ export class Driver {
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 3 * 1000 })
         } else if (url.pathname === '/sign-in') {
-            await this.page.waitForSelector('.e2e-signin-form')
+            await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
@@ -185,12 +185,12 @@ export class Driver {
      */
     public async setExtensionSourcegraphUrl(): Promise<void> {
         await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
-        await this.page.waitForSelector('.e2e-sourcegraph-url')
-        await this.replaceText({ selector: '.e2e-sourcegraph-url', newText: this.sourcegraphBaseUrl })
+        await this.page.waitForSelector('.test-sourcegraph-url')
+        await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
         await this.page.waitForFunction(
             () => {
-                const element = document.querySelector('.e2e-connection-status')
+                const element = document.querySelector('.test-connection-status')
                 return element?.textContent?.includes('Connected')
             },
             { timeout: 5000 }
@@ -302,11 +302,11 @@ export class Driver {
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.e2e-filtered-connection')
-            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+            await this.page.waitFor('.test-filtered-connection')
+            await this.page.waitForSelector('.test-filtered-connection__loader', { hidden: true })
 
             // Matches buttons for deleting external services named ${displayName}.
-            const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
+            const deleteButtonSelector = `[data-test-external-service-name="${displayName}"] .test-delete-external-service-button`
             if (await this.page.$(deleteButtonSelector)) {
                 await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
             }
@@ -315,7 +315,7 @@ export class Driver {
         // Navigate to the add external service page.
         console.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
-        await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
+        await this.page.waitForSelector(`[data-test-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
         })
         await this.page.evaluate((selector: string) => {
@@ -324,20 +324,20 @@ export class Driver {
                 throw new Error(`Could not find element to click on for selector ${selector}`)
             }
             element.click()
-        }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
+        }, `[data-test-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
-            selector: '#e2e-external-service-form-display-name',
+            selector: '#test-external-service-form-display-name',
             newText: displayName,
         })
 
-        await this.page.waitForSelector('.e2e-external-service-editor .monaco-editor')
+        await this.page.waitForSelector('.test-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
         await this.replaceText({
-            selector: '.e2e-external-service-editor .monaco-editor .view-line',
+            selector: '.test-external-service-editor .monaco-editor .view-line',
             newText: config,
             selectMethod: 'keyboard',
         })
-        await Promise.all([this.page.waitForNavigation(), this.page.click('.e2e-add-external-service-button')])
+        await Promise.all([this.page.waitForNavigation(), this.page.click('.test-add-external-service-button')])
 
         if (ensureRepos) {
             // Clone the repositories
@@ -345,7 +345,7 @@ export class Driver {
                 await this.page.goto(
                     this.sourcegraphBaseUrl + `/site-admin/repositories?filter=cloned&query=${encodeURIComponent(slug)}`
                 )
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                await this.page.waitForSelector(`.repository-node[data-test-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
@@ -357,7 +357,7 @@ export class Driver {
                     this.sourcegraphBaseUrl +
                         `/site-admin/repositories?filter=cloning&query=${encodeURIComponent(slug)}`
                 )
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                await this.page.waitForSelector(`.repository-node[data-test-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }

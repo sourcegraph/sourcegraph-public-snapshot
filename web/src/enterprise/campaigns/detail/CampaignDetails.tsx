@@ -401,7 +401,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     history={history}
                 />
             )}
-            <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
+            <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="test-campaign-form">
                 {['saving', 'editing'].includes(mode) && (
                     <>
                         <h3>Details</h3>
@@ -504,7 +504,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             <button
                                 type="submit"
                                 form={campaignFormID}
-                                className="btn btn-primary e2e-campaign-create-btn"
+                                className="btn btn-primary test-campaign-create-btn"
                                 disabled={mode !== 'editing' || patchSet?.patches.totalCount === 0}
                             >
                                 Create
@@ -545,7 +545,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <>
                                     {totalChangesetCount === 0 && (
-                                        <div className="mt-4 mb-2 alert alert-info e2e-campaign-get-started">
+                                        <div className="mt-4 mb-2 alert alert-info test-campaign-get-started">
                                             Add a changeset to get started.
                                         </div>
                                     )}

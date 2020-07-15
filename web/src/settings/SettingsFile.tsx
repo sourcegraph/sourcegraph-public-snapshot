@@ -159,7 +159,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className="settings-file e2e-settings-file d-flex flex-grow-1 flex-column">
+            <div className="settings-file test-settings-file d-flex flex-grow-1 flex-column">
                 <SaveToolbar
                     dirty={dirty}
                     error={this.props.commitError}

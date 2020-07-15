@@ -297,7 +297,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
 
         return (
-            <div className="e2e-search-results search-results d-flex flex-column w-100">
+            <div className="test-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
                 {!this.props.interactiveSearchMode && (
                     <SearchResultsFilterBars
