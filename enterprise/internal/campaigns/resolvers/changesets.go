@@ -333,15 +333,16 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	if err != nil {
 		return nil, err
 	}
+
+	events := make(ee.ChangesetEvents, len(es))
+	copy(events, es)
+	sort.Sort(events)
+
 	// We use changeset labels as the source of truth as they can be renamed
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	events := ee.ChangesetEvents(es)
-	labels := events.UpdateLabelsSince(r.Changeset)
-	sort.Slice(labels, func(i, j int) bool {
-		return labels[i].Name < labels[j].Name
-	})
+	labels := ee.ComputeLabels(r.Changeset, events)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})
