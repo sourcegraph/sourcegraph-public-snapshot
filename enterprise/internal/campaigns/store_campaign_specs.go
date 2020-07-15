@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
@@ -267,12 +266,10 @@ func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
 	)
 }
 
-const CampaignSpecTTL = 7 * 24 * time.Hour
-
 // DeleteExpiredCampaignSpecs deletes CampaignSpecs that have not been attached
 // to a Campaign within CampaignSpecTTL.
 func (s *Store) DeleteExpiredCampaignSpecs(ctx context.Context) error {
-	expirationTime := s.now().Add(-CampaignSpecTTL)
+	expirationTime := s.now().Add(-campaigns.CampaignSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredCampaignSpecsQueryFmtstr, expirationTime)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)

@@ -1673,6 +1673,16 @@ func (cs *CampaignSpec) UnmarshalValidate() error {
 	return unmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
+// CampaignSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
+// yet.
+const CampaignSpecTTL = 7 * 24 * time.Hour
+
+// ExpiresAt returns the time when the CampaignSpec will be deleted if not
+// applied.
+func (cs *CampaignSpec) ExpiresAt() time.Time {
+	return cs.CreatedAt.Truncate(time.Second).Add(CampaignSpecTTL)
+}
+
 type CampaignSpecFields struct {
 	Name              string             `json:"name"`
 	Description       string             `json:"description"`
@@ -1756,6 +1766,20 @@ func (cs *ChangesetSpec) UnmarshalValidate() error {
 	}
 
 	return nil
+}
+
+// ChangesetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
+// attached to a CampaignSpec.
+// It's lower than CampaignSpecTTL because ChangesetSpecs should be attached to
+// a CampaignSpec immediately after having been created, whereas a CampaignSpec
+// might take a while to be complete and might also go through a lengthy review
+// phase.
+const ChangesetSpecTTL = 2 * 24 * time.Hour
+
+// ExpiresAt returns the time when the ChangesetSpec will be deleted if not
+// attached to a CampaignSpec.
+func (cs *ChangesetSpec) ExpiresAt() time.Time {
+	return cs.CreatedAt.Truncate(time.Second).Add(ChangesetSpecTTL)
 }
 
 // ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if

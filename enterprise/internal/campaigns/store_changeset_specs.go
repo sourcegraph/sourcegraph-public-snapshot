@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
@@ -276,18 +275,10 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	)
 }
 
-// ChangsetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
-// attached to a CampaignSpec.
-// It's lower than CampaignSpecTTL because ChangesetSpecs should be attached to
-// a CampaignSpec immediately after having been created, whereas a CampaignSpec
-// might take a while to be complete and might also go through a lengthy review
-// phase.
-const ChangesetSpecTTL = 2 * 24 * time.Hour
-
 // DeleteExpiredChangesetSpecs deletes ChangesetSpecs that have not been
 // attached to a CampaignSpec within ChangesetSpecTTL.
 func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
-	expirationTime := s.now().Add(-ChangesetSpecTTL)
+	expirationTime := s.now().Add(-campaigns.ChangesetSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, expirationTime)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)

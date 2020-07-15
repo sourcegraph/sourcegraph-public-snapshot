@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -73,9 +72,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						Published: false,
 					},
-					ExpiresAt: &graphqlbackend.DateTime{
-						Time: spec.CreatedAt.Truncate(time.Second).Add(2 * time.Hour),
-					},
+					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt()},
 				}
 			},
 		},
@@ -94,9 +91,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 						ExternalID: spec.Spec.ExternalID,
 						Published:  false,
 					},
-					ExpiresAt: &graphqlbackend.DateTime{
-						Time: spec.CreatedAt.Truncate(time.Second).Add(2 * time.Hour),
-					},
+					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt()},
 				}
 			},
 		},
