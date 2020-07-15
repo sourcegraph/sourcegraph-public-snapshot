@@ -1205,14 +1205,6 @@ github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7 h1:G58fa9uWw59V5
 github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
-github.com/sourcegraph/zoekt v0.0.0-20200622101713-7b13614a083e h1:g7164BqqH/2SXaWaUjHtgUL3808yFfrbnKZ/JiWmiTI=
-github.com/sourcegraph/zoekt v0.0.0-20200622101713-7b13614a083e/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
-github.com/sourcegraph/zoekt v0.0.0-20200713222406-e18ef28c5e83 h1:EB6RKE5d+i1zw2+yprhkZz97kQNt5syWw8dO/oucd4s=
-github.com/sourcegraph/zoekt v0.0.0-20200713222406-e18ef28c5e83/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
-github.com/sourcegraph/zoekt v0.0.0-20200713223616-6c04e2e54f66 h1:YSsYlwZkAO3Fc+PlXtFbTBNqFCQNVFAxRhFPIabiHI8=
-github.com/sourcegraph/zoekt v0.0.0-20200713223616-6c04e2e54f66/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
-github.com/sourcegraph/zoekt v0.0.0-20200714193922-27c53f42a968 h1:bAVNFzQTs93cBtXvrORtcvawWsaOH/ZfsOYL8KgtTxs=
-github.com/sourcegraph/zoekt v0.0.0-20200714193922-27c53f42a968/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/sourcegraph/zoekt v0.0.0-20200714221025-dea986a54d01 h1:Qp+BmPgBkC4e0J5hAXS+UpdoPhQTkCrxYxkoyrxQ1nI=
 github.com/sourcegraph/zoekt v0.0.0-20200714221025-dea986a54d01/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72 h1:qLC7fQah7D6K1B0ujays3HV9gkFtllcxhzImRR7ArPQ=
