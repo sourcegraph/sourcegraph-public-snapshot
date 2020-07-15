@@ -103,6 +103,7 @@ func Test_determineOutOfDateAlert(t *testing.T) {
 }
 
 func TestObservabilityActiveAlertsAlert(t *testing.T) {
+	f := false
 	type args struct {
 		prometheusURL string
 		args          AlertFuncArgs
@@ -115,14 +116,23 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 		{
 			name: "not admin",
 			args: args{
-				args: AlertFuncArgs{IsSiteAdmin: true},
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					ViewerFinalSettings: &schema.Settings{
+						AlertsHideObservabilitySiteAlerts: &f,
+					},
+				},
 			},
 			want: nil,
 		},
 		{
 			name: "prometheus disabled",
 			args: args{
-				args:          AlertFuncArgs{IsSiteAdmin: true},
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					ViewerFinalSettings: &schema.Settings{
+						AlertsHideObservabilitySiteAlerts: &f,
+					}},
 				prometheusURL: "",
 			},
 			want: nil,
@@ -130,7 +140,12 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 		{
 			name: "prometheus malformed",
 			args: args{
-				args:          AlertFuncArgs{IsSiteAdmin: true},
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					ViewerFinalSettings: &schema.Settings{
+						AlertsHideObservabilitySiteAlerts: &f,
+					},
+				},
 				prometheusURL: " http://prometheus:9090",
 			},
 			want: []*Alert{{
@@ -141,7 +156,12 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 		{
 			name: "prometheus unreachable",
 			args: args{
-				args:          AlertFuncArgs{IsSiteAdmin: true},
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					ViewerFinalSettings: &schema.Settings{
+						AlertsHideObservabilitySiteAlerts: &f,
+					},
+				},
 				prometheusURL: "http://no-prometheus:9090",
 			},
 			want: []*Alert{{
@@ -150,13 +170,10 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 			}},
 		},
 		{
-			name: "no alerts if alerts are disabled",
+			name: "alerts disabled by default",
 			args: args{
 				args: AlertFuncArgs{
 					IsSiteAdmin: true,
-					ViewerFinalSettings: &schema.Settings{
-						AlertsHideObservabilitySiteAlerts: true,
-					},
 				},
 				prometheusURL: "http://no-prometheus:9090",
 			},
