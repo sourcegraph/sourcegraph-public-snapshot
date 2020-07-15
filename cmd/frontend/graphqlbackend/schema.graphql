@@ -661,79 +661,6 @@ type CampaignSpec implements Node {
     viewerCanAdminister: Boolean!
 }
 
-type ChangesetUpdateEdge {
-    # When false, no operation will be performed on this changeset.
-    dirty: Boolean!
-    # When this is going to end up being a new pending changeset,
-    willPublish: Boolean!
-    # True, if the changeset will be closed on apply.
-    willClose: Boolean!
-    # The new title.
-    newTitle: String!
-    # The old title.
-    oldTitle: String!
-    # true, when newTitle != node.title.
-    titleChanged: Boolean!
-    # The new body value.
-    newBody: String!
-    # The old body value.
-    oldBody: String!
-    # true, when newBody != node.body.
-    bodyChanged: Boolean!
-    # true, when the patch changed.
-    patchChanged: Boolean!
-    # The new branch name, if set.
-    newBranch: String
-    # The old branch name, if set.
-    oldBranch: String
-    # True, when the branch name changed for this changeset.
-    branchChanged: Boolean!
-    # The new diff, can be preview only or null.
-    diff: PreviewRepositoryComparison
-    # The changeset to be updated. All values reflect the _old_ state.
-    node: Changeset!
-}
-
-type ChangesetUpdateConnection {
-    totalCount: Int!
-    pageInfo: PageInfo!
-    edges: [ChangesetUpdateEdge!]!
-}
-
-# The delta (difference) between a campaign's desired state (spec) and its actual state (status) at
-# a given point in time. Because the campaign delta is computed based on external state, it may
-# become out-of-date immediately after creation (e.g., if the external state changes), so it must be
-# treated as a snapshot only and not as a definitive plan.
-type CampaignDelta {
-    # The title of the campaign, after the spec is applied.
-    newTitle: String!
-    # The title of the campaign, before the spec is applied.
-    oldTitle: String!
-    # True, when newTitle != oldTitle.
-    titleChanged: Boolean!
-
-    # The description of the campaign, after the spec is applied.
-    newDescription: String!
-    # The description of the campaign, before the spec is applied.
-    oldDescription: String!
-    # True, when newDescription != oldDescription.
-    descriptionChanged: Boolean!
-
-    # The campaign that is changed here, if it exists already.
-    campaign: Campaign
-
-    changesets(
-        first: Int
-        after: String
-        dirtyOnly: Boolean = false
-        addedOnly: Boolean = false
-        willCloseOnly: Boolean = false
-    ): ChangesetUpdateConnection!
-
-    # Whether the viewer can also update, not just view.
-    viewerCanAdminister: Boolean!
-}
-
 # A user (identified either by username or email address) with its repository permission.
 input UserPermission {
     # Depending on the bindID option in the permissions.userMapping site configuration property,
@@ -744,40 +671,10 @@ input UserPermission {
     permission: RepositoryPermission = READ
 }
 
-# The state of a background process.
-enum BackgroundProcessState {
-    # The background process is currently processing items.
-    PROCESSING
-    # The background process failed.
-    ERRORED
-    # The background process successfully completed the processing of all items.
-    COMPLETED
-    # The background process was cancelled.
-    CANCELED
-}
-
-# The status of a background process.
-type BackgroundProcessStatus {
-    # How many items were successfully completed.
-    completedCount: Int!
-
-    # How many items are not yet done (including items that errored).
-    pendingCount: Int!
-
-    # The state of the background process.
-    state: BackgroundProcessState!
-
-    # Messages of errors that occurred since the current run of this process was started.
-    errors: [String!]!
-}
-
 # A campaign is a set of related changes to apply to code across one or more repositories.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
-
-    # The current status of creating or updating the campaign's changesets on the code host.
-    status: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
@@ -811,6 +708,8 @@ type Campaign implements Node {
         first: Int
         # Only include changesets with the given state.
         state: ChangesetState
+        # Only include changesets with the given external state.
+        externalState: ExternalChangesetState
         # Only include changesets with the given review state.
         reviewState: ChangesetReviewState
         # Only include changesets with the given check state.
@@ -870,11 +769,18 @@ type CampaignConnection {
 
 # The state of a changeset.
 enum ChangesetState {
-    PENDING
+    # The changeset has not yet been created on the codehost and is not scheduled to be.
+    UNPUBLISHED
+    # The changeset is currently being created or updated on the codehost.
     PUBLISHING
+    # An error occurred while publishing or syncing this changeset.
     ERRORED
-    # STALE
-    # CONFLICTED
+    # The changeset is likely up to date and no changes are pending execution.
+    SYNCED
+}
+
+# The merge state of a changeset.
+enum ChangesetExternalState {
     OPEN
     CLOSED
     MERGED
@@ -923,6 +829,9 @@ interface Changeset {
     # The state of the changeset.
     state: ChangesetState!
 
+    # The external state of the changeset, or null when not yet opened.
+    externalState: ChangesetExternalState
+
     # The date and time when the changeset was created.
     createdAt: DateTime!
 
@@ -948,6 +857,9 @@ type HiddenExternalChangeset implements Node & Changeset {
 
     # The state of the changeset.
     state: ChangesetState!
+
+    # The external state of the changeset, or null when not yet opened.
+    externalState: ChangesetExternalState
 
     # The date and time when the changeset was created.
     createdAt: DateTime!
@@ -1002,14 +914,17 @@ type ExternalChangeset implements Node & Changeset {
     # The state of the changeset.
     state: ChangesetState!
 
+    # The external state of the changeset, or null when not yet opened.
+    externalState: ChangesetExternalState
+
     # The labels attached to the changeset on the code host.
     labels: [ChangesetLabel!]!
 
-    # The external URL of the changeset on the code host. Not set when unpublished or deleted.
+    # The external URL of the changeset on the code host. Not set when changeset is UNPUBLISHED, PUBLISHING or mergeState is DELETED.
     externalURL: ExternalLink
 
-    # The review state of this changeset.
-    reviewState: ChangesetReviewState!
+    # The review state of this changeset. Set once published.
+    reviewState: ChangesetReviewState
 
     # The base of the diff ("old" or "left-hand side"). It could be null in some cases, for example
     # when a force push has occured.
@@ -1036,6 +951,22 @@ type ExternalChangeset implements Node & Changeset {
     error: String
 }
 
+# Used in the campaign page for the overview component.
+type ChangesetConnectionStats {
+    # The count of unpublished changesets.
+    unpublished: Int!
+    # The count of mergeStatus: OPEN changesets.
+    open: Int!
+    # The count of mergeStatus: MERGED changesets.
+    merged: Int!
+    # The count of mergeStatus: CLOSED changesets.
+    closed: Int!
+    # The count of all changesets. Equal to totalCount of the connection.
+    total: Int!
+    # TODO: this one as well? The count of changesets with errors.
+    errored: Int!
+}
+
 # A list of changesets.
 type ChangesetConnection {
     # A list of changesets.
@@ -1046,6 +977,8 @@ type ChangesetConnection {
 
     # Pagination information.
     pageInfo: PageInfo!
+
+    stats: ChangesetConnectionStats!
 }
 
 # A changeset event in a code host (e.g., a comment on a pull request on GitHub).
@@ -1253,31 +1186,6 @@ type Query {
         # Only include campaigns that the viewer can administer.
         viewerCanAdminister: Boolean
     ): CampaignConnection!
-
-    # Preview the effect of applying a campaign spec. If an existing campaign exists in the
-    # namespace with the same name as that in the campaign spec, it returns the delta (difference)
-    # between the campaign's desired state (spec) and its actual state (status), as a list of
-    # changes to be applied to external state (such as repositories and changesets on code hosts).
-    # Otherwise, it returns the operations that need to be performed to create the campaign.
-    #
-    # The result is a snapshot and may immediately become stale because it is dependent on external
-    # state that can change at any time (e.g., a repository on a code host is updated).
-    #
-    # The result is computed using the viewer's credentials. Two viewers with different access
-    # levels to the associated repositories may see different results from this query.
-    campaignDelta(
-        # The namespace in which to compute the delta.
-        namespace: ID!
-
-        # The desired state of the campaign.
-        campaignSpec: ID!
-
-        # If set, return an error if the campaign identified using the namespace and campaignSpec
-        # parameters does not match the campaign with this ID. This lets callers use a stable ID
-        # that refers to a specific campaign during an edit session (and is not susceptible to
-        # conflicts if the underlying campaign is moved to a different namespace, renamed, or deleted).
-        ensureCampaign: ID
-    ): CampaignDelta!
 
     # Looks up a repository by either name or cloneURL.
     repository(
@@ -2279,22 +2187,10 @@ type GitRefConnection {
     pageInfo: PageInfo!
 }
 
-# A repository comparison, with all the fields that exist on ALL kinds of comparisons.
-interface RepositoryComparisonInterface {
-    # The repository that is the base (left-hand side) of this comparison.
-    baseRepository: Repository!
-
-    # The file diffs for each changed file.
-    fileDiffs(
-        # Return the first n file diffs from the list.
-        first: Int
-        # Return file diffs after the given cursor.
-        after: String
-    ): FileDiffConnection!
-}
+union RepositoryComparisonInterface = RepositoryComparison | PreviewRepositoryComparison
 
 # A not-yet-committed preview of a diff on a repository.
-type PreviewRepositoryComparison implements RepositoryComparisonInterface {
+type PreviewRepositoryComparison {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
@@ -2308,7 +2204,7 @@ type PreviewRepositoryComparison implements RepositoryComparisonInterface {
 }
 
 # The differences between two concrete Git commits in a repository.
-type RepositoryComparison implements RepositoryComparisonInterface {
+type RepositoryComparison {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
