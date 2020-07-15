@@ -10,7 +10,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	ossAuthz "github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	ossDB "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"

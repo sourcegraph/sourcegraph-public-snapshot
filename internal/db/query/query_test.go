@@ -7,7 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
+	"github.com/sourcegraph/sourcegraph/internal/db/query"
 )
 
 func ExampleEval() {
