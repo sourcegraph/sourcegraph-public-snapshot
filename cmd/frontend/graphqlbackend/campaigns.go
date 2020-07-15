@@ -168,7 +168,6 @@ type CampaignResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
-	OpenChangesets(ctx context.Context) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
