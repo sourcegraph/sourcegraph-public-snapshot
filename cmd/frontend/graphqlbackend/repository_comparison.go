@@ -20,12 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type RepositoryComparisonConnectionResolver interface {
-	Nodes(ctx context.Context) ([]*RepositoryComparisonResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
 type RepositoryComparisonInput struct {
 	Base         *string
 	Head         *string

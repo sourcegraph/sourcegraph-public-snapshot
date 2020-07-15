@@ -620,18 +620,6 @@ input UserPermission {
     permission: RepositoryPermission = READ
 }
 
-# A paginated list of repository diffs committed to git.
-type RepositoryComparisonConnection {
-    # A list of repository diffs committed to git.
-    nodes: [RepositoryComparison!]!
-
-    # The total number of repository diffs in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
 # The state of a background process.
 enum BackgroundProcessState {
     # The background process is currently processing items.
@@ -693,10 +681,6 @@ type Campaign implements Node {
 
     # The date and time when the campaign was updated.
     updatedAt: DateTime!
-
-    # The combined diff of all changesets (that already exist on the code host) across all affected
-    # repositories.
-    repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign that already exist on the code host.
     changesets(
