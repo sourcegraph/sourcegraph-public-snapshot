@@ -133,6 +133,14 @@ export const createSharedIntegrationTestContext = async <
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()
 
+    // Avoid 404 error logs from missing favicon
+    server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+        response
+            .status(302)
+            .setHeader('Location', new URL('/.assets/img/sourcegraph-mark.svg', driver.sourcegraphBaseUrl).href)
+            .send('')
+    })
+
     // Serve assets from disk
     server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
         const asset = request.params.path
