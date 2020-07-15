@@ -29,7 +29,7 @@
     "storybook": "start-storybook -p 9001 -c .storybook",
     "build-storybook": "build-storybook -c .storybook",
     "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
-    "percy-storybook": "PERCY_TOKEN=${PERCY_STORYBOOK_TOKEN} percy-storybook --widths=768",
+    "chromatic": "chromatic --exit-zero-on-changes",
     "deduplicate": "yarn-deduplicate -s fewer"
   },
   "browserslist": [
@@ -82,7 +82,6 @@
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@octokit/rest": "^16.36.0",
     "@percy/puppeteer": "^1.1.0",
-    "@percy/storybook": "^3.3.0",
     "@pollyjs/adapter-puppeteer": "^4.3.0",
     "@pollyjs/core": "^4.3.0",
     "@pollyjs/persister-fs": "^4.3.0",
@@ -184,6 +183,7 @@
     "chai-as-promised": "^7.1.1",
     "chalk": "^4.1.0",
     "chokidar-cli": "^2.1.0",
+    "chromatic": "^5.0.0",
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.9",
     "cross-env": "^7.0.2",
