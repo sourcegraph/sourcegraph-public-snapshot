@@ -183,7 +183,7 @@ type changesetResolver struct {
 
 	// cache changeset events as they are used more than once
 	eventsOnce sync.Once
-	events     []*campaigns.ChangesetEvent
+	events     ee.ChangesetEvents
 	eventsErr  error
 
 	// When the next sync is scheduled
@@ -239,7 +239,10 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 			Limit:        -1,
 		}
 		es, _, err := r.store.ListChangesetEvents(ctx, opts)
+
 		r.events = es
+		sort.Sort(r.events)
+
 		r.eventsErr = err
 	})
 	return r.events, r.eventsErr
@@ -334,15 +337,11 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 		return nil, err
 	}
 
-	events := make(ee.ChangesetEvents, len(es))
-	copy(events, es)
-	sort.Sort(events)
-
 	// We use changeset labels as the source of truth as they can be renamed
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	labels := ee.ComputeLabels(r.Changeset, events)
+	labels := ee.ComputeLabels(r.Changeset, es)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})
