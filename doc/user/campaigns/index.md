@@ -4,9 +4,7 @@
 
 ## What are campaigns?
 
-Campaigns are part of [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) and let you make large-scale code changes across many repositories and different code hosts.
-
-You provide the code to make the change, and campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
+Campaigns are a part of [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) that allow you to make large-scale code changes across many repositories and different code hosts, and monitor their progress.
 
 <div class="text-center">
   <iframe
@@ -26,11 +24,18 @@ If you are a first-time user of campaigns, we recommend that you read through th
 1. Read through the **[How it works](#how-it-works)** section below and **watch the video** to get an understanding of how campaigns work.
 1. Go through the "[Getting started](./getting_started.md)" instructions to setup your Sourcegraph instance for campaigns.
 1. Create your first campaign from a set of patches by reading "[Creating a campaign from patches](./creating_campaign_from_patches.md)".
-1. Create a manual campaign to track the progress of already-existing pull requests on your code host: "[Creating a manual campaign](./creating_manual_campaign.md)".
+1. Create a manual campaign to track the progress of existing pull requests on your code host by reading "[Creating a manual campaign](./creating_manual_campaign.md)".
 
 At this point you're ready to explore the [**example campaigns**](./examples/index.md) and [create your own action definitions](./actions.md) and campaigns.
 
 ## When should I use campaigns?
+
+You should use campaigns if you want to:
+
+* run code to make changes across a large number of repositories.
+* keep track of a large number of pull requests and their status on GitHub or Bitbucket Server instances.
+* execute commands to upgrade dependencies in multiple repositories.
+* use Sourcegraph's search and replace matches by running code in the matched repositories.
 
 Campaigns allow you to **leverage Sourcegraph's search powers** and **execute code and Docker containers in all the repositories** yielded by a single Sourcegraph search query.
 
@@ -47,14 +52,7 @@ The created set of patches can then be turned into multiple **changesets** (a ge
   </figure>
 </div>
 
-Once the campaign is created, you can track the **review state, CI status and open/closed/merged lifecycle of each changeset in the Sourcegraph UI**.
-
-You should use campaigns if you want to
-
-* run code to make changes across a large number of repositories.
-* keep track of a large number of pull requests and their status on GitHub or Bitbucket Server instances.
-* execute commands to upgrade dependencies in multiple repositories.
-* use Sourcegraph's search and replace matches by running code in the matched repositories.
+Once the campaign is created, you can track the **review state, CI status,** and **open/closed/merged lifecycle** of each changeset in the Sourcegraph UI.
 
 <div class="clearfix"></div>
 
@@ -71,11 +69,11 @@ See this video for a demonstration of lifecycle of a campaign:
   </figure>
 </div>
 
-1. With the `src` CLI the user **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities.
+1. The `src` CLI **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities.
 
-    This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository) and yields **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
+    This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository). It yields a **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
 1. The patches are then used to **create a draft campaign**.
-1. At this point, since it's a draft camapaign, no changesets (_pull requests_ in the case of GitHub here) have been created on the code host.
+1. At this point, since it's a draft camapaign, no changesets (or _pull requests_ in the case of GitHub) have been created on the code host.
 1. The user then selectively **creates GitHub pull requests** by publishing single patches.
 
 <div class="clearfix"></div>
@@ -87,4 +85,4 @@ See this video for a demonstration of lifecycle of a campaign:
 
 ## Limitations
 
-Campaigns currently only support **GitHub** and **Bitbucket Server** repositories. If you're interested in using campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).
+Campaigns currently support **GitHub**, **GitLab** and **Bitbucket Server** repositories. If you're interested in using campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).
