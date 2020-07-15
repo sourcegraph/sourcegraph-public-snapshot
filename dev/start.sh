@@ -2,6 +2,13 @@
 
 set -euf -o pipefail
 
+if [[ ${BASH_VERSION:0:1} -lt 5 ]]; then
+    echo "Please upgrade bash to version 5. Currently on ${BASH_VERSION}."
+    echo
+    echo "  brew install bash"
+    exit 1
+fi
+
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
