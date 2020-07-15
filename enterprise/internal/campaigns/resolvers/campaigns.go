@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"sync"
 	"time"
@@ -207,21 +206,6 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	return resolvers, nil
 }
 
-func (r *campaignResolver) RepositoryDiffs(
-	ctx context.Context,
-	args *graphqlutil.ConnectionArgs,
-) (graphqlbackend.RepositoryComparisonConnectionResolver, error) {
-	changesetsConnection := &changesetsConnectionResolver{
-		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			CampaignID: r.Campaign.ID,
-			Limit:      int(args.GetFirst()),
-		},
-		optsSafe: true,
-	}
-	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
-}
-
 func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	changesetsConnection := &changesetsConnectionResolver{
 		store: r.store,
@@ -259,37 +243,4 @@ func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.Backgroun
 	svc := ee.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: GetCampaignStatus checks whether current user is authorized.
 	return svc.GetCampaignStatus(ctx, r.Campaign)
-}
-
-type changesetDiffsConnectionResolver struct {
-	*changesetsConnectionResolver
-}
-
-func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
-	changesets, err := r.changesetsConnectionResolver.Nodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	resolvers := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(changesets))
-	for _, c := range changesets {
-		switch c := c.(type) {
-		case *changesetResolver:
-			comp, err := c.Diff(ctx)
-			if err != nil {
-				return nil, err
-			}
-
-			if comp != nil {
-				resolvers = append(resolvers, comp)
-			}
-		case *hiddenChangesetResolver:
-			// Do not include hidden changesets in diff and diffstats
-			continue
-		default:
-			return nil, fmt.Errorf("changesetResolver has unknown type: %T", c)
-		}
-
-	}
-	return resolvers, nil
 }
