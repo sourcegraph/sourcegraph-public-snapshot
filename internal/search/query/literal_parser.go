@@ -351,11 +351,7 @@ func ParseAndOrLiteral(in string) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
-	err = validate(nodes)
-	if err != nil {
-		return nil, err
-	}
+
 	err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 	if err != nil {
 		return nil, err

@@ -313,3 +313,135 @@ func TestMap(t *testing.T) {
 		})
 	}
 }
+
+func TestTranslateGlobToRegex(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "*",
+			want:  "[^/]*?",
+		},
+		{
+			input: "*repo",
+			want:  "[^/]*?repo$",
+		},
+		{
+			input: "re*o",
+			want:  "^re[^/]*?o$",
+		},
+		{
+			input: "repo*",
+			want:  "^repo[^/]*?",
+		},
+		{
+			input: "?",
+			want:  "^.$",
+		},
+		{
+			input: "?repo",
+			want:  "^.repo$",
+		},
+		{
+			input: "re?o",
+			want:  "^re.o$",
+		},
+		{
+			input: "repo?",
+			want:  "^repo.$",
+		},
+		{
+			input: "123",
+			want:  "^123$",
+		},
+		{
+			input: ".123",
+			want:  "^\\.123$",
+		},
+		{
+			input: "*.go",
+			want:  "[^/]*?\\.go$",
+		},
+		{
+			input: "h[a-z]llo",
+			want:  "^h[a-z]llo$",
+		},
+		{
+			input: "h[!a-z]llo",
+			want:  "^h[^a-z]llo$",
+		},
+		{
+			input: "h[!abcde]llo",
+			want:  "^h[^abcde]llo$",
+		},
+		{
+			input: "h[]-]llo",
+			want:  "^h[]-]llo$",
+		},
+		{
+			input: "h\\[llo",
+			want:  "^h\\[llo$",
+		},
+		{
+			input: "h\\*llo",
+			want:  "^h\\*llo$",
+		},
+		{
+			input: "h\\?llo",
+			want:  "^h\\?llo$",
+		},
+		{
+			input: "fo[a-z]baz",
+			want:  "^fo[a-z]baz$",
+		},
+		{
+			input: "foo/**",
+			want:  "^foo/.*?",
+		},
+		{
+			input: "[a-z0-9]",
+			want:  "^[a-z0-9]$",
+		},
+		{
+			input: "[abc-]",
+			want:  "^[abc-]$",
+		},
+		{
+			input: "[--0]",
+			want:  "^[--0]$",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.want, func(t *testing.T) {
+			got, err := globToRegex(c.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestTranslateBadGlobPattern(t *testing.T) {
+	cases := []struct {
+		input string
+	}{
+		{input: "fo[a-b-c]"},
+		{input: "fo\\o"},
+		{input: "fo[o"},
+		{input: "[z-a]"},
+		{input: "[a-z--0]"},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			_, err := globToRegex(c.input)
+			if diff := cmp.Diff(ErrBadGlobPattern.Error(), err.Error()); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
