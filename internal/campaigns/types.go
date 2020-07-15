@@ -1592,6 +1592,15 @@ type ChangesetSpec struct {
 	UpdatedAt time.Time
 }
 
+// ChangesetSpecType tells about the type of the changeset spec without including the description. Useful for HiddenChangesetSpecs in the API.
+type ChangesetSpecType string
+
+// Valid ChangesetEvent kinds
+const (
+	ChangesetSpecTypeExisting ChangesetSpecType = "EXISTING"
+	ChangesetSpecTypeBranch   ChangesetSpecType = "BRANCH"
+)
+
 // Clone returns a clone of a ChangesetSpec.
 func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 	cc := *cs
@@ -1640,6 +1649,11 @@ type ChangesetSpecDescription struct {
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
 	Published bool `json:"published,omitempty"`
+}
+
+// IsExistingChangesetRef returns true when the changeset spec is referencing an existing changeset on a codehost.
+func (d *ChangesetSpecDescription) IsExistingChangesetRef() bool {
+	return d.ExternalID != ""
 }
 
 type GitCommitDescription struct {

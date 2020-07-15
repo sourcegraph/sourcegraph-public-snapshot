@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -45,7 +46,7 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 	return graphqlbackend.JSONValue{Value: r.campaignSpec.Spec}, nil
 }
 
-func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context) ([]graphqlbackend.ChangesetSpecResolver, error) {
+func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
 	opts := ee.ListChangesetSpecsOpts{Limit: -1, CampaignSpecID: r.campaignSpec.ID}
 	cs, _, err := r.store.ListChangesetSpecs(ctx, opts)
 	if err != nil {
@@ -61,7 +62,16 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context) ([]graphqlbac
 		})
 	}
 
-	return resolvers, nil
+	return &changesetSpecConnectionResolver{
+		resolvers: resolvers,
+	}, nil
+}
+
+func (r *campaignSpecResolver) Description() graphqlbackend.CampaignDescriptionResolver {
+	return &campaignDescriptionResolver{
+		name:        r.campaignSpec.Spec.Name,
+		description: r.campaignSpec.Spec.Description,
+	}
 }
 
 func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
@@ -92,12 +102,48 @@ func (r *campaignSpecResolver) PreviewURL() (string, error) {
 	return "/campaigns/new?spec=" + string(r.ID()), nil
 }
 
-func (r *campaignSpecResolver) CreatedAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.campaignSpec.CreatedAt}
+func (r *campaignSpecResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.campaignSpec.CreatedAt}
 }
 
 func (r *campaignSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	// TODO: This is a bogus value and needs to be implemented properly
 	expiresAt := r.campaignSpec.CreatedAt.Add(2 * time.Hour)
 	return &graphqlbackend.DateTime{Time: expiresAt}
+}
+
+func (r *campaignSpecResolver) ViewerCanAdminister() bool {
+	// TODO: Implement.
+	return true
+}
+
+type campaignDescriptionResolver struct {
+	name, description string
+}
+
+func (r *campaignDescriptionResolver) Name() string {
+	return r.name
+}
+
+func (r *campaignDescriptionResolver) Description() string {
+	return r.description
+}
+
+type changesetSpecConnectionResolver struct {
+	resolvers []graphqlbackend.ChangesetSpecResolver
+}
+
+func (r *changesetSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	// TODO: Implement.
+	return int32(len(r.resolvers)), nil
+}
+
+func (r *changesetSpecConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	// TODO: Implement.
+	return &graphqlutil.PageInfo{}, nil
+}
+
+func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetSpecResolver, error) {
+	// TODO: Implement.
+	return r.resolvers, nil
 }

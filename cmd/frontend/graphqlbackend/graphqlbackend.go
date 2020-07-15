@@ -412,14 +412,20 @@ func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToChangesetSpec() (ChangesetSpecResolver, bool) {
+func (r *NodeResolver) ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool) {
 	n, ok := r.Node.(ChangesetSpecResolver)
-	return n, ok
+	if !ok {
+		return nil, ok
+	}
+	return n.ToHiddenChangesetSpec()
 }
 
-func (r *NodeResolver) ToCampaignDelta() (CampaignDeltaResolver, bool) {
-	n, ok := r.Node.(CampaignDeltaResolver)
-	return n, ok
+func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool) {
+	n, ok := r.Node.(ChangesetSpecResolver)
+	if !ok {
+		return nil, ok
+	}
+	return n.ToVisibleChangesetSpec()
 }
 
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
