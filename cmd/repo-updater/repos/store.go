@@ -430,15 +430,15 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-/*
-This query generates a diff by selecting only
-the repos that need to be updated.
-Selected repos will have their cloned column reversed if
-their cloned column is true but they are not in cloned_repos
-or they are in cloned_repos but their cloned column is false
-*/
+--
+-- This query generates a diff by selecting only
+-- the repos that need to be updated.
+-- Selected repos will have their cloned column reversed if
+-- their cloned column is true but they are not in cloned_repos
+-- or they are in cloned_repos but their cloned column is false.
+--
 WITH cloned_repos AS (
-  SELECT jsonb_array_elements_text(%s)
+  SELECT jsonb_array_elements_text(%s) AS name
 ),
 diff AS (
   SELECT id,
@@ -446,9 +446,9 @@ diff AS (
   FROM repo
   WHERE
     NOT cloned
-      AND name IN (SELECT * FROM cloned_repos)
+      AND name IN (SELECT name::citext FROM cloned_repos)
     OR cloned
-      AND name NOT IN (SELECT * FROM cloned_repos)
+      AND name NOT IN (SELECT name::citext FROM cloned_repos)
 )
 UPDATE repo
 SET cloned = NOT diff.cloned
@@ -467,7 +467,7 @@ func (s DBStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 
 const CountNotClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.CountNotClonedRepos
-SELECT COUNT(*) FROM repo WHERE NOT cloned
+SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 `
 
 // a paginatedQuery returns a query with the given pagination
@@ -515,6 +515,7 @@ func (s DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
 // The ID field is used to distinguish between Repos that need to be updated and Repos
 // that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
+// The cloned column is not updated by this function.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	if len(repos) == 0 {
 		return nil
@@ -612,7 +613,6 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		Archived            bool            `json:"archived"`
 		Fork                bool            `json:"fork"`
 		Private             bool            `json:"private"`
-		Cloned              bool            `json:"cloned"`
 		Sources             json.RawMessage `json:"sources"`
 		Metadata            json.RawMessage `json:"metadata"`
 	}
@@ -642,7 +642,6 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
 			Archived:            r.Archived,
-			Cloned:              r.Cloned,
 			Fork:                r.Fork,
 			Private:             r.Private,
 			Sources:             sources,
@@ -687,7 +686,6 @@ WITH batch AS (
       external_service_id   text,
       external_id           text,
       archived              boolean,
-      cloned                boolean,
       fork                  boolean,
       private               boolean,
       sources               jsonb,
@@ -711,7 +709,6 @@ SET
   external_service_id   = batch.external_service_id,
   external_id           = batch.external_id,
   archived              = batch.archived,
-  cloned                = batch.cloned,
   fork                  = batch.fork,
   private               = batch.private,
   sources               = batch.sources,
@@ -749,7 +746,6 @@ INSERT INTO repo (
   external_service_id,
   external_id,
   archived,
-  cloned,
   fork,
   private,
   sources,
@@ -767,7 +763,6 @@ SELECT
   external_service_id,
   external_id,
   archived,
-  cloned,
   fork,
   private,
   sources,
