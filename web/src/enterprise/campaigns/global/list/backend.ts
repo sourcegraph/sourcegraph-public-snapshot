@@ -17,13 +17,15 @@ export const queryCampaigns = ({
                         id
                         name
                         description
-                        url
                         createdAt
                         closedAt
+                        author {
+                            username
+                        }
                         changesets {
-                            totalCount
-                            nodes {
-                                state
+                            stats {
+                                open
+                                merged
                             }
                         }
                     }
