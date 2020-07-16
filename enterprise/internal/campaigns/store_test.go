@@ -569,7 +569,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      "campaigns/test",
 				ExternalUpdatedAt:   clock.now(),
-				ExternalState:       cmpgn.ChangesetStateOpen,
+				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
 				ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 			}
@@ -884,8 +884,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
-		stateOpen := cmpgn.ChangesetStateOpen
-		stateClosed := cmpgn.ChangesetStateClosed
+		stateOpen := cmpgn.ChangesetExternalStateOpen
+		stateClosed := cmpgn.ChangesetExternalStateClosed
 		stateApproved := cmpgn.ChangesetReviewStateApproved
 		stateChangesRequested := cmpgn.ChangesetReviewStateChangesRequested
 		statePassed := cmpgn.ChangesetCheckStatePassed
@@ -1456,7 +1456,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
-			ExternalState:       cmpgn.ChangesetStateOpen,
+			ExternalState:       cmpgn.ChangesetExternalStateOpen,
 			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
 			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 		})
@@ -2365,7 +2365,6 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 		patchesAttachedToOtherCampaign bool
 		patches                        []*cmpgn.Patch
 		wantDeleted                    bool
-		want                           *cmpgn.BackgroundProcessStatus
 	}{
 		{
 			hasCampaign: false,
@@ -2458,7 +2457,7 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 					ExternalServiceType: extsvc.TypeGitHub,
 					ExternalBranch:      "campaigns/test",
 					ExternalUpdatedAt:   clock.now(),
-					ExternalState:       cmpgn.ChangesetStateOpen,
+					ExternalState:       cmpgn.ChangesetExternalStateOpen,
 					ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
 					ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 				}
@@ -2865,228 +2864,6 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 			if have, want := count, int64(len(changesetJobs)-(i+1)); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
-		}
-	})
-
-	t.Run("BackgroundProcessStatus", func(t *testing.T) {
-		tests := []struct {
-			jobs []*cmpgn.ChangesetJob
-			want *cmpgn.BackgroundProcessStatus
-			opts GetCampaignStatusOpts
-		}{
-			{
-				jobs: []*cmpgn.ChangesetJob{}, // no jobs
-				want: &cmpgn.BackgroundProcessStatus{
-					ProcessState:  cmpgn.BackgroundProcessStateCompleted,
-					Total:         0,
-					Completed:     0,
-					Pending:       0,
-					ProcessErrors: nil,
-				},
-			},
-			{
-				jobs: []*cmpgn.ChangesetJob{
-					// not started (pending)
-					{},
-					// started (pending)
-					{StartedAt: clock.now()},
-				},
-				want: &cmpgn.BackgroundProcessStatus{
-					ProcessState:  cmpgn.BackgroundProcessStateProcessing,
-					Total:         2,
-					Completed:     0,
-					Pending:       2,
-					ProcessErrors: nil,
-				},
-			},
-			{
-				jobs: []*cmpgn.ChangesetJob{
-					// completed, no errors
-					{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
-				},
-				want: &cmpgn.BackgroundProcessStatus{
-					ProcessState:  cmpgn.BackgroundProcessStateCompleted,
-					Total:         1,
-					Completed:     1,
-					Pending:       0,
-					ProcessErrors: nil,
-				},
-			},
-			{
-				jobs: []*cmpgn.ChangesetJob{
-					// completed, error
-					{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
-				},
-				want: &cmpgn.BackgroundProcessStatus{
-					ProcessState:  cmpgn.BackgroundProcessStateErrored,
-					Total:         1,
-					Completed:     1,
-					Failed:        1,
-					Pending:       0,
-					ProcessErrors: []string{"error1"},
-				},
-			},
-			{
-				jobs: []*cmpgn.ChangesetJob{
-					// not started (pending)
-					{},
-					// started (pending)
-					{StartedAt: clock.now()},
-					// completed, no errors
-					{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
-					// completed, error
-					{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
-					// completed, another error
-					{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
-				},
-				want: &cmpgn.BackgroundProcessStatus{
-					ProcessState:  cmpgn.BackgroundProcessStateProcessing,
-					Total:         5,
-					Completed:     3,
-					Failed:        2,
-					Pending:       2,
-					ProcessErrors: []string{"error1", "error2"},
-				},
-			},
-
-			{
-				jobs: []*cmpgn.ChangesetJob{
-					// completed, error
-					{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
-				},
-				// but we want to exclude errors
-				opts: GetCampaignStatusOpts{ExcludeErrors: true},
-				want: &cmpgn.BackgroundProcessStatus{
-					ProcessState:  cmpgn.BackgroundProcessStateErrored,
-					Total:         1,
-					Completed:     1,
-					Failed:        1,
-					Pending:       0,
-					ProcessErrors: nil,
-				},
-			},
-		}
-
-		for campaignID, tc := range tests {
-			for i, j := range tc.jobs {
-				p := &cmpgn.Patch{
-					RepoID:     api.RepoID(i),
-					PatchSetID: int64(campaignID),
-					BaseRef:    "deadbeef",
-					Diff:       "foobar",
-				}
-
-				if err := s.CreatePatch(ctx, p); err != nil {
-					t.Fatal(err)
-				}
-
-				j.CampaignID = int64(campaignID)
-				j.PatchID = p.ID
-
-				err := s.CreateChangesetJob(ctx, j)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			opts := tc.opts
-			opts.ID = int64(campaignID)
-
-			status, err := s.GetCampaignStatus(ctx, opts)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if diff := cmp.Diff(status, tc.want); diff != "" {
-				t.Fatalf("wrong diff: %s", diff)
-			}
-		}
-	})
-	t.Run("BackgroundProcessStatus_ErrorsOnlyInRepos", func(t *testing.T) {
-		var campaignID int64 = 123456
-
-		patches := []*cmpgn.Patch{
-			{RepoID: 444, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
-			{RepoID: 555, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
-			{RepoID: 666, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
-		}
-		for _, p := range patches {
-			if err := s.CreatePatch(ctx, p); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{PatchID: patches[0].ID, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
-			// completed, error
-			{PatchID: patches[1].ID, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
-			// completed, another error
-			{PatchID: patches[2].ID, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
-		}
-
-		for _, j := range jobs {
-			j.CampaignID = campaignID
-
-			err := s.CreateChangesetJob(ctx, j)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		opts := GetCampaignStatusOpts{
-			ID:                   campaignID,
-			ExcludeErrorsInRepos: []api.RepoID{patches[2].RepoID},
-		}
-
-		want := &cmpgn.BackgroundProcessStatus{
-			ProcessState:  cmpgn.BackgroundProcessStateErrored,
-			Total:         3,
-			Completed:     3,
-			Failed:        2,
-			Pending:       0,
-			ProcessErrors: []string{"error1"},
-			// error2 should be excluded
-		}
-
-		status, err := s.GetCampaignStatus(ctx, opts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(status, want); diff != "" {
-			t.Fatalf("wrong diff: %s", diff)
-		}
-
-		// Now we filter out all errors, but still want the ProcessState to be
-		// correct
-		opts = GetCampaignStatusOpts{
-			ID: campaignID,
-			ExcludeErrorsInRepos: []api.RepoID{
-				patches[0].RepoID,
-				patches[1].RepoID,
-				patches[2].RepoID,
-			},
-		}
-
-		want = &cmpgn.BackgroundProcessStatus{
-			// This should stay "Errored", even though no errors are returned.
-			ProcessState:  cmpgn.BackgroundProcessStateErrored,
-			Total:         3,
-			Completed:     3,
-			Failed:        2,
-			Pending:       0,
-			ProcessErrors: nil,
-			// error1 and error2 should be excluded
-		}
-
-		status, err = s.GetCampaignStatus(ctx, opts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(status, want); diff != "" {
-			t.Fatalf("wrong diff: %s", diff)
 		}
 	})
 

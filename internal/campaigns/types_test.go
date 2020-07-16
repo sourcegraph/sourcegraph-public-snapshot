@@ -64,12 +64,12 @@ func TestChangesetMetadata(t *testing.T) {
 		t.Errorf("changeset body wrong. want=%q, have=%q", want, have)
 	}
 
-	state, err := changeset.state()
+	state, err := changeset.externalState()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if want, have := ChangesetStateMerged, state; want != have {
+	if want, have := ChangesetExternalStateMerged, state; want != have {
 		t.Errorf("changeset state wrong. want=%q, have=%q", want, have)
 	}
 
@@ -619,57 +619,57 @@ func TestChangeset_Body(t *testing.T) {
 	})
 }
 
-func TestChangeset_state(t *testing.T) {
+func TestChangeset_externalState(t *testing.T) {
 	for name, tc := range map[string]struct {
 		meta interface{}
-		want ChangesetState
+		want ChangesetExternalState
 	}{
 		"bitbucketserver: declined": {
 			meta: &bitbucketserver.PullRequest{
 				State: "DECLINED",
 			},
-			want: ChangesetStateClosed,
+			want: ChangesetExternalStateClosed,
 		},
 		"bitbucketserver: open": {
 			meta: &bitbucketserver.PullRequest{
 				State: "OPEN",
 			},
-			want: ChangesetStateOpen,
+			want: ChangesetExternalStateOpen,
 		},
 		"GitHub: open": {
 			meta: &github.PullRequest{
 				State: "OPEN",
 			},
-			want: ChangesetStateOpen,
+			want: ChangesetExternalStateOpen,
 		},
 		"GitLab: opened": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateOpened,
 			},
-			want: ChangesetStateOpen,
+			want: ChangesetExternalStateOpen,
 		},
 		"GitLab: closed": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateClosed,
 			},
-			want: ChangesetStateClosed,
+			want: ChangesetExternalStateClosed,
 		},
 		"GitLab: locked": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateLocked,
 			},
-			want: ChangesetStateClosed,
+			want: ChangesetExternalStateClosed,
 		},
 		"GitLab: merged": {
 			meta: &gitlab.MergeRequest{
 				State: gitlab.MergeRequestStateMerged,
 			},
-			want: ChangesetStateMerged,
+			want: ChangesetExternalStateMerged,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			c := &Changeset{Metadata: tc.meta}
-			have, err := c.state()
+			have, err := c.externalState()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
@@ -681,11 +681,11 @@ func TestChangeset_state(t *testing.T) {
 
 	t.Run("deleted", func(t *testing.T) {
 		c := &Changeset{ExternalDeletedAt: time.Unix(10, 0)}
-		have, err := c.state()
+		have, err := c.externalState()
 		if err != nil {
 			t.Errorf("unexpected error: %+v", err)
 		}
-		if want := ChangesetStateDeleted; have != want {
+		if want := ChangesetExternalStateDeleted; have != want {
 			t.Errorf("unexpected state: have %s; want %s", have, want)
 		}
 	})
@@ -694,14 +694,14 @@ func TestChangeset_state(t *testing.T) {
 		c := &Changeset{Metadata: &github.PullRequest{
 			State: "FOO",
 		}}
-		if _, err := c.state(); err == nil {
+		if _, err := c.externalState(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
 	t.Run("unknown changeset type", func(t *testing.T) {
 		c := &Changeset{}
-		if _, err := c.state(); err == nil {
+		if _, err := c.externalState(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})

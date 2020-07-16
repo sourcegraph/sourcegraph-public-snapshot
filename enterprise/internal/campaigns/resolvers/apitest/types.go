@@ -103,19 +103,15 @@ type UserOrg struct {
 }
 
 type Campaign struct {
-	ID                  string
-	Name                string
-	Description         string
-	Branch              string
-	Author              User
-	ViewerCanAdminister bool
-	Namespace           UserOrg
-	CreatedAt           string
-	UpdatedAt           string
-	Status              struct {
-		State  string
-		Errors []string
-	}
+	ID                      string
+	Name                    string
+	Description             string
+	Branch                  string
+	Author                  User
+	ViewerCanAdminister     bool
+	Namespace               UserOrg
+	CreatedAt               string
+	UpdatedAt               string
 	Patches                 PatchConnection
 	HasUnpublishedPatches   bool
 	Changesets              ChangesetConnection
@@ -142,17 +138,18 @@ type Repository struct {
 }
 
 type Changeset struct {
-	Typename    string `json:"__typename"`
-	ID          string
-	Repository  Repository
-	Campaigns   CampaignConnection
-	CreatedAt   string
-	UpdatedAt   string
-	NextSyncAt  string
-	Title       string
-	Body        string
-	State       string
-	ExternalURL struct {
+	Typename      string `json:"__typename"`
+	ID            string
+	Repository    Repository
+	Campaigns     CampaignConnection
+	CreatedAt     string
+	UpdatedAt     string
+	NextSyncAt    string
+	Title         string
+	Body          string
+	State         string
+	ExternalState string
+	ExternalURL   struct {
 		URL         string
 		ServiceType string
 	}

@@ -44,11 +44,6 @@ type SyncChangesetArgs struct {
 	Changeset graphql.ID
 }
 
-type FileDiffsConnectionArgs struct {
-	First *int32
-	After *string
-}
-
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
@@ -158,7 +153,7 @@ type GitBranchChangesetDescriptionResolver interface {
 	Title() string
 	Body() string
 
-	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
+	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
 
 	Commits() []GitCommitDescriptionResolver
 
@@ -176,10 +171,11 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First       *int32
-	State       *campaigns.ChangesetState
-	ReviewState *campaigns.ChangesetReviewState
-	CheckState  *campaigns.ChangesetCheckState
+	First         *int32
+	State         *campaigns.ChangesetState
+	ExternalState *campaigns.ChangesetExternalState
+	ReviewState   *campaigns.ChangesetReviewState
+	CheckState    *campaigns.ChangesetCheckState
 }
 
 type CampaignResolver interface {
@@ -195,7 +191,6 @@ type CampaignResolver interface {
 	UpdatedAt() DateTime
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
-	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
 }
@@ -206,10 +201,19 @@ type CampaignsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type ChangesetsConnectionStatsResolver interface {
+	Unpublished() int32
+	Open() int32
+	Merged() int32
+	Closed() int32
+	Total() int32
+}
+
 type ChangesetsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Stats(ctx context.Context) (ChangesetsConnectionStatsResolver, error)
 }
 
 type ChangesetLabelResolver interface {
@@ -227,6 +231,7 @@ type ChangesetResolver interface {
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
 	State() campaigns.ChangesetState
+	ExternalState() *campaigns.ChangesetExternalState
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -248,20 +253,22 @@ type HiddenExternalChangesetResolver interface {
 type ExternalChangesetResolver interface {
 	ChangesetResolver
 
-	ExternalID() string
+	ExternalID() *string
 	Title() (string, error)
 	Body() (string, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState(context.Context) campaigns.ChangesetReviewState
+	ReviewState(context.Context) *campaigns.ChangesetReviewState
 	CheckState(context.Context) (*campaigns.ChangesetCheckState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
-	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
+	Diff(ctx context.Context) (RepositoryComparisonInterface, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	Head(ctx context.Context) (*GitRefResolver, error)
 	Base(ctx context.Context) (*GitRefResolver, error)
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
+
+	Error() *string
 }
 
 type ChangesetEventsConnectionResolver interface {
@@ -285,15 +292,6 @@ type ChangesetCountsResolver interface {
 	OpenApproved() int32
 	OpenChangesRequested() int32
 	OpenPending() int32
-}
-
-type BackgroundProcessStatus interface {
-	CompletedCount() int32
-	PendingCount() int32
-
-	State() campaigns.BackgroundProcessState
-
-	Errors() []string
 }
 
 var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")

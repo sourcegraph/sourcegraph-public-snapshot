@@ -402,10 +402,8 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return err
 		}
 
-		processing, err := campaignIsProcessing(ctx, tx, id)
-		if err != nil {
-			return err
-		}
+		// TODO: Implement logic to find changesets in PUBLISHING state.
+		processing := false
 		if processing {
 			err = ErrCloseProcessingCampaign
 			return err
@@ -481,10 +479,8 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 		}
 		defer tx.Done(&err)
 
-		processing, err := campaignIsProcessing(ctx, tx, id)
-		if err != nil {
-			return err
-		}
+		// TODO: Implement logic to find changesets in PUBLISHING state.
+		processing := false
 		if processing {
 			return ErrDeleteProcessingCampaign
 		}
@@ -498,7 +494,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
 func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changesets) (err error) {
 	cs = cs.Filter(func(c *campaigns.Changeset) bool {
-		return c.ExternalState == campaigns.ChangesetStateOpen
+		return c.ExternalState == campaigns.ChangesetExternalStateOpen
 	})
 
 	if len(cs) == 0 {
@@ -597,67 +593,6 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	return nil
 }
 
-// GetCampaignStatus returns the BackgroundProcessStatus for the given campaign.
-func (s *Service) GetCampaignStatus(ctx context.Context, c *campaigns.Campaign) (status *campaigns.BackgroundProcessStatus, err error) {
-	traceTitle := fmt.Sprintf("campaign: %d", c.ID)
-	tr, ctx := trace.New(ctx, "service.GetCampaignStatus", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	canAdmin, err := hasCampaignAdminPermissions(ctx, c)
-	if err != nil {
-		return nil, err
-	}
-
-	if !canAdmin {
-		// If the user doesn't have admin permissions for this campaign, we
-		// don't need to filter out specific errors, but can simply exclude
-		// _all_ errors.
-		return s.store.GetCampaignStatus(ctx, GetCampaignStatusOpts{
-			ID:            c.ID,
-			ExcludeErrors: true,
-		})
-	}
-
-	// We need to filter out error messages the user is not allowed to see,
-	// because they don't have permissions to access the repository associated
-	// with a given patch/changesetJob.
-
-	// First we load the repo IDs of the failed changesetJobs
-	repoIDs, err := s.store.GetRepoIDsForFailedChangesetJobs(ctx, c.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = struct{}{}
-	}
-
-	// We now check which repositories in `repoIDs` are not in `accessibleRepoIDs`.
-	// We have to filter the error messages associated with those out.
-	excludedRepos := make([]api.RepoID, 0, len(accessibleRepoIDs))
-	for _, id := range repoIDs {
-		if _, ok := accessibleRepoIDs[id]; !ok {
-			excludedRepos = append(excludedRepos, id)
-		}
-	}
-
-	return s.store.GetCampaignStatus(ctx, GetCampaignStatusOpts{
-		ID:                   c.ID,
-		ExcludeErrorsInRepos: excludedRepos,
-	})
-}
-
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
@@ -682,28 +617,6 @@ func validateCampaignBranch(branch string) error {
 		return ErrCampaignBranchInvalid
 	}
 	return nil
-}
-
-func campaignIsProcessing(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	status, err := store.GetCampaignStatus(ctx, GetCampaignStatusOpts{ID: campaign})
-	if err != nil {
-		return false, err
-	}
-	return status.Processing(), nil
-}
-
-// hasCampaignAdminPermissions returns true when the actor in the given context
-// is either a site-admin or the author of the given campaign.
-func hasCampaignAdminPermissions(ctx context.Context, c *campaigns.Campaign) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID); err != nil {
-		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
-			return false, nil
-		}
-
-		return false, err
-	}
-	return true, nil
 }
 
 // accessibleRepos collects the RepoIDs of the changesets and returns a set of

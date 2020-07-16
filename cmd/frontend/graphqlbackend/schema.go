@@ -664,40 +664,10 @@ input UserPermission {
     permission: RepositoryPermission = READ
 }
 
-# The state of a background process.
-enum BackgroundProcessState {
-    # The background process is currently processing items.
-    PROCESSING
-    # The background process failed.
-    ERRORED
-    # The background process successfully completed the processing of all items.
-    COMPLETED
-    # The background process was cancelled.
-    CANCELED
-}
-
-# The status of a background process.
-type BackgroundProcessStatus {
-    # How many items were successfully completed.
-    completedCount: Int!
-
-    # How many items are not yet done (including items that errored).
-    pendingCount: Int!
-
-    # The state of the background process.
-    state: BackgroundProcessState!
-
-    # Messages of errors that occurred since the current run of this process was started.
-    errors: [String!]!
-}
-
 # A campaign is a set of related changes to apply to code across one or more repositories.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
-
-    # The current status of creating or updating the campaign's changesets on the code host.
-    status: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
@@ -731,6 +701,8 @@ type Campaign implements Node {
         first: Int
         # Only include changesets with the given state.
         state: ChangesetState
+        # Only include changesets with the given external state.
+        externalState: ChangesetExternalState
         # Only include changesets with the given review state.
         reviewState: ChangesetReviewState
         # Only include changesets with the given check state.
@@ -747,7 +719,7 @@ type Campaign implements Node {
         to: DateTime
     ): [ChangesetCounts!]!
 
-    # The date and time when the campaign was closed.
+    # The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
     closedAt: DateTime
 
     # The diff stat for all the changesets in the campaign.
@@ -786,8 +758,20 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# The state of a changeset.
+# The internal state of a changeset on Sourcegraph.
 enum ChangesetState {
+    # The changeset has not yet been created on the code host and is not scheduled to be.
+    UNPUBLISHED
+    # The changeset is currently being created or updated on the code host.
+    PUBLISHING
+    # An error occurred while publishing or syncing this changeset.
+    ERRORED
+    # The changeset is likely up to date and no changes are pending execution.
+    SYNCED
+}
+
+# The state of a changeset on the code host on which it's hosted.
+enum ChangesetExternalState {
     OPEN
     CLOSED
     MERGED
@@ -836,6 +820,9 @@ interface Changeset {
     # The state of the changeset.
     state: ChangesetState!
 
+    # The external state of the changeset, or null when not yet published to the code host.
+    externalState: ChangesetExternalState
+
     # The date and time when the changeset was created.
     createdAt: DateTime!
 
@@ -862,6 +849,9 @@ type HiddenExternalChangeset implements Node & Changeset {
     # The state of the changeset.
     state: ChangesetState!
 
+    # The external state of the changeset, or null when not yet opened.
+    externalState: ChangesetExternalState
+
     # The date and time when the changeset was created.
     createdAt: DateTime!
 
@@ -878,8 +868,8 @@ type ExternalChangeset implements Node & Changeset {
     id: ID!
 
     # The external ID that uniquely identifies this ExternalChangeset on the
-    # code host. For example, on GitHub this is the pull request number.
-    externalID: String!
+    # code host. For example, on GitHub this is the pull request number. This is only set once the changeset is published on the code host.
+    externalID: String
 
     # The repository changed by this changeset.
     repository: Repository!
@@ -915,14 +905,17 @@ type ExternalChangeset implements Node & Changeset {
     # The state of the changeset.
     state: ChangesetState!
 
+    # The external state of the changeset, or null when not yet published to the code host.
+    externalState: ChangesetExternalState
+
     # The labels attached to the changeset on the code host.
     labels: [ChangesetLabel!]!
 
-    # The external URL of the changeset on the code host.
-    externalURL: ExternalLink!
+    # The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, PUBLISHING or externalState is DELETED.
+    externalURL: ExternalLink
 
-    # The review state of this changeset.
-    reviewState: ChangesetReviewState!
+    # The review state of this changeset. This is only set once the changeset is published on the code host.
+    reviewState: ChangesetReviewState
 
     # The base of the diff ("old" or "left-hand side"). It could be null in some cases, for example
     # when a force push has occured.
@@ -933,7 +926,7 @@ type ExternalChangeset implements Node & Changeset {
     head: GitRef
 
     # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
-    diff: RepositoryComparison
+    diff: RepositoryComparisonInterface
 
     # The diffstat of this changeset, or null if the changeset is closed
     # (without merging) or is already merged. This data is also available
@@ -944,6 +937,23 @@ type ExternalChangeset implements Node & Changeset {
     # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
     # checks have been configured.
     checkState: ChangesetCheckState
+
+    # An error that has occurred when publishing or updating the changeset. This is only set when the changeset state is ERRORED and the viewer can administer this changeset.
+    error: String
+}
+
+# Used in the campaign page for the overview component.
+type ChangesetConnectionStats {
+    # The count of unpublished changesets.
+    unpublished: Int!
+    # The count of externalState: OPEN changesets.
+    open: Int!
+    # The count of externalState: MERGED changesets.
+    merged: Int!
+    # The count of externalState: CLOSED changesets.
+    closed: Int!
+    # The count of all changesets. Equal to totalCount of the connection.
+    total: Int!
 }
 
 # A list of changesets.
@@ -956,6 +966,9 @@ type ChangesetConnection {
 
     # Pagination information.
     pageInfo: PageInfo!
+
+    # Stats on all the changesets that are in this connection. Pagination has no effect on the stats.
+    stats: ChangesetConnectionStats!
 }
 
 # A changeset event in a code host (e.g., a comment on a pull request on GitHub).
@@ -2165,13 +2178,17 @@ type GitRefConnection {
     pageInfo: PageInfo!
 }
 
+# Either a preview or an actual repository comparison.
+union RepositoryComparisonInterface = RepositoryComparison | PreviewRepositoryComparison
+
 # A not-yet-committed preview of a diff on a repository.
 type PreviewRepositoryComparison {
-    # The repository that this diff is targeting.
+    # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
-    # The preview of the file diffs for each file in the diff.
+    # The file diffs for each changed file.
     fileDiffs(
+        # Return the first n file diffs from the list.
         first: Int
         # Return file diffs after the given cursor.
         after: String
