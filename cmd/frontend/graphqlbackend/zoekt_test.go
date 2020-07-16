@@ -96,6 +96,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchCount     int
 		wantMatchURLs      []string
 		wantMatchInputRevs []string
+		wantUnindexed      []*search.RepositoryRevisions
 		wantLimitHit       bool
 		wantReposLimitHit  map[string]struct{}
 		wantErr            bool
@@ -233,6 +234,30 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			// if we search a branch that is indexed and unindexed, we should
+			// split the repository revision into the indexed and unindexed
+			// parts.
+			name: "split branch",
+			args: args{
+				ctx:             context.Background(),
+				query:           &search.TextPatternInfo{FileMatchLimit: 100},
+				repos:           makeRepositoryRevisions("foo/bar@HEAD:unindexed"),
+				useFullDeadline: false,
+				results: []zoekt.FileMatch{
+					{
+						Repository: "foo/bar",
+						Branches:   []string{"HEAD"},
+						FileName:   "baz.go",
+					},
+				},
+			},
+			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
+			wantMatchURLs: []string{
+				"git://foo/bar?HEAD#baz.go",
+			},
+			wantMatchInputRevs: []string{"HEAD"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -258,6 +283,10 @@ func TestIndexedSearch(t *testing.T) {
 			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest)
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(tt.wantUnindexed, indexed.Unindexed, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
 			indexed.since = tt.args.since
