@@ -144,13 +144,15 @@ If, during a test, a query is made that has no corresponding mock, the request w
 
 There are default mock responses for queries made in almost every test, which you can extend with object spread syntax if needed.
 
+`testContext.overrideGraphQL()` can be called multiple times during a test if the response to one or more queries should change, e.g. after an action was taken that causes a change on the backend (see the next section for how to assert those).
+
 ##### Waiting for a mutation and checking passed variables
 
-To verify that the client sent a GraphQL mutation to the backend, you can use`waitForRequest()`.
+To verify that the client sent a GraphQL mutation to the backend, you can use `testContext.waitForRequest()`.
 Pass it a callback that triggers the request (e.g. clicking a "Save" button in a form).
 The function returns the variables that were passed to the mutation, which can be asserted with `assert.deepStrictEqual()`.
 
-Only use `waitForRequest()` for behavior you need to test, not to generally wait for parts of the application to load.
+Only use `testContext.waitForRequest()` for behavior you need to test, not to generally wait for parts of the application to load.
 Whether a query is made for loading is an implementation detail, instead assert and wait on the DOM using `waitForSelector()` or `retry()`.
 
 ##### Mocking JSContext
