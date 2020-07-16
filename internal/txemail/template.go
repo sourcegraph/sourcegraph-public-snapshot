@@ -76,10 +76,7 @@ func renderTemplate(t *txtypes.ParsedTemplates, data interface{}, m *email.Email
 	}
 
 	m.HTML, err = render(t.Html)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 var (
