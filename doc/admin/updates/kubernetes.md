@@ -5,7 +5,13 @@ Follow the [recommended method](../install/kubernetes/update.md) of upgrading a 
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.17
+
+No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+
 ## 3.16
+
+No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
 
 Note: The following deployments have had their `strategy` changed from `rolling` to `recreate`:
 
@@ -15,9 +21,7 @@ Note: The following deployments have had their `strategy` changed from `rolling`
 - precise-code-intel-bundle-manager
 - prometheus
   
-This change was made to avoid two pods writing to the same volume and causing corruption. 
-
-No special action is needed to apply the change.
+This change was made to avoid two pods writing to the same volume and causing corruption. No special action is needed to apply the change.
 
 ## 3.15
 
