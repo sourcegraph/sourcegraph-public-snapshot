@@ -161,10 +161,17 @@ const commonProps: RepogroupPageProps = {
     showCampaigns: false,
     authenticatedUser: authUser,
     repogroupMetadata: python2To3Metadata,
+    autoFocus: false,
 }
 
-add('Repogroup page', () => (
+add('Repogroup page with smart search field', () => (
     <MemoryRouter>
         <RepogroupPage {...commonProps} />
+    </MemoryRouter>
+))
+
+add('Repogroup page without smart search field', () => (
+    <MemoryRouter>
+        <RepogroupPage {...commonProps} smartSearchField={false} />
     </MemoryRouter>
 ))
