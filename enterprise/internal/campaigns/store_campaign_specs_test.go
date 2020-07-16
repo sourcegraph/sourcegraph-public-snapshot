@@ -234,4 +234,61 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 			}
 		}
 	})
+
+	t.Run("DeleteExpiredCampaignSpecs", func(t *testing.T) {
+		underTTL := clock.now().Add(-cmpgn.CampaignSpecTTL + 1*time.Minute)
+		overTTL := clock.now().Add(-cmpgn.CampaignSpecTTL - 1*time.Minute)
+
+		tests := []struct {
+			createdAt   time.Time
+			hasCampaign bool
+			wantDeleted bool
+		}{
+			{hasCampaign: false, createdAt: underTTL, wantDeleted: false},
+			{hasCampaign: false, createdAt: overTTL, wantDeleted: true},
+			{hasCampaign: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaign: true, createdAt: overTTL, wantDeleted: false},
+		}
+
+		for _, tc := range tests {
+			campaignSpec := &cmpgn.CampaignSpec{
+				UserID:          1,
+				NamespaceUserID: 1,
+				CreatedAt:       tc.createdAt,
+			}
+
+			if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+				t.Fatal(err)
+			}
+
+			if tc.hasCampaign {
+				campaign := &cmpgn.Campaign{
+					Name:            "not-blank",
+					AuthorID:        1,
+					NamespaceUserID: 1,
+					CampaignSpecID:  campaignSpec.ID,
+				}
+				if err := s.CreateCampaign(ctx, campaign); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if err := s.DeleteExpiredCampaignSpecs(ctx); err != nil {
+				t.Fatal(err)
+			}
+
+			haveCampaignSpec, err := s.GetCampaignSpec(ctx, GetCampaignSpecOpts{ID: campaignSpec.ID})
+			if err != nil && err != ErrNoResults {
+				t.Fatal(err)
+			}
+
+			if tc.wantDeleted && err == nil {
+				t.Fatalf("tc=%+v\n\t want campaign spec to be deleted. got: %v", tc, haveCampaignSpec)
+			}
+
+			if !tc.wantDeleted && err == ErrNoResults {
+				t.Fatalf("want patch set not to be deleted, but got deleted")
+			}
+		}
+	})
 }

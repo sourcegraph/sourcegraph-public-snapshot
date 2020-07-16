@@ -60,10 +60,16 @@ func enterpriseInit(
 	// Set up expired patch set deletion
 	go func() {
 		for {
-			err := campaignsStore.DeleteExpiredPatchSets(ctx)
-			if err != nil {
+			if err := campaignsStore.DeleteExpiredPatchSets(ctx); err != nil {
 				log15.Error("DeleteExpiredPatchSets", "error", err)
 			}
+			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
+			}
+			if err := campaignsStore.DeleteExpiredChangesetSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredChangesetSpecs", "error", err)
+			}
+
 			time.Sleep(2 * time.Minute)
 		}
 	}()
