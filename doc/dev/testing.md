@@ -251,7 +251,7 @@ Do this:
 page.click('.selector')
 ```
 
-For more complex interactions, you can execute them atomically _within the browser_ using `page.evaluate()`.
+You can execute more complex interactions atomically _within the browser_ using `page.evaluate()`.
 Note that the passed callback cannot refer to any scope variables as it is executed in the browser.
 It can however be passed JSON-stringifyable parameters and return a JSON-stringifyable return value.
 
