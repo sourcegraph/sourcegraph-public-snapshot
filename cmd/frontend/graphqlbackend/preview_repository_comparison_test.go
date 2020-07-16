@@ -1,11 +1,12 @@
-package resolvers
+package graphqlbackend
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -92,7 +93,7 @@ index 9bd8209..d2acfa9 100644
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}
 
-	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, graphqlbackend.NewRepositoryResolver(repo), string(wantHeadRevision), testDiff)
+	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, NewRepositoryResolver(repo), string(wantHeadRevision), testDiff)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +148,7 @@ index 9bd8209..d2acfa9 100644
 		}
 
 		for _, tc := range tests {
-			args := &graphqlbackend.FileDiffsConnectionArgs{First: &tc.first}
+			args := &FileDiffsConnectionArgs{First: &tc.first}
 			if tc.after != "" {
 				args.After = &tc.after
 			}
@@ -190,7 +191,7 @@ index 9bd8209..d2acfa9 100644
 	})
 
 	t.Run("NewFile resolver", func(t *testing.T) {
-		fileDiffConnection, err := previewComparisonResolver.FileDiffs(ctx, &graphqlbackend.FileDiffsConnectionArgs{})
+		fileDiffConnection, err := previewComparisonResolver.FileDiffs(ctx, &FileDiffsConnectionArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -239,4 +240,94 @@ Line 10`
 			t.Fatalf("wrong file content. want=%q have=%q", wantNewFileContent, haveContent)
 		}
 	})
+}
+
+func TestApplyPatch(t *testing.T) {
+	tests := []struct {
+		file          string
+		patch         string
+		origStartLine int32
+		wantFile      string
+	}{
+		{
+			file: `1 some
+2
+3
+4
+5
+6
+7 super awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes`,
+			patch: ` 4
+ 5
+ 6
+-7 super awesome
++7 super mega awesome
+ 8
+ 9
+ 10
+`,
+			origStartLine: 4,
+			wantFile: `1 some
+2
+3
+4
+5
+6
+7 super mega awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes`,
+		},
+	}
+
+	for _, tc := range tests {
+		have := applyPatch(tc.file, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: tc.origStartLine, Body: []byte(tc.patch)}}})
+		if have != tc.wantFile {
+			t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
+		}
+	}
+}
+
+func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
+	t.Helper()
+
+	byRev := map[api.CommitID]struct{}{}
+	for _, r := range revs {
+		byRev[r] = struct{}{}
+	}
+
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
+		if _, ok := byRev[api.CommitID(rev)]; !ok {
+			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
+		}
+		return api.CommitID(rev), nil
+	}
+	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
+
+	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*git.Commit, error) {
+		if _, ok := byRev[id]; !ok {
+			t.Fatalf("GetCommit received unexpected ID: %s", id)
+		}
+		return &git.Commit{ID: id}, nil
+	}
+	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }

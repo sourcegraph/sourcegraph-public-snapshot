@@ -151,11 +151,13 @@ func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryCom
 }
 
 type RepositoryComparisonResolver struct {
-	RepositoryComparisonInterface
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
 	repo                     *RepositoryResolver
 }
+
+// Type guard.
+var _ RepositoryComparisonInterface = &RepositoryComparisonResolver{}
 
 func (r *RepositoryComparisonResolver) ToPreviewRepositoryComparison() (PreviewRepositoryComparisonResolver, bool) {
 	return nil, false

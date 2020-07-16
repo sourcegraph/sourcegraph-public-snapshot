@@ -112,7 +112,7 @@ func (r *changesetDescriptionResolver) Published() bool { return r.desc.Publishe
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	patch := r.desc.Commits[0].Diff
-	return NewPreviewRepositoryComparisonResolver(ctx, r.repoResolver, r.desc.BaseRev, patch)
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.repoResolver, r.desc.BaseRev, patch)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {

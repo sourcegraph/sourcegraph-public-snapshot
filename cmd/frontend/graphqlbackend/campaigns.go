@@ -294,10 +294,6 @@ type ChangesetCountsResolver interface {
 	OpenPending() int32
 }
 
-type PreviewRepositoryComparisonResolver interface {
-	RepositoryComparisonInterface
-}
-
 var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
 
 type defaultCampaignsResolver struct{}

@@ -445,7 +445,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		if err != nil {
 			return nil, err
 		}
-		return NewPreviewRepositoryComparisonResolver(ctx, repo, r.changeset.SyncState.BaseRefOid, "")
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, repo, r.changeset.SyncState.BaseRefOid, "")
 	}
 
 	// Only return diffs for open changesets, otherwise we can't guarantee that
