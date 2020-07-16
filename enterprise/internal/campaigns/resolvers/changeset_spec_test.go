@@ -73,9 +73,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						Published: false,
 					},
-					ExpiresAt: &graphqlbackend.DateTime{
-						Time: spec.CreatedAt.Truncate(time.Second).Add(2 * time.Hour),
-					},
+					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
 			},
 		},
@@ -94,9 +92,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 						ExternalID: spec.Spec.ExternalID,
 						Published:  false,
 					},
-					ExpiresAt: &graphqlbackend.DateTime{
-						Time: spec.CreatedAt.Truncate(time.Second).Add(2 * time.Hour),
-					},
+					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
 			},
 		},

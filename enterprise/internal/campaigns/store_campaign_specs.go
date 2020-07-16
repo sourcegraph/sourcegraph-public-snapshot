@@ -266,6 +266,31 @@ func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
 	)
 }
 
+// DeleteExpiredCampaignSpecs deletes CampaignSpecs that have not been attached
+// to a Campaign within CampaignSpecTTL.
+func (s *Store) DeleteExpiredCampaignSpecs(ctx context.Context) error {
+	expirationTime := s.now().Add(-campaigns.CampaignSpecTTL)
+	q := sqlf.Sprintf(deleteExpiredCampaignSpecsQueryFmtstr, expirationTime)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteExpiredCampaignSpecsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:DeleteExpiredCampaignSpecs
+DELETE FROM
+  campaign_specs
+WHERE
+  created_at < %s
+AND
+NOT EXISTS (
+  SELECT 1 FROM campaigns WHERE campaigns.campaign_spec_id = campaign_specs.id
+);
+`
+
 func scanCampaignSpec(c *campaigns.CampaignSpec, s scanner) error {
 	var spec json.RawMessage
 

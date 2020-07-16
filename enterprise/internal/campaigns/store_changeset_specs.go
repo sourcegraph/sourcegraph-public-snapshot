@@ -275,6 +275,30 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	)
 }
 
+// DeleteExpiredChangesetSpecs deletes ChangesetSpecs that have not been
+// attached to a CampaignSpec within ChangesetSpecTTL.
+func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
+	expirationTime := s.now().Add(-campaigns.ChangesetSpecTTL)
+	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, expirationTime)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteExpiredChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:DeleteExpiredChangesetSpecs
+DELETE FROM
+  changeset_specs
+WHERE
+  created_at < %s
+AND
+  campaign_spec_id IS NULL
+;
+`
+
 func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 	var spec json.RawMessage
 
