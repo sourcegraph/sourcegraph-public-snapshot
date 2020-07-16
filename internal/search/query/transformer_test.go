@@ -18,7 +18,7 @@ func prettyPrint(nodes []Node) string {
 func TestSubstituteAliases(t *testing.T) {
 	input := "r:repo g:repogroup f:file"
 	want := `(and "repo:repo" "repogroup:repogroup" "file:file")`
-	query, _ := ParseAndOr(input)
+	query, _ := ParseAndOr(input, SearchTypeRegex)
 	got := prettyPrint(SubstituteAliases(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
@@ -28,7 +28,7 @@ func TestSubstituteAliases(t *testing.T) {
 func TestLowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
-	query, _ := ParseAndOr(input)
+	query, _ := ParseAndOr(input, SearchTypeRegex)
 	got := prettyPrint(LowercaseFieldNames(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
@@ -106,6 +106,7 @@ func TestHoist(t *testing.T) {
 				parser := &parser{
 					buf:        []byte(in),
 					heuristics: parensAsPatterns,
+					leafParser: SearchTypeRegex,
 				}
 				nodes, _ := parser.parseOr()
 				return newOperator(nodes, And)
@@ -174,7 +175,7 @@ func TestSearchUppercase(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("searchUppercase", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
 			got := prettyPrint(SearchUppercase(SubstituteAliases(query)))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
@@ -219,7 +220,7 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
 			got := prettyPrint(substituteOrForRegexp(query))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
@@ -252,7 +253,7 @@ func TestSubstituteConcat(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
 			got := prettyPrint(substituteConcat(query, " "))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
@@ -277,7 +278,7 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
 			got := EmptyGroupsToLiteral(query)[0].(Pattern)
 			if diff := cmp.Diff(c.wantLabels, got.Annotation.Labels); diff != "" {
 				t.Fatal(diff)
@@ -305,7 +306,7 @@ func TestMap(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
 			got := prettyPrint(Map(query, c.fns...))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)

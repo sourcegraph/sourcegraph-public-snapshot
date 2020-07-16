@@ -1,8 +1,6 @@
 package query
 
 import (
-	"fmt"
-	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -138,8 +136,9 @@ func (p *parser) ParsePatternLiteral() Pattern {
 	}
 }
 
-// parseParameterParameterList scans for consecutive leaf nodes.
-func (p *parser) parseParameterListLiteral() ([]Node, error) {
+// parseLeavesRegexp scans for consecutive leaf nodes when interpreting the
+// query as containing literal patterns.
+func (p *parser) parseLeavesLiteral() ([]Node, error) {
 	var nodes []Node
 	start := p.pos
 loop:
@@ -176,7 +175,7 @@ loop:
 			_ = p.expect(LPAREN) // Guaranteed to succeed.
 			p.balanced++
 			p.heuristics |= disambiguated
-			result, err := p.parseOrLiteral()
+			result, err := p.parseOr()
 			if err != nil {
 				return nil, err
 			}
@@ -241,60 +240,6 @@ loop:
 	return partitionParameters(nodes), nil
 }
 
-// parseAnd parses and-expressions.
-func (p *parser) parseAndLiteral() ([]Node, error) {
-	left, err := p.parseParameterListLiteral()
-	if err != nil {
-		return nil, err
-	}
-	if left == nil {
-		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
-	}
-	if !p.expect(AND) {
-		return left, nil
-	}
-	right, err := p.parseAndLiteral()
-	if err != nil {
-		return nil, err
-	}
-	return newOperator(append(left, right...), And), nil
-}
-
-// parseOr parses or-expressions. Or operators have lower precedence than And
-// operators, therefore this function calls parseAnd.
-func (p *parser) parseOrLiteral() ([]Node, error) {
-	left, err := p.parseAndLiteral()
-	if err != nil {
-		return nil, err
-	}
-	if left == nil {
-		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
-	}
-	if !p.expect(OR) {
-		return left, nil
-	}
-	right, err := p.parseOrLiteral()
-	if err != nil {
-		return nil, err
-	}
-	return newOperator(append(left, right...), Or), nil
-}
-
-func literalFallbackParser(in string) ([]Node, error) {
-	parser := &parser{
-		buf:        []byte(in),
-		heuristics: allowDanglingParens,
-	}
-	nodes, err := parser.parseOrLiteral()
-	if err != nil {
-		return nil, err
-	}
-	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return newOperator(hoistedNodes, And), nil
-	}
-	return newOperator(nodes, And), nil
-}
-
 // validatePureLiteralPattern checks that no pattern expression contains and/or
 // operators nested inside concat. It may happen that we interpret a query this
 // way due to ambiguity. If this happens, return an error message.
@@ -316,45 +261,4 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
 	}
 	return nil
-}
-
-func ParseAndOrLiteral(in string) ([]Node, error) {
-	if strings.TrimSpace(in) == "" {
-		return nil, nil
-	}
-	parser := &parser{buf: []byte(in)}
-	nodes, err := parser.parseOrLiteral()
-	if err != nil {
-		switch err.(type) {
-		case *ExpectedOperand:
-			// The query may be unbalanced or malformed as in "(" or
-			// "x or" and expects an operand. Try harder to parse it.
-			if nodes, err := literalFallbackParser(in); err == nil {
-				return nodes, nil
-			}
-		}
-		// Another kind of error, like a malformed parameter.
-		return nil, err
-	}
-	if parser.balanced != 0 {
-		// The query is unbalanced and might be something like "(x" or
-		// "x or (x" where patterns start with a leading open
-		// parenthesis. Try harder to parse it.
-		if nodes, err := literalFallbackParser(in); err == nil {
-			return nodes, nil
-		}
-		return nil, errors.Wrap(err, "unbalanced expression")
-	}
-	if !isSet(parser.heuristics, disambiguated) {
-		// Hoist or expressions if this query is potential ambiguous.
-		if hoistedNodes, err := Hoist(nodes); err == nil {
-			nodes = hoistedNodes
-		}
-	}
-
-	err = validatePureLiteralPattern(nodes, parser.balanced == 0)
-	if err != nil {
-		return nil, err
-	}
-	return newOperator(nodes, And), nil
 }
