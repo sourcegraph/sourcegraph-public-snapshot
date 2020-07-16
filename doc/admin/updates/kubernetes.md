@@ -7,26 +7,17 @@ Follow the [recommended method](../install/kubernetes/update.md) of upgrading a 
 
 ## 3.16
 
-### Note: The following deployments have had their `strategy` changed from `rolling` to `recreate`:
-  - redis-cache
-  - redis-store
-  - pgsql
-  - precise-code-intel-bundle-manager
-  - prometheus
+Note: The following deployments have had their `strategy` changed from `rolling` to `recreate`:
+
+- redis-cache
+- redis-store
+- pgsql
+- precise-code-intel-bundle-manager
+- prometheus
   
 This change was made to avoid two pods writing to the same volume and causing corruption. 
 
-To implement these changes run the followng:
-
-```shell script
-kubectl apply -f base/precise-code-intel/bundle-manager.Deployment.yaml
-kubectl apply -f base/redis/redis-cache.Deployment.yaml
-kubectl apply -f base/redis/redis-store.Deployment.yaml
-kubectl apply -f base/prometheus/prometheus.Deployment.yaml
-kubectl apply -f base/pgsql/pgsql.Deployment
-```
-
-For more information see[#676](https://github.com/sourcegraph/deploy-sourcegraph/pull/676)
+No special action is needed to apply the change.
 
 ## 3.15
 
