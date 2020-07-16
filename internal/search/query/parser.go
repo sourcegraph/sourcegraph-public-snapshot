@@ -844,8 +844,7 @@ func ParseAndOr(in string) ([]Node, error) {
 type ParserOptions struct {
 	SearchType SearchType
 
-	// defines whether field values of supported
-	// fields are treated as regex or glob.
+	// treat repo, file, or repohasfile values as glob syntax if true.
 	Globbing bool
 }
 
