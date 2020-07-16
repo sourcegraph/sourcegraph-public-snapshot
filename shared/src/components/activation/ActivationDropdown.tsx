@@ -72,7 +72,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
         if (!show) {
-            return <div className="test-activation-hidden" />
+            return <div className="test-activation-hidden d-none" />
         }
 
         const confettiConfig = {
