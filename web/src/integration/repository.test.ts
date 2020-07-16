@@ -9,6 +9,7 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Repository', () => {
     let driver: Driver
@@ -24,6 +25,7 @@ describe('Repository', () => {
             directory: __dirname,
         })
     })
+    saveScreenshotsUponFailures(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     async function assertSelectorHasText(selector: string, text: string) {
