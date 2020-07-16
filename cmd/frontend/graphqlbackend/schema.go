@@ -967,7 +967,7 @@ type ChangesetConnection {
     # Pagination information.
     pageInfo: PageInfo!
 
-    # Stats on all the changesets that are in this connection.
+    # Stats on all the changesets that are in this connection. Pagination has no effect on the stats.
     stats: ChangesetConnectionStats!
 }
 
