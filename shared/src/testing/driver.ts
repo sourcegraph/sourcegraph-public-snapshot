@@ -693,15 +693,18 @@ interface DriverOptions extends LaunchOptions {
     keepBrowser?: boolean
 }
 
-export async function createDriverForTest(
-    options: DriverOptions = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo')
-): Promise<Driver> {
-    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole = true, keepBrowser } = options
+export async function createDriverForTest(options?: DriverOptions): Promise<Driver> {
+    // Apply defaults
+    options = {
+        ...getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools'),
+        ...options,
+    }
+
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
         ...options,
         args,
-        headless: readEnvironmentBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
     }
     let browser: puppeteer.Browser
