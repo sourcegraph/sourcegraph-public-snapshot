@@ -669,11 +669,15 @@ func TestServer_StatusMessages(t *testing.T) {
 			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
 
 			stored := tc.stored.Clone()
+			var cloned []string
 			for i, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
 					ID:          strconv.Itoa(i),
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
+				}
+				if r.Cloned {
+					cloned = append(cloned, r.Name)
 				}
 			}
 
@@ -682,6 +686,11 @@ func TestServer_StatusMessages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			err = store.SetClonedRepos(ctx, cloned...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			err = store.UpsertExternalServices(ctx, githubService)
 			if err != nil {
 				t.Fatal(err)
