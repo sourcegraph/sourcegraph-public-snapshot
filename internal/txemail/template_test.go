@@ -3,8 +3,8 @@ package txemail
 import (
 	"testing"
 
+	"github.com/jordan-wright/email"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"gopkg.in/jpoehls/gophermail.v0"
 )
 
 func TestParseTemplate(t *testing.T) {
@@ -21,7 +21,7 @@ func TestParseTemplate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var m gophermail.Message
+	var m email.Email
 	if err := renderTemplate(pt, struct {
 		A string
 		B string
@@ -35,10 +35,10 @@ func TestParseTemplate(t *testing.T) {
 	if want := `a subject <b>`; m.Subject != want {
 		t.Errorf("got subject %q, want %q", m.Subject, want)
 	}
-	if want := `a text body <b>`; m.Body != want {
-		t.Errorf("got text body %q, want %q", m.Body, want)
+	if want := `a text body <b>`; string(m.Text) != want {
+		t.Errorf("got text body %q, want %q", string(m.Text), want)
 	}
-	if want := `a html body <span class="&lt;b&gt;" />`; m.HTMLBody != want {
-		t.Errorf("got html body %q, want %q", m.HTMLBody, want)
+	if want := `a html body <span class="&lt;b&gt;" />`; string(m.HTML) != want {
+		t.Errorf("got html body %q, want %q", string(m.HTML), want)
 	}
 }
