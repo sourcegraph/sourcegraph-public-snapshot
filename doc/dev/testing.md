@@ -95,7 +95,7 @@ Some common failure modes:
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
 
-Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, disable it with `it.skip()` and file an issue on the author.
+Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](https://about.sourcegraph.com/handbook/engineering/testing#flaky-tests).
 
 #### Viewing browser-based tests live in CI
 
