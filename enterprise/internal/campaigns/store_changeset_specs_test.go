@@ -267,4 +267,56 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 			}
 		}
 	})
+
+	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
+		underTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL - 24*time.Hour)
+
+		tests := []struct {
+			createdAt       time.Time
+			hasCampaignSpec bool
+			wantDeleted     bool
+		}{
+			{hasCampaignSpec: false, createdAt: underTTL, wantDeleted: false},
+			{hasCampaignSpec: false, createdAt: overTTL, wantDeleted: true},
+			{hasCampaignSpec: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaignSpec: true, createdAt: overTTL, wantDeleted: false},
+		}
+
+		for _, tc := range tests {
+			campaignSpec := &cmpgn.CampaignSpec{UserID: 4567, NamespaceUserID: 4567}
+
+			if tc.hasCampaignSpec {
+				if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			changesetSpec := &cmpgn.ChangesetSpec{
+				CampaignSpecID: campaignSpec.ID,
+				CreatedAt:      tc.createdAt,
+			}
+
+			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := s.DeleteExpiredChangesetSpecs(ctx); err != nil {
+				t.Fatal(err)
+			}
+
+			haveChangesetSpec, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: changesetSpec.ID})
+			if err != nil && err != ErrNoResults {
+				t.Fatal(err)
+			}
+
+			if tc.wantDeleted && err == nil {
+				t.Fatalf("tc=%+v\n\t want changeset spec to be deleted. got: %v", tc, haveChangesetSpec)
+			}
+
+			if !tc.wantDeleted && err == ErrNoResults {
+				t.Fatalf("want patch set not to be deleted, but got deleted")
+			}
+		}
+	})
 }
