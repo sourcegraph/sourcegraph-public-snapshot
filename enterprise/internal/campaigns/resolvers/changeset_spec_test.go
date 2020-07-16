@@ -136,21 +136,21 @@ query($id: ID!) {
 
         ... on ExistingChangesetReference {
           baseRepository {
-			  id
-		  }
+              id
+          }
           externalID
         }
 
         ... on GitBranchChangesetDescription {
           baseRepository {
-			  id
-		  }
+              id
+          }
           baseRef
           baseRev
 
           headRepository {
-			  id
-		  }
+              id
+          }
           headRef
 
           title
@@ -166,7 +166,7 @@ query($id: ID!) {
       }
 
       expiresAt
-	}
+    }
   }
 }
 `
