@@ -28,7 +28,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         },
     },
     'No description': {
-        id: 'test',
+        id: 'test2',
         name: 'Awesome campaign',
         description: null,
         createdAt: new Date('2020-05-05').toISOString(),
@@ -45,7 +45,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         },
     },
     'Closed campaign': {
-        id: 'test',
+        id: 'test3',
         name: 'Awesome campaign',
         description: `# Description
 

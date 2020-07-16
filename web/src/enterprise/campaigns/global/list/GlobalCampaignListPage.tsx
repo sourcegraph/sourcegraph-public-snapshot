@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
-import { queryCampaigns, queryCampaignsCount as _queryCampaignsCount } from './backend'
+import React, { useEffect } from 'react'
+import { queryCampaigns as _queryCampaigns } from './backend'
 import AddIcon from 'mdi-react/AddIcon'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { RouteComponentProps } from 'react-router'
@@ -7,12 +7,10 @@ import { FilteredConnection, FilteredConnectionFilter } from '../../../../compon
 import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
 import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
-import { useObservable } from '../../../../../../shared/src/util/useObservable'
-import { Observable } from 'rxjs'
 
 interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
-    authenticatedUser: IUser
-    queryCampaignsCount?: () => Observable<number>
+    authenticatedUser: Pick<IUser, 'siteAdmin'>
+    queryCampaigns?: typeof _queryCampaigns
 }
 
 const FILTERS: FilteredConnectionFilter[] = [
@@ -40,12 +38,10 @@ const FILTERS: FilteredConnectionFilter[] = [
  * A list of all campaigns on the Sourcegraph instance.
  */
 export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
-    queryCampaignsCount = _queryCampaignsCount,
+    queryCampaigns = _queryCampaigns,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
-
-    const totalCount = useObservable(useMemo(() => queryCampaignsCount(), [queryCampaignsCount]))
     return (
         <>
             <div className="d-flex justify-content-between align-items-end mb-3">
@@ -58,6 +54,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                         <a href="https://docs.sourcegraph.com/user/campaigns">Learn how.</a>
                     </p>
                 </div>
+                {/* TODO: Remove. */}
                 {props.authenticatedUser.siteAdmin && (
                     <Link to="/campaigns/create" className="btn btn-primary ml-3">
                         <AddIcon className="icon-inline" /> New campaign
@@ -81,19 +78,17 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                 </div>
             </div>
 
-            {typeof totalCount === 'number' && totalCount > 0 && (
-                <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
-                    {...props}
-                    nodeComponent={CampaignNode}
-                    nodeComponentProps={{ history: props.history }}
-                    queryConnection={queryCampaigns}
-                    hideSearch={true}
-                    filters={FILTERS}
-                    noun="campaign"
-                    pluralNoun="campaigns"
-                    className="mb-3"
-                />
-            )}
+            <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
+                {...props}
+                nodeComponent={CampaignNode}
+                nodeComponentProps={{ history: props.history }}
+                queryConnection={queryCampaigns}
+                hideSearch={true}
+                filters={FILTERS}
+                noun="campaign"
+                pluralNoun="campaigns"
+                className="mb-3"
+            />
         </>
     )
 }
