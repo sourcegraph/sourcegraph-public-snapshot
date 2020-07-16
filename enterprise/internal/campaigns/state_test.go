@@ -601,7 +601,7 @@ func TestComputeChangesetExternalState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			changeset := tc.changeset
 
-			have, err := ComputeChangesetExternalState(changeset, tc.history)
+			have, err := ComputeExternalState(changeset, tc.history)
 			if err != nil {
 				t.Fatalf("got error: %s", err)
 			}

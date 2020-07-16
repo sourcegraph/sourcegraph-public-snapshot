@@ -37,7 +37,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 		return
 	}
 
-	if state, err := ComputeChangesetExternalState(c, history); err != nil {
+	if state, err := ComputeExternalState(c, history); err != nil {
 		log15.Warn("Computing external changeset state", "err", err)
 	} else {
 		c.ExternalState = state
@@ -108,9 +108,9 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 	return campaigns.ChangesetCheckStateUnknown
 }
 
-// ComputeChangesetExternalState computes the overall state for the changeset and its
+// ComputeExternalState computes the overall state for the changeset and its
 // associated events. The events should be presorted.
-func ComputeChangesetExternalState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetExternalState, error) {
+func ComputeExternalState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetExternalState, error) {
 	if len(history) == 0 {
 		return computeSingleChangesetExternalState(c)
 	}
