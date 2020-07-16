@@ -4,7 +4,7 @@ const { DefinePlugin, ProgressPlugin } = require('webpack')
 
 const config = {
   stories: ['../**/*.story.tsx'],
-  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', '@storybook/addon-options'],
+  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', '@storybook/addon-options', 'storybook-addon-designs'],
   /**
    * @param config {import('webpack').Configuration}
    * @returns {import('webpack').Configuration}
