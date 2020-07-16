@@ -19,11 +19,10 @@ type ChangesetCounts struct {
 	OpenApproved         int32
 	OpenChangesRequested int32
 	OpenPending          int32
-	Unpublished          int32
 }
 
 func (cc *ChangesetCounts) String() string {
-	return fmt.Sprintf("%s (Total: %d, Merged: %d, Closed: %d, Open: %d, OpenApproved: %d, OpenChangesRequested: %d, OpenPending: %d, Unpublished: %d)",
+	return fmt.Sprintf("%s (Total: %d, Merged: %d, Closed: %d, Open: %d, OpenApproved: %d, OpenChangesRequested: %d, OpenPending: %d)",
 		cc.Time.String(),
 		cc.Total,
 		cc.Merged,
@@ -32,7 +31,6 @@ func (cc *ChangesetCounts) String() string {
 		cc.OpenApproved,
 		cc.OpenChangesRequested,
 		cc.OpenPending,
-		cc.Unpublished,
 	)
 }
 

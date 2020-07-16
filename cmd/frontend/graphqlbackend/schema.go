@@ -744,8 +744,6 @@ type ChangesetCounts {
     openChangesRequested: Int!
     # The number of changesets that are both open and are pending review.
     openPending: Int!
-    # The number of unpublished changesets. TODO: Do we want to track it? That way, the burndown chart would never be empty.
-    unpublished: Int!
 }
 
 # A list of campaigns.

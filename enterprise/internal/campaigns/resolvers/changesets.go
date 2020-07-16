@@ -26,7 +26,7 @@ import (
 )
 
 type changesetsConnectionStatsResolver struct {
-	unpublished, open, merged, closed, total, errored int32
+	unpublished, open, merged, closed, total int32
 }
 
 func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
@@ -43,9 +43,6 @@ func (r *changesetsConnectionStatsResolver) Closed() int32 {
 }
 func (r *changesetsConnectionStatsResolver) Total() int32 {
 	return r.total
-}
-func (r *changesetsConnectionStatsResolver) Errored() int32 {
-	return r.errored
 }
 
 type changesetsConnectionResolver struct {

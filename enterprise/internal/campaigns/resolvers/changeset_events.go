@@ -109,4 +109,3 @@ func (r *changesetCountsResolver) Open() int32                 { return r.counts
 func (r *changesetCountsResolver) OpenApproved() int32         { return r.counts.OpenApproved }
 func (r *changesetCountsResolver) OpenChangesRequested() int32 { return r.counts.OpenChangesRequested }
 func (r *changesetCountsResolver) OpenPending() int32          { return r.counts.OpenPending }
-func (r *changesetCountsResolver) Unpublished() int32          { return r.counts.Unpublished }

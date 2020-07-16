@@ -207,7 +207,6 @@ type ChangesetsConnectionStatsResolver interface {
 	Merged() int32
 	Closed() int32
 	Total() int32
-	Errored() int32
 }
 
 type ChangesetsConnectionResolver interface {
@@ -293,7 +292,6 @@ type ChangesetCountsResolver interface {
 	OpenApproved() int32
 	OpenChangesRequested() int32
 	OpenPending() int32
-	Unpublished() int32
 }
 
 type PreviewRepositoryComparisonResolver interface {
