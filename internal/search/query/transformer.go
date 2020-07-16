@@ -182,7 +182,7 @@ func globToRegex(value string) (string, error) {
 	}
 
 	// add regex anchor "$" if glob doesn't end with *
-	if r[len(r)-1] != '*' {
+	if r[l-1] != '*' {
 		sb.WriteRune('$')
 	}
 	return sb.String(), nil
