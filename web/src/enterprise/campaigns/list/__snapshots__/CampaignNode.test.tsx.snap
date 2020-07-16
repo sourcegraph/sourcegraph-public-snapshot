@@ -9,7 +9,7 @@ exports[`CampaignNode campaign selection mode 1`] = `
       "changesets": Object {
         "nodes": Array [
           Object {
-            "state": "OPEN",
+            "externalState": "OPEN",
           },
         ],
       },
@@ -161,10 +161,10 @@ exports[`CampaignNode campaign with mixed changeset states 1`] = `
       "changesets": Object {
         "nodes": Array [
           Object {
-            "state": "OPEN",
+            "externalState": "OPEN",
           },
           Object {
-            "state": "CLOSED",
+            "externalState": "CLOSED",
           },
         ],
       },
@@ -302,7 +302,7 @@ exports[`CampaignNode campaign without description 1`] = `
       "changesets": Object {
         "nodes": Array [
           Object {
-            "state": "OPEN",
+            "externalState": "OPEN",
           },
         ],
       },
@@ -428,7 +428,7 @@ exports[`CampaignNode closed campaign 1`] = `
       "changesets": Object {
         "nodes": Array [
           Object {
-            "state": "OPEN",
+            "externalState": "OPEN",
           },
         ],
       },
@@ -566,7 +566,7 @@ exports[`CampaignNode open campaign 1`] = `
       "changesets": Object {
         "nodes": Array [
           Object {
-            "state": "OPEN",
+            "externalState": "OPEN",
           },
         ],
       },

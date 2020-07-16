@@ -1,6 +1,5 @@
 import React from 'react'
 import { CampaignActionsBar } from './CampaignActionsBar'
-import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
 import { shallow } from 'enzyme'
 
 const PROPS = {
@@ -28,9 +27,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: false,
                     }}
                 />
@@ -45,9 +41,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -62,9 +55,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: new Date().toISOString(),
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -79,9 +69,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -96,9 +83,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.PROCESSING,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -113,9 +97,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -130,9 +111,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -147,9 +125,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -164,9 +139,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />
@@ -181,9 +153,6 @@ describe('CampaignActionsBar', () => {
                     campaign={{
                         closedAt: null,
                         name: 'Super campaign',
-                        status: {
-                            state: BackgroundProcessState.COMPLETED,
-                        },
                         viewerCanAdminister: true,
                     }}
                 />

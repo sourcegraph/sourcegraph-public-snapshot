@@ -6,6 +6,7 @@ import {
     ChangesetState,
     IExternalChangeset,
     ChangesetCheckState,
+    ChangesetExternalState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
 import { shallow } from 'enzyme'
@@ -32,7 +33,8 @@ describe('ExternalChangesetNode', () => {
                         {
                             __typename: 'ExternalChangeset',
                             reviewState: ChangesetReviewState.PENDING,
-                            state: ChangesetState.OPEN,
+                            state: ChangesetState.UNPUBLISHED,
+                            externalState: ChangesetExternalState.OPEN,
                             externalURL: {
                                 url: 'https://github.com/sourcegraph/sourcegraph/pull/111111',
                             },

@@ -131,14 +131,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "status": Object {
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": false,
       }
@@ -193,46 +185,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
       />
     </div>
   </CampaignActionsBar>
-  <CampaignStatus
-    campaign={
-      Object {
-        "__typename": "Campaign",
-        "author": Object {
-          "username": "alice",
-        },
-        "branch": "awesome-branch",
-        "changesetCountsOverTime": Array [],
-        "changesets": Object {
-          "totalCount": 2,
-        },
-        "closedAt": null,
-        "createdAt": "2020-01-01",
-        "description": "d",
-        "diffStat": Object {
-          "__typename": "IDiffStat",
-          "added": 5,
-          "changed": 3,
-          "deleted": 2,
-        },
-        "hasUnpublishedPatches": false,
-        "id": "c",
-        "name": "n",
-        "status": Object {
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
-        "updatedAt": "2020-01-01",
-        "viewerCanAdminister": false,
-      }
-    }
-    history="[History]"
-  >
-    CampaignStatus(state=PROCESSING)
-  </CampaignStatus>
   <div
     className="card mt-2"
   >
@@ -331,14 +283,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
           "hasUnpublishedPatches": false,
           "id": "c",
           "name": "n",
-          "status": Object {
-            "completedCount": 3,
-            "errors": Array [
-              "a",
-            ],
-            "pendingCount": 3,
-            "state": "PROCESSING",
-          },
           "updatedAt": "2020-01-01",
           "viewerCanAdminister": false,
         }
@@ -429,14 +373,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "status": Object {
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": false,
       }
@@ -504,14 +440,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "status": Object {
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": true,
       }
@@ -567,7 +495,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         <CloseDeleteCampaignPrompt
           buttonClassName="btn-secondary mr-1"
           buttonText="Close"
-          disabled={true}
+          disabled={false}
           disabledTooltip="Cannot close while campaign is being created"
           message={
             <p>
@@ -585,8 +513,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           >
             <summary>
               <span
-                className="btn dropdown-toggle btn-secondary mr-1 disabled"
-                data-tooltip="Cannot close while campaign is being created"
+                className="btn dropdown-toggle btn-secondary mr-1"
                 onClick={[Function]}
               >
                 Close
@@ -623,7 +550,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
                   </div>
                   <button
                     className="btn mr-1 btn-secondary mr-1"
-                    disabled={true}
+                    disabled={false}
                     onClick={[Function]}
                     type="button"
                   >
@@ -637,7 +564,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         <CloseDeleteCampaignPrompt
           buttonClassName="btn-danger"
           buttonText="Delete"
-          disabled={true}
+          disabled={false}
           disabledTooltip="Cannot delete while campaign is being created"
           message={
             <p>
@@ -655,8 +582,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           >
             <summary>
               <span
-                className="btn dropdown-toggle btn-danger disabled"
-                data-tooltip="Cannot delete while campaign is being created"
+                className="btn dropdown-toggle btn-danger"
                 onClick={[Function]}
               >
                 Delete
@@ -693,7 +619,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
                   </div>
                   <button
                     className="btn mr-1 btn-danger"
-                    disabled={true}
+                    disabled={false}
                     onClick={[Function]}
                     type="button"
                   >
@@ -707,46 +633,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
       </span>
     </div>
   </CampaignActionsBar>
-  <CampaignStatus
-    campaign={
-      Object {
-        "__typename": "Campaign",
-        "author": Object {
-          "username": "alice",
-        },
-        "branch": "awesome-branch",
-        "changesetCountsOverTime": Array [],
-        "changesets": Object {
-          "totalCount": 2,
-        },
-        "closedAt": null,
-        "createdAt": "2020-01-01",
-        "description": "d",
-        "diffStat": Object {
-          "__typename": "IDiffStat",
-          "added": 5,
-          "changed": 3,
-          "deleted": 2,
-        },
-        "hasUnpublishedPatches": false,
-        "id": "c",
-        "name": "n",
-        "status": Object {
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
-        "updatedAt": "2020-01-01",
-        "viewerCanAdminister": true,
-      }
-    }
-    history="[History]"
-  >
-    CampaignStatus(state=PROCESSING)
-  </CampaignStatus>
   <div
     className="card mt-2"
   >
@@ -845,14 +731,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
           "hasUnpublishedPatches": false,
           "id": "c",
           "name": "n",
-          "status": Object {
-            "completedCount": 3,
-            "errors": Array [
-              "a",
-            ],
-            "pendingCount": 3,
-            "state": "PROCESSING",
-          },
           "updatedAt": "2020-01-01",
           "viewerCanAdminister": true,
         }
@@ -943,14 +821,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
-        "status": Object {
-          "completedCount": 3,
-          "errors": Array [
-            "a",
-          ],
-          "pendingCount": 3,
-          "state": "PROCESSING",
-        },
         "updatedAt": "2020-01-01",
         "viewerCanAdminister": true,
       }

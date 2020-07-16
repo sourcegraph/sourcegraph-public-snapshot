@@ -38,7 +38,7 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 
 type changesetStatesAtTime struct {
 	t           time.Time
-	state       campaigns.ChangesetState
+	state       campaigns.ChangesetExternalState
 	reviewState campaigns.ChangesetReviewState
 }
 
@@ -53,7 +53,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 	var (
 		states = []changesetStatesAtTime{}
 
-		currentState       = campaigns.ChangesetStateOpen
+		currentState       = campaigns.ChangesetExternalStateOpen
 		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
@@ -82,19 +82,19 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		switch e.Kind {
 		case campaigns.ChangesetEventKindGitHubClosed, campaigns.ChangesetEventKindBitbucketServerDeclined:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != campaigns.ChangesetStateMerged {
-				currentState = campaigns.ChangesetStateClosed
+			if currentState != campaigns.ChangesetExternalStateMerged {
+				currentState = campaigns.ChangesetExternalStateClosed
 				pushStates(et)
 			}
 
 		case campaigns.ChangesetEventKindGitHubMerged, campaigns.ChangesetEventKindBitbucketServerMerged:
-			currentState = campaigns.ChangesetStateMerged
+			currentState = campaigns.ChangesetExternalStateMerged
 			pushStates(et)
 
 		case campaigns.ChangesetEventKindGitHubReopened, campaigns.ChangesetEventKindBitbucketServerReopened:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != campaigns.ChangesetStateMerged {
-				currentState = campaigns.ChangesetStateOpen
+			if currentState != campaigns.ChangesetExternalStateMerged {
+				currentState = campaigns.ChangesetExternalStateOpen
 				pushStates(et)
 			}
 
@@ -199,7 +199,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 	// ExternalDeletedAt manually in the Syncer.
 	deletedAt := ch.ExternalDeletedAt
 	if !deletedAt.IsZero() {
-		currentState = campaigns.ChangesetStateClosed
+		currentState = campaigns.ChangesetExternalStateClosed
 		pushStates(deletedAt)
 	}
 

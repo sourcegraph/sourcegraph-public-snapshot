@@ -5,14 +5,14 @@ import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { CampaignsIcon } from '../icons'
 import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'
-import { changesetStateIcons, changesetStatusColorClasses } from '../detail/changesets/presentation'
 import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
 import * as H from 'history'
+import { changesetExternalStateIcons, changesetExternalStateColorClasses } from '../detail/changesets/presentation'
 
 export type CampaignNodeCampaign = Pick<GQL.ICampaign, 'id' | 'closedAt' | 'name' | 'description' | 'createdAt'> & {
     changesets: {
-        nodes: Pick<GQL.IExternalChangeset, 'state'>[]
+        nodes: Pick<GQL.IExternalChangeset, 'externalState'>[]
     }
 }
 
@@ -39,10 +39,10 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
     now = new Date(),
 }) => {
     const campaignIconClass = node.closedAt ? 'text-danger' : 'text-success'
-    const OpenChangesetIcon = changesetStateIcons[GQL.ChangesetState.OPEN]
-    const MergedChangesetIcon = changesetStateIcons[GQL.ChangesetState.MERGED]
-    const changesetCountByState = (state: GQL.ChangesetState): number =>
-        node.changesets.nodes.reduce((previous, next) => previous + (next.state === state ? 1 : 0), 0)
+    const OpenChangesetIcon = changesetExternalStateIcons[GQL.ChangesetExternalState.OPEN]
+    const MergedChangesetIcon = changesetExternalStateIcons[GQL.ChangesetExternalState.MERGED]
+    const changesetCountByState = (state: GQL.ChangesetExternalState): number =>
+        node.changesets.nodes.reduce((previous, next) => previous + (next.externalState === state ? 1 : 0), 0)
     return (
         <li className="list-group-item">
             <div className="d-flex align-items-center p-2">
@@ -68,12 +68,12 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
                     />
                 </div>
                 <div data-tooltip="Open changesets">
-                    {changesetCountByState(GQL.ChangesetState.OPEN)}{' '}
-                    <OpenChangesetIcon className={`text-${changesetStatusColorClasses.OPEN} ml-1 mr-2`} />
+                    {changesetCountByState(GQL.ChangesetExternalState.OPEN)}{' '}
+                    <OpenChangesetIcon className={`text-${changesetExternalStateColorClasses.OPEN} ml-1 mr-2`} />
                 </div>
                 <div data-tooltip="Merged changesets">
-                    {changesetCountByState(GQL.ChangesetState.MERGED)}{' '}
-                    <MergedChangesetIcon className={`text-${changesetStatusColorClasses.MERGED} ml-1`} />
+                    {changesetCountByState(GQL.ChangesetExternalState.MERGED)}{' '}
+                    <MergedChangesetIcon className={`text-${changesetExternalStateColorClasses.MERGED} ml-1`} />
                 </div>
                 {selection?.enabled && (
                     <button type="button" className="btn btn-secondary ml-3" onClick={() => selection.onSelect(node)}>

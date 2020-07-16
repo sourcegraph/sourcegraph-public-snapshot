@@ -151,7 +151,7 @@ func TestExecChangesetJob(t *testing.T) {
 				RepoID:              repo.ID,
 				CampaignIDs:         []int64{campaign.ID},
 				ExternalBranch:      headRef,
-				ExternalState:       cmpgn.ChangesetStateOpen,
+				ExternalState:       cmpgn.ChangesetExternalStateOpen,
 				ExternalReviewState: cmpgn.ChangesetReviewStatePending,
 				ExternalCheckState:  cmpgn.ChangesetCheckStateUnknown,
 				CreatedAt:           now,

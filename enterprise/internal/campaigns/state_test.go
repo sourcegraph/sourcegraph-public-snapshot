@@ -485,7 +485,7 @@ func TestComputeReviewState(t *testing.T) {
 	}
 }
 
-func TestComputeChangesetState(t *testing.T) {
+func TestComputeChangesetExternalState(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
@@ -493,107 +493,107 @@ func TestComputeChangesetState(t *testing.T) {
 		name      string
 		changeset *campaigns.Changeset
 		history   []changesetStatesAtTime
-		want      cmpgn.ChangesetState
+		want      cmpgn.ChangesetExternalState
 	}{
 		{
 			name:      "github - no events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetStateOpen,
+			want:      cmpgn.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "github - changeset older than events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(0), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateClosed,
+			want: cmpgn.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "github - changeset newer than events",
 			changeset: githubChangeset(daysAgo(0), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateOpen,
+			want: cmpgn.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "github - changeset newer and deleted",
 			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN"), daysAgo(0)),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateDeleted,
+			want: cmpgn.ChangesetExternalStateDeleted,
 		},
 		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetStateOpen,
+			want:      cmpgn.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "bitbucketserver - changeset older than events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(0), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateClosed,
+			want: cmpgn.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "bitbucketserver - changeset newer than events",
 			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateOpen,
+			want: cmpgn.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "bitbucketserver - changeset newer and deleted",
 			changeset: setDeletedAt(bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"), daysAgo(0)),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateDeleted,
+			want: cmpgn.ChangesetExternalStateDeleted,
 		},
 		{
 			name:      "gitlab - no events, opened",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetStateOpen,
+			want:      cmpgn.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "gitlab - no events, closed",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateClosed, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetStateClosed,
+			want:      cmpgn.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - no events, locked",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateLocked, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetStateClosed,
+			want:      cmpgn.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - no events, merged",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetStateMerged,
+			want:      cmpgn.ChangesetExternalStateMerged,
 		},
 		{
 			name:      "gitlab - changeset older than events",
 			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateMerged, nil),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(0), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateClosed,
+			want: cmpgn.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - changeset newer than events",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetStateMerged,
+			want: cmpgn.ChangesetExternalStateMerged,
 		},
 	}
 
@@ -601,7 +601,7 @@ func TestComputeChangesetState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			changeset := tc.changeset
 
-			have, err := ComputeChangesetState(changeset, tc.history)
+			have, err := ComputeExternalState(changeset, tc.history)
 			if err != nil {
 				t.Fatalf("got error: %s", err)
 			}

@@ -80,7 +80,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		isHidden:      errcode.IsNotFound(err),
 		store:         r.store,
 		httpFactory:   r.httpFactory,
-		Changeset:     changeset,
+		changeset:     changeset,
 		preloadedRepo: repo,
 	}, nil
 }
@@ -425,14 +425,14 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 	}
 
 	if args.State != nil {
-		state := campaigns.ChangesetState(*args.State)
+		state := *args.ExternalState
 		if !state.Valid() {
 			return opts, false, errors.New("changeset state not valid")
 		}
 		opts.ExternalState = &state
 	}
 	if args.ReviewState != nil {
-		state := campaigns.ChangesetReviewState(*args.ReviewState)
+		state := *args.ReviewState
 		if !state.Valid() {
 			return opts, false, errors.New("changeset review state not valid")
 		}
@@ -442,7 +442,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 		safe = false
 	}
 	if args.CheckState != nil {
-		state := campaigns.ChangesetCheckState(*args.CheckState)
+		state := *args.CheckState
 		if !state.Valid() {
 			return opts, false, errors.New("changeset check state not valid")
 		}

@@ -91,7 +91,7 @@ func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.
 		isHidden:    false,
 		store:       r.store,
 		httpFactory: r.httpFactory,
-		Changeset:   r.changeset,
+		changeset:   r.changeset,
 	}, nil
 }
 

@@ -9,9 +9,7 @@ import { CampaignUIMode } from './CampaignDetails'
 interface Props {
     mode: CampaignUIMode
 
-    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
-        status: Pick<GQL.ICampaign['status'], 'state'>
-    }
+    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'>
 
     onClose: (closeChangesets: boolean) => Promise<void>
     onDelete: (closeChangesets: boolean) => Promise<void>
@@ -24,7 +22,8 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign, m
     const editingCampaign = mode === 'editing' || mode === 'saving'
 
     const campaignClosed = campaign?.closedAt
-    const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
+    // TODO: New way to determine processing status
+    const campaignProcessing = false
     const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
 
     let stateBadge: JSX.Element
