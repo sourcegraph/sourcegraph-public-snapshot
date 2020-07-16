@@ -194,10 +194,10 @@ const (
 	ChangesetStateSynced      ChangesetState = "SYNCED"
 )
 
-// ChangesetState defines the possible states of a Changeset.
+// ChangesetExternalState defines the possible states of a Changeset on a code host.
 type ChangesetExternalState string
 
-// ChangesetState constants.
+// ChangesetExternalState constants.
 const (
 	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
 	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"

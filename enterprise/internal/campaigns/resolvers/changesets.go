@@ -293,6 +293,9 @@ func (r *changesetResolver) ID() graphql.ID {
 }
 
 func (r *changesetResolver) ExternalID() *string {
+        if r.changeset == nil {
+          return nil
+        }
 	return &r.changeset.ExternalID
 }
 
@@ -349,10 +352,16 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 }
 
 func (r *changesetResolver) Title() (string, error) {
+        if r.changeset == nil {
+          return "TODO: return from spec"
+        }
 	return r.changeset.Title()
 }
 
 func (r *changesetResolver) Body() (string, error) {
+        if r.changeset == nil {
+          return "TODO: return from spec"
+        }
 	return r.changeset.Body()
 }
 
@@ -374,6 +383,7 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
+	// TODO: Implement this properly by checking whether the changeset has been published on the code host.
 	return &r.changeset.ExternalReviewState
 }
 

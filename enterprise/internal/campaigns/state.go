@@ -38,7 +38,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	}
 
 	if state, err := ComputeChangesetExternalState(c, history); err != nil {
-		log15.Warn("Computing changeset state", "err", err)
+		log15.Warn("Computing external changeset state", "err", err)
 	} else {
 		c.ExternalState = state
 	}

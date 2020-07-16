@@ -693,7 +693,7 @@ query {
     ... on ExternalChangeset {
       id
 
-      externalState
+	  externalState
 	  createdAt
 	  updatedAt
 	  nextSyncAt
