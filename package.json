@@ -85,7 +85,7 @@
     "@pollyjs/adapter-puppeteer": "^5.0.0",
     "@pollyjs/core": "^5.0.0",
     "@pollyjs/persister-fs": "^5.0.0",
-    "@slack/web-api": "^5.8.1",
+    "@slack/web-api": "^5.10.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
     "@sourcegraph/eslint-config": "^0.19.15",
     "@sourcegraph/prettierrc": "^3.0.3",
