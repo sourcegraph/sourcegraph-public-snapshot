@@ -3097,10 +3097,10 @@
     "@theme-ui/core" "^0.3.1"
     "@theme-ui/mdx" "^0.3.0"
 
-"@ts-morph/common@~0.5.0":
-  version "0.5.0"
-  resolved "https://registry.npmjs.org/@ts-morph/common/-/common-0.5.0.tgz#d6ba5d162a8d6bf5c0870ffe2083a1f513d2193d"
-  integrity sha512-/nIPpBgAJULjFnPlreL3gm4XJK9wiE3TGkBh02qXe80naG+AvegvCZX34abU3MArJRPeTfQL8vJxcx8HBMVBiQ==
+"@ts-morph/common@~0.5.1":
+  version "0.5.1"
+  resolved "https://registry.npmjs.org/@ts-morph/common/-/common-0.5.1.tgz#c85037c9ed420755a68fce613348a94d8ef81a3d"
+  integrity sha512-0qasHorGK8VfUK20oECpIfmu/B6cwGSNTj2HoNsIKeDE1kB/uCk5jWFHkgBuoZu/3i3ysLOwO9QsFJaRAH65UA==
   dependencies:
     "@dsherret/to-absolute-glob" "^2.0.2"
     fast-glob "^3.2.2"
@@ -21690,13 +21690,13 @@ ts-key-enum@^2.0.0, ts-key-enum@^2.0.3:
   resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.3.tgz#f37dc56d3cd0ce7e667e1780eb76ed7d3bf1ff09"
   integrity sha512-hdzWAxZDIz1mrXvXHn4WMi6GAzMTnDfeanztDt7nzA5Ck8IEjW/vXrYhA7tXg9XCDGpChCITXQKuCr/997WCWg==
 
-ts-morph@^7.1.1:
-  version "7.1.1"
-  resolved "https://registry.npmjs.org/ts-morph/-/ts-morph-7.1.1.tgz#50374d1b0b30ab517f73bf08ede91f342f27330c"
-  integrity sha512-vzLA3RW6bHNApHtzFA9CzR1VVBsImjKAhg4rMh/VjyNRWIgIGsyX8RIYBqwhR7CNWv40/W5fmdDgdtHRf+Q02w==
+ts-morph@^7.1.2:
+  version "7.1.2"
+  resolved "https://registry.npmjs.org/ts-morph/-/ts-morph-7.1.2.tgz#7da8c3686b238f89988c3ee658bc5f3953ed8ec7"
+  integrity sha512-0ggF46muGv3v09Yf8Ce5ykTLiQ8I6hGvdB5ID/3+K4J11nCHo/vTaucqTvdFprJzQALpwQx+9bKi31mTxO0+tw==
   dependencies:
     "@dsherret/to-absolute-glob" "^2.0.2"
-    "@ts-morph/common" "~0.5.0"
+    "@ts-morph/common" "~0.5.1"
     code-block-writer "^10.1.0"
 
 ts-node@^8.10.2:
