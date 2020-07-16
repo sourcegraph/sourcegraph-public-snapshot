@@ -146,7 +146,7 @@ There are default mock responses for queries made in almost every test, which yo
 
 ##### Waiting for a mutation and checking passed variables
 
-To test the client made a GraphQL mutation to the backend, you can use `waitForRequest()`.
+To verify that the client sent a GraphQL mutation to the backend, you can use`waitForRequest()`.
 Pass it a callback that triggers the request (e.g. clicking a "Save" button in a form).
 The function returns the variables that were passed to the mutation, which can be asserted with `assert.deepStrictEqual()`.
 
