@@ -138,7 +138,7 @@ Instead, integration tests create a _test context_ object before every test usin
 
 ##### Mocking GraphQL responses
 
-Calling `testContext.overrideGraphQl()` in a test or `beforeEach()` hook with an object map allows you to override GraphQL queries and mutations that are made by the application during the test by their unique query name used by the implementation.
+Calling `testContext.overrideGraphQl()` in a test or `beforeEach()` hook with an object map allows you to override GraphQL queries and mutations made by the client code. The map is indexed by the unique query name specified in the implementation, for example [`ResolveRepo`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a3b40f3ae9376b42ce9a67b5a33f177ba98ac050/-/blob/browser/src/shared/repo/backend.tsx?subtree=true#L32-36).
 The types of each query are specifically generated for each query to validate the shape of the mock results and provide autocompletion.
 If a query is made during a test that is not mocked, the request will be rejected and an error will be logged with details about which query was missing.
 
