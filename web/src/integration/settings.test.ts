@@ -4,6 +4,7 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { settingsID, testUserID } from '../../../shared/src/testing/integration/graphQlResults'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Settings', () => {
     let driver: Driver
@@ -19,6 +20,7 @@ describe('Settings', () => {
             directory: __dirname,
         })
     })
+    saveScreenshotsUponFailures(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('User settings page', () => {
