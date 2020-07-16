@@ -15,12 +15,14 @@ import { Services } from '../../../shared/src/api/client/services'
 import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
 
-const { add } = storiesOf('web/RepogroupPage', module).addDecorator(story => (
-    <>
-        <style>{webStyles}</style>
-        <div className="theme-light">{story()}</div>
-    </>
-))
+const { add } = storiesOf('web/RepogroupPage', module)
+    .addParameters({ percy: { widths: [993] } })
+    .addDecorator(story => (
+        <>
+            <style>{webStyles}</style>
+            <div className="theme-light">{story()}</div>
+        </>
+    ))
 
 const history = H.createMemoryHistory()
 
@@ -161,7 +163,7 @@ const commonProps: RepogroupPageProps = {
     repogroupMetadata: python2To3Metadata,
 }
 
-add('Site admin', () => (
+add('Repogroup page', () => (
     <MemoryRouter>
         <RepogroupPage {...commonProps} />
     </MemoryRouter>
