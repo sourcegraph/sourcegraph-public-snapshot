@@ -63,7 +63,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createTestData := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64) {
+	createCampaign := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64) {
 		t.Helper()
 
 		c := &campaigns.Campaign{
@@ -77,7 +77,23 @@ func TestPermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		cs := &campaigns.CampaignSpec{UserID: userID, NamespaceUserID: userID}
+		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+			t.Fatal(err)
+		}
+
 		return c.ID
+	}
+
+	createCampaignSpec := func(t *testing.T, s *ee.Store, name string, userID int32) (randID string) {
+		t.Helper()
+
+		cs := &campaigns.CampaignSpec{UserID: userID, NamespaceUserID: userID}
+		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+			t.Fatal(err)
+		}
+
+		return cs.RandID
 	}
 
 	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
@@ -111,65 +127,128 @@ func TestPermissionLevels(t *testing.T) {
 
 		cleanUpCampaigns(t, store)
 
-		adminCampaign := createTestData(t, store, "admin", adminID)
-		userCampaign := createTestData(t, store, "user", userID)
+		adminCampaign := createCampaign(t, store, "admin", adminID)
+		adminCampaignSpec := createCampaignSpec(t, store, "admin", adminID)
+		userCampaign := createCampaign(t, store, "user", userID)
+		userCampaignSpec := createCampaignSpec(t, store, "user", userID)
 
-		tests := []struct {
-			name                    string
-			currentUser             int32
-			campaign                int64
-			wantViewerCanAdminister bool
-		}{
-			{
-				name:                    "site-admin viewing own campaign",
-				currentUser:             adminID,
-				campaign:                adminCampaign,
-				wantViewerCanAdminister: true,
-			},
-			{
-				name:                    "non-site-admin viewing other's campaign",
-				currentUser:             userID,
-				campaign:                adminCampaign,
-				wantViewerCanAdminister: false,
-			},
-			{
-				name:                    "site-admin viewing other's campaign",
-				currentUser:             adminID,
-				campaign:                userCampaign,
-				wantViewerCanAdminister: true,
-			},
-			{
-				name:                    "non-site-admin viewing own campaign",
-				currentUser:             userID,
-				campaign:                userCampaign,
-				wantViewerCanAdminister: true,
-			},
-		}
+		t.Run("CampaignByID", func(t *testing.T) {
+			tests := []struct {
+				name                    string
+				currentUser             int32
+				campaign                int64
+				wantViewerCanAdminister bool
+			}{
+				{
+					name:                    "site-admin viewing own campaign",
+					currentUser:             adminID,
+					campaign:                adminCampaign,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing other's campaign",
+					currentUser:             userID,
+					campaign:                adminCampaign,
+					wantViewerCanAdminister: false,
+				},
+				{
+					name:                    "site-admin viewing other's campaign",
+					currentUser:             adminID,
+					campaign:                userCampaign,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing own campaign",
+					currentUser:             userID,
+					campaign:                userCampaign,
+					wantViewerCanAdminister: true,
+				},
+			}
 
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				graphqlID := string(campaigns.MarshalCampaignID(tc.campaign))
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					graphqlID := string(campaigns.MarshalCampaignID(tc.campaign))
 
-				var res struct{ Node apitest.Campaign }
+					var res struct{ Node apitest.Campaign }
 
-				input := map[string]interface{}{"campaign": graphqlID}
-				queryCampaign := `
+					input := map[string]interface{}{"campaign": graphqlID}
+					queryCampaign := `
 				  query($campaign: ID!) {
 				    node(id: $campaign) { ... on Campaign { id, viewerCanAdminister } }
 				  }
                 `
 
-				actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-				apitest.MustExec(actorCtx, t, s, input, &res, queryCampaign)
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					apitest.MustExec(actorCtx, t, s, input, &res, queryCampaign)
 
-				if have, want := res.Node.ID, graphqlID; have != want {
-					t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
-				}
-				if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-					t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
-				}
-			})
-		}
+					if have, want := res.Node.ID, graphqlID; have != want {
+						t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
+					}
+					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+						t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
+					}
+				})
+			}
+		})
+
+		t.Run("CampaignSpecByID", func(t *testing.T) {
+			tests := []struct {
+				name                    string
+				currentUser             int32
+				campaignSpec            string
+				wantViewerCanAdminister bool
+			}{
+				{
+					name:                    "site-admin viewing own campaign spec",
+					currentUser:             adminID,
+					campaignSpec:            adminCampaignSpec,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing other's campaign spec",
+					currentUser:             userID,
+					campaignSpec:            adminCampaignSpec,
+					wantViewerCanAdminister: false,
+				},
+				{
+					name:                    "site-admin viewing other's campaign spec",
+					currentUser:             adminID,
+					campaignSpec:            userCampaignSpec,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing own campaign spec",
+					currentUser:             userID,
+					campaignSpec:            userCampaignSpec,
+					wantViewerCanAdminister: true,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					graphqlID := string(marshalCampaignSpecRandID(tc.campaignSpec))
+
+					var res struct{ Node apitest.CampaignSpec }
+
+					input := map[string]interface{}{"campaignSpec": graphqlID}
+					queryCampaignSpec := `
+				  query($campaignSpec: ID!) {
+				    node(id: $campaignSpec) { ... on CampaignSpec { id, viewerCanAdminister } }
+				  }
+                `
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					apitest.MustExec(actorCtx, t, s, input, &res, queryCampaignSpec)
+
+					if have, want := res.Node.ID, graphqlID; have != want {
+						t.Fatalf("queried campaign spec has wrong id %q, want %q", have, want)
+					}
+					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+						t.Fatalf("queried campaign spec's ViewerCanAdminister is wrong %t, want %t", have, want)
+					}
+				})
+			}
+		})
 
 		t.Run("Campaigns", func(t *testing.T) {
 			tests := []struct {
@@ -302,7 +381,7 @@ func TestPermissionLevels(t *testing.T) {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
-						campaignID := createTestData(t, store, "test-campaign", tc.campaignAuthor)
+						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor)
 
 						// We add the changeset to the campaign. It doesn't matter
 						// for the addChangesetsToCampaign mutation, since that is

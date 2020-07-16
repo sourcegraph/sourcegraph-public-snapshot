@@ -97,7 +97,7 @@ type CampaignSpecResolver interface {
 
 	PreviewURL() (string, error)
 
-	ViewerCanAdminister() bool
+	ViewerCanAdminister(context.Context) (bool, error)
 }
 
 type CampaignDescriptionResolver interface {

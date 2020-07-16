@@ -197,6 +197,8 @@ type CampaignSpec struct {
 
 	ChangesetSpecs ChangesetSpecConnection
 
+	ViewerCanAdminister bool
+
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 }

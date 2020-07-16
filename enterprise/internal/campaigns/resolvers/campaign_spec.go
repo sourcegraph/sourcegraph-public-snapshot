@@ -109,9 +109,8 @@ func (r *campaignSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.campaignSpec.ExpiresAt()}
 }
 
-func (r *campaignSpecResolver) ViewerCanAdminister() bool {
-	// TODO: Implement.
-	return true
+func (r *campaignSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	return checkSiteAdminOrSameUser(ctx, r.campaignSpec.UserID)
 }
 
 type campaignDescriptionResolver struct {

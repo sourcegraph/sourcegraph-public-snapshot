@@ -66,11 +66,13 @@ func TestCampaignSpecResolver(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		PreviewURL: "/campaigns/new?spec=" + apiID,
-		Namespace:  apitest.UserOrg{ID: userApiID, DatabaseID: userID},
-		Creator:    apitest.User{ID: userApiID, DatabaseID: userID},
-		CreatedAt:  graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
-		ExpiresAt:  &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+		PreviewURL:          "/campaigns/new?spec=" + apiID,
+		Namespace:           apitest.UserOrg{ID: userApiID, DatabaseID: userID},
+		Creator:             apitest.User{ID: userApiID, DatabaseID: userID},
+		ViewerCanAdminister: true,
+
+		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 	}
 
 	if diff := cmp.Diff(want, response.Node); diff != "" {
@@ -98,6 +100,7 @@ query($campaignSpec: ID!) {
       }
 
       previewURL
+      viewerCanAdminister
 
       createdAt
       expiresAt

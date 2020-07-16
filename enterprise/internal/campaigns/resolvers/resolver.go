@@ -520,9 +520,10 @@ func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 	}
 }
 
-func currentUserCanAdministerCampaign(ctx context.Context, c *campaigns.Campaign) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID); err != nil {
+func checkSiteAdminOrSameUser(ctx context.Context, userID int32) (bool, error) {
+	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign
+	// admin rights.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
 			return false, nil
 		}
