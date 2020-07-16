@@ -16,7 +16,13 @@ import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
 
 const { add } = storiesOf('web/RepogroupPage', module)
-    .addParameters({ percy: { widths: [993] } })
+    .addParameters({
+        percy: { widths: [993] },
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
+        },
+    })
     .addDecorator(story => (
         <>
             <style>{webStyles}</style>
