@@ -12,8 +12,8 @@ assignees: ''
 <!--
 Summarize what the team wants to achieve this iteration.
 - What are the problems we want to solve or what information do we want to gather?
-- Why is solving those problems or gathering that infomation important?
-- How do we plan to solve those problems?
+- Why is solving those problems or gathering that information important?
+- How does we plan to solve those problems or gather that information?
 -->
 
 ### Availability
