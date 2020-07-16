@@ -373,10 +373,19 @@ type Event struct {
 	Timestamp       time.Time
 }
 
+// Secret represents the secrets table
 type Secret struct {
-	ID         int32
-	SourceType string // the table providing the object we're encrypting
-	SourceID   int32  // the id in the external table
-	KeyName    string
-	Value      string
+	ID int32
+
+	// The table containing an object whose token is being encrypted.
+	SourceType string
+
+	// The ID of the object in the SourceType table.
+	SourceID int32
+
+	// KeyName represents a unique key for the case where we're storing key-value pairs.
+	KeyName string
+
+	// Value contains the encrypted string
+	Value string
 }
