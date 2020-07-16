@@ -84,7 +84,15 @@ func (*schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 	default:
 		searchType = query.SearchTypeLiteral
 	}
-	q, err := query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: false})
+
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	globbing := getBoolPtr(settings.SearchGlobbing, false)
+
+	q, err := query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 	if err != nil {
 		return nil, err
 	}
