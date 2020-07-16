@@ -97,6 +97,12 @@ const SettingsSchemaJSON = `{
         "required": ["key", "description", "query"]
       }
     },
+    "search.globbing": {
+      "description": "Enables globbing for supported field values",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
     "search.scopes": {
       "description": "Predefined search scopes",
       "type": "array",

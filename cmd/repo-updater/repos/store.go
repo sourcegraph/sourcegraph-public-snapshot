@@ -49,6 +49,8 @@ type StoreListReposArgs struct {
 	PerPage int64
 	// Only include private repositories.
 	PrivateOnly bool
+	// Only include cloned repositories.
+	ClonedOnly bool
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -382,6 +384,10 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 		preds = append(preds, sqlf.Sprintf("private = TRUE"))
 	}
 
+	if args.ClonedOnly {
+		preds = append(preds, sqlf.Sprintf("cloned = TRUE"))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -411,26 +417,43 @@ func (s DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error 
 		return nil
 	}
 
-	names := make([]*sqlf.Query, len(repoNames))
-	for i, v := range repoNames {
-		names[i] = sqlf.Sprintf("%s", v)
+	names, err := json.Marshal(repoNames)
+	if err != nil {
+		return nil
 	}
-	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Join(names, ","))
 
-	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	q := sqlf.Sprintf(setClonedReposQueryFmtstr, sqlf.Sprintf("%s", string(names)))
+
+	_, err = s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
 const setClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
-WITH c AS (
-	UPDATE repo SET cloned = true
-	WHERE NOT cloned AND name in (%s)
-	RETURNING id
- )
- UPDATE repo SET cloned = false
- FROM c
- WHERE cloned AND repo.id != c.id;
+--
+-- This query generates a diff by selecting only
+-- the repos that need to be updated.
+-- Selected repos will have their cloned column reversed if
+-- their cloned column is true but they are not in cloned_repos
+-- or they are in cloned_repos but their cloned column is false.
+--
+WITH cloned_repos AS (
+  SELECT jsonb_array_elements_text(%s) AS name
+),
+diff AS (
+  SELECT id,
+    cloned
+  FROM repo
+  WHERE
+    NOT cloned
+      AND name IN (SELECT name::citext FROM cloned_repos)
+    OR cloned
+      AND name NOT IN (SELECT name::citext FROM cloned_repos)
+)
+UPDATE repo
+SET cloned = NOT diff.cloned
+FROM diff
+WHERE repo.id = diff.id;
 `
 
 // CountNotClonedRepos returns the number of repos whose cloned column is true.
@@ -444,7 +467,7 @@ func (s DBStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 
 const CountNotClonedReposQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.CountNotClonedRepos
-SELECT COUNT(*) FROM repo WHERE NOT cloned
+SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 `
 
 // a paginatedQuery returns a query with the given pagination
@@ -492,6 +515,7 @@ func (s DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
 // The ID field is used to distinguish between Repos that need to be updated and Repos
 // that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
+// The cloned column is not updated by this function.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	if len(repos) == 0 {
 		return nil
