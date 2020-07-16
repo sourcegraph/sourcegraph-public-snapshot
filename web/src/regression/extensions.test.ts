@@ -118,7 +118,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         console.log('------------------------ one -------------------------------')
 
         // Wait for the "Coverage: X%" button to appear and click it
-        //await driver.findElementWithText('Coverage: 80%', { action: 'click', wait: true })
+        // await driver.findElementWithText('Coverage: 80%', { action: 'click', wait: true })
 
         console.log('------------------------ two -------------------------------')
 
