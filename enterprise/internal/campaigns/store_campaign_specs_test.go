@@ -236,37 +236,24 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 	})
 
 	t.Run("DeleteExpiredCampaignSpecs", func(t *testing.T) {
+		underTTL := clock.now().Add(-cmpgn.CampaignSpecTTL + 1*time.Minute)
+		overTTL := clock.now().Add(-cmpgn.CampaignSpecTTL - 1*time.Minute)
+
 		tests := []struct {
 			createdAt   time.Time
 			hasCampaign bool
 			wantDeleted bool
 		}{
-			{
-				hasCampaign: false,
-				createdAt:   clock.now(),
-				wantDeleted: false,
-			},
-			{
-				hasCampaign: false,
-				createdAt:   clock.now().Add(-8 * 24 * time.Hour),
-				wantDeleted: true,
-			},
-			{
-				hasCampaign: true,
-				createdAt:   clock.now(),
-				wantDeleted: false,
-			},
-			{
-				hasCampaign: true,
-				createdAt:   clock.now().Add(-8 * 24 * time.Hour),
-				wantDeleted: false,
-			},
+			{hasCampaign: false, createdAt: underTTL, wantDeleted: false},
+			{hasCampaign: false, createdAt: overTTL, wantDeleted: true},
+			{hasCampaign: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaign: true, createdAt: overTTL, wantDeleted: false},
 		}
 
 		for _, tc := range tests {
 			campaignSpec := &cmpgn.CampaignSpec{
-				UserID:          4567,
-				NamespaceUserID: 4567,
+				UserID:          1,
+				NamespaceUserID: 1,
 				CreatedAt:       tc.createdAt,
 			}
 
@@ -277,8 +264,8 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 			if tc.hasCampaign {
 				campaign := &cmpgn.Campaign{
 					Name:            "not-blank",
-					AuthorID:        4567,
-					NamespaceUserID: 4567,
+					AuthorID:        1,
+					NamespaceUserID: 1,
 					CampaignSpecID:  campaignSpec.ID,
 				}
 				if err := s.CreateCampaign(ctx, campaign); err != nil {

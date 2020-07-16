@@ -287,13 +287,8 @@ WHERE
   created_at < %s
 AND
 NOT EXISTS (
-  SELECT 1
-  FROM
-    campaigns
-  WHERE
-    campaigns.campaign_spec_id = campaign_specs.id
-  )
-;
+  SELECT 1 FROM campaigns WHERE campaigns.campaign_spec_id = campaign_specs.id
+);
 `
 
 func scanCampaignSpec(c *campaigns.CampaignSpec, s scanner) error {

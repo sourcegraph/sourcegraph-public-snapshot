@@ -269,34 +269,18 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
+		underTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL - 24*time.Hour)
+
 		tests := []struct {
-			createdAt                      time.Time
-			hasCampaignSpec                bool
-			patchesAttachedToOtherCampaign bool
-			patches                        []*cmpgn.Patch
-			wantDeleted                    bool
-			want                           *cmpgn.BackgroundProcessStatus
+			createdAt       time.Time
+			hasCampaignSpec bool
+			wantDeleted     bool
 		}{
-			{
-				hasCampaignSpec: false,
-				createdAt:       clock.now(),
-				wantDeleted:     false,
-			},
-			{
-				hasCampaignSpec: false,
-				createdAt:       clock.now().Add(-3 * 24 * time.Hour),
-				wantDeleted:     true,
-			},
-			{
-				hasCampaignSpec: true,
-				createdAt:       clock.now(),
-				wantDeleted:     false,
-			},
-			{
-				hasCampaignSpec: true,
-				createdAt:       clock.now().Add(-3 * 24 * time.Hour),
-				wantDeleted:     false,
-			},
+			{hasCampaignSpec: false, createdAt: underTTL, wantDeleted: false},
+			{hasCampaignSpec: false, createdAt: overTTL, wantDeleted: true},
+			{hasCampaignSpec: true, createdAt: underTTL, wantDeleted: false},
+			{hasCampaignSpec: true, createdAt: overTTL, wantDeleted: false},
 		}
 
 		for _, tc := range tests {
