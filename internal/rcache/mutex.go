@@ -46,19 +46,23 @@ func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(),
 		cancel()
 		return ctx, nil, false
 	}
-	unlockedC := make(chan interface{})
+	unlockedC := make(chan struct{})
 	go func() {
 		ticker := time.NewTicker(mutexExpiry / 2)
 		for {
 			select {
 			case <-ctx.Done():
-				// TODO handle error
+				// An error here means we may not have released the lock.
+				// It's OK to ignore as we'll stop extending the lock anyway
+				// and it will expire.
 				_, _ = mu.Unlock()
 				ticker.Stop()
 				close(unlockedC)
 				return
 			case <-ticker.C:
-				// TODO simple retry
+				// We do not retry on error as we should cancel the context
+				// as soon as we are not 100% sure we hold the lock. This minimises
+				// the chance of more than one instance thinking they hold it.
 				if ok, err := mu.Extend(); !ok || err != nil {
 					cancel()
 				}
