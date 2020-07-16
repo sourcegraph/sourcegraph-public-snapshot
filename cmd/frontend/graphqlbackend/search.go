@@ -91,16 +91,13 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 	}
 
 	var queryInfo query.QueryInfo
-	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || searchType == query.SearchTypeStructural {
+	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || useNewParser || searchType == query.SearchTypeStructural {
 		// To process the input as an and/or query, the flag must be
 		// enabled (default is on) and must contain either an 'and' or
-		// 'or' expression. Else, fallback to the older existing parser.
-		queryInfo, err = query.ProcessAndOr(args.Query, searchType)
-		if err != nil {
-			return alertForQuery(args.Query, err), nil
-		}
-	} else if useNewParser {
-		queryInfo, err = query.ProcessAndOr(args.Query, searchType)
+		// 'or' expression or set in settings. Else, fallback to the
+		// older existing parser.
+		globbing := getBoolPtr(settings.SearchGlobbing, false)
+		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
@@ -234,6 +231,7 @@ var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 func overrideSearchType(input string, searchType query.SearchType, useNewParser bool) query.SearchType {
 	if useNewParser {
 		q, err := query.ParseAndOrLiteral(input)
+		q = query.LowercaseFieldNames(q)
 		if err != nil {
 			// If parsing fails, return the default search type. Any actual
 			// parse errors will be raised by subsequent parser calls.
