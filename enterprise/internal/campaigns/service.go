@@ -619,20 +619,6 @@ func validateCampaignBranch(branch string) error {
 	return nil
 }
 
-// hasCampaignAdminPermissions returns true when the actor in the given context
-// is either a site-admin or the author of the given campaign.
-func hasCampaignAdminPermissions(ctx context.Context, c *campaigns.Campaign) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID); err != nil {
-		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
-			return false, nil
-		}
-
-		return false, err
-	}
-	return true, nil
-}
-
 // accessibleRepos collects the RepoIDs of the changesets and returns a set of
 // the api.RepoID for which the subset of repositories for which the actor in
 // ctx has read permissions.

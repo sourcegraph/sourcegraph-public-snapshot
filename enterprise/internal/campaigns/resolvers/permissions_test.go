@@ -610,12 +610,12 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 }
 
 const queryCampaignPermLevels = `
-query($campaign: ID!, $state: ChangesetState, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
+query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
   node(id: $campaign) {
     ... on Campaign {
       id
 
-      changesets(first: 100, state: $state, reviewState: $reviewState, checkState: $checkState) {
+      changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
         totalCount
         nodes {
           __typename

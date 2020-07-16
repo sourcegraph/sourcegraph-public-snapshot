@@ -758,11 +758,11 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# The state of a changeset.
+# The internal state of a changeset on Sourcegraph.
 enum ChangesetState {
-    # The changeset has not yet been created on the codehost and is not scheduled to be.
+    # The changeset has not yet been created on the code host and is not scheduled to be.
     UNPUBLISHED
-    # The changeset is currently being created or updated on the codehost.
+    # The changeset is currently being created or updated on the code host.
     PUBLISHING
     # An error occurred while publishing or syncing this changeset.
     ERRORED
@@ -770,7 +770,7 @@ enum ChangesetState {
     SYNCED
 }
 
-# The merge state of a changeset.
+# The state of a changeset on the code host on which it's hosted.
 enum ChangesetExternalState {
     OPEN
     CLOSED
@@ -820,7 +820,7 @@ interface Changeset {
     # The state of the changeset.
     state: ChangesetState!
 
-    # The external state of the changeset, or null when not yet opened.
+    # The external state of the changeset, or null when not yet published to the code host.
     externalState: ChangesetExternalState
 
     # The date and time when the changeset was created.
@@ -868,7 +868,7 @@ type ExternalChangeset implements Node & Changeset {
     id: ID!
 
     # The external ID that uniquely identifies this ExternalChangeset on the
-    # code host. For example, on GitHub this is the pull request number. Set once published.
+    # code host. For example, on GitHub this is the pull request number. This is only set once the changeset is published on the code host.
     externalID: String
 
     # The repository changed by this changeset.
@@ -905,16 +905,16 @@ type ExternalChangeset implements Node & Changeset {
     # The state of the changeset.
     state: ChangesetState!
 
-    # The external state of the changeset, or null when not yet opened.
+    # The external state of the changeset, or null when not yet published to the code host.
     externalState: ChangesetExternalState
 
     # The labels attached to the changeset on the code host.
     labels: [ChangesetLabel!]!
 
-    # The external URL of the changeset on the code host. Not set when changeset is UNPUBLISHED, PUBLISHING or mergeState is DELETED.
+    # The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, PUBLISHING or externalState is DELETED.
     externalURL: ExternalLink
 
-    # The review state of this changeset. Set once published.
+    # The review state of this changeset. This is only set once the changeset is published on the code host.
     reviewState: ChangesetReviewState
 
     # The base of the diff ("old" or "left-hand side"). It could be null in some cases, for example
@@ -938,7 +938,7 @@ type ExternalChangeset implements Node & Changeset {
     # checks have been configured.
     checkState: ChangesetCheckState
 
-    # Any error that can have occurred. Set, when state == ERRORED and the viewer can administer this changeset.
+    # An error that has occurred when publishing or updating the changeset. This is only set when the changeset state is ERRORED and the viewer can administer this changeset.
     error: String
 }
 
@@ -946,16 +946,14 @@ type ExternalChangeset implements Node & Changeset {
 type ChangesetConnectionStats {
     # The count of unpublished changesets.
     unpublished: Int!
-    # The count of mergeStatus: OPEN changesets.
+    # The count of externalState: OPEN changesets.
     open: Int!
-    # The count of mergeStatus: MERGED changesets.
+    # The count of externalState: MERGED changesets.
     merged: Int!
-    # The count of mergeStatus: CLOSED changesets.
+    # The count of externalState: CLOSED changesets.
     closed: Int!
     # The count of all changesets. Equal to totalCount of the connection.
     total: Int!
-    # TODO: this one as well? The count of changesets with errors.
-    errored: Int!
 }
 
 # A list of changesets.
@@ -969,7 +967,7 @@ type ChangesetConnection {
     # Pagination information.
     pageInfo: PageInfo!
 
-    # Stats on all the changesets that are in this connction.
+    # Stats on all the changesets that are in this connection.
     stats: ChangesetConnectionStats!
 }
 

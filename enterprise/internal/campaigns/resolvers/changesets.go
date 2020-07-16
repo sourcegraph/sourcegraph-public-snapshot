@@ -293,9 +293,9 @@ func (r *changesetResolver) ID() graphql.ID {
 }
 
 func (r *changesetResolver) ExternalID() *string {
-        if r.changeset == nil {
-          return nil
-        }
+	if r.changeset == nil {
+		return nil
+	}
 	return &r.changeset.ExternalID
 }
 
@@ -352,16 +352,16 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 }
 
 func (r *changesetResolver) Title() (string, error) {
-        if r.changeset == nil {
-          return "TODO: return from spec"
-        }
+	if r.changeset == nil {
+		return "TODO: return from spec", nil
+	}
 	return r.changeset.Title()
 }
 
 func (r *changesetResolver) Body() (string, error) {
-        if r.changeset == nil {
-          return "TODO: return from spec"
-        }
+	if r.changeset == nil {
+		return "TODO: return from spec", nil
+	}
 	return r.changeset.Body()
 }
 
