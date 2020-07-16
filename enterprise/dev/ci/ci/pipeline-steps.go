@@ -126,6 +126,7 @@ func addSharedTests(pipeline *bk.Pipeline) {
 
 	// Upload storybook to Chromatic
 	pipeline.AddStep(":chromatic:",
+		bk.AutomaticRetry(5),
 		bk.Cmd("dev/ci/yarn-run.sh chromatic"))
 }
 
