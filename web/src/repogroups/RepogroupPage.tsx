@@ -55,8 +55,8 @@ export interface RepogroupPageProps
     authRequired?: boolean
     showCampaigns: boolean
 
-    /** Disables auto focusing the query input on the page. */
-    noAutoFocus?: boolean
+    /** Controls focusing the query input on the page. Query inputs are autofocused by default. */
+    autoFocus?: boolean
 
     // Repogroup page metadata
     repogroupMetadata: RepogroupMetadata

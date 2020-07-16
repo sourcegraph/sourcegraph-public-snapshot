@@ -59,9 +59,7 @@ interface Props
     interactiveModeHomepageMode?: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
-
-    /** Disable auto focusing the query input. */
-    noAutoFocus?: boolean
+    autoFocus?: boolean
 
     // For NavLinks
     authRequired?: boolean
@@ -123,14 +121,15 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                     queryState={userQueryState}
                                     onChange={setUserQueryState}
                                     onSubmit={onSubmit}
-                                    autoFocus={!props.noAutoFocus}
+                                    autoFocus={props.autoFocus !== false}
                                 />
                             ) : (
                                 <QueryInput
                                     {...props}
                                     value={userQueryState}
                                     onChange={setUserQueryState}
-                                    autoFocus={!props.noAutoFocus || 'cursor-at-end'}
+                                    // We always want to set this to 'cursor-at-end' when true.
+                                    autoFocus={props.autoFocus ? 'cursor-at-end' : props.autoFocus}
                                     hasGlobalQueryBehavior={true}
                                     patternType={props.patternType}
                                     setPatternType={props.setPatternType}
