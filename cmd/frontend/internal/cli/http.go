@@ -73,7 +73,7 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook, bitbucketServ
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
 	// OverrideAuthMiddleware allows us to inject an authentication token via an
-	// environment variable, for testing.  This is true only when a site-config
+	// environment variable, for testing. This is true only when a site-config
 	// change is explicitly made, to enable this token.
 	h = internalauth.OverrideAuthMiddleware(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
