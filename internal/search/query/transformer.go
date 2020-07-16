@@ -41,7 +41,7 @@ func LowercaseFieldNames(nodes []Node) []Node {
 
 var ErrBadGlobPattern = errors.New("syntax error in glob pattern")
 
-// translateCharacterClass translates character classes like [A-Z] or [!0-9]
+// translateCharacterClass translates character classes like [a-zA-Z].
 func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 	sb := strings.Builder{}
 	i := startIx
@@ -62,7 +62,7 @@ Loop:
 			}
 			sb.WriteRune(r[i])
 			i++
-		default: // range lo-hi
+		default: // translate character range lo-hi.
 
 			// '-' is treated literally at the start and end of
 			// of a character class.
@@ -73,9 +73,9 @@ Loop:
 				}
 
 				if i > startIx && r[i+1] != ']' {
-					// "-" cannot be the lower end of a range
+					// '-' cannot be the lower end of a range
 					// unless it is the first character within
-					// the character class
+					// the character class.
 					return -1, "", ErrBadGlobPattern
 				}
 			}
@@ -129,15 +129,15 @@ var globSpecialSymbols = map[rune]struct{}{
 	'[':  {},
 }
 
-// globToRegex converts a glob to a regex
-// we support: *, ?, character classes [...], ranges [A-F]
+// globToRegex converts a glob string to a regular expression.
+// We support: *, ?, and character classes [...].
 func globToRegex(value string) (string, error) {
 	r := []rune(value)
 	l := len(r)
 	sb := strings.Builder{}
 
 	i := 0
-	// add regex anchor "^" if glob does not start with *
+	// Add regex anchor "^" if glob does not start with *.
 	if r[i] != '*' {
 		sb.WriteRune('^')
 	}
@@ -149,14 +149,14 @@ func globToRegex(value string) (string, error) {
 			} else {
 				sb.WriteString("[^/]*?")
 			}
-			// skip repeated '*'
+			// Skip repeated '*'.
 			for i < l-1 && r[i+1] == '*' {
 				i++
 			}
 		case '?':
 			sb.WriteRune('.')
 		case '\\':
-			// handle escaped special characters
+			// Handle escaped special characters.
 			sb.WriteRune('\\')
 			i++
 			if _, ok := globSpecialSymbols[r[i]]; !ok {
@@ -188,8 +188,8 @@ func globToRegex(value string) (string, error) {
 	return sb.String(), nil
 }
 
-// globError caries the actual error plus the name of field where the
-// error occurred.
+// globError carries the error message and the name of
+// field where the error occurred.
 type globError struct {
 	field string
 	err   error
@@ -199,7 +199,7 @@ func (g globError) Error() string {
 	return g.err.Error()
 }
 
-// mapGlobToRegex translates glob to regexp for fields repo, file, repohasfile
+// mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
 func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	var globErrors []globError
 	var err error
@@ -216,7 +216,6 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
 
-	// error formatting
 	if len(globErrors) == 1 {
 		return nil, fmt.Errorf("invalid glob syntax in field %s: ", globErrors[0].field)
 	}
