@@ -196,9 +196,7 @@ loop:
 					if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
 						if len(nodes) > 0 {
 							if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-								previous.Value += pattern.Value
-								previous.Annotation.Labels |= pattern.Annotation.Labels
-								nodes[len(nodes)-1] = previous
+								nodes[len(nodes)-1] = concatPatterns(previous, pattern)
 								continue
 							}
 						}
@@ -353,11 +351,7 @@ func ParseAndOrLiteral(in string) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
-	err = validate(nodes)
-	if err != nil {
-		return nil, err
-	}
+
 	err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 	if err != nil {
 		return nil, err

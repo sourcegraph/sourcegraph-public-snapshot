@@ -13,7 +13,7 @@ func ZoektIndexServer() *Container {
 						{
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m]))`,
+							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 15},
 							Critical:          Alert{GreaterOrEqual: 30},
@@ -39,8 +39,8 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsage1d("zoekt-indexserver"),
-						sharedProvisioningMemoryUsage1d("zoekt-indexserver"),
+						sharedProvisioningCPUUsage7d("zoekt-indexserver"),
+						sharedProvisioningMemoryUsage7d("zoekt-indexserver"),
 					},
 					{
 						sharedProvisioningCPUUsage5m("zoekt-indexserver"),

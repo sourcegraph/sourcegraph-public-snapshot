@@ -97,7 +97,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         <input
                             id="new-org-page__form-name"
                             type="text"
-                            className="form-control e2e-new-org-name-input"
+                            className="form-control test-new-org-name-input"
                             placeholder="acme-corp"
                             pattern={VALID_ORG_NAME_REGEXP}
                             maxLength={ORG_NAME_MAX_LENGTH}
@@ -121,7 +121,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         <input
                             id="new-org-page__form-display-name"
                             type="text"
-                            className="form-control e2e-new-org-display-name-input"
+                            className="form-control test-new-org-display-name-input"
                             placeholder="ACME Corporation"
                             autoCorrect="off"
                             value={this.state.displayName}

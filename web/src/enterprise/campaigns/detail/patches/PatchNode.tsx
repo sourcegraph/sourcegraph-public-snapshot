@@ -104,7 +104,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     )
 
     return (
-        <li className="list-group-item e2e-changeset-node">
+        <li className="list-group-item test-changeset-node">
             {fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"

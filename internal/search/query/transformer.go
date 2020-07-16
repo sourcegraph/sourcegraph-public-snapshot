@@ -39,6 +39,201 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
+var ErrBadGlobPattern = errors.New("syntax error in glob pattern")
+
+// translateCharacterClass translates character classes like [a-zA-Z].
+func translateCharacterClass(r []rune, startIx int) (int, string, error) {
+	sb := strings.Builder{}
+	i := startIx
+	lenR := len(r)
+Loop:
+	for i < lenR {
+		switch r[i] {
+		case '!':
+			if i == startIx {
+				sb.WriteRune('^')
+			} else {
+				sb.WriteRune(r[i])
+			}
+			i++
+		case ']':
+			if i > startIx {
+				break Loop
+			}
+			sb.WriteRune(r[i])
+			i++
+		default: // translate character range lo-hi.
+
+			// '-' is treated literally at the start and end of
+			// of a character class.
+			if r[i] == '-' {
+				if i == lenR-1 {
+					// no closing bracket
+					return -1, "", ErrBadGlobPattern
+				}
+
+				if i > startIx && r[i+1] != ']' {
+					// '-' cannot be the lower end of a range
+					// unless it is the first character within
+					// the character class.
+					return -1, "", ErrBadGlobPattern
+				}
+			}
+			lo := r[i]
+			sb.WriteRune(r[i]) // lo
+			i++
+
+			if i == lenR {
+				// no closing bracket
+				return -1, "", ErrBadGlobPattern
+			}
+
+			// lo = hi
+			if r[i] != '-' {
+				continue
+			}
+
+			sb.WriteRune(r[i]) // -
+			i++
+
+			if i == lenR {
+				// no closing bracket
+				return -1, "", ErrBadGlobPattern
+			}
+
+			if r[i] == ']' {
+				continue
+			}
+
+			hi := r[i]
+			if lo > hi {
+				// range is reversed
+				return -1, "", ErrBadGlobPattern
+			}
+			sb.WriteRune(r[i]) // hi
+			i++
+		}
+	}
+	if i == lenR {
+		return -1, "", ErrBadGlobPattern
+	}
+
+	return i - startIx, sb.String(), nil
+
+}
+
+var globSpecialSymbols = map[rune]struct{}{
+	'\\': {},
+	'*':  {},
+	'?':  {},
+	'[':  {},
+}
+
+// globToRegex converts a glob string to a regular expression.
+// We support: *, ?, and character classes [...].
+func globToRegex(value string) (string, error) {
+	if value == "" {
+		return value, nil
+	}
+
+	r := []rune(value)
+	l := len(r)
+	sb := strings.Builder{}
+
+	i := 0
+	// Add regex anchor "^" if glob does not start with *.
+	if r[i] != '*' {
+		sb.WriteRune('^')
+	}
+	for i = 0; i < l; i++ {
+		switch r[i] {
+		case '*':
+			if i < l-1 && r[i+1] == '*' {
+				sb.WriteString(".*?")
+			} else {
+				sb.WriteString("[^/]*?")
+			}
+			// Skip repeated '*'.
+			for i < l-1 && r[i+1] == '*' {
+				i++
+			}
+		case '?':
+			sb.WriteRune('.')
+		case '\\':
+			// Handle escaped special characters.
+			sb.WriteRune('\\')
+			i++
+			if _, ok := globSpecialSymbols[r[i]]; !ok {
+				return "", ErrBadGlobPattern
+			}
+			sb.WriteRune(r[i])
+		case '[':
+			sb.WriteRune('[')
+			i++
+
+			advanced, s, err := translateCharacterClass(r, i)
+			if err != nil {
+				return "", err
+			}
+
+			i += advanced
+			sb.WriteString(s)
+
+			sb.WriteRune(']')
+		default:
+			sb.WriteString(regexp.QuoteMeta(string(r[i])))
+		}
+	}
+
+	// add regex anchor "$" if glob doesn't end with *
+	if r[l-1] != '*' {
+		sb.WriteRune('$')
+	}
+	return sb.String(), nil
+}
+
+// globError carries the error message and the name of
+// field where the error occurred.
+type globError struct {
+	field string
+	err   error
+}
+
+func (g globError) Error() string {
+	return g.err.Error()
+}
+
+// mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
+func mapGlobToRegex(nodes []Node) ([]Node, error) {
+	var globErrors []globError
+	var err error
+
+	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+			value, err = globToRegex(value)
+			if err != nil {
+				globErrors = append(globErrors, globError{field: field, err: err})
+			}
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+
+	if len(globErrors) == 1 {
+		return nil, fmt.Errorf("invalid glob syntax in field %s: ", globErrors[0].field)
+	}
+
+	if len(globErrors) > 1 {
+		fields := globErrors[0].field + ":"
+
+		for _, e := range globErrors[1:] {
+			fields += fmt.Sprintf(", %s:", e.field)
+		}
+		return nil, fmt.Errorf("invalid glob syntax in fields %s", fields)
+	}
+
+	return nodes, nil
+}
+
 // Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
 // changes certain expressions in a way that some consider to be more natural.
 // For example, the following query without parentheses is interpreted as
@@ -213,7 +408,6 @@ func substituteConcat(nodes []Node, separator string) []Node {
 				new = append(new, newOperator(substituteConcat(v.Operands, separator), v.Kind)...)
 			}
 		}
-
 	}
 	return new
 }

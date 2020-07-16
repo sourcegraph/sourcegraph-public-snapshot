@@ -3,12 +3,6 @@
         margin: 0.5rem 0;
     }
 
-    &__nav-link {
-        @media only percy {
-            visibility: hidden;
-            display: none;
-        }
-    }
     &__dropdown-menu {
         min-width: 22rem;
         max-width: 22rem;

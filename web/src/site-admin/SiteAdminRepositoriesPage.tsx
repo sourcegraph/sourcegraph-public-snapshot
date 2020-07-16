@@ -29,8 +29,8 @@ interface RepositoryNodeProps extends ActivationProps {
 const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = props => (
     <li
         className="repository-node list-group-item py-2"
-        data-e2e-repository={props.node.name}
-        data-e2e-cloned={props.node.mirrorInfo.cloned}
+        data-test-repository={props.node.name}
+        data-test-cloned={props.node.mirrorInfo.cloned}
     >
         <div className="d-flex align-items-center justify-content-between">
             <div>

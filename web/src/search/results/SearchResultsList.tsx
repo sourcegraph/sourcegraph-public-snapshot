@@ -31,6 +31,7 @@ import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { DeployType } from '../../jscontext'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&

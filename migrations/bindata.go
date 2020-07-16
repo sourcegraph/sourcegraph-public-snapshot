@@ -80,6 +80,8 @@
 // 1528395688_add_cloned_column_to_repo.up.sql (154B)
 // 1528395689_lsif_indexable_repositories_enable.down.sql (78B)
 // 1528395689_lsif_indexable_repositories_enable.up.sql (85B)
+// 1528395690_lsif_upload_size.down.sql (697B)
+// 1528395690_lsif_upload_size.up.sql (703B)
 
 package migrations
 
@@ -1748,6 +1750,46 @@ func _1528395689_lsif_indexable_repositories_enableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395690_lsif_upload_sizeDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x91\xcb\x6a\xeb\x30\x10\x86\xf7\x7a\x8a\x7f\x17\x38\x9c\xf8\x05\x4c\x16\x4e\xaa\xb6\x2e\xbe\x14\xdb\x69\x96\xc6\x58\x13\x22\xf0\x0d\x8d\xd4\xd0\x3e\x7d\x89\x0c\x6d\x13\xd2\x52\x4a\x97\x92\xbe\x99\xff\x9b\xd1\x5a\xde\xc5\x59\x28\xc4\x4d\x91\x3f\xe2\x29\x96\x3b\x74\xac\xf7\xb5\x72\xfd\xc4\xf5\x51\xdb\x43\x6d\x68\x1a\x59\xdb\xd1\xbc\xd4\x43\xd3\x53\x78\x89\xba\xa9\x1b\x1b\xf5\x43\xd8\xf7\x0d\x85\x88\x92\x4a\x16\xa8\xa2\x75\x22\xcf\xba\xc0\xf3\x9b\x3c\xd9\xa6\x19\xe6\xbb\x9a\xf5\x2b\x85\x42\x2c\x97\x28\xa8\x35\xd4\x58\xc2\xb3\xa6\x23\xe3\x94\x88\x81\x8e\x68\xc7\xce\xf5\x03\x8b\x4d\x21\xa3\x4a\x5e\xc6\x21\x2a\x51\xca\x44\x6e\x2a\xb8\xe0\xdf\x7f\xb8\x60\xaf\x07\xcd\x07\x52\x75\x63\xd1\x30\x26\x33\xb6\xc4\x3c\x9f\x6f\x8b\x3c\x3d\x57\x72\xd8\xdd\xcb\x42\x82\xed\x29\x7a\x85\x45\x3b\xf6\x53\x47\x96\xd4\x22\x14\x5f\x64\x5e\xdd\x06\xa2\x52\x00\x38\x93\x31\x81\x7f\x69\x18\x97\xf0\x87\xc8\x3c\x85\xf3\xb5\x0f\x79\x9c\x79\x14\x06\x79\x06\x13\x68\x85\x15\x5c\xf0\xa9\x5a\x2b\x4f\xce\xd2\x26\x50\xe4\x5d\x4f\xb3\xc5\x25\xb2\x6d\x92\x5c\xb3\xfe\xee\x17\x7f\xeb\xfd\xbe\xc0\x3f\x35\xcf\xd3\x34\xae\x42\xf1\x16\x00\x00\xff\xff\xe4\xa0\x23\x9f\xb9\x02\x00\x00")
+
+func _1528395690_lsif_upload_sizeDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395690_lsif_upload_sizeDownSql,
+		"1528395690_lsif_upload_size.down.sql",
+	)
+}
+
+func _1528395690_lsif_upload_sizeDownSql() (*asset, error) {
+	bytes, err := _1528395690_lsif_upload_sizeDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395690_lsif_upload_size.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe4, 0x2c, 0x16, 0x51, 0x1e, 0xda, 0xde, 0x9d, 0x43, 0x82, 0xaf, 0x75, 0x33, 0xbb, 0x7f, 0x70, 0xd1, 0x76, 0x22, 0xd6, 0x7d, 0x3, 0x11, 0x3b, 0x4c, 0x55, 0x11, 0x57, 0x17, 0x35, 0x84, 0x7a}}
+	return a, nil
+}
+
+var __1528395690_lsif_upload_sizeUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x91\xcb\x4e\xc3\x30\x10\x45\xf7\xfe\x8a\xbb\xab\x84\x68\x7e\x20\xea\x22\x6d\x0d\x04\xe5\x81\x92\x94\x2e\xa3\x10\x4f\xa9\xa5\xbc\xe4\xb1\xa9\xe0\xeb\x51\x13\x09\x68\x55\x10\x42\x2c\x6d\x9f\x99\x7b\x66\xbc\x94\xb7\x61\xe2\x0b\xb1\xce\xd2\x07\x3c\x86\x72\x8b\x86\xf5\xae\x54\xae\x1d\xb8\x3c\x68\xbb\x2f\x0d\x0d\x3d\x6b\xdb\x9b\xd7\xb2\xab\x5a\xf2\xcf\x51\x37\x34\x7d\xa5\x7e\x09\x8f\x7d\x7d\x21\x82\xa8\x90\x19\x8a\x60\x19\xc9\x93\x2e\x08\xd6\x6b\xac\xd2\x68\x13\x27\x98\xae\x4a\xd6\x6f\x84\x27\xfd\xac\x3b\xeb\x0b\x31\x9f\x23\xa3\xda\x50\x65\x09\x2f\x9a\x0e\x8c\x63\x2e\x3a\x3a\xa0\xee\x1b\xd7\x76\x2c\x56\x99\x0c\x0a\x79\x1e\x8a\x20\x47\x2e\x23\xb9\x2a\xe0\xbc\xab\x6b\x38\x6f\xa7\x3b\xcd\x7b\x52\x65\x65\x51\x31\x06\xd3\xd7\xc4\x3c\x9d\x6f\xb2\x34\x3e\x15\x73\xd8\xde\xc9\x4c\x82\xed\x31\x7a\x81\x59\xdd\xb7\x43\x43\x96\xd4\xcc\x17\xdf\x64\x5e\xdc\x09\x82\x5c\x00\x38\x91\x31\xde\xf8\x52\x31\xce\xe1\x4f\x91\x69\x0a\x37\xd6\xde\xa7\x61\x32\xa2\x30\x48\x13\x18\x4f\x2b\x2c\xe0\xbc\x2f\xd5\x5a\x8d\xe4\x24\x6d\x3c\x45\xa3\xeb\x71\xb6\x30\x47\xb2\x89\xa2\x4b\xd6\x3f\xfd\xe5\x5f\xbd\x3f\x16\xf8\xaf\xe6\x69\x1c\x87\x85\x2f\xde\x03\x00\x00\xff\xff\x87\x07\xaf\x35\xbf\x02\x00\x00")
+
+func _1528395690_lsif_upload_sizeUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395690_lsif_upload_sizeUpSql,
+		"1528395690_lsif_upload_size.up.sql",
+	)
+}
+
+func _1528395690_lsif_upload_sizeUpSql() (*asset, error) {
+	bytes, err := _1528395690_lsif_upload_sizeUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395690_lsif_upload_size.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xde, 0x41, 0x31, 0x45, 0x3c, 0x19, 0xaf, 0x7a, 0x9d, 0x3, 0xf, 0xf1, 0x41, 0xd9, 0x69, 0x2d, 0x54, 0x60, 0x3b, 0xcf, 0x5c, 0xb7, 0x72, 0xb8, 0x41, 0xe8, 0x8f, 0xb2, 0x97, 0xe6, 0x46, 0x87}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1919,6 +1961,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395688_add_cloned_column_to_repo.up.sql":                             _1528395688_add_cloned_column_to_repoUpSql,
 	"1528395689_lsif_indexable_repositories_enable.down.sql":                  _1528395689_lsif_indexable_repositories_enableDownSql,
 	"1528395689_lsif_indexable_repositories_enable.up.sql":                    _1528395689_lsif_indexable_repositories_enableUpSql,
+	"1528395690_lsif_upload_size.down.sql":                                    _1528395690_lsif_upload_sizeDownSql,
+	"1528395690_lsif_upload_size.up.sql":                                      _1528395690_lsif_upload_sizeUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2045,6 +2089,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395688_add_cloned_column_to_repo.up.sql":                             {_1528395688_add_cloned_column_to_repoUpSql, map[string]*bintree{}},
 	"1528395689_lsif_indexable_repositories_enable.down.sql":                  {_1528395689_lsif_indexable_repositories_enableDownSql, map[string]*bintree{}},
 	"1528395689_lsif_indexable_repositories_enable.up.sql":                    {_1528395689_lsif_indexable_repositories_enableUpSql, map[string]*bintree{}},
+	"1528395690_lsif_upload_size.down.sql":                                    {_1528395690_lsif_upload_sizeDownSql, map[string]*bintree{}},
+	"1528395690_lsif_upload_size.up.sql":                                      {_1528395690_lsif_upload_sizeUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

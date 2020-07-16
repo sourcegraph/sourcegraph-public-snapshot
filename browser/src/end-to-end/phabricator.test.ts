@@ -207,7 +207,7 @@ describe('Sourcegraph Phabricator extension', () => {
         // Once the line is tokenized, we can click on the individual token we want a hover for.
         const codeElement = await driver.page.waitForXPath(`//tbody/tr[${lineNumber}]//span[text()="CallOption"]`)
         await codeElement.click()
-        await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
+        await driver.page.waitForSelector('.test-tooltip-go-to-definition')
     })
 
     after(async () => {

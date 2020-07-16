@@ -575,6 +575,20 @@ func partitionParameters(nodes []Node) []Node {
 	return newOperator(append(unorderedParams, patterns...), And)
 }
 
+// concatPatterns extends the left pattern with the right pattern, appropriately
+// updating the ranges and annotations.
+func concatPatterns(left, right Pattern) Pattern {
+	if left.Annotation.Range.End.Column != right.Annotation.Range.Start.Column {
+		panic(fmt.Sprintf("Expected contiguous patterns to concatenate, but %s ends at %d and %s starts at %d",
+			left, left.Annotation.Range.End.Column,
+			right, right.Annotation.Range.Start.Column))
+	}
+	left.Value += right.Value
+	left.Annotation.Labels |= right.Annotation.Labels
+	left.Annotation.Range.End.Column += len(right.Value)
+	return left
+}
+
 // parseParameterParameterList scans for consecutive leaf nodes.
 func (p *parser) parseParameterList() ([]Node, error) {
 	var nodes []Node
@@ -592,21 +606,23 @@ loop:
 			if isSet(p.heuristics, parensAsPatterns) {
 				if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
 					pattern := Pattern{
-						Value:      value,
-						Negated:    false,
-						Annotation: Annotation{Labels: Regexp},
+						Value:   value,
+						Negated: false,
+						Annotation: Annotation{
+							Labels: Regexp,
+							Range:  newRange(p.pos, p.pos+advance),
+						},
 					}
 
-					// Merge when a pattern like foo()bar is parsed as (concat "foo" "()bar")
+					// Concat when a pattern like foo()bar is parsed as (concat "foo" "()bar")
 					// if these are not space-separated.
 					if p.pos > 0 {
 						if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
 							if len(nodes) > 0 {
 								if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-									previous.Value += pattern.Value
 									previous.Annotation.Labels = Regexp | HeuristicParensAsPatterns
+									nodes[len(nodes)-1] = concatPatterns(previous, pattern)
 									p.pos += advance
-									nodes[len(nodes)-1] = previous
 									continue
 								}
 							}
@@ -825,12 +841,19 @@ func ParseAndOr(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
+type ParserOptions struct {
+	SearchType SearchType
+
+	// treat repo, file, or repohasfile values as glob syntax if true.
+	Globbing bool
+}
+
 // ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
+func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	var query []Node
 	var err error
 
-	switch searchType {
+	switch options.SearchType {
 	case SearchTypeLiteral, SearchTypeStructural:
 		query, err = ParseAndOrLiteral(in)
 		if err != nil {
@@ -844,6 +867,14 @@ func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
 		}
 		query = EmptyGroupsToLiteral(query)
 	}
+
+	if options.Globbing {
+		query, err = mapGlobToRegex(query)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {

@@ -11,7 +11,7 @@ import schema from '../src/browser-extension/schema.json'
 
 /**
  * If true, add <all_urls> to the permissions in the manifest.
- * This is needed for e2e tests because it is not possible to accept the
+ * This is needed for e2e and integration tests because it is not possible to accept the
  * permission prompt with puppeteer.
  */
 const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(

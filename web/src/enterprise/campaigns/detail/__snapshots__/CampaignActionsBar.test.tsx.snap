@@ -43,7 +43,7 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
     <button
       className="btn btn-secondary mr-1"
       disabled={false}
-      id="e2e-campaign-edit"
+      id="test-campaign-edit"
       onClick={[Function]}
       type="button"
     >
@@ -248,7 +248,7 @@ exports[`CampaignActionsBar editable 1`] = `
     <button
       className="btn btn-secondary mr-1"
       disabled={false}
-      id="e2e-campaign-edit"
+      id="test-campaign-edit"
       onClick={[Function]}
       type="button"
     >
@@ -336,7 +336,7 @@ exports[`CampaignActionsBar mode: closing 1`] = `
     <button
       className="btn btn-secondary mr-1"
       disabled={true}
-      id="e2e-campaign-edit"
+      id="test-campaign-edit"
       onClick={[Function]}
       type="button"
     >
@@ -424,7 +424,7 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
     <button
       className="btn btn-secondary mr-1"
       disabled={true}
-      id="e2e-campaign-edit"
+      id="test-campaign-edit"
       onClick={[Function]}
       type="button"
     >
@@ -751,7 +751,7 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
     <button
       className="btn btn-secondary mr-1"
       disabled={false}
-      id="e2e-campaign-edit"
+      id="test-campaign-edit"
       onClick={[Function]}
       type="button"
     >

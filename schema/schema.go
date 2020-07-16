@@ -399,6 +399,8 @@ type ExperimentalFeatures struct {
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index HEAD and revisions in version contexts. This allows specifying additional revisions.
+	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
@@ -981,7 +983,7 @@ type Sentry struct {
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
 	// AlertsHideObservabilitySiteAlerts description: Disables observability-related site alert banners.
-	AlertsHideObservabilitySiteAlerts bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
+	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowPatchUpdates description: Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
@@ -1010,10 +1012,14 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
+	// SearchGlobbing description: Enables globbing for supported field values
+	SearchGlobbing *bool `json:"search.globbing,omitempty"`
 	// SearchIncludeArchived description: Whether searches should include searching archived repositories.
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
+	// SearchMigrateParser description: If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.
+	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the repogroup: operator.
 	SearchRepositoryGroups map[string][]string `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
@@ -1138,6 +1144,8 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
+	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
+	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"

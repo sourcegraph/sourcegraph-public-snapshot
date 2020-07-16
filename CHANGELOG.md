@@ -22,7 +22,12 @@ All notable changes to Sourcegraph are documented in this file.
     - PagerDuty notifiers: `severity` and `apiUrl`
     - Webhook notifiers: `bearerToken`
   - A new `disableSendResolved` option disables notifications for when alerts resolve themselves.
-- Recently firing critical alerts are now displayed to admins in site alerts.
+- Recently firing critical alerts can now be displayed to admins via site alerts, use the flag `{ "alerts.hideObservabilitySiteAlerts": false }` to enable these alerts in user configuration.
+- Specific alerts can now be silenced using `observability.silenceAlerts`. [#12087](https://github.com/sourcegraph/sourcegraph/pull/12087)
+- Revisions listed in `experimentalFeatures.versionContext` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
+- Revisions listed in `experimentalFeatures.versionContext` or `experimentalFeatures.search.index.branches` will be indexed for faster searching. This is the first support towards indexing non-default branches. [#6728](https://github.com/sourcegraph/sourcegraph/issues/6728)
+- Campaigns are now supported on GitLab.
+- Campaigns now support GitLab and allow users to create, update and track merge requests on GitLab instances.
 
 ### Changed
 
@@ -43,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Reduce frontend memory spikes by limiting the number of goroutines launched by our GraphQL resolvers. [#11736](https://github.com/sourcegraph/sourcegraph/pull/11736)
 - Fixed a bug affecting Sourcegraph icon display in our Phabricator native integration [#11825](https://github.com/sourcegraph/sourcegraph/pull/11825).
 - Improve performance of site-admin repositories status page. [#11932](https://github.com/sourcegraph/sourcegraph/pull/11932)
+- An issue where search autocomplete for files didn't add the right path. [#12241](https://github.com/sourcegraph/sourcegraph/pull/12241)
 
 ### Removed
 

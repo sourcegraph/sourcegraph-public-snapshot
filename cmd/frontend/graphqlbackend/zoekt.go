@@ -324,9 +324,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		limitHit = true
 	}
 
-	matches := make([]*FileMatchResolver, len(resp.Files))
+	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
-	for i, file := range resp.Files {
+	for _, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
 			file.LineMatches = file.LineMatches[:maxLineMatches]
@@ -334,34 +334,38 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			limitHit = true
 		}
 
-		repo, inputRev := repos.GetRepoInputRev(&file)
+		repo, inputRevs := repos.GetRepoInputRev(&file)
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
 			repoResolver = &RepositoryResolver{repo: repo}
 			repoResolvers[repo.Name] = repoResolver
 		}
 
-		// symbols is set in symbols search, lines in text search.
-		var (
-			symbols    []*searchSymbolResult
-			lines      []*lineMatch
-			matchCount int
-		)
+		var lines []*lineMatch
+		var matchCount int
 		if typ != symbolRequest {
 			lines, matchCount = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
-		} else {
-			symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 		}
 
-		matches[i] = &FileMatchResolver{
-			JPath:        file.FileName,
-			JLineMatches: lines,
-			JLimitHit:    fileLimitHit,
-			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
-			uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
-			symbols:      symbols,
-			Repo:         repoResolver,
-			CommitID:     api.CommitID(file.Version),
+		for _, inputRev := range inputRevs {
+			inputRev := inputRev // copy so we can take the pointer
+
+			var symbols []*searchSymbolResult
+			if typ == symbolRequest {
+				symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
+			}
+
+			matches = append(matches, &FileMatchResolver{
+				JPath:        file.FileName,
+				JLineMatches: lines,
+				JLimitHit:    fileLimitHit,
+				MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
+				uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
+				symbols:      symbols,
+				Repo:         repoResolver,
+				CommitID:     api.CommitID(file.Version),
+				InputRev:     &inputRev,
+			})
 		}
 	}
 
@@ -657,24 +661,24 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 }
 
 // GetRepoInputRev returns the repo and inputRev associated with file.
-func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.Repo, inputRev string) {
+func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.Repo, inputRevs []string) {
 	repoRev := rb.repoRevs[file.Repository]
 
-	// TODO(keegancsmith) We need to handle results across branches for the
-	// same file. Options:
-	// 1. a filematch per file.Branches
-	// 2. update result schema to have multiple uris.
-	//
-	// For now we only show one result for simplicity.
-	branch := file.Branches[0]
-	for i, b := range rb.repoBranches[file.Repository] {
-		if branch == b {
-			// RevSpec is guaranteed to be explicit via zoektIndexedRepos
-			return repoRev.Repo, repoRev.Revs[i].RevSpec
+	inputRevs = make([]string, 0, len(file.Branches))
+	for _, branch := range file.Branches {
+		for i, b := range rb.repoBranches[file.Repository] {
+			if branch == b {
+				// RevSpec is guaranteed to be explicit via zoektIndexedRepos
+				inputRevs = append(inputRevs, repoRev.Revs[i].RevSpec)
+			}
 		}
 	}
 
-	// Did not find a match. This is unexpected, but we can fallback to
-	// file.Version to generate correct links.
-	return repoRev.Repo, file.Version
+	if len(inputRevs) == 0 {
+		// Did not find a match. This is unexpected, but we can fallback to
+		// file.Version to generate correct links.
+		inputRevs = append(inputRevs, file.Version)
+	}
+
+	return repoRev.Repo, inputRevs
 }

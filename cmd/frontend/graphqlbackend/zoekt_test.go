@@ -16,9 +16,9 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -81,7 +81,7 @@ func TestIndexedSearch(t *testing.T) {
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
-			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}, {Name: "dev", Version: "bardevSHA"}},
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}, {Name: "dev", Version: "bardevSHA"}, {Name: "main", Version: "barmainSHA"}},
 		},
 	}, {
 		Repository: zoekt.Repository{
@@ -91,13 +91,14 @@ func TestIndexedSearch(t *testing.T) {
 	}}
 
 	tests := []struct {
-		name              string
-		args              args
-		wantMatchCount    int
-		wantMatchURLs     []string
-		wantLimitHit      bool
-		wantReposLimitHit map[string]struct{}
-		wantErr           bool
+		name               string
+		args               args
+		wantMatchCount     int
+		wantMatchURLs      []string
+		wantMatchInputRevs []string
+		wantLimitHit       bool
+		wantReposLimitHit  map[string]struct{}
+		wantErr            bool
 	}{
 		{
 			name: "no matches",
@@ -190,6 +191,10 @@ func TestIndexedSearch(t *testing.T) {
 				"git://foo/bar#baz.go",
 				"git://foo/foobar#baz.go",
 			},
+			wantMatchInputRevs: []string{
+				"",
+				"",
+			},
 			wantErr: false,
 		},
 		{
@@ -197,18 +202,19 @@ func TestIndexedSearch(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				query:           &search.TextPatternInfo{FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev"),
+				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev:main"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
 						Repository: "foo/bar",
-						Branches:   []string{"HEAD"},
-						FileName:   "baz.go",
+						// baz.go is the same in HEAD and dev
+						Branches: []string{"HEAD", "dev"},
+						FileName: "baz.go",
 					},
 					{
 						Repository: "foo/bar",
 						Branches:   []string{"dev"},
-						FileName:   "baz.go",
+						FileName:   "bam.go",
 					},
 				},
 				since: func(time.Time) time.Duration { return 0 },
@@ -218,6 +224,12 @@ func TestIndexedSearch(t *testing.T) {
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 				"git://foo/bar?dev#baz.go",
+				"git://foo/bar?dev#bam.go",
+			},
+			wantMatchInputRevs: []string{
+				"HEAD",
+				"dev",
+				"dev",
 			},
 			wantErr: false,
 		},
@@ -264,12 +276,19 @@ func TestIndexedSearch(t *testing.T) {
 
 			var gotMatchCount int
 			var gotMatchURLs []string
+			var gotMatchInputRevs []string
 			for _, m := range gotFm {
 				gotMatchCount += m.MatchCount
 				gotMatchURLs = append(gotMatchURLs, m.Resource())
+				if m.InputRev != nil {
+					gotMatchInputRevs = append(gotMatchInputRevs, *m.InputRev)
+				}
 			}
 			if diff := cmp.Diff(tt.wantMatchURLs, gotMatchURLs); diff != "" {
 				t.Errorf("match URLs mismatch (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(tt.wantMatchInputRevs, gotMatchInputRevs); diff != "" {
+				t.Errorf("match InputRevs mismatch (-want +got):\n%s", diff)
 			}
 			if gotMatchCount != tt.wantMatchCount {
 				t.Errorf("gotMatchCount = %v, want %v", gotMatchCount, tt.wantMatchCount)

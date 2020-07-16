@@ -124,7 +124,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	}
 	if entry != nil {
 		for _, branch := range entry.Repository.Branches {
-			name := "refs/heads/" + branch.Name
+			name := branch.Name
 			if branch.Name == "HEAD" {
 				name = defaultBranchRef.name
 			}

@@ -14,14 +14,16 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -139,18 +141,24 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 // search specific endpoint is used rather than serving the entire site settings
 // from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	opts := struct {
-		LargeFiles []string
-		Symbols    bool
-	}{
-		LargeFiles: conf.Get().SearchLargeFiles,
-		Symbols:    conf.SymbolIndexEnabled(),
+	repo := r.URL.Query().Get("repo")
+	getVersion := func(branch string) (string, error) {
+		// Do not to trigger a repo-updater lookup since this is a batch job.
+		commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: api.RepoName(repo)}, nil, branch, git.ResolveRevisionOptions{})
+		if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+			// GetIndexOptions wants an empty rev for a missing rev or empty
+			// repo.
+			return "", nil
+		}
+		return string(commitID), err
 	}
-	err := json.NewEncoder(w).Encode(opts)
+
+	b, err := searchbackend.GetIndexOptions(&conf.Get().SiteConfiguration, repo, getVersion)
 	if err != nil {
-		return errors.Wrap(err, "encode")
+		return err
 	}
-	return nil
+	_, err = w.Write(b)
+	return err
 }
 
 type reposListServer struct {

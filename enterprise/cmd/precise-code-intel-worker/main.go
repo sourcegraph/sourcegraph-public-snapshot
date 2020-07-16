@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -36,6 +37,8 @@ func main() {
 	var (
 		bundleManagerURL   = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
 		workerPollInterval = mustParseInterval(rawWorkerPollInterval, "PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL")
+		workerConcurrency  = mustParseInt(rawWorkerConcurrency, "PRECISE_CODE_INTEL_WORKER_CONCURRENCY")
+		workerBudget       = mustParseInt64(rawWorkerBudget, "PRECISE_CODE_INTEL_WORKER_BUDGET")
 		resetInterval      = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
@@ -62,6 +65,8 @@ func main() {
 		bundles.New(bundleManagerURL),
 		gitserver.DefaultClient,
 		workerPollInterval,
+		workerConcurrency,
+		workerBudget,
 		workerMetrics,
 	)
 
@@ -97,5 +102,5 @@ func mustInitializeStore() store.Store {
 		log.Fatalf("failed to connect to database: %s", err)
 	}
 
-	return store.NewWithHandle(dbconn.Global)
+	return store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global))
 }

@@ -23,6 +23,7 @@ describe('LanguageFeatures (integration)', () => {
         }),
         labeledProviderResults: labels => ({
             contents: labels.map(label => ({ value: label, kind: MarkupKind.PlainText })),
+            alerts: [],
         }),
         providerWithImplementation: run => ({ provideHover: run } as sourcegraph.HoverProvider),
         getResult: (services, uri, extensionHost) =>

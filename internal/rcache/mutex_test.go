@@ -1,9 +1,8 @@
 package rcache
 
 import (
-	"testing"
-
 	"context"
+	"testing"
 )
 
 func TestTryAcquireMutex(t *testing.T) {

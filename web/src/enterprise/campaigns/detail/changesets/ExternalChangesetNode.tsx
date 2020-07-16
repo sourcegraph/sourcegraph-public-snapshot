@@ -179,7 +179,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     }, [extensionInfo, range, node.repository.id, node.repository.name])
 
     return (
-        <li className="list-group-item e2e-changeset-node">
+        <li className="list-group-item test-changeset-node">
             {node.diff?.fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"

@@ -37,6 +37,7 @@ import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../../shared/src/api/contract'
+import { DeployType } from '../../jscontext'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -296,7 +297,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
 
         return (
-            <div className="e2e-search-results search-results d-flex flex-column w-100">
+            <div className="test-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
                 {!this.props.interactiveSearchMode && (
                     <SearchResultsFilterBars

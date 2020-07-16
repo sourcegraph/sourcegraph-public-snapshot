@@ -15,12 +15,20 @@ import { Services } from '../../../shared/src/api/client/services'
 import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
 
-const { add } = storiesOf('web/RepogroupPage', module).addDecorator(story => (
-    <>
-        <style>{webStyles}</style>
-        <div className="theme-light">{story()}</div>
-    </>
-))
+const { add } = storiesOf('web/RepogroupPage', module)
+    .addParameters({
+        percy: { widths: [993] },
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
+        },
+    })
+    .addDecorator(story => (
+        <>
+            <style>{webStyles}</style>
+            <div className="theme-light">{story()}</div>
+        </>
+    ))
 
 const history = H.createMemoryHistory()
 
@@ -159,10 +167,17 @@ const commonProps: RepogroupPageProps = {
     showCampaigns: false,
     authenticatedUser: authUser,
     repogroupMetadata: python2To3Metadata,
+    autoFocus: false,
 }
 
-add('Site admin', () => (
+add('Repogroup page with smart search field', () => (
     <MemoryRouter>
         <RepogroupPage {...commonProps} />
+    </MemoryRouter>
+))
+
+add('Repogroup page without smart search field', () => (
+    <MemoryRouter>
+        <RepogroupPage {...commonProps} smartSearchField={false} />
     </MemoryRouter>
 ))

@@ -171,7 +171,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     defaultLabel,
     ...props
 }) => (
-    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} e2e-suggestion-item`} {...props}>
+    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} test-suggestion-item`} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.displayValue ?? suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>

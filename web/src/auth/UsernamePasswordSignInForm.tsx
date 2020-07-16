@@ -35,7 +35,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <Form className="signin-signup-form signin-form e2e-signin-form" onSubmit={this.handleSubmit}>
+            <Form className="signin-signup-form signin-form test-signin-form" onSubmit={this.handleSubmit}>
                 {window.context.allowSignup ? (
                     <p>
                         <Link to={`/sign-up${this.props.location.search}`}>Don't have an account? Sign up.</Link>
