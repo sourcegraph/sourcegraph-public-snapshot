@@ -52,7 +52,9 @@ execWatchman() {
   exec dev/watchmanwrapper/watchmanwrapper dev/handle-change.sh <<-EOT
 ["subscribe", ".", "gochangewatch", {
   "expression": ["allof",
-    ["not", ["match", ".*"]],
+    ["not", ["anyof",
+      ["match", ".*"],
+      ["suffix", "_test.go"]]],
     ["anyof",
       ["suffix", "go"],
       ["dirname", "cmd/symbols"],

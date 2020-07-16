@@ -63,7 +63,7 @@ interface Props
     prependQueryForSuggestions?: string
 
     /** Whether the input should be autofocused (and the behavior thereof) */
-    autoFocus?: true | 'cursor-at-end'
+    autoFocus?: boolean | 'cursor-at-end'
 
     /** The input placeholder, if different from the default is desired. */
     placeholder?: string

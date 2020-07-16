@@ -1906,27 +1906,27 @@
   dependencies:
     esquery "^1.0.1"
 
-"@pollyjs/adapter-puppeteer@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/adapter-puppeteer/-/adapter-puppeteer-4.3.0.tgz#9104172b2da360d0ab36429622b4c6730dea2a65"
-  integrity sha512-vxrUdO7Hm+wvVgB8vatWQpHK2DuMrGt0ikyca8/eXIyyf78wRvX+W6vjZZPHu4yVC+REzyEiJXVleLVME25ZPQ==
+"@pollyjs/adapter-puppeteer@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/adapter-puppeteer/-/adapter-puppeteer-5.0.0.tgz#cca1d4a553af1287768dc2d6b3ed6371530dc219"
+  integrity sha512-f/DkOULohx1F7by8jWK3dPRzk2VDOvJFxscy7X5YDNwvccOPuyhpsU5Dmde/sgWRYbfUUzAarc7cVgRnTYbhow==
   dependencies:
-    "@pollyjs/adapter" "^4.3.0"
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/adapter" "^5.0.0"
+    "@pollyjs/utils" "^5.0.0"
 
-"@pollyjs/adapter@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/adapter/-/adapter-4.3.0.tgz#42a000125064bc82b4248130caf2366a008de128"
-  integrity sha512-8/kELw/esDY+Mi6xiYRSX3EHKoVmPeqjRYk7DHFbHhXoMs6ENrPS0ay8Ajl0KHppAnutTk4YLqaI/3VqFCR5iw==
+"@pollyjs/adapter@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/adapter/-/adapter-5.0.0.tgz#faba5a7e68db38f56b4bf04271d8f5a10d5ca8c2"
+  integrity sha512-GaJUp9hKKKbRbh1FDbjVfxNGIYs8/1QQI5SR+zjz+OjpjV2btRPFCq1cqO4ORrHA2pTIC8IvEL3lgPSG4v/cPg==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
 
-"@pollyjs/core@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/core/-/core-4.3.0.tgz#1043085972131465e651f867ca895e6c787640a0"
-  integrity sha512-8Fs0Lg19P39oO/GvzWoC/fkckrCSx9rL5DPmU4Ez/Q+WXnDzmWtHI1x/jmD+jv5JLc2ig/ueWugIpE0f9eZbAQ==
+"@pollyjs/core@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/core/-/core-5.0.0.tgz#5e61c34ce78245fe6f80768d90ce4ab135a8ec2c"
+  integrity sha512-f/v5z7aKSWdeBCZQFiQGL4aZmdWAuQWV+U/fMbAIEYjkX8Av0gWPhkFyeMfeFriYMg7Ts1XxPNI7LYroCnjn7w==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
     "@sindresorhus/fnv1a" "^1.2.0"
     blueimp-md5 "^2.10.0"
     fast-json-stable-stringify "^2.0.0"
@@ -1935,12 +1935,12 @@
     route-recognizer "^0.3.4"
     slugify "^1.3.4"
 
-"@pollyjs/node-server@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/node-server/-/node-server-4.3.0.tgz#f822e66110e71eb25fbe476951fdc764d2417395"
-  integrity sha512-pGrX889RkJXleW7p1cMKJqEtuasABbosneU9VrHOUYOMlYnObIOTt5y/n3m0NMAh9SyyusgqC7yQ18/PnMCgfg==
+"@pollyjs/node-server@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/node-server/-/node-server-5.0.0.tgz#b4b8cb12cd2777b4ad4406ab6dcc7c1d539f7db7"
+  integrity sha512-DK1hqsZnIU7TXECNPI6E+ojaSpv62lt3+8eGn3qFbsa61ToTFQLFEMNfcTWA6ZXArrpdzYAdKVTt8BsdEujHkg==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
     body-parser "^1.19.0"
     cors "^2.8.5"
     express "^4.17.1"
@@ -1949,30 +1949,30 @@
     morgan "^1.9.1"
     nocache "^2.1.0"
 
-"@pollyjs/persister-fs@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/persister-fs/-/persister-fs-4.3.0.tgz#d6eb718a6b3e027c7071b59f4300b26961b36a07"
-  integrity sha512-2DUIyl/3mr5F1Orq6bnpW6Witz2I8ulMGsqCFrlh4LaA4DlSg2SwOv88bbjzMCfqGP1CN3U5Zu8o7tZlFxkd8w==
+"@pollyjs/persister-fs@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/persister-fs/-/persister-fs-5.0.0.tgz#eaa1d4a672a9920b93c9238870aa899149f748d0"
+  integrity sha512-ju75JJ6sSJ/q68rB74wxIlvXCq/riuCqW3pS/Ucd4SFfks/HxXxM3yGTHn0Qq5SrmY9cYbQFfpOz0WCNDIqr+A==
   dependencies:
-    "@pollyjs/node-server" "^4.3.0"
-    "@pollyjs/persister" "^4.3.0"
+    "@pollyjs/node-server" "^5.0.0"
+    "@pollyjs/persister" "^5.0.0"
 
-"@pollyjs/persister@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/persister/-/persister-4.3.0.tgz#cd62b6d3c7deae5f6eabdfb107bb76ed4389b8e6"
-  integrity sha512-oKTl++rZdT/5tMoeHMsgUAHjnRf/4qLNv7kc7u8ddldjgZ4eDAIWlG6BwFkhDxjhV+ofVlnLxFnRjmK4qrrmqA==
+"@pollyjs/persister@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/persister/-/persister-5.0.0.tgz#36b85aba8d9a252e3125b257d7c1ec33d015d8fd"
+  integrity sha512-bTJes0c2/y4xrXi1vPypJhup/N/VPC1jY7maOuSv4pOFo6VAvoVJGT2sgMMnPU7qHSRn9Y6v+S7QqGtLOZCyAA==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
     bowser "^2.4.0"
     fast-json-stable-stringify "^2.0.0"
     lodash-es "^4.17.11"
     set-cookie-parser "^2.3.5"
     utf8-byte-length "^1.0.4"
 
-"@pollyjs/utils@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/utils/-/utils-4.3.0.tgz#c7c709bfc40836d9c3f7c3b89b8e54da7e364b0f"
-  integrity sha512-8BYWtP4nK6mAlDgZQ8j2+EZjQH2beoHaHnZDyG7GdspOLeILtXhHLeAxp371YSKN387t7OEBS0nIQSMppHuTQg==
+"@pollyjs/utils@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/utils/-/utils-5.0.0.tgz#c001f93865db82780dd17642c54e3919260c0034"
+  integrity sha512-zXoR13NGR1fVoUAcKR9/8AYCXZsMkG5EdvTZbR1nk5hCYJN1AR73HAKXMPsk/2vkLnBr6LWoAr3f9LjwqJOehQ==
   dependencies:
     qs "^6.7.0"
     url-parse "^1.4.7"
@@ -14321,7 +14321,7 @@ lodash.memoize@^4.1.2:
   resolved "https://registry.npmjs.org/lodash.memoize/-/lodash.memoize-4.1.2.tgz#bcc6c49a42a2840ed997f323eada5ecd182e0bfe"
   integrity sha1-vMbEmkKihA7Zl/Mj6tpezRguC/4=
 
-lodash.once@^4.0.0:
+lodash.once@^4.0.0, lodash.once@^4.1.1:
   version "4.1.1"
   resolved "https://registry.npmjs.org/lodash.once/-/lodash.once-4.1.1.tgz#0dd3971213c7c56df880977d504c88fb471a97ac"
   integrity sha1-DdOXEhPHxW34gJd9UEyI+0cal6w=
@@ -14548,6 +14548,11 @@ make-error@^1.1.1:
   version "1.3.5"
   resolved "https://registry.npmjs.org/make-error/-/make-error-1.3.5.tgz#efe4e81f6db28cadd605c70f29c831b58ef776c8"
   integrity sha512-c3sIjNUow0+8swNwVpqoH4YCShKNFkMaw6oH1mNS2haDZQqkeZFlHS3dhoeEbKKmJB4vXpJucU6oH75aDYeE9g==
+
+make-event-props@^1.1.0:
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/make-event-props/-/make-event-props-1.2.0.tgz#96b87d88919533b8f8934b58b4c3d5679459a0cf"
+  integrity sha512-BmWFkm/jZzVH9A0tEBdkjAARUz/eha+5IRyfOndeSMKRadkgR5DawoBHoRwLxkYmjJOI5bHkXKpaZocxj+dKgg==
 
 make-fetch-happen@^5.0.0:
   version "5.0.2"
@@ -14853,6 +14858,11 @@ meow@^7.0.1:
     trim-newlines "^3.0.0"
     type-fest "^0.13.1"
     yargs-parser "^18.1.3"
+
+merge-class-names@^1.1.1:
+  version "1.3.0"
+  resolved "https://registry.npmjs.org/merge-class-names/-/merge-class-names-1.3.0.tgz#c4cdc1a981a81dd9afc27aa4287e912a337c5dee"
+  integrity sha512-k0Qaj36VBpKgdc8c188LEZvo6v/zzry/FUufwopWbMSp6/knfVFU/KIB55/hJjeIpg18IH2WskXJCRnM/1BrdQ==
 
 merge-deep@^3.0.2:
   version "3.0.2"
@@ -15464,6 +15474,11 @@ node-dir@^0.1.10:
   integrity sha1-X1Zl2TNRM1yqvvjxxVRRbPXx5OU=
   dependencies:
     minimatch "^3.0.2"
+
+node-ensure@^0.0.0:
+  version "0.0.0"
+  resolved "https://registry.npmjs.org/node-ensure/-/node-ensure-0.0.0.tgz#ecae764150de99861ec5c810fd5d096b183932a7"
+  integrity sha1-7K52QVDemYYexcgQ/V0Jaxg5Mqc=
 
 node-environment-flags@1.0.6:
   version "1.0.6"
@@ -16858,6 +16873,14 @@ pbkdf2@^3.0.3:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
+pdfjs-dist@2.1.266:
+  version "2.1.266"
+  resolved "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-2.1.266.tgz#cded02268b389559e807f410d2a729db62160026"
+  integrity sha512-Jy7o1wE3NezPxozexSbq4ltuLT0Z21ew/qrEiAEeUZzHxMHGk4DUV1D7RuCXg5vJDvHmjX1YssN+we9QfRRgXQ==
+  dependencies:
+    node-ensure "^0.0.0"
+    worker-loader "^2.0.0"
+
 pend@~1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/pend/-/pend-1.2.0.tgz#7a57eb550a6783f9115331fcf4663d5c8e007a50"
@@ -18228,6 +18251,18 @@ react-lifecycles-compat@^3.0.4:
   version "3.0.4"
   resolved "https://registry.npmjs.org/react-lifecycles-compat/-/react-lifecycles-compat-3.0.4.tgz#4f1a273afdfc8f3488a8c516bfda78f872352362"
   integrity sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==
+
+react-pdf@^4.0.5:
+  version "4.1.0"
+  resolved "https://registry.npmjs.org/react-pdf/-/react-pdf-4.1.0.tgz#fcb874f28050fe9593c4e04652c7bff94bb1acf9"
+  integrity sha512-SYwkWc+vRQHfrpDls3DOgn4G+wT0mYGJRor20e28GPRW8VB+6o8WqZ4QZxsl50z+dKM7UscXFnK/02eN3NXi2g==
+  dependencies:
+    "@babel/runtime" "^7.0.0"
+    lodash.once "^4.1.1"
+    make-event-props "^1.1.0"
+    merge-class-names "^1.1.1"
+    pdfjs-dist "2.1.266"
+    prop-types "^15.6.2"
 
 react-popper-tooltip@^2.8.3:
   version "2.8.3"
@@ -20165,9 +20200,9 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 sourcegraph@^24.0.0:
-  version "24.6.0"
-  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.6.0.tgz#d6343a0a52c2e3c20a3d7bbcadde712bbdf4a931"
-  integrity sha512-FEmuGVRcSqMtE5DItZcDa1ylm7FykcswIN6M6xa0vFbyLv6INYxjGYOGq/WlH4/AUQC0abmaysPXlyJRkGgMyg==
+  version "24.7.0"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.7.0.tgz#24cf034f055d1a951f0b081e2d0a4338df650420"
+  integrity sha512-PlGvkdBy5r5iHdKAVNY/jsPgWb3oY+2iAdIQ3qR83UHhvBFVgoctDAnyfJ1eMstENY3etBWtAJ8Kleoar3ecaA==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
   version "0.0.0"
@@ -20414,6 +20449,13 @@ store2@^2.7.1:
   version "2.7.1"
   resolved "https://registry.npmjs.org/store2/-/store2-2.7.1.tgz#22070b7dc04748a792fc6912a58ab99d3a21d788"
   integrity sha512-zzzP5ZY6QWumnAFV6kBRbS44pUMcpZBNER5DWUe1HETlaKXqLcCQxbNu6IHaKr1pUsjuhUGBdOy8sWKmMkL6pQ==
+
+storybook-addon-designs@^5.4.0:
+  version "5.4.0"
+  resolved "https://registry.npmjs.org/storybook-addon-designs/-/storybook-addon-designs-5.4.0.tgz#f1a40d27766ec5c1603a8d333c54270ed1609f65"
+  integrity sha512-1tW5a956pHaDA3hrDRZFborJibGmu/rYviacrBmNG8QoW4TFnsu80qPfOKbkG0b/vbnqh7WukTRVh2UE8ZoMDw==
+  dependencies:
+    react-pdf "^4.0.5"
 
 storybook-chromatic@^2.2.2:
   version "2.2.2"
