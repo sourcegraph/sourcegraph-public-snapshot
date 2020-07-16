@@ -72,7 +72,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
         if (!show) {
-            return null
+            return <div className="test-activation-hidden d-none" />
         }
 
         const confettiConfig = {
@@ -115,7 +115,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                             </div>
                             <span className="activation-dropdown-button__progress-bar-container">
                                 <CircularProgressbar
-                                    className="activation-dropdown-button__circular-progress-bar"
+                                    className="activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                                     strokeWidth={12}
                                     value={percentageDone(this.props.activation.completed)}
                                 />
