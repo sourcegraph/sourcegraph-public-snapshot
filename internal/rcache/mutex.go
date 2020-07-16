@@ -27,8 +27,17 @@ var (
 
 // TryAcquireMutex tries to Lock a distributed mutex. If the mutex is already
 // locked, it will return `ctx, nil, false`. Otherwise it returns `ctx,
-// release, true`. Release must be called to free the lock. When the lock is
-// free the returned context is cancelled.
+// release, true`. Release must be called to free the lock.
+// The lock has a 1 minute lifetime, but a background routine extends it every 30 seconds.
+// If, on release, we are unable to unlock the mutex it will continue to be locked until
+// it is expired by Redis.
+// The returned context will be cancelled if any of the following occur:
+// * The parent context in cancelled
+// * The release function is called
+// * There is an error extending the lock expiry or the expiry can't be extended because
+//   they key no longer exists in Redis
+// A caller can therefore assume that they are the sole holder of the lock as long as the
+// context has not been cancelled.
 func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(), bool) {
 	// We return a canceled context if we fail, so create the context here
 	ctx, cancel := context.WithCancel(ctx)
@@ -46,19 +55,23 @@ func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(),
 		cancel()
 		return ctx, nil, false
 	}
-	unlockedC := make(chan interface{})
+	unlockedC := make(chan struct{})
 	go func() {
 		ticker := time.NewTicker(mutexExpiry / 2)
 		for {
 			select {
 			case <-ctx.Done():
-				// TODO handle error
+				// An error here means we may not have released the lock.
+				// It's OK to ignore as we'll stop extending the lock anyway
+				// and it will expire.
 				_, _ = mu.Unlock()
 				ticker.Stop()
 				close(unlockedC)
 				return
 			case <-ticker.C:
-				// TODO simple retry
+				// We do not retry on error as we should cancel the context
+				// as soon as we are not 100% sure we hold the lock. This minimises
+				// the chance of more than one instance thinking they hold it.
 				if ok, err := mu.Extend(); !ok || err != nil {
 					cancel()
 				}
