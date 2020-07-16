@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -60,9 +59,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 }
 
 func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	// TODO: This is a bogus value and needs to be implemented properly
-	expiresAt := r.changesetSpec.CreatedAt.Add(2 * time.Hour)
-	return &graphqlbackend.DateTime{Time: expiresAt}
+	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
 func (r *changesetSpecResolver) ToHiddenChangesetSpec() (graphqlbackend.HiddenChangesetSpecResolver, bool) {
