@@ -73,10 +73,10 @@ describe('Core functionality regression test suite', () => {
 
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
-            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {
-                const editor = document.querySelector('.e2e-settings-file .monaco-editor') as HTMLElement
-                return editor ? editor.textContent : null
+                const editor = document.querySelector('.e2e-settings-file .monaco-editor .view-lines') as HTMLElement
+                return editor ? editor.innerText : null
             })
         }
 
