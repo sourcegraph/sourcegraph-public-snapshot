@@ -164,7 +164,7 @@ There is a default mock JSContext that you can extend with object spread syntax 
 End-to-end tests test the whole app: JavaScript, CSS styles, and backend.
 They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/end-to-end).
 
-A special end-to-end test suite is the regression test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
+The **regression test suite** is a special end-to-end test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
 
 Test coverage by end-to-end tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `e2e`.
 
