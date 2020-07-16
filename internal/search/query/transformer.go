@@ -206,9 +206,7 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
-			fmt.Println("before: ", value)
 			value, err = globToRegex(value)
-			fmt.Println("after: ", value)
 			if err != nil {
 				globErrors = append(globErrors, globError{field: field, err: err})
 			}
