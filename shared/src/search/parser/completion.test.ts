@@ -347,4 +347,48 @@ describe('getCompletionItems()', () => {
             )?.suggestions.map(({ filterText }) => filterText)
         ).toStrictEqual(['^jsonrpc'])
     })
+
+    test('includes file path in insertText with fuzzy completions', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('main.go') as ParseSuccess<Sequence>).token,
+                    { column: 7 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'some/path/main.go',
+                            name: 'main.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions
+                .filter(({ insertText }) => insertText.includes('some/path'))
+                .map(({ insertText }) => insertText)
+        ).toStrictEqual(['file:^some/path/main\\.go$ '])
+    })
+
+    test('includes file path in insertText when completing filter value', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('f:') as ParseSuccess<Sequence>).token,
+                    { column: 2 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'some/path/main.go',
+                            name: 'main.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ insertText }) => insertText)
+        ).toStrictEqual(['^some/path/main\\.go$'])
+    })
 })
