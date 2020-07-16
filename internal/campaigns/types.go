@@ -1680,7 +1680,7 @@ const CampaignSpecTTL = 7 * 24 * time.Hour
 // ExpiresAt returns the time when the CampaignSpec will be deleted if not
 // applied.
 func (cs *CampaignSpec) ExpiresAt() time.Time {
-	return cs.CreatedAt.Truncate(time.Second).Add(CampaignSpecTTL)
+	return cs.CreatedAt.Add(CampaignSpecTTL)
 }
 
 type CampaignSpecFields struct {
@@ -1779,7 +1779,7 @@ const ChangesetSpecTTL = 2 * 24 * time.Hour
 // ExpiresAt returns the time when the ChangesetSpec will be deleted if not
 // attached to a CampaignSpec.
 func (cs *ChangesetSpec) ExpiresAt() time.Time {
-	return cs.CreatedAt.Truncate(time.Second).Add(ChangesetSpecTTL)
+	return cs.CreatedAt.Add(ChangesetSpecTTL)
 }
 
 // ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if
