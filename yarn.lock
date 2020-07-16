@@ -2303,7 +2303,8 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.1.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -20231,12 +20232,13 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 sourcegraph@^24.0.0:
-  version "24.6.0"
-  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.6.0.tgz#d6343a0a52c2e3c20a3d7bbcadde712bbdf4a931"
-  integrity sha512-FEmuGVRcSqMtE5DItZcDa1ylm7FykcswIN6M6xa0vFbyLv6INYxjGYOGq/WlH4/AUQC0abmaysPXlyJRkGgMyg==
+  version "24.7.0"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.7.0.tgz#24cf034f055d1a951f0b081e2d0a4338df650420"
+  integrity sha512-PlGvkdBy5r5iHdKAVNY/jsPgWb3oY+2iAdIQ3qR83UHhvBFVgoctDAnyfJ1eMstENY3etBWtAJ8Kleoar3ecaA==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "24.7.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
