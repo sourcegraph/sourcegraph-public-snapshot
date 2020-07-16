@@ -124,12 +124,12 @@ describe('e2e test suite', () => {
             })
 
             await driver.page.click('.test-create-access-token-submit')
-            const token: string = await (
-                await driver.page.waitForFunction(() => {
-                    const element = document.querySelector<HTMLInputElement>('.test-access-token input[type=text]')
-                    return element?.value
-                })
-            ).jsonValue()
+            const token = (await (
+                await driver.page.waitForFunction(
+                    () => document.querySelector<HTMLInputElement>('.test-access-token input[type=text]')?.value
+                )
+            ).jsonValue()) as string | null
+            assert(token)
 
             const response = await got.post('.api/graphql', {
                 prefixUrl: sourcegraphBaseUrl,
@@ -296,12 +296,9 @@ describe('e2e test suite', () => {
                 ensureRepos: ['aws/test'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
-            const blob: string = await (
-                await driver.page.waitFor(() => {
-                    const element = document.querySelector<HTMLElement>('.test-repo-blob')
-                    return element?.textContent
-                })
-            ).jsonValue()
+            const blob = (await (
+                await driver.page.waitFor(() => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent)
+            ).jsonValue()) as string | null
 
             expect(blob).toBe('README\n\nchange')
         })
@@ -326,12 +323,9 @@ describe('e2e test suite', () => {
                 ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
-            const blob: string = await (
-                await driver.page.waitFor(() => {
-                    const element = document.querySelector<HTMLElement>('.test-repo-blob')
-                    return element?.textContent
-                })
-            ).jsonValue()
+            const blob = (await (
+                await driver.page.waitFor(() => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent)
+            ).jsonValue()) as string | null
 
             expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
         })
