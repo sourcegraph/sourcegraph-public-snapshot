@@ -625,9 +625,9 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 	notHEADOnlySearch := false
 
 	// Assume for large searches they will mostly involve indexed
-	// revisions. So avoid allocations for that case by reuseing reporev.Revs
+	// revisions, so just allocate that.
 	var unindexed []search.RevisionSpecifier
-	indexed := reporev.Revs[:0]
+	indexed := make([]search.RevisionSpecifier, 0, len(reporev.Revs))
 
 	branches := make([]string, 0, len(reporev.Revs))
 	for _, rev := range reporev.Revs {
