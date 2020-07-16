@@ -73,7 +73,7 @@ See this video for a demonstration of lifecycle of a campaign:
 
     This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository). It yields a **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
 1. The patches are then used to **create a draft campaign**.
-1. At this point, since it's a draft camapaign, no changesets (or _pull requests_ in the case of GitHub) have been created on the code host.
+1. At this point, since it's a draft camapaign, no changesets have been created on the code host.
 1. The user then selectively **creates GitHub pull requests** by publishing single patches.
 
 <div class="clearfix"></div>
