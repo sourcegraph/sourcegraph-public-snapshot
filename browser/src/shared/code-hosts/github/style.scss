@@ -52,8 +52,12 @@
 // Diff views
 .diff-view {
     .file-header {
+        // Trigger a two-row layout if file path and action items don't fit all in one row.
         flex-wrap: wrap;
+
         .file-info {
+            // Make sure file paths don't wrap to make space for buttons
+            // (instead trigger a two-row layout if it does not fit)
             flex: 0 2 auto !important;
         }
         .file-actions {
