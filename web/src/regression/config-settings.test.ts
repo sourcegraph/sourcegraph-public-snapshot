@@ -80,28 +80,27 @@ describe('Site config test suite', () => {
             const editFns = []
             if (builtinAuthProviderIndex !== -1) {
                 editFns.push((contents: string) => {
-                        const parsed: SiteConfiguration = jsonc.parse(contents)
-                        const found =
-                            parsed['auth.providers']
-                                ?.map((provider, index) => (provider.type === 'builtin' ? index : -1))
-                                .filter(index => index !== -1) || []
-                        const foundIndex = found.length > 0 ? found[0] : -1
-                        if (foundIndex !== -1) {
-                            return jsoncEdit.setProperty(
-                                contents,
-                                ['auth.providers', foundIndex],
-                                undefined,
-                                formattingOptions
-                            )
-                        }
-                        return []
+                    const parsed: SiteConfiguration = jsonc.parse(contents)
+                    const found =
+                        parsed['auth.providers']
+                            ?.map((provider, index) => (provider.type === 'builtin' ? index : -1))
+                            .filter(index => index !== -1) || []
+                    const foundIndex = found.length > 0 ? found[0] : -1
+                    if (foundIndex !== -1) {
+                        return jsoncEdit.setProperty(
+                            contents,
+                            ['auth.providers', foundIndex],
+                            undefined,
+                            formattingOptions
+                        )
                     }
-                )
+                    return []
+                })
             }
             editFns.push((contents: string) =>
                 jsoncEdit.setProperty(contents, ['auth.providers', -1], provider, formattingOptions)
             )
-            console.log("editFns", editFns)
+            console.log('editFns', editFns)
             return editSiteConfig(gqlClient, ...editFns)
         }
 
