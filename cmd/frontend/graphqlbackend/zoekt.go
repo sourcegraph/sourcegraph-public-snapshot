@@ -362,6 +362,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			symbols:      symbols,
 			Repo:         repoResolver,
 			CommitID:     api.CommitID(file.Version),
+			InputRev:     &inputRev,
 		}
 	}
 
