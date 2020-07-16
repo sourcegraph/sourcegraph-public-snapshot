@@ -66,7 +66,7 @@ const fileToCompletion = (
 ): PartialCompletionItem => ({
     label: name,
     kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
-    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(name)}$ `,
+    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(path)}$ `,
     filterText: name,
     detail: `${path} - ${repository.name}`,
 })
