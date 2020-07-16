@@ -25,6 +25,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+type changesetsConnectionStatsResolver struct {
+	unpublished, open, merged, closed, total int32
+}
+
+func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
+	return r.unpublished
+}
+func (r *changesetsConnectionStatsResolver) Open() int32 {
+	return r.open
+}
+func (r *changesetsConnectionStatsResolver) Merged() int32 {
+	return r.merged
+}
+func (r *changesetsConnectionStatsResolver) Closed() int32 {
+	return r.closed
+}
+func (r *changesetsConnectionStatsResolver) Total() int32 {
+	return r.total
+}
+
 type changesetsConnectionResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
@@ -72,7 +92,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			isHidden:            !repoFound,
 			store:               r.store,
 			httpFactory:         r.httpFactory,
-			Changeset:           c,
+			changeset:           c,
 			preloadedRepo:       repo,
 			preloadedNextSyncAt: preloadedNextSyncAt,
 		})
@@ -160,12 +180,17 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 	return r.changesets, r.reposByID, r.next, r.err
 }
 
+func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
+	// TODO: Implement.
+	return &changesetsConnectionStatsResolver{}, nil
+}
+
 type changesetResolver struct {
 	isHidden    bool
 	store       *ee.Store
 	httpFactory *httpcli.Factory
 
-	*campaigns.Changeset
+	changeset     *campaigns.Changeset
 	preloadedRepo *types.Repo
 
 	// cache repo because it's called more than once
@@ -215,7 +240,7 @@ func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 		if r.preloadedRepo != nil {
 			r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
 		} else {
-			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, r.RepoID)
+			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, r.changeset.RepoID)
 			if r.repoErr != nil {
 				return
 			}
@@ -227,7 +252,7 @@ func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.ChangesetEvent, error) {
 	r.eventsOnce.Do(func() {
 		opts := ee.ListChangesetEventsOpts{
-			ChangesetIDs: []int64{r.Changeset.ID},
+			ChangesetIDs: []int64{r.changeset.ID},
 			Limit:        -1,
 		}
 		es, _, err := r.store.ListChangesetEvents(ctx, opts)
@@ -245,13 +270,13 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 		if r.preloadedNextSyncAt != nil {
 			r.nextSyncAt = *r.preloadedNextSyncAt
 		} else {
-			syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.Changeset.ID}})
+			syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
 			if err != nil {
 				r.nextSyncAtErr = err
 				return
 			}
 			for _, d := range syncData {
-				if d.ChangesetID == r.Changeset.ID {
+				if d.ChangesetID == r.changeset.ID {
 					r.nextSyncAt = ee.NextSync(time.Now, d)
 					return
 				}
@@ -264,11 +289,14 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 }
 
 func (r *changesetResolver) ID() graphql.ID {
-	return marshalChangesetID(r.Changeset.ID)
+	return marshalChangesetID(r.changeset.ID)
 }
 
-func (r *changesetResolver) ExternalID() string {
-	return r.Changeset.ExternalID
+func (r *changesetResolver) ExternalID() *string {
+	if r.changeset == nil {
+		return nil
+	}
+	return &r.changeset.ExternalID
 }
 
 func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
@@ -277,7 +305,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
-		ChangesetID: r.Changeset.ID,
+		ChangesetID: r.changeset.ID,
 	}
 
 	state, err := parseCampaignState(args.State)
@@ -305,11 +333,11 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 }
 
 func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Changeset.CreatedAt}
+	return graphqlbackend.DateTime{Time: r.changeset.CreatedAt}
 }
 
 func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
+	return graphqlbackend.DateTime{Time: r.changeset.UpdatedAt}
 }
 
 func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
@@ -324,27 +352,39 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 }
 
 func (r *changesetResolver) Title() (string, error) {
-	return r.Changeset.Title()
+	if r.changeset == nil {
+		return "TODO: return from spec", nil
+	}
+	return r.changeset.Title()
 }
 
 func (r *changesetResolver) Body() (string, error) {
-	return r.Changeset.Body()
+	if r.changeset == nil {
+		return "TODO: return from spec", nil
+	}
+	return r.changeset.Body()
 }
 
 func (r *changesetResolver) State() campaigns.ChangesetState {
-	return r.ExternalState
+	// TODO: Implement.
+	return campaigns.ChangesetStateUnpublished
+}
+
+func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
+	return &r.changeset.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
-	url, err := r.Changeset.URL()
+	url, err := r.changeset.URL()
 	if err != nil {
 		return nil, err
 	}
-	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
+	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState(ctx context.Context) campaigns.ChangesetReviewState {
-	return r.ExternalReviewState
+func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
+	// TODO: Implement this properly by checking whether the changeset has been published on the code host.
+	return &r.changeset.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
@@ -355,9 +395,14 @@ func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
 	return &state
 }
 
+func (r *changesetResolver) Error() *string {
+	// TODO: Implement.
+	return nil
+}
+
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
 	// Not every code host supports labels on changesets so don't make a DB call unless we need to.
-	if ok := r.Changeset.SupportsLabels(); !ok {
+	if ok := r.changeset.SupportsLabels(); !ok {
 		return []graphqlbackend.ChangesetLabelResolver{}, nil
 	}
 
@@ -370,7 +415,7 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	labels := ee.ComputeLabels(r.Changeset, es)
+	labels := ee.ComputeLabels(r.changeset, es)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})
@@ -385,18 +430,27 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 	// perhaps we can use the cached data here
 	return &changesetEventsConnectionResolver{
 		store:     r.store,
-		changeset: r.Changeset,
+		changeset: r.changeset,
 		opts: ee.ListChangesetEventsOpts{
-			ChangesetIDs: []int64{r.Changeset.ID},
+			ChangesetIDs: []int64{r.changeset.ID},
 			Limit:        int(args.ConnectionArgs.GetFirst()),
 		},
 	}, nil
 }
 
-func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
+func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
+	// TODO: Return previewRepositoryConnection from the spec, when changeset doesn't yet exist on the codehost.
+	if r.changeset == nil {
+		repo, err := r.computeRepo(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, repo, r.changeset.SyncState.BaseRefOid, "")
+	}
+
 	// Only return diffs for open changesets, otherwise we can't guarantee that
 	// we have the refs on gitserver
-	if r.ExternalState != campaigns.ChangesetStateOpen {
+	if r.changeset.ExternalState != campaigns.ChangesetExternalStateOpen {
 		return nil, nil
 	}
 
@@ -405,25 +459,25 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, err
 	}
 
-	base, err := r.Changeset.BaseRefOid()
+	base, err := r.changeset.BaseRefOid()
 	if err != nil {
 		return nil, err
 	}
 	if base == "" {
 		// Fallback to the ref if we can't get the OID
-		base, err = r.Changeset.BaseRef()
+		base, err = r.changeset.BaseRef()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	head, err := r.Changeset.HeadRefOid()
+	head, err := r.changeset.HeadRefOid()
 	if err != nil {
 		return nil, err
 	}
 	if head == "" {
 		// Fallback to the ref if we can't get the OID
-		head, err = r.Changeset.HeadRef()
+		head, err = r.changeset.HeadRef()
 		if err != nil {
 			return nil, err
 		}
@@ -437,14 +491,14 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 }
 
 func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	if stat := r.Changeset.DiffStat(); stat != nil {
+	if stat := r.changeset.DiffStat(); stat != nil {
 		return graphqlbackend.NewDiffStat(*stat), nil
 	}
 	return nil, nil
 }
 
 func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	name, err := r.Changeset.HeadRef()
+	name, err := r.changeset.HeadRef()
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +507,7 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 	}
 
 	var oid string
-	if r.ExternalState == campaigns.ChangesetStateMerged {
+	if r.changeset.ExternalState == campaigns.ChangesetExternalStateMerged {
 		// The PR was merged, find the merge commit
 		events, err := r.computeEvents(ctx)
 		if err != nil {
@@ -463,7 +517,7 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 	}
 	if oid == "" {
 		// Fall back to the head ref
-		oid, err = r.Changeset.HeadRefOid()
+		oid, err = r.changeset.HeadRefOid()
 		if err != nil {
 			return nil, err
 		}
@@ -480,7 +534,7 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 }
 
 func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	name, err := r.Changeset.BaseRef()
+	name, err := r.changeset.BaseRef()
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +542,7 @@ func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, errors.New("changeset base ref could not be determined")
 	}
 
-	oid, err := r.Changeset.BaseRefOid()
+	oid, err := r.changeset.BaseRefOid()
 	if err != nil {
 		return nil, err
 	}

@@ -37,8 +37,8 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 		return
 	}
 
-	if state, err := ComputeChangesetState(c, history); err != nil {
-		log15.Warn("Computing changeset state", "err", err)
+	if state, err := ComputeExternalState(c, history); err != nil {
+		log15.Warn("Computing external changeset state", "err", err)
 	} else {
 		c.ExternalState = state
 	}
@@ -52,7 +52,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	// synced, and it's still complete, then we don't need to do any further
 	// work: the diffstat should still be correct, and this way we don't need to
 	// rely on gitserver having the head OID still available.
-	if c.SyncState.IsComplete && c.ExternalState != campaigns.ChangesetStateOpen {
+	if c.SyncState.IsComplete && c.ExternalState != campaigns.ChangesetExternalStateOpen {
 		return
 	}
 
@@ -108,15 +108,15 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 	return campaigns.ChangesetCheckStateUnknown
 }
 
-// ComputeChangesetState computes the overall state for the changeset and its
+// ComputeExternalState computes the overall state for the changeset and its
 // associated events. The events should be presorted.
-func ComputeChangesetState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetState, error) {
+func ComputeExternalState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetExternalState, error) {
 	if len(history) == 0 {
-		return computeSingleChangesetState(c)
+		return computeSingleChangesetExternalState(c)
 	}
 	newestDataPoint := history[len(history)-1]
 	if c.UpdatedAt.After(newestDataPoint.t) {
-		return computeSingleChangesetState(c)
+		return computeSingleChangesetExternalState(c)
 	}
 	return newestDataPoint.state, nil
 }
@@ -390,31 +390,31 @@ func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.Changeset
 	}
 }
 
-// computeSingleChangesetState of a Changeset based on the metadata.
+// computeSingleChangesetExternalState of a Changeset based on the metadata.
 // It does NOT reflect the final calculated state, use `ExternalState` instead.
-func computeSingleChangesetState(c *campaigns.Changeset) (s campaigns.ChangesetState, err error) {
+func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.ChangesetExternalState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
-		return campaigns.ChangesetStateDeleted, nil
+		return campaigns.ChangesetExternalStateDeleted, nil
 	}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		s = campaigns.ChangesetState(m.State)
+		s = campaigns.ChangesetExternalState(m.State)
 	case *bitbucketserver.PullRequest:
 		if m.State == "DECLINED" {
-			s = campaigns.ChangesetStateClosed
+			s = campaigns.ChangesetExternalStateClosed
 		} else {
-			s = campaigns.ChangesetState(m.State)
+			s = campaigns.ChangesetExternalState(m.State)
 		}
 	case *gitlab.MergeRequest:
 		// TODO: implement webhook support
 		switch m.State {
 		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
-			s = campaigns.ChangesetStateClosed
+			s = campaigns.ChangesetExternalStateClosed
 		case gitlab.MergeRequestStateMerged:
-			s = campaigns.ChangesetStateMerged
+			s = campaigns.ChangesetExternalStateMerged
 		case gitlab.MergeRequestStateOpened:
-			s = campaigns.ChangesetStateOpen
+			s = campaigns.ChangesetExternalStateOpen
 		default:
 			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
 		}
@@ -570,7 +570,7 @@ func computeSyncState(ctx context.Context, c *campaigns.Changeset, repo gitserve
 	return &campaigns.ChangesetSyncState{
 		BaseRefOid: base,
 		HeadRefOid: head,
-		IsComplete: c.ExternalState != campaigns.ChangesetStateOpen,
+		IsComplete: c.ExternalState != campaigns.ChangesetExternalStateOpen,
 	}, nil
 }
 

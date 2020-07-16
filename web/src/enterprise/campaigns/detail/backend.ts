@@ -22,12 +22,6 @@ const campaignFragment = gql`
             username
             avatarURL
         }
-        status {
-            completedCount
-            pendingCount
-            state
-            errors
-        }
         branch
         createdAt
         updatedAt
@@ -174,9 +168,19 @@ export const queryChangesets = (
                                     }
                                     externalID
                                     diff {
-                                        fileDiffs {
-                                            diffStat {
-                                                ...DiffStatFields
+                                        __typename
+                                        ... on PreviewRepositoryComparison {
+                                            fileDiffs {
+                                                diffStat {
+                                                    ...DiffStatFields
+                                                }
+                                            }
+                                        }
+                                        ... on RepositoryComparison {
+                                            fileDiffs {
+                                                diffStat {
+                                                    ...DiffStatFields
+                                                }
                                             }
                                         }
                                     }
@@ -238,25 +242,43 @@ export const queryExternalChangesetWithFileDiffs = (
                     __typename
                     ... on ExternalChangeset {
                         diff {
-                            range {
-                                base {
-                                    ...GitRefSpecFields
+                            __typename
+                            ... on RepositoryComparison {
+                                range {
+                                    base {
+                                        ...GitRefSpecFields
+                                    }
+                                    head {
+                                        ...GitRefSpecFields
+                                    }
                                 }
-                                head {
-                                    ...GitRefSpecFields
+                                fileDiffs(first: $first, after: $after) {
+                                    nodes {
+                                        ...FileDiffFields
+                                    }
+                                    totalCount
+                                    pageInfo {
+                                        hasNextPage
+                                        endCursor
+                                    }
+                                    diffStat {
+                                        ...DiffStatFields
+                                    }
                                 }
                             }
-                            fileDiffs(first: $first, after: $after) {
-                                nodes {
-                                    ...FileDiffFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                    endCursor
-                                }
-                                diffStat {
-                                    ...DiffStatFields
+                            ... on PreviewRepositoryComparison {
+                                fileDiffs(first: $first, after: $after) {
+                                    nodes {
+                                        ...FileDiffFields
+                                    }
+                                    totalCount
+                                    pageInfo {
+                                        hasNextPage
+                                        endCursor
+                                    }
+                                    diffStat {
+                                        ...DiffStatFields
+                                    }
                                 }
                             }
                         }

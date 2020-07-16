@@ -16,9 +16,8 @@ import { Subject, of, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, distinctUntilChanged, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { CampaignStatus } from './CampaignStatus'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { CampaignDiffStat } from './CampaignDiffStat'
@@ -26,7 +25,6 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
@@ -46,7 +44,6 @@ interface Campaign
         | 'branch'
     > {
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
-    status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     diffStat: Pick<GQL.ICampaign['diffStat'], 'added' | 'deleted' | 'changed'>
 }
 
@@ -103,12 +100,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
                 switchMap(() =>
-                    _fetchCampaignById(campaignID).pipe(
-                        // repeat fetching the campaign as long as the state is still processing
-                        repeatUntil(campaign => campaign?.status?.state !== GQL.BackgroundProcessState.PROCESSING, {
-                            delay: 2000,
-                        })
-                    )
+                    _fetchCampaignById(campaignID).pipe(repeatWhen(observer => observer.pipe(delay(5000))))
                 ),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
@@ -206,9 +198,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 formID={campaignFormID}
             />
             {alertError && <ErrorAlert error={alertError} history={history} />}
-            {campaign && !['saving', 'editing'].includes(mode) && (
-                <CampaignStatus campaign={campaign} history={history} />
-            )}
             {campaign && !['saving', 'editing'].includes(mode) && (
                 <>
                     <div className="card mt-2">

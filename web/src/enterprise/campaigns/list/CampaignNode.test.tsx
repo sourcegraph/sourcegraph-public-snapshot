@@ -17,7 +17,7 @@ describe('CampaignNode', () => {
 
 - and renders in markdown
         `,
-        changesets: { nodes: [{ state: GQL.ChangesetState.OPEN }] },
+        changesets: { nodes: [{ externalState: GQL.ChangesetExternalState.OPEN }] },
         patches: { totalCount: 2 },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
@@ -77,7 +77,10 @@ describe('CampaignNode', () => {
                     node={{
                         ...node,
                         changesets: {
-                            nodes: [{ state: GQL.ChangesetState.OPEN }, { state: GQL.ChangesetState.CLOSED }],
+                            nodes: [
+                                { externalState: GQL.ChangesetExternalState.OPEN },
+                                { externalState: GQL.ChangesetExternalState.CLOSED },
+                            ],
                         },
                     }}
                     now={parseISO('2019-01-01T23:15:01Z')}
