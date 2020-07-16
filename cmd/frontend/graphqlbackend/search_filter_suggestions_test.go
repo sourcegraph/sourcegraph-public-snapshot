@@ -6,8 +6,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
 func TestSearchFilterSuggestions(t *testing.T) {

@@ -31,7 +31,7 @@ exports[`AddChangesetForm renders the form 1`] = `
             Repository path
           </label>
           <input
-            className="form-control mr-1 e2e-track-changeset-repo"
+            className="form-control mr-1 test-track-changeset-repo"
             id="changeset-repo"
             onChange={[Function]}
             placeholder="codehost.example.com/example-org/example-repository"
@@ -65,7 +65,7 @@ exports[`AddChangesetForm renders the form 1`] = `
             Changeset number
           </label>
           <input
-            className="form-control mr-1 e2e-track-changeset-id"
+            className="form-control mr-1 test-track-changeset-id"
             id="changeset-number"
             min={1}
             onChange={[Function]}
@@ -79,7 +79,7 @@ exports[`AddChangesetForm renders the form 1`] = `
         </div>
       </div>
       <button
-        className="btn btn-primary mr-1 e2e-track-changeset-btn"
+        className="btn btn-primary mr-1 test-track-changeset-btn"
         disabled={false}
         type="submit"
       >

@@ -10,9 +10,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -603,4 +603,50 @@ func changesetGitserverRepo(ctx context.Context, c *campaigns.Changeset) (*gitse
 
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
+}
+
+// ComputeLabels returns a sorted list of current labels based the starting set
+// of labels found in the Changeset and looking at ChangesetEvents that have
+// occurred after the Changeset.UpdatedAt.
+// The events should be presorted.
+func ComputeLabels(c *campaigns.Changeset, events ChangesetEvents) []campaigns.ChangesetLabel {
+	var current []campaigns.ChangesetLabel
+	var since time.Time
+	if c != nil {
+		current = c.Labels()
+		since = c.UpdatedAt
+	}
+
+	// Iterate through all label events to get the current set
+	set := make(map[string]campaigns.ChangesetLabel)
+	for _, l := range current {
+		set[l.Name] = l
+	}
+	for _, event := range events {
+		switch e := event.Metadata.(type) {
+		case *github.LabelEvent:
+			if e.CreatedAt.Before(since) {
+				continue
+			}
+			if e.Removed {
+				delete(set, e.Label.Name)
+				continue
+			}
+			set[e.Label.Name] = campaigns.ChangesetLabel{
+				Name:        e.Label.Name,
+				Color:       e.Label.Color,
+				Description: e.Label.Description,
+			}
+		}
+	}
+	labels := make([]campaigns.ChangesetLabel, 0, len(set))
+	for _, label := range set {
+		labels = append(labels, label)
+	}
+
+	sort.Slice(labels, func(i, j int) bool {
+		return labels[i].Name < labels[j].Name
+	})
+
+	return labels
 }

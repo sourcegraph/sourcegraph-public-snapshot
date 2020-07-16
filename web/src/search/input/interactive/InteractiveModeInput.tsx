@@ -220,7 +220,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         const logo = <img className="global-navbar__logo" src={logoSource} />
 
         return (
-            <div className="interactive-mode-input e2e-interactive-mode-input">
+            <div className="interactive-mode-input test-interactive-mode-input">
                 <div className={!homepageMode ? 'interactive-mode-input__top-nav' : ''}>
                     {!homepageMode &&
                         (this.props.authRequired ? (

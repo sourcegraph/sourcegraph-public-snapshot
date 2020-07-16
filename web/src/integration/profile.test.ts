@@ -54,13 +54,13 @@ describe('User profile page', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
         await driver.page.waitForSelector('.user-settings-profile-page')
         await driver.replaceText({
-            selector: '.e2e-user-settings-profile-page__display-name',
+            selector: '.test-user-settings-profile-page__display-name',
             newText: 'Test2',
             selectMethod: 'selectall',
         })
 
         const requestVariables = await testContext.waitForGraphQLRequest(async () => {
-            await driver.page.click('.e2e-user-settings-profile-page-update-profile')
+            await driver.page.click('.test-user-settings-profile-page-update-profile')
         }, 'updateUser')
 
         assert.strictEqual(requestVariables.displayName, 'Test2')

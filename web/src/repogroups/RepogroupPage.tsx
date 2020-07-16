@@ -108,8 +108,8 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     interactiveModeHomepageMode={true}
                 />
             </div>
-            <div className="repogroup-page__content">
-                <div className="repogroup-page__column">
+            <div className="row">
+                <div className="repogroup-page__column col-xs-12 col-lg-7">
                     <p className="repogroup-page__content-description h5 font-weight-normal mb-4">
                         {props.repogroupMetadata.description}
                     </p>
@@ -126,7 +126,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                 </div>
                                 <div className="d-flex">
                                     <button
-                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn e2e-search-button btn-secondary"
+                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn test-search-button btn-secondary"
                                         type="button"
                                         aria-label="Search"
                                         onClick={onSubmitExample(
@@ -141,7 +141,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                         </div>
                     ))}
                 </div>
-                <div className="repogroup-page__column">
+                <div className="repogroup-page__column col-xs-12 col-lg-5">
                     <div className="repogroup-page__repo-card card">
                         <h2 className="font-weight-normal">
                             <SourceRepositoryMultipleIcon className="icon-inline mr-2" />

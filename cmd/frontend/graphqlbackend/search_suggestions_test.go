@@ -8,10 +8,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -49,6 +49,9 @@ func TestSearchSuggestions(t *testing.T) {
 		return nil, nil, nil
 	}
 	defer func() { mockSearchSymbols = nil }()
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
 
 	searchVersions := []string{"V1", "V2"}
 
@@ -125,6 +128,9 @@ func TestSearchSuggestions(t *testing.T) {
 
 	// This test is only valid for Regexp searches. Literal searches won't return suggestions for an invalid regexp.
 	t.Run("single term invalid regex", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		sr, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {
 			t.Fatal(err)

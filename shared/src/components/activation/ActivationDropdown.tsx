@@ -90,7 +90,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                     <>
                         <MenuButton
                             className={classNames(
-                                'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle',
+                                'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle',
                                 { animate: this.state.animate }
                             )}
                         >

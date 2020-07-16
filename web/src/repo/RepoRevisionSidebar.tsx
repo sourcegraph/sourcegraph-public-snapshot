@@ -109,7 +109,7 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                         id="explorer"
                         className={`repo-revision-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-revision-sidebar--open ${this.props.className}--open` : ''
-                        } e2e-repo-revision-sidebar`}
+                        } test-repo-revision-sidebar`}
                         tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >

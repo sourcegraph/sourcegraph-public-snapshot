@@ -115,7 +115,7 @@
 
 # Cloud
 /cmd/frontend/authz/ @sourcegraph/cloud
-/cmd/frontend/db/ @sourcegraph/cloud
+/internal/db/ @sourcegraph/cloud
 /cmd/frontend/globals/ @sourcegraph/cloud @slimsag
 /cmd/frontend/graphqlbackend/ @sourcegraph/cloud @slimsag
 /cmd/frontend/internal/bg/ @sourcegraph/cloud @slimsag
@@ -123,7 +123,7 @@
 /cmd/gitserver/ @sourcegraph/cloud
 /cmd/repo-updater/ @sourcegraph/cloud
 /enterprise/cmd/frontend/authz/ @sourcegraph/cloud
-/enterprise/cmd/frontend/db/ @sourcegraph/cloud
+/enterprise/internal/db/ @sourcegraph/cloud
 /enterprise/cmd/frontend/internal/authz/ @sourcegraph/cloud
 /enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/cloud @slimsag
 /enterprise/cmd/repo-updater/ @sourcegraph/cloud
@@ -226,13 +226,6 @@ Dockerfile @sourcegraph/distribution
 /internal/metrics @keegancsmith @slimsag
 /internal/logging @keegancsmith @slimsag
 /internal/observation @keegancsmith @slimsag
-
-# Code discussions
-**/*discussion* @slimsag
-/cmd/frontend/types/discussions.go @slimsag
-/cmd/frontend/internal/pkg/discussions @slimsag
-/cmd/frontend/graphqlbackend/discussion* @slimsag
-/cmd/frontend/db/discussion* @slimsag
 
 # Precise code intel
 /enterprise/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel

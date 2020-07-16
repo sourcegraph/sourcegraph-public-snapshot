@@ -11,7 +11,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -20,8 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -185,7 +183,7 @@ type changesetResolver struct {
 
 	// cache changeset events as they are used more than once
 	eventsOnce sync.Once
-	events     []*campaigns.ChangesetEvent
+	events     ee.ChangesetEvents
 	eventsErr  error
 
 	// When the next sync is scheduled
@@ -241,7 +239,10 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 			Limit:        -1,
 		}
 		es, _, err := r.store.ListChangesetEvents(ctx, opts)
+
 		r.events = es
+		sort.Sort(r.events)
+
 		r.eventsErr = err
 	})
 	return r.events, r.eventsErr
@@ -326,25 +327,21 @@ func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.Changese
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
-	// Only GitHub and Gitlab support labels on changesets so don't make a DB call unless we need to.
-	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
-		if _, ok := r.Changeset.Metadata.(*gitlab.MergeRequest); !ok {
-			return []graphqlbackend.ChangesetLabelResolver{}, nil
-		}
+	// Not every code host supports labels on changesets so don't make a DB call unless we need to.
+	if ok := r.Changeset.SupportsLabels(); !ok {
+		return []graphqlbackend.ChangesetLabelResolver{}, nil
 	}
+
 	es, err := r.computeEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	// We use changeset labels as the source of truth as they can be renamed
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	events := ee.ChangesetEvents(es)
-	labels := events.UpdateLabelsSince(r.Changeset)
-	sort.Slice(labels, func(i, j int) bool {
-		return labels[i].Name < labels[j].Name
-	})
+	labels := ee.ComputeLabels(r.Changeset, es)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})

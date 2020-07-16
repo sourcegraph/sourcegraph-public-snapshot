@@ -636,7 +636,7 @@ dlv attach $(pgrep frontend)
 
 Delve will pause the process once it attaches the debugger. Most used [commands](https://github.com/go-delve/delve/tree/master/Documentation/cli):
 
-- `b cmd/frontend/db/access_tokens.go:52` to set a breakpoint on a line (`bp` lists all, `clearall` deletes all)
+- `b internal/db/access_tokens.go:52` to set a breakpoint on a line (`bp` lists all, `clearall` deletes all)
 - `c` to continue execution of the program
 - `Ctrl-C` pause the program to bring back the command prompt
 - `n` to step over the next statement

@@ -2,7 +2,7 @@
 
 exports[`PatchNode renders a patch with publishing disabled and publishable: disabled 1`] = `
 <li
-  className="list-group-item e2e-changeset-node"
+  className="list-group-item test-changeset-node"
 >
   <Collapsible
     expandedButtonClassName="mb-3"
@@ -85,7 +85,7 @@ exports[`PatchNode renders a patch with publishing disabled and publishable: dis
 
 exports[`PatchNode renders a patch with publishing disabled and publishable: enabled 1`] = `
 <li
-  className="list-group-item e2e-changeset-node"
+  className="list-group-item test-changeset-node"
 >
   <Collapsible
     expandedButtonClassName="mb-3"
@@ -162,7 +162,7 @@ exports[`PatchNode renders a patch with publishing disabled and publishable: ena
 
 exports[`PatchNode renders a patch with publishing enabled and publishable: disabled 1`] = `
 <li
-  className="list-group-item e2e-changeset-node"
+  className="list-group-item test-changeset-node"
 >
   <Collapsible
     expandedButtonClassName="mb-3"
@@ -256,7 +256,7 @@ exports[`PatchNode renders a patch with publishing enabled and publishable: disa
 
 exports[`PatchNode renders a patch with publishing enabled and publishable: enabled 1`] = `
 <li
-  className="list-group-item e2e-changeset-node"
+  className="list-group-item test-changeset-node"
 >
   <Collapsible
     expandedButtonClassName="mb-3"
@@ -344,7 +344,7 @@ exports[`PatchNode renders a patch with publishing enabled and publishable: enab
 
 exports[`PatchNode renders a patch without a filediff 1`] = `
 <li
-  className="list-group-item e2e-changeset-node"
+  className="list-group-item test-changeset-node"
 >
   <div
     className="changeset-node__content changeset-node__content--no-collapse flex-fill"
