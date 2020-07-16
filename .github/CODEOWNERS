@@ -115,9 +115,7 @@
 
 # Cloud
 /cmd/frontend/authz/ @sourcegraph/cloud
-/internal/db/ @sourcegraph/cloud
 /cmd/frontend/globals/ @sourcegraph/cloud @slimsag
-/cmd/frontend/graphqlbackend/ @sourcegraph/cloud @slimsag
 /cmd/frontend/internal/bg/ @sourcegraph/cloud @slimsag
 /cmd/github-proxy/ @sourcegraph/cloud
 /cmd/gitserver/ @sourcegraph/cloud
@@ -125,9 +123,7 @@
 /enterprise/cmd/frontend/authz/ @sourcegraph/cloud
 /enterprise/internal/db/ @sourcegraph/cloud
 /enterprise/cmd/frontend/internal/authz/ @sourcegraph/cloud
-/enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/cloud @slimsag
 /enterprise/cmd/repo-updater/ @sourcegraph/cloud
-/internal/api/ @sourcegraph/cloud
 /internal/extsvc/ @sourcegraph/cloud
 /internal/gitserver/ @sourcegraph/cloud
 /internal/jsonc/ @sourcegraph/cloud @tsenart @slimsag
@@ -135,8 +131,6 @@
 /internal/trace/ @sourcegraph/cloud
 /internal/tracer/ @sourcegraph/cloud
 /internal/vcs/ @sourcegraph/cloud
-/migrations/ @sourcegraph/cloud
-/schema/ @sourcegraph/cloud
 
 # Backend e2e tests
 /dev/e2e/ @unknwon
@@ -256,7 +250,7 @@ Dockerfile @sourcegraph/distribution
 /dev/licenses.sh @sourcegraph/distribution
 
 # Changes to the GraphQL API should be approved by both the team owning the backend and the consumers
-/cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web @sourcegraph/cloud
+/cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web
 
 # These are configured through Renovate config.
 # See ../renovate.json and https://github.com/sourcegraph/renovate-config/blob/master/renovate.json
@@ -264,8 +258,6 @@ Dockerfile @sourcegraph/distribution
 **/package.json
 **/yarn.lock
 
-/go.sum @sourcegraph/cloud
-/go.mod @sourcegraph/cloud
 /CHANGELOG.md
 
 /.tool-versions @sourcegraph/distribution
