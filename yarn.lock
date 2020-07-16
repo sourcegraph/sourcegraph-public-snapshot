@@ -1906,27 +1906,27 @@
   dependencies:
     esquery "^1.0.1"
 
-"@pollyjs/adapter-puppeteer@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/adapter-puppeteer/-/adapter-puppeteer-4.3.0.tgz#9104172b2da360d0ab36429622b4c6730dea2a65"
-  integrity sha512-vxrUdO7Hm+wvVgB8vatWQpHK2DuMrGt0ikyca8/eXIyyf78wRvX+W6vjZZPHu4yVC+REzyEiJXVleLVME25ZPQ==
+"@pollyjs/adapter-puppeteer@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/adapter-puppeteer/-/adapter-puppeteer-5.0.0.tgz#cca1d4a553af1287768dc2d6b3ed6371530dc219"
+  integrity sha512-f/DkOULohx1F7by8jWK3dPRzk2VDOvJFxscy7X5YDNwvccOPuyhpsU5Dmde/sgWRYbfUUzAarc7cVgRnTYbhow==
   dependencies:
-    "@pollyjs/adapter" "^4.3.0"
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/adapter" "^5.0.0"
+    "@pollyjs/utils" "^5.0.0"
 
-"@pollyjs/adapter@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/adapter/-/adapter-4.3.0.tgz#42a000125064bc82b4248130caf2366a008de128"
-  integrity sha512-8/kELw/esDY+Mi6xiYRSX3EHKoVmPeqjRYk7DHFbHhXoMs6ENrPS0ay8Ajl0KHppAnutTk4YLqaI/3VqFCR5iw==
+"@pollyjs/adapter@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/adapter/-/adapter-5.0.0.tgz#faba5a7e68db38f56b4bf04271d8f5a10d5ca8c2"
+  integrity sha512-GaJUp9hKKKbRbh1FDbjVfxNGIYs8/1QQI5SR+zjz+OjpjV2btRPFCq1cqO4ORrHA2pTIC8IvEL3lgPSG4v/cPg==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
 
-"@pollyjs/core@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/core/-/core-4.3.0.tgz#1043085972131465e651f867ca895e6c787640a0"
-  integrity sha512-8Fs0Lg19P39oO/GvzWoC/fkckrCSx9rL5DPmU4Ez/Q+WXnDzmWtHI1x/jmD+jv5JLc2ig/ueWugIpE0f9eZbAQ==
+"@pollyjs/core@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/core/-/core-5.0.0.tgz#5e61c34ce78245fe6f80768d90ce4ab135a8ec2c"
+  integrity sha512-f/v5z7aKSWdeBCZQFiQGL4aZmdWAuQWV+U/fMbAIEYjkX8Av0gWPhkFyeMfeFriYMg7Ts1XxPNI7LYroCnjn7w==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
     "@sindresorhus/fnv1a" "^1.2.0"
     blueimp-md5 "^2.10.0"
     fast-json-stable-stringify "^2.0.0"
@@ -1935,12 +1935,12 @@
     route-recognizer "^0.3.4"
     slugify "^1.3.4"
 
-"@pollyjs/node-server@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/node-server/-/node-server-4.3.0.tgz#f822e66110e71eb25fbe476951fdc764d2417395"
-  integrity sha512-pGrX889RkJXleW7p1cMKJqEtuasABbosneU9VrHOUYOMlYnObIOTt5y/n3m0NMAh9SyyusgqC7yQ18/PnMCgfg==
+"@pollyjs/node-server@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/node-server/-/node-server-5.0.0.tgz#b4b8cb12cd2777b4ad4406ab6dcc7c1d539f7db7"
+  integrity sha512-DK1hqsZnIU7TXECNPI6E+ojaSpv62lt3+8eGn3qFbsa61ToTFQLFEMNfcTWA6ZXArrpdzYAdKVTt8BsdEujHkg==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
     body-parser "^1.19.0"
     cors "^2.8.5"
     express "^4.17.1"
@@ -1949,30 +1949,30 @@
     morgan "^1.9.1"
     nocache "^2.1.0"
 
-"@pollyjs/persister-fs@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/persister-fs/-/persister-fs-4.3.0.tgz#d6eb718a6b3e027c7071b59f4300b26961b36a07"
-  integrity sha512-2DUIyl/3mr5F1Orq6bnpW6Witz2I8ulMGsqCFrlh4LaA4DlSg2SwOv88bbjzMCfqGP1CN3U5Zu8o7tZlFxkd8w==
+"@pollyjs/persister-fs@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/persister-fs/-/persister-fs-5.0.0.tgz#eaa1d4a672a9920b93c9238870aa899149f748d0"
+  integrity sha512-ju75JJ6sSJ/q68rB74wxIlvXCq/riuCqW3pS/Ucd4SFfks/HxXxM3yGTHn0Qq5SrmY9cYbQFfpOz0WCNDIqr+A==
   dependencies:
-    "@pollyjs/node-server" "^4.3.0"
-    "@pollyjs/persister" "^4.3.0"
+    "@pollyjs/node-server" "^5.0.0"
+    "@pollyjs/persister" "^5.0.0"
 
-"@pollyjs/persister@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/persister/-/persister-4.3.0.tgz#cd62b6d3c7deae5f6eabdfb107bb76ed4389b8e6"
-  integrity sha512-oKTl++rZdT/5tMoeHMsgUAHjnRf/4qLNv7kc7u8ddldjgZ4eDAIWlG6BwFkhDxjhV+ofVlnLxFnRjmK4qrrmqA==
+"@pollyjs/persister@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/persister/-/persister-5.0.0.tgz#36b85aba8d9a252e3125b257d7c1ec33d015d8fd"
+  integrity sha512-bTJes0c2/y4xrXi1vPypJhup/N/VPC1jY7maOuSv4pOFo6VAvoVJGT2sgMMnPU7qHSRn9Y6v+S7QqGtLOZCyAA==
   dependencies:
-    "@pollyjs/utils" "^4.3.0"
+    "@pollyjs/utils" "^5.0.0"
     bowser "^2.4.0"
     fast-json-stable-stringify "^2.0.0"
     lodash-es "^4.17.11"
     set-cookie-parser "^2.3.5"
     utf8-byte-length "^1.0.4"
 
-"@pollyjs/utils@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@pollyjs/utils/-/utils-4.3.0.tgz#c7c709bfc40836d9c3f7c3b89b8e54da7e364b0f"
-  integrity sha512-8BYWtP4nK6mAlDgZQ8j2+EZjQH2beoHaHnZDyG7GdspOLeILtXhHLeAxp371YSKN387t7OEBS0nIQSMppHuTQg==
+"@pollyjs/utils@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/@pollyjs/utils/-/utils-5.0.0.tgz#c001f93865db82780dd17642c54e3919260c0034"
+  integrity sha512-zXoR13NGR1fVoUAcKR9/8AYCXZsMkG5EdvTZbR1nk5hCYJN1AR73HAKXMPsk/2vkLnBr6LWoAr3f9LjwqJOehQ==
   dependencies:
     qs "^6.7.0"
     url-parse "^1.4.7"
@@ -2303,8 +2303,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -20165,13 +20164,12 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 sourcegraph@^24.0.0:
-  version "24.6.0"
-  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.6.0.tgz#d6343a0a52c2e3c20a3d7bbcadde712bbdf4a931"
-  integrity sha512-FEmuGVRcSqMtE5DItZcDa1ylm7FykcswIN6M6xa0vFbyLv6INYxjGYOGq/WlH4/AUQC0abmaysPXlyJRkGgMyg==
+  version "24.7.0"
+  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.7.0.tgz#24cf034f055d1a951f0b081e2d0a4338df650420"
+  integrity sha512-PlGvkdBy5r5iHdKAVNY/jsPgWb3oY+2iAdIQ3qR83UHhvBFVgoctDAnyfJ1eMstENY3etBWtAJ8Kleoar3ecaA==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.7.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
