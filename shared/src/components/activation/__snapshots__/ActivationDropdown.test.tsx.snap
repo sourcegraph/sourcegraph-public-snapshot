@@ -173,7 +173,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               background={false}
               backgroundPadding={0}
               circleRatio={1}
-              className="activation-dropdown-button__circular-progress-bar"
+              className="activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
               classes={
                 Object {
                   "background": "CircularProgressbar-background",
@@ -200,7 +200,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               value={0}
             >
               <svg
-                className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                className="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                 data-test-id="CircularProgressbar"
                 style={Object {}}
                 viewBox="0 0 100 100"
@@ -300,7 +300,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                   class="activation-dropdown-button__progress-bar-container"
                 >
                   <svg
-                    class="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                    class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                     data-test-id="CircularProgressbar"
                     viewBox="0 0 100 100"
                   >
@@ -766,7 +766,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         class="activation-dropdown-button__progress-bar-container"
                       >
                         <svg
-                          class="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+                          class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                           data-test-id="CircularProgressbar"
                           viewBox="0 0 100 100"
                         >
