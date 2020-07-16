@@ -2,7 +2,6 @@ package workerutil
 
 import (
 	"context"
-	"database/sql"
 	"sort"
 	"testing"
 	"time"
@@ -14,11 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "workerutil"
-}
-
-func TestDequeueState(t *testing.T) {
+func TestStoreDequeueState(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -37,7 +32,7 @@ func TestDequeueState(t *testing.T) {
 	assertDequeueRecordResult(t, 4, record, tx, ok, err)
 }
 
-func TestDequeueOrder(t *testing.T) {
+func TestStoreDequeueOrder(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -56,7 +51,7 @@ func TestDequeueOrder(t *testing.T) {
 	assertDequeueRecordResult(t, 2, record, tx, ok, err)
 }
 
-func TestDequeueConditions(t *testing.T) {
+func TestStoreDequeueConditions(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -76,7 +71,7 @@ func TestDequeueConditions(t *testing.T) {
 	assertDequeueRecordResult(t, 3, record, tx, ok, err)
 }
 
-func TestDequeueDelay(t *testing.T) {
+func TestStoreDequeueDelay(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -95,7 +90,7 @@ func TestDequeueDelay(t *testing.T) {
 	assertDequeueRecordResult(t, 4, record, tx, ok, err)
 }
 
-func TestDequeueView(t *testing.T) {
+func TestStoreDequeueView(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -129,7 +124,7 @@ func TestDequeueView(t *testing.T) {
 	assertDequeueRecordViewResult(t, 2, 14, record, tx, ok, err)
 }
 
-func TestDequeueConcurrent(t *testing.T) {
+func TestStoreDequeueConcurrent(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -180,7 +175,7 @@ func TestDequeueConcurrent(t *testing.T) {
 	}
 }
 
-func TestRequeue(t *testing.T) {
+func TestStoreRequeue(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -221,7 +216,237 @@ func TestRequeue(t *testing.T) {
 	}
 }
 
-func TestResetStalled(t *testing.T) {
+func TestStoreMarkComplete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore(defaultTestStoreOptions)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'processing')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	marked, err := store.MarkComplete(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+	if !marked {
+		t.Fatalf("expected record to be marked")
+	}
+
+	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	if err != nil {
+		t.Fatalf("unexpected error querying record: %s", err)
+	}
+	defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+	if !rows.Next() {
+		t.Fatal("expected record to exist")
+	}
+
+	var state string
+	var failureMessage *string
+	if err := rows.Scan(&state, &failureMessage); err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if state != "completed" {
+		t.Errorf("unexpected state. want=%q have=%q", "completed", state)
+	}
+	if failureMessage != nil {
+		t.Errorf("unexpected failure message. want=%v have=%v", nil, failureMessage)
+	}
+}
+
+func TestStoreMarkCompleteNotProcessing(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore(defaultTestStoreOptions)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, failure_message)
+		VALUES
+			(1, 'errored', 'old message')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	marked, err := store.MarkComplete(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+	if marked {
+		t.Fatalf("expected record not to be marked")
+	}
+
+	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	if err != nil {
+		t.Fatalf("unexpected error querying record: %s", err)
+	}
+	defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+	if !rows.Next() {
+		t.Fatal("expected record to exist")
+	}
+
+	var state string
+	var failureMessage *string
+	if err := rows.Scan(&state, &failureMessage); err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if state != "errored" {
+		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
+	}
+	if failureMessage == nil || *failureMessage != "old message" {
+		t.Errorf("unexpected failure message. want=%v have=%v", "old message", failureMessage)
+	}
+}
+
+func TestStoreMarkErrored(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore(defaultTestStoreOptions)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'processing')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	marked, err := store.MarkErrored(context.Background(), 1, "new message")
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+	if !marked {
+		t.Fatalf("expected record to be marked")
+	}
+
+	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	if err != nil {
+		t.Fatalf("unexpected error querying record: %s", err)
+	}
+	defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+	if !rows.Next() {
+		t.Fatal("expected record to exist")
+	}
+
+	var state string
+	var failureMessage *string
+	if err := rows.Scan(&state, &failureMessage); err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if state != "errored" {
+		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
+	}
+	if failureMessage == nil || *failureMessage != "new message" {
+		t.Errorf("unexpected failure message. want=%v have=%v", "new message", failureMessage)
+	}
+}
+
+func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore(defaultTestStoreOptions)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'completed')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	marked, err := store.MarkErrored(context.Background(), 1, "new message")
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+	if !marked {
+		t.Fatalf("expected record to be marked")
+	}
+
+	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	if err != nil {
+		t.Fatalf("unexpected error querying record: %s", err)
+	}
+	defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+	if !rows.Next() {
+		t.Fatal("expected record to exist")
+	}
+
+	var state string
+	var failureMessage *string
+	if err := rows.Scan(&state, &failureMessage); err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if state != "errored" {
+		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
+	}
+	if failureMessage == nil || *failureMessage != "new message" {
+		t.Errorf("unexpected failure message. want=%v have=%v", "new message", failureMessage)
+	}
+}
+
+func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore(defaultTestStoreOptions)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, failure_message)
+		VALUES
+			(1, 'errored', 'old message')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	marked, err := store.MarkErrored(context.Background(), 1, "new message")
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+	if marked {
+		t.Fatalf("expected record not to be marked")
+	}
+
+	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	if err != nil {
+		t.Fatalf("unexpected error querying record: %s", err)
+	}
+	defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+	if !rows.Next() {
+		t.Fatal("expected record to exist")
+	}
+
+	var state string
+	var failureMessage *string
+	if err := rows.Scan(&state, &failureMessage); err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if state != "errored" {
+		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
+	}
+	if failureMessage == nil || *failureMessage != "old message" {
+		t.Errorf("unexpected failure message. want=%v have=%v", "old message", failureMessage)
+	}
+}
+
+func TestStoreResetStalled(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -302,138 +527,4 @@ func TestResetStalled(t *testing.T) {
 	if state != "errored" {
 		t.Errorf("unexpected state. want=%q have=%q", "errored", state)
 	}
-}
-
-func testStore(options StoreOptions) *Store {
-	return NewStore(basestore.NewHandleWithDB(dbconn.Global), options)
-}
-
-type TestRecord struct {
-	ID    int
-	State string
-}
-
-func testScanFirstRecord(rows *sql.Rows, queryErr error) (v interface{}, _ bool, err error) {
-	if queryErr != nil {
-		return nil, false, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var record TestRecord
-		if err := rows.Scan(&record.ID, &record.State); err != nil {
-			return nil, false, err
-		}
-
-		return record, true, nil
-	}
-
-	return nil, false, nil
-}
-
-type TestRecordView struct {
-	ID       int
-	State    string
-	NewField int
-}
-
-func testScanFirstRecordView(rows *sql.Rows, queryErr error) (v interface{}, exists bool, err error) {
-	if queryErr != nil {
-		return nil, false, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var record TestRecordView
-		if err := rows.Scan(&record.ID, &record.State, &record.NewField); err != nil {
-			return nil, false, err
-		}
-
-		return record, true, nil
-	}
-
-	return nil, false, nil
-}
-
-func setupStoreTest(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-
-	if _, err := dbconn.Global.Exec(`
-		CREATE TABLE IF NOT EXISTS workerutil_test (
-			id              integer NOT NULL,
-			state           text NOT NULL,
-			failure_message text,
-			started_at      timestamp with time zone,
-			finished_at     timestamp with time zone,
-			process_after   timestamp with time zone,
-			num_resets      integer NOT NULL default 0,
-			uploaded_at     timestamp with time zone NOT NULL default NOW()
-		)
-	`); err != nil {
-		t.Fatalf("unexpected error creating test table: %s", err)
-	}
-
-	if _, err := dbconn.Global.Exec(`
-		CREATE OR REPLACE VIEW workerutil_test_view AS (
-			SELECT w.*, (w.id * 7) as new_field FROM workerutil_test w
-		)
-	`); err != nil {
-		t.Fatalf("unexpected error creating test table: %s", err)
-	}
-}
-
-var defaultTestStoreOptions = StoreOptions{
-	TableName:         "workerutil_test w",
-	Scan:              testScanFirstRecord,
-	OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
-	ColumnExpressions: []*sqlf.Query{
-		sqlf.Sprintf("w.id"),
-		sqlf.Sprintf("w.state"),
-	},
-	StalledMaxAge: time.Second * 5,
-	MaxNumResets:  5,
-}
-
-func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, tx *Store, ok bool, err error) {
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected a dequeueable record")
-	}
-	defer func() { _ = tx.Done(nil) }()
-
-	if val := record.(TestRecord).ID; val != expectedID {
-		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
-	}
-	if val := record.(TestRecord).State; val != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
-	}
-}
-
-func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, tx *Store, ok bool, err error) {
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected a dequeueable record")
-	}
-	defer func() { _ = tx.Done(nil) }()
-
-	if val := record.(TestRecordView).ID; val != expectedID {
-		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
-	}
-	if val := record.(TestRecordView).State; val != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
-	}
-	if val := record.(TestRecordView).NewField; val != expectedNewField {
-		t.Errorf("unexpected new field. want=%d have=%d", expectedNewField, val)
-	}
-}
-
-func testNow() time.Time {
-	return time.Now().UTC().Truncate(time.Second)
 }

@@ -10,10 +10,56 @@ import (
 )
 
 // Store is the database layer for the workerutil package that handles worker-side operations.
-type Store struct {
+type Store interface {
+	basestore.ShareableStore
+
+	// Done performs a commit or rollback of the underlying the transaction/savepoint depending
+	// returned from the Dequeue method. See basestore.Store#Done for additional documentation.
+	Done(err error) error
+
+	// Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
+	// should be held by the worker process. If there is such an record, it is returned along with a new store instance
+	// that wraps the transaction. The resulting transaction must be closed by the caller, and the transaction should
+	// include a state transition of the record into a terminal state. If there is no such unlocked record, a nil record
+	// and a nil store will be returned along with a  false-valued flag. This method must not be called from within a
+	// transaction.
+	//
+	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
+	Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, tx Store, exists bool, err error)
+
+	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
+	// the next dequeue of this record can be performed.
+	Requeue(ctx context.Context, id int, after time.Time) error
+
+	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
+	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
+	// indicating if the record was updated.
+	MarkComplete(ctx context.Context, id int) (bool, error)
+
+	// MarkErrored attempts to update the state of the record to errored. This method will only have an effect
+	// if the current state of the record is processing or completed. A requeued record or a record already marked
+	// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
+	MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error)
+
+	// ResetStalled moves all unlocked records in the processing state for more than `StalledMaxAge` back to the queued
+	// state. In order to prevent input that continually crashes worker instances, records that have been reset more
+	// than `MaxNumResets` times will be marked as errored. This method returns a list of record identifiers that have
+	// been reset and a list of record identifiers that have been marked as errored.
+	ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error)
+}
+
+// Record is a generic interface for record conforming to the requirements of the store.
+type Record interface {
+	// RecordID returns the integer primary key of the record.
+	RecordID() int
+}
+
+type store struct {
 	*basestore.Store
 	options StoreOptions
 }
+
+var _ Store = &store{}
 
 // StoreOptions configure the behavior of Store over a particular set of tables, columns, and expressions.
 type StoreOptions struct {
@@ -80,31 +126,32 @@ type StoreOptions struct {
 // value if the given error value is nil.
 //
 // See the `CloseRows` function in the store/base package for suggested implementation details.
-type RecordScanFn func(rows *sql.Rows, err error) (interface{}, bool, error)
+type RecordScanFn func(rows *sql.Rows, err error) (Record, bool, error)
 
 // NewStore creates a new store with the given database handle and options.
-func NewStore(handle *basestore.TransactableHandle, options StoreOptions) *Store {
+func NewStore(handle *basestore.TransactableHandle, options StoreOptions) Store {
+	return newStore(handle, options)
+}
+
+// newStore creates a new store with the given database handle and options.
+func newStore(handle *basestore.TransactableHandle, options StoreOptions) *store {
 	if options.ViewName == "" {
 		options.ViewName = options.TableName
 	}
 
-	return &Store{
+	return &store{
 		Store:   basestore.NewWithHandle(handle),
 		options: options,
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other)}
-}
-
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
+func (s *store) Transact(ctx context.Context) (*store, error) {
 	txBase, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{Store: txBase, options: s.options}, nil
+	return &store{Store: txBase, options: s.options}, nil
 }
 
 // Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
@@ -115,7 +162,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 // transaction.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *Store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record interface{}, tx *Store, exists bool, err error) {
+func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, _ Store, exists bool, err error) {
 	if s.InTransaction() {
 		return nil, nil, false, ErrDequeueTransaction
 	}
@@ -141,7 +188,7 @@ func (s *Store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record i
 
 		// Once we have an eligible identifier, we try to create a transaction and select the
 		// record in a way that takes a row lock for the duration of the transaction.
-		tx, err = s.Transact(ctx)
+		tx, err := s.Transact(ctx)
 		if err != nil {
 			return nil, nil, false, err
 		}
@@ -232,7 +279,7 @@ LIMIT 1
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 // the next dequeue of this record can be performed.
-func (s *Store) Requeue(ctx context.Context, id int, after time.Time) error {
+func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
 	return s.Exec(ctx, sqlf.Sprintf(
 		requeueQuery,
 		quote(s.options.TableName),
@@ -248,25 +295,57 @@ SET state = 'queued', process_after = %s
 WHERE id = %s
 `
 
+// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
+// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
+// indicating if the record was updated.
+func (s *store) MarkComplete(ctx context.Context, id int) (bool, error) {
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(markCompleteQuery, quote(s.options.TableName), id)))
+	return ok, err
+}
+
+const markCompleteQuery = `
+-- source: internal/workerutil/store.go:MarkComplete
+UPDATE %s
+SET state = 'completed', finished_at = clock_timestamp()
+WHERE id = %s AND state = 'processing'
+RETURNING id
+`
+
+// MarkErrored attempts to update the state of the record to errored. This method will only have an effect
+// if the current state of the record is processing or completed. A requeued record or a record already marked
+// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
+func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error) {
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(markErroredQuery, quote(s.options.TableName), failureMessage, id)))
+	return ok, err
+}
+
+const markErroredQuery = `
+-- source: internal/workerutil/store.go:MarkErrored
+UPDATE %s
+SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
+WHERE id = %s AND (state = 'processing' OR state = 'completed')
+RETURNING id
+`
+
 // ResetStalled moves all unlocked records in the processing state for more than `StalledMaxAge` back to the queued
 // state. In order to prevent input that continually crashes worker instances, records that have been reset more
 // than `MaxNumResets` times will be marked as errored. This method returns a list of record identifiers that have
 // been reset and a list of record identifiers that have been marked as errored.
-func (s *Store) ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error) {
+func (s *store) ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, err error) {
 	resetIDs, err = s.resetStalled(ctx, resetStalledQuery)
 	if err != nil {
-		return nil, nil, err
+		return resetIDs, erroredIDs, err
 	}
 
 	erroredIDs, err = s.resetStalled(ctx, resetStalledMaxResetsQuery)
 	if err != nil {
-		return nil, nil, err
+		return resetIDs, erroredIDs, err
 	}
 
 	return resetIDs, erroredIDs, nil
 }
 
-func (s *Store) resetStalled(ctx context.Context, q string) ([]int, error) {
+func (s *store) resetStalled(ctx context.Context, q string) ([]int, error) {
 	return basestore.ScanInts(s.Query(
 		ctx,
 		sqlf.Sprintf(

@@ -34,6 +34,10 @@ type Upload struct {
 	Rank           *int       `json:"placeInQueue"`
 }
 
+func (u Upload) RecordID() int {
+	return u.ID
+}
+
 // scanUploads scans a slice of uploads from the return value of `*store.query`.
 func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 	if queryErr != nil {
@@ -91,6 +95,11 @@ func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
 
 // scanFirstUploadInterface scans a slice of uploads from the return value of `*store.query` and returns the first.
 func scanFirstUploadInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
+	return scanFirstUpload(rows, err)
+}
+
+// scanFirstUploadRecord scans a slice of uploads from the return value of `*store.query` and returns the first.
+func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstUpload(rows, err)
 }
 
@@ -507,12 +516,16 @@ func (s *store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, 
 	return s.makeUploadWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeUploadWorkQueueStore() *workerutil.Store {
+func (s *store) makeUploadWorkQueueStore() workerutil.Store {
+	return WorkerutilUploadStore(s)
+}
+
+func WorkerutilUploadStore(s Store) workerutil.Store {
 	return workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
 		TableName:         "lsif_uploads",
 		ViewName:          "lsif_uploads_with_repository_name u",
 		ColumnExpressions: uploadColumnsWithNullRank,
-		Scan:              scanFirstUploadInterface,
+		Scan:              scanFirstUploadRecord,
 		OrderByExpression: sqlf.Sprintf("uploaded_at"),
 		StalledMaxAge:     StalledUploadMaxAge,
 		MaxNumResets:      UploadMaxNumResets,
