@@ -411,6 +411,10 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			input: "[--0]",
 			want:  "^[--0]$",
 		},
+		{
+			input: "",
+			want:  "",
+		},
 	}
 
 	for _, c := range cases {

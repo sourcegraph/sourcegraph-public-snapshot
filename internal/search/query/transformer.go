@@ -132,6 +132,10 @@ var globSpecialSymbols = map[rune]struct{}{
 // globToRegex converts a glob string to a regular expression.
 // We support: *, ?, and character classes [...].
 func globToRegex(value string) (string, error) {
+	if value == "" {
+		return value, nil
+	}
+
 	r := []rune(value)
 	l := len(r)
 	sb := strings.Builder{}
