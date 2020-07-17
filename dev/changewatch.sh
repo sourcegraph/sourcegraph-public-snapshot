@@ -12,9 +12,4 @@ if [ ! -x "$(command -v watchman)" ]; then
   exit 1
 fi
 
-set -e
-pushd dev/watchmanwrapper
-go build
-popd
-
-exec dev/watchmanwrapper/watchmanwrapper dev/handle-change.sh < dev/watchmanwrapper/watch.json
+exec go run ./dev/watchmanwrapper dev/handle-change.sh < dev/watchmanwrapper/watch.json
