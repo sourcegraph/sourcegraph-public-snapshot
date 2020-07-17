@@ -60,10 +60,11 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
-We have sample GitHub Action configurations for
-[golang/go](https://github.com/sourcegraph-codeintel-showcase/go/blob/f40606b1241b0ca4802d7b00a763241b03404eea/.github/workflows/lsif.yml),
-[kubernetes/kubernetes](https://github.com/sourcegraph-codeintel-showcase/kubernetes/blob/359b6469d85cc7cd4f6634e50651633eefeaea4e/.github/workflows/lsif.yml), and
-[moby/moby](https://github.com/sourcegraph-codeintel-showcase/moby/blob/380429abb05846de773d5aa07de052f40c9e8208/.github/workflows/lsif.yml).
+The following projects have example GitHub Action workflows to generate and upload LSIF indexes.
+
+- [golang/go](https://github.com/sourcegraph-codeintel-showcase/go/blob/f40606b1241b0ca4802d7b00a763241b03404eea/.github/workflows/lsif.yml)
+- [kubernetes/kubernetes](https://github.com/sourcegraph-codeintel-showcase/kubernetes/blob/359b6469d85cc7cd4f6634e50651633eefeaea4e/.github/workflows/lsif.yml)
+- [moby/moby](https://github.com/sourcegraph-codeintel-showcase/moby/blob/380429abb05846de773d5aa07de052f40c9e8208/.github/workflows/lsif.yml)
 
 ### CircleCI
 
@@ -87,10 +88,11 @@ workflows:
       - lsif-node
 ```
 
-We have sample CircleCI configurations for
-[grafana](https://github.com/sourcegraph-codeintel-showcase/grafana/blob/664a694955ea40575a1cffe9db47a7adf4d3c2bb/.circleci/config.yml),
-[helm](https://github.com/sourcegraph-codeintel-showcase/helm/blob/62c38f152d0802719aad1ec4c1c281f01dc75173/.circleci/config.yml), and
-[prometheus/prometheus](https://github.com/sourcegraph-codeintel-showcase/prometheus/blob/a0a8a249fff9d1c6ce4c097ccc4f5e120c723c51/.circleci/config.yml).
+The following projects have example CircleCI configurations to generate and upload LSIF indexes.
+
+- [grafana](https://github.com/sourcegraph-codeintel-showcase/grafana/blob/664a694955ea40575a1cffe9db47a7adf4d3c2bb/.circleci/config.yml)
+- [helm](https://github.com/sourcegraph-codeintel-showcase/helm/blob/62c38f152d0802719aad1ec4c1c281f01dc75173/.circleci/config.yml)
+- [prometheus/prometheus](https://github.com/sourcegraph-codeintel-showcase/prometheus/blob/a0a8a249fff9d1c6ce4c097ccc4f5e120c723c51/.circleci/config.yml)
 
 ### Travis CI
 
@@ -109,7 +111,8 @@ jobs:
           "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN -ignore-upload-failures"
 ```
 
-We have sample Travis CI configurations for
-[aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml),
-[etcd-io/etcd](https://github.com/sourcegraph-codeintel-showcase/etcd/blob/eae726706fe8ebf7e08b45ba29a70388595db31b/.travis.yml), and
-[hugo/hugo](https://github.com/sourcegraph-codeintel-showcase/hugo/blob/6704b7c125d7b21ccf2048d7bff0f1ffe2b0867d/.travis.yml).
+The following projects have example Travis CI configurations to generate and upload LSIF indexes.
+
+- [aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml)
+- [etcd-io/etcd](https://github.com/sourcegraph-codeintel-showcase/etcd/blob/eae726706fe8ebf7e08b45ba29a70388595db31b/.travis.yml)
+- [hugo/hugo](https://github.com/sourcegraph-codeintel-showcase/hugo/blob/6704b7c125d7b21ccf2048d7bff0f1ffe2b0867d/.travis.yml)

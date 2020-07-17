@@ -96,13 +96,14 @@ jobs:
           args: lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
-We have sample GitHub Action configurations for
-[elastic/kibana](https://github.com/sourcegraph-codeintel-showcase/kibana/blob/7ed559df0e2036487ae6d606e9ffa29d90d49e38/.github/workflows/lsif.yml),
-[golang/go](https://github.com/sourcegraph-codeintel-showcase/go/blob/f40606b1241b0ca4802d7b00a763241b03404eea/.github/workflows/lsif.yml),
-[kubernetes/kubernetes](https://github.com/sourcegraph-codeintel-showcase/kubernetes/blob/359b6469d85cc7cd4f6634e50651633eefeaea4e/.github/workflows/lsif.yml),
-[lodash/lodash](https://github.com/sourcegraph-codeintel-showcase/lodash/blob/b90ea221bd1b1e036f2dfcd199a2327883f9451f/.github/workflows/lsif.yml),
-[moby/moby](https://github.com/sourcegraph-codeintel-showcase/moby/blob/380429abb05846de773d5aa07de052f40c9e8208/.github/workflows/lsif.yml), and
-[ReactiveX/IxJS](https://github.com/sourcegraph-codeintel-showcase/IxJS/blob/e53d323314043afb016b6deceaeb068d8d23c303/.github/workflows/lsif.yml).
+The following projects have example GitHub Action workflows to generate and upload LSIF indexes.
+
+- [elastic/kibana](https://github.com/sourcegraph-codeintel-showcase/kibana/blob/7ed559df0e2036487ae6d606e9ffa29d90d49e38/.github/workflows/lsif.yml)
+- [golang/go](https://github.com/sourcegraph-codeintel-showcase/go/blob/f40606b1241b0ca4802d7b00a763241b03404eea/.github/workflows/lsif.yml)
+- [kubernetes/kubernetes](https://github.com/sourcegraph-codeintel-showcase/kubernetes/blob/359b6469d85cc7cd4f6634e50651633eefeaea4e/.github/workflows/lsif.yml)
+- [lodash/lodash](https://github.com/sourcegraph-codeintel-showcase/lodash/blob/b90ea221bd1b1e036f2dfcd199a2327883f9451f/.github/workflows/lsif.yml)
+- [moby/moby](https://github.com/sourcegraph-codeintel-showcase/moby/blob/380429abb05846de773d5aa07de052f40c9e8208/.github/workflows/lsif.yml)
+- [ReactiveX/IxJS](https://github.com/sourcegraph-codeintel-showcase/IxJS/blob/e53d323314043afb016b6deceaeb068d8d23c303/.github/workflows/lsif.yml)
 
 Other frameworks may require you to explicitly cache artifacts between jobs. In CircleCI this might look like:
 
@@ -144,23 +145,25 @@ workflows:
             - install-deps
 ```
 
-We have sample CircleCI configurations for
-[angular/angular](https://github.com/sourcegraph-codeintel-showcase/angular/blob/f06eec98cadab2ff7a1cef2a03ba7c42015eb399/.circleci/config.yml),
-[facebook/jest](https://github.com/sourcegraph-codeintel-showcase/jest/blob/b781fa2b6683f04324edbc4b41552a94f97cd479/.circleci/config.yml),
-[facebook/react](https://github.com/sourcegraph-codeintel-showcase/react/blob/e488420f686b88803cfb1bb09bbc4d3991db8c55/.circleci/config.yml),
-[grafana](https://github.com/sourcegraph-codeintel-showcase/grafana/blob/664a694955ea40575a1cffe9db47a7adf4d3c2bb/.circleci/config.yml),
-[helm](https://github.com/sourcegraph-codeintel-showcase/helm/blob/62c38f152d0802719aad1ec4c1c281f01dc75173/.circleci/config.yml),
-[prometheus/prometheus](https://github.com/sourcegraph-codeintel-showcase/prometheus/blob/a0a8a249fff9d1c6ce4c097ccc4f5e120c723c51/.circleci/config.yml), and
-[ReactiveX/rxjs](https://github.com/sourcegraph-codeintel-showcase/rxjs/blob/c9d3c1a76a68273863fc59075a71b4cc43c06114/.circleci/config.yml).
+The following projects have example CircleCI configurations to generate and upload LSIF indexes.
 
-We have sample Travis CI configurations for
-[aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml),
-[etcd-io/etcd](https://github.com/sourcegraph-codeintel-showcase/etcd/blob/eae726706fe8ebf7e08b45ba29a70388595db31b/.travis.yml),
-[expressjs/express](https://github.com/sourcegraph-codeintel-showcase/express/blob/bd1ae153f19656183257ed223d518aeb9f5091ec/.travis.yml),
-[hugo/hugo](https://github.com/sourcegraph-codeintel-showcase/hugo/blob/6704b7c125d7b21ccf2048d7bff0f1ffe2b0867d/.travis.yml),
-[Microsoft/TypeScript](https://github.com/sourcegraph-codeintel-showcase/TypeScript/blob/f37f1dee1b3e63b12df2935590c8707a5ec3993b/.travis.yml),
-[moment/moment](https://github.com/sourcegraph-codeintel-showcase/moment/blob/eedccdc2c07fb5abe931b427d50f5b3c3f44ac95/.travis.yml), and
-[sindresorhus/got](https://github.com/sourcegraph-codeintel-showcase/got/blob/164d55a029512cea7f245de870cbb1eaba114734/.travis.yml).
+- [angular/angular](https://github.com/sourcegraph-codeintel-showcase/angular/blob/f06eec98cadab2ff7a1cef2a03ba7c42015eb399/.circleci/config.yml)
+- [facebook/jest](https://github.com/sourcegraph-codeintel-showcase/jest/blob/b781fa2b6683f04324edbc4b41552a94f97cd479/.circleci/config.yml)
+- [facebook/react](https://github.com/sourcegraph-codeintel-showcase/react/blob/e488420f686b88803cfb1bb09bbc4d3991db8c55/.circleci/config.yml)
+- [grafana](https://github.com/sourcegraph-codeintel-showcase/grafana/blob/664a694955ea40575a1cffe9db47a7adf4d3c2bb/.circleci/config.yml)
+- [helm](https://github.com/sourcegraph-codeintel-showcase/helm/blob/62c38f152d0802719aad1ec4c1c281f01dc75173/.circleci/config.yml)
+- [prometheus/prometheus](https://github.com/sourcegraph-codeintel-showcase/prometheus/blob/a0a8a249fff9d1c6ce4c097ccc4f5e120c723c51/.circleci/config.yml)
+- [ReactiveX/rxjs](https://github.com/sourcegraph-codeintel-showcase/rxjs/blob/c9d3c1a76a68273863fc59075a71b4cc43c06114/.circleci/config.yml)
+
+The following projects have example Travis CI configurations to generate and upload LSIF indexes.
+
+- [aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml)
+- [etcd-io/etcd](https://github.com/sourcegraph-codeintel-showcase/etcd/blob/eae726706fe8ebf7e08b45ba29a70388595db31b/.travis.yml)
+- [expressjs/express](https://github.com/sourcegraph-codeintel-showcase/express/blob/bd1ae153f19656183257ed223d518aeb9f5091ec/.travis.yml)
+- [hugo/hugo](https://github.com/sourcegraph-codeintel-showcase/hugo/blob/6704b7c125d7b21ccf2048d7bff0f1ffe2b0867d/.travis.yml)
+- [Microsoft/TypeScript](https://github.com/sourcegraph-codeintel-showcase/TypeScript/blob/f37f1dee1b3e63b12df2935590c8707a5ec3993b/.travis.yml)
+- [moment/moment](https://github.com/sourcegraph-codeintel-showcase/moment/blob/eedccdc2c07fb5abe931b427d50f5b3c3f44ac95/.travis.yml)
+- [sindresorhus/got](https://github.com/sourcegraph-codeintel-showcase/got/blob/164d55a029512cea7f245de870cbb1eaba114734/.travis.yml)
 
 ## CI from scratch
 
