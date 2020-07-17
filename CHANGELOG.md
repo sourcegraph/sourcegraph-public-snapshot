@@ -21,6 +21,12 @@ All notable changes to `src-cli` are documented in this file.
 
 - Removed `clone-in-progress` flag. [#246](https://github.com/sourcegraph/src-cli/pull/246)
 
+## 3.16.1
+
+### Fixed
+
+- Fix inferred root for lsif upload command. [#248](https://github.com/sourcegraph/src-cli/pull/248)
+
 ## 3.16
 
 ### Added
