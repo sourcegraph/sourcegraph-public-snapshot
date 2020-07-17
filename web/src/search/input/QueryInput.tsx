@@ -39,6 +39,8 @@ import { Toggles } from './toggles/Toggles'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
+import {isErrorLike} from '../../../../shared/src/util/errors';
+import {SearchSuggestion} from "../../../../shared/src/search/suggestions";
 
 interface Props
     extends PatternTypeProps,
@@ -145,6 +147,10 @@ export class QueryInput extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
+        const globbing: boolean = this.props.settingsCascade.final &&
+            !isErrorLike(this.props.settingsCascade.final) &&
+            this.props.settingsCascade.final['search.globbing']
+
         // Update parent component
         // (will be used in next PR to push to queryHistory (undo/redo))
         this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
@@ -213,7 +219,7 @@ export class QueryInput extends React.Component<Props, State> {
                             const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
                                 map((suggestions): Suggestion[] =>
                                     suggestions
-                                        .map(createSuggestion)
+                                        .map((item: SearchSuggestion) => createSuggestion(item, globbing))
                                         .filter(isDefined)
                                         .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
                                         .filter(suggestion => {

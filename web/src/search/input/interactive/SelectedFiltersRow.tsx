@@ -39,6 +39,8 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
      * Whether we're on the search homepage.
      */
     isHomepage: boolean
+
+    globbing: boolean
 }
 
 /**
@@ -53,6 +55,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
     toggleFilterEditable,
     toggleFilterNegated,
     isHomepage,
+    globbing
 }) => {
     const filterKeys = Object.keys(filtersInQuery)
     return (
@@ -63,6 +66,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
                         filterKeys.map(field => (
                             /** Replace this with new input component, which can be an input when editable, and button when non-editable */
                             <FilterInput
+                                globbing={globbing}
                                 key={field}
                                 mapKey={field}
                                 filterType={filtersInQuery[field].type as Exclude<FilterType, FilterType.patterntype>}
