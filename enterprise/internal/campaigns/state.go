@@ -370,7 +370,7 @@ func computeGitLabCheckState(mr *gitlab.MergeRequest) campaigns.ChangesetCheckSt
 	// Sort into descending order so that the pipeline at index 0 is the latest.
 	pipelines := mr.Pipelines
 	sort.Slice(pipelines, func(i, j int) bool {
-		return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt)
+		return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt.Time)
 	})
 
 	// TODO: after webhooks, look at changeset events.

@@ -289,7 +289,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
 		c.ExternalBranch = pr.SourceBranch
-		c.ExternalUpdatedAt = pr.UpdatedAt
+		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -330,7 +330,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 	case *bitbucketserver.PullRequest:
 		return unixMilliToTime(int64(m.CreatedDate))
 	case *gitlab.MergeRequest:
-		return m.CreatedAt
+		return m.CreatedAt.Time
 	default:
 		return time.Time{}
 	}
@@ -852,9 +852,9 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(int64(e.Status.DateAdded))
 	case *gitlab.ReviewApproved:
-		return e.CreatedAt
+		return e.CreatedAt.Time
 	case *gitlab.ReviewUnapproved:
-		return e.CreatedAt
+		return e.CreatedAt.Time
 	}
 
 	return t
