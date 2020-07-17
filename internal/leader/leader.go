@@ -23,23 +23,26 @@ type Options struct {
 // workFn could lose leadership at any point so it is important that the supplied context is checked before performing
 // any work that should not run in parallel with another worker.
 // release can be called from within workFn to explicitly release the lock.
-func Do(ctx context.Context, key string, workFn func(ctx context.Context, release func()), options Options) {
+func Do(parentCtx context.Context, key string, workFn func(ctx context.Context), options Options) {
 	if options.AcquireInterval == 0 {
 		options.AcquireInterval = defaultAcquireInterval
 	}
 	for {
 		select {
-		case <-ctx.Done():
+		case <-parentCtx.Done():
 			return
 		default:
 		}
 
-		ctx, cancel, ok := rcache.TryAcquireMutex(ctx, key, options.MutexOptions)
+		ctx, cancel, ok := rcache.TryAcquireMutex(parentCtx, key, options.MutexOptions)
 		if !ok {
 			time.Sleep(options.AcquireInterval)
 			continue
 		}
 
-		workFn(ctx, cancel)
+		func() {
+			defer cancel()
+			workFn(ctx)
+		}()
 	}
 }

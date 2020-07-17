@@ -19,14 +19,13 @@ func TestDoWhileLeader(t *testing.T) {
 
 	var count int64
 
-	fn := func(ctx context.Context, release func()) {
+	fn := func(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
 		atomic.AddInt64(&count, 1)
-		defer release()
 		<-ctx.Done()
 	}
 
