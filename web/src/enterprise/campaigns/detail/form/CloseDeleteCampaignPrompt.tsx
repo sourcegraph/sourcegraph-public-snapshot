@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import classNames from 'classnames'
+import { initial } from 'lodash'
 
 interface Props {
     disabled: boolean
@@ -9,6 +10,9 @@ interface Props {
     buttonText: string
     onButtonClick: (closeChangesets: boolean) => void
     buttonClassName?: string
+
+    /** Used for visual testing. */
+    initiallyOpen?: boolean
 }
 
 /**
@@ -22,8 +26,14 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
     buttonText,
     onButtonClick,
     buttonClassName = '',
+    initiallyOpen = false,
 }) => {
     const detailsMenuReference = React.createRef<HTMLDetailsElement>()
+    useEffect(() => {
+        if (initiallyOpen && detailsMenuReference.current) {
+            detailsMenuReference.current.open = true
+        }
+    }, [initiallyOpen, detailsMenuReference])
     // Global click event listener, used for detecting interaction with other elements. Closes the menu then.
     useEffect(() => {
         const listener = (event: MouseEvent): void => {
@@ -41,43 +51,41 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const onClick = useCallback(() => onButtonClick(closeChangesets), [onButtonClick, closeChangesets])
     return (
-        <>
-            <details className="campaign-prompt__details" ref={detailsMenuReference}>
-                <summary>
-                    <span
-                        className={classNames('btn dropdown-toggle', buttonClassName, disabled && 'disabled')}
-                        onClick={event => disabled && event.preventDefault()}
-                        data-tooltip={disabled ? disabledTooltip : undefined}
-                    >
-                        {buttonText}
-                    </span>
-                </summary>
-                <div className="position-absolute campaign-prompt__details-menu">
-                    <div className="card mt-1">
-                        <div className="card-body">
-                            {message}
-                            <div className="form-group">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={closeChangesets}
-                                        onChange={event => setCloseChangesets(event.target.checked)}
-                                    />{' '}
-                                    Close open changesets on code hosts
-                                </label>
-                            </div>
-                            <button
-                                type="button"
-                                disabled={disabled}
-                                className={`btn mr-1 ${buttonClassName}`}
-                                onClick={onClick}
-                            >
-                                {buttonText}
-                            </button>
+        <details className="campaign-prompt__details" ref={detailsMenuReference}>
+            <summary>
+                <span
+                    className={classNames('btn dropdown-toggle', buttonClassName, disabled && 'disabled')}
+                    onClick={event => disabled && event.preventDefault()}
+                    data-tooltip={disabled ? disabledTooltip : undefined}
+                >
+                    {buttonText}
+                </span>
+            </summary>
+            <div className="position-absolute campaign-prompt__details-menu">
+                <div className="card mt-1">
+                    <div className="card-body">
+                        {message}
+                        <div className="form-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={closeChangesets}
+                                    onChange={event => setCloseChangesets(event.target.checked)}
+                                />{' '}
+                                Close open changesets on code hosts
+                            </label>
                         </div>
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            className={`btn mr-1 ${buttonClassName}`}
+                            onClick={onClick}
+                        >
+                            {buttonText}
+                        </button>
                     </div>
                 </div>
-            </details>
-        </>
+            </div>
+        </details>
     )
 }
