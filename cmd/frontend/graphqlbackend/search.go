@@ -230,7 +230,7 @@ var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 
 func overrideSearchType(input string, searchType query.SearchType, useNewParser bool) query.SearchType {
 	if useNewParser {
-		q, err := query.ParseAndOrLiteral(input)
+		q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
 		q = query.LowercaseFieldNames(q)
 		if err != nil {
 			// If parsing fails, return the default search type. Any actual

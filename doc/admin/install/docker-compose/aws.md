@@ -36,7 +36,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.14.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.17.2'
 
 # Install git
 yum update -y
@@ -66,8 +66,8 @@ mount -a
 yum update -y
 amazon-linux-extras install docker
 systemctl enable --now docker
-sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
-sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
+sed -i -e 's/1024/262144/g' /etc/sysconfig/docker
+sed -i -e 's/4096/262144/g' /etc/sysconfig/docker
 usermod -a -G docker ec2-user
 
 # Install jq for scripting
@@ -88,6 +88,9 @@ tmp_config=$(mktemp)
 trap "rm -f ${tmp_config}" EXIT
 cat "${DOCKER_DAEMON_CONFIG_FILE}" | jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
 cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
+
+# Configure inotify limits for indexed search.
+echo -e "\nfs.inotify.max_user_watches = 128000\n" >> /etc/sysctl.d/local.conf
 
 ## finally, restart Docker daemon to pick up our changes
 systemctl restart --now docker

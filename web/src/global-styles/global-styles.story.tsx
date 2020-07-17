@@ -14,6 +14,7 @@ import { highlightCodeSafe } from '../../../shared/src/util/markdown'
 import { Form } from '../components/Form'
 import openColor from 'open-color'
 import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
+import 'storybook-addon-designs'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
@@ -296,24 +297,33 @@ add('Layout', () => (
     </>
 ))
 
-add('Alerts', () => (
-    <>
-        <h1>Alerts</h1>
-        <p>
-            Provide contextual feedback messages for typical user actions with the handful of available and flexible
-            alert messages.
-        </p>
-        {semanticColors.map(semantic => (
-            <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
-                A simple {semantic} alert — check it out! It can also contain{' '}
-                <a href="" className="alert-link" onClick={flow(preventDefault, action('alert link clicked'))}>
-                    links like this
-                </a>
-                .
-            </div>
-        ))}
-    </>
-))
+add(
+    'Alerts',
+    () => (
+        <>
+            <h1>Alerts</h1>
+            <p>
+                Provide contextual feedback messages for typical user actions with the handful of available and flexible
+                alert messages.
+            </p>
+            {semanticColors.map(semantic => (
+                <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
+                    A simple {semantic} alert — check it out! It can also contain{' '}
+                    <a href="" className="alert-link" onClick={flow(preventDefault, action('alert link clicked'))}>
+                        links like this
+                    </a>
+                    .
+                </div>
+            ))}
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=127%3A4',
+        },
+    }
+)
 
 add('Badges', () => (
     <>
@@ -329,46 +339,55 @@ add('Badges', () => (
     </>
 ))
 
-add('Buttons', () => (
-    <>
-        <h1>Buttons</h1>
-        <p>
-            Use Bootstrap’s custom button styles for actions in forms, dialogs, and more with support for multiple
-            sizes, states, and more.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
-        </p>
-        <p>
-            {semanticColors.map(semantic => (
-                <React.Fragment key={semantic}>
-                    <button
-                        type="button"
-                        key={semantic}
-                        className={classNames('btn', `btn-${semantic}`)}
-                        onClick={flow(preventDefault, action('button clicked'))}
-                    >
-                        {startCase(semantic)}
-                    </button>{' '}
-                </React.Fragment>
-            ))}
-        </p>
+add(
+    'Buttons',
+    () => (
+        <>
+            <h1>Buttons</h1>
+            <p>
+                Use Bootstrap’s custom button styles for actions in forms, dialogs, and more with support for multiple
+                sizes, states, and more.{' '}
+                <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
+            </p>
+            <p>
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', `btn-${semantic}`)}
+                            onClick={flow(preventDefault, action('button clicked'))}
+                        >
+                            {startCase(semantic)}
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </p>
 
-        <h2>Disabled</h2>
-        <p>
-            <button type="button" className="btn btn-primary" disabled={true}>
-                I am disabled
-            </button>{' '}
-            <button type="button" className="btn btn-secondary" disabled={true}>
-                I am disabled
-            </button>
-        </p>
+            <h2>Disabled</h2>
+            <p>
+                <button type="button" className="btn btn-primary" disabled={true}>
+                    I am disabled
+                </button>{' '}
+                <button type="button" className="btn btn-secondary" disabled={true}>
+                    I am disabled
+                </button>
+            </p>
 
-        <h2>Links</h2>
-        <p>Links can be made to look like buttons too.</p>
-        <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-            I am a link
-        </a>
-    </>
-))
+            <h2>Links</h2>
+            <p>Links can be made to look like buttons too.</p>
+            <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+                I am a link
+            </a>
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+        },
+    }
+)
 
 add('Dropdowns', () => (
     <>
@@ -435,153 +454,177 @@ add('Input groups', () => (
     </>
 ))
 
-add('Forms', () => (
-    <>
-        <h1>Forms</h1>
-        <p>
-            Forms are validated using native HTML validation. Submit the below form with invalid input to try it out.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
-                Bootstrap documentation
-            </a>
-        </p>
-        <Form onSubmit={preventDefault}>
-            <div className="form-group">
-                <label htmlFor="example-email-input">Email address</label>
-                <input
-                    type="email"
-                    className="form-control"
-                    id="example-email-input"
-                    aria-describedby="email-help"
-                    placeholder="me@example.com"
-                />
-                <small id="email-help" className="form-text text-muted">
-                    We'll never share your email with anyone else.
-                </small>
-            </div>
-            <div className="form-group">
-                <label htmlFor="example-input-password">Password</label>
-                <input type="password" className="form-control" id="example-input-password" />
-            </div>
-            <div className="form-group">
-                <label htmlFor="example-example-select">Example select</label>
-                <select id="example-select" className="form-control">
-                    <option>Option A</option>
-                    <option>Option B</option>
-                    <option>Option C</option>
-                </select>
-            </div>
-            <div className="form-group">
-                <label htmlFor="example-textarea">Example textarea</label>
-                <textarea className="form-control" id="example-textarea" rows={3} />
-            </div>
-            <div className="form-group form-check">
-                <input type="checkbox" className="form-check-input" id="exampleCheck1" />
-                <label className="form-check-label" htmlFor="exampleCheck1">
-                    Check me out
-                </label>
-            </div>
-            <button type="submit" className="btn btn-primary">
-                Submit
-            </button>
-        </Form>
-
-        <h2 className="mt-3">Disabled</h2>
-        <Form>
-            <fieldset disabled={true}>
+add(
+    'Forms',
+    () => (
+        <>
+            <h1>Forms</h1>
+            <p>
+                Forms are validated using native HTML validation. Submit the below form with invalid input to try it
+                out.{' '}
+                <a href="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
+                    Bootstrap documentation
+                </a>
+            </p>
+            <Form onSubmit={preventDefault}>
                 <div className="form-group">
-                    <label htmlFor="disabledTextInput">Disabled input</label>
-                    <input type="text" id="disabledTextInput" className="form-control" placeholder="Disabled input" />
+                    <label htmlFor="example-email-input">Email address</label>
+                    <input
+                        type="email"
+                        className="form-control"
+                        id="example-email-input"
+                        aria-describedby="email-help"
+                        placeholder="me@example.com"
+                    />
+                    <small id="email-help" className="form-text text-muted">
+                        We'll never share your email with anyone else.
+                    </small>
                 </div>
                 <div className="form-group">
-                    <label htmlFor="disabledSelect">Disabled select menu</label>
-                    <select id="disabledSelect" className="form-control">
-                        <option>Disabled select</option>
+                    <label htmlFor="example-input-password">Password</label>
+                    <input type="password" className="form-control" id="example-input-password" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="example-example-select">Example select</label>
+                    <select id="example-select" className="form-control">
+                        <option>Option A</option>
+                        <option>Option B</option>
+                        <option>Option C</option>
                     </select>
                 </div>
                 <div className="form-group">
-                    <div className="form-check">
-                        <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="disabledFieldsetCheck"
-                            disabled={true}
-                        />
-                        <label className="form-check-label" htmlFor="disabledFieldsetCheck">
-                            Can't check this
-                        </label>
-                    </div>
+                    <label htmlFor="example-textarea">Example textarea</label>
+                    <textarea className="form-control" id="example-textarea" rows={3} />
+                </div>
+                <div className="form-group form-check">
+                    <input type="checkbox" className="form-check-input" id="exampleCheck1" />
+                    <label className="form-check-label" htmlFor="exampleCheck1">
+                        Check me out
+                    </label>
                 </div>
                 <button type="submit" className="btn btn-primary">
                     Submit
                 </button>
-            </fieldset>
-        </Form>
+            </Form>
 
-        <h2 className="mt-3">Readonly</h2>
-        <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
+            <h2 className="mt-3">Disabled</h2>
+            <Form>
+                <fieldset disabled={true}>
+                    <div className="form-group">
+                        <label htmlFor="disabledTextInput">Disabled input</label>
+                        <input
+                            type="text"
+                            id="disabledTextInput"
+                            className="form-control"
+                            placeholder="Disabled input"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="disabledSelect">Disabled select menu</label>
+                        <select id="disabledSelect" className="form-control">
+                            <option>Disabled select</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <div className="form-check">
+                            <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id="disabledFieldsetCheck"
+                                disabled={true}
+                            />
+                            <label className="form-check-label" htmlFor="disabledFieldsetCheck">
+                                Can't check this
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" className="btn btn-primary">
+                        Submit
+                    </button>
+                </fieldset>
+            </Form>
 
-        <h2 className="mt-3">Sizing</h2>
-        <p>Form controls can be made smaller or larger for rare use cases, like a select inside a dropdown menu.</p>
-        <div className="d-flex">
-            <div>
-                <input className="form-control form-control-lg mb-1" type="text" placeholder="Large input" />
-                <input className="form-control mb-1" type="text" placeholder="Default input" />
-                <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+            <h2 className="mt-3">Readonly</h2>
+            <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
+
+            <h2 className="mt-3">Sizing</h2>
+            <p>Form controls can be made smaller or larger for rare use cases, like a select inside a dropdown menu.</p>
+            <div className="d-flex">
+                <div>
+                    <input className="form-control form-control-lg mb-1" type="text" placeholder="Large input" />
+                    <input className="form-control mb-1" type="text" placeholder="Default input" />
+                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+                </div>
+                <div className="ml-2">
+                    <select className="form-control form-control-lg mb-1">
+                        <option>Large select</option>
+                    </select>
+                    <select className="form-control mb-1">
+                        <option>Default select</option>
+                    </select>
+                    <select className="form-control form-control-sm mb-1">
+                        <option>Small select</option>
+                    </select>
+                </div>
             </div>
-            <div className="ml-2">
-                <select className="form-control form-control-lg mb-1">
-                    <option>Large select</option>
-                </select>
-                <select className="form-control mb-1">
-                    <option>Default select</option>
-                </select>
-                <select className="form-control form-control-sm mb-1">
-                    <option>Small select</option>
-                </select>
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=30%3A24',
+        },
+    }
+)
+
+add(
+    'Cards',
+    () => (
+        <>
+            <h1>Cards</h1>
+            <p>
+                A card is a flexible and extensible content container. It includes options for headers and footers, a
+                wide variety of content, contextual background colors, and powerful display options.{' '}
+                <a href="https://getbootstrap.com/docs/4.5/components/card/">Bootstrap documentation</a>
+            </p>
+
+            <h2>Examples</h2>
+
+            <div className="card mb-3">
+                <div className="card-body">This is some text within a card body.</div>
             </div>
-        </div>
-    </>
-))
 
-add('Cards', () => (
-    <>
-        <h1>Cards</h1>
-        <p>
-            A card is a flexible and extensible content container. It includes options for headers and footers, a wide
-            variety of content, contextual background colors, and powerful display options.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/card/">Bootstrap documentation</a>
-        </p>
-
-        <h2>Examples</h2>
-
-        <div className="card mb-3">
-            <div className="card-body">This is some text within a card body.</div>
-        </div>
-
-        <div className="card mb-3" style={{ maxWidth: '18rem' }}>
-            <div className="card-body">
-                <h3 className="card-title">Card title</h3>
-                <p className="card-text">
-                    Some quick example text to build on the card title and make up the bulk of the card's content.
-                </p>
-                <button type="button" className="btn btn-primary">
-                    Do something
-                </button>
+            <div className="card mb-3" style={{ maxWidth: '18rem' }}>
+                <div className="card-body">
+                    <h3 className="card-title">Card title</h3>
+                    <p className="card-text">
+                        Some quick example text to build on the card title and make up the bulk of the card's content.
+                    </p>
+                    <button type="button" className="btn btn-primary">
+                        Do something
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <div className="card">
-            <div className="card-header">Featured</div>
-            <div className="card-body">
-                <h3 className="card-title">Special title treatment</h3>
-                <p className="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-                    Go somewhere
-                </a>
+            <div className="card">
+                <div className="card-header">Featured</div>
+                <div className="card-body">
+                    <h3 className="card-title">Special title treatment</h3>
+                    <p className="card-text">With supporting text below as a natural lead-in to additional content.</p>
+                    <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                        Go somewhere
+                    </a>
+                </div>
             </div>
-        </div>
-    </>
-))
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=109%3A2',
+        },
+    }
+)
 
 add('List groups', () => (
     <>
