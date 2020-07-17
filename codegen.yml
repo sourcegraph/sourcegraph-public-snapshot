@@ -1,7 +1,7 @@
 overwrite: true
 schema: './cmd/frontend/graphqlbackend/schema.graphql'
 hooks:
-  afterAllFileWrite:
+  afterOneFileWrite:
     - eslint --fix
     - prettier --write
 config:
