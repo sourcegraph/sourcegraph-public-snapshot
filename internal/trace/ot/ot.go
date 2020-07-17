@@ -8,6 +8,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
@@ -59,8 +60,7 @@ func MiddlewareWithTracer(tr opentracing.Tracer, h http.Handler, opts ...nethttp
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch GetTracePolicy() {
 		case TraceSelective:
-			traceHeaderIsTrue, _ := strconv.ParseBool(r.Header.Get(traceHeader))
-			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), traceHeaderIsTrue)))
+			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), requestWantsTracing(r))))
 			return
 		case TraceAll:
 			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), true)))
@@ -73,6 +73,24 @@ func MiddlewareWithTracer(tr opentracing.Tracer, h http.Handler, opts ...nethttp
 }
 
 const traceHeader = "X-Sourcegraph-Should-Trace"
+const traceQuery = "trace"
+
+// requestWantsTrace returns true if a request is opting into tracing either
+// via our HTTP Header or our URL Query.
+func requestWantsTracing(r *http.Request) bool {
+	// Prefer header over query param.
+	if v := r.Header.Get(traceHeader); v != "" {
+		b, _ := strconv.ParseBool(v)
+		return b
+	}
+	// PERF: Avoid parsing RawQuery if "trace=" is not present
+	if strings.Contains(r.URL.RawQuery, "trace=") {
+		v := r.URL.Query().Get("trace")
+		b, _ := strconv.ParseBool(v)
+		return b
+	}
+	return false
+}
 
 // Transport wraps an underlying HTTP RoundTripper, injecting the X-Sourcegraph-Should-Trace header
 // into outgoing requests whenever the shouldTraceKey context value is true.
