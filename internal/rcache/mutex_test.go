@@ -9,7 +9,7 @@ func TestTryAcquireMutex(t *testing.T) {
 	SetupForTest(t)
 
 	options := MutexOptions{
-		// Make mutex fails faster
+		// Make mutex fail faster
 		Tries: 1,
 	}
 
