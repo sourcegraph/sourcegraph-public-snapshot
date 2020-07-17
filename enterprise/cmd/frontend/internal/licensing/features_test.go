@@ -17,21 +17,46 @@ func TestCheckFeature(t *testing.T) {
 		}
 	}
 
+	plan := func(p Plan) string {
+		return "plan:" + string(p)
+	}
+
 	t.Run(string(FeatureACLs), func(t *testing.T) {
 		check(t, FeatureACLs, nil, false)
+
 		check(t, FeatureACLs, license("starter"), false)
+		check(t, FeatureACLs, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureACLs, license(plan(oldEnterprise)), true)
 		check(t, FeatureACLs, license(), true)
+
+		check(t, FeatureACLs, license(plan(team)), false)
+		check(t, FeatureACLs, license(plan(enterprise)), false)
+		check(t, FeatureACLs, license(plan(enterprise), string(FeatureACLs)), true)
 	})
 
 	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
 		check(t, FeatureExtensionRegistry, nil, false)
+
 		check(t, FeatureExtensionRegistry, license("starter"), false)
+		check(t, FeatureExtensionRegistry, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureExtensionRegistry, license(plan(oldEnterprise)), true)
 		check(t, FeatureExtensionRegistry, license(), true)
+
+		check(t, FeatureExtensionRegistry, license(plan(team)), false)
+		check(t, FeatureExtensionRegistry, license(plan(enterprise)), false)
+		check(t, FeatureExtensionRegistry, license(plan(enterprise), string(FeatureExtensionRegistry)), true)
 	})
 
 	t.Run(string(FeatureRemoteExtensionsAllowDisallow), func(t *testing.T) {
 		check(t, FeatureRemoteExtensionsAllowDisallow, nil, false)
+
 		check(t, FeatureRemoteExtensionsAllowDisallow, license("starter"), false)
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(oldEnterprise)), true)
 		check(t, FeatureRemoteExtensionsAllowDisallow, license(), true)
+
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(team)), false)
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(enterprise)), false)
+		check(t, FeatureRemoteExtensionsAllowDisallow, license(plan(enterprise), string(FeatureRemoteExtensionsAllowDisallow)), true)
 	})
 }

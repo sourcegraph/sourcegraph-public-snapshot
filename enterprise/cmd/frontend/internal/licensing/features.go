@@ -31,7 +31,17 @@ func checkFeature(info *Info, feature Feature) error {
 	if info == nil {
 		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
 	}
-	if !info.Plan().HasFeature(feature) {
+
+	// Check if the feature is explicitly allowed via license tag.
+	hasFeature := func(want Feature) bool {
+		for _, t := range info.Tags {
+			if Feature(t) == want {
+				return true
+			}
+		}
+		return false
+	}
+	if !info.Plan().HasFeature(feature) && !hasFeature(feature) {
 		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
 	}
 	return nil // feature is activated for current license
