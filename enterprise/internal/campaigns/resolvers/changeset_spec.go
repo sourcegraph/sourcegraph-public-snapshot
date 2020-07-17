@@ -52,11 +52,8 @@ func (r *changesetSpecResolver) ID() graphql.ID {
 	return marshalChangesetSpecRandID(r.changesetSpec.RandID)
 }
 
-func (r *changesetSpecResolver) Type() campaigns.ChangesetSpecType {
-	if r.changesetSpec.Spec.IsExistingChangesetRef() {
-		return campaigns.ChangesetSpecTypeExisting
-	}
-	return campaigns.ChangesetSpecTypeBranch
+func (r *changesetSpecResolver) Type() campaigns.ChangesetSpecDescriptionType {
+	return r.changesetSpec.Spec.Type()
 }
 
 func (r *changesetSpecResolver) computeRepo() (*graphqlbackend.RepositoryResolver, error) {
@@ -153,16 +150,16 @@ type changesetDescriptionResolver struct {
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
-	if r.desc.IsExistingChangesetRef() {
+	if r.desc.IsExisting() {
 		return r, true
 	}
 	return nil, false
 }
 func (r *changesetDescriptionResolver) ToGitBranchChangesetDescription() (graphqlbackend.GitBranchChangesetDescriptionResolver, bool) {
-	if r.desc.IsExistingChangesetRef() {
-		return nil, false
+	if r.desc.IsBranch() {
+		return r, true
 	}
-	return r, true
+	return nil, false
 }
 
 func (r *changesetDescriptionResolver) BaseRepository() *graphqlbackend.RepositoryResolver {

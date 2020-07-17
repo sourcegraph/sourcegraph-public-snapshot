@@ -114,7 +114,7 @@ type ChangesetSpecConnectionResolver interface {
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
 
-	Type() campaigns.ChangesetSpecType
+	Type() campaigns.ChangesetSpecDescriptionType
 
 	ExpiresAt() *DateTime
 
