@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -89,12 +90,13 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		}
 
 		resolvers = append(resolvers, &changesetResolver{
-			isHidden:            !repoFound,
-			store:               r.store,
-			httpFactory:         r.httpFactory,
-			changeset:           c,
-			preloadedRepo:       repo,
-			preloadedNextSyncAt: preloadedNextSyncAt,
+			isHidden:             !repoFound,
+			store:                r.store,
+			httpFactory:          r.httpFactory,
+			changeset:            c,
+			preloadedRepo:        repo,
+			attemptedPreloadRepo: true,
+			preloadedNextSyncAt:  preloadedNextSyncAt,
 		})
 	}
 
@@ -190,13 +192,20 @@ type changesetResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
 
-	changeset     *campaigns.Changeset
-	preloadedRepo *types.Repo
+	changeset *campaigns.Changeset
+
+	attemptedPreloadRepo bool
+	preloadedRepo        *types.Repo
 
 	// cache repo because it's called more than once
 	repoOnce sync.Once
 	repo     *graphqlbackend.RepositoryResolver
 	repoErr  error
+	// The context with which we try to load the repository if it's not
+	// preloaded. We need an extra field for that, because the
+	// ToExternalChangeset/ToHiddenExternalChangeset methods cannot take a
+	// context.Context without graphql-go panic'ing.
+	repoCtx context.Context
 
 	// cache changeset events as they are used more than once
 	eventsOnce sync.Once
@@ -222,27 +231,58 @@ func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 }
 
 func (r *changesetResolver) ToExternalChangeset() (graphqlbackend.ExternalChangesetResolver, bool) {
-	if r.isHidden {
+	accessible, err := r.repoAccessible()
+	if err != nil {
+		return r, true
+	}
+
+	if !accessible {
 		return nil, false
 	}
+
 	return r, true
 }
 
 func (r *changesetResolver) ToHiddenExternalChangeset() (graphqlbackend.HiddenExternalChangesetResolver, bool) {
-	if !r.isHidden {
+	accessible, err := r.repoAccessible()
+	if err != nil {
+		return r, true
+	}
+
+	if accessible {
 		return nil, false
 	}
+
 	return r, true
 }
 
-func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+func (r *changesetResolver) repoAccessible() (bool, error) {
+	repo, err := r.computeRepo()
+	if err != nil {
+		// In case we couldn't load the repository because of an error, we
+		// return the error
+		return false, err
+	}
+
+	// If the repository is not nil, it's accessible
+	return repo != nil, nil
+}
+
+func (r *changesetResolver) computeRepo() (*graphqlbackend.RepositoryResolver, error) {
 	r.repoOnce.Do(func() {
-		if r.preloadedRepo != nil {
-			r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
+		if r.attemptedPreloadRepo {
+			if r.preloadedRepo != nil {
+				r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
+			}
 		} else {
+			if r.repoCtx == nil {
+				r.repoErr = fmt.Errorf("no context available to query repository")
+				return
+			}
+
 			// 🚨 SECURITY: graphqlbackend.RepositoryByIDInt32 uses the authzFilter under the hood and
 			// filters out repositories that the user doesn't have access to.
-			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, r.changeset.RepoID)
+			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(r.repoCtx, r.changeset.RepoID)
 		}
 	})
 	return r.repo, r.repoErr
@@ -299,7 +339,7 @@ func (r *changesetResolver) ExternalID() *string {
 }
 
 func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return r.computeRepo(ctx)
+	return r.computeRepo()
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
@@ -440,7 +480,7 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
 	// TODO: Return previewRepositoryConnection from the spec, when changeset doesn't yet exist on the codehost.
 	if r.changeset == nil {
-		repo, err := r.computeRepo(ctx)
+		repo, err := r.computeRepo()
 		if err != nil {
 			return nil, err
 		}
@@ -453,7 +493,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		return nil, nil
 	}
 
-	repo, err := r.computeRepo(ctx)
+	repo, err := r.computeRepo()
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +597,7 @@ func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefRes
 }
 
 func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
-	repo, err := r.computeRepo(ctx)
+	repo, err := r.computeRepo()
 	if err != nil {
 		return nil, err
 	}
