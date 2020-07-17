@@ -37,8 +37,8 @@ func TestDoWhileLeader(t *testing.T) {
 		},
 	}
 
-	go Do(ctx, key, fn, options)
-	go Do(ctx, key, fn, options)
+	go Do(ctx, key, options, fn)
+	go Do(ctx, key, options, fn)
 
 	time.Sleep(500 * time.Millisecond)
 	cancel()

@@ -24,7 +24,7 @@ type Options struct {
 // workFn could lose leadership at any point so it is important that the supplied context is checked before performing
 // any work that should not run in parallel with another worker.
 // release can be called from within workFn to explicitly release the lock.
-func Do(parentCtx context.Context, key string, workFn func(ctx context.Context), options Options) {
+func Do(parentCtx context.Context, key string, options Options, workFn func(ctx context.Context)) {
 	if options.AcquireInterval == 0 {
 		options.AcquireInterval = defaultAcquireInterval
 	}
