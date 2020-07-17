@@ -9,7 +9,7 @@ interface Props {
 export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
     const logoSource = '/.assets/img/download-illus.svg'
     return (
-        <div className={classNames('private-code-cta d-flex flex-row card', props.className)}>
+        <div className={classNames('private-code-cta shadow d-flex flex-row card', props.className)}>
             <div className="private-code-cta__icon-column d-flex flex-column align-items-center">
                 <img src={logoSource} className="private-code-cta__logo" />
             </div>
