@@ -20,7 +20,6 @@ import { switchMap, distinctUntilChanged, repeatWhen, delay } from 'rxjs/operato
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
-import { CampaignDiffStat } from './CampaignDiffStat'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -229,8 +228,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {totalChangesetCount > 0 && (
                 <>
                     <h3 className="mt-4 d-flex align-items-end mb-0">
-                        {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}{' '}
-                        {campaign && <CampaignDiffStat campaign={campaign} className="ml-2 mb-0" />}
+                        {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
                     </h3>
                     {totalChangesetCount > 0 && (
                         <CampaignChangesets
