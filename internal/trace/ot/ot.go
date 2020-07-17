@@ -58,17 +58,16 @@ func MiddlewareWithTracer(tr opentracing.Tracer, h http.Handler, opts ...nethttp
 		}),
 	}, opts...)...)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var trace bool
 		switch GetTracePolicy() {
 		case TraceSelective:
-			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), requestWantsTracing(r))))
-			return
+			trace = requestWantsTracing(r)
 		case TraceAll:
-			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), true)))
-			return
+			trace = true
 		default:
-			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), false)))
-			return
+			trace = false
 		}
+		nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), trace)))
 	})
 }
 
