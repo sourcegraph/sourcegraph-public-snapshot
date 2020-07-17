@@ -2,7 +2,6 @@ package leader
 
 import (
 	"context"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -25,7 +24,7 @@ func TestDoWhileLeader(t *testing.T) {
 			return
 		default:
 		}
-		atomic.AddInt64(&count, 1)
+		count++
 		<-ctx.Done()
 	}
 
@@ -37,8 +36,16 @@ func TestDoWhileLeader(t *testing.T) {
 		},
 	}
 
-	go Do(ctx, key, options, fn)
-	go Do(ctx, key, options, fn)
+	cancelled := make(chan struct{})
+
+	go func() {
+		Do(ctx, key, options, fn)
+		cancelled <- struct{}{}
+	}()
+	go func() {
+		Do(ctx, key, options, fn)
+		cancelled <- struct{}{}
+	}()
 
 	time.Sleep(500 * time.Millisecond)
 	cancel()
@@ -46,4 +53,14 @@ func TestDoWhileLeader(t *testing.T) {
 	if count != 1 {
 		t.Fatalf("Count > 1: %d", count)
 	}
+
+	// Check that Do exits after cancelled
+	for i := 0; i < 2; i++ {
+		select {
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("Timeout")
+		case <-cancelled:
+		}
+	}
+
 }
