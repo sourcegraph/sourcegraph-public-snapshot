@@ -17,19 +17,4 @@ pushd dev/watchmanwrapper
 go build
 popd
 
-exec dev/watchmanwrapper/watchmanwrapper dev/handle-change.sh <<-EOT
-["subscribe", ".", "gochangewatch", {
-  "expression": ["allof",
-    ["not", ["anyof",
-      ["match", ".*"],
-      ["suffix", "_test.go"]]],
-    ["anyof",
-      ["suffix", "go"],
-      ["dirname", "cmd/symbols"],
-      ["dirname", "schema"],
-      ["dirname", "docker-images/grafana/jsonnet"],
-      ["dirname", "monitoring"],
-      ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]]],
-  "fields": ["name"]
-}]
-EOT
+exec dev/watchmanwrapper/watchmanwrapper dev/handle-change.sh < dev/watchmanwrapper/watch.json
