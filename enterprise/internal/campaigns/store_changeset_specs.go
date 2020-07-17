@@ -136,9 +136,15 @@ var deleteChangesetSpecQueryFmtstr = `
 DELETE FROM changeset_specs WHERE id = %s
 `
 
-// CountChangesetSpecs returns the number of code mods in the database.
-func (s *Store) CountChangesetSpecs(ctx context.Context) (count int64, _ error) {
-	q := sqlf.Sprintf(countChangesetSpecsQueryFmtstr)
+// CountChangesetSpecsOpts captures the query options needed for counting
+// ChangesetSpecs.
+type CountChangesetSpecsOpts struct {
+	CampaignSpecID int64
+}
+
+// CountChangesetSpecs returns the number of changeset specs in the database.
+func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (count int64, _ error) {
+	q := countChangesetSpecsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
@@ -149,7 +155,21 @@ var countChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:CountChangesetSpecs
 SELECT COUNT(id)
 FROM changeset_specs
+WHERE %s
 `
+
+func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.CampaignSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_spec_id = %s", opts.CampaignSpecID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
 
 // GetChangesetSpecOpts captures the query options needed for getting a ChangesetSpec
 type GetChangesetSpecOpts struct {

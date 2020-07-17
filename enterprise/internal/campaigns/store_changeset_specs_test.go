@@ -62,7 +62,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 	}
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountChangesetSpecs(ctx)
+		count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,6 +70,30 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 		if have, want := count, int64(len(changesetSpecs)); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("WithCampaignSpecID", func(t *testing.T) {
+			testsRan := false
+			for _, c := range changesetSpecs {
+				if c.CampaignSpecID == 0 {
+					continue
+				}
+
+				opts := CountChangesetSpecsOpts{CampaignSpecID: c.CampaignSpecID}
+				subCount, err := s.CountChangesetSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := subCount, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+				testsRan = true
+			}
+
+			if !testsRan {
+				t.Fatal("no changesetSpec has a non-zero CampaignSpecID")
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -257,7 +281,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 				t.Fatal(err)
 			}
 
-			count, err := s.CountChangesetSpecs(ctx)
+			count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
