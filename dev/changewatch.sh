@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 # Wrapper for watchman. To debug which changes it detect set the environment
