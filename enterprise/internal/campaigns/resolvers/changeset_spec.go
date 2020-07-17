@@ -32,7 +32,8 @@ type changesetSpecResolver struct {
 
 	changesetSpec *campaigns.ChangesetSpec
 
-	preloadedRepo *types.Repo
+	preloadedRepo        *types.Repo
+	attemptedPreloadRepo bool
 
 	// Cache repo because it's accessed more than once
 	repoOnce sync.Once
@@ -60,13 +61,20 @@ func (r *changesetSpecResolver) Type() campaigns.ChangesetSpecType {
 
 func (r *changesetSpecResolver) computeRepo() (*graphqlbackend.RepositoryResolver, error) {
 	r.repoOnce.Do(func() {
-		if r.preloadedRepo != nil {
-			r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
+		if r.attemptedPreloadRepo {
+			if r.preloadedRepo != nil {
+				r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
+			}
 		} else {
 			if r.repoCtx == nil {
 				r.repoErr = fmt.Errorf("no context available to query repository")
 				return
 			}
+
+			// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+			// filters out repositories that the user doesn't have access to.
+			// In case we don't find a repository, it might be because it's deleted
+			// or because the user doesn't have access.
 			repo, err := graphqlbackend.RepositoryByIDInt32(r.repoCtx, r.changesetSpec.RepoID)
 			if err != nil && !errcode.IsNotFound(err) {
 				r.repoErr = err

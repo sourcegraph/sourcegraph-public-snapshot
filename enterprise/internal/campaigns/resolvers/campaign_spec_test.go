@@ -142,7 +142,7 @@ query($campaignSpec: ID!) {
       createdAt
       expiresAt
 
-	  changesetSpecs(first: 100) {
+      changesetSpecs(first: 100) {
         totalCount
 
         nodes {
