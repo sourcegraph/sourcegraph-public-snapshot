@@ -52,21 +52,31 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
         sortText: `0${index}`,
     }))
 
-const repositoryToCompletion = ({ name }: IRepository, options: { isFilterValue: boolean }): PartialCompletionItem => ({
+const insertText = (name: string, isFilterValue: boolean, globbing: boolean, filter: string): string => {
+    let text: string;
+    if (globbing) {
+        text = `${name}`
+    } else {
+        text = `^${escapeRegExp(name)}$`
+    }
+    return isFilterValue ? text : `{filter}:${text}`
+}
+
+const repositoryToCompletion = ({name}: IRepository, options: { isFilterValue: boolean, globbing: boolean }): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
-    insertText: options.isFilterValue ? `^${escapeRegExp(name)}$ ` : `repo:^${escapeRegExp(name)}$ `,
+    insertText: insertText(name, options.isFilterValue, options.globbing, 'repo'),
     filterText: name,
     detail: options.isFilterValue ? undefined : 'Repository',
 })
 
 const fileToCompletion = (
     { name, path, repository, isDirectory }: IFile,
-    options: { isFilterValue: boolean }
+    options: { isFilterValue: boolean, globbing: boolean }
 ): PartialCompletionItem => ({
     label: name,
     kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
-    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(path)}$ `,
+    insertText: insertText(name, options.isFilterValue, options.globbing, 'file'),
     filterText: name,
     detail: `${path} - ${repository.name}`,
 })
@@ -131,7 +141,7 @@ const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => (
 
 const suggestionToCompletionItem = (
     suggestion: SearchSuggestion,
-    options: { isFilterValue: boolean }
+    options: { isFilterValue: boolean, globbing: boolean }
 ): PartialCompletionItem | undefined => {
     switch (suggestion.__typename) {
         case 'File':
@@ -166,7 +176,8 @@ const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
 export async function getCompletionItems(
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>,
-    dynamicSuggestions: Observable<SearchSuggestion[]>
+    dynamicSuggestions: Observable<SearchSuggestion[]>,
+    globbing: boolean
 ): Promise<Monaco.languages.CompletionList | null> {
     const defaultRange = {
         startLineNumber: 1,
@@ -216,7 +227,7 @@ export async function getCompletionItems(
             suggestions: [
                 ...staticSuggestions,
                 ...(await dynamicSuggestions.pipe(first()).toPromise())
-                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, {isFilterValue: false, globbing}))
                     .filter(isDefined)
                     .map(completionItem => ({
                         ...completionItem,
@@ -255,7 +266,7 @@ export async function getCompletionItems(
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, {isFilterValue: true, globbing}))
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,

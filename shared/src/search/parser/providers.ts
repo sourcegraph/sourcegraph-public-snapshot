@@ -33,7 +33,8 @@ const alphabet = 'abcdefghijklmnopqrstuvwxyz'
 export function getProviders(
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
-    fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>
+    fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
+    globbing: boolean
 ): SearchFieldProviders {
     const parsedQueries = searchQueries.pipe(
         map(rawQuery => {
@@ -78,7 +79,7 @@ export function getProviders(
                         switchMap(({ parsed }) =>
                             parsed.type === 'error'
                                 ? of(null)
-                                : getCompletionItems(parsed.token, position, debouncedDynamicSuggestions)
+                                : getCompletionItems(parsed.token, position, debouncedDynamicSuggestions, globbing)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
