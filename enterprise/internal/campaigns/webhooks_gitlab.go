@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -62,7 +63,7 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Route the request based on the event type.
-	if err := h.handleEvent(event); err != nil {
+	if err := h.handleEvent(r.Context(), extSvc, event); err != nil {
 		respond(w, err.code, err)
 	} else {
 		respond(w, http.StatusNoContent, nil)
@@ -95,10 +96,49 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 	return nil, errExternalServiceNotFound
 }
 
-func (h *GitLabWebhook) handleEvent(event interface{}) *httpError {
-	switch event.(type) {
+func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalService, event interface{}) *httpError {
+	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
+
+	esID, err := extractExternalServiceID(extSvc)
+	if err != nil {
+		return &httpError{
+			code: http.StatusInternalServerError,
+			err:  err,
+		}
+	}
+
+	switch e := event.(type) {
 	case *webhooks.MergeRequestEvent:
-		log15.Info("would handle merge request event", "event", event)
+		log15.Info("would handle merge request event", "event", e)
+		return nil
+
+	case *webhooks.NoteMergeRequestEvent:
+		// XXX: Figure out how to ListRepos(). We need the external ID (project
+		// ID), external service type (gitlab), and external service ID
+		// (external service URL?).
+		review, ok := e.Note.ToReview().(keyer)
+		if review == nil {
+			log15.Debug("received a non-review note; ignoring")
+			return nil
+		} else if !ok {
+			return &httpError{
+				code: http.StatusInternalServerError,
+				err:  errors.New("cannot assert object as keyer"),
+			}
+		}
+
+		pr := PR{
+			ID:             int64(e.MergeRequest.IID),
+			RepoExternalID: strconv.Itoa(e.Project.ID),
+		}
+
+		if err := h.upsertChangesetEvent(ctx, esID, pr, review); err != nil {
+			return &httpError{
+				code: http.StatusInternalServerError,
+				err:  errors.Wrap(err, "upserting changeset event"),
+			}
+		}
+
 		return nil
 	}
 

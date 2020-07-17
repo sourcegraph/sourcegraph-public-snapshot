@@ -14,12 +14,18 @@ type EventCommon struct {
 	Project    gitlab.ProjectCommon `json:"project"`
 }
 
+// Simple events that are simply unmarshalled and have no methods attached are defined below.
+
 type MergeRequestEvent struct {
 	EventCommon
 
 	User         gitlab.User         `json:"user"`
 	MergeRequest gitlab.MergeRequest `json:"object_attributes"`
 	Labels       []gitlab.Label      `json:"labels"`
+}
+
+type downcaster interface {
+	downcast() (interface{}, error)
 }
 
 var ErrObjectKindUnknown = errors.New("unknown object kind")
@@ -52,14 +58,22 @@ func UnmarshalEvent(data []byte) (interface{}, error) {
 	switch event.ObjectKind {
 	case "merge_request":
 		typedEvent = &MergeRequestEvent{}
+	case "note":
+		typedEvent = &noteEvent{}
 	default:
 		return nil, errors.Wrapf(ErrObjectKindUnknown, "kind: %s", event.ObjectKind)
 	}
 
-	// Finally, let's perform the real unmarshal and return the event to the
-	// caller.
+	// Let's perform the real unmarshal.
 	if err := json.Unmarshal(data, typedEvent); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling typed event")
+	}
+
+	// Some event types need to be able to be downcasted to a more specific type
+	// than the one we get just from the object_kind attribute, so let's do that
+	// here if we need to, otherwise we can return.
+	if dc, ok := typedEvent.(downcaster); ok {
+		return dc.downcast()
 	}
 	return typedEvent, nil
 }
