@@ -82,7 +82,7 @@ func TestPermissionLevels(t *testing.T) {
 		return c.ID
 	}
 
-	createCampaignSpec := func(t *testing.T, s *ee.Store, name string, userID int32) (randID string) {
+	createCampaignSpec := func(t *testing.T, s *ee.Store, userID int32) (randID string) {
 		t.Helper()
 
 		cs := &campaigns.CampaignSpec{UserID: userID, NamespaceUserID: userID}
@@ -125,9 +125,9 @@ func TestPermissionLevels(t *testing.T) {
 		cleanUpCampaigns(t, store)
 
 		adminCampaign := createCampaign(t, store, "admin", adminID)
-		adminCampaignSpec := createCampaignSpec(t, store, "admin", adminID)
+		adminCampaignSpec := createCampaignSpec(t, store, adminID)
 		userCampaign := createCampaign(t, store, "user", userID)
-		userCampaignSpec := createCampaignSpec(t, store, "user", userID)
+		userCampaignSpec := createCampaignSpec(t, store, userID)
 
 		t.Run("CampaignByID", func(t *testing.T) {
 			tests := []struct {
@@ -324,24 +324,36 @@ func TestPermissionLevels(t *testing.T) {
 	t.Run("mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
-			mutationFunc func(campaignID string, changesetID string) string
+			mutationFunc func(campaignID, changesetID, campaignSpecID string) string
 		}{
 			{
 				name: "closeCampaign",
-				mutationFunc: func(campaignID string, changesetID string) string {
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
 				},
 			},
 			{
 				name: "deleteCampaign",
-				mutationFunc: func(campaignID string, changesetID string) string {
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } } `, campaignID)
 				},
 			},
 			{
 				name: "syncChangeset",
-				mutationFunc: func(campaignID string, changesetID string) string {
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
+				},
+			},
+			{
+				name: "applyCampaign",
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+					return fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
+				},
+			},
+			{
+				name: "moveCampaign",
+				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+					return fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaignID)
 				},
 			},
 		}
@@ -379,6 +391,7 @@ func TestPermissionLevels(t *testing.T) {
 						cleanUpCampaigns(t, store)
 
 						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor)
+						campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
 
 						// We add the changeset to the campaign. It doesn't matter
 						// for the addChangesetsToCampaign mutation, since that is
@@ -391,6 +404,7 @@ func TestPermissionLevels(t *testing.T) {
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
 							string(marshalChangesetID(changeset.ID)),
+							string(marshalCampaignSpecRandID(campaignSpecID)),
 						)
 
 						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))

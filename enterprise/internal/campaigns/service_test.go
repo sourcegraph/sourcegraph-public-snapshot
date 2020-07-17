@@ -69,7 +69,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset) {
+	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
 		campaign := testCampaign(author, 0)
 		if err = s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
@@ -85,7 +85,12 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return campaign, changeset
+		cs := &campaigns.CampaignSpec{UserID: author, NamespaceUserID: author}
+		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+			t.Fatal(err)
+		}
+
+		return campaign, changeset, cs
 	}
 
 	assertAuthError := func(t *testing.T, err error) {
@@ -139,7 +144,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			campaign, changeset := createTestData(t, store, svc, tc.campaignAuthor)
+			campaign, changeset, campaignSpec := createTestData(t, store, svc, tc.campaignAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
@@ -155,6 +160,21 @@ func TestServicePermissionLevels(t *testing.T) {
 
 			t.Run("DeleteCampaign", func(t *testing.T) {
 				err = svc.DeleteCampaign(currentUserCtx, campaign.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("MoveCampaign", func(t *testing.T) {
+				_, err = svc.MoveCampaign(currentUserCtx, MoveCampaignOpts{
+					CampaignID: campaign.ID,
+					NewName:    "foobar2",
+				})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("ApplyCampaign", func(t *testing.T) {
+				_, err = svc.ApplyCampaign(currentUserCtx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec.RandID,
+				})
 				tc.assertFunc(t, err)
 			})
 		})

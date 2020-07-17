@@ -192,11 +192,6 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may apply campaigns for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
 	opts := ee.ApplyCampaignOpts{}
 
 	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
