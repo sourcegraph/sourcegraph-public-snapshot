@@ -68,7 +68,7 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 	return &TransactableHandle{db: tx}, nil
 }
 
-// Done performs a commit or rollback of the underlying the transaction/savepoint depending
+// Done performs a commit or rollback of the underlying transaction/savepoint depending
 // on the value of the error parameter. The resulting error value is a multierror containing
 // the error parameter along with any error that occurs during commit or rollback of the
 // transaction/savepoint. If the store does not wrap a transaction the original error value

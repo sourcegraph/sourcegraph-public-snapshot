@@ -135,7 +135,7 @@ func TestWorkerConcurrent(t *testing.T) {
 			handler.PostHandleFunc.SetDefaultHook(func(ctx context.Context, record Record) { markTime(record.RecordID(), 1) })
 			handler.HandleFunc.SetDefaultHook(func(context.Context, Store, Record) error {
 				// Do a _very_ small sleep to make it very unlikely that the scheduler
-				// will  happen to invoke all of the handlers sequentially.
+				// will happen to invoke all of the handlers sequentially.
 				<-time.After(time.Millisecond * 10)
 				return nil
 			})
@@ -168,11 +168,11 @@ func TestWorkerConcurrent(t *testing.T) {
 							// Here, A finishes after E is dequeued, which has a distance of 5 (2*3-1).
 
 							t.Errorf(
-								"times %d (%s-%s) and %d (%s-%s) failed validation",
+								"times %[1]d (%[3]s-%[4]s) and %[2]d (%[5]s-%[6]s) failed validation",
 								i,
+								j,
 								times[i][0],
 								times[i][1],
-								j,
 								times[j][0],
 								times[j][1],
 							)

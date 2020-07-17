@@ -13,15 +13,15 @@ import (
 type Store interface {
 	basestore.ShareableStore
 
-	// Done performs a commit or rollback of the underlying the transaction/savepoint depending
+	// Done performs a commit or rollback of the underlying transaction/savepoint depending
 	// returned from the Dequeue method. See basestore.Store#Done for additional documentation.
 	Done(err error) error
 
 	// Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
-	// should be held by the worker process. If there is such an record, it is returned along with a new store instance
+	// should be held by the worker process. If there is such a record, it is returned along with a new store instance
 	// that wraps the transaction. The resulting transaction must be closed by the caller, and the transaction should
 	// include a state transition of the record into a terminal state. If there is no such unlocked record, a nil record
-	// and a nil store will be returned along with a  false-valued flag. This method must not be called from within a
+	// and a nil store will be returned along with a false-valued flag. This method must not be called from within a
 	// transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
@@ -155,10 +155,10 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 }
 
 // Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
-// should be held by the worker process. If there is such an record, it is returned along with a new store instance
+// should be held by the worker process. If there is such a record, it is returned along with a new store instance
 // that wraps the transaction. The resulting transaction must be closed by the caller, and the transaction should
 // include a state transition of the record into a terminal state. If there is no such unlocked record, a nil record
-// and a nil store will be returned along with a  false-valued flag. This method must not be called from within a
+// and a nil store will be returned along with a false-valued flag. This method must not be called from within a
 // transaction.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.

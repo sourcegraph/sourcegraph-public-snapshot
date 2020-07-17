@@ -13,6 +13,7 @@ func NewIndexResetter(
 	metrics workerutil.ResetterMetrics,
 ) *workerutil.Resetter {
 	return workerutil.NewResetter(store.WorkerutilIndexStore(s), workerutil.ResetterOptions{
+		Name:     "index resetter",
 		Interval: resetInterval,
 		Metrics:  metrics,
 	})

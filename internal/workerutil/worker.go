@@ -26,6 +26,7 @@ type Worker struct {
 }
 
 type WorkerOptions struct {
+	Name        string
 	Handler     Handler
 	NumHandlers int
 	Interval    time.Duration
@@ -130,7 +131,7 @@ loop:
 				}
 			}
 
-			log15.Error("Failed to dequeue and handle record", "err", err)
+			log15.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)
 		}
 
 		delay := w.options.Interval
@@ -199,7 +200,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, nil
 	}
 
-	log15.Info("Dequeued record for processing", "id", record.RecordID())
+	log15.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
 	if hook, ok := w.options.Handler.(HandlerWithHooks); ok {
 		hook.PreHandle(w.ctx, record)
@@ -208,20 +209,17 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	w.wg.Add(1)
 
 	go func() {
-		defer w.wg.Done()
-
-		defer func() {
-			w.handlerSemaphore <- struct{}{}
-		}()
-
 		defer func() {
 			if hook, ok := w.options.Handler.(HandlerWithHooks); ok {
 				hook.PostHandle(w.ctx, record)
 			}
+
+			w.handlerSemaphore <- struct{}{}
+			w.wg.Done()
 		}()
 
 		if err := w.handle(tx, record); err != nil {
-			log15.Error("Failed to finalize record", "err", err)
+			log15.Error("Failed to finalize record", "name", w.options.Name, "err", err)
 		}
 	}()
 
@@ -250,17 +248,17 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 		if marked, markErr := tx.MarkErrored(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
-			log15.Warn("Marked record as errored", "id", record.RecordID(), "err", handleErr)
+			log15.Warn("Marked record as errored", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
 		}
 	} else {
 		if marked, markErr := tx.MarkComplete(ctx, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
-			log15.Info("Marked record as complete", "id", record.RecordID())
+			log15.Info("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
 		}
 	}
 
-	log15.Info("Handled record", "id", record.RecordID())
+	log15.Info("Handled record", "name", w.options.Name, "id", record.RecordID())
 	return nil
 }
 

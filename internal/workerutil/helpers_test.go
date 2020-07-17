@@ -2,29 +2,14 @@ package workerutil
 
 import (
 	"database/sql"
-	"flag"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "workerutil"
-}
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-	}
-	os.Exit(m.Run())
-}
 
 type TestWorkRecord struct {
 	ID int

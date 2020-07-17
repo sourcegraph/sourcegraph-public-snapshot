@@ -12,10 +12,10 @@ import (
 
 // Store is the interface to Postgres for precise-code-intel features.
 type Store interface {
-	// TODO - document
+	// Handle returns the underlying transactable database handle.
 	Handle() *basestore.TransactableHandle
 
-	// TODO - document
+	// With creates a new store with the underlying database handle from the given store.
 	With(other basestore.ShareableStore) Store
 
 	// Transact returns a store whose methods operate within the context of a transaction.

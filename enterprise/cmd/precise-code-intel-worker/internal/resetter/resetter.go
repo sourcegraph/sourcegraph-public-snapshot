@@ -13,6 +13,7 @@ func NewUploadResetter(
 	metrics workerutil.ResetterMetrics,
 ) *workerutil.Resetter {
 	return workerutil.NewResetter(store.WorkerutilUploadStore(s), workerutil.ResetterOptions{
+		Name:     "upload resetter",
 		Interval: resetInterval,
 		Metrics:  metrics,
 	})

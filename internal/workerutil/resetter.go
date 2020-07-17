@@ -26,6 +26,7 @@ type Resetter struct {
 }
 
 type ResetterOptions struct {
+	Name     string
 	Interval time.Duration
 	Metrics  ResetterMetrics
 }
@@ -68,14 +69,14 @@ loop:
 			}
 
 			r.options.Metrics.Errors.Inc()
-			log15.Error("Failed to reset stalled records", "error", err)
+			log15.Error("Failed to reset stalled records", "name", r.options.Name, "error", err)
 		}
 
 		for _, id := range resetIDs {
-			log15.Debug("Reset stalled record", "id", id)
+			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id)
 		}
 		for _, id := range erroredIDs {
-			log15.Debug("Reset stalled record", "id", id)
+			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id)
 		}
 
 		r.options.Metrics.RecordResets.Add(float64(len(resetIDs)))
