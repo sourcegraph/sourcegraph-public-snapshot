@@ -101,19 +101,49 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 			t.Fatalf("first=%d, unexpected hasNextPage (-want +got):\n%s", tc.first, diff)
 		}
 	}
+
+	var endCursor *string
+	for i := range changesetSpecs {
+		input := map[string]interface{}{"campaignSpec": apiID, "first": 1}
+		if endCursor != nil {
+			input["after"] = *endCursor
+		}
+		wantHasNextPage := i != len(changesetSpecs)-1
+
+		var response struct{ Node apitest.CampaignSpec }
+		apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecConnection)
+
+		specs := response.Node.ChangesetSpecs
+		if diff := cmp.Diff(1, len(specs.Nodes)); diff != "" {
+			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(len(changesetSpecs), specs.TotalCount); diff != "" {
+			t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(wantHasNextPage, specs.PageInfo.HasNextPage); diff != "" {
+			t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+		}
+
+		endCursor = specs.PageInfo.EndCursor
+		if want, have := wantHasNextPage, endCursor != nil; have != want {
+			t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+		}
+	}
 }
 
 const queryChangesetSpecConnection = `
-query($campaignSpec: ID!, $first: Int!) {
+query($campaignSpec: ID!, $first: Int!, $after: String) {
   node(id: $campaignSpec) {
     __typename
 
     ... on CampaignSpec {
       id
 
-      changesetSpecs(first: $first) {
+      changesetSpecs(first: $first, after: $after) {
         totalCount
-        pageInfo { hasNextPage }
+        pageInfo { hasNextPage, endCursor }
 
         nodes {
           __typename

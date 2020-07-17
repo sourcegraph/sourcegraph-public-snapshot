@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -49,8 +50,13 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
-
-	// TODO: args.After
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
 
 	return &changesetSpecConnectionResolver{
 		store:       r.store,

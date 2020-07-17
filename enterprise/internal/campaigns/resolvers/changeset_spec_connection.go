@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -46,7 +47,13 @@ func (r *changesetSpecConnectionResolver) PageInfo(ctx context.Context) (*graphq
 		return nil, err
 	}
 
-	return graphqlutil.HasNextPage(next != 0), nil
+	if next != 0 {
+		// We don't use the RandID for pagination, because we can't paginate database
+		// entries based on the RandID.
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+	}
+
+	return graphqlutil.HasNextPage(false), nil
 }
 
 func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetSpecResolver, error) {
