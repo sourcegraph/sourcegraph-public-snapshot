@@ -124,28 +124,28 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                     {uploadOrError.state === GQL.LSIFUploadState.UPLOADING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Still uploading...</span>
+                            <span className="test-upload-state">Still uploading...</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload is currently being processed...</span>
+                            <span className="test-upload-state">Upload is currently being processed...</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload processed successfully.</span>
+                            <span className="test-upload-state">Upload processed successfully.</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload failed to complete:</span>{' '}
+                            <span className="test-upload-state">Upload failed to complete:</span>{' '}
                             <code>{uploadOrError.failure}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">
+                            <span className="test-upload-state">
                                 Upload is queued. There are {uploadOrError.placeInQueue} uploads ahead of this one.
                             </span>
                         </div>
@@ -201,7 +201,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                                 <td>Is latest for repo</td>
                                 <td>
                                     {uploadOrError.finishedAt ? (
-                                        <span className="e2e-is-latest-for-repo">
+                                        <span className="test-is-latest-for-repo">
                                             {uploadOrError.isLatestForRepo ? 'yes' : 'no'}
                                         </span>
                                     ) : (

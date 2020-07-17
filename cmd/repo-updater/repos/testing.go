@@ -263,6 +263,9 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		if args.PrivateOnly {
 			preds = append(preds, r.Private)
 		}
+		if args.ClonedOnly {
+			preds = append(preds, r.Cloned)
+		}
 
 		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
 			repos = append(repos, r)
@@ -328,12 +331,16 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		if repo == nil {
 			return errors.Errorf("upserting repo with non-existent ID: id=%v", r.ID)
 		}
+		// the cloned column shouldn't be modified by UpsertRepos
+		r.Cloned = repo.Cloned
 		s.repoByID[r.ID] = r
 	}
 
 	for _, r := range inserts {
 		s.repoIDSeq++
 		r.ID = s.repoIDSeq
+		// the cloned column shouldn't be modified by UpsertRepos
+		r.Cloned = false
 		s.repoByID[r.ID] = r
 	}
 
@@ -363,7 +370,7 @@ func (s *FakeStore) SetClonedRepos(ctx context.Context, repoNames ...string) err
 
 		var found bool
 		for _, repoName := range repoNames {
-			if repoName == r.Name {
+			if strings.ToLower(repoName) == strings.ToLower(r.Name) {
 				found = true
 				break
 			}

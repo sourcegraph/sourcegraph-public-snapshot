@@ -9,6 +9,7 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -24,6 +25,7 @@ describe('Blob viewer', () => {
             directory: __dirname,
         })
     })
+    saveScreenshotsUponFailures(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('general layout for viewing a file', () => {
@@ -51,9 +53,9 @@ describe('Blob viewer', () => {
             prepareTwoFilesStubs()
 
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
-            await driver.page.waitForSelector('.e2e-repo-blob')
+            await driver.page.waitForSelector('.test-repo-blob')
             const blobContent = await driver.page.evaluate(() => {
-                const editorArea = document.querySelector<HTMLDivElement>('.e2e-repo-blob')
+                const editorArea = document.querySelector<HTMLDivElement>('.test-repo-blob')
                 return editorArea ? editorArea.textContent : null
             })
 
@@ -65,11 +67,11 @@ describe('Blob viewer', () => {
             prepareTwoFilesStubs()
 
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
-            await driver.page.waitForSelector('.e2e-tree-file-link')
+            await driver.page.waitForSelector('.test-tree-file-link')
 
             // collect all files/links visible the the "Files" tab
             const allFilesInTheTree = await driver.page.evaluate(() => {
-                const allFiles = document.querySelectorAll<HTMLAnchorElement>('.e2e-tree-file-link')
+                const allFiles = document.querySelectorAll<HTMLAnchorElement>('.test-tree-file-link')
 
                 return [...allFiles].map(fileAnchor => ({
                     content: fileAnchor.textContent,

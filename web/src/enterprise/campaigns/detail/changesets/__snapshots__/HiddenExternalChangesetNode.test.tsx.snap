@@ -12,7 +12,7 @@ exports[`HiddenExternalChangesetNode renders 1`] = `
   }
 >
   <li
-    className="list-group-item e2e-changeset-node"
+    className="list-group-item test-changeset-node"
   >
     <div
       className="changeset-node__content changeset-node__content--no-collapse flex-fill"

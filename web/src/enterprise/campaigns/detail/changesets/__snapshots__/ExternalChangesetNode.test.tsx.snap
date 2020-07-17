@@ -2,7 +2,7 @@
 
 exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
 <li
-  className="list-group-item e2e-changeset-node"
+  className="list-group-item test-changeset-node"
 >
   <Collapsible
     expandedButtonClassName="mb-3"

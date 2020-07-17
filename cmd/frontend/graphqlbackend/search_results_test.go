@@ -245,6 +245,9 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		for _, v := range searchVersions {
 			r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: `repo:*`, Version: v})
 			if err != nil {
@@ -1098,7 +1101,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 }
 
 func TestSearchResolver_evaluateWarning(t *testing.T) {
-	q, _ := query.ProcessAndOr("file:foo or file:bar", query.SearchTypeRegex)
+	q, _ := query.ProcessAndOr("file:foo or file:bar", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
 	wantPrefix := "I'm having trouble understanding that query."
 	andOrQuery, _ := q.(*query.AndOrQuery)
 	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
@@ -1108,7 +1111,7 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 		}
 	})
 
-	_, err := query.ProcessAndOr("file:foo or or or", query.SearchTypeRegex)
+	_, err := query.ProcessAndOr("file:foo or or or", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
 	gotAlert := alertForQuery("", err)
 	t.Run("warn for unsupported ambiguous and/or query", func(t *testing.T) {
 		if !strings.HasPrefix(gotAlert.description, wantPrefix) {

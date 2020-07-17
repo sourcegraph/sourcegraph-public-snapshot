@@ -103,11 +103,6 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(pipeline *bk.Pipeline) {
-	// Shared tests
-	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test.sh shared"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
-
 	// Client integration tests
 	pipeline.AddStep(":puppeteer::electric_plug:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
@@ -124,10 +119,15 @@ func addSharedTests(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn nyc report -r json"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook"))
 
-	// Upload storybook to Percy
-	pipeline.AddStep(":storybook::percy:",
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		bk.Cmd("dev/ci/yarn-run.sh build-storybook percy-storybook"))
+	// Upload storybook to Chromatic
+	pipeline.AddStep(":chromatic:",
+		bk.AutomaticRetry(5),
+		bk.Cmd("dev/ci/yarn-run.sh chromatic"))
+
+	// Shared tests
+	pipeline.AddStep(":jest:",
+		bk.Cmd("dev/ci/yarn-test.sh shared"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
 // Adds PostgreSQL backcompat tests.

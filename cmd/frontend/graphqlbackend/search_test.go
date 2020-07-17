@@ -363,12 +363,16 @@ func TestDetectSearchType(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(*testing.T) {
-			got, err := detectSearchType(test.version, test.patternType, test.input)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got != test.want {
-				t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
+			got, err := detectSearchType(test.version, test.patternType)
+			useNewParser := []bool{true, false}
+			for _, parserOpt := range useNewParser {
+				got = overrideSearchType(test.input, got, parserOpt)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got != test.want {
+					t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
+				}
 			}
 		})
 	}

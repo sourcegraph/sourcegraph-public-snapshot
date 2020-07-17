@@ -123,7 +123,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                         <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
                         <input
                             type="text"
-                            className="form-control e2e-create-access-token-description"
+                            className="form-control test-create-access-token-description"
                             id="user-settings-create-access-token-page__note"
                             onChange={this.onNoteChange}
                             required={true}
@@ -182,7 +182,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                     <button
                         type="submit"
                         disabled={this.state.creationOrError === 'loading'}
-                        className="btn btn-success e2e-create-access-token-submit"
+                        className="btn btn-success test-create-access-token-submit"
                     >
                         {this.state.creationOrError === 'loading' ? (
                             <LoadingSpinner className="icon-inline" />
@@ -192,7 +192,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                         Generate token
                     </button>
                     <Link
-                        className="btn btn-secondary ml-1 e2e-create-access-token-cancel"
+                        className="btn btn-secondary ml-1 test-create-access-token-cancel"
                         to={this.props.match.url.replace(/\/new$/, '')}
                     >
                         Cancel

@@ -97,6 +97,12 @@ const SettingsSchemaJSON = `{
         "required": ["key", "description", "query"]
       }
     },
+    "search.globbing": {
+      "description": "Enables globbing for supported field values",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
     "search.scopes": {
       "description": "Predefined search scopes",
       "type": "array",
@@ -203,6 +209,12 @@ const SettingsSchemaJSON = `{
     },
     "search.uppercase": {
       "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
+    "search.migrateParser": {
+      "description": "If true, uses the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }

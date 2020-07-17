@@ -28,6 +28,9 @@ type RepoFields struct {
 
 	// Archived is whether this repository has been archived.
 	Archived bool
+
+	// Cloned is whether this repository is cloned.
+	Cloned bool
 }
 
 // Repo represents a source code repository.

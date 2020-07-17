@@ -4,6 +4,7 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { settingsID, testUserID } from '../../../shared/src/testing/integration/graphQlResults'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Settings', () => {
     let driver: Driver
@@ -19,6 +20,7 @@ describe('Settings', () => {
             directory: __dirname,
         })
     })
+    saveScreenshotsUponFailures(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     describe('User settings page', () => {
@@ -69,23 +71,23 @@ describe('Settings', () => {
             })
 
             const getSettingsEditorContent = async (): Promise<string | null | undefined> => {
-                await driver.page.waitForSelector('.e2e-settings-file .monaco-editor .view-lines')
+                await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
                 return driver.page.evaluate(
                     () =>
                         document
-                            .querySelector<HTMLElement>('.e2e-settings-file .monaco-editor .view-lines')
+                            .querySelector<HTMLElement>('.test-settings-file .monaco-editor .view-lines')
                             ?.textContent?.replace(/\u00A0/g, ' ') // Monaco replaces all spaces with &nbsp;
                 )
             }
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings')
 
-            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
-            await driver.page.waitForSelector('.e2e-save-toolbar-save')
+            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.test-save-toolbar-save')
 
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.e2e-save-toolbar-save')?.disabled
+                    () => document.querySelector<HTMLButtonElement>('.test-save-toolbar-save')?.disabled
                 ),
                 true,
                 'Expected save button to be disabled'
@@ -94,7 +96,7 @@ describe('Settings', () => {
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'
             await driver.replaceText({
-                selector: '.e2e-settings-file .monaco-editor .view-lines',
+                selector: '.test-settings-file .monaco-editor .view-lines',
                 newText: newSettings,
                 selectMethod: 'keyboard',
                 enterTextMethod: 'type',
@@ -106,7 +108,7 @@ describe('Settings', () => {
 
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.e2e-save-toolbar-save')?.disabled
+                    () => document.querySelector<HTMLButtonElement>('.test-save-toolbar-save')?.disabled
                 ),
                 false,
                 'Expected save button to not be disabled'
