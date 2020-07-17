@@ -457,8 +457,8 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	// Create 4 repositories
-	repos := make([]*repos.Repo, 0, 4)
+	// Create 2 repositories
+	repos := make([]*repos.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
 		r := newGitHubTestRepo(name, i)
@@ -475,9 +475,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		mockRepoComparison(t, changesetBaseRefOid, changesetHeadRefOid, testDiff)
 		changesetDiffStat := apitest.DiffStat{Added: 0, Changed: 2, Deleted: 0}
 
-		changesets := make([]*campaigns.Changeset, 0, 2)
+		changesets := make([]*campaigns.Changeset, 0, len(repos))
 		changesetIDs := make([]int64, 0, cap(changesets))
-		for _, r := range repos[0:2] {
+		for _, r := range repos {
 			c := &campaigns.Changeset{
 				RepoID:              r.ID,
 				ExternalServiceType: extsvc.TypeGitHub,
@@ -602,8 +602,8 @@ func TestRepositoryPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, 2)
-		for _, r := range repos[0:2] {
+		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(repos))
+		for _, r := range repos {
 			c := &campaigns.ChangesetSpec{
 				RepoID:         r.ID,
 				UserID:         userID,
