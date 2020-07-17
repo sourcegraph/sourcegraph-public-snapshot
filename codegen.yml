@@ -14,7 +14,7 @@ config:
   declarationKind: 'interface'
   scalars:
     DateTime: 'string'
-    JSON: '{ [key: string]: any }'
+    JSON: 'object'
     GitObjectID: 'string'
     JSONCString: 'string'
 
