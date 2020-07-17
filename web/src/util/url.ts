@@ -95,10 +95,10 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const blobSeparator = pathname.indexOf('/-/blob/')
     const comparisonSeparator = pathname.indexOf('/-/compare/')
     if (treeSeparator !== -1) {
-        filePath = pathname.slice(treeSeparator + '/-/tree/'.length)
+        filePath = decodeURIComponent(pathname.slice(treeSeparator + '/-/tree/'.length))
     }
     if (blobSeparator !== -1) {
-        filePath = pathname.slice(blobSeparator + '/-/blob/'.length)
+        filePath = decodeURIComponent(pathname.slice(blobSeparator + '/-/blob/'.length))
     }
     if (comparisonSeparator !== -1) {
         commitRange = pathname.slice(comparisonSeparator + '/-/compare/'.length)
