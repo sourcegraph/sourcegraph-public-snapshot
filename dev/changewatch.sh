@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 # variable WATCHMAN_DEBUG=t
 
 if [ ! -x "$(command -v watchman)" ]; then
-  echo "Please install watchman"
+  echo "Please install watchman. https://facebook.github.io/watchman/docs/install.html"
   echo
   echo "  brew install watchman"
   exit 1
