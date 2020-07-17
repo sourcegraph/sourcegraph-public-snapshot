@@ -12,4 +12,4 @@ if [ ! -x "$(command -v watchman)" ]; then
   exit 1
 fi
 
-exec go run ./dev/watchmanwrapper dev/handle-change.sh < dev/watchmanwrapper/watch.json
+exec go run ./dev/watchmanwrapper dev/handle-change.sh <dev/watchmanwrapper/watch.json
