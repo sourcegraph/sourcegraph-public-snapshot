@@ -97,7 +97,7 @@ func TestParseParameterList(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			parser := &parser{buf: []byte(tt.Input)}
-			result, err := parser.parseParameterList()
+			result, err := parser.parseLeavesRegexp()
 			if err != nil {
 				t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
 			}
@@ -248,8 +248,8 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf: []byte(in),
-		// heuristics: map[heuristic]bool{parensAsPatterns: false},
+		buf:        []byte(in),
+		leafParser: SearchTypeRegex,
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -723,7 +723,7 @@ func TestParse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, err = ParseAndOr(tt.Input)
+			result, err = ParseAndOr(tt.Input, SearchTypeRegex)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {
@@ -841,7 +841,7 @@ func TestMergePatterns(t *testing.T) {
 	for _, tt := range cases {
 		t.Run("merge pattern", func(t *testing.T) {
 			p := &parser{buf: []byte(tt.input), heuristics: parensAsPatterns}
-			nodes, err := p.parseParameterList()
+			nodes, err := p.parseLeavesRegexp()
 			got := nodes[0].(Pattern).Annotation.Range.String()
 			if err != nil {
 				t.Error(err)
