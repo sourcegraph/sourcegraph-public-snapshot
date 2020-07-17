@@ -8,6 +8,12 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
+BRANCH=$(git branch --show-current)
+if [[ "$BRANCH" =~ ^[0-9.]+$ ]]; then
+  echo 'Skipping db-backcompat test for versioned branch'
+  exit 0
+fi
+
 HEAD=$(git symbolic-ref --short HEAD || git rev-parse HEAD)
 if [ -z "$HEAD" ]; then
   # shellcheck disable=SC2016
