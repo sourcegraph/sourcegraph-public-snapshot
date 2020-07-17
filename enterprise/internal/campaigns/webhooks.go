@@ -78,6 +78,8 @@ func extractExternalServiceID(extSvc *repos.ExternalService) (string, error) {
 		serviceID = c.Url
 	case *schema.BitbucketServerConnection:
 		serviceID = c.Url
+	case *schema.GitLabConnection:
+		serviceID = c.Url
 	}
 	if serviceID == "" {
 		return "", errors.New("could not determine service id")
