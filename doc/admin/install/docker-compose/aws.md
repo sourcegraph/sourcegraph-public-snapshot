@@ -109,7 +109,7 @@ docker-compose up -d
 * Click "Add New Volume" and add an additional volume (for storing Docker data) with the following settings:
 
   * **Volume Type** (left-most column): EBS
-  * **Device**: `/dev/sdb`
+  * **IMPORTANT: Device**: `/dev/sdb` 
   * **Size (GiB)**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
   * **Volume Type**: General Purpose SSD (gp2)
   * **Delete on Termination**: Leave this setting unchecked
