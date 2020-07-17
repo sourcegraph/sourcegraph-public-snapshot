@@ -1,10 +1,16 @@
 import * as React from 'react'
 import DownloadIcon from 'mdi-react/DownloadIcon'
+import { Link } from '../../../../shared/src/components/Link'
+import classNames from 'classnames'
 
-export const PrivateCodeCta: React.FunctionComponent<{}> = () => {
+interface Props {
+    className?: string
+}
+
+export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
     const logoSource = '/.assets/img/sourcegraph-mark.svg'
     return (
-        <div className="private-code-cta d-flex flex-row card">
+        <div className={classNames('private-code-cta d-flex flex-row card', props.className)}>
             <div className="private-code-cta__icon-column d-flex flex-column align-items-center">
                 <img src={logoSource} className="private-code-cta__logo" />
                 <DownloadIcon className="private-code-cta__download-icon" />
@@ -16,7 +22,9 @@ export const PrivateCodeCta: React.FunctionComponent<{}> = () => {
                     Bitbucket and local installations of git, perforce, svn and other code repositories.
                 </p>
                 <div>
-                    <button className="btn btn-primary">Install now</button>
+                    <Link to="https://docs.sourcegraph.com/">
+                        <button className="btn btn-primary">Install now</button>
+                    </Link>
                 </div>
             </div>
         </div>

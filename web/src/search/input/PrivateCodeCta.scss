@@ -1,9 +1,9 @@
 .private-code-cta {
-    max-width: 691px;
     padding: 1.5rem;
     border-radius: 3px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.07);
-    border: 1px solid #f2f4f8;
+    background: #1d2535;
+    border: 1px solid #32405d;
     color: $gray-17;
 
     &__logo {
@@ -14,10 +14,26 @@
     &__download-icon {
         height: 3.5rem;
         width: 4rem;
-        color: #e6eaf2;
+        color: #404c67;
     }
 
     &__icon-column {
         margin-right: 1.5rem;
+    }
+
+    &--search-page {
+        max-width: 690px;
+    }
+}
+
+.theme-light {
+    .private-code-cta {
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.07);
+        background: $body-bg-color-light;
+        border: 1px solid $color-light-bg-2;
+
+        &__download-icon {
+            color: #e6eaf2;
+        }
     }
 }
