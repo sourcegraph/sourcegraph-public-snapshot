@@ -1785,9 +1785,26 @@ type ChangesetSpecDescription struct {
 	Published bool `json:"published,omitempty"`
 }
 
-// IsExistingChangesetRef returns true when the changeset spec is referencing an existing changeset on a codehost.
+// IsExistingChangesetRef returns true when the changeset spec is referencing
+// an existing changeset on a codehost.
 func (d *ChangesetSpecDescription) IsExistingChangesetRef() bool {
 	return d.ExternalID != ""
+}
+
+// ErrNoCommits is returned by (*ChangesetSpecDescription).Diff if the
+// description doesn't have any commits descriptions.
+var ErrNoCommits = errors.New("changeset description doesn't contain commit descriptions")
+
+// Diff returns the Diff of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) Diff() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].Diff, nil
 }
 
 type GitCommitDescription struct {
