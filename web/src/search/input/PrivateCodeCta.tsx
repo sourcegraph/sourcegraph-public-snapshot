@@ -1,5 +1,4 @@
 import * as React from 'react'
-import DownloadIcon from 'mdi-react/DownloadIcon'
 import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
 
@@ -20,11 +19,9 @@ export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
                     Set up a private Sourcegraph instance to search your private repositories on GitHub, GitLab,
                     Bitbucket and local installations of git, perforce, svn and other code repositories.
                 </p>
-                <div>
-                    <Link to="https://docs.sourcegraph.com/" target="_blank" rel="noreferrer">
-                        <button className="btn btn-primary ga-cta-install-now">Install now</button>
-                    </Link>
-                </div>
+                <Link to="https://docs.sourcegraph.com/" target="_blank" rel="noreferrer">
+                    <button className="btn btn-primary ga-cta-install-now">Install now</button>
+                </Link>
             </div>
         </div>
     )

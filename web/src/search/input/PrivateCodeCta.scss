@@ -1,26 +1,20 @@
 .private-code-cta {
     padding: 1.5rem;
     border-radius: 3px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.07);
-    background: #1d2535;
-    border: 1px solid #32405d;
+    background: $gray-21;
+    border: 1px solid $gray-18;
     color: $gray-17;
-
-    &__download-icon {
-        height: 3.5rem;
-        width: 4rem;
-        color: #404c67;
-    }
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.07);
 
     &__icon-column {
         margin-right: 1.5rem;
     }
+
 }
 
 .theme-light {
     .private-code-cta {
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.07);
-        background: #ffffff;
+        background: $white;
         border: 1px solid $color-light-bg-2;
     }
 }
@@ -50,5 +44,6 @@
         strong {
             color: $gray-11;
         }
+
     }
 }
