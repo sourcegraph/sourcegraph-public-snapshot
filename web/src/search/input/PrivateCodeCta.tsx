@@ -21,7 +21,7 @@ export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
                     Bitbucket and local installations of git, perforce, svn and other code repositories.
                 </p>
                 <div>
-                    <Link to="https://docs.sourcegraph.com/" target="_blank" rel="">
+                    <Link to="https://docs.sourcegraph.com/" target="_blank" rel="noreferrer">
                         <button className="btn btn-primary ga-cta-install-now">Install now</button>
                     </Link>
                 </div>
