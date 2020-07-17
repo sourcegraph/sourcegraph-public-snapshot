@@ -66,9 +66,7 @@ go test -tags "gqltest" -base-url "http://localhost:3080" -email "joe@sourcegrap
 
 ## How to add new tests
 
-Adding new tests to this test suite is as easy as adding a Go test,
-
-General rules:
+Adding new tests to this test suite is as easy as adding a Go test, here are some general rules to follow:
 
 - Add `// +build gqltest` on every new file as the very first line.
 - Use `gqltest-` prefix for entity name, and be as specific be as possible for eaiser debugging, e.g. `gqltest-org-user-1`.
