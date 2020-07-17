@@ -927,7 +927,10 @@ func TestCreateCampaignSpec(t *testing.T) {
 		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{
-				{ID: string(changesetSpecID)},
+				{
+					Typename: "VisibleChangesetSpec",
+					ID:       string(changesetSpecID),
+				},
 			},
 		},
 	}
@@ -963,6 +966,7 @@ mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
 
 	changesetSpecs {
 	  nodes {
+		  __typename
 		  ... on VisibleChangesetSpec {
 			  id
 		  }
