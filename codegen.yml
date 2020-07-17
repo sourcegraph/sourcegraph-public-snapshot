@@ -1,0 +1,45 @@
+overwrite: true
+schema: './cmd/frontend/graphqlbackend/schema.graphql'
+hooks:
+  afterAllFileWrite:
+    - eslint --fix
+    - prettier --write
+config:
+  onlyOperationTypes: true
+  preResolveTypes: true
+  operationResultSuffix: 'Result'
+  omitOperationSuffix: true
+  skipTypename: true
+  namingConvention: keep
+  declarationKind: 'interface'
+  scalars:
+    DateTime: 'string'
+    JSON: '{ [key: string]: any }'
+    GitObjectID: 'string'
+    JSONCString: 'string'
+
+generates:
+  web/src/graphql-operations.ts:
+    documents:
+      - 'web/src/**/*.{ts,tsx}'
+      - '!web/src/regression/**/*.*'
+      - '!web/src/end-to-end/**/*.*'
+    config:
+      enumValues: ../../shared/src/graphql/schema
+      interfaceNameForOperations: 'WebGraphQlOperations'
+    plugins:
+      - shared/dev/extractGraphQlOperationCodegenPlugin.js
+      - typescript
+      - typescript-operations
+
+  shared/src/graphql-operations.ts:
+    documents:
+      - 'shared/src/**/*.{ts,tsx}'
+      - '!shared/src/testing/**/*.*'
+    config:
+      enumValues: ./graphql/schema
+      interfaceNameForOperations: 'SharedGraphQlOperations'
+    plugins:
+      - shared/dev/extractGraphQlOperationCodegenPlugin.js
+      - typescript
+      - typescript-operations
