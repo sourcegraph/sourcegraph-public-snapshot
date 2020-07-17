@@ -8,12 +8,11 @@ interface Props {
 }
 
 export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
-    const logoSource = '/.assets/img/sourcegraph-mark.svg'
+    const logoSource = '/.assets/img/download-illus.svg'
     return (
         <div className={classNames('private-code-cta d-flex flex-row card', props.className)}>
             <div className="private-code-cta__icon-column d-flex flex-column align-items-center">
                 <img src={logoSource} className="private-code-cta__logo" />
-                <DownloadIcon className="private-code-cta__download-icon" />
             </div>
             <div>
                 <h3>Search your private code</h3>

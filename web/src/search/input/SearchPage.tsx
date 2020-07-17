@@ -288,8 +288,12 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </div>
                             </div>
                         </div>
+                        <div className="row justify-content-center">
+                            <div className="mx-auto col-md-10 col-lg-8 col-xl-6">
+                                <PrivateCodeCta className="private-code-cta--search-page" />
+                            </div>
+                        </div>
                     </div>
-                    <PrivateCodeCta className="private-code-cta--search-page" />
                 </>
             )}
         </div>

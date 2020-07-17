@@ -42,9 +42,9 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                         .
                     </p>
                 </section>
-                <div className="col-md-4 col-xs-12">
-                    <PrivateCodeCta />
-                </div>
+                    <div className="offset-md-1 col-md-10 offset-lg-0 col-lg-4">
+                        <PrivateCodeCta />
+                    </div>
             </div>
         }
     />
