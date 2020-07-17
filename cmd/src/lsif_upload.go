@@ -95,7 +95,7 @@ Examples:
 		}
 
 		if !isFlagSet(flagSet, "root") {
-			if root, err := codeintel.InferRoot(*flags.root); err != nil {
+			if root, err := codeintel.InferRoot(*flags.file); err != nil {
 				inferErrors = append(inferErrors, inferError{"root", err})
 			} else {
 				flags.root = &root
