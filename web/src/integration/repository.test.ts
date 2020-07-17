@@ -437,11 +437,13 @@ describe('Repository', () => {
             await driver.page.waitForSelector('.test-repo-blob')
 
             assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector('.breadcrumb .part-directory')?.textContent),
+                await driver.page.evaluate(
+                    () => document.querySelector('.test-breadcrumb-part-directory')?.textContent
+                ),
                 directoryName
             )
             assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector('.breadcrumb .part-last')?.textContent),
+                await driver.page.evaluate(() => document.querySelector('.test-breadcrumb-part-last')?.textContent),
                 fileName
             )
 
