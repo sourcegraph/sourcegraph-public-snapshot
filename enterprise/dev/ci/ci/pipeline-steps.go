@@ -131,10 +131,11 @@ func addSharedTests(pipeline *bk.Pipeline) {
 }
 
 // Adds PostgreSQL backcompat tests.
-func addPostgresBackcompat(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":postgres:",
-		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
-}
+// Workaround for https://github.com/sourcegraph/sourcegraph/pull/12301
+// func addPostgresBackcompat(pipeline *bk.Pipeline) {
+// 	pipeline.AddStep(":postgres:",
+// 		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+// }
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
