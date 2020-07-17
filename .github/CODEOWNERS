@@ -216,6 +216,7 @@ Dockerfile @sourcegraph/distribution
 # Backend shared packages
 /internal/endpoint/ @keegancsmith @slimsag
 /internal/rcache/ @keegancsmith
+/internal/leader @sourcegraph/cloud
 /internal/redispool/ @keegancsmith
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
