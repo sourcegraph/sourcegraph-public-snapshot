@@ -46,6 +46,7 @@
 /internal/src-cli @efritz
 /internal/linkheader @efritz
 /internal/sqliteutil @efritz
+/internal/workerutil @efritz
 /internal/tar @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
