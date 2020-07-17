@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -448,7 +447,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Repo filtered out by authzFilter
-		authzFilterRepo(t, rs[0].ID)
+		ct.AuthzFilterRepos(t, rs[0].ID)
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
@@ -464,7 +463,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Repo of changeset2 filtered out by authzFilter
-		authzFilterRepo(t, changeset2.RepoID)
+		ct.AuthzFilterRepos(t, changeset2.RepoID)
 
 		fakeSource := &ct.FakeChangesetSource{Err: nil}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -568,7 +567,7 @@ func TestService(t *testing.T) {
 
 		t.Run("missing repository permissions", func(t *testing.T) {
 			// Single repository filtered out by authzFilter
-			authzFilterRepo(t, changesetSpecs[0].RepoID)
+			ct.AuthzFilterRepos(t, changesetSpecs[0].RepoID)
 
 			opts := CreateCampaignSpecOpts{
 				UserID:               user.ID,
@@ -640,7 +639,7 @@ func TestService(t *testing.T) {
 
 		t.Run("missing repository permissions", func(t *testing.T) {
 			// Single repository filtered out by authzFilter
-			authzFilterRepo(t, repo.ID)
+			ct.AuthzFilterRepos(t, repo.ID)
 
 			_, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
 			if !errcode.IsNotFound(err) {
@@ -943,18 +942,4 @@ func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state 
 	}
 
 	return changeset
-}
-
-func authzFilterRepo(t *testing.T, id api.RepoID) {
-	db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		var filtered []*types.Repo
-		for _, r := range repos {
-			if r.ID == id {
-				continue
-			}
-			filtered = append(filtered, r)
-		}
-		return filtered, nil
-	}
-	t.Cleanup(func() { db.MockAuthzFilter = nil })
 }
