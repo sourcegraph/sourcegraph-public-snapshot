@@ -31,6 +31,7 @@ import classNames from 'classnames'
 import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageConfig'
 import { SearchPageInput } from './SearchPageInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
+import { PrivateCodeCta } from './PrivateCodeCta'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -94,6 +95,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                 <SearchPageInput {...props} source="home" />
                 {views && <ViewGrid {...props} className="mt-5" views={views} />}
             </div>
+            <PrivateCodeCta />
             {props.isSourcegraphDotCom && props.showRepogroupHomepage && (
                 <div className="search-page__repogroup-content container-fluid mt-5">
                     <div className="d-flex align-items-baseline mb-3">

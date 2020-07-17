@@ -1,0 +1,23 @@
+.private-code-cta {
+    max-width: 691px;
+    padding: 1.5rem;
+    border-radius: 3px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.07);
+    border: 1px solid #f2f4f8;
+    color: $gray-17;
+
+    &__logo {
+        height: 3.5rem;
+        width: 3.5rem;
+    }
+
+    &__download-icon {
+        height: 3.5rem;
+        width: 4rem;
+        color: #e6eaf2;
+    }
+
+    &__icon-column {
+        margin-right: 1.5rem;
+    }
+}
