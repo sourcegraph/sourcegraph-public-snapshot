@@ -237,6 +237,10 @@ type ChangesetSpecDescription struct {
 	Commits []GitCommitDescription
 
 	Published bool
+
+	Diff struct {
+		FileDiffs FileDiffs
+	}
 }
 
 type GitCommitDescription struct {

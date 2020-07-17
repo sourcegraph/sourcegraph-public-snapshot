@@ -13,6 +13,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -37,6 +38,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
+	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
+	mockBackendCommits(t, testRev)
+
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +54,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}{
 		{
 			name:    "GitBranchChangesetDescription",
-			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID),
+			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
@@ -72,6 +76,15 @@ func TestChangesetSpecResolver(t *testing.T) {
 							{Diff: spec.Spec.Commits[0].Diff, Message: spec.Spec.Commits[0].Message},
 						},
 						Published: false,
+						Diff: struct{ FileDiffs apitest.FileDiffs }{
+							FileDiffs: apitest.FileDiffs{
+								DiffStat: apitest.DiffStat{
+									Added:   1,
+									Deleted: 1,
+									Changed: 2,
+								},
+							},
+						},
 					},
 					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
@@ -100,6 +113,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+
 			spec, err := campaigns.NewChangesetSpecFromRaw(tc.rawSpec)
 			if err != nil {
 				t.Fatal(err)
@@ -162,6 +176,12 @@ query($id: ID!) {
           }
 
           published
+
+		  diff {
+		    fileDiffs {
+			  diffStat { added, changed, deleted }
+			}
+		  }
         }
       }
 

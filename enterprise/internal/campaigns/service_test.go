@@ -621,7 +621,7 @@ func TestService(t *testing.T) {
 		svc := NewServiceWithClock(store, cf, clock)
 
 		repo := rs[0]
-		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID))
+		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
 			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
