@@ -22,7 +22,7 @@ export const PrivateCodeCta: React.FunctionComponent<Props> = props => {
                 </p>
                 <div>
                     <Link to="https://docs.sourcegraph.com/">
-                        <button className="btn btn-primary">Install now</button>
+                        <button className="btn btn-primary ga-cta-install-now">Install now</button>
                     </Link>
                 </div>
             </div>
