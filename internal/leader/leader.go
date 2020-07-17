@@ -2,6 +2,7 @@ package leader
 
 import (
 	"context"
+	"math/rand"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -28,15 +29,17 @@ func Do(parentCtx context.Context, key string, workFn func(ctx context.Context),
 		options.AcquireInterval = defaultAcquireInterval
 	}
 	for {
-		select {
-		case <-parentCtx.Done():
+		if parentCtx.Err() != nil {
 			return
-		default:
 		}
 
 		ctx, cancel, ok := rcache.TryAcquireMutex(parentCtx, key, options.MutexOptions)
 		if !ok {
-			time.Sleep(options.AcquireInterval)
+			select {
+			case <-parentCtx.Done():
+				return
+			case <-time.After(jitter(options.AcquireInterval)):
+			}
 			continue
 		}
 
@@ -45,4 +48,9 @@ func Do(parentCtx context.Context, key string, workFn func(ctx context.Context),
 			workFn(ctx)
 		}()
 	}
+}
+
+// jitter returns the base duration increased by a random amount of up to 25%
+func jitter(base time.Duration) time.Duration {
+	return base + time.Duration(rand.Int63n(int64(base/4)))
 }
