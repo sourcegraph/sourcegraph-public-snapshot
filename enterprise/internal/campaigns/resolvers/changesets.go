@@ -240,10 +240,9 @@ func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 		if r.preloadedRepo != nil {
 			r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
 		} else {
+			// 🚨 SECURITY: graphqlbackend.RepositoryByIDInt32 uses the authzFilter under the hood and
+			// filters out repositories that the user doesn't have access to.
 			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, r.changeset.RepoID)
-			if r.repoErr != nil {
-				return
-			}
 		}
 	})
 	return r.repo, r.repoErr

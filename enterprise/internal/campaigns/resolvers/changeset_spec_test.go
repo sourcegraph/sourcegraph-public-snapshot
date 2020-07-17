@@ -136,7 +136,7 @@ query($id: ID!) {
 
         ... on ExistingChangesetReference {
           baseRepository {
-              id
+             id
           }
           externalID
         }

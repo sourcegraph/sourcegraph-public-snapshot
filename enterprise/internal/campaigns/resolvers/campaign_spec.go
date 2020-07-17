@@ -58,6 +58,7 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 			store:         r.store,
 			httpFactory:   r.httpFactory,
 			changesetSpec: c,
+			repoCtx:       ctx,
 		})
 	}
 
@@ -97,7 +98,6 @@ func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.N
 }
 
 func (r *campaignSpecResolver) PreviewURL() (string, error) {
-	// TODO: this needs to take the namespace into account
 	return "/campaigns/new?spec=" + string(r.ID()), nil
 }
 

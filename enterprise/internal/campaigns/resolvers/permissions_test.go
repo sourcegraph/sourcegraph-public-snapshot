@@ -541,7 +541,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		ct.AuthzFilterRepos(t, filteredRepo)
 
 		// Send query again and check that for each filtered repository we get a
-		// HiddenChangeset/HiddenPatch and that errors are filtered out
+		// HiddenChangeset
 		want := wantCampaignResponse{
 			changesetTypes: map[string]int{
 				"ExternalChangeset":       1,
@@ -591,6 +591,67 @@ func TestRepositoryPermissions(t *testing.T) {
 			// No HiddenExternalChangeset
 		}
 		testCampaignResponse(t, s, userCtx, input, wantReviewStateResponse)
+	})
+
+	t.Run("CampaignSpec and changesetSpecs", func(t *testing.T) {
+		campaignSpec := &campaigns.CampaignSpec{
+			UserID:          userID,
+			NamespaceUserID: userID,
+		}
+		if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, 2)
+		for _, r := range repos[0:2] {
+			c := &campaigns.ChangesetSpec{
+				RepoID:         r.ID,
+				UserID:         userID,
+				CampaignSpecID: campaignSpec.ID,
+			}
+			if err := store.CreateChangesetSpec(ctx, c); err != nil {
+				t.Fatal(err)
+			}
+			changesetSpecs = append(changesetSpecs, c)
+		}
+
+		// Query campaignSpec and check that we get all changesetSpecs
+		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		testCampaignSpecResponse(t, s, userCtx, campaignSpec.RandID, wantCampaignSpecResponse{
+			changesetSpecTypes:  map[string]int{"VisibleChangesetSpec": 2},
+			changesetSpecsCount: 2,
+		})
+
+		// Now query the changesetSpecs as single nodes, to make sure that fetching/preloading
+		// of repositories works
+		for _, c := range changesetSpecs {
+			// Both changesetSpecs are visible still, so both should be VisibleChangesetSpec
+			testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
+		}
+
+		// Now we add the authzFilter and filter out the repository of one changeset
+		filteredRepo := changesetSpecs[0].RepoID
+		ct.AuthzFilterRepos(t, filteredRepo)
+
+		// Send query again and check that for each filtered repository we get a
+		// HiddenChangesetSpec.
+		testCampaignSpecResponse(t, s, userCtx, campaignSpec.RandID, wantCampaignSpecResponse{
+			changesetSpecTypes: map[string]int{
+				"VisibleChangesetSpec": 1,
+				"HiddenChangesetSpec":  1,
+			},
+			changesetSpecsCount: 2,
+		})
+
+		// Query the single changesetSpec nodes again
+		for _, c := range changesetSpecs {
+			// The changesetSpec whose repository has been filtered should be hidden
+			if c.RepoID == filteredRepo {
+				testChangesetSpecResponse(t, s, userCtx, c.RandID, "HiddenChangesetSpec")
+			} else {
+				testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
+			}
+		}
 	})
 }
 
@@ -722,6 +783,126 @@ query {
       repository {
         id
         name
+      }
+    }
+  }
+}
+`
+
+type wantCampaignSpecResponse struct {
+	changesetSpecTypes  map[string]int
+	changesetSpecsCount int
+}
+
+func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, campaignSpecRandID string, w wantCampaignSpecResponse) {
+	t.Helper()
+
+	in := map[string]interface{}{
+		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpecRandID)),
+	}
+
+	var response struct{ Node apitest.CampaignSpec }
+	apitest.MustExec(ctx, t, s, in, &response, queryCampaignSpecPermLevels)
+
+	if have, want := response.Node.ID, in["campaignSpec"]; have != want {
+		t.Fatalf("campaignSpec id is wrong. have %q, want %q", have, want)
+	}
+
+	if diff := cmp.Diff(w.changesetSpecsCount, response.Node.ChangesetSpecs.TotalCount); diff != "" {
+		t.Fatalf("unexpected changesetSpecs total count (-want +got):\n%s", diff)
+	}
+
+	changesetSpecTypes := map[string]int{}
+	for _, c := range response.Node.ChangesetSpecs.Nodes {
+		changesetSpecTypes[c.Typename]++
+	}
+	if diff := cmp.Diff(w.changesetSpecTypes, changesetSpecTypes); diff != "" {
+		t.Fatalf("unexpected changesetSpec types (-want +got):\n%s", diff)
+	}
+}
+
+const queryCampaignSpecPermLevels = `
+query($campaignSpec: ID!) {
+  node(id: $campaignSpec) {
+    ... on CampaignSpec {
+      id
+
+      changesetSpecs(first: 100) {
+        totalCount
+        nodes {
+          __typename
+          type
+
+          ... on HiddenChangesetSpec {
+            id
+          }
+
+          ... on VisibleChangesetSpec {
+            id
+
+            description {
+              ... on ExistingChangesetReference {
+                baseRepository {
+                  id
+                  name
+                }
+              }
+
+              ... on GitBranchChangesetDescription {
+                baseRepository {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`
+
+func testChangesetSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, randID string, wantType string) {
+	t.Helper()
+
+	var res struct{ Node apitest.ChangesetSpec }
+	query := fmt.Sprintf(queryChangesetSpecPermLevels, marshalChangesetSpecRandID(randID))
+	apitest.MustExec(ctx, t, s, nil, &res, query)
+
+	if have, want := res.Node.Typename, wantType; have != want {
+		t.Fatalf("changesetspec has wrong typename. want=%q, have=%q", want, have)
+	}
+}
+
+const queryChangesetSpecPermLevels = `
+query {
+  node(id: %q) {
+    __typename
+
+    ... on HiddenChangesetSpec {
+      id
+      type
+    }
+
+    ... on VisibleChangesetSpec {
+      id
+      type
+
+      description {
+        ... on ExistingChangesetReference {
+          baseRepository {
+            id
+            name
+          }
+        }
+
+        ... on GitBranchChangesetDescription {
+          baseRepository {
+            id
+            name
+          }
+        }
       }
     }
   }
