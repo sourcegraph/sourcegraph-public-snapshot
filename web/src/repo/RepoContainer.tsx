@@ -139,6 +139,10 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     public componentDidMount(): void {
+        const globbing: boolean = this.props.settingsCascade.final &&
+            !isErrorLike(this.props.settingsCascade.final) &&
+            this.props.settingsCascade.final['search.globbing']
+
         const parsedRouteChanges = this.componentUpdates.pipe(
             map(props => props.match.params.repoRevAndRest),
             distinctUntilChanged(),
@@ -181,9 +185,9 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         )
 
         this.subscriptions.add(
-            parsedRouteChanges.subscribe(({ repoName, revision, rawRevision }) => {
-                this.setState({ repoName, revision, rawRevision })
-                const query = searchQueryForRepoRevision(repoName, revision)
+            parsedRouteChanges.subscribe(({repoName, revision, rawRevision}) => {
+                this.setState({repoName, revision, rawRevision})
+                const query = searchQueryForRepoRevision(repoName, globbing, revision)
                 this.props.onNavbarQueryChange({
                     query,
                     cursorPosition: query.length,
@@ -237,14 +241,14 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                         const filters: FiltersToTypeAndValue = {
                             [uniqueId('repo')]: {
                                 type: FilterType.repo,
-                                value: repoFilterForRepoRevision(repoName, revision),
+                                value: repoFilterForRepoRevision(repoName, globbing, revision),
                                 editable: false,
                             },
                         }
                         if (filePath) {
                             filters[uniqueId('file')] = {
                                 type: FilterType.file,
-                                value: `^${escapeRegExp(filePath)}`,
+                                value: globbing ? filePath : `^${escapeRegExp(filePath)}`,
                                 editable: false,
                             }
                         }
@@ -254,9 +258,9 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             cursorPosition: 0,
                         })
                     } else {
-                        let query = searchQueryForRepoRevision(repoName, revision)
+                        let query = searchQueryForRepoRevision(repoName, globbing, revision)
                         if (filePath) {
-                            query = `${query.trimEnd()} file:^${escapeRegExp(filePath)}`
+                            query = `${query.trimEnd()} file:${globbing? filePath: '^'+escapeRegExp(filePath)}`
                         }
                         this.props.onNavbarQueryChange({
                             query,
