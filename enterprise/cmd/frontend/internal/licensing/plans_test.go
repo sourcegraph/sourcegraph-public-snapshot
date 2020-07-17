@@ -20,7 +20,7 @@ func TestPlan_isKnown(t *testing.T) {
 		}
 	})
 	t.Run("known", func(t *testing.T) {
-		if got, want := Plan(testPlan).isKnown(), true; got != want {
+		if got, want := testPlan.isKnown(), true; got != want {
 			t.Error()
 		}
 	})
@@ -36,6 +36,8 @@ func TestInfo_Plan(t *testing.T) {
 		{tags: []string{"foo", Plan("xyz").tag(), testPlan.tag()}, want: testPlan},
 		{tags: []string{"plan:old-starter-0"}, want: oldEnterpriseStarter},
 		{tags: []string{"plan:old-enterprise-0"}, want: oldEnterprise},
+		{tags: []string{"plan:team-0"}, want: team},
+		{tags: []string{"plan:enterprise-0"}, want: enterprise},
 		{tags: []string{"starter"}, want: oldEnterpriseStarter},
 		{tags: []string{"foo"}, want: oldEnterprise},
 		{tags: []string{""}, want: oldEnterprise},
