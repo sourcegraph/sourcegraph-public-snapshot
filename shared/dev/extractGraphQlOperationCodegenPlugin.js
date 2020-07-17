@@ -3,7 +3,7 @@
 const { visit } = require('graphql');
 const path = require('path');
 
-const ROOT_FOLDER = path.join(__dirname, '../../')
+const ROOT_FOLDER = path.resolve(__dirname, '../../')
 /**
  *
  * @param {import('graphql').GraphQLSchema} schema
