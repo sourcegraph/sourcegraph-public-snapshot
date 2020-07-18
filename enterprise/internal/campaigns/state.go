@@ -103,7 +103,7 @@ func computeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
 
 	case *gitlab.MergeRequest:
-		return computeGitLabCheckState(m)
+		return computeGitLabCheckState(c.UpdatedAt, m, events)
 	}
 
 	return campaigns.ChangesetCheckStateUnknown
@@ -352,30 +352,53 @@ func parseGithubCheckSuiteState(status, conclusion string) campaigns.ChangesetCh
 	return campaigns.ChangesetCheckStateUnknown
 }
 
-func computeGitLabCheckState(mr *gitlab.MergeRequest) campaigns.ChangesetCheckState {
+func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, events []*campaigns.ChangesetEvent) campaigns.ChangesetCheckState {
 	// GitLab pipelines aren't tied to commits in the same way that GitHub
-	// checks are. In the (current) absence of webhooks, the process here is
-	// pretty straightforward: the latest pipeline wins. They _should_ be in
-	// descending order, but we'll sort them just to be sure.
+	// checks are. We're simply looking for the most recent pipeline run that
+	// was associated with the merge request, which may live in a changeset
+	// event (via webhook) or on the Pipelines field of the merge request
+	// itself. We don't need to implement the same combinatorial logic that
+	// exists for other code hosts because that's essentially what the pipeline
+	// is, except GitLab handles the details of combining the job states.
 
-	// First up, a special case: if there are no pipelines, we'll try to use
-	// HeadPipeline. If that's empty, then we'll shrug and say we don't know.
-	if len(mr.Pipelines) == 0 {
-		if mr.HeadPipeline != nil {
-			return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
+	// Let's figure out what the last pipeline event we saw in the events was.
+	var lastPipelineEvent *gitlab.Pipeline
+	for _, e := range events {
+		switch m := e.Metadata.(type) {
+		case *gitlab.Pipeline:
+			if lastPipelineEvent == nil || lastPipelineEvent.CreatedAt.Before(m.CreatedAt.Time) {
+				lastPipelineEvent = m
+			}
 		}
-		return campaigns.ChangesetCheckStateUnknown
 	}
 
-	// Sort into descending order so that the pipeline at index 0 is the latest.
-	pipelines := mr.Pipelines
-	sort.Slice(pipelines, func(i, j int) bool {
-		return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt.Time)
-	})
+	if lastPipelineEvent == nil || lastPipelineEvent.CreatedAt.Before(lastSynced) {
+		// OK, so we've either synced since the last pipeline event or there
+		// just aren't any events, therefore the source of truth is the merge
+		// request. The process here is pretty straightforward: the latest
+		// pipeline wins. They _should_ be in descending order, but we'll sort
+		// them just to be sure.
 
-	// TODO: after webhooks, look at changeset events.
+		// First up, a special case: if there are no pipelines, we'll try to use
+		// HeadPipeline. If that's empty, then we'll shrug and say we don't
+		// know.
+		if len(mr.Pipelines) == 0 {
+			if mr.HeadPipeline != nil {
+				return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
+			}
+			return campaigns.ChangesetCheckStateUnknown
+		}
 
-	return parseGitLabPipelineStatus(pipelines[0].Status)
+		// Sort into descending order so that the pipeline at index 0 is the latest.
+		pipelines := mr.Pipelines
+		sort.Slice(pipelines, func(i, j int) bool {
+			return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt.Time)
+		})
+
+		return parseGitLabPipelineStatus(pipelines[0].Status)
+	}
+
+	return parseGitLabPipelineStatus(lastPipelineEvent.Status)
 }
 
 func parseGitLabPipelineStatus(status gitlab.PipelineStatus) campaigns.ChangesetCheckState {
@@ -408,7 +431,6 @@ func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.Ch
 			s = campaigns.ChangesetExternalState(m.State)
 		}
 	case *gitlab.MergeRequest:
-		// TODO: implement webhook support
 		switch m.State {
 		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
 			s = campaigns.ChangesetExternalStateClosed
