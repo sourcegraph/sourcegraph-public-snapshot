@@ -45,6 +45,14 @@ PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	31.521s
 ```
 
+### Testing against local dev instance
+
+It is not required to boot up a single Docker container to run these tests, which means it's also possible to run these tests against any Sourcegraph instance, for example, your local dev instance:
+
+```sh
+go test -tags "gqltest" -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
+```
+
 Generally, you're able to repeatedly run these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
 
 Because we're using the standard Go test framework, you are able to just run a single or subset of these tests:
@@ -54,14 +62,6 @@ Because we're using the standard Go test framework, you are able to just run a s
 2020/07/17 14:20:59 Site admin authenticated: gqltest-admin
 PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	3.073s
-```
-
-### Testing against local dev instance
-
-It is not required to boot up a single Docker container to run these tests, which means it's also possible to run these tests against any Sourcegraph instance, for example, your local dev instance:
-
-```sh
-go test -tags "gqltest" -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
 ```
 
 ## How to add new tests
