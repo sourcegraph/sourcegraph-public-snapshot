@@ -11,7 +11,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -97,6 +99,11 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 	return nil, errExternalServiceNotFound
 }
 
+type stateMergeRequestEvent interface {
+	keyer
+	webhooks.MergeRequestEventContainer
+}
+
 func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalService, event interface{}) *httpError {
 	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
 
@@ -109,67 +116,34 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 	}
 
 	switch e := event.(type) {
-	case *webhooks.MergeRequestEvent:
-		// The action field denotes what actually happened, which we need to use
-		// to figure out what to do.
-
-		switch e.MergeRequest.Action {
-		// So this is fun: although approvals and unapprovals manifest in normal
-		// syncs as system notes, we _don't_ get them as note events in
-		// webhooks. Instead, we get a merge request webhook with an "approved"
-		// or "unapproved" action field that magically appears in the object
-		// (merge request) attributes and no further details on who changed the
-		// approval status, the note ID, or anything else we can use to
-		// deduplicate later.
-		//
-		// Therefore, the only realistic action we can take here is to re-sync
-		// the changeset as a whole. The problem is that — since we only have
-		// the merge request — this requires three requests to the REST API, and
-		// GitLab's documentation is quite clear that webhooks should run as
-		// fast as possible.
-		//
-		// Instead, we'll ask repo-updater to prioritise the sync of this
-		// changeset, and let the normal sync process take care of pulling the
-		// notes and pipelines and putting things in the right places, at the
-		// cost of the webhook update not being instantaneous.
-		case "approved":
-		case "unapproved":
-			// We need to get our changeset ID for this to work. To get _there_,
-			// we need the repo ID, and then we can use the merge request IID to
-			// match the external ID.
-			pr := PR{
-				ID:             int64(e.MergeRequest.IID),
-				RepoExternalID: strconv.Itoa(e.Project.ID),
-			}
-
-			repo, err := h.getRepoForPR(ctx, h.Store, pr, esID)
-			if err != nil {
-				return &httpError{
-					code: http.StatusInternalServerError,
-					err:  errors.Wrap(err, "getting repo"),
-				}
-			}
-
-			c, err := h.Store.GetChangeset(ctx, GetChangesetOpts{
-				RepoID:              repo.ID,
-				ExternalID:          strconv.FormatInt(pr.ID, 10),
-				ExternalServiceType: h.ServiceType,
-			})
-			if err != nil {
-				return &httpError{
-					code: http.StatusInternalServerError,
-					err:  errors.Wrap(err, "getting changeset"),
-				}
-			}
-
-			if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{c.ID}); err != nil {
-				return &httpError{
-					code: http.StatusInternalServerError,
-					err:  errors.Wrap(err, "enqueuing changeset sync"),
-				}
+	// Merge request approval and unapproval events need to be special cased.
+	case *webhooks.MergeRequestApprovedEvent,
+		*webhooks.MergeRequestUnapprovedEvent:
+		if err := h.handleMergeRequestApprovalEvent(ctx, esID, e.(webhooks.MergeRequestEventContainer).ToEvent()); err != nil {
+			return &httpError{
+				code: http.StatusInternalServerError,
+				err:  err,
 			}
 		}
+		return nil
 
+	// All other merge request events are state events.
+	case stateMergeRequestEvent:
+		if err := h.handleMergeRequestStateEvent(ctx, esID, e); err != nil {
+			return &httpError{
+				code: http.StatusInternalServerError,
+				err:  err,
+			}
+		}
+		return nil
+
+	case *webhooks.PipelineEvent:
+		if err := h.handlePipelineEvent(ctx, esID, e); err != nil {
+			return &httpError{
+				code: http.StatusInternalServerError,
+				err:  err,
+			}
+		}
 		return nil
 	}
 
@@ -177,6 +151,85 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 		code: http.StatusNotImplemented,
 		err:  errors.Errorf("unknown event type: %T", event),
 	}
+}
+
+func (h *GitLabWebhook) handleMergeRequestApprovalEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEvent) error {
+	// So this is fun: although approvals and unapprovals manifest in normal
+	// syncs as system notes, we _don't_ get them as note events in webhooks.
+	// Instead, we get a merge request webhook with an "approved" or
+	// "unapproved" action field that magically appears in the object (merge
+	// request) attributes and no further details on who changed the approval
+	// status, the note ID, or anything else we can use to deduplicate later.
+	//
+	// Therefore, the only realistic action we can take here is to re-sync the
+	// changeset as a whole. The problem is that — since we only have the merge
+	// request — this requires three requests to the REST API, and GitLab's
+	// documentation is quite clear that webhooks should run as fast as possible
+	// to avoid unexpected retries.
+	//
+	// To meet this goal, rather than synchronously synchronising here, we'll
+	// instead ask repo-updater to prioritise the sync of this changeset and let
+	// the normal sync process take care of pulling the notes and pipelines and
+	// putting things in the right places. The downside is that the updated
+	// changeset state won't appear _quite_ as instantaneously to the user, but
+	// this is the best compromise given the limited payload we get in the
+	// webhook.
+	//
+	// We need to get our changeset ID for this to work. To get _there_, we need
+	// the repo ID, and then we can use the merge request IID to match the
+	// external ID.
+	pr := gitlabToPR(&event.Project, event.MergeRequest)
+	repo, err := h.getRepoForPR(ctx, h.Store, pr, esID)
+	if err != nil {
+		return errors.Wrap(err, "getting repo")
+	}
+
+	c, err := h.getChangesetForPR(ctx, h.Store, &pr, repo)
+	if err != nil {
+		return errors.Wrap(err, "getting changeset")
+	}
+
+	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{c.ID}); err != nil {
+		return errors.Wrap(err, "enqueuing changeset sync")
+	}
+
+	return nil
+}
+
+func (h *GitLabWebhook) handleMergeRequestStateEvent(ctx context.Context, esID string, event stateMergeRequestEvent) error {
+	e := event.ToEvent()
+	pr := gitlabToPR(&e.Project, e.MergeRequest)
+	if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
+		return errors.Wrap(err, "upserting changeset event")
+	}
+	return nil
+}
+
+func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, event *webhooks.PipelineEvent) error {
+	// Pipeline webhook payloads don't include the merge request very reliably:
+	// for example, re-running a pipeline from the GitLab UI will result in no
+	// merge request field, even when that pipeline was attached to a merge
+	// request. So the very first thing we need to do is see if we even have the
+	// merge request; if we don't, we can't do anything useful here, and we'll
+	// just have to wait for the next scheduled sync.
+	if event.MergeRequest == nil {
+		log15.Debug("ignoring pipeline event without a merge request", "payload", event)
+		return nil
+	}
+
+	pr := gitlabToPR(&event.Project, event.MergeRequest)
+	if err := h.upsertChangesetEvent(ctx, esID, pr, &event.Pipeline); err != nil {
+		return errors.Wrap(err, "upserting changeset event")
+	}
+	return nil
+}
+
+func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *repos.Repo) (*campaigns.Changeset, error) {
+	return tx.GetChangeset(ctx, GetChangesetOpts{
+		RepoID:              repo.ID,
+		ExternalID:          strconv.FormatInt(pr.ID, 10),
+		ExternalServiceType: h.ServiceType,
+	})
 }
 
 func (h *GitLabWebhook) validateSecret(extSvc *repos.ExternalService, secret string) (bool, error) {
@@ -205,4 +258,13 @@ func (h *GitLabWebhook) validateSecret(extSvc *repos.ExternalService, secret str
 		}
 	}
 	return false, nil
+}
+
+// gitlabToPR instantiates a new PR instance given fields that are commonly
+// available in GitLab webhook payloads.
+func gitlabToPR(project *gitlab.ProjectCommon, mr *gitlab.MergeRequest) PR {
+	return PR{
+		ID:             int64(mr.IID),
+		RepoExternalID: strconv.Itoa(project.ID),
+	}
 }
