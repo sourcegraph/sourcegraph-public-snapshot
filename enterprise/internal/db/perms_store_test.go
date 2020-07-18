@@ -14,10 +14,12 @@ import (
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"golang.org/x/sync/errgroup"
 )
 
 func cleanupPermsTables(t *testing.T, s *PermsStore) {
@@ -257,17 +259,16 @@ func checkRegularPermsTable(s *PermsStore, sql string, expects map[int32][]uint3
 
 	for rows.Next() {
 		var id int32
-		var ids []byte
-		if err = rows.Scan(&id, &ids); err != nil {
+		var ids []int64
+		if err = rows.Scan(&id, pq.Array(&ids)); err != nil {
 			return err
 		}
 
-		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return err
+		objIDs := make([]uint32, 0, len(ids))
+		for _, id := range ids {
+			objIDs = append(objIDs, uint32(id))
 		}
 
-		objIDs := bitmapToArray(bm)
 		if expects[id] == nil {
 			return fmt.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, objIDs)
 		}
@@ -834,18 +835,17 @@ func checkUserPendingPermsTable(
 	for rows.Next() {
 		var id int32
 		var spec extsvc.AccountSpec
-		var ids []byte
-		if err := rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
+		var ids []int64
+		if err := rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, pq.Array(&ids)); err != nil {
 			return nil, err
 		}
 		idToSpecs[id] = spec
 
-		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return nil, err
+		repoIDs := make([]uint32, 0, len(ids))
+		for _, id := range ids {
+			repoIDs = append(repoIDs, uint32(id))
 		}
 
-		repoIDs := bitmapToArray(bm)
 		if expects[spec] == nil {
 			return nil, fmt.Errorf("unexpected row in table: (spec: %v) -> (ids: %v)", spec, repoIDs)
 		}
@@ -882,17 +882,16 @@ func checkRepoPendingPermsTable(
 
 	for rows.Next() {
 		var id int32
-		var ids []byte
-		if err := rows.Scan(&id, &ids); err != nil {
+		var ids []int64
+		if err := rows.Scan(&id, pq.Array(&ids)); err != nil {
 			return err
 		}
 
-		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return err
+		userIDs := make([]int, 0, len(ids))
+		for _, id := range ids {
+			userIDs = append(userIDs, int(id))
 		}
 
-		userIDs := bitmapToArray(bm)
 		if expects[id] == nil {
 			return fmt.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, userIDs)
 		}

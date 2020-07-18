@@ -770,12 +770,12 @@ Referenced by:
 
 # Table "public.repo_pending_permissions"
 ```
-   Column   |           Type           | Modifiers 
-------------+--------------------------+-----------
+   Column   |           Type           |            Modifiers             
+------------+--------------------------+----------------------------------
  repo_id    | integer                  | not null
  permission | text                     | not null
- user_ids   | bytea                    | not null
  updated_at | timestamp with time zone | not null
+ user_ids   | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -783,13 +783,13 @@ Indexes:
 
 # Table "public.repo_permissions"
 ```
-   Column   |           Type           | Modifiers 
-------------+--------------------------+-----------
+   Column   |           Type           |            Modifiers             
+------------+--------------------------+----------------------------------
  repo_id    | integer                  | not null
  permission | text                     | not null
- user_ids   | bytea                    | not null
  updated_at | timestamp with time zone | not null
  synced_at  | timestamp with time zone | 
+ user_ids   | integer[]                | not null default '{}'::integer[]
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -960,10 +960,10 @@ Foreign-key constraints:
  bind_id      | text                     | not null
  permission   | text                     | not null
  object_type  | text                     | not null
- object_ids   | bytea                    | not null
  updated_at   | timestamp with time zone | not null
  service_type | text                     | not null
  service_id   | text                     | not null
+ object_ids   | integer[]                | not null default '{}'::integer[]
 Indexes:
     "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, permission, object_type, bind_id)
 
@@ -971,14 +971,14 @@ Indexes:
 
 # Table "public.user_permissions"
 ```
-   Column    |           Type           | Modifiers 
--------------+--------------------------+-----------
+   Column    |           Type           |            Modifiers             
+-------------+--------------------------+----------------------------------
  user_id     | integer                  | not null
  permission  | text                     | not null
  object_type | text                     | not null
- object_ids  | bytea                    | not null
  updated_at  | timestamp with time zone | not null
  synced_at   | timestamp with time zone | 
+ object_ids  | integer[]                | not null default '{}'::integer[]
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 

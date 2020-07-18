@@ -10,6 +10,7 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
@@ -227,8 +228,8 @@ func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) 
 		return rows.Err()
 	}
 
-	var ids []byte
-	if err = rows.Scan(&ids, &p.UpdatedAt); err != nil {
+	var ids []int64
+	if err = rows.Scan(pq.Array(&ids), &p.UpdatedAt); err != nil {
 		return err
 	}
 
@@ -236,11 +237,12 @@ func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) 
 		return err
 	}
 
-	if p.IDs = roaring.NewBitmap(); len(ids) == 0 {
-		return nil
+	p.IDs = roaring.NewBitmap()
+	for _, id := range ids {
+		p.IDs.Add(uint32(id))
 	}
 
-	return p.IDs.UnmarshalBinary(ids)
+	return nil
 }
 
 func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
@@ -434,11 +436,6 @@ func (s *store) upsert(ctx context.Context, p *authz.UserPermissions) (err error
 }
 
 func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
-	ids, err := p.IDs.ToBytes()
-	if err != nil {
-		return nil, err
-	}
-
 	if p.UpdatedAt.IsZero() {
 		return nil, errors.New("UpdatedAt timestamp must be set")
 	}
@@ -448,7 +445,7 @@ func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
-		ids,
+		pq.Array(p.IDs.ToArray()),
 		p.UpdatedAt.UTC(),
 	), nil
 }

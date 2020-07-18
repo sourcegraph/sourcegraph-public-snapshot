@@ -84,6 +84,8 @@
 // 1528395690_lsif_upload_size.up.sql (703B)
 // 1528395691_encrypt_tokens.down.sql (128B)
 // 1528395691_encrypt_tokens.up.sql (496B)
+// 1528395692_alter_permissions_object_ids_to_intarray.down.sql (924B)
+// 1528395692_alter_permissions_object_ids_to_intarray.up.sql (805B)
 
 package migrations
 
@@ -1832,6 +1834,46 @@ func _1528395691_encrypt_tokensUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395692_alter_permissions_object_ids_to_intarrayDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x91\x4f\x4b\xfb\x30\x1c\xc6\xef\x79\x15\xcf\x6d\xa7\xc1\x0f\x76\xec\x29\x5b\xb3\x1f\x85\x34\x95\x36\x85\x09\x82\xa4\x2e\x1b\x11\x9b\x94\x24\x13\xfb\xee\x05\x75\x58\xb7\x76\x0c\x67\xce\xdf\xe7\x93\xe7\xcf\x92\xfd\xcf\x44\x42\x88\x2c\x6b\xb1\xa2\x92\x41\xd2\x25\x67\xf0\xba\x73\x8f\x9d\xf6\xad\x09\xc1\x38\x1b\x92\xd3\x83\x43\xd0\xfe\xe2\xc1\x17\xc1\x6e\x8d\xdd\x5f\x43\x1a\x39\x24\x94\x4b\x56\x4e\x38\x42\x5a\x16\x77\x58\x15\xbc\xce\x05\xb2\x35\xd8\x26\xab\x64\xf5\x49\x33\xdb\x90\xfc\x10\x9f\xba\x9d\x10\xbb\xe6\x59\x3f\xc5\x73\xf9\x54\x96\xdf\x78\xb8\x16\x32\xf4\x42\xe6\x73\x94\x3a\xe8\x88\x57\xf5\x72\xd0\x01\xd1\xa1\xd1\x68\x8c\x55\xbe\xc7\xce\xf9\x56\x45\xb8\x1d\x74\xdb\xc5\x1e\xde\x29\x6f\xec\x1e\x8d\x89\xad\xea\xc2\xe5\x22\x68\x9a\x1e\xff\xfe\xfe\x11\xcb\x7b\xc9\x28\x44\x21\x21\x6a\xce\x91\xb2\x35\xad\xb9\xc4\xec\xe1\x6d\xa1\x16\xff\x86\x6f\x36\xda\xd4\x28\xff\x58\xcb\xcd\xf4\xf3\x0a\xff\x38\xc5\xe4\x54\x37\xa7\x21\x1f\x63\xb3\x8d\x64\xa2\xca\x8a\xe1\xde\xc6\x46\xe5\xbd\xea\x13\x42\x56\x45\x9e\x67\x32\x21\xef\x01\x00\x00\xff\xff\xf4\x2e\xee\x25\x9c\x03\x00\x00")
+
+func _1528395692_alter_permissions_object_ids_to_intarrayDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395692_alter_permissions_object_ids_to_intarrayDownSql,
+		"1528395692_alter_permissions_object_ids_to_intarray.down.sql",
+	)
+}
+
+func _1528395692_alter_permissions_object_ids_to_intarrayDownSql() (*asset, error) {
+	bytes, err := _1528395692_alter_permissions_object_ids_to_intarrayDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395692_alter_permissions_object_ids_to_intarray.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8e, 0x5c, 0x8b, 0xf, 0x11, 0x9a, 0xf2, 0xef, 0x2a, 0x22, 0x13, 0x89, 0xbd, 0x4c, 0x5f, 0x8, 0x34, 0x4d, 0x49, 0x79, 0xae, 0x5, 0x54, 0x2c, 0xde, 0x27, 0x72, 0x94, 0xfb, 0xf5, 0x13, 0x5f}}
+	return a, nil
+}
+
+var __1528395692_alter_permissions_object_ids_to_intarrayUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x90\xc1\x4a\x03\x31\x10\x86\xef\x79\x8a\xb9\xf5\x21\xf6\x94\x26\x53\x09\x64\x13\xc9\x4e\xa0\x20\x22\xd5\x06\x89\x60\xb6\x24\xf5\x20\xe2\xbb\x8b\xd5\xc5\x5a\x4d\x37\x88\xf7\x6f\xbe\x7c\xf9\x97\x78\xa1\x4c\xc7\x18\x39\x6f\x04\x27\x04\xe2\x4b\x8d\x90\xc3\x6e\xbc\xd9\x85\xfc\x18\x4b\x89\x63\x2a\xdd\x29\xf0\x54\x42\x3e\x0b\x7c\x1a\xd2\x36\xa6\xfb\x16\xd3\x2f\x20\xe3\x9a\xd0\x55\x8a\x40\x3a\x7b\x09\xc2\x6a\xdf\x1b\x50\x2b\xc0\xb5\x1a\x68\xf8\xb0\xc5\x6d\xe9\xbe\x1d\x9f\xd6\x56\x8e\xc7\xdb\x87\x70\xb7\xff\x79\x5e\xfb\xcb\x5f\x1a\x5a\x25\xc7\x2d\x4c\x38\x7c\x1f\x0c\xd7\x84\x66\x50\xf6\xc0\x19\x4b\x13\x1b\xd3\x7e\x93\xf3\xe6\x79\x6e\x32\x2e\xe5\xf4\xd0\xd4\x08\xca\xd0\xd5\xf5\x41\x66\xbc\xd6\x20\x71\xc5\xbd\x26\x58\xbc\xbc\x2e\x66\x36\x3c\xb2\x7d\xc5\xb6\xfb\xaa\xa3\xfe\x47\xe5\x59\x6b\x6b\x2d\x13\xb6\xef\x15\x75\xec\x2d\x00\x00\xff\xff\x87\xd6\xf7\xcc\x25\x03\x00\x00")
+
+func _1528395692_alter_permissions_object_ids_to_intarrayUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395692_alter_permissions_object_ids_to_intarrayUpSql,
+		"1528395692_alter_permissions_object_ids_to_intarray.up.sql",
+	)
+}
+
+func _1528395692_alter_permissions_object_ids_to_intarrayUpSql() (*asset, error) {
+	bytes, err := _1528395692_alter_permissions_object_ids_to_intarrayUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395692_alter_permissions_object_ids_to_intarray.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x22, 0xbd, 0xeb, 0xcd, 0xb, 0x29, 0x3b, 0x83, 0x64, 0xa0, 0xad, 0x77, 0xbf, 0xbf, 0xd1, 0x9e, 0x66, 0xc1, 0x2a, 0x98, 0xa6, 0x60, 0x5e, 0x4, 0x68, 0x4d, 0xf2, 0xb8, 0x5e, 0xef, 0x5d, 0x4e}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2007,6 +2049,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395690_lsif_upload_size.up.sql":                                      _1528395690_lsif_upload_sizeUpSql,
 	"1528395691_encrypt_tokens.down.sql":                                      _1528395691_encrypt_tokensDownSql,
 	"1528395691_encrypt_tokens.up.sql":                                        _1528395691_encrypt_tokensUpSql,
+	"1528395692_alter_permissions_object_ids_to_intarray.down.sql":            _1528395692_alter_permissions_object_ids_to_intarrayDownSql,
+	"1528395692_alter_permissions_object_ids_to_intarray.up.sql":              _1528395692_alter_permissions_object_ids_to_intarrayUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2137,6 +2181,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395690_lsif_upload_size.up.sql":                                      {_1528395690_lsif_upload_sizeUpSql, map[string]*bintree{}},
 	"1528395691_encrypt_tokens.down.sql":                                      {_1528395691_encrypt_tokensDownSql, map[string]*bintree{}},
 	"1528395691_encrypt_tokens.up.sql":                                        {_1528395691_encrypt_tokensUpSql, map[string]*bintree{}},
+	"1528395692_alter_permissions_object_ids_to_intarray.down.sql":            {_1528395692_alter_permissions_object_ids_to_intarrayDownSql, map[string]*bintree{}},
+	"1528395692_alter_permissions_object_ids_to_intarray.up.sql":              {_1528395692_alter_permissions_object_ids_to_intarrayUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -8,8 +8,10 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -128,13 +130,13 @@ AND permission = %s
 // 	"user_permissions":
 //   user_id | permission | object_type |  object_ids   | updated_at | synced_at
 //  ---------+------------+-------------+---------------+------------+------------
-//         1 |       read |       repos |  bitmap{1, 2} | <DateTime> | <DateTime>
+//         1 |       read |       repos |        {1, 2} | <DateTime> | <DateTime>
 //
 //  "repo_permissions":
 //   repo_id | permission | user_ids  | updated_at |  synced_at
 //  ---------+------------+-----------+------------+-------------
-//         1 |       read | bitmap{1} | <DateTime> | <Unchanged>
-//         2 |       read | bitmap{1} | <DateTime> | <Unchanged>
+//         1 |       read |       {1} | <DateTime> | <Unchanged>
+//         2 |       read |       {1} | <DateTime> | <Unchanged>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
 	if Mocks.Perms.SetUserPermissions != nil {
 		return Mocks.Perms.SetUserPermissions(ctx, p)
@@ -245,23 +247,19 @@ DO UPDATE SET
   synced_at = excluded.synced_at
 `
 
-	ids, err := p.IDs.ToBytes()
-	if err != nil {
-		return nil, err
-	}
-
 	if p.UpdatedAt.IsZero() {
 		return nil, ErrPermsUpdatedAtNotSet
 	} else if p.SyncedAt.IsZero() {
 		return nil, ErrPermsSyncedAtNotSet
 	}
 
+	p.IDs.RunOptimize()
 	return sqlf.Sprintf(
 		format,
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
-		ids,
+		pq.Array(p.IDs.ToArray()),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
 	), nil
@@ -284,13 +282,13 @@ DO UPDATE SET
 // 	"user_permissions":
 //   user_id | permission | object_type | object_ids | updated_at |  synced_at
 //  ---------+------------+-------------+------------+------------+-------------
-//         1 |       read |       repos |  bitmap{1} | <DateTime> | <Unchanged>
-//         2 |       read |       repos |  bitmap{1} | <DateTime> | <Unchanged>
+//         1 |       read |       repos |        {1} | <DateTime> | <Unchanged>
+//         2 |       read |       repos |        {1} | <DateTime> | <Unchanged>
 //
 //  "repo_permissions":
 //   repo_id | permission |   user_ids   | updated_at | synced_at
 //  ---------+------------+--------------+------------+------------
-//         1 |       read | bitmap{1, 2} | <DateTime> | <DateTime>
+//         1 |       read |       {1, 2} | <DateTime> | <DateTime>
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPermissions != nil {
 		return Mocks.Perms.SetRepoPermissions(ctx, p)
@@ -431,21 +429,16 @@ DO UPDATE SET
 
 	items := make([]*sqlf.Query, len(ps))
 	for i := range ps {
-		ps[i].IDs.RunOptimize()
-		ids, err := ps[i].IDs.ToBytes()
-		if err != nil {
-			return nil, err
-		}
-
 		if ps[i].UpdatedAt.IsZero() {
 			return nil, ErrPermsUpdatedAtNotSet
 		}
 
+		ps[i].IDs.RunOptimize()
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
 			ps[i].UserID,
 			ps[i].Perm.String(),
 			ps[i].Type,
-			ids,
+			pq.Array(ps[i].IDs.ToArray()),
 			ps[i].UpdatedAt.UTC(),
 		)
 	}
@@ -474,22 +467,18 @@ DO UPDATE SET
   synced_at = excluded.synced_at
 `
 
-	ids, err := p.UserIDs.ToBytes()
-	if err != nil {
-		return nil, err
-	}
-
 	if p.UpdatedAt.IsZero() {
 		return nil, ErrPermsUpdatedAtNotSet
 	} else if p.SyncedAt.IsZero() {
 		return nil, ErrPermsSyncedAtNotSet
 	}
 
+	p.UserIDs.RunOptimize()
 	return sqlf.Sprintf(
 		format,
 		p.RepoID,
 		p.Perm.String(),
-		ids,
+		pq.Array(p.UserIDs.ToArray()),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
 	), nil
@@ -733,8 +722,8 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 	for rows.Next() {
 		var id int32
 		var spec extsvc.AccountSpec
-		var ids []byte
-		if err = rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
+		var ids []int64
+		if err = rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, pq.Array(&ids)); err != nil {
 			return nil, nil, err
 		}
 
@@ -745,8 +734,8 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 		}
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return nil, nil, err
+		for _, id := range ids {
+			bm.Add(uint32(id))
 		}
 		loaded[id] = bm
 	}
@@ -786,7 +775,7 @@ RETURNING id
 			accounts.AccountIDs[i],
 			p.Perm.String(),
 			authz.PermRepos,
-			[]byte{},
+			pq.Array([]uint32{}),
 			p.UpdatedAt.UTC(),
 		)
 	}
@@ -850,23 +839,18 @@ DO UPDATE SET
 
 	items := make([]*sqlf.Query, len(ps))
 	for i := range ps {
-		ps[i].IDs.RunOptimize()
-		ids, err := ps[i].IDs.ToBytes()
-		if err != nil {
-			return nil, err
-		}
-
 		if ps[i].UpdatedAt.IsZero() {
 			return nil, ErrPermsUpdatedAtNotSet
 		}
 
+		ps[i].IDs.RunOptimize()
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s)",
 			ps[i].ServiceType,
 			ps[i].ServiceID,
 			ps[i].BindID,
 			ps[i].Perm.String(),
 			ps[i].Type,
-			ids,
+			pq.Array(ps[i].IDs.ToArray()),
 			ps[i].UpdatedAt.UTC(),
 		)
 	}
@@ -893,20 +877,15 @@ DO UPDATE SET
 
 	items := make([]*sqlf.Query, len(ps))
 	for i := range ps {
-		ps[i].UserIDs.RunOptimize()
-		ids, err := ps[i].UserIDs.ToBytes()
-		if err != nil {
-			return nil, err
-		}
-
 		if ps[i].UpdatedAt.IsZero() {
 			return nil, ErrPermsUpdatedAtNotSet
 		}
 
+		ps[i].UserIDs.RunOptimize()
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
 			ps[i].RepoID,
 			ps[i].Perm.String(),
-			ids,
+			pq.Array(ps[i].UserIDs.ToArray()),
 			ps[i].UpdatedAt.UTC(),
 		)
 	}
@@ -1072,20 +1051,15 @@ DO UPDATE SET
 
 	items := make([]*sqlf.Query, len(ps))
 	for i := range ps {
-		ps[i].UserIDs.RunOptimize()
-		ids, err := ps[i].UserIDs.ToBytes()
-		if err != nil {
-			return nil, err
-		}
-
 		if ps[i].UpdatedAt.IsZero() {
 			return nil, ErrPermsUpdatedAtNotSet
 		}
 
+		ps[i].UserIDs.RunOptimize()
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
 			ps[i].RepoID,
 			ps[i].Perm.String(),
-			ids,
+			pq.Array(ps[i].UserIDs.ToArray()),
 			ps[i].UpdatedAt.UTC(),
 		)
 	}
@@ -1143,8 +1117,8 @@ AND service_id = %s
 
 	for rows.Next() {
 		var bindID string
-		var ids []byte
-		if err = rows.Scan(&bindID, &ids); err != nil {
+		var ids []int64
+		if err = rows.Scan(&bindID, pq.Array(&ids)); err != nil {
 			return nil, err
 		}
 
@@ -1153,12 +1127,9 @@ AND service_id = %s
 		}
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return nil, err
-		} else if bm.GetCardinality() == 0 {
-			continue
+		for _, id := range ids {
+			bm.Add(uint32(id))
 		}
-
 		bindIDs = append(bindIDs, bindID)
 	}
 	if err = rows.Err(); err != nil {
@@ -1274,10 +1245,10 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 	}
 
 	var id int32
-	var ids []byte
+	var ids []int64
 	var updatedAt time.Time
 	var syncedAt time.Time
-	if err = rows.Scan(&id, &ids, &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
+	if err = rows.Scan(&id, pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
 		return nil, err
 	}
 
@@ -1291,12 +1262,9 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 		syncedAt:  syncedAt,
 		updatedAt: updatedAt,
 	}
-	if len(ids) == 0 {
-		return vals, nil
-	} else if err = vals.ids.UnmarshalBinary(ids); err != nil {
-		return nil, err
+	for _, id := range ids {
+		vals.ids.Add(uint32(id))
 	}
-
 	return vals, nil
 }
 
@@ -1321,8 +1289,8 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 	loaded := make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
 		var objID int32
-		var ids []byte
-		if err = rows.Scan(&objID, &ids); err != nil {
+		var ids []int64
+		if err = rows.Scan(&objID, pq.Array(&ids)); err != nil {
 			return nil, err
 		}
 
@@ -1331,8 +1299,8 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 		}
 
 		bm := roaring.NewBitmap()
-		if err = bm.UnmarshalBinary(ids); err != nil {
-			return nil, err
+		for _, id := range ids {
+			bm.Add(uint32(id))
 		}
 		loaded[objID] = bm
 	}
