@@ -28,6 +28,13 @@ type MergeRequestEvent struct {
 	Labels []gitlab.Label `json:"labels"`
 }
 
+type PipelineEvent struct {
+	EventCommon
+
+	User     gitlab.User     `json:"user"`
+	Pipeline gitlab.Pipeline `json:"object_attributes"`
+}
+
 var ErrObjectKindUnknown = errors.New("unknown object kind")
 
 // UnmarshalEvent unmarshals the given JSON into an event type. Possible return
@@ -43,9 +50,8 @@ func UnmarshalEvent(data []byte) (interface{}, error) {
 	//
 	// Since we only care about the object_kind field, we'll start by
 	// unmarshalling into a minimal type that only has that field. We use
-	// object_kind instead of event_type because the GitLab webhook
-	// documentation implies that event_type is only available on a subset of
-	// the event types, whereas object_kind is generally reliable.
+	// object_kind instead of event_type because not all GitLab webhook types
+	// include event_type, whereas object_kind is generally reliable.
 	var event struct {
 		ObjectKind string `json:"object_kind"`
 	}
@@ -58,6 +64,8 @@ func UnmarshalEvent(data []byte) (interface{}, error) {
 	switch event.ObjectKind {
 	case "merge_request":
 		typedEvent = &MergeRequestEvent{}
+	case "pipeline":
+		typedEvent = &PipelineEvent{}
 	default:
 		return nil, errors.Wrapf(ErrObjectKindUnknown, "kind: %s", event.ObjectKind)
 	}

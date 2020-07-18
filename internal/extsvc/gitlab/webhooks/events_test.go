@@ -61,16 +61,16 @@ func TestUnmarshalEvent(t *testing.T) {
 		}
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("valid merge request", func(t *testing.T) {
 		event, err := UnmarshalEvent([]byte(`
-		{
-			"object_kind": "merge_request",
-			"event_type": "merge_request",
-			"object_attributes":{
-				"iid": 42
+			{
+				"object_kind": "merge_request",
+				"event_type": "merge_request",
+				"object_attributes":{
+					"iid": 42
+				}
 			}
-		}
-	`))
+		`))
 		if event == nil {
 			t.Error("unexpected nil event")
 		}
@@ -84,6 +84,28 @@ func TestUnmarshalEvent(t *testing.T) {
 		}
 		if want := "merge_request"; mre.EventType != want {
 			t.Errorf("unexpected event_type: have %s; want %s", mre.EventType, want)
+		}
+	})
+
+	t.Run("valid pipeline", func(t *testing.T) {
+		event, err := UnmarshalEvent([]byte(`
+			{
+				"object_kind": "pipeline",
+				"object_attributes":{
+					"id": 42
+				}
+			}
+		`))
+		if event == nil {
+			t.Error("unexpected nil event")
+		}
+		if err != nil {
+			t.Errorf("unexpected error: %+v", err)
+		}
+
+		pe := event.(*PipelineEvent)
+		if want := gitlab.ID(42); pe.Pipeline.ID != want {
+			t.Errorf("unexpected IID: have %d; want %d", pe.Pipeline.ID, want)
 		}
 	})
 }
