@@ -493,72 +493,72 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			name: "add",
 			updates: []*authz.RepoPermissions{
 				{
-					RepoID:  1,
+					RepoID:  11,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1),
 				}, {
-					RepoID:  2,
+					RepoID:  22,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1, 2),
 				}, {
-					RepoID:  3,
+					RepoID:  33,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
-				1: {1, 2},
-				2: {2},
-				3: {3},
-				4: {3},
+				1: {11, 22},
+				2: {22},
+				3: {33},
+				4: {33},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {1},
-				2: {1, 2},
-				3: {3, 4},
+				11: {1},
+				22: {1, 2},
+				33: {3, 4},
 			},
 		},
 		{
 			name: "add and update",
 			updates: []*authz.RepoPermissions{
 				{
-					RepoID:  1,
+					RepoID:  11,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1),
 				}, {
-					RepoID:  1,
+					RepoID:  11,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(2, 3),
 				}, {
-					RepoID:  2,
+					RepoID:  22,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1, 2),
 				}, {
-					RepoID:  2,
+					RepoID:  22,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
 				1: {},
-				2: {1},
-				3: {1, 2},
-				4: {2},
+				2: {11},
+				3: {11, 22},
+				4: {22},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {2, 3},
-				2: {3, 4},
+				11: {2, 3},
+				22: {3, 4},
 			},
 		},
 		{
 			name: "add and clear",
 			updates: []*authz.RepoPermissions{
 				{
-					RepoID:  1,
+					RepoID:  11,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1, 2, 3),
 				}, {
-					RepoID:  1,
+					RepoID:  11,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(),
 				},
@@ -569,7 +569,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 				3: {},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {},
+				11: {},
 			},
 		},
 	}
