@@ -45,7 +45,7 @@ PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	31.521s
 ```
 
-Generally, you're able to repeatly running these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
+Generally, you're able to repeatedly run these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
 
 Because we're using the standard Go test framework, you are able to just run a single or subset of these tests:
 
@@ -69,8 +69,8 @@ go test -tags "gqltest" -base-url "http://localhost:3080" -email "joe@sourcegrap
 Adding new tests to this test suite is as easy as adding a Go test, here are some general rules to follow:
 
 - Add `// +build gqltest` on every new file as the very first line.
-- Use `gqltest-` prefix for entity name, and be as specific be as possible for eaiser debugging, e.g. `gqltest-org-user-1`.
-- Restore to the previous state regardless of failures, including:
+- Use `gqltest-` prefix for entity name, and be as specific as possible for easier debugging, e.g. `gqltest-org-user-1`.
+- Restore the previous state regardless of failures, including:
   - Delete new users created during the test.
   - Delete external service created during the test.
   - Although, sometimes you would not want to delete an entity so you could login and inspect the failure state.
