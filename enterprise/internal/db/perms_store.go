@@ -799,41 +799,16 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		return nil
 	}
 
-	// Batch query all repository permissions object IDs in one go.
-	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
-	// (i.e. repo -> user) to prevent deadlocks.
-	q := loadRepoPermissionsBatchQuery(ids, p.Perm, "FOR UPDATE")
-	loadedIDs, err := txs.batchLoadIDs(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "batch load repo permissions")
-	}
-
 	updatedAt := txs.clock()
-	updatedPerms := make([]*authz.RepoPermissions, 0, len(ids))
-	for i := range ids {
-		repoID := int32(ids[i])
-		oldIDs := loadedIDs[repoID]
-		if oldIDs == nil {
-			oldIDs = roaring.NewBitmap()
-		}
 
-		oldIDs.Add(uint32(userID))
-		updatedPerms = append(updatedPerms, &authz.RepoPermissions{
-			RepoID:    repoID,
-			Perm:      p.Perm,
-			UserIDs:   oldIDs,
-			UpdatedAt: updatedAt,
-		})
-	}
-
-	if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
+	if q, err := upsertRepoPermissionsBatchQuery(p.IDs.ToArray(), p.Perm, []int32{userID}, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert repo permissions batch query")
 	}
 
 	// Load existing user permissions to be merged if any. Since we're doing union of permissions,
-	// whatever we have already in the "repo_permissions" table is all valid thus we don't
+	// whatever we have already in the "user_permissions" table is all valid thus we don't
 	// need to do any clean up.
 	up := &authz.UserPermissions{
 		UserID: userID,
@@ -852,8 +827,11 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	}
 	up.IDs = roaring.Or(oldIDs, p.IDs)
 
-	up.UpdatedAt = txs.clock()
-	if q, err = upsertUserPermissionsBatchQuery(up); err != nil {
+	objectIDs := make([]int32, 0, up.IDs.GetCardinality())
+	for _, id := range up.IDs.ToArray() {
+		objectIDs = append(objectIDs, int32(id))
+	}
+	if q, err := upsertUserPermissionsBatchQuery([]uint32{uint32(userID)}, p.Perm, p.Type, objectIDs, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions query")
@@ -867,26 +845,6 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	}
 
 	return nil
-}
-
-func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, lock string) *sqlf.Query {
-	const format = `
--- source: enterprise/internal/db/perms_store.go:loadRepoPermissionsBatchQuery
-SELECT repo_id, user_ids
-FROM repo_permissions
-WHERE repo_id IN (%s)
-AND permission = %s
-`
-
-	items := make([]*sqlf.Query, len(repoIDs))
-	for i := range repoIDs {
-		items[i] = sqlf.Sprintf("%d", repoIDs[i])
-	}
-	return sqlf.Sprintf(
-		format+lock,
-		sqlf.Join(items, ","),
-		perm.String(),
-	)
 }
 
 func upsertRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, userIDs []int32, updatedAt time.Time) (*sqlf.Query, error) {
@@ -1119,49 +1077,6 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 		vals.ids.Add(uint32(id))
 	}
 	return vals, nil
-}
-
-// batchLoadIDs runs the query and returns unmarshalled IDs with their corresponding object ID value.
-func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32]*roaring.Bitmap, error) {
-	var err error
-	ctx, save := s.observe(ctx, "batchLoadIDs", "")
-	defer func() {
-		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
-		)
-	}()
-
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	loaded := make(map[int32]*roaring.Bitmap)
-	for rows.Next() {
-		var objID int32
-		var ids []int64
-		if err = rows.Scan(&objID, pq.Array(&ids)); err != nil {
-			return nil, err
-		}
-
-		if len(ids) == 0 {
-			continue
-		}
-
-		bm := roaring.NewBitmap()
-		for _, id := range ids {
-			bm.Add(uint32(id))
-		}
-		loaded[objID] = bm
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return loaded, nil
 }
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
