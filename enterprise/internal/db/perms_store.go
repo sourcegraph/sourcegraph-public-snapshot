@@ -145,101 +145,65 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	ctx, save := s.observe(ctx, "SetUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	// Open a transaction for update consistency.
-	txs, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer txs.Done(&err)
-
-	// Retrieve currently stored object IDs of this user.
-	var oldIDs *roaring.Bitmap
-	vals, err := txs.load(ctx, loadUserPermissionsQuery(p, "FOR UPDATE"))
-	if err != nil {
-		if err == authz.ErrPermsNotFound {
-			oldIDs = roaring.NewBitmap()
-		} else {
-			return errors.Wrap(err, "load user permissions")
-		}
-	} else {
-		oldIDs = vals.ids
-	}
-
 	if p.IDs == nil {
-		p.IDs = roaring.NewBitmap()
+		p.IDs = roaring.New()
 	}
 
-	// Compute differences between the old and new sets.
-	added := roaring.AndNot(p.IDs, oldIDs)
-	removed := roaring.AndNot(oldIDs, p.IDs)
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.SetUserPermissions
+WITH args AS (
+	SELECT
+		%s::INT AS user_id,
+		%s::TEXT AS permission,
+		%s::TEXT AS object_type,
+		%s::INT[] AS new_ids
+),
 
-	updatedAt := txs.clock()
+old AS (
+	SELECT object_ids, synced_at FROM user_permissions
+	JOIN args ON
+		user_permissions.user_id = args.user_id AND
+		user_permissions.permission = args.permission AND
+		user_permissions.object_type = args.object_type
+	UNION
+	SELECT '{}' AS object_ids, NOW() AS synced_at
+	ORDER BY synced_at ASC NULLS FIRST
+	LIMIT 1
+	-- Relying on the fact the last synced_at is before current time
+),
+new AS (SELECT new_ids AS ids FROM args),
 
-	if added.GetCardinality() > 0 {
-		if q, err := upsertRepoPermissionsBatchQuery(added.ToArray(), p.Perm, []int32{p.UserID}, updatedAt); err != nil {
-			return err
-		} else if err = txs.execute(ctx, q); err != nil {
-			return errors.Wrap(err, "execute upsert repo permissions batch query")
-		}
-	}
+perms AS (
+	SELECT
+		old.object_ids - new.ids AS removed,
+		new.ids - old.object_ids AS added
+	FROM old, new
+),
+repo_perms AS (
+    INSERT INTO repo_permissions (repo_id, permission, user_ids, updated_at)
+    SELECT UNNEST(perms.added | perms.removed), args.permission, INTSET(args.user_id), NOW()
+    FROM perms, args
+    ON CONFLICT ON CONSTRAINT repo_permissions_perm_unique
+    DO UPDATE SET
+		updated_at = excluded.updated_at,
+		user_ids = (
+			SELECT CASE WHEN perms.added::INT[] @> INTSET(repo_permissions.repo_id)
+				THEN repo_permissions.user_ids | excluded.user_ids
+				ELSE repo_permissions.user_ids - excluded.user_ids
+			END
+		FROM perms)
+)
 
-	if removed.GetCardinality() > 0 {
-		q := sqlf.Sprintf(`
-UPDATE repo_permissions SET user_ids = user_ids - %s::INT, updated_at = %s WHERE repo_id = ANY (%s) AND permission = %s;
-`, p.UserID, updatedAt.UTC(), pq.Array(removed.ToArray()), p.Perm.String())
-		if err = txs.execute(ctx, q); err != nil {
-			return errors.Wrap(err, "execute update removed repo permissions query")
-		}
-	}
-
-	// NOTE: The permissions background syncing heuristics relies on SyncedAt column
-	// to do rolling update, if we don't always update the value of the column regardless,
-	// we will end up checking the same set of oldest but up-to-date rows in the table.
-	p.UpdatedAt = updatedAt
-	p.SyncedAt = updatedAt
-	if q, err := upsertUserPermissionsQuery(p); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user permissions query")
-	}
-
-	return nil
-}
-
-// upsertUserPermissionsQuery upserts single row of user permissions, it does the
-// same thing as upsertUserPermissionsBatchQuery but also updates "synced_at"
-// column to the value of p.SyncedAt field.
-func upsertUserPermissionsQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
-	const format = `
--- source: enterprise/internal/db/perms_store.go:upsertUserPermissionsQuery
-INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, updated_at, synced_at)
-VALUES
-  (%s, %s, %s, %s, %s, %s)
-ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_unique
+INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at)
+SELECT args.user_id, args.permission, args.object_type, new.ids, NOW(), NOW()
+FROM new, args
+ON CONFLICT ON CONSTRAINT user_permissions_perm_object_unique
 DO UPDATE SET
-  object_ids = excluded.object_ids,
-  updated_at = excluded.updated_at,
-  synced_at = excluded.synced_at
-`
-
-	if p.UpdatedAt.IsZero() {
-		return nil, ErrPermsUpdatedAtNotSet
-	} else if p.SyncedAt.IsZero() {
-		return nil, ErrPermsSyncedAtNotSet
-	}
-
-	p.IDs.RunOptimize()
-	return sqlf.Sprintf(
-		format,
-		p.UserID,
-		p.Perm.String(),
-		p.Type,
-		pq.Array(p.IDs.ToArray()),
-		p.UpdatedAt.UTC(),
-		p.SyncedAt.UTC(),
-	), nil
+	updated_at = excluded.updated_at,
+	synced_at = excluded.synced_at,
+	object_ids = excluded.object_ids
+`, p.UserID, p.Perm.String(), p.Type, pq.Array(p.IDs.ToArray()))
+	return s.execute(ctx, q)
 }
 
 // SetRepoPermissions performs a full update for p, new user IDs found in p will be upserted
