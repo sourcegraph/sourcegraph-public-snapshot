@@ -67,7 +67,8 @@ func TestUnmarshalEvent(t *testing.T) {
 				"object_kind": "merge_request",
 				"event_type": "merge_request",
 				"object_attributes":{
-					"iid": 42
+					"iid": 42,
+					"action": "approved"
 				}
 			}
 		`))
@@ -78,7 +79,7 @@ func TestUnmarshalEvent(t *testing.T) {
 			t.Errorf("unexpected error: %+v", err)
 		}
 
-		mre := event.(*MergeRequestEvent)
+		mre := event.(*MergeRequestApprovedEvent)
 		if want := gitlab.ID(42); mre.MergeRequest.IID != want {
 			t.Errorf("unexpected IID: have %d; want %d", mre.MergeRequest.IID, want)
 		}
