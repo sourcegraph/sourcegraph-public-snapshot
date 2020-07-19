@@ -2,7 +2,7 @@ overwrite: true
 schema: './cmd/frontend/graphqlbackend/schema.graphql'
 hooks:
   afterOneFileWrite:
-    - eslint --fix
+    # - eslint --fix
     - prettier --write
 config:
   onlyOperationTypes: true
@@ -12,9 +12,11 @@ config:
   skipTypename: true
   namingConvention: keep
   declarationKind: 'interface'
+  avoidOptionals: true
   scalars:
     DateTime: 'string'
     JSON: 'object'
+    JSONValue: 'unknown'
     GitObjectID: 'string'
     JSONCString: 'string'
 

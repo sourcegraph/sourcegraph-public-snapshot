@@ -21,6 +21,8 @@
     "test": "jest",
     "graphql": "gulp graphQLTypes",
     "schema": "gulp schema",
+    "t": "gulp generateGraphQlOperations",
+    "t-w": "gulp watchGraphQlOperations",
     "watch-schema": "gulp watchSchema"
   },
   "sideEffects": true
