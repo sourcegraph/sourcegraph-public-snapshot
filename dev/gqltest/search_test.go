@@ -222,6 +222,23 @@ func TestSearch(t *testing.T) {
 				name:  "true is an alias for yes when fork is set",
 				query: `repo:github\.com/sgtest/mux fork:true`,
 			},
+			{
+				name:  "non-master branch, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes`,
+			},
+			{
+				name:  "indexed multiline search, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes`,
+			},
+			{
+				name:  "unindexed multiline search, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes`,
+			},
+			{
+				name:       "random characters, zero result",
+				query:      `repo:^github\.com/sgtest/java-langserver$ doesnot734734743734743exist`,
+				zeroResult: true,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
