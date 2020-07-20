@@ -6,7 +6,7 @@ import React from 'react'
 const { add } = storiesOf('web/PrivateCodeCta', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="p-4">{story()}</div>
+        <div className="theme-light p-4">{story()}</div>
     </>
 ))
 
