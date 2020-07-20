@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -70,7 +69,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset) {
+	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
 		campaign := testCampaign(author, 0)
 		if err = s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
@@ -86,7 +85,12 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return campaign, changeset
+		cs := &campaigns.CampaignSpec{UserID: author, NamespaceUserID: author}
+		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+			t.Fatal(err)
+		}
+
+		return campaign, changeset, cs
 	}
 
 	assertAuthError := func(t *testing.T, err error) {
@@ -140,7 +144,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			campaign, changeset := createTestData(t, store, svc, tc.campaignAuthor)
+			campaign, changeset, campaignSpec := createTestData(t, store, svc, tc.campaignAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
@@ -156,6 +160,21 @@ func TestServicePermissionLevels(t *testing.T) {
 
 			t.Run("DeleteCampaign", func(t *testing.T) {
 				err = svc.DeleteCampaign(currentUserCtx, campaign.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("MoveCampaign", func(t *testing.T) {
+				_, err = svc.MoveCampaign(currentUserCtx, MoveCampaignOpts{
+					CampaignID: campaign.ID,
+					NewName:    "foobar2",
+				})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("ApplyCampaign", func(t *testing.T) {
+				_, err = svc.ApplyCampaign(currentUserCtx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec.RandID,
+				})
 				tc.assertFunc(t, err)
 			})
 		})
@@ -448,7 +467,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Repo filtered out by authzFilter
-		authzFilterRepo(t, rs[0].ID)
+		ct.AuthzFilterRepos(t, rs[0].ID)
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
@@ -464,7 +483,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Repo of changeset2 filtered out by authzFilter
-		authzFilterRepo(t, changeset2.RepoID)
+		ct.AuthzFilterRepos(t, changeset2.RepoID)
 
 		fakeSource := &ct.FakeChangesetSource{Err: nil}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -568,7 +587,7 @@ func TestService(t *testing.T) {
 
 		t.Run("missing repository permissions", func(t *testing.T) {
 			// Single repository filtered out by authzFilter
-			authzFilterRepo(t, changesetSpecs[0].RepoID)
+			ct.AuthzFilterRepos(t, changesetSpecs[0].RepoID)
 
 			opts := CreateCampaignSpecOpts{
 				UserID:               user.ID,
@@ -602,7 +621,7 @@ func TestService(t *testing.T) {
 		svc := NewServiceWithClock(store, cf, clock)
 
 		repo := rs[0]
-		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID))
+		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
 			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
@@ -640,7 +659,7 @@ func TestService(t *testing.T) {
 
 		t.Run("missing repository permissions", func(t *testing.T) {
 			// Single repository filtered out by authzFilter
-			authzFilterRepo(t, repo.ID)
+			ct.AuthzFilterRepos(t, repo.ID)
 
 			_, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
 			if !errcode.IsNotFound(err) {
@@ -943,18 +962,4 @@ func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, extSta
 	}
 
 	return changeset
-}
-
-func authzFilterRepo(t *testing.T, id api.RepoID) {
-	db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		var filtered []*types.Repo
-		for _, r := range repos {
-			if r.ID == id {
-				continue
-			}
-			filtered = append(filtered, r)
-		}
-		return filtered, nil
-	}
-	t.Cleanup(func() { db.MockAuthzFilter = nil })
 }

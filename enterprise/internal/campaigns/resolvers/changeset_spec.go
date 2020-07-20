@@ -2,12 +2,16 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -27,6 +31,19 @@ type changesetSpecResolver struct {
 	httpFactory *httpcli.Factory
 
 	changesetSpec *campaigns.ChangesetSpec
+
+	preloadedRepo        *types.Repo
+	attemptedPreloadRepo bool
+
+	// Cache repo because it's accessed more than once
+	repoOnce sync.Once
+	repo     *graphqlbackend.RepositoryResolver
+	repoErr  error
+	// The context with which we try to load the repository if it's not
+	// preloaded. We need an extra field for that, because the
+	// ToVisibleChangesetSpec/ToHiddenChangesetSpec methods cannot take a
+	// context.Context without graphql-go panic'ing.
+	repoCtx context.Context
 }
 
 func (r *changesetSpecResolver) ID() graphql.ID {
@@ -35,23 +52,46 @@ func (r *changesetSpecResolver) ID() graphql.ID {
 	return marshalChangesetSpecRandID(r.changesetSpec.RandID)
 }
 
-func (r *changesetSpecResolver) Type() campaigns.ChangesetSpecType {
-	if r.changesetSpec.Spec.IsExistingChangesetRef() {
-		return campaigns.ChangesetSpecTypeExisting
-	}
-	return campaigns.ChangesetSpecTypeBranch
+func (r *changesetSpecResolver) Type() campaigns.ChangesetSpecDescriptionType {
+	return r.changesetSpec.Spec.Type()
+}
+
+func (r *changesetSpecResolver) computeRepo() (*graphqlbackend.RepositoryResolver, error) {
+	r.repoOnce.Do(func() {
+		if r.attemptedPreloadRepo {
+			if r.preloadedRepo != nil {
+				r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
+			}
+		} else {
+			if r.repoCtx == nil {
+				r.repoErr = fmt.Errorf("no context available to query repository")
+				return
+			}
+
+			// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+			// filters out repositories that the user doesn't have access to.
+			// In case we don't find a repository, it might be because it's deleted
+			// or because the user doesn't have access.
+			repo, err := graphqlbackend.RepositoryByIDInt32(r.repoCtx, r.changesetSpec.RepoID)
+			if err != nil && !errcode.IsNotFound(err) {
+				r.repoErr = err
+				return
+			}
+			r.repo = repo
+		}
+	})
+	return r.repo, r.repoErr
 }
 
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
-	// TODO: Remove n+1 for repository.
-	repoResolver, err := graphqlbackend.RepositoryByID(ctx, r.changesetSpec.Spec.BaseRepository)
+	repo, err := r.computeRepo()
 	if err != nil {
 		return nil, err
 	}
 
 	descriptionResolver := &changesetDescriptionResolver{
 		desc:         &r.changesetSpec.Spec,
-		repoResolver: repoResolver,
+		repoResolver: repo,
 	}
 
 	return descriptionResolver, nil
@@ -61,12 +101,41 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
-func (r *changesetSpecResolver) ToHiddenChangesetSpec() (graphqlbackend.HiddenChangesetSpecResolver, bool) {
-	// TODO: return true when repo is inaccessible.
-	return nil, false
+func (r *changesetSpecResolver) repoAccessible() (bool, error) {
+	repo, err := r.computeRepo()
+	if err != nil {
+		// In case we couldn't load the repository because of an error, we
+		// return the error
+		return false, err
+	}
+
+	// If the repository is not nil, it's accessible
+	return repo != nil, nil
 }
+
+func (r *changesetSpecResolver) ToHiddenChangesetSpec() (graphqlbackend.HiddenChangesetSpecResolver, bool) {
+	accessible, err := r.repoAccessible()
+	if err != nil {
+		return r, true
+	}
+
+	if accessible {
+		return nil, false
+	}
+
+	return r, true
+}
+
 func (r *changesetSpecResolver) ToVisibleChangesetSpec() (graphqlbackend.VisibleChangesetSpecResolver, bool) {
-	// TODO: return true when repo is accessible.
+	accessible, err := r.repoAccessible()
+	if err != nil {
+		return r, true
+	}
+
+	if !accessible {
+		return nil, false
+	}
+
 	return r, true
 }
 
@@ -81,16 +150,16 @@ type changesetDescriptionResolver struct {
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
-	if r.desc.IsExistingChangesetRef() {
+	if r.desc.IsExisting() {
 		return r, true
 	}
 	return nil, false
 }
 func (r *changesetDescriptionResolver) ToGitBranchChangesetDescription() (graphqlbackend.GitBranchChangesetDescriptionResolver, bool) {
-	if r.desc.IsExistingChangesetRef() {
-		return nil, false
+	if r.desc.IsBranch() {
+		return r, true
 	}
-	return r, true
+	return nil, false
 }
 
 func (r *changesetDescriptionResolver) BaseRepository() *graphqlbackend.RepositoryResolver {
@@ -108,8 +177,11 @@ func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
 func (r *changesetDescriptionResolver) Published() bool { return r.desc.Published }
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	patch := r.desc.Commits[0].Diff
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.repoResolver, r.desc.BaseRev, patch)
+	diff, err := r.desc.Diff()
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.repoResolver, r.desc.BaseRev, diff)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {

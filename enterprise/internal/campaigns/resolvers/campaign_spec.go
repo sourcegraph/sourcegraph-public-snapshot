@@ -2,11 +2,11 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -46,23 +46,22 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 }
 
 func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := ee.ListChangesetSpecsOpts{Limit: -1, CampaignSpecID: r.campaignSpec.ID}
-	cs, _, err := r.store.ListChangesetSpecs(ctx, opts)
-	if err != nil {
-		return nil, err
+	opts := ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID}
+	if args.First != nil {
+		opts.Limit = int(*args.First)
 	}
-
-	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(cs))
-	for _, c := range cs {
-		resolvers = append(resolvers, &changesetSpecResolver{
-			store:         r.store,
-			httpFactory:   r.httpFactory,
-			changesetSpec: c,
-		})
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
 	}
 
 	return &changesetSpecConnectionResolver{
-		resolvers: resolvers,
+		store:       r.store,
+		httpFactory: r.httpFactory,
+		opts:        opts,
 	}, nil
 }
 
@@ -97,7 +96,6 @@ func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.N
 }
 
 func (r *campaignSpecResolver) PreviewURL() (string, error) {
-	// TODO: this needs to take the namespace into account
 	return "/campaigns/new?spec=" + string(r.ID()), nil
 }
 
@@ -109,9 +107,8 @@ func (r *campaignSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.campaignSpec.ExpiresAt()}
 }
 
-func (r *campaignSpecResolver) ViewerCanAdminister() bool {
-	// TODO: Implement.
-	return true
+func (r *campaignSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	return checkSiteAdminOrSameUser(ctx, r.campaignSpec.UserID)
 }
 
 type campaignDescriptionResolver struct {
@@ -124,23 +121,4 @@ func (r *campaignDescriptionResolver) Name() string {
 
 func (r *campaignDescriptionResolver) Description() string {
 	return r.description
-}
-
-type changesetSpecConnectionResolver struct {
-	resolvers []graphqlbackend.ChangesetSpecResolver
-}
-
-func (r *changesetSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// TODO: Implement.
-	return int32(len(r.resolvers)), nil
-}
-
-func (r *changesetSpecConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	// TODO: Implement.
-	return &graphqlutil.PageInfo{}, nil
-}
-
-func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetSpecResolver, error) {
-	// TODO: Implement.
-	return r.resolvers, nil
 }

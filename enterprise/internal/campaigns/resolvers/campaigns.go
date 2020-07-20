@@ -96,7 +96,7 @@ func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserReso
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return currentUserCanAdministerCampaign(ctx, r.Campaign)
+	return checkSiteAdminOrSameUser(ctx, r.Campaign.AuthorID)
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {

@@ -77,11 +77,11 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	return &changesetResolver{
-		isHidden:      errcode.IsNotFound(err),
-		store:         r.store,
-		httpFactory:   r.httpFactory,
-		changeset:     changeset,
-		preloadedRepo: repo,
+		store:                r.store,
+		httpFactory:          r.httpFactory,
+		changeset:            changeset,
+		attemptedPreloadRepo: true,
+		preloadedRepo:        repo,
 	}, nil
 }
 
@@ -162,7 +162,12 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return &changesetSpecResolver{store: r.store, httpFactory: r.httpFactory, changesetSpec: changesetSpec}, nil
+	return &changesetSpecResolver{
+		store:         r.store,
+		httpFactory:   r.httpFactory,
+		changesetSpec: changesetSpec,
+		repoCtx:       ctx,
+	}, nil
 }
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -185,11 +190,6 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	// 🚨 SECURITY: Only site admins may apply campaigns for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
 
 	opts := ee.ApplyCampaignOpts{}
 
@@ -301,6 +301,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		store:         r.store,
 		httpFactory:   r.httpFactory,
 		changesetSpec: spec,
+		repoCtx:       ctx,
 	}
 	return resolver, nil
 }
@@ -520,9 +521,10 @@ func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 	}
 }
 
-func currentUserCanAdministerCampaign(ctx context.Context, c *campaigns.Campaign) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID); err != nil {
+func checkSiteAdminOrSameUser(ctx context.Context, userID int32) (bool, error) {
+	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign
+	// admin rights.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
 			return false, nil
 		}
