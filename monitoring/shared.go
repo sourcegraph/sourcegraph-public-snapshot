@@ -84,7 +84,7 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -99,7 +99,7 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -116,7 +116,7 @@ var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) O
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -131,7 +131,7 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
