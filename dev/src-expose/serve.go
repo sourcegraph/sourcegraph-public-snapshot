@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 )
@@ -21,6 +22,10 @@ type Serve struct {
 	Root  string
 	Info  *log.Logger
 	Debug *log.Logger
+
+	// updatingServerInfo is used to ensure we only have 1 goroutine running
+	// git update-server-info.
+	updatingServerInfo uint64
 }
 
 func (s *Serve) Start() error {
@@ -188,7 +193,7 @@ func (s *Serve) configureRepos() []string {
 			return nil
 		}
 
-		if err := configureOneRepo(s.Info, gitdir); err != nil {
+		if err := configurePostUpdateHook(gitdir); err != nil {
 			s.Info.Printf("configuring repo at %s: %v", gitdir, err)
 			return nil
 		}
@@ -222,27 +227,57 @@ func (s *Serve) configureRepos() []string {
 		panic(err)
 	}
 
+	go s.allUpdateServerInfo(gitDirs)
+
 	return gitDirs
+}
+
+// allUpdateServerInfo will run updateServerInfo on each gitDirs. To prevent
+// too many of these processes running, it will only run one at a time.
+func (s *Serve) allUpdateServerInfo(gitDirs []string) {
+	if !atomic.CompareAndSwapUint64(&s.updatingServerInfo, 0, 1) {
+		return
+	}
+
+	for _, dir := range gitDirs {
+		gitdir := filepath.Join(s.Root, dir)
+		if err := updateServerInfo(gitdir); err != nil {
+			s.Info.Printf("git update-server-info failed for %s: %v", gitdir, err)
+		}
+	}
+
+	atomic.StoreUint64(&s.updatingServerInfo, 0)
 }
 
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html
 // for background.
-func configureOneRepo(logger *log.Logger, gitDir string) error {
+func configurePostUpdateHook(gitDir string) error {
+	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
+	if _, err := os.Stat(postUpdatePath); err == nil {
+		return nil
+	}
+
+	if err := updateServerInfo(gitDir); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
+		return errors.Wrap(err, "create git hooks dir")
+	}
+	if err := ioutil.WriteFile(postUpdatePath, []byte(postUpdatePath), 0755); err != nil {
+		return errors.Wrap(err, "setting post-update hook")
+	}
+
+	return nil
+}
+
+func updateServerInfo(gitDir string) error {
 	c := exec.Command("git", "update-server-info")
 	c.Dir = gitDir
 	out, err := c.CombinedOutput()
 	if err != nil {
 		return errors.Wrapf(err, "updating server info: %s", out)
-	}
-	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
-	if _, err := os.Stat(postUpdatePath); err != nil {
-		if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
-			return errors.Wrapf(err, "create git hooks dir: %s", out)
-		}
-		if err := ioutil.WriteFile(postUpdatePath, []byte(postUpdatePath), 0755); err != nil {
-			return errors.Wrapf(err, "setting post-update hook: %s", out)
-		}
 	}
 	return nil
 }
