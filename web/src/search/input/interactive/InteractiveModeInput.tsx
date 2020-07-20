@@ -33,7 +33,7 @@ import { isSingularFilter } from '../../../../../shared/src/search/parser/filter
 import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
-import {isErrorLike} from "../../../../../shared/src/util/errors";
+import {isGlobbingActive} from '../../../util/globbing';
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -276,9 +276,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                 {!this.props.lowProfile && (
                     <div>
                         <SelectedFiltersRow
-                            globbing={this.props.settingsCascade.final &&
-                            !isErrorLike(this.props.settingsCascade.final) &&
-                            this.props.settingsCascade.final['search.globbing']}
+                            globbing={isGlobbingActive(this.props.settingsCascade)}
                             filtersInQuery={this.props.filtersInQuery}
                             navbarQuery={this.props.navbarSearchState}
                             onSubmit={this.onSubmit}

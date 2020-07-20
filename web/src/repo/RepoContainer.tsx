@@ -41,6 +41,7 @@ import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import {isGlobbingActive} from "../util/globbing";
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -139,9 +140,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     public componentDidMount(): void {
-        const globbing: boolean = this.props.settingsCascade.final &&
-            !isErrorLike(this.props.settingsCascade.final) &&
-            this.props.settingsCascade.final['search.globbing']
+        const globbing = isGlobbingActive(this.props.settingsCascade)
 
         const parsedRouteChanges = this.componentUpdates.pipe(
             map(props => props.match.params.repoRevAndRest),

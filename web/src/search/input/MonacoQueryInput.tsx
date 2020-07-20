@@ -17,7 +17,7 @@ import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import {isErrorLike} from "../../../../shared/src/util/errors";
+import {isGlobbingActive} from '../../util/globbing';
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -233,10 +233,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
-        const globbing: boolean = this.props.settingsCascade.final &&
-            !isErrorLike(this.props.settingsCascade.final) &&
-            this.props.settingsCascade.final['search.globbing']
-
+        const globbing = isGlobbingActive(this.props.settingsCascade)
         this.subscriptions.add(addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, globbing))
     }
 
