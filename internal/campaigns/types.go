@@ -194,6 +194,19 @@ const (
 	ChangesetStateSynced      ChangesetState = "SYNCED"
 )
 
+// Valid returns true if the given ChangesetState is valid.
+func (s ChangesetState) Valid() bool {
+	switch s {
+	case ChangesetStateUnpublished,
+		ChangesetStatePublishing,
+		ChangesetStateErrored,
+		ChangesetStateSynced:
+		return true
+	default:
+		return false
+	}
+}
+
 // ChangesetExternalState defines the possible states of a Changeset on a code host.
 type ChangesetExternalState string
 
@@ -205,7 +218,7 @@ const (
 	ChangesetExternalStateDeleted ChangesetExternalState = "DELETED"
 )
 
-// Valid returns true if the given Changeset is valid.
+// Valid returns true if the given ChangesetExternalState is valid.
 func (s ChangesetExternalState) Valid() bool {
 	switch s {
 	case ChangesetExternalStateOpen,
