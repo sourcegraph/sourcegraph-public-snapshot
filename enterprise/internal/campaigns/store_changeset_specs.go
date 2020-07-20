@@ -26,6 +26,18 @@ const changesetSpecInsertCols = `
 const changesetSpecCols = `
   id,` + changesetSpecInsertCols
 
+const changesetSpecColsFullyQualified = `
+  changeset_specs.id,
+  changeset_specs.rand_id,
+  changeset_specs.raw_spec,
+  changeset_specs.spec,
+  changeset_specs.campaign_spec_id,
+  changeset_specs.repo_id,
+  changeset_specs.user_id,
+  changeset_specs.created_at,
+  changeset_specs.updated_at
+`
+
 // CreateChangesetSpec creates the given ChangesetSpec.
 func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetSpec) error {
 	q, err := s.createChangesetSpecQuery(c)
@@ -153,15 +165,20 @@ func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpec
 
 var countChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:CountChangesetSpecs
-SELECT COUNT(id)
+SELECT COUNT(changeset_specs.id)
 FROM changeset_specs
+INNER JOIN repo ON repo.id = changeset_specs.repo_id
 WHERE %s
 `
 
 func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+
 	if opts.CampaignSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_spec_id = %s", opts.CampaignSpecID))
+		cond := sqlf.Sprintf("changeset_specs.campaign_spec_id = %s", opts.CampaignSpecID)
+		preds = append(preds, cond)
 	}
 
 	if len(preds) == 0 {
@@ -198,20 +215,24 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 
 var getChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpec
-SELECT ` + changesetSpecCols + `
+SELECT ` + changesetSpecColsFullyQualified + `
 FROM changeset_specs
+INNER JOIN repo ON repo.id = changeset_specs.repo_id
 WHERE %s
 LIMIT 1
 `
 
 func getChangesetSpecQuery(opts *GetChangesetSpecOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id = %s", opts.ID))
 	}
 
 	if opts.RandID != "" {
-		preds = append(preds, sqlf.Sprintf("rand_id = %s", opts.RandID))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id = %s", opts.RandID))
 	}
 
 	if len(preds) == 0 {
@@ -255,9 +276,10 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 
 var listChangesetSpecsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:ListChangesetSpecs
-SELECT ` + changesetSpecCols + ` FROM changeset_specs
+SELECT ` + changesetSpecColsFullyQualified + ` FROM changeset_specs
+INNER JOIN repo ON repo.id = changeset_specs.repo_id
 WHERE %s
-ORDER BY id ASC
+ORDER BY changeset_specs.id ASC
 `
 
 func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
@@ -272,11 +294,12 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+		sqlf.Sprintf("changeset_specs.id >= %s", opts.Cursor),
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
 	if opts.CampaignSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_spec_id = %d", opts.CampaignSpecID))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.campaign_spec_id = %d", opts.CampaignSpecID))
 	}
 
 	if len(opts.RandIDs) != 0 {
@@ -286,7 +309,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 				ids = append(ids, sqlf.Sprintf("%s", id))
 			}
 		}
-		preds = append(preds, sqlf.Sprintf("rand_id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(

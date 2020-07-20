@@ -65,8 +65,11 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(changesetSpecs))
 	for _, c := range changesetSpecs {
 		repo, _ := reposByID[c.RepoID]
-		// If it's not in reposByID the repository was either deleted or
-		// filtered out by the authz-filter.
+		// If it's not in reposByID the repository was filtered out by the
+		// authz-filter.
+		// In that case we'll set it anyway to nil and changesetSpecResolver
+		// will treat it as "hidden".
+
 		resolvers = append(resolvers, &changesetSpecResolver{
 			store:         r.store,
 			httpFactory:   r.httpFactory,
