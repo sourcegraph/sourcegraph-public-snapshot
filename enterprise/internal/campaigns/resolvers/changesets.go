@@ -425,7 +425,7 @@ func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.Changese
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
-	state := r.ExternalCheckState
+	state := r.changeset.ExternalCheckState
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil
 	}
