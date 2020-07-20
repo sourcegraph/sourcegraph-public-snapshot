@@ -12,7 +12,6 @@ import (
 
 func TestServer_handleGet(t *testing.T) {
 	conn := []*schema.GitoliteConnection{{
-		Blacklist: "isblaclist.*",
 		Prefix:    "mygitolite.host/",
 		Host:      "git@mygitolite.host",
 		Phabricator: &schema.Phabricator{
@@ -57,7 +56,6 @@ func TestServer_handleGet(t *testing.T) {
 
 func TestServer_handleGet_invalid(t *testing.T) {
 	conn := []*schema.GitoliteConnection{{
-		Blacklist: "isblaclist.*",
 		Prefix:    "mygitolite.host/",
 		Host:      "git@mygitolite.host",
 		Phabricator: &schema.Phabricator{
