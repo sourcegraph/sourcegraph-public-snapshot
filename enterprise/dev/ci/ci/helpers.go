@@ -152,3 +152,12 @@ func (c Config) isDocsOnly() bool {
 	}
 	return true
 }
+
+func (c Config) isGoOnly() bool {
+	for _, p := range c.changedFiles {
+		if !strings.HasSuffix(p, ".go") {
+			return false
+		}
+	}
+	return true
+}

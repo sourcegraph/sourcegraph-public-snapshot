@@ -67,6 +67,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		pipelineOperations = []func(*bk.Pipeline){
 			addDocs,
 		}
+
+	case c.isPR() && c.isGoOnly():
+		// If this is a go-only PR, run only the steps necessary to verify the go code.
+		pipelineOperations = []func(*bk.Pipeline){
+			addGoTests,            // ~1.5m
+			addCheck,              // ~1m
+			addGoBuild,            // ~0.5m
+			addPostgresBackcompat, // ~0.25m
+		}
+
 	case c.patchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
