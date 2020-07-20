@@ -146,6 +146,8 @@ Your site admin can configure indexed branches in site configuration under the `
 }
 ```
 
+Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
+
 > NOTE: The default branch (`HEAD`) is always indexed.
 
 > NOTE: All revisions specified in version contexts are also indexed.
