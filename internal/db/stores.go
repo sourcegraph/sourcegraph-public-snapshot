@@ -22,4 +22,6 @@ var (
 	OrgInvitations = &orgInvitations{}
 
 	Authz AuthzStore = &authzStore{}
+
+	Secrets = &secrets{}
 )

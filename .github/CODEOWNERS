@@ -133,9 +133,9 @@
 /internal/tracer/ @sourcegraph/cloud
 /internal/vcs/ @sourcegraph/cloud
 
-# Backend e2e tests
-/dev/e2e/ @unknwon
-/internal/e2eutil/ @unknwon
+# Backend integration tests
+/dev/gqltest/ @unknwon
+/internal/gqltestutil/ @unknwon
 
 # Campaigns
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
