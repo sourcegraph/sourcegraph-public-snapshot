@@ -29,7 +29,6 @@
     "storybook": "start-storybook -p 9001 -c .storybook",
     "build-storybook": "build-storybook -c .storybook",
     "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
-    "chromatic": "chromatic --exit-zero-on-changes",
     "deduplicate": "yarn-deduplicate -s fewer"
   },
   "browserslist": [
