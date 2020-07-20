@@ -158,7 +158,7 @@ const SiteSchemaJSON = `{
           ]
         },
         "search.index.branches": {
-          "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index HEAD and revisions in version contexts. This allows specifying additional revisions.",
+          "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -202,7 +202,7 @@ const SiteSchemaJSON = `{
                       "type": "string"
                     },
                     "rev": {
-                      "description": "Branch, tag, or commit hash",
+                      "description": "Branch, tag, or commit hash. \"HEAD\" or \"\" can be used for the default branch.",
                       "type": "string"
                     }
                   }
