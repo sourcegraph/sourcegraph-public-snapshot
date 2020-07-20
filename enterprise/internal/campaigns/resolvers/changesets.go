@@ -80,9 +80,9 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		}
 
 		repo, repoFound := reposByID[c.RepoID]
-		// If it's not in reposByID the repository was either deleted or
-		// filtered out by the authz-filter.
-		// In both cases: isHidden: true.
+		// If it's not in reposByID the repository was filtered out by the
+		// authz-filter. In that case we want to return a changesetResolver
+		// that doesn't reveal all information.
 		// But if the filter opts would leak information about the hidden
 		// changesets, we skip the hidden changeset.
 		if !repoFound && !r.optsSafe {
@@ -90,7 +90,6 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		}
 
 		resolvers = append(resolvers, &changesetResolver{
-			isHidden:             !repoFound,
 			store:                r.store,
 			httpFactory:          r.httpFactory,
 			changeset:            c,
@@ -188,7 +187,6 @@ func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbacken
 }
 
 type changesetResolver struct {
-	isHidden    bool
 	store       *ee.Store
 	httpFactory *httpcli.Factory
 

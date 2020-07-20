@@ -77,7 +77,6 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	return &changesetResolver{
-		isHidden:             errcode.IsNotFound(err),
 		store:                r.store,
 		httpFactory:          r.httpFactory,
 		changeset:            changeset,
