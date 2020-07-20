@@ -62,7 +62,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
 	var pipelineOperations []func(*bk.Pipeline)
 	switch {
-	case c.isPR() && isDocsOnly():
+	case c.isPR() && c.isDocsOnly():
 		// If this is a docs-only PR, run only the steps necessary to verify the docs.
 		pipelineOperations = []func(*bk.Pipeline){
 			addDocs,
