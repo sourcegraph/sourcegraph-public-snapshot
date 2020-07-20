@@ -231,7 +231,7 @@ func (s *secrets) UpdateBySource(ctx context.Context, sourceType string, sourceI
 		`UPDATE
 			secrets
 		SET
-			value=$1
+			value=%s
 		WHERE
 			source_type=%s AND source_id=%d
 		`, value, sourceType, sourceID)
