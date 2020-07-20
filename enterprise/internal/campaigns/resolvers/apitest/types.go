@@ -197,6 +197,8 @@ type CampaignSpec struct {
 
 	ChangesetSpecs ChangesetSpecConnection
 
+	ViewerCanAdminister bool
+
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 }
@@ -235,6 +237,10 @@ type ChangesetSpecDescription struct {
 	Commits []GitCommitDescription
 
 	Published bool
+
+	Diff struct {
+		FileDiffs FileDiffs
+	}
 }
 
 type GitCommitDescription struct {

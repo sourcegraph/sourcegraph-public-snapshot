@@ -53,10 +53,30 @@ changesetTemplate:
   published: false
 `
 
-func NewRawChangesetSpecGitBranch(repo graphql.ID) string {
+func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
+	diff := `diff --git INSTALL.md INSTALL.md
+index e5af166..d44c3fc 100644
+--- INSTALL.md
++++ INSTALL.md
+@@ -3,10 +3,10 @@
+ Line 1
+ Line 2
+ Line 3
+-Line 4
++This is cool: Line 4
+ Line 5
+ Line 6
+-Line 7
+-Line 8
++Another Line 7
++Foobar Line 8
+ Line 9
+ Line 10
+`
 	tmpl := `{
+
 		"baseRepository": %q,
-		"baseRev":"d34db33f",
+		"baseRev": %q,
 		"baseRef":"refs/heads/master",
 
 		"headRepository": %q,
@@ -68,11 +88,10 @@ func NewRawChangesetSpecGitBranch(repo graphql.ID) string {
 		"published": false,
 
 		"commits": [
-		  {"message": "git commit message", "diff": "+/- diff"}
-		]
+		  {"message": "git commit message", "diff": %q}]
 	}`
 
-	return fmt.Sprintf(tmpl, repo, repo)
+	return fmt.Sprintf(tmpl, repo, baseRev, repo, diff)
 }
 
 func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {

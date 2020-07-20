@@ -927,7 +927,10 @@ func TestCreateCampaignSpec(t *testing.T) {
 		Creator:       apitest.User{ID: userApiID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{
-				{ID: string(changesetSpecID)},
+				{
+					Typename: "VisibleChangesetSpec",
+					ID:       string(changesetSpecID),
+				},
 			},
 		},
 	}
@@ -963,6 +966,7 @@ mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
 
 	changesetSpecs {
 	  nodes {
+		  __typename
 		  ... on VisibleChangesetSpec {
 			  id
 		  }
@@ -1001,7 +1005,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"changesetSpec": ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID)),
+		"changesetSpec": ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f"),
 	}
 
 	var response struct{ CreateChangesetSpec apitest.ChangesetSpec }
@@ -1069,7 +1073,7 @@ func TestApplyCampaign(t *testing.T) {
 	repoApiID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	changesetSpec := &campaigns.ChangesetSpec{
-		RawSpec: ct.NewRawChangesetSpecGitBranch(repoApiID),
+		RawSpec: ct.NewRawChangesetSpecGitBranch(repoApiID, "d34db33f"),
 		Spec: campaigns.ChangesetSpecDescription{
 			BaseRepository: repoApiID,
 		},

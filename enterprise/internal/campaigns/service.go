@@ -127,6 +127,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	if err != nil {
 		return nil, err
 	}
+	// TODO: If NamespaceOrgID is set, does the user even have access to this Org?
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	spec.UserID = opts.UserID
@@ -262,6 +263,12 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
+	// 🚨 SECURITY: Only site-admins or the creator of campaignSpec can apply
+	// campaignSpec.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaignSpec.UserID); err != nil {
+		return nil, err
+	}
+
 	getOpts := GetCampaignOpts{
 		CampaignSpecName: campaignSpec.Spec.Name,
 		NamespaceUserID:  campaignSpec.NamespaceUserID,
@@ -341,6 +348,11 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 
 	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: opts.CampaignID})
 	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the Author of the campaign can move it.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
 		return nil, err
 	}
 

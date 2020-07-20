@@ -7,27 +7,49 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
+	repo := testRepo(1, extsvc.TypeGitHub)
+	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+
+	if err := rs.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+		t.Fatal(err)
+	}
+
 	changesetSpecs := make([]*cmpgn.ChangesetSpec, 0, 3)
+	for i := 0; i < cap(changesetSpecs); i++ {
+		c := &cmpgn.ChangesetSpec{
+			RawSpec:        `{}`,
+			UserID:         int32(i + 1234),
+			CampaignSpecID: int64(i + 910),
+			RepoID:         repo.ID,
+		}
+
+		if i == cap(changesetSpecs)-1 {
+			c.CampaignSpecID = 0
+		}
+		changesetSpecs = append(changesetSpecs, c)
+	}
+
+	// We create this ChangesetSpec to make sure that it's not returned when
+	// listing or getting ChangesetSpecs, since we don't want to load
+	// ChangesetSpecs whose repository has been (soft-)deleted.
+	changesetSpecDeletedRepo := &cmpgn.ChangesetSpec{
+		UserID:         int32(424242),
+		CampaignSpecID: int64(424242),
+		RawSpec:        `{}`,
+		RepoID:         deletedRepo.ID,
+	}
 
 	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(changesetSpecs); i++ {
-			c := &cmpgn.ChangesetSpec{
-				RawSpec:        `{"repoID": "abc", "rev": "d34db33f"}`,
-				Spec:           cmpgn.ChangesetSpecDescription{},
-				UserID:         int32(i + 1234),
-				RepoID:         api.RepoID(i + 5678),
-				CampaignSpecID: int64(i + 910),
-			}
+		toCreate := make([]*cmpgn.ChangesetSpec, 0, len(changesetSpecs)+1)
+		toCreate = append(toCreate, changesetSpecDeletedRepo)
+		toCreate = append(toCreate, changesetSpecs...)
 
-			if i == cap(changesetSpecs)-1 {
-				c.CampaignSpecID = 0
-			}
-
+		for _, c := range toCreate {
 			want := c.Clone()
 			have := c
 
@@ -52,17 +74,11 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
-
-			changesetSpecs = append(changesetSpecs, c)
 		}
 	})
 
-	if len(changesetSpecs) != cap(changesetSpecs) {
-		t.Fatalf("changesetSpecs is empty. creation failed")
-	}
-
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountChangesetSpecs(ctx)
+		count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,6 +86,30 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 		if have, want := count, int64(len(changesetSpecs)); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("WithCampaignSpecID", func(t *testing.T) {
+			testsRan := false
+			for _, c := range changesetSpecs {
+				if c.CampaignSpecID == 0 {
+					continue
+				}
+
+				opts := CountChangesetSpecsOpts{CampaignSpecID: c.CampaignSpecID}
+				subCount, err := s.CountChangesetSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := subCount, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+				testsRan = true
+			}
+
+			if !testsRan {
+				t.Fatal("no changesetSpec has a non-zero CampaignSpecID")
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -191,6 +231,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 				t.Fatal(err)
 			}
 
+			// ListChangesetSpecs should not return ChangesetSpecs whose
+			// repository was (soft-)deleted.
 			if diff := cmp.Diff(have, changesetSpecs); diff != "" {
 				t.Fatalf("opts: %+v, diff: %s", opts, diff)
 			}
@@ -257,7 +299,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 				t.Fatal(err)
 			}
 
-			count, err := s.CountChangesetSpecs(ctx)
+			count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -294,7 +336,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, _ repo
 
 			changesetSpec := &cmpgn.ChangesetSpec{
 				CampaignSpecID: campaignSpec.ID,
-				CreatedAt:      tc.createdAt,
+				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
+				RepoID:    repo.ID,
+				CreatedAt: tc.createdAt,
 			}
 
 			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
