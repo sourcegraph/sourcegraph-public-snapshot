@@ -485,7 +485,7 @@ func TestComputeReviewState(t *testing.T) {
 	}
 }
 
-func TestComputeChangesetExternalState(t *testing.T) {
+func TestComputeExternalState(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
@@ -607,7 +607,7 @@ func TestComputeChangesetExternalState(t *testing.T) {
 			}
 
 			if have, want := have, tc.want; have != want {
-				t.Errorf("%d: wrong changeset state. have=%s, want=%s", i, have, want)
+				t.Errorf("%d: wrong external state. have=%s, want=%s", i, have, want)
 			}
 		})
 	}
