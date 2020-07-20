@@ -271,10 +271,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // update the scheduler with the list.
 func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
 	const sleepDuration = 10 * time.Second
-	for {
-		if ctx.Err() != nil {
-			return
-		}
+	for ctx.Err() == nil {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
 			log15.Warn("failed to update git fetch scheduler with list of cloned repositories", "error", err)
