@@ -69,7 +69,7 @@ See this video for a demonstration of lifecycle of a campaign:
   </figure>
 </div>
 
-1. The `src` CLI **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities.
+1. The `src` CLI **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraph's search capabilities.
 
     This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository). It yields a **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
 1. The patches are then used to **create a draft campaign**.
