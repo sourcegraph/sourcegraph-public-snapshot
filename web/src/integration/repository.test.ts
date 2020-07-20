@@ -32,7 +32,7 @@ describe('Repository', () => {
     async function assertSelectorHasText(selector: string, text: string) {
         assert.strictEqual(
             await driver.page.evaluate(
-                selector => document.querySelector<HTMLButtonElement>(selector)?.textContent,
+                selector => document.querySelector<HTMLElement>(selector)?.textContent,
                 selector
             ),
             text
@@ -62,8 +62,7 @@ describe('Repository', () => {
                             ancestors: {
                                 nodes: [
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiIxNWMyMjkwZGNiMzc3MzFjYzRlZTVhMmExYzFlNWEyNWI0YzI4ZjgxIn0=',
+                                        id: 'TestCommit1',
                                         oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                         abbreviatedOID: '15c2290',
                                         message: 'update LSIF indexing CI workflow\n',
@@ -96,12 +95,6 @@ describe('Repository', () => {
                                                 url:
                                                     '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                             },
-                                            {
-                                                oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                                abbreviatedOID: '9e615b1',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                            },
                                         ],
                                         url:
                                             '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
@@ -120,8 +113,7 @@ describe('Repository', () => {
                                         },
                                     },
                                     {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiI5ZTYxNWIxYzMyY2M1MTkxMzA1NzVlOGQxMGQwZDBmZWU4YTVlYjZjIn0=',
+                                        id: 'TestCommit2',
                                         oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         abbreviatedOID: '9e615b1',
                                         message: 'LSIF Indexing Campaign',
@@ -171,60 +163,6 @@ describe('Repository', () => {
                                                 '/github.com/sourcegraph/jsonrpc2@9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         },
                                     },
-                                    {
-                                        id:
-                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiI5NmM0ZWZhYjdlZTI4ZjNkMWNmMWQyNDhhMDEzOWNlYTM3MzY4YjE4In0=',
-                                        oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        abbreviatedOID: '96c4efa',
-                                        message:
-                                            'Produce LSIF data for each commit for fast/precise code nav (#35)\n\n* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml\r',
-                                        subject: 'Produce LSIF data for each commit for fast/precise code nav (#35)',
-                                        body:
-                                            '* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml',
-                                        author: {
-                                            person: {
-                                                avatarURL: 'https://avatars0.githubusercontent.com/u/1976?v=4',
-                                                name: 'Quinn Slack',
-                                                email: 'qslack@qslack.com',
-                                                displayName: 'Quinn Slack',
-                                                user: { id: 'VXNlcjo2', username: 'sqs', url: '/users/sqs' },
-                                            },
-                                            date: '2019-12-22T04:34:38Z',
-                                        },
-                                        committer: {
-                                            person: {
-                                                avatarURL: '',
-                                                name: 'GitHub',
-                                                email: 'noreply@github.com',
-                                                displayName: 'GitHub',
-                                                user: null,
-                                            },
-                                            date: '2019-12-22T04:34:38Z',
-                                        },
-                                        parents: [
-                                            {
-                                                oid: 'cee7209801bf50cee868f8e0696ba0b76ae21792',
-                                                abbreviatedOID: 'cee7209',
-                                                url:
-                                                    '/github.com/sourcegraph/jsonrpc2/-/commit/cee7209801bf50cee868f8e0696ba0b76ae21792',
-                                            },
-                                        ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        canonicalURL:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        externalURLs: [
-                                            {
-                                                url:
-                                                    'https://github.com/sourcegraph/jsonrpc2/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                                serviceType: 'github',
-                                            },
-                                        ],
-                                        tree: {
-                                            canonicalURL:
-                                                '/github.com/sourcegraph/jsonrpc2@96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                        },
-                                    },
                                 ],
                                 pageInfo: { hasNextPage: true },
                             },
@@ -235,8 +173,7 @@ describe('Repository', () => {
                     node: {
                         commit: {
                             __typename: 'GitCommit',
-                            id:
-                                'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUbzBNRGsxTXpnPSIsImMiOiIxNWMyMjkwZGNiMzc3MzFjYzRlZTVhMmExYzFlNWEyNWI0YzI4ZjgxIn0=',
+                            id: 'TestCommit1',
                             oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                             abbreviatedOID: '15c2290',
                             message: 'update LSIF indexing CI workflow\n',
@@ -245,9 +182,9 @@ describe('Repository', () => {
                             author: {
                                 person: {
                                     avatarURL: '',
-                                    name: 'garo (they/them)',
-                                    email: 'gbrik@users.noreply.github.com',
-                                    displayName: 'garo (they/them)',
+                                    name: 'Test User',
+                                    email: 'test@example.com',
+                                    displayName: 'Test User',
                                     user: null,
                                 },
                                 date: '2020-04-29T18:40:54Z',
@@ -268,12 +205,6 @@ describe('Repository', () => {
                                     abbreviatedOID: '96c4efa',
                                     url:
                                         '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
-                                },
-                                {
-                                    oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
-                                    abbreviatedOID: '9e615b1',
-                                    url:
-                                        '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                 },
                             ],
                             url: '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
