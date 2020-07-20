@@ -53,12 +53,7 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
     }))
 
 const insertText = (name: string, isFilterValue: boolean, globbing: boolean, filter: string): string => {
-    let text: string;
-    if (globbing) {
-        text = `${name}`
-    } else {
-        text = `^${escapeRegExp(name)}$`
-    }
+    const text = globbing ? name : `^${escapeRegExp(name)}$`
     return isFilterValue ? text : `{filter}:${text}`
 }
 
