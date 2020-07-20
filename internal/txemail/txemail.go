@@ -118,7 +118,7 @@ func Send(ctx context.Context, message Message) error {
 	}
 
 	if conf.EmailSmtp.DisableTLS {
-		return m.SendWithTLS(
+		return m.SendWithStartTLS(
 			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
 			smtpAuth,
 			&tls.Config{
