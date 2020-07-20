@@ -29,7 +29,7 @@ EOF
 # longer lived branches (release branches) will fail. We should avoid this
 # check in those cases. If this PR does indeed contain a failure, we will pick
 # it up in the master CI run.
-if ! git merge-base --is-ancestor ${CURRENTLY_DEPLOYED} ${HEAD}; then
+if ! git merge-base --is-ancestor "${CURRENTLY_DEPLOYED}" "${HEAD}"; then
   echo
   echo "This branch is out of date with sourcegraph.com."
   echo "SKIPPED"
