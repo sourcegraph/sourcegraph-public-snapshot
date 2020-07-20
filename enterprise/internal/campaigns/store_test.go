@@ -2954,68 +2954,6 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 			}
 		}
 	})
-
-	t.Run("GetRepoIDsForFailedChangesetJobs", func(t *testing.T) {
-		var campaignID int64 = 654321
-
-		patches := []*cmpgn.Patch{
-			{RepoID: 111, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
-			{RepoID: 222, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
-			{RepoID: 333, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
-		}
-		for _, p := range patches {
-			if err := s.CreatePatch(ctx, p); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{
-				PatchID:     patches[0].ID,
-				StartedAt:   clock.now(),
-				FinishedAt:  clock.now(),
-				ChangesetID: 23,
-			},
-			// completed, error
-			{
-				PatchID:    patches[1].ID,
-				StartedAt:  clock.now(),
-				FinishedAt: clock.now(),
-				Error:      "error1",
-			},
-			// completed, another error
-			{
-				PatchID:    patches[2].ID,
-				StartedAt:  clock.now(),
-				FinishedAt: clock.now(),
-				Error:      "error2",
-			},
-		}
-
-		for _, j := range jobs {
-			j.CampaignID = campaignID
-
-			err := s.CreateChangesetJob(ctx, j)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		want := []api.RepoID{
-			patches[1].RepoID,
-			patches[2].RepoID,
-		}
-
-		have, err := s.GetRepoIDsForFailedChangesetJobs(ctx, campaignID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("wrong diff: %s", diff)
-		}
-	})
 }
 
 func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
