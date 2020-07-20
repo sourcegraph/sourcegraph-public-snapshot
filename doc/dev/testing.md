@@ -125,7 +125,8 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 
 #### Running client integration tests
 
-Run `yarn test-integration` in the repository root.
+To run integration tests for the web app, you first need to build a JavaScript bundle by running `yarn build-web` in the repository root.
+To then run the tests, run `yarn test-integration` in the repository root.
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
 See the above sections for how to debug the tests, which applies to both integration and end-to-end tests.
