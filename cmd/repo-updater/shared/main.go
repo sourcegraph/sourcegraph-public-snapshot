@@ -270,7 +270,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // syncCloned will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list.
 func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
-	sleepDuration := 10 * time.Second
+	const sleepDuration = 10 * time.Second
 	for {
 		if ctx.Err() != nil {
 			return
@@ -291,14 +291,13 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 			continue
 		}
 
-		sleep(ctx, 10*time.Second)
+		sleep(ctx, sleepDuration)
 	}
 }
 
 func sleep(ctx context.Context, d time.Duration) {
 	select {
 	case <-ctx.Done():
-		return
 	case <-time.After(d):
 	}
 }
