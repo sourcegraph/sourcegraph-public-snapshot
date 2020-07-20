@@ -85,7 +85,7 @@ func (s *secrets) getBySQL(ctx context.Context, query *sqlf.Query) (*types.Secre
 
 	for res.Next() {
 		var obj types.Secret
-		if err := res.Scan(&obj.ID, &obj.SourceType, &obj.SourceID, &obj.Value); err != nil {
+		if err := res.Scan(&obj.ID, &obj.SourceType, &obj.SourceID, &obj.KeyName, &obj.Value); err != nil {
 			return nil, err
 		}
 		results = append(results, &obj)

@@ -23,7 +23,10 @@ func TestAllByKeyValue(t *testing.T) {
 	}
 
 	sec, err := Secrets.GetByKeyName(ctx, key)
-	if sec.KeyName != key {
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sec.KeyName.String != key {
 		t.Fatalf("Expected %s received %s", value, sec.Value)
 	}
 
@@ -80,7 +83,7 @@ func TestAllByKeySource(t *testing.T) {
 
 	Secrets.DeleteBySource(ctx, sourceType, sourceID)
 	s, err = Secrets.GetBySource(ctx, sourceType, sourceID)
-	if err == nil {
+	if err != nil {
 		t.Fatal(err)
 	}
 
