@@ -3,6 +3,7 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { testUserID } from '../../../shared/src/testing/integration/graphQlResults'
 
 describe('User profile page', () => {
     let driver: Driver
@@ -27,7 +28,7 @@ describe('User profile page', () => {
             User: () => ({
                 user: {
                     __typename: 'User',
-                    id: 'VXNlcjoxODkyNw==',
+                    id: testUserID,
                     username: 'test',
                     displayName: 'Test',
                     url: '/users/test',
@@ -44,7 +45,7 @@ describe('User profile page', () => {
             }),
             UserForProfilePage: () => ({
                 node: {
-                    id: 'VXNlcjoxODkyNw==',
+                    id: testUserID,
                     username: 'test',
                     displayName: 'Test',
                     avatarURL: '',
@@ -65,6 +66,6 @@ describe('User profile page', () => {
             await driver.page.click('.test-user-settings-profile-page-update-profile')
         }, 'updateUser')
 
-        assert.strictEqual(requestVariables.displayName, 'Test2')
+        assert.deepStrictEqual(requestVariables.displayName, 'Test2')
     })
 })
