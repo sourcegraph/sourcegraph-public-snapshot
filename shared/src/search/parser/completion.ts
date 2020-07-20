@@ -54,7 +54,7 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
 
 const insertText = (name: string, isFilterValue: boolean, globbing: boolean, filter: string): string => {
     const text = globbing ? name : `^${escapeRegExp(name)}$`
-    return isFilterValue ? text : `{filter}:${text}`
+    return isFilterValue ? text : `${filter}:${text}`
 }
 
 const repositoryToCompletion = ({name}: IRepository, options: { isFilterValue: boolean, globbing: boolean }): PartialCompletionItem => ({
