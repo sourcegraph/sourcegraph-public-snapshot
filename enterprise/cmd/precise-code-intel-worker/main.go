@@ -53,13 +53,7 @@ func main() {
 	workerMetrics := metrics.NewWorkerMetrics(observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
-
-	uploadResetter := resetter.UploadResetter{
-		Store:         store,
-		ResetInterval: resetInterval,
-		Metrics:       resetterMetrics,
-	}
-
+	uploadResetter := resetter.NewUploadResetter(store, resetInterval, resetterMetrics)
 	worker := worker.NewWorker(
 		store,
 		bundles.New(bundleManagerURL),
@@ -71,7 +65,7 @@ func main() {
 	)
 
 	go server.Start()
-	go uploadResetter.Run()
+	go uploadResetter.Start()
 	go worker.Start()
 	go debugserver.Start()
 
@@ -87,6 +81,7 @@ func main() {
 	}()
 
 	server.Stop()
+	uploadResetter.Stop()
 	worker.Stop()
 }
 

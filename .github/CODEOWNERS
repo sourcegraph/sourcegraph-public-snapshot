@@ -46,6 +46,7 @@
 /internal/src-cli @efritz
 /internal/linkheader @efritz
 /internal/sqliteutil @efritz
+/internal/workerutil @efritz
 /internal/tar @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
@@ -132,9 +133,9 @@
 /internal/tracer/ @sourcegraph/cloud
 /internal/vcs/ @sourcegraph/cloud
 
-# Backend e2e tests
-/dev/e2e/ @unknwon
-/internal/e2eutil/ @unknwon
+# Backend integration tests
+/dev/gqltest/ @unknwon
+/internal/gqltestutil/ @unknwon
 
 # Campaigns
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
@@ -216,6 +217,7 @@ Dockerfile @sourcegraph/distribution
 # Backend shared packages
 /internal/endpoint/ @keegancsmith @slimsag
 /internal/rcache/ @keegancsmith
+/internal/leader @sourcegraph/cloud
 /internal/redispool/ @keegancsmith
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
