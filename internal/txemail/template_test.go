@@ -3,6 +3,7 @@ package txemail
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jordan-wright/email"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
@@ -32,13 +33,15 @@ func TestParseTemplate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want := `a subject <b>`; m.Subject != want {
-		t.Errorf("got subject %q, want %q", m.Subject, want)
+	if diff := cmp.Diff(m.Subject, `a subject <b>`); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
 	}
-	if want := `a text body <b>`; string(m.Text) != want {
-		t.Errorf("got text body %q, want %q", string(m.Text), want)
+
+	if diff := cmp.Diff(string(m.Text), `a text body <b>`); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
 	}
-	if want := `a html body <span class="&lt;b&gt;" />`; string(m.HTML) != want {
-		t.Errorf("got html body %q, want %q", string(m.HTML), want)
+
+	if diff := cmp.Diff(string(m.HTML), `a html body <span class="&lt;b&gt;" />`); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
 	}
 }
