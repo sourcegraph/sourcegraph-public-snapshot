@@ -288,7 +288,7 @@ func TestCampaigns(t *testing.T) {
 		graphqlBBSRepoID, "2",
 	)
 
-	state := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
+	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(githubRepo.Name),
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
@@ -727,7 +727,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockState := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
+	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(githubRepo.Name),
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
@@ -1207,7 +1207,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		FakeMetadata: fakePR,
 	})
 
-	state := ct.MockGitHubChangesetSync(&protocol.RepoInfo{
+	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(repo.Name),
 		VCS:  protocol.VCSInfo{URL: repo.URI},
 	})

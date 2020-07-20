@@ -12,19 +12,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type MockedGitHubChangesetSyncState struct {
+type MockedChangesetSyncState struct {
 	execReader      func([]string) (io.ReadCloser, error)
 	mockRepoLookup  func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 	resolveRevision func(string, git.ResolveRevisionOptions) (api.CommitID, error)
 }
 
-// MockGitHubChangesetSync sets up mocks such that invoking LoadChangesets() on
-// one or more GitHub changesets will always return succeed, and return the same
-// diff (+1, ~1, -3).
+// MockChangesetSyncState sets up mocks such that invoking SetDerivedState() with
+// a Changeset will use the same diff (+1, ~1, -3) when setting the SyncState
+// on a Changeset.
 //
 // state.Unmock() must called to clean up, usually via defer.
-func MockGitHubChangesetSync(repo *protocol.RepoInfo) *MockedGitHubChangesetSyncState {
-	state := &MockedGitHubChangesetSyncState{
+func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
+	state := &MockedChangesetSyncState{
 		execReader:      git.Mocks.ExecReader,
 		mockRepoLookup:  repoupdater.MockRepoLookup,
 		resolveRevision: git.Mocks.ResolveRevision,
@@ -73,7 +73,7 @@ index 884601b..c4886d5 100644
 }
 
 // Unmock resets the mocks set up by MockGitHubChangesetSync.
-func (state *MockedGitHubChangesetSyncState) Unmock() {
+func (state *MockedChangesetSyncState) Unmock() {
 	git.Mocks.ExecReader = state.execReader
 	git.Mocks.ResolveRevision = state.resolveRevision
 	repoupdater.MockRepoLookup = state.mockRepoLookup
