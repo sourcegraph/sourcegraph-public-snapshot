@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"html/template"
 	"io/ioutil"
@@ -189,7 +190,7 @@ func (s *Serve) configureRepos() []string {
 		// will contain nil error. If it does, proceed to configure.
 		gitdir := filepath.Join(path, ".git")
 		if fi, err := os.Stat(gitdir); err != nil || !fi.IsDir() {
-			s.Debug.Print("not a repository root", path)
+			s.Debug.Printf("not a repository root: %s", path)
 			return nil
 		}
 
@@ -249,12 +250,14 @@ func (s *Serve) allUpdateServerInfo(gitDirs []string) {
 	atomic.StoreUint64(&s.updatingServerInfo, 0)
 }
 
+var postUpdateHook = []byte("#!/bin/sh\nexec git update-server-info\n")
+
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html
 // for background.
 func configurePostUpdateHook(gitDir string) error {
 	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
-	if _, err := os.Stat(postUpdatePath); err == nil {
+	if b, _ := ioutil.ReadFile(postUpdatePath); bytes.Equal(b, postUpdateHook) {
 		return nil
 	}
 
@@ -265,7 +268,7 @@ func configurePostUpdateHook(gitDir string) error {
 	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
 		return errors.Wrap(err, "create git hooks dir")
 	}
-	if err := ioutil.WriteFile(postUpdatePath, []byte(postUpdatePath), 0755); err != nil {
+	if err := ioutil.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
 		return errors.Wrap(err, "setting post-update hook")
 	}
 
