@@ -7,7 +7,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
   isSiteAdmin={false}
 >
   <ButtonDropdown
-    className="nav-link py-0 px-0 percy-hide"
+    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
     isOpen={false}
     toggle={[Function]}
   >
@@ -15,7 +15,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
       a11y={true}
       active={false}
       addonType={false}
-      className="nav-link py-0 px-0 percy-hide"
+      className="nav-link py-0 px-0 percy-hide chromatic-ignore"
       direction="down"
       group={true}
       inNavbar={false}
@@ -26,7 +26,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     >
       <Manager>
         <div
-          className="nav-link py-0 px-0 percy-hide btn-group"
+          className="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
@@ -114,7 +114,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
   isSiteAdmin={false}
 >
   <ButtonDropdown
-    className="nav-link py-0 px-0 percy-hide"
+    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
     isOpen={false}
     toggle={[Function]}
   >
@@ -122,7 +122,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
       a11y={true}
       active={false}
       addonType={false}
-      className="nav-link py-0 px-0 percy-hide"
+      className="nav-link py-0 px-0 percy-hide chromatic-ignore"
       direction="down"
       group={true}
       inNavbar={false}
@@ -133,7 +133,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     >
       <Manager>
         <div
-          className="nav-link py-0 px-0 percy-hide btn-group"
+          className="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
@@ -222,7 +222,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
   isSiteAdmin={true}
 >
   <ButtonDropdown
-    className="nav-link py-0 px-0 percy-hide"
+    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
     isOpen={false}
     toggle={[Function]}
   >
@@ -230,7 +230,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
       a11y={true}
       active={false}
       addonType={false}
-      className="nav-link py-0 px-0 percy-hide"
+      className="nav-link py-0 px-0 percy-hide chromatic-ignore"
       direction="down"
       group={true}
       inNavbar={false}
@@ -241,7 +241,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     >
       <Manager>
         <div
-          className="nav-link py-0 px-0 percy-hide btn-group"
+          className="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
@@ -345,7 +345,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
   isSiteAdmin={false}
 >
   <ButtonDropdown
-    className="nav-link py-0 px-0 percy-hide"
+    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
     isOpen={false}
     toggle={[Function]}
   >
@@ -353,7 +353,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
       a11y={true}
       active={false}
       addonType={false}
-      className="nav-link py-0 px-0 percy-hide"
+      className="nav-link py-0 px-0 percy-hide chromatic-ignore"
       direction="down"
       group={true}
       inNavbar={false}
@@ -364,7 +364,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     >
       <Manager>
         <div
-          className="nav-link py-0 px-0 percy-hide btn-group"
+          className="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
@@ -453,7 +453,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
   isSiteAdmin={true}
 >
   <ButtonDropdown
-    className="nav-link py-0 px-0 percy-hide"
+    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
     isOpen={false}
     toggle={[Function]}
   >
@@ -461,7 +461,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
       a11y={true}
       active={false}
       addonType={false}
-      className="nav-link py-0 px-0 percy-hide"
+      className="nav-link py-0 px-0 percy-hide chromatic-ignore"
       direction="down"
       group={true}
       inNavbar={false}
@@ -472,7 +472,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
     >
       <Manager>
         <div
-          className="nav-link py-0 px-0 percy-hide btn-group"
+          className="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
@@ -576,7 +576,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
   isSiteAdmin={false}
 >
   <ButtonDropdown
-    className="nav-link py-0 px-0 percy-hide"
+    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
     isOpen={false}
     toggle={[Function]}
   >
@@ -584,7 +584,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
       a11y={true}
       active={false}
       addonType={false}
-      className="nav-link py-0 px-0 percy-hide"
+      className="nav-link py-0 px-0 percy-hide chromatic-ignore"
       direction="down"
       group={true}
       inNavbar={false}
@@ -595,7 +595,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
     >
       <Manager>
         <div
-          className="nav-link py-0 px-0 percy-hide btn-group"
+          className="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
@@ -684,7 +684,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
   isSiteAdmin={true}
 >
   <ButtonDropdown
-    className="nav-link py-0 px-0 percy-hide"
+    className="nav-link py-0 px-0 percy-hide chromatic-ignore"
     isOpen={false}
     toggle={[Function]}
   >
@@ -692,7 +692,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
       a11y={true}
       active={false}
       addonType={false}
-      className="nav-link py-0 px-0 percy-hide"
+      className="nav-link py-0 px-0 percy-hide chromatic-ignore"
       direction="down"
       group={true}
       inNavbar={false}
@@ -703,7 +703,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
     >
       <Manager>
         <div
-          className="nav-link py-0 px-0 percy-hide btn-group"
+          className="nav-link py-0 px-0 percy-hide chromatic-ignore btn-group"
           onKeyDown={[Function]}
         >
           <DropdownToggle
