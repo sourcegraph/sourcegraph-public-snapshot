@@ -2722,42 +2722,6 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 	return ids, nil
 }
 
-// GetRepoIDsForFailedChangesetJobs returns the repository IDs of patches that
-// are associated with failed changeset jobs belonging to the specified
-// campaign.
-// The repository IDs are used to get filtered by our authzFilter so we can
-// then only load the error messages of the changeset jobs belonging to
-// repositories that are NOT filtered out.
-func (s *Store) GetRepoIDsForFailedChangesetJobs(ctx context.Context, campaign int64) ([]api.RepoID, error) {
-	const queryFmtString = `
-	SELECT patches.repo_id
-	FROM changeset_jobs
-	JOIN patches ON patches.id = changeset_jobs.patch_id
-	WHERE
-	  changeset_jobs.campaign_id = %s
-	AND
-	  changeset_jobs.error != ''
-	AND
-	  changeset_jobs.finished_at IS NOT NULL;
-	`
-
-	q := sqlf.Sprintf(queryFmtString, campaign)
-	var ids []api.RepoID
-	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var id api.RepoID
-		err = sc.Scan(&id)
-		if err != nil {
-			return 0, 0, err
-		}
-		ids = append(ids, id)
-		return 0, 1, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
-}
-
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	_, _, err := s.query(ctx, q, sc)
 	return err
