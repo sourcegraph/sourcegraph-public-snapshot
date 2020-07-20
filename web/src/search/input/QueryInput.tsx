@@ -41,7 +41,7 @@ import { Shortcut } from '@slimsag/react-shortcuts'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import {isErrorLike} from '../../../../shared/src/util/errors';
 import {SearchSuggestion} from "../../../../shared/src/search/suggestions";
-import {isGlobbingActive} from "../../util/globbing";
+import {globbingEnabledFromSettings} from "../../util/globbing";
 
 interface Props
     extends PatternTypeProps,
@@ -148,7 +148,7 @@ export class QueryInput extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const globbing = isGlobbingActive(this.props.settingsCascade)
+        const globbing = globbingEnabledFromSettings(this.props.settingsCascade)
 
         // Update parent component
         // (will be used in next PR to push to queryHistory (undo/redo))
