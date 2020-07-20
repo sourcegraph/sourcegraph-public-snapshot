@@ -36,7 +36,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Configuration for `observability.alerts` has changed and notifications are now provided by Prometheus Alertmanager. [#11832](https://github.com/sourcegraph/sourcegraph/pull/11832)
   - Removed: `observability.alerts.id`.
   - Removed: Slack notifiers no longer accept `mentionUsers`, `mentionGroups`, `mentionChannel`, and `token` options.
--
 
 ### Fixed
 
@@ -49,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug affecting Sourcegraph icon display in our Phabricator native integration [#11825](https://github.com/sourcegraph/sourcegraph/pull/11825).
 - Improve performance of site-admin repositories status page. [#11932](https://github.com/sourcegraph/sourcegraph/pull/11932)
 - An issue where search autocomplete for files didn't add the right path. [#12241](https://github.com/sourcegraph/sourcegraph/pull/12241)
+- Fixed site admins are getting errors when visiting user settings page in OSS version. [#12313](https://github.com/sourcegraph/sourcegraph/pull/12313)
 
 ### Removed
 
