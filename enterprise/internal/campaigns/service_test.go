@@ -929,13 +929,13 @@ func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
 	return c
 }
 
-func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetExternalState) *campaigns.Changeset {
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, extState campaigns.ChangesetExternalState) *campaigns.Changeset {
 	changeset := &campaigns.Changeset{
 		RepoID:              repoID,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
-		Metadata:            &github.PullRequest{State: string(state)},
-		ExternalState:       state,
+		Metadata:            &github.PullRequest{State: string(extState)},
+		ExternalState:       extState,
 	}
 
 	if campaign != 0 {

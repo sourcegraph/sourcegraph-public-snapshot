@@ -473,7 +473,7 @@ func TestComputeReviewState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			changeset := tc.changeset
 
-			have, err := ComputeReviewState(changeset, tc.history)
+			have, err := computeReviewState(changeset, tc.history)
 			if err != nil {
 				t.Fatalf("got error: %s", err)
 			}
@@ -505,7 +505,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "github - changeset older than events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateClosed,
 		},
@@ -513,7 +513,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "github - changeset newer than events",
 			changeset: githubChangeset(daysAgo(0), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateOpen,
 		},
@@ -521,7 +521,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "github - changeset newer and deleted",
 			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN"), daysAgo(0)),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateDeleted,
 		},
@@ -535,7 +535,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "bitbucketserver - changeset older than events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateClosed,
 		},
@@ -543,7 +543,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "bitbucketserver - changeset newer than events",
 			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateOpen,
 		},
@@ -551,7 +551,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "bitbucketserver - changeset newer and deleted",
 			changeset: setDeletedAt(bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"), daysAgo(0)),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateDeleted,
 		},
@@ -583,7 +583,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "gitlab - changeset older than events",
 			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateMerged, nil),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateClosed,
 		},
@@ -591,7 +591,7 @@ func TestComputeExternalState(t *testing.T) {
 			name:      "gitlab - changeset newer than events",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), state: campaigns.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
 			want: cmpgn.ChangesetExternalStateMerged,
 		},
@@ -601,7 +601,7 @@ func TestComputeExternalState(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			changeset := tc.changeset
 
-			have, err := ComputeExternalState(changeset, tc.history)
+			have, err := computeExternalState(changeset, tc.history)
 			if err != nil {
 				t.Fatalf("got error: %s", err)
 			}
