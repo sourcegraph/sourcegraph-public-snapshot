@@ -62,11 +62,21 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
 	var pipelineOperations []func(*bk.Pipeline)
 	switch {
-	case c.isPR() && isDocsOnly():
+	case c.isPR() && c.isDocsOnly():
 		// If this is a docs-only PR, run only the steps necessary to verify the docs.
 		pipelineOperations = []func(*bk.Pipeline){
 			addDocs,
 		}
+
+	case c.isPR() && c.isGoOnly():
+		// If this is a go-only PR, run only the steps necessary to verify the go code.
+		pipelineOperations = []func(*bk.Pipeline){
+			addGoTests,            // ~1.5m
+			addCheck,              // ~1m
+			addGoBuild,            // ~0.5m
+			addPostgresBackcompat, // ~0.25m
+		}
+
 	case c.patchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
