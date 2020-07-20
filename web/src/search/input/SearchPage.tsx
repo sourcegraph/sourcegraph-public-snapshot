@@ -139,15 +139,15 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 </li>
                                 <li className="list-group-item px-0 pt-3 pb-2">
                                     <Link
-                                        to="/search?q=lang:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
+                                        to="/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
                                         className="text-monospace mb-2"
                                     >
-                                        <span className="search-page__keyword-text">lang:</span>python from \B\.\w+
+                                        <span className="search-page__keyword-text">repogroup:</span>python from \B\.\w+
                                         import \w+
                                     </Link>{' '}
                                     <p className="mt-2">
                                         Search for explicit imports with one or more leading dots that indicate current
-                                        and parent packages involved.
+                                        and parent packages involved, across popular Python repositories.
                                     </p>
                                 </li>
                                 <li className="list-group-item px-0 pt-3 pb-2">
