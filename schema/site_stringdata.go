@@ -496,7 +496,7 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "disableTLS": {
-          "description": "Disable TLS verification - only compatible with observability.alerts today, see https://github.com/sourcegraph/sourcegraph/issues/10702",
+          "description": "Disable TLS verification",
           "type": "boolean"
         }
       },
