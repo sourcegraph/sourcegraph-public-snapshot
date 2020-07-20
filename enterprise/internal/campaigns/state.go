@@ -29,7 +29,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	copy(events, es)
 	sort.Sort(events)
 
-	c.ExternalCheckState = ComputeCheckState(c, events)
+	c.ExternalCheckState = computeCheckState(c, events)
 
 	history, err := computeHistory(c, events)
 	if err != nil {
@@ -37,12 +37,12 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 		return
 	}
 
-	if state, err := ComputeExternalState(c, history); err != nil {
+	if state, err := computeExternalState(c, history); err != nil {
 		log15.Warn("Computing external changeset state", "err", err)
 	} else {
 		c.ExternalState = state
 	}
-	if state, err := ComputeReviewState(c, history); err != nil {
+	if state, err := computeReviewState(c, history); err != nil {
 		log15.Warn("Computing changeset review state", "err", err)
 	} else {
 		c.ExternalReviewState = state
@@ -91,9 +91,10 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	}
 }
 
-// ComputeCheckState computes the overall check state based on the current synced check state
-// and any webhook events that have arrived after the most recent sync
-func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns.ChangesetCheckState {
+// computeCheckState computes the overall check state based on the current
+// synced check state and any webhook events that have arrived after the most
+// recent sync.
+func computeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns.ChangesetCheckState {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
@@ -108,9 +109,9 @@ func ComputeCheckState(c *campaigns.Changeset, events ChangesetEvents) campaigns
 	return campaigns.ChangesetCheckStateUnknown
 }
 
-// ComputeExternalState computes the overall state for the changeset and its
-// associated events. The events should be presorted.
-func ComputeExternalState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetExternalState, error) {
+// computeExternalState computes the external state for the changeset and its
+// associated events.
+func computeExternalState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetExternalState, error) {
 	if len(history) == 0 {
 		return computeSingleChangesetExternalState(c)
 	}
@@ -118,12 +119,12 @@ func ComputeExternalState(c *campaigns.Changeset, history []changesetStatesAtTim
 	if c.UpdatedAt.After(newestDataPoint.t) {
 		return computeSingleChangesetExternalState(c)
 	}
-	return newestDataPoint.state, nil
+	return newestDataPoint.externalState, nil
 }
 
-// ComputeReviewState computes the review state for the changeset and its
+// computeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
-func ComputeReviewState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetReviewState, error) {
+func computeReviewState(c *campaigns.Changeset, history []changesetStatesAtTime) (campaigns.ChangesetReviewState, error) {
 	if len(history) == 0 {
 		return computeSingleChangesetReviewState(c)
 	}
@@ -433,7 +434,7 @@ func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.Ch
 // GitHub doesn't keep the review state on a changeset, so a GitHub Changeset
 // will always return ChangesetReviewStatePending.
 //
-// This method should NOT be called directly. Use ComputeReviewState instead.
+// This method should NOT be called directly. Use computeReviewState instead.
 func computeSingleChangesetReviewState(c *campaigns.Changeset) (s campaigns.ChangesetReviewState, err error) {
 	states := map[campaigns.ChangesetReviewState]bool{}
 
@@ -501,16 +502,6 @@ func selectReviewState(states map[campaigns.ChangesetReviewState]bool) campaigns
 	}
 
 	return campaigns.ChangesetReviewStatePending
-}
-
-// computeOverallReviewState returns the overall review state given a map of
-// reviews per author.
-func computeReviewState(statesByAuthor map[string]campaigns.ChangesetReviewState) campaigns.ChangesetReviewState {
-	states := make(map[campaigns.ChangesetReviewState]bool)
-	for _, s := range statesByAuthor {
-		states[s] = true
-	}
-	return selectReviewState(states)
 }
 
 // computeDiffStat computes the up to date diffstat for the changeset, based on
