@@ -1,18 +1,27 @@
 package indexer
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type IndexerMetrics struct {
-	Processor *metrics.OperationMetrics
+	ProcessOperation *observation.Operation
 }
 
-func NewIndexerMetrics(r prometheus.Registerer) IndexerMetrics {
-	processor := metrics.NewOperationMetrics(r, "index_queue_processor")
+func NewIndexerMetrics(observationContext *observation.Context) IndexerMetrics {
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
+		"index_queue_processor",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of results returned"),
+	)
 
 	return IndexerMetrics{
-		Processor: processor,
+		ProcessOperation: observationContext.Operation(observation.Op{
+			Name:         "Processor.Process",
+			MetricLabels: []string{"process"},
+			Metrics:      metrics,
+		}),
 	}
 }

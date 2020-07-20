@@ -76,6 +76,7 @@ Sourcegraph has the following dependencies:
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
+- [Watchman](https://facebook.github.io/watchman/)
 
 The following are two recommendations for installing these dependencies:
 
@@ -93,7 +94,7 @@ The following are two recommendations for installing these dependencies:
 3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, SQLite tools, and jq with the following command:
 
     ```
-    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq
+    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
     ```
 
 4.  Install the Node Version Manager (`nvm`) using:
@@ -181,6 +182,9 @@ The following are two recommendations for installing these dependencies:
 
     # install comby (you must rename the extracted binary to `comby` and move the binary into your $PATH)
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
+
+    # install watchman (you must put the binary and shared libraries on your $PATH and $LD_LIBRARY_PATH)
+    curl -L https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
 
     # nvm (to manage Node.js)
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"

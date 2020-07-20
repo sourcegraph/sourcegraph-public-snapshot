@@ -10,6 +10,7 @@ import {
     createBlobContentResult,
 } from './graphQlResponseHelpers'
 import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import * as path from 'path'
 
 describe('Repository', () => {
     let driver: Driver
@@ -378,6 +379,94 @@ describe('Repository', () => {
             await driver.findElementWithText(clickedCommit, { selector: '.git-commit-node__oid', action: 'click' })
             await driver.page.waitForSelector('.git-commit-node__message-subject')
             await assertSelectorHasText('.git-commit-node__message-subject', 'update LSIF indexing CI workflow')
+        })
+
+        it('works with files with spaces in the name', async () => {
+            const fileName = '% token.4288249258.sql'
+            const directoryName = "Geoffrey's random queries.32r242442bf"
+            const filePath = path.posix.join(directoryName, fileName)
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                FileExternalLinks: ({ filePath, repoName, revision }) =>
+                    createFileExternalLinksResult(
+                        `https://${repoName}/blob/${revision}/${filePath.split('/').map(encodeURIComponent).join('/')}`
+                    ),
+                TreeEntries: () => ({
+                    repository: {
+                        commit: {
+                            tree: {
+                                isRoot: false,
+                                url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
+                                entries: [
+                                    {
+                                        name: fileName,
+                                        path: filePath,
+                                        isDirectory: false,
+                                        url:
+                                            '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
+                                        submodule: null,
+                                        isSingleChild: false,
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                }),
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+            })
+
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/github.com/ggilmore/q-test/-/tree/Geoffrey's%20random%20queries.32r242442bf`
+            )
+            await driver.page.waitForSelector('.test-tree-file-link')
+            assert.strictEqual(
+                await driver.page.evaluate(() => document.querySelector('.test-tree-file-link')?.textContent),
+                fileName
+            )
+
+            await driver.page.click('.test-tree-file-link')
+            await driver.page.waitForSelector('.test-repo-blob')
+
+            assert.strictEqual(
+                await driver.page.evaluate(
+                    () => document.querySelector('.test-breadcrumb-part-directory')?.textContent
+                ),
+                directoryName
+            )
+            assert.strictEqual(
+                await driver.page.evaluate(() => document.querySelector('.test-breadcrumb-part-last')?.textContent),
+                fileName
+            )
+
+            // TODO, broken: https://github.com/sourcegraph/sourcegraph/issues/12296
+            // await driver.page.waitForSelector('#monaco-query-input .view-lines')
+            // const searchQuery = await driver.page.evaluate(
+            //     () => document.querySelector('#monaco-query-input .view-lines')?.textContent
+            // )
+            // assert.strictEqual(
+            //     searchQuery,
+            //     'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\.32r242442bf/% token\\.4288249258\\.sql$"'
+            // )
+
+            await driver.page.waitForSelector('.test-go-to-code-host')
+            assert.strictEqual(
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-go-to-code-host')?.href
+                ),
+                "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
+            )
+
+            const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
+            assert.strictEqual(blobContent, `content for: ${filePath}`)
         })
     })
 })

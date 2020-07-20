@@ -26,6 +26,10 @@ type Index struct {
 	Rank           *int       `json:"placeInQueue"`
 }
 
+func (i Index) RecordID() int {
+	return i.ID
+}
+
 // scanIndexes scans a slice of indexes from the return value of `*store.query`.
 func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 	if queryErr != nil {
@@ -70,6 +74,11 @@ func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
 
 // scanFirstIndexInterface scans a slice of indexes from the return value of `*store.query` and returns the first.
 func scanFirstIndexInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
+	return scanFirstIndex(rows, err)
+}
+
+// scanFirstIndexInterface scans a slice of indexes from the return value of `*store.query` and returns the first.
+func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstIndex(rows, err)
 }
 
@@ -341,12 +350,16 @@ func (s *store) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, 
 	return s.makeIndexWorkQueueStore().ResetStalled(ctx)
 }
 
-func (s *store) makeIndexWorkQueueStore() *workerutil.Store {
+func (s *store) makeIndexWorkQueueStore() workerutil.Store {
+	return WorkerutilIndexStore(s)
+}
+
+func WorkerutilIndexStore(s Store) workerutil.Store {
 	return workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: indexColumnsWithNullRank,
-		Scan:              scanFirstIndexInterface,
+		Scan:              scanFirstIndexRecord,
 		OrderByExpression: sqlf.Sprintf("queued_at"),
 		StalledMaxAge:     StalledIndexMaxAge,
 		MaxNumResets:      IndexMaxNumResets,

@@ -843,6 +843,22 @@ Indexes:
 
 ```
 
+# Table "public.secrets"
+```
+   Column    |          Type          |                      Modifiers                       
+-------------+------------------------+------------------------------------------------------
+ id          | bigint                 | not null default nextval('secrets_id_seq'::regclass)
+ source_type | character varying(50)  | 
+ source_id   | bigint                 | 
+ key_name    | character varying(100) | 
+ value       | text                   | not null
+Indexes:
+    "secrets_pkey" PRIMARY KEY, btree (id)
+    "secret_key_idx" UNIQUE, btree (key_name)
+    "secret_sourcetype_idx" UNIQUE, btree (source_type, source_id)
+
+```
+
 # Table "public.settings"
 ```
      Column     |           Type           |                       Modifiers                       

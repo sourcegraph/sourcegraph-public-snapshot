@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -347,6 +348,16 @@ func (s *ObservedStore) wrap(other Store) Store {
 		repoUsageStatisticsOperation:            s.repoUsageStatisticsOperation,
 		repoNameOperation:                       s.repoNameOperation,
 	}
+}
+
+// Handle calls into the inner store and wraps the resulting value in an ObservedStore.
+func (s *ObservedStore) Handle() *basestore.TransactableHandle {
+	return s.store.Handle()
+}
+
+// With calls into the inner store and wraps the resulting value in an ObservedStore.
+func (s *ObservedStore) With(other basestore.ShareableStore) Store {
+	return s.wrap(s.store.With(other))
 }
 
 // Transact calls into the inner store and wraps the resulting value in an ObservedStore.
