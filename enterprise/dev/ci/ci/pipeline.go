@@ -92,7 +92,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		pipelineOperations = []func(*bk.Pipeline){
 			addLint,
 			addBrowserExt,
-			addSharedTests,
+			addSharedTests(c),
 			wait,
 			addBrowserExtensionReleaseSteps,
 		}
@@ -103,7 +103,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		pipelineOperations = []func(*bk.Pipeline){
 			addLint,
 			addBrowserExt,
-			addSharedTests,
+			addSharedTests(c),
 			wait,
 			addBrowserExtensionE2ESteps,
 		}
@@ -115,7 +115,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addWebApp,
-			addSharedTests,
+			addSharedTests(c),
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
@@ -131,7 +131,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		pipelineOperations = []func(*bk.Pipeline){
 			triggerE2E(c, env),
 			addLint,               // ~4.5m
-			addSharedTests,        // ~4.5m
+			addSharedTests(c),     // ~4.5m
 			addWebApp,             // ~3m
 			addBrowserExt,         // ~2m
 			addGoTests,            // ~1.5m
