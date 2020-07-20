@@ -273,7 +273,7 @@ type ExternalChangesetResolver interface {
 	Body() (string, error)
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) campaigns.ChangesetReviewState
-	CheckState(context.Context) (*campaigns.ChangesetCheckState, error)
+	CheckState() *campaigns.ChangesetCheckState
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)

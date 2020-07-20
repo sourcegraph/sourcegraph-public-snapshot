@@ -318,12 +318,12 @@ func (r *changesetResolver) ReviewState(ctx context.Context) campaigns.Changeset
 	return r.ExternalReviewState
 }
 
-func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.ChangesetCheckState, error) {
+func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
 	state := r.ExternalCheckState
 	if state == campaigns.ChangesetCheckStateUnknown {
-		return nil, nil
+		return nil
 	}
-	return &state, nil
+	return &state
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
