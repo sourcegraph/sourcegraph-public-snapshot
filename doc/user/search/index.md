@@ -126,6 +126,9 @@ To specify the default branch, you can set `"rev"` to `"HEAD"` or `""`.
 
 After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
 
+
+> NOTE: All revisions specified in version contexts [will be indexed](#multi-branch-indexing-experimental).
+
 ### Multi-branch indexing <span class="badge badge-primary">experimental</span>
 
 > NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
