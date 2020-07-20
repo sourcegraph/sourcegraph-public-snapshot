@@ -41,11 +41,21 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                         </a>
                         .
                     </p>
+                    <section className="my-3">
+                        <h2>Ask questions and share feedback</h2>
+                        <p>
+                            Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an issue
+                            in our <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>,
+                            or email <a href="mailto:feedback@sourcegraph.com">feedback@sourcegraph.com</a>. We look
+                            forward to hearing from you!
+                        </p>
+                    </section>
                 </section>
                 <div className="offset-md-1 col-md-10 offset-lg-0 col-lg-4">
                     <PrivateCodeCta />
                 </div>
             </div>
         }
+        hideShareFeedbackBlurb={true}
     />
 )
