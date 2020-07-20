@@ -3,6 +3,7 @@ package txemail
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -114,6 +115,16 @@ func Send(ctx context.Context, message Message) error {
 		smtpAuth = smtp.CRAMMD5Auth(conf.EmailSmtp.Username, conf.EmailSmtp.Password)
 	default:
 		return fmt.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
+	}
+
+	if conf.EmailSmtp.DisableTLS {
+		return m.SendWithStartTLS(
+			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
+			smtpAuth,
+			&tls.Config{
+				InsecureSkipVerify: true,
+			},
+		)
 	}
 
 	return m.Send(
