@@ -194,8 +194,8 @@ func (s *Serve) configureRepos() []string {
 			return nil
 		}
 
-		if err := configurePostUpdateHook(gitdir); err != nil {
-			s.Info.Printf("configuring repo at %s: %v", gitdir, err)
+		if err := configurePostUpdateHook(s.Info, gitdir); err != nil {
+			s.Info.Printf("failed configuring repo at %s: %v", gitdir, err)
 			return nil
 		}
 
@@ -255,11 +255,13 @@ var postUpdateHook = []byte("#!/bin/sh\nexec git update-server-info\n")
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html
 // for background.
-func configurePostUpdateHook(gitDir string) error {
+func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
 	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
 	if b, _ := ioutil.ReadFile(postUpdatePath); bytes.Equal(b, postUpdateHook) {
 		return nil
 	}
+
+	logger.Printf("configuring git post-update hook for %s", gitDir)
 
 	if err := updateServerInfo(gitDir); err != nil {
 		return err
