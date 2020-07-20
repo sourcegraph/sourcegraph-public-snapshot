@@ -102,7 +102,16 @@ export const createSharedIntegrationTestContext = async <
     if (record) {
         await mkdirp(recordingsDirectory)
     }
-    const requestResourceTypes: ResourceType[] = ['xhr', 'fetch', 'document', 'script', 'stylesheet', 'image', 'font']
+    const requestResourceTypes: ResourceType[] = [
+        'xhr',
+        'fetch',
+        'document',
+        'script',
+        'stylesheet',
+        'image',
+        'font',
+        'other', // Favicon
+    ]
     const polly = new Polly(snakeCase(currentTest.title), {
         adapters: ['puppeteer'],
         adapterOptions: {
@@ -133,6 +142,14 @@ export const createSharedIntegrationTestContext = async <
 
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()
+
+    // Avoid 404 error logs from missing favicon
+    server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+        response
+            .status(302)
+            .setHeader('Location', new URL('/.assets/img/sourcegraph-mark.svg', driver.sourcegraphBaseUrl).href)
+            .send('')
+    })
 
     // Serve assets from disk
     server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
