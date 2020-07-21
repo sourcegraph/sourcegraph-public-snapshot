@@ -244,7 +244,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-                  data-e2e-tab="added"
+                  data-test-tab="added"
                   onClick={[Function]}
                   type="button"
                 >
@@ -277,7 +277,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="changed"
+                  data-test-tab="changed"
                   onClick={[Function]}
                   type="button"
                 >
@@ -310,7 +310,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="unmodified"
+                  data-test-tab="unmodified"
                   onClick={[Function]}
                   type="button"
                 >
@@ -343,7 +343,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="deleted"
+                  data-test-tab="deleted"
                   onClick={[Function]}
                   type="button"
                 >
@@ -640,7 +640,7 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
-                  data-e2e-tab="added"
+                  data-test-tab="added"
                   onClick={[Function]}
                   type="button"
                 >
@@ -673,7 +673,7 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="changed"
+                  data-test-tab="changed"
                   onClick={[Function]}
                   type="button"
                 >
@@ -706,7 +706,7 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="unmodified"
+                  data-test-tab="unmodified"
                   onClick={[Function]}
                   type="button"
                 >
@@ -739,7 +739,7 @@ exports[`CampaignUpdateDiff renders a loader 1`] = `
               >
                 <button
                   className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
-                  data-e2e-tab="deleted"
+                  data-test-tab="deleted"
                   onClick={[Function]}
                   type="button"
                 >

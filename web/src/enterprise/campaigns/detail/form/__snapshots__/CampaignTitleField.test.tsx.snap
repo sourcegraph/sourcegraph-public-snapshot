@@ -15,7 +15,7 @@ exports[`CampaignTitleField renders 1`] = `
     </label>
     <input
       autoFocus={true}
-      className="form-control e2e-campaign-title"
+      className="form-control test-campaign-title"
       id="campaignTitle"
       onChange={[Function]}
       required={true}

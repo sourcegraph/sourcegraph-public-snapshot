@@ -157,6 +157,20 @@ const SiteSchemaJSON = `{
             ]
           ]
         },
+        "search.index.branches": {
+          "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "examples": [
+            {
+              "github.com/sourcegraph/sourcegraph": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"],
+              "name/of/repo": ["develop"]
+            }
+          ]
+        },
         "versionContexts": {
           "description": "JSON array of version context configuration",
           "type": "array",
@@ -188,7 +202,7 @@ const SiteSchemaJSON = `{
                       "type": "string"
                     },
                     "rev": {
-                      "description": "Branch, tag, or commit hash",
+                      "description": "Branch, tag, or commit hash. \"HEAD\" or \"\" can be used for the default branch.",
                       "type": "string"
                     }
                   }
@@ -482,7 +496,7 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "disableTLS": {
-          "description": "Disable TLS verification - only compatible with observability.alerts today, see https://github.com/sourcegraph/sourcegraph/issues/10702",
+          "description": "Disable TLS verification",
           "type": "boolean"
         }
       },
@@ -655,6 +669,13 @@ const SiteSchemaJSON = `{
             "type": ""
           }
         }
+      }
+    },
+    "observability.silenceAlerts": {
+      "description": "Silence individual Sourcegraph alerts by identifier.",
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     },
     "observability.logSlowSearches": {

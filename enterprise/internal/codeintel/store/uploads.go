@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -29,7 +30,12 @@ type Upload struct {
 	Indexer        string     `json:"indexer"`
 	NumParts       int        `json:"numParts"`
 	UploadedParts  []int      `json:"uploadedParts"`
+	UploadSize     *int64     `json:"uploadSize"`
 	Rank           *int       `json:"placeInQueue"`
+}
+
+func (u Upload) RecordID() int {
+	return u.ID
 }
 
 // scanUploads scans a slice of uploads from the return value of `*store.query`.
@@ -60,6 +66,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.Indexer,
 			&upload.NumParts,
 			pq.Array(&rawUploadedParts),
+			&upload.UploadSize,
 			&upload.Rank,
 		); err != nil {
 			return nil, err
@@ -88,6 +95,11 @@ func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
 
 // scanFirstUploadInterface scans a slice of uploads from the return value of `*store.query` and returns the first.
 func scanFirstUploadInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
+	return scanFirstUpload(rows, err)
+}
+
+// scanFirstUploadRecord scans a slice of uploads from the return value of `*store.query` and returns the first.
+func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstUpload(rows, err)
 }
 
@@ -174,6 +186,7 @@ func (s *store) GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 			u.indexer,
 			u.num_parts,
 			u.uploaded_parts,
+			u.upload_size,
 			s.rank
 		FROM lsif_uploads_with_repository_name u
 		LEFT JOIN (
@@ -198,13 +211,11 @@ type GetUploadsOptions struct {
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	if started {
-		defer func() { err = tx.Done(err) }()
-	}
+	defer func() { err = tx.Done(err) }()
 
 	var conds []*sqlf.Query
 
@@ -256,6 +267,7 @@ func (s *store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				u.indexer,
 				u.num_parts,
 				u.uploaded_parts,
+				u.upload_size,
 				s.rank
 			FROM lsif_uploads_with_repository_name u
 			LEFT JOIN (
@@ -315,8 +327,9 @@ func (s *store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 				indexer,
 				state,
 				num_parts,
-				uploaded_parts
-			) VALUES (%s, %s, %s, %s, %s, %s, %s)
+				uploaded_parts,
+				upload_size
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 		`,
 			upload.Commit,
@@ -326,6 +339,7 @@ func (s *store) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 			upload.State,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
 		),
 	))
 
@@ -342,9 +356,9 @@ func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) erro
 	`, partIndex, uploadID))
 }
 
-// MarkQueued updates the state of the upload to queued.
-func (s *store) MarkQueued(ctx context.Context, id int) error {
-	return s.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, id))
+// MarkQueued updates the state of the upload to queued and updates the upload size.
+func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int) error {
+	return s.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s`, uploadSize, id))
 }
 
 // MarkComplete updates the state of the upload to complete.
@@ -382,32 +396,31 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.indexer"),
 	sqlf.Sprintf("u.num_parts"),
 	sqlf.Sprintf("u.uploaded_parts"),
+	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("NULL"),
 }
 
-// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-// upload is returned along with a store instance which wraps the transaction. This transaction must be closed.
-// If there is no such unlocked upload, a zero-value upload and nil store will be returned along with a false
-// valued flag. This method must not be called from within a transaction.
-func (s *store) Dequeue(ctx context.Context) (Upload, Store, bool, error) {
-	upload, tx, ok, err := s.dequeueRecord(
-		ctx,
-		"lsif_uploads_with_repository_name",
-		"lsif_uploads",
-		uploadColumnsWithNullRank,
-		sqlf.Sprintf("uploaded_at"),
-		scanFirstUploadInterface,
-	)
-	if err != nil || !ok {
-		return Upload{}, tx, ok, err
+// Dequeue selects the oldest queued upload smaller than the given maximum size and locks it with a transaction.
+// If there is such an upload, the upload is returned along with a store instance which wraps the transaction.
+// This transaction must be closed. If there is no such unlocked upload, a zero-value upload and nil store will
+// be returned along with a false valued flag. This method must not be called from within a transaction.
+func (s *store) Dequeue(ctx context.Context, maxSize int64) (Upload, Store, bool, error) {
+	conditions := []*sqlf.Query{}
+	if maxSize != 0 {
+		conditions = append(conditions, sqlf.Sprintf("upload_size IS NULL OR upload_size <= %s", maxSize))
 	}
 
-	return upload.(Upload), tx, true, nil
+	upload, tx, ok, err := s.makeUploadWorkQueueStore().Dequeue(ctx, conditions)
+	if err != nil || !ok {
+		return Upload{}, nil, false, err
+	}
+
+	return upload.(Upload), s.With(tx), true, nil
 }
 
 // Requeue updates the state of the upload to queued and adds a processing delay before the next dequeue attempt.
 func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
-	return s.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued', process_after = %s WHERE id = %s`, after, id))
+	return s.makeUploadWorkQueueStore().Requeue(ctx, id, after)
 }
 
 // GetStates returns the states for the uploads with the given identifiers.
@@ -422,13 +435,11 @@ func (s *store) GetStates(ctx context.Context, ids []int) (map[int]string, error
 // the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
 // commit on the default branch when invoked.
 func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (_ bool, err error) {
-	tx, started, err := s.transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return false, err
 	}
-	if started {
-		defer func() { err = tx.Done(err) }()
-	}
+	defer func() { err = tx.Done(err) }()
 
 	visibilities, err := scanVisibilities(tx.query(
 		ctx,
@@ -450,7 +461,7 @@ func (s *store) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTi
 			}
 
 			if err := tx.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-				return false, errors.Wrap(err, "s.UpdateDumpsVisibleFromTip")
+				return false, errors.Wrap(err, "store.UpdateDumpsVisibleFromTip")
 			}
 		}
 
@@ -502,45 +513,21 @@ const UploadMaxNumResets = 3
 // UploadMaxNumResets times will be marked as errored. This method returns a list of updated and errored upload
 // identifiers.
 func (s *store) ResetStalled(ctx context.Context, now time.Time) ([]int, []int, error) {
-	resetIDs, err := scanInts(s.query(
-		ctx,
-		sqlf.Sprintf(`
-			UPDATE lsif_uploads u
-			SET state = 'queued', started_at = null, num_resets = num_resets + 1
-			WHERE id = ANY(
-				SELECT id FROM lsif_uploads_with_repository_name
-				WHERE
-					state = 'processing' AND
-					%s - started_at > (%s * interval '1 second') AND
-					num_resets < %s
-				FOR UPDATE SKIP LOCKED
-			)
-			RETURNING u.id
-		`, now.UTC(), StalledUploadMaxAge/time.Second, UploadMaxNumResets),
-	))
-	if err != nil {
-		return nil, nil, err
-	}
+	return s.makeUploadWorkQueueStore().ResetStalled(ctx)
+}
 
-	erroredIDs, err := scanInts(s.query(
-		ctx,
-		sqlf.Sprintf(`
-			UPDATE lsif_uploads u
-			SET state = 'errored', finished_at = clock_timestamp(), failure_message = 'failed to process'
-			WHERE id = ANY(
-				SELECT id FROM lsif_uploads_with_repository_name
-				WHERE
-					state = 'processing' AND
-					%s - started_at > (%s * interval '1 second') AND
-					num_resets >= %s
-				FOR UPDATE SKIP LOCKED
-			)
-			RETURNING u.id
-		`, now.UTC(), StalledUploadMaxAge/time.Second, UploadMaxNumResets),
-	))
-	if err != nil {
-		return nil, nil, err
-	}
+func (s *store) makeUploadWorkQueueStore() workerutil.Store {
+	return WorkerutilUploadStore(s)
+}
 
-	return resetIDs, erroredIDs, nil
+func WorkerutilUploadStore(s Store) workerutil.Store {
+	return workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
+		TableName:         "lsif_uploads",
+		ViewName:          "lsif_uploads_with_repository_name u",
+		ColumnExpressions: uploadColumnsWithNullRank,
+		Scan:              scanFirstUploadRecord,
+		OrderByExpression: sqlf.Sprintf("uploaded_at"),
+		StalledMaxAge:     StalledUploadMaxAge,
+		MaxNumResets:      UploadMaxNumResets,
+	})
 }

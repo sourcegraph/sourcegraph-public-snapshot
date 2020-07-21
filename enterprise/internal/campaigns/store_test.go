@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 type clock interface {
@@ -1059,6 +1060,25 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatal(diff)
 		}
+
+		for _, c := range changesets {
+			c.Metadata = &gitlab.MergeRequest{ID: 1234, IID: 123}
+			c.ExternalServiceType = extsvc.TypeGitLab
+
+			have = append(have, c.Clone())
+
+			c.UpdatedAt = clock.now()
+			want = append(want, c)
+		}
+
+		if err := s.UpdateChangesets(ctx, have...); err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatal(diff)
+		}
+
 	})
 }
 
@@ -3028,7 +3048,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 
 		for i, tc := range tests {
-			var campaignID int64 = int64(9999 + i)
+			var campaignID = int64(9999 + i)
 
 			for _, j := range tc.jobs {
 				j.CampaignID = campaignID

@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../components/PageTitle'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { Link } from '../../../shared/src/components/Link'
-import { SettingsCascadeProps, Settings } from '../../../shared/src/settings/settings'
+import { SettingsCascadeProps, Settings, isSettingsValid } from '../../../shared/src/settings/settings'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
@@ -25,8 +25,10 @@ import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import { RepogroupMetadata, RepositoryType, CodeHosts } from './types'
+import { RepogroupMetadata } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
+import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
@@ -54,6 +56,9 @@ export interface RepogroupPageProps
     authRequired?: boolean
     showCampaigns: boolean
 
+    /** Controls focusing the query input on the page. Query inputs are autofocused by default. */
+    autoFocus?: boolean
+
     // Repogroup page metadata
     repogroupMetadata: RepogroupMetadata
 }
@@ -62,6 +67,16 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     useEffect(() => eventLogger.logViewEvent(`Repogroup:${props.repogroupMetadata.name}`))
 
     const repogroupQuery = `repogroup:${props.repogroupMetadata.name}`
+
+    // Get repogroups from settings.
+    const repogroups: { [name: string]: string[] } | undefined = useMemo(
+        () =>
+            isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final['search.repositoryGroups'],
+        [props.settingsCascade]
+    )
+
+    // Find the repositories for this specific repogroup.
+    const repogroupRepoList = repogroups?.[props.repogroupMetadata.name]
 
     const onSubmitExample = (query: string, patternType: GQL.SearchPatternType) => (
         event?: React.MouseEvent<HTMLButtonElement>
@@ -87,25 +102,32 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                 </span>
             </div>
             <div className="repogroup-page__container">
-                <SearchPageInput {...props} source="repogroupPage" interactiveModeHomepageMode={true} />
+                <SearchPageInput
+                    {...props}
+                    queryPrefix={repogroupQuery}
+                    source="repogroupPage"
+                    interactiveModeHomepageMode={true}
+                />
             </div>
-            <div className="repogroup-page__content">
-                <div className="repogroup-page__column">
+            <div className="row">
+                <div className="repogroup-page__column col-xs-12 col-lg-7">
                     <p className="repogroup-page__content-description h5 font-weight-normal mb-4">
                         {props.repogroupMetadata.description}
                     </p>
+
+                    <h2>Search examples</h2>
                     {props.repogroupMetadata.examples.map(example => (
-                        <>
+                        <div className="mt-3" key={example.title}>
                             <h3 className="mb-3">{example.title}</h3>
                             <p>{example.description}</p>
                             <div className="d-flex mb-4">
-                                <div className="repogroup-page__example-bar form-control text-monospace">
+                                <div className="repogroup-page__example-bar form-control text-monospace ">
                                     <span className="repogroup-page__keyword-text">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
                                 </div>
                                 <div className="d-flex">
                                     <button
-                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn e2e-search-button btn-secondary"
+                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn test-search-button btn-secondary"
                                         type="button"
                                         aria-label="Search"
                                         onClick={onSubmitExample(
@@ -117,40 +139,40 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                     </button>
                                 </div>
                             </div>
-                        </>
+                        </div>
                     ))}
                 </div>
-                <div className="repogroup-page__column">
-                    <div className="repogroup-page__repo-card card">
-                        <h2 className="font-weight-normal">
-                            <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
-                            Repositories
-                        </h2>
-                        <p>
-                            Using the syntax{' '}
-                            <span className="text-monospace">
-                                <span className="repogroup-page__keyword-text">repogroup:</span>
-                                {props.repogroupMetadata.name}
-                            </span>{' '}
-                            in a query will search these repositories:
-                        </p>
-                        <div className="repogroup-page__repo-list row">
-                            <div className="col-lg-6">
-                                {props.repogroupMetadata.repositories
-                                    .slice(0, Math.ceil(props.repogroupMetadata.repositories.length / 2))
-                                    .map(repo => (
-                                        <RepoLink key={repo.name} repo={repo} />
+                <div className="repogroup-page__column col-xs-12 col-lg-5">
+                    <div className="order-1-lg order-2-xs">
+                        <PrivateCodeCta />
+                    </div>
+                    <div className="order-2-lg order-1-xs">
+                        <div className="repogroup-page__repo-card card">
+                            <h2 className="font-weight-normal">
+                                <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
+                                Repositories
+                            </h2>
+                            <p>
+                                Using the syntax{' '}
+                                <span className="text-monospace">
+                                    <span className="repogroup-page__keyword-text">repogroup:</span>
+                                    {props.repogroupMetadata.name}
+                                </span>{' '}
+                                in a query will search these repositories:
+                            </p>
+                            <div className="repogroup-page__repo-list row">
+                                <div className="col-lg-6">
+                                    {repogroupRepoList?.slice(0, Math.ceil(repogroupRepoList.length / 2)).map(repo => (
+                                        <RepoLink key={repo} repo={repo} />
                                     ))}
-                            </div>
-                            <div className="col-lg-6">
-                                {props.repogroupMetadata.repositories
-                                    .slice(
-                                        Math.ceil(props.repogroupMetadata.repositories.length / 2),
-                                        props.repogroupMetadata.repositories.length
-                                    )
-                                    .map(repo => (
-                                        <RepoLink key={repo.name} repo={repo} />
-                                    ))}
+                                </div>
+                                <div className="col-lg-6">
+                                    {repogroupRepoList
+                                        ?.slice(Math.ceil(repogroupRepoList.length / 2), repogroupRepoList.length)
+                                        .map(repo => (
+                                            <RepoLink key={repo} repo={repo} />
+                                        ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -160,35 +182,35 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     )
 }
 
-const RepoLink: React.FunctionComponent<{ repo: RepositoryType }> = props => (
-    <li className="repogroup-page__repo-item list-unstyled mb-3" key={props.repo.name}>
-        {props.repo.codehost === CodeHosts.GITHUB && (
+const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
+    <li className="repogroup-page__repo-item list-unstyled mb-3" key={repo}>
+        {repo.startsWith('github.com') && (
             <>
-                <a href={`https://github.com/${props.repo.name}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer">
                     <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/github.com/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
-                    {props.repo.name}
+                <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
+                    {displayRepoName(repo)}
                 </Link>
             </>
         )}
-        {props.repo.codehost === CodeHosts.GITLAB && (
+        {repo.startsWith('gitlab.com') && (
             <>
-                <a href={`https://gitlab.com/${props.repo.name}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer">
                     <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/gitlab.com/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
-                    {props.repo.name}
+                <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
+                    {displayRepoName(repo)}
                 </Link>
             </>
         )}
-        {props.repo.codehost === CodeHosts.BITBUCKET && (
+        {repo.startsWith('bitbucket.com') && (
             <>
-                <a href={`https://bitbucket.com/${props.repo.name}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer">
                     <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/bitbucket.com/${props.repo.name}`} className="text-monospace repogroup-page__web-link">
-                    {props.repo.name}
+                <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
+                    {displayRepoName(repo)}
                 </Link>
             </>
         )}

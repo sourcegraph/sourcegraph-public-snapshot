@@ -32,8 +32,18 @@ const commonProps = subtypeOf<Partial<VersionContextDropdownProps>>()({
     setVersionContext,
 })
 
-add('No context selected', () => <VersionContextDropdown {...commonProps} versionContext={undefined} />)
-add('Context selected', () => <VersionContextDropdown {...commonProps} versionContext="test 1" />)
+add('No context selected', () => <VersionContextDropdown {...commonProps} versionContext={undefined} />, {
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/Sax8ctk8GhvWd0vrzkHSDK/Version-Contexts?node-id=97%3A175',
+    },
+})
+add('Context selected', () => <VersionContextDropdown {...commonProps} versionContext="test 1" />, {
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/Sax8ctk8GhvWd0vrzkHSDK/Version-Contexts?node-id=95%3A22516',
+    },
+})
 add('Selected context appears at the top of the list', () => (
     <VersionContextDropdown {...commonProps} versionContext="test 3" />
 ))

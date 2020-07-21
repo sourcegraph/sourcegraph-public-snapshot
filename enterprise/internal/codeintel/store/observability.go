@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -12,8 +13,6 @@ import (
 // An ObservedStore wraps another store with error logging, Prometheus metrics, and tracing.
 type ObservedStore struct {
 	store                                   Store
-	savepointOperation                      *observation.Operation
-	rollbackToSavepointOperation            *observation.Operation
 	doneOperation                           *observation.Operation
 	getUploadByIDOperation                  *observation.Operation
 	getUploadsOperation                     *observation.Operation
@@ -73,16 +72,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 
 	return &ObservedStore{
 		store: store,
-		savepointOperation: observationContext.Operation(observation.Op{
-			Name:         "store.Savepoint",
-			MetricLabels: []string{"savepoint"},
-			Metrics:      metrics,
-		}),
-		rollbackToSavepointOperation: observationContext.Operation(observation.Op{
-			Name:         "store.RollbackToSavepoint",
-			MetricLabels: []string{"rollback_to_savepoint"},
-			Metrics:      metrics,
-		}),
 		doneOperation: observationContext.Operation(observation.Op{
 			Name:         "store.Done",
 			MetricLabels: []string{"done"},
@@ -314,8 +303,6 @@ func (s *ObservedStore) wrap(other Store) Store {
 
 	return &ObservedStore{
 		store:                                   other,
-		savepointOperation:                      s.savepointOperation,
-		rollbackToSavepointOperation:            s.rollbackToSavepointOperation,
 		doneOperation:                           s.doneOperation,
 		getUploadByIDOperation:                  s.getUploadByIDOperation,
 		deleteUploadsWithoutRepositoryOperation: s.deleteUploadsWithoutRepositoryOperation,
@@ -363,6 +350,16 @@ func (s *ObservedStore) wrap(other Store) Store {
 	}
 }
 
+// Handle calls into the inner store and wraps the resulting value in an ObservedStore.
+func (s *ObservedStore) Handle() *basestore.TransactableHandle {
+	return s.store.Handle()
+}
+
+// With calls into the inner store and wraps the resulting value in an ObservedStore.
+func (s *ObservedStore) With(other basestore.ShareableStore) Store {
+	return s.wrap(s.store.With(other))
+}
+
 // Transact calls into the inner store and wraps the resulting value in an ObservedStore.
 func (s *ObservedStore) Transact(ctx context.Context) (Store, error) {
 	tx, err := s.store.Transact(ctx)
@@ -371,20 +368,6 @@ func (s *ObservedStore) Transact(ctx context.Context) (Store, error) {
 	}
 
 	return s.wrap(tx), nil
-}
-
-// Savepoint calls into the inner store and registers the observed results.
-func (s *ObservedStore) Savepoint(ctx context.Context) (_ string, err error) {
-	ctx, endObservation := s.savepointOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.Savepoint(ctx)
-}
-
-// RollbackToSavepoint calls into the inner store and registers the observed results.
-func (s *ObservedStore) RollbackToSavepoint(ctx context.Context, name string) (err error) {
-	ctx, endObservation := s.rollbackToSavepointOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.RollbackToSavepoint(ctx, name)
 }
 
 // Done calls into the inner store and registers the observed results.
@@ -437,10 +420,10 @@ func (s *ObservedStore) AddUploadPart(ctx context.Context, uploadID, partIndex i
 }
 
 // MarkQueued calls into the inner store and registers the observed result.
-func (s *ObservedStore) MarkQueued(ctx context.Context, uploadID int) (err error) {
+func (s *ObservedStore) MarkQueued(ctx context.Context, uploadID int, uploadSize *int) (err error) {
 	ctx, endObservation := s.markQueuedOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return s.store.MarkQueued(ctx, uploadID)
+	return s.store.MarkQueued(ctx, uploadID, uploadSize)
 }
 
 // MarkComplete calls into the inner store and registers the observed results.
@@ -458,11 +441,11 @@ func (s *ObservedStore) MarkErrored(ctx context.Context, id int, failureMessage 
 }
 
 // Dequeue calls into the inner store and registers the observed results.
-func (s *ObservedStore) Dequeue(ctx context.Context) (_ Upload, _ Store, _ bool, err error) {
+func (s *ObservedStore) Dequeue(ctx context.Context, maxSize int64) (_ Upload, _ Store, _ bool, err error) {
 	ctx, endObservation := s.dequeueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	upload, tx, ok, err := s.store.Dequeue(ctx)
+	upload, tx, ok, err := s.store.Dequeue(ctx, maxSize)
 	return upload, s.wrap(tx), ok, err
 }
 

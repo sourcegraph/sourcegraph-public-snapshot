@@ -52,7 +52,7 @@ var (
 // SetupGlobalTestDB creates a temporary test DB handle, sets
 // `dbconn.Global` to it and setups other test configuration.
 //
-// Callers (other than github.com/sourcegraph/sourcegraph/cmd/frontend/db) must
+// Callers (other than github.com/sourcegraph/sourcegraph/internal/db) must
 // set a name in this package's DBNameSuffix var that is unique among all other
 // test packages that call SetupGlobalTestDB, so that each package's
 // tests run in separate DBs and do not conflict.

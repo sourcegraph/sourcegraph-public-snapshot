@@ -24,6 +24,10 @@ type Config struct {
 	// in the branch. If empty, then no check is enforced.
 	mustIncludeCommit []string
 
+	// changedFiles is the list of files that have changed since the
+	// merge-base with origin/master.
+	changedFiles []string
+
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
@@ -78,12 +82,21 @@ func ComputeConfig() Config {
 			mustIncludeCommits[i] = strings.TrimSpace(mustIncludeCommits[i])
 		}
 	}
+
+	var changedFiles []string
+	if output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output(); err != nil {
+		panic(err)
+	} else {
+		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
+	}
+
 	return Config{
 		now:               now,
 		branch:            branch,
 		version:           version,
 		commit:            commit,
 		mustIncludeCommit: mustIncludeCommits,
+		changedFiles:      changedFiles,
 
 		taggedRelease:       taggedRelease,
 		releaseBranch:       lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
@@ -122,25 +135,27 @@ func (c Config) ensureCommit() error {
 	return nil
 }
 
-func (c Config) isDefaultBranch() bool {
-	return c.branch == "master" || strings.HasPrefix(c.branch, "master-dry-run/")
-}
-
 func (c Config) isPR() bool {
 	return !c.isBextReleaseBranch &&
 		!c.releaseBranch &&
 		!c.taggedRelease &&
-		!c.isDefaultBranch() &&
+		c.branch != "master" &&
+		!strings.HasPrefix(c.branch, "master-dry-run/") &&
 		!strings.HasPrefix(c.branch, "docker-images-patch/")
 }
 
-func isDocsOnly() bool {
-	output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
-	if err != nil {
-		panic(err)
+func (c Config) isDocsOnly() bool {
+	for _, p := range c.changedFiles {
+		if !strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
+			return false
+		}
 	}
-	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-		if !strings.HasPrefix(line, "doc/") && line != "CHANGELOG.md" {
+	return true
+}
+
+func (c Config) isGoOnly() bool {
+	for _, p := range c.changedFiles {
+		if !strings.HasSuffix(p, ".go") {
 			return false
 		}
 	}

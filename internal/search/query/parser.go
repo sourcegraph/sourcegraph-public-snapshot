@@ -161,6 +161,7 @@ type parser struct {
 	heuristics heuristics
 	pos        int
 	balanced   int
+	leafParser SearchType
 }
 
 func (p *parser) done() bool {
@@ -575,8 +576,23 @@ func partitionParameters(nodes []Node) []Node {
 	return newOperator(append(unorderedParams, patterns...), And)
 }
 
-// parseParameterParameterList scans for consecutive leaf nodes.
-func (p *parser) parseParameterList() ([]Node, error) {
+// concatPatterns extends the left pattern with the right pattern, appropriately
+// updating the ranges and annotations.
+func concatPatterns(left, right Pattern) Pattern {
+	if left.Annotation.Range.End.Column != right.Annotation.Range.Start.Column {
+		panic(fmt.Sprintf("Expected contiguous patterns to concatenate, but %s ends at %d and %s starts at %d",
+			left, left.Annotation.Range.End.Column,
+			right, right.Annotation.Range.Start.Column))
+	}
+	left.Value += right.Value
+	left.Annotation.Labels |= right.Annotation.Labels
+	left.Annotation.Range.End.Column += len(right.Value)
+	return left
+}
+
+// parseLeavesRegexp scans for consecutive leaf nodes when interpreting the
+// query as containing regexp patterns.
+func (p *parser) parseLeavesRegexp() ([]Node, error) {
 	var nodes []Node
 	start := p.pos
 loop:
@@ -592,21 +608,23 @@ loop:
 			if isSet(p.heuristics, parensAsPatterns) {
 				if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
 					pattern := Pattern{
-						Value:      value,
-						Negated:    false,
-						Annotation: Annotation{Labels: Regexp},
+						Value:   value,
+						Negated: false,
+						Annotation: Annotation{
+							Labels: Regexp,
+							Range:  newRange(p.pos, p.pos+advance),
+						},
 					}
 
-					// Merge when a pattern like foo()bar is parsed as (concat "foo" "()bar")
+					// Concat when a pattern like foo()bar is parsed as (concat "foo" "()bar")
 					// if these are not space-separated.
 					if p.pos > 0 {
 						if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
 							if len(nodes) > 0 {
 								if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-									previous.Value += pattern.Value
 									previous.Annotation.Labels = Regexp | HeuristicParensAsPatterns
+									nodes[len(nodes)-1] = concatPatterns(previous, pattern)
 									p.pos += advance
-									nodes[len(nodes)-1] = previous
 									continue
 								}
 							}
@@ -741,7 +759,13 @@ func newOperator(nodes []Node, kind operatorKind) []Node {
 
 // parseAnd parses and-expressions.
 func (p *parser) parseAnd() ([]Node, error) {
-	left, err := p.parseParameterList()
+	var left []Node
+	var err error
+	if p.leafParser == SearchTypeRegex {
+		left, err = p.parseLeavesRegexp()
+	} else {
+		left, err = p.parseLeavesLiteral()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -778,12 +802,13 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
-func tryFallbackParser(in string) ([]Node, error) {
-	parser := &parser{
+func (p *parser) tryFallbackParser(in string) ([]Node, error) {
+	newParser := &parser{
 		buf:        []byte(in),
 		heuristics: allowDanglingParens,
+		leafParser: p.leafParser,
 	}
-	nodes, err := parser.parseOr()
+	nodes, err := newParser.parseOr()
 	if err != nil {
 		return nil, err
 	}
@@ -794,24 +819,35 @@ func tryFallbackParser(in string) ([]Node, error) {
 }
 
 // ParseAndOr a raw input string into a parse tree comprising Nodes.
-func ParseAndOr(in string) ([]Node, error) {
+func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
 	if strings.TrimSpace(in) == "" {
 		return nil, nil
 	}
+
 	parser := &parser{
 		buf:        []byte(in),
 		heuristics: parensAsPatterns,
+		leafParser: searchType,
 	}
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		if nodes, err := tryFallbackParser(in); err == nil {
-			return nodes, nil
+		switch err.(type) {
+		case *ExpectedOperand:
+			// The query may be unbalanced or malformed as in "(" or
+			// "x or" and expects an operand. Try harder to parse it.
+			if nodes, err := parser.tryFallbackParser(in); err == nil {
+				return nodes, nil
+			}
 		}
+		// Another kind of error, like a malformed parameter.
 		return nil, err
 	}
 	if parser.balanced != 0 {
-		if nodes, err := tryFallbackParser(in); err == nil {
+		// The query is unbalanced and might be something like "(x" or
+		// "x or (x" where patterns start with a leading open
+		// parenthesis. Try harder to parse it.
+		if nodes, err := parser.tryFallbackParser(in); err == nil {
 			return nodes, nil
 		}
 		return nil, errors.New("unbalanced expression")
@@ -822,28 +858,46 @@ func ParseAndOr(in string) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
+	if searchType == SearchTypeLiteral {
+		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return newOperator(nodes, And), nil
 }
 
+type ParserOptions struct {
+	SearchType SearchType
+
+	// treat repo, file, or repohasfile values as glob syntax if true.
+	Globbing bool
+}
+
 // ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
+func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	var query []Node
 	var err error
 
-	switch searchType {
+	query, err = ParseAndOr(in, options.SearchType)
+	if err != nil {
+		return nil, err
+	}
+
+	switch options.SearchType {
 	case SearchTypeLiteral, SearchTypeStructural:
-		query, err = ParseAndOrLiteral(in)
-		if err != nil {
-			return nil, err
-		}
 		query = substituteConcat(query, " ")
 	case SearchTypeRegex:
-		query, err = ParseAndOr(in)
+		query = EmptyGroupsToLiteral(query)
+	}
+
+	if options.Globbing {
+		query, err = mapGlobToRegex(query)
 		if err != nil {
 			return nil, err
 		}
-		query = EmptyGroupsToLiteral(query)
 	}
+
 	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {

@@ -99,18 +99,18 @@ describe('Organizations regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/organizations')
             await driver.findElementWithText('Create organization', { action: 'click', wait: { timeout: 2000 } })
             await driver.replaceText({
-                selector: '.e2e-new-org-name-input',
+                selector: '.test-new-org-name-input',
                 newText: testOrg.name,
             })
             await driver.replaceText({
-                selector: '.e2e-new-org-display-name-input',
+                selector: '.test-new-org-display-name-input',
                 newText: testOrg.displayName,
             })
             await driver.findElementWithText('Create organization', { action: 'click' })
             resourceManager.add('Organization', testOrg.name, () => deleteOrganizationByName(gqlClient, testOrg.name))
-            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
             await driver.replaceText({
-                selector: '.e2e-settings-file .monaco-editor',
+                selector: '.test-settings-file .monaco-editor',
                 newText: `{"quicklinks": [${JSON.stringify(expectedQuicklink)}]}`,
                 selectMethod: 'keyboard',
                 enterTextMethod: 'paste',

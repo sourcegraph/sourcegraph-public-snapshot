@@ -5,6 +5,7 @@
 @import './LazyMonacoQueryInput';
 @import './InfoDropdown';
 @import './interactive/InteractiveModeInput';
+@import './PrivateCodeCta';
 
 .search-page {
     display: flex;
@@ -14,6 +15,21 @@
     width: 100%;
     overflow: auto;
     padding-bottom: 4rem;
+
+    &__web-link {
+        color: #1c7cd6;
+    }
+
+    h5 {
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    p {
+        font-weight: normal;
+        font-size: 14px;
+        line-height: 20px;
+    }
 
     &__logo {
         flex: 0 0 auto;
@@ -28,7 +44,7 @@
         margin-top: 1rem;
     }
 
-    &__container {
+    &__search-container {
         flex: 1 1 auto;
         margin-top: 1.5rem;
         width: 49rem;
@@ -58,13 +74,13 @@
     }
 
     &__repogroup-content {
-        max-width: 80%;
+        max-width: 90%;
     }
 
     &__repogroup-list {
         &-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
             grid-auto-rows: minmax(4rem, auto);
             gap: $spacer * 0.75;
         }
@@ -76,35 +92,25 @@
         }
     }
 
-    &__lang-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(min-content, 1fr));
-        gap: $spacer * 0.75;
+    &__search-a-language {
+        margin-bottom: 3rem;
+    }
+
+    &__lang-link {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     &__help-content {
-        display: grid;
-        grid-template-columns: 2fr 1fr 2fr;
-        column-gap: 2rem;
-
-        &-header {
-            color: $gray-14;
-        }
-
         &-subheading {
-            color: $gray-07;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
-    }
-
-    &__web-link {
-        color: #1c7cd6;
     }
 
     &__keyword-value-text {
-        color: '#6078A9';
-        font-size: '12px';
-        line-height: '140%';
+        color: #6078a9;
+        font-size: 12px;
+        line-height: 140%;
     }
 
     &__repogroup-listing-title {
@@ -136,6 +142,85 @@
     .search-page {
         &__cloud-tag-line {
             color: $gray-07;
+        }
+
+        h1,
+        h2 {
+            color: $gray-19;
+        }
+
+        h3,
+        h4,
+        h6 {
+            color: $gray-13;
+        }
+
+        h5 {
+            color: $gray-18;
+        }
+
+        strong {
+            color: $gray-11;
+        }
+
+        &__help-content {
+            color: $gray-11;
+        }
+
+        &__example-searches {
+            a {
+                color: $gray-19;
+            }
+        }
+
+        &__web-link {
+            color: #1c7cd6;
+        }
+
+        &__keyword-text {
+            color: #1c7cd6;
+        }
+    }
+}
+
+.theme-dark {
+    .search-page {
+        h1,
+        h2 {
+            color: $gray-09;
+        }
+
+        h3,
+        h4,
+        h6 {
+            color: $gray-08;
+        }
+
+        h5 {
+            color: $gray-03;
+        }
+
+        p,
+        i {
+            color: $gray-06;
+        }
+
+        strong {
+            color: $gray-11;
+        }
+
+        &__example-searches {
+            a {
+                color: $white;
+            }
+        }
+
+        &__web-link {
+            color: #329af0;
+        }
+
+        &__keyword-text {
+            color: #329af0;
         }
     }
 }

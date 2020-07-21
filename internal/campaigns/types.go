@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -27,6 +28,7 @@ import (
 var SupportedExternalServices = map[string]struct{}{
 	extsvc.TypeGitHub:          {},
 	extsvc.TypeBitbucketServer: {},
+	extsvc.TypeGitLab:          {},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -36,8 +38,10 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-func IsKindSupported(kind string) bool {
-	_, ok := SupportedExternalServices[extsvc.KindToType(kind)]
+// IsKindSupported returns whether the given extsvc Kind is supported by
+// campaigns.
+func IsKindSupported(extSvcKind string) bool {
+	_, ok := SupportedExternalServices[extsvc.KindToType(extSvcKind)]
 	return ok
 }
 
@@ -423,6 +427,12 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalServiceType = extsvc.TypeBitbucketServer
 		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+	case *gitlab.MergeRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
+		c.ExternalServiceType = extsvc.TypeGitLab
+		c.ExternalBranch = pr.SourceBranch
+		c.ExternalUpdatedAt = pr.UpdatedAt
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -446,6 +456,8 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *bitbucketserver.PullRequest:
 		return m.Title, nil
+	case *gitlab.MergeRequest:
+		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -460,6 +472,8 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreatedAt
 	case *bitbucketserver.PullRequest:
 		return unixMilliToTime(int64(m.CreatedDate))
+	case *gitlab.MergeRequest:
+		return m.CreatedAt
 	default:
 		return time.Time{}
 	}
@@ -471,6 +485,8 @@ func (c *Changeset) Body() (string, error) {
 	case *github.PullRequest:
 		return m.Body, nil
 	case *bitbucketserver.PullRequest:
+		return m.Description, nil
+	case *gitlab.MergeRequest:
 		return m.Description, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -505,6 +521,17 @@ func (c *Changeset) state() (s ChangesetState, err error) {
 		} else {
 			s = ChangesetState(m.State)
 		}
+	case *gitlab.MergeRequest:
+		switch m.State {
+		case gitlab.MergeRequestStateOpened:
+			s = ChangesetStateOpen
+		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
+			s = ChangesetStateClosed
+		case gitlab.MergeRequestStateMerged:
+			s = ChangesetStateMerged
+		default:
+			return "", errors.Errorf("unknown merge request state: %s", m.State)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -527,6 +554,8 @@ func (c *Changeset) URL() (s string, err error) {
 		}
 		selfLink := m.Links.Self[0]
 		return selfLink.Href, nil
+	case *gitlab.MergeRequest:
+		return m.WebURL, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -625,6 +654,28 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 			addEvent(s)
 		}
 
+	case *gitlab.MergeRequest:
+		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Pipelines))
+
+		for _, note := range m.Notes {
+			if review := note.ToReview(); review != nil {
+				events = append(events, &ChangesetEvent{
+					ChangesetID: c.ID,
+					Key:         review.(Keyer).Key(),
+					Kind:        ChangesetEventKindFor(review),
+					Metadata:    review,
+				})
+			}
+		}
+
+		for _, pipeline := range m.Pipelines {
+			events = append(events, &ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         pipeline.Key(),
+				Kind:        ChangesetEventKindFor(pipeline),
+				Metadata:    pipeline,
+			})
+		}
 	}
 	return events
 }
@@ -638,6 +689,8 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return m.HeadRefOid, nil
 	case *bitbucketserver.PullRequest:
 		return "", nil
+	case *gitlab.MergeRequest:
+		return m.DiffRefs.HeadSHA, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -651,6 +704,8 @@ func (c *Changeset) HeadRef() (string, error) {
 		return "refs/heads/" + m.HeadRefName, nil
 	case *bitbucketserver.PullRequest:
 		return m.FromRef.ID, nil
+	case *gitlab.MergeRequest:
+		return "refs/heads/" + m.SourceBranch, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -665,6 +720,8 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return m.BaseRefOid, nil
 	case *bitbucketserver.PullRequest:
 		return "", nil
+	case *gitlab.MergeRequest:
+		return m.DiffRefs.BaseSHA, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -678,8 +735,22 @@ func (c *Changeset) BaseRef() (string, error) {
 		return "refs/heads/" + m.BaseRefName, nil
 	case *bitbucketserver.PullRequest:
 		return m.ToRef.ID, nil
+	case *gitlab.MergeRequest:
+		return "refs/heads/" + m.TargetBranch, nil
 	default:
 		return "", errors.New("unknown changeset type")
+	}
+}
+
+// SupportsLabels returns whether the code host on which the changeset is
+// hosted supports labels and whether it's safe to call the
+// (*Changeset).Labels() method.
+func (c *Changeset) SupportsLabels() bool {
+	switch c.Metadata.(type) {
+	case *github.PullRequest, *gitlab.MergeRequest:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -693,6 +764,20 @@ func (c *Changeset) Labels() []ChangesetLabel {
 				Color:       l.Color,
 				Description: l.Description,
 			}
+		}
+		return labels
+	case *gitlab.MergeRequest:
+		// Similarly to GitHub above, GitLab labels can have colors (foreground
+		// _and_ background, in fact) and descriptions. Unfortunately, the REST
+		// API only returns this level of detail on the list endpoint (with an
+		// option added in GitLab 12.7), and not when retrieving individual MRs.
+		//
+		// When our minimum GitLab version is 12.0, we should be able to switch
+		// to retrieving MRs via GraphQL, and then we can start retrieving
+		// richer label data.
+		labels := make([]ChangesetLabel, len(m.Labels))
+		for i, l := range m.Labels {
+			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
 		}
 		return labels
 	default:
@@ -799,6 +884,20 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 		}
 		return username, nil
 
+	case *gitlab.ReviewApproved:
+		username := meta.Author.Username
+		if username == "" {
+			return "", errors.New("review user is blank")
+		}
+		return username, nil
+
+	case *gitlab.ReviewUnapproved:
+		username := meta.Author.Username
+		if username == "" {
+			return "", errors.New("review user is blank")
+		}
+		return username, nil
+
 	default:
 		return "", nil
 	}
@@ -807,7 +906,8 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 // ReviewState returns the review state of the ChangesetEvent if it is a review event.
 func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	switch e.Kind {
-	case ChangesetEventKindBitbucketServerApproved:
+	case ChangesetEventKindBitbucketServerApproved,
+		ChangesetEventKindGitLabApproved:
 		return ChangesetReviewStateApproved, nil
 
 	// BitbucketServer's "REVIEWED" activity is created when someone clicks
@@ -831,7 +931,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 
 	case ChangesetEventKindGitHubReviewDismissed,
 		ChangesetEventKindBitbucketServerUnapproved,
-		ChangesetEventKindBitbucketServerDismissed:
+		ChangesetEventKindBitbucketServerDismissed,
+		ChangesetEventKindGitLabUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -893,6 +994,10 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = unixMilliToTime(int64(e.CreatedDate))
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(int64(e.Status.DateAdded))
+	case *gitlab.ReviewApproved:
+		return e.CreatedAt
+	case *gitlab.ReviewUnapproved:
+		return e.CreatedAt
 	}
 
 	return t
@@ -1229,6 +1334,16 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		}
 		e.CheckRuns = o.CheckRuns
 
+	case *gitlab.ReviewApproved:
+		o := o.Metadata.(*gitlab.ReviewApproved)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlab.ReviewUnapproved:
+		o := o.Metadata.(*gitlab.ReviewUnapproved)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
 	default:
 		panic(errors.Errorf("unknown changeset event metadata %T", e))
 	}
@@ -1362,6 +1477,12 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
 	case *bitbucketserver.CommitStatus:
 		return ChangesetEventKindBitbucketServerCommitStatus
+	case *gitlab.Pipeline:
+		return ChangesetEventKindGitLabPipeline
+	case *gitlab.ReviewApproved:
+		return ChangesetEventKindGitLabApproved
+	case *gitlab.ReviewUnapproved:
+		return ChangesetEventKindGitLabUnapproved
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -1419,6 +1540,15 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		case ChangesetEventKindCheckRun:
 			return new(github.CheckRun), nil
 		}
+	case strings.HasPrefix(string(k), "gitlab"):
+		switch k {
+		case ChangesetEventKindGitLabApproved:
+			return new(gitlab.ReviewApproved), nil
+		case ChangesetEventKindGitLabPipeline:
+			return new(gitlab.Pipeline), nil
+		case ChangesetEventKindGitLabUnapproved:
+			return new(gitlab.ReviewUnapproved), nil
+		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
 }
@@ -1464,6 +1594,10 @@ const (
 	// BitbucketServer calls this an Unapprove event but we've called it Dismissed to more
 	// clearly convey that it only occurs when a request for changes has been dismissed.
 	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
+
+	ChangesetEventKindGitLabApproved   ChangesetEventKind = "gitlab:approved"
+	ChangesetEventKindGitLabPipeline   ChangesetEventKind = "gitlab:pipeline"
+	ChangesetEventKindGitLabUnapproved ChangesetEventKind = "gitlab:unapproved"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset

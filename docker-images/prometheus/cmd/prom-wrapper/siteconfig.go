@@ -40,6 +40,9 @@ type subscribedSiteConfig struct {
 
 	Email    *siteEmailConfig
 	emailSum [32]byte
+
+	SilencedAlerts    []string
+	silencedAlertsSum [32]byte
 }
 
 // newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
@@ -53,12 +56,19 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 	if err != nil {
 		return nil
 	}
+	silencedAlertsBytes, err := json.Marshal(config.ObservabilitySilenceAlerts)
+	if err != nil {
+		return nil
+	}
 	return &subscribedSiteConfig{
 		Alerts:    config.ObservabilityAlerts,
 		alertsSum: sha256.Sum256(alertsBytes),
 
 		Email:    email,
 		emailSum: sha256.Sum256(emailBytes),
+
+		SilencedAlerts:    config.ObservabilitySilenceAlerts,
+		silencedAlertsSum: sha256.Sum256(silencedAlertsBytes),
 	}
 }
 
@@ -77,6 +87,10 @@ func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDif
 
 	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
 		changes = append(changes, siteConfigDiff{Type: "email", Change: changeSMTP})
+	}
+
+	if !bytes.Equal(c.silencedAlertsSum[:], other.silencedAlertsSum[:]) {
+		changes = append(changes, siteConfigDiff{Type: "silenced-alerts", Change: changeSilences})
 	}
 
 	return changes
@@ -195,10 +209,11 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	// run changeset and aggregate results
 	changeContext := ChangeContext{
 		AMConfig: amConfig,
+		AMClient: c.alertmanager,
 	}
 	for _, diff := range diffs {
 		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.Change(ctx, c.log, changeContext, newConfig)
+		result := diff.Change(ctx, c.log.New("change", diff.Type), changeContext, newConfig)
 		c.problems = append(c.problems, result.Problems...)
 	}
 
@@ -224,5 +239,5 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 
 	// update state
 	c.config = newConfig
-	c.log.Debug("configuration diffs applied", "diffs", diffs)
+	c.log.Debug("configuration diffs applied", "diffs", diffs, "problems", c.problems)
 }

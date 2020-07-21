@@ -3,11 +3,13 @@ import React from 'react'
 import webStyles from '../SourcegraphWebApp.scss'
 import { ChartViewContent } from './ChartViewContent'
 import { createMemoryHistory } from 'history'
+import isChromatic from 'chromatic/isChromatic'
 
 const history = createMemoryHistory()
 
 const commonProps = {
     history,
+    animate: !isChromatic(),
     location: history.location,
 }
 

@@ -127,7 +127,7 @@ describe('CampaignDetails', () => {
 
     test('editing existing', () => {
         const component = mount(renderCampaignDetails({ viewerCanAdminister: true }))
-        component.find('#e2e-campaign-edit').simulate('click')
+        component.find('#test-campaign-edit').simulate('click')
 
         expect(component).toMatchSnapshot()
     })

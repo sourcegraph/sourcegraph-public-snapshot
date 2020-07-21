@@ -1,6 +1,6 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
-import H from 'history'
+import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'

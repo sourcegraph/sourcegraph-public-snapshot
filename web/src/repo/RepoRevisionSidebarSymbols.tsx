@@ -37,11 +37,11 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
-                className="repo-revision-sidebar-symbols-node__link e2e-symbol-link"
+                className="repo-revision-sidebar-symbols-node__link test-symbol-link"
                 activeClassName="repo-revision-sidebar-symbols-node__link--active"
             >
-                <SymbolIcon kind={node.kind} className="icon-inline mr-1 e2e-symbol-icon" />
-                <span className="repo-revision-sidebar-symbols-node__name e2e-symbol-name">{node.name}</span>
+                <SymbolIcon kind={node.kind} className="icon-inline mr-1 test-symbol-icon" />
+                <span className="repo-revision-sidebar-symbols-node__name test-symbol-name">{node.name}</span>
                 {node.containerName && (
                     <span className="repo-revision-sidebar-symbols-node__container-name">
                         <small>{node.containerName}</small>

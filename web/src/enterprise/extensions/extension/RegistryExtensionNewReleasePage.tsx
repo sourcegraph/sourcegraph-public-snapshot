@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H from 'history'
+import * as H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import React, { useCallback, useState } from 'react'
 import { fromFetch } from 'rxjs/fetch'

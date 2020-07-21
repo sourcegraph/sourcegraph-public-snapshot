@@ -115,23 +115,23 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                     {indexOrError.state === GQL.LSIFIndexState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
-                            <span className="e2e-index-state">Index is currently being processed...</span>
+                            <span className="test-index-state">Index is currently being processed...</span>
                         </div>
                     ) : indexOrError.state === GQL.LSIFIndexState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
                             <CheckIcon className="icon-inline" />{' '}
-                            <span className="e2e-index-state">Index processed successfully.</span>
+                            <span className="test-index-state">Index processed successfully.</span>
                         </div>
                     ) : indexOrError.state === GQL.LSIFIndexState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
-                            <span className="e2e-index-state">Index failed to complete:</span>{' '}
+                            <span className="test-index-state">Index failed to complete:</span>{' '}
                             <code>{indexOrError.failure}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-index-state">
+                            <span className="test-index-state">
                                 Index is queued. There are {indexOrError.placeInQueue} indexes ahead of this one.
                             </span>
                         </div>

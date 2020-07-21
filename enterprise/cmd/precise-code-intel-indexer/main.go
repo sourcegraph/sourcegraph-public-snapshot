@@ -56,14 +56,9 @@ func main() {
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
 	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
-	indexerMetrics := indexer.NewIndexerMetrics(prometheus.DefaultRegisterer)
+	indexerMetrics := indexer.NewIndexerMetrics(observationContext)
 	server := server.New()
-
-	indexResetter := resetter.IndexResetter{
-		Store:         store,
-		ResetInterval: resetInterval,
-		Metrics:       resetterMetrics,
-	}
+	indexResetter := resetter.NewIndexResetter(store, resetInterval, resetterMetrics)
 
 	indexabilityUpdater := indexabilityupdater.NewUpdater(
 		store,
@@ -96,7 +91,7 @@ func main() {
 	janitor := janitor.New(store, janitorInterval, janitorMetrics)
 
 	go server.Start()
-	go indexResetter.Run()
+	go indexResetter.Start()
 	go indexabilityUpdater.Start()
 	go scheduler.Start()
 	go indexer.Start()
@@ -120,6 +115,7 @@ func main() {
 	}()
 
 	server.Stop()
+	indexResetter.Stop()
 	indexer.Stop()
 	scheduler.Stop()
 	indexabilityUpdater.Stop()

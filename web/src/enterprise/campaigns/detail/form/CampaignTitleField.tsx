@@ -14,7 +14,7 @@ export const CampaignTitleField: React.FunctionComponent<Props> = ({ value, onCh
     <div className="form-group">
         <label htmlFor="campaignTitle">Title</label>
         <input
-            className="form-control e2e-campaign-title"
+            className="form-control test-campaign-title"
             value={value}
             onChange={event => onChange(event.target.value)}
             disabled={disabled}

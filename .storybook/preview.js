@@ -4,6 +4,7 @@ import { withInfo } from '@storybook/addon-info'
 import { withKnobs } from '@storybook/addon-knobs'
 import { addDecorator } from '@storybook/react'
 import { setLinkComponent, AnchorLink } from '../shared/src/components/Link'
+import { withDesign } from 'storybook-addon-designs'
 
 setLinkComponent(AnchorLink)
 
@@ -12,5 +13,6 @@ setLinkComponent(AnchorLink)
 addDecorator(withInfo({ header: false, propTables: false }))
 addDecorator(withKnobs)
 addDecorator((storyFn, context) => withConsole()(storyFn)(context))
+addDecorator(withDesign)
 
 configureActions({ depth: 100, limit: 20 })

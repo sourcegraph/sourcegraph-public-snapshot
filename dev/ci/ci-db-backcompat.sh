@@ -28,7 +28,7 @@ EOF
 # Recreate the test DB and run TestMigrations once to ensure that the schema version is the latest.
 set -ex
 asdf install # in case the go version has changed in between these two commits
-go test -count=1 -v ./cmd/frontend/db/ -run=TestMigrations
+go test -count=1 -v ./internal/db/ -run=TestMigrations
 HEAD="$HEAD" OLD="${CURRENTLY_DEPLOYED}" ./dev/ci/db-backcompat.sh
 set +ex
 

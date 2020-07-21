@@ -219,7 +219,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
     }
 
     private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
-        <button type="button" className={className} data-e2e-tab={tab.id} onClick={() => this.onSelectTab(tab.id)}>
+        <button type="button" className={className} data-test-tab={tab.id} onClick={() => this.onSelectTab(tab.id)}>
             {tab.label}
         </button>
     )

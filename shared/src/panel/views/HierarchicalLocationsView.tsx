@@ -1,7 +1,7 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -143,7 +143,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             return <FileLocationsError error={this.state.locationsOrError.result} />
         }
         if (this.state.locationsOrError.isLoading && this.state.locationsOrError.result.locations.length === 0) {
-            return <LoadingSpinner className="icon-inline m-1 e2e-loading-spinner" />
+            return <LoadingSpinner className="icon-inline m-1 test-loading-spinner" />
         }
         if (this.state.locationsOrError.result.locations.length === 0) {
             return <FileLocationsNotFound />
@@ -234,7 +234,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                         storageKey={`hierarchical-locations-view-resizable:${group.name}`}
                                         defaultSize={group.defaultSize}
                                         element={
-                                            <div className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list">
+                                            <div className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list">
                                                 {groups[index].map((group, innerIndex) => (
                                                     <span
                                                         key={innerIndex}
@@ -259,7 +259,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     </span>
                                                 ))}
                                                 {this.state.locationsOrError.isLoading && (
-                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0 e2e-loading-spinner" />
+                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />
                                                 )}
                                             </div>
                                         }

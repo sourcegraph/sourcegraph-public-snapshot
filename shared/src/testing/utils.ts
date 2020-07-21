@@ -2,7 +2,7 @@ import pRetry from 'p-retry'
 import { OperationOptions } from 'retry'
 
 /**
- * Retry function with more sensible defaults for e2e test assertions
+ * Retry function with more sensible defaults for e2e and integration test assertions
  *
  * @param function_ The async assertion function to retry
  * @param options Option overrides passed to pRetry
