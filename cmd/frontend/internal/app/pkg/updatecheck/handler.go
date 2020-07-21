@@ -44,7 +44,7 @@ var (
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.17.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.18.0")
 )
 
 func getLatestRelease(deployType string) build {
