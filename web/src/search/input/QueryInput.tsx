@@ -39,7 +39,6 @@ import { Toggles } from './toggles/Toggles'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
-import { isErrorLike } from '../../../../shared/src/util/errors'
 import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
 
 interface Props

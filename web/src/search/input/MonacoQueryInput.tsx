@@ -17,7 +17,6 @@ import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { globbingEnabledFromSettings } from '../../util/globbing'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
