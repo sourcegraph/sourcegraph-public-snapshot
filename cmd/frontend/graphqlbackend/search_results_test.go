@@ -454,6 +454,21 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		Repo:  repoMatch,
 	}
 
+	goTestFileMatch := &FileMatchResolver{
+		JPath: "/foo_test.go",
+		Repo:  repoMatch,
+	}
+
+	nodeModulesMatchSub := &FileMatchResolver{
+		JPath: "/anything/node_modules/testFile.md",
+		Repo:  repoMatch,
+	}
+
+	nodeModulesMatchRoot := &FileMatchResolver{
+		JPath: "/node_modules/testFile.md",
+		Repo:  repoMatch,
+	}
+
 	rev := "develop3.0"
 	fileMatchRev := &FileMatchResolver{
 		JPath:    "/testFile.md",
@@ -526,8 +541,17 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`lang:"ignore list"`: {},
 			},
 		},
+		{
+			descr:         "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{nodeModulesMatchSub},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:^testRepo$`:          {},
+				`-file:(^|/)node_modules/`: {},
+				`lang:markdown`:            {},
+			},
+		},
 
-		// globbing
+		// globbing: true
 
 		{
 			descr:         "single repo match",
@@ -575,7 +599,36 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 			globbing: true,
 		},
-
+		{
+			descr:         "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{goTestFileMatch},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`:    {},
+				`-file:**_test.go`: {},
+				`lang:go`:          {},
+			},
+			globbing: true,
+		},
+		{
+			descr:         "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{nodeModulesMatchSub},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`: {},
+				`-file:node_modules/** -file:**/node_modules/**`: {},
+				`lang:markdown`: {},
+			},
+			globbing: true,
+		},
+		{
+			descr:         "file match which matches one of the common file filters",
+			searchResults: []SearchResultResolver{nodeModulesMatchRoot},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`: {},
+				`-file:node_modules/** -file:**/node_modules/**`: {},
+				`lang:markdown`: {},
+			},
+			globbing: true,
+		},
 		// If there are no search results, no filters should be displayed.
 		{
 			descr:                     "no results",
