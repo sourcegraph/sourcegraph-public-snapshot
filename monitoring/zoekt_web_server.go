@@ -17,6 +17,7 @@ func ZoektWebServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 50},
 							PanelOptions:      PanelOptions().LegendFormat("{{code}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
