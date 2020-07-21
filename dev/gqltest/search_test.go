@@ -454,4 +454,15 @@ func TestSearch(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("timeout search options", func(t *testing.T) {
+		alert, err := client.SearchAlert(`router index:no timeout:1ns`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if alert == nil {
+			t.Fatal("Want search alert but got nil")
+		}
+	})
 }

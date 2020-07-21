@@ -169,6 +169,55 @@ query Search($query: String!) {
 	return resp.Data.Search.Results.SearchCommitResults, nil
 }
 
+// SearchAlert is an alert specific to searches (i.e. not site alert).
+type SearchAlert struct {
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	ProposedQueries []struct {
+		Description string `json:"description"`
+		Query       string `json:"query"`
+	} `json:"proposedQueries"`
+}
+
+// SearchAlert returns the alert returned by searching for given query.
+// It returns both nil values if no alert raised and no error occurred.
+func (c *Client) SearchAlert(query string) (*SearchAlert, error) {
+	const gqlQuery = `
+query Search($query: String!) {
+	search(query: $query) {
+		results {
+			alert {
+				title
+				description
+				proposedQueries {
+					description
+					query
+				}
+			}
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"query": query,
+	}
+	var resp struct {
+		Data struct {
+			Search struct {
+				Results struct {
+					*SearchAlert `json:"alert"`
+				} `json:"results"`
+			} `json:"search"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Search.Results.SearchAlert, nil
+}
+
 type SearchStatsResult struct {
 	Languages []struct {
 		Name       string `json:"name"`
