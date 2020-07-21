@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { ActionNavItemsClassProps, ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
 import { ContributionScope } from '../../../../shared/src/api/client/context/context'

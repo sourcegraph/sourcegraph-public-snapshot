@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import H from 'history'
+import * as H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'

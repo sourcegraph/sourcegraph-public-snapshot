@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React, { useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import * as GQL from '../../../../shared/src/graphql/schema'

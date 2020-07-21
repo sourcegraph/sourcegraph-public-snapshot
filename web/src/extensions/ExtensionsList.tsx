@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
