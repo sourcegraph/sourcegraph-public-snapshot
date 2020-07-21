@@ -43,6 +43,8 @@ func TestReposHandler(t *testing.T) {
 				Debug: discardLogger,
 				Addr:  testAddress,
 				Root:  root,
+
+				updatingServerInfo: 2, // disables background updates
 			}).handler()
 			if err != nil {
 				t.Fatal(err)
@@ -74,6 +76,8 @@ func TestReposHandler(t *testing.T) {
 				Debug: discardLogger,
 				Addr:  testAddress,
 				Root:  root,
+
+				updatingServerInfo: 2, // disables background updates
 			}).handler()
 			if err != nil {
 				t.Fatal(err)
@@ -167,8 +171,6 @@ func gitInitRepos(t *testing.T, names ...string) string {
 }
 
 func TestIgnoreGitSubmodules(t *testing.T) {
-	t.Skipf("This test is disabled because it was identified as flaky. See https://github.com/sourcegraph/sourcegraph/issues/12351.")
-
 	root, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
@@ -187,6 +189,8 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 		Info:  testLogger(t),
 		Debug: discardLogger,
 		Root:  root,
+
+		updatingServerInfo: 2, // disables background updates
 	}).configureRepos()
 	if len(repos) != 0 {
 		t.Fatalf("expected no repos, got %v", repos)
