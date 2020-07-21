@@ -57,7 +57,10 @@ const insertText = (name: string, isFilterValue: boolean, globbing: boolean, fil
     return isFilterValue ? text : `${filter}:${text}`
 }
 
-const repositoryToCompletion = ({name}: IRepository, options: { isFilterValue: boolean, globbing: boolean }): PartialCompletionItem => ({
+const repositoryToCompletion = (
+    { name }: IRepository,
+    options: { isFilterValue: boolean; globbing: boolean }
+): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
     insertText: insertText(name, options.isFilterValue, options.globbing, 'repo'),
@@ -67,7 +70,7 @@ const repositoryToCompletion = ({name}: IRepository, options: { isFilterValue: b
 
 const fileToCompletion = (
     { name, path, repository, isDirectory }: IFile,
-    options: { isFilterValue: boolean, globbing: boolean }
+    options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem => ({
     label: name,
     kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
@@ -136,7 +139,7 @@ const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => (
 
 const suggestionToCompletionItem = (
     suggestion: SearchSuggestion,
-    options: { isFilterValue: boolean, globbing: boolean }
+    options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem | undefined => {
     switch (suggestion.__typename) {
         case 'File':
@@ -172,7 +175,7 @@ export async function getCompletionItems(
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>,
     dynamicSuggestions: Observable<SearchSuggestion[]>,
-    globbing: boolean
+    globbing: Observable<boolean>
 ): Promise<Monaco.languages.CompletionList | null> {
     const defaultRange = {
         startLineNumber: 1,
@@ -180,6 +183,9 @@ export async function getCompletionItems(
         startColumn: column,
         endColumn: column,
     }
+
+    const glob = await globbing.toPromise()
+
     // Show all filter suggestions on the first column.
     if (column === 1) {
         return {
@@ -218,11 +224,12 @@ export async function getCompletionItems(
         ) {
             return { suggestions: staticSuggestions }
         }
+
         return {
             suggestions: [
                 ...staticSuggestions,
                 ...(await dynamicSuggestions.pipe(first()).toPromise())
-                    .map(suggestion => suggestionToCompletionItem(suggestion, {isFilterValue: false, globbing}))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing: glob }))
                     .filter(isDefined)
                     .map(completionItem => ({
                         ...completionItem,
@@ -261,7 +268,7 @@ export async function getCompletionItems(
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                    .map(suggestion => suggestionToCompletionItem(suggestion, {isFilterValue: true, globbing}))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing: glob }))
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,

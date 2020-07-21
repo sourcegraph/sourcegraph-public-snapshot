@@ -54,7 +54,7 @@ interface Props
     isSourcegraphDotCom: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
-
+    globbing: boolean
     /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
     interactiveModeHomepageMode?: boolean
     /** A query fragment to appear at the beginning of the input. */

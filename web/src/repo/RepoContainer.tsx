@@ -41,7 +41,7 @@ import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
-import {globbingEnabledFromSettings} from "../util/globbing";
+import { globbingEnabledFromSettings } from '../util/globbing'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -98,6 +98,7 @@ interface RepoContainerProps
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
+    globbing: boolean
 }
 
 interface RepoRevContainerState extends ParsedRepoRevision {
@@ -140,8 +141,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     public componentDidMount(): void {
-        const globbing = globbingEnabledFromSettings(this.props.settingsCascade)
-
         const parsedRouteChanges = this.componentUpdates.pipe(
             map(props => props.match.params.repoRevAndRest),
             distinctUntilChanged(),
@@ -184,9 +183,9 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         )
 
         this.subscriptions.add(
-            parsedRouteChanges.subscribe(({repoName, revision, rawRevision}) => {
-                this.setState({repoName, revision, rawRevision})
-                const query = searchQueryForRepoRevision(repoName, globbing, revision)
+            parsedRouteChanges.subscribe(({ repoName, revision, rawRevision }) => {
+                this.setState({ repoName, revision, rawRevision })
+                const query = searchQueryForRepoRevision(repoName, this.props.globbing, revision)
                 this.props.onNavbarQueryChange({
                     query,
                     cursorPosition: query.length,
@@ -240,14 +239,14 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                         const filters: FiltersToTypeAndValue = {
                             [uniqueId('repo')]: {
                                 type: FilterType.repo,
-                                value: repoFilterForRepoRevision(repoName, globbing, revision),
+                                value: repoFilterForRepoRevision(repoName, this.props.globbing, revision),
                                 editable: false,
                             },
                         }
                         if (filePath) {
                             filters[uniqueId('file')] = {
                                 type: FilterType.file,
-                                value: globbing ? filePath : `^${escapeRegExp(filePath)}`,
+                                value: this.props.globbing ? filePath : `^${escapeRegExp(filePath)}`,
                                 editable: false,
                             }
                         }
@@ -257,9 +256,11 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             cursorPosition: 0,
                         })
                     } else {
-                        let query = searchQueryForRepoRevision(repoName, globbing, revision)
+                        let query = searchQueryForRepoRevision(repoName, this.props.globbing, revision)
                         if (filePath) {
-                            query = `${query.trimEnd()} file:${globbing? filePath: '^'+escapeRegExp(filePath)}`
+                            query = `${query.trimEnd()} file:${
+                                this.props.globbing ? filePath : '^' + escapeRegExp(filePath)
+                            }`
                         }
                         this.props.onNavbarQueryChange({
                             query,

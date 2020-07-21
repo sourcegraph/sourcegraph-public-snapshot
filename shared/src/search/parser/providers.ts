@@ -34,7 +34,7 @@ export function getProviders(
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
     fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
-    globbing: boolean
+    globbing: Observable<boolean>
 ): SearchFieldProviders {
     const parsedQueries = searchQueries.pipe(
         map(rawQuery => {
@@ -44,7 +44,9 @@ export function getProviders(
         publishReplay(1),
         refCount()
     )
+
     const debouncedDynamicSuggestions = searchQueries.pipe(debounceTime(300), switchMap(fetchSuggestions), share())
+
     return {
         tokens: {
             getInitialState: () => PARSER_STATE,

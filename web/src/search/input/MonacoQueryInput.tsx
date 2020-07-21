@@ -17,7 +17,7 @@ import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import {globbingEnabledFromSettings} from '../../util/globbing';
+import { globbingEnabledFromSettings } from '../../util/globbing'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -28,6 +28,7 @@ export interface MonacoQueryInputProps
     location: H.Location
     history: H.History
     queryState: QueryState
+    globbing: boolean
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     autoFocus?: boolean
@@ -52,7 +53,7 @@ function addSouregraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
     patternTypes: Observable<SearchPatternType>,
-    globbing: boolean
+    globbing: Observable<boolean>
 ): Subscription {
     const subscriptions = new Subscription()
 
@@ -127,6 +128,13 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     )
     private patternTypes = this.componentUpdates.pipe(
         map(({ patternType }) => patternType),
+        distinctUntilChanged(),
+        publishReplay(1),
+        refCount()
+    )
+
+    private globbing = this.componentUpdates.pipe(
+        map(({ globbing }) => globbing),
         distinctUntilChanged(),
         publishReplay(1),
         refCount()
@@ -233,8 +241,9 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private editorWillMount = (monaco: typeof Monaco): void => {
         // Register themes and code intelligence providers.
-        const globbing = globbingEnabledFromSettings(this.props.settingsCascade)
-        this.subscriptions.add(addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, globbing))
+        this.subscriptions.add(
+            addSouregraphSearchCodeIntelligence(monaco, this.searchQueries, this.patternTypes, this.globbing)
+        )
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
