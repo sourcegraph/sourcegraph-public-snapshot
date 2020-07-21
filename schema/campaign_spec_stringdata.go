@@ -82,7 +82,10 @@ const CampaignSpecSchemaJSON = `{
           },
           "env": {
             "type": "object",
-            "description": "Environment variables to set in the environment when running this command."
+            "description": "Environment variables to set in the environment when running this command.",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       }
