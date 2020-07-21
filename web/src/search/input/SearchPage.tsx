@@ -86,7 +86,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
     return (
         <div className="search-page">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
-            {props.isSourcegraphDotCom ? <div className="search-page__cloud-tag-line">Search public code</div> : null}
+            {props.isSourcegraphDotCom && <div className="search-page__cloud-tag-line">Search public code</div>}
             <div
                 className={classNames('search-page__container', {
                     'search-page__container--with-repogroups': props.isSourcegraphDotCom,
