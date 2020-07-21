@@ -51,7 +51,7 @@ func TestAllByKeyValue(t *testing.T) {
 
 	_, err = Secrets.GetByKeyName(ctx, key)
 	if err == nil {
-		t.Fatal(err)
+		t.Fatal("Secret not deleted from database.")
 	}
 }
 
