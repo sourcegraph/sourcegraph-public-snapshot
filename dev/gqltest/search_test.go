@@ -423,4 +423,35 @@ func TestSearch(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("diff search", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+		}{
+			{
+				name:  "diff search, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ type:diff main count:1`,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
 }
