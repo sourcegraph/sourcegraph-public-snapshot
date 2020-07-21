@@ -10,13 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"golang.org/x/time/rate"
 )
+
+const MaxGitserverRequestsPerSecond = 100
 
 type Updater struct {
 	store           store.Store
 	gitserverClient gitserver.Client
 	interval        time.Duration
 	metrics         UpdaterMetrics
+	limiter         *rate.Limiter
 	done            chan struct{}
 	once            sync.Once
 }
@@ -32,6 +36,7 @@ func NewUpdater(
 		gitserverClient: gitserverClient,
 		interval:        interval,
 		metrics:         metrics,
+		limiter:         rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 		done:            make(chan struct{}),
 	}
 }
@@ -86,6 +91,10 @@ func (u *Updater) update(ctx context.Context) error {
 }
 
 func (u *Updater) queueRepository(ctx context.Context, repoUsageStatistics store.RepoUsageStatistics) error {
+	if err := u.limiter.Wait(ctx); err != nil {
+		return err
+	}
+
 	commit, err := u.gitserverClient.Head(ctx, u.store, repoUsageStatistics.RepositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
