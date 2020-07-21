@@ -201,40 +201,27 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 // commonFileFilters are common filters used. It is used by DynamicFilters to
 // propose them if they match shown results.
 var commonFileFilters = []struct {
-	regexp      *lazyregexp.Regexp
-	regexFilter string
-	globFilter  string
+	Regexp *lazyregexp.Regexp
+	Filter string
 }{
 	// Exclude go tests
 	{
-		regexp:      lazyregexp.New(`_test\.go$`),
-		regexFilter: `-file:_test\.go$`,
-		globFilter:  `-file:**_test.go`,
+		Regexp: lazyregexp.New(`_test\.go$`),
+		Filter: `-file:_test\.go$`,
 	},
 	// Exclude go vendor
 	{
-		regexp:      lazyregexp.New(`(^|/)vendor/`),
-		regexFilter: `-file:(^|/)vendor/`,
-		globFilter:  `-file:vendor/** -file:**/vendor/**`,
+		Regexp: lazyregexp.New(`(^|/)vendor/`),
+		Filter: `-file:(^|/)vendor/`,
 	},
 	// Exclude node_modules
 	{
-		regexp:      lazyregexp.New(`(^|/)node_modules/`),
-		regexFilter: `-file:(^|/)node_modules/`,
-		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
+		Regexp: lazyregexp.New(`(^|/)node_modules/`),
+		Filter: `-file:(^|/)node_modules/`,
 	},
 }
 
-func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-
-	var globbing bool
-	settings, err := decodedViewerFinalSettings(ctx)
-	if err != nil {
-		globbing = false
-	} else {
-		globbing = getBoolPtr(settings.SearchGlobbing, false)
-	}
-
+func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int)
 	add := func(value string, label string, count int, limitHit bool, kind string, score score) {
@@ -255,14 +242,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		sf.score = score
 	}
 
-	addRepoFilter := func(uri string, rev string, lineMatchCount int, globbing bool) {
-		var filter string
-		if globbing {
-			filter = fmt.Sprintf(`repo:%s`, uri)
-		} else {
-			filter = fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
-		}
-
+	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
+		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
 		if rev != "" {
 			// We don't need to quote rev. The only special characters we interpret
 			// are @ and :, both of which are disallowed in git refs
@@ -276,22 +257,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
-
-			// We match against the regex pattern regardless of whether globbing is enabled or not.
-			// Why?
-			// To match glob patterns, the most obvious choice would be golang's path.Match. However Match does
-			// not support **, which means we would have to map between golang's standard patterns and the patterns we support.
-			// Since we anyway have to map, we might as well map to regex.
-			//
-			// In the future we might want to evaluate external matchers or roll our own, in which case we can
-			// update the code here.
-			if ff.regexp.MatchString(fileMatchPath) {
-				if globbing {
-					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file", scoreDefault)
-				} else {
-					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file", scoreDefault)
-				}
-
+			if ff.Regexp.MatchString(fileMatchPath) {
+				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file", scoreDefault)
 			}
 		}
 	}
@@ -325,7 +292,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			if fm.InputRev != nil {
 				rev = *fm.InputRev
 			}
-			addRepoFilter(fm.Repo.Name(), rev, len(fm.LineMatches()), globbing)
+			addRepoFilter(fm.Repo.Name(), rev, len(fm.LineMatches()))
 			addLangFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
@@ -336,7 +303,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(r.Name(), "", 1, globbing)
+			addRepoFilter(r.Name(), "", 1)
 		}
 	}
 
