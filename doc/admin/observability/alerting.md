@@ -2,17 +2,19 @@
 
 Alerts can be configured to notify site admins when there is something wrong or noteworthy on the Sourcegraph instance.
 
-## Setting up alerting
+## Understanding alerts
 
-### Sourcegraph 3.17+
+See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing.
+
+## Setting up alerting
 
 Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/configuration`) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
 
 Once configured, Sourcegraph alerts will automatically be routed to the appropriate notification channels by severity level.
 
-#### Example notifiers
+### Example notifiers
 
-##### Slack
+#### Slack
 
 ```json
 "observability.alerts": [
@@ -27,7 +29,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
-##### PagerDuty
+#### PagerDuty
 
 ```json
 "observability.alerts": [
@@ -42,7 +44,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
-##### Webhook
+#### Webhook
 
 ```json
 "observability.alerts": [
@@ -57,7 +59,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
-##### Email
+#### Email
 
 Note that to receive email notifications, the [`email.address`](../config/site_config.md#email-address) and [`email.smtp`](../config/site_config.md#email-smtp) fields must be configured in site configuration.
 
@@ -74,7 +76,7 @@ Note that to receive email notifications, the [`email.address`](../config/site_c
 ]
 ```
 
-#### Silencing alerts
+### Silencing alerts
 
 If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the `observability.silenceAlerts` field. For example:
 
@@ -88,7 +90,9 @@ If there is an alert you are aware of and you wish to silence notifications for 
 
 You can find the appropriate identifier for each alert in [alert solutions](./alert_solutions.md).
 
-### Before 3.17: Configure alert channels in Grafana
+## Setting up alerting: before Sourcegraph 3.17
+
+### Configure alert channels in Grafana
 
 Before configuring specific alerts in Grafana, you must set up alert channels. Each channel
 corresponds to an external service to which Grafana will push alerts.
@@ -121,7 +125,7 @@ corresponds to an external service to which Grafana will push alerts.
 > earlier). Set the environment variable `GF_SERVER_ROOT_URL` to your Sourcegraph instance external URL followed
 > by the path `/-/debug/grafana`.
 
-### Before 3.17: Set up an individual alert
+### Set up an individual alert
 
 After adding the appropriate notification channels, configure individual alerts to notify those channels.
 
@@ -137,7 +141,3 @@ After adding the appropriate notification channels, configure individual alerts 
 1. Verify your rule by clicking `Test Rule` or viewing `State History`.
 1. Return to the dashboard page by clicking the left arrow in the upper left. Save the dashboard by
    clicking the save icon in the upper right.
-
-### Understanding alerts
-
-See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing.
