@@ -75,13 +75,18 @@ export function getProviders(
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [':', '-', ...alphabet, ...alphabet.toUpperCase()],
             provideCompletionItems: (textModel, position, context, token) =>
-                parsedQueries
+                combineLatest([parsedQueries, globbing])
                     .pipe(
                         first(),
-                        switchMap(({ parsed }) =>
-                            parsed.type === 'error'
+                        switchMap(([parsedQueries, globbing]) =>
+                            parsedQueries.parsed.type === 'error'
                                 ? of(null)
-                                : getCompletionItems(parsed.token, position, debouncedDynamicSuggestions, globbing)
+                                : getCompletionItems(
+                                      parsedQueries.parsed.token,
+                                      position,
+                                      debouncedDynamicSuggestions,
+                                      globbing
+                                  )
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )

@@ -175,7 +175,7 @@ export async function getCompletionItems(
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>,
     dynamicSuggestions: Observable<SearchSuggestion[]>,
-    globbing: Observable<boolean>
+    globbing: boolean
 ): Promise<Monaco.languages.CompletionList | null> {
     const defaultRange = {
         startLineNumber: 1,
@@ -183,8 +183,6 @@ export async function getCompletionItems(
         startColumn: column,
         endColumn: column,
     }
-
-    const glob = await globbing.toPromise()
 
     // Show all filter suggestions on the first column.
     if (column === 1) {
@@ -229,7 +227,7 @@ export async function getCompletionItems(
             suggestions: [
                 ...staticSuggestions,
                 ...(await dynamicSuggestions.pipe(first()).toPromise())
-                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing: glob }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing }))
                     .filter(isDefined)
                     .map(completionItem => ({
                         ...completionItem,
@@ -268,7 +266,7 @@ export async function getCompletionItems(
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing: glob }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,
