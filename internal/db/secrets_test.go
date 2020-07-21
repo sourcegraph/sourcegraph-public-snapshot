@@ -99,8 +99,8 @@ func TestAllByKeySource(t *testing.T) {
 	}
 
 	_, err = Secrets.GetBySource(ctx, sourceType, sourceID)
-	if err != nil {
-		t.Fatal(err)
+	if err == nil {
+		t.Fatal("Secret not deleted from database.")
 	}
 }
 
@@ -146,6 +146,6 @@ func TestAllByID(t *testing.T) {
 
 	_, err = Secrets.GetByID(ctx, sec.ID)
 	if err == nil { // to fail this would error since we're removing the object
-		t.Fatal(err)
+		t.Fatal("Secret not deleted from database.")
 	}
 }
