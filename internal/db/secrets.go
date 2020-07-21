@@ -63,14 +63,14 @@ func (s *secrets) DeleteBySource(ctx context.Context, sourceType string, sourceI
 		return Mocks.Secrets.DeleteBySource(ctx, sourceType, sourceID)
 	}
 
-	q :=
+	q := sqlf.Sprintf(
 		`DELETE FROM
 			secrets
 		WHERE
 			source_type=%s AND source_id=%d
-		`
+		`, sourceType, sourceID)
 
-	_, err := dbconn.Global.ExecContext(ctx, q, sourceType, sourceID)
+	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
