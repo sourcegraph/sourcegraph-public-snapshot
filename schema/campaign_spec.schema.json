@@ -85,6 +85,30 @@
         }
       }
     },
+    "importChangesets": {
+      "type": "array",
+      "description": "Import existing changesets on code hosts.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repo", "externalIDs"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "The repository name as configured on your Sourcegraph instance."
+          },
+          "externalIDs": {
+            "type": "array",
+            "description": "The changesets to import from the code host. For GitHub this is the PR number, for Gitlab this is the MR number, for Bitbucket server this is the PR number.",
+            "uniqueItems": true,
+            "items": {
+              "oneOf": [{ "type": "string" }, { "type": "integer" }]
+            },
+            "examples": [120, "120", "!120", "#120"]
+          }
+        }
+      }
+    },
     "changesetTemplate": {
       "type": "object",
       "description": "A template describing how to create (and update) changesets with the file changes produced by the command steps.",
