@@ -10,11 +10,6 @@ import (
 
 // SearchFilterSuggestions provides search filter and default value suggestions.
 func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFilterSuggestions, error) {
-	settings, err := decodedViewerFinalSettings(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	groupsByName, err := resolveRepoGroups(ctx)
 	if err != nil {
 		return nil, err
@@ -34,15 +29,8 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 		return nil, err
 	}
 	repoNames := make([]string, len(repos))
-
-	if getBoolPtr(settings.SearchGlobbing, false) {
-		for i := range repos {
-			repoNames[i] = string(repos[i].Name)
-		}
-	} else {
-		for i := range repos {
-			repoNames[i] = "^" + regexp.QuoteMeta(string(repos[i].Name)) + "$"
-		}
+	for i := range repos {
+		repoNames[i] = "^" + regexp.QuoteMeta(string(repos[i].Name)) + "$"
 	}
 
 	return &searchFilterSuggestions{
