@@ -289,8 +289,21 @@ func TestSearch(t *testing.T) {
 				query: "fork:only router",
 			},
 			{
+				name:  "double-quoted pattern, nonzero result",
+				query: `"func main() {\n" patterntype:regexp count:1 stable:yes`,
+			},
+			{
+				name:  "exclude repo, nonzero result",
+				query: `"func main() {\n" -repo:go-diff patterntype:regexp count:1 stable:yes`,
+			},
+			{
 				name:       "fork:no",
 				query:      "fork:no FORK_SENTINEL",
+				zeroResult: true,
+			},
+			{
+				name:       "random characters, zero results",
+				query:      "asdfalksd+jflaksjdfklas patterntype:literal -repo:sourcegraph",
 				zeroResult: true,
 			},
 		}
