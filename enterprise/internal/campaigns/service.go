@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -110,14 +111,13 @@ type CreateCampaignSpecOpts struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
-	UserID int32
-
 	ChangesetSpecRandIDs []string
 }
 
 // CreateCampaignSpec creates the CampaignSpec.
 func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *campaigns.CampaignSpec, err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("User %d", opts.UserID))
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("Actor %s", actor))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -127,10 +127,15 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	if err != nil {
 		return nil, err
 	}
-	// TODO: If NamespaceOrgID is set, does the user even have access to this Org?
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = checkNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
-	spec.UserID = opts.UserID
+	spec.UserID = actor.UID
 
 	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
 	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
@@ -355,9 +360,12 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
 		return nil, err
 	}
-
-	if opts.NewName != "" {
-		campaign.Name = opts.NewName
+	// Check if current user has access to target namespace if set.
+	if opts.NewNamespaceOrgID != 0 || opts.NewNamespaceUserID != 0 {
+		err = checkNamespaceAccess(ctx, opts.NewNamespaceUserID, opts.NewNamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if opts.NewNamespaceOrgID != 0 {
@@ -366,6 +374,10 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	} else if opts.NewNamespaceUserID != 0 {
 		campaign.NamespaceUserID = opts.NewNamespaceUserID
 		campaign.NamespaceOrgID = 0
+	}
+
+	if opts.NewName != "" {
+		campaign.Name = opts.NewName
 	}
 
 	return campaign, tx.UpdateCampaign(ctx, campaign)
@@ -649,3 +661,24 @@ func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]*typ
 
 	return accessibleRepoIDs, nil
 }
+
+// checkNamespaceAccess checks whether the current user in the ctx has access
+// to either the user ID or the org ID as a namespace.
+// If the userID is non-zero that will be checked. Otherwise the org ID will be
+// checked.
+// If the current user is an admin, true will be returned.
+// Otherwise it checks whether the current user _is_ the namespace user or has
+// access to the namespace org.
+// If both values are zero, an error is returned.
+func checkNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) error {
+	if namespaceOrgID != 0 {
+		return backend.CheckOrgAccess(ctx, namespaceOrgID)
+	} else if namespaceUserID != 0 {
+		return backend.CheckSiteAdminOrSameUser(ctx, namespaceUserID)
+	} else {
+		return ErrNoNamespace
+	}
+}
+
+// ErrNoNamespace is returned by checkNamespaceAccess if no valid namespace ID is given.
+var ErrNoNamespace = errors.New("no namespace given")
