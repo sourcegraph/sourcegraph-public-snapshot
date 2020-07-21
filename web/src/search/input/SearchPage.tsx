@@ -53,13 +53,15 @@ interface Props
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    globbing: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
     // For NavLinks
     authRequired?: boolean
     showCampaigns: boolean
+
+    // Whether globbing is enabled for filters.
+    globbing: boolean
 }
 
 /**

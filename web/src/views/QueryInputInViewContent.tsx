@@ -18,6 +18,9 @@ interface Props
 
     location: H.Location
     history: H.History
+
+    /** Whether globbing is enabled for filters. */
+    globbing: true
 }
 
 /**

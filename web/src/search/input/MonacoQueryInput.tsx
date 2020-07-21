@@ -27,11 +27,13 @@ export interface MonacoQueryInputProps
     location: H.Location
     history: H.History
     queryState: QueryState
-    globbing: boolean
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+
+    // Whether globbing is enabled for filters.
+    globbing: boolean
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const

@@ -92,6 +92,7 @@ interface Props
     /** Keyboard shortcut to focus the query input. */
     keyboardShortcutForFocus?: KeyboardShortcut
 
+    /** Whether globbing is enabled for filters. */
     globbing: boolean
 }
 

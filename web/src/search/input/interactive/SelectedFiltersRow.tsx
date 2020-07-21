@@ -40,6 +40,9 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
      */
     isHomepage: boolean
 
+    /**
+     * Whether globbing is enabled for filters.
+     */
     globbing: boolean
 }
 
@@ -55,7 +58,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
     toggleFilterEditable,
     toggleFilterNegated,
     isHomepage,
-    globbing
+    globbing,
 }) => {
     const filterKeys = Object.keys(filtersInQuery)
     return (

@@ -33,7 +33,7 @@ import { isSingularFilter } from '../../../../../shared/src/search/parser/filter
 import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
-import {globbingEnabledFromSettings} from '../../../util/globbing';
+import { globbingEnabledFromSettings } from '../../../util/globbing'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -53,6 +53,10 @@ interface InteractiveModeProps
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
+
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
+
     /** Whether to hide the selected filters and add filter rows. */
     lowProfile: boolean
 
