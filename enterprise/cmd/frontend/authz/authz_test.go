@@ -370,31 +370,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders:            providersEqual(),
 		},
 		{
-			description: "Bitbucket Server TTL error",
-			cfg:         conf.Unified{},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
-				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
-							},
-						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
-							SigningKey:  bogusKey,
-						},
-						Ttl: "invalid",
-					},
-					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
-					Token:    "secret-token",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.ttl: time: invalid duration invalid\n\n"},
-		},
-		{
 			description: "Bitbucket Server Oauth config error",
 			cfg:         conf.Unified{},
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
@@ -529,7 +504,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 		}
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ :=
-			ProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
+			ProvidersFromConfig(context.Background(), &test.cfg, &store)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}

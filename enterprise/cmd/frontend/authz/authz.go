@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -154,7 +153,6 @@ func ProvidersFromConfig(
 	ctx context.Context,
 	cfg *conf.Unified,
 	s ExternalServicesStore,
-	db dbutil.DB, // Needed by Bitbucket Server authz provider
 ) (
 	allowAccessByDefault bool,
 	providers []authz.Provider,
@@ -190,7 +188,7 @@ func ProvidersFromConfig(
 	if bbsConns, err := s.ListBitbucketServerConnections(ctx); err != nil {
 		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
 	} else {
-		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bbsConns, db)
+		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bbsConns)
 		providers = append(providers, bbsProviders...)
 		seriousProblems = append(seriousProblems, bbsProblems...)
 		warnings = append(warnings, bbsWarnings...)
@@ -216,7 +214,7 @@ func init() {
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
+			ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems
