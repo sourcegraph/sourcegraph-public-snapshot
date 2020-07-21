@@ -53,6 +53,7 @@ interface Props
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    globbing: boolean
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
