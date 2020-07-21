@@ -22,10 +22,6 @@ type gitlabAuthzProviderParams struct {
 	SudoOp  gitlab.SudoProviderOp
 }
 
-func (m gitlabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.Account, repos []*types.Repo) ([]authz.RepoPerms, error) {
-	panic("should never be called")
-}
-
 func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
 	panic("should never be called")
 }

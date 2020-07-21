@@ -373,7 +373,6 @@ type MockAuthzProvider struct {
 	// perms is the map from external user account to repository permissions. The key set must
 	// include all user external accounts that are available in this mock instance.
 	perms map[extsvc.Account]map[api.RepoName]authz.Perms
-	repos map[api.RepoName]struct{}
 }
 
 func (m *MockAuthzProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
@@ -394,26 +393,6 @@ func (m *MockAuthzProvider) FetchAccount(ctx context.Context, user *types.User, 
 		}
 	}
 	return nil, nil
-}
-
-func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.Account, repos []*types.Repo) (retPerms []authz.RepoPerms, _ error) {
-	if acct == nil {
-		acct = &extsvc.Account{}
-	}
-	if _, existsInPerms := m.perms[*acct]; !existsInPerms {
-		acct = &extsvc.Account{}
-	}
-
-	userPerms := m.perms[*acct]
-	for _, repo := range repos {
-		if userPerms[repo.Name].Include(authz.Read) {
-			retPerms = append(retPerms, authz.RepoPerms{
-				Repo:  repo,
-				Perms: authz.Read,
-			})
-		}
-	}
-	return retPerms, nil
 }
 
 func (m *MockAuthzProvider) ServiceID() string   { return m.serviceID }

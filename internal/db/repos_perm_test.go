@@ -121,21 +121,6 @@ type fakeProvider struct {
 	extAcct  *extsvc.Account
 }
 
-func (f fakeProvider) RepoPerms(
-	ctx context.Context,
-	userAccount *extsvc.Account,
-	repos []*types.Repo,
-) ([]authz.RepoPerms, error) {
-	authorized := make([]authz.RepoPerms, 0, len(repos))
-	for _, repo := range repos {
-		authorized = append(authorized, authz.RepoPerms{
-			Repo:  repo,
-			Perms: authz.Read,
-		})
-	}
-	return authorized, nil
-}
-
 func (f fakeProvider) FetchAccount(
 	ctx context.Context,
 	user *types.User,

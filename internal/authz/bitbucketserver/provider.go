@@ -78,58 +78,6 @@ func (p *Provider) ServiceID() string { return p.codeHost.ServiceID }
 // ServiceType returns the type of this Provider, namely, "bitbucketServer".
 func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 
-// RepoPerms returns the permissions the given external account has in relation to the given set of repos.
-// It performs a single HTTP request against the Bitbucket Server API which returns all repositories
-// the authenticated user has permissions to read.
-func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.Account, repos []*types.Repo) (
-	perms []authz.RepoPerms,
-	err error,
-) {
-	var (
-		userName string
-		userID   int32
-	)
-
-	tr, ctx := trace.New(ctx, "bitbucket.authz.provider.RepoPerms", "")
-	defer func() {
-		tr.LogFields(
-			otlog.String("user.name", userName),
-			otlog.Int32("user.id", userID),
-			otlog.Int("repos.count", len(repos)),
-			otlog.Int("perms.count", len(perms)),
-		)
-
-		if err != nil {
-			tr.SetError(err)
-		}
-
-		tr.Finish()
-	}()
-
-	if acct != nil && acct.ServiceID == p.codeHost.ServiceID && acct.ServiceType == p.codeHost.ServiceType {
-		var user bitbucketserver.User
-		if err := json.Unmarshal(*acct.Data, &user); err != nil {
-			return nil, err
-		}
-
-		userID = acct.UserID
-		userName = user.Name
-	}
-
-	ps := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	}
-
-	err = p.store.LoadPermissions(ctx, ps, p.update(userName))
-	if err != nil {
-		return nil, err
-	}
-
-	return ps.AuthorizedRepos(repos), nil
-}
-
 // UpdatePermissions forces an update of the permissions of the given
 // user.
 func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
