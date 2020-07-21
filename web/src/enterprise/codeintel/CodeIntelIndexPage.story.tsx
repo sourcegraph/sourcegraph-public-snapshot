@@ -7,6 +7,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import * as H from 'history'
 import React from 'react'
 import webStyles from '../../SourcegraphWebApp.scss'
+import { SourcegraphContext } from '../../jscontext'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 

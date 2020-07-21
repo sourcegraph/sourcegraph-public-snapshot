@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import H from 'history'
+import * as H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'

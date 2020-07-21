@@ -21,13 +21,13 @@ describe('mergeHoverResults', () => {
 
     it('merges a Hover into result', () => {
         const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-        const merged: HoverMerged = { contents: [hover.contents] }
+        const merged: HoverMerged = { contents: [hover.contents], alerts: [] }
         expect(mergeHoverResults([hover])).toEqual(merged)
     })
 
     it('omits non Hover values from hovers result', () => {
         const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-        const merged: HoverMerged = { contents: [hover.contents] }
+        const merged: HoverMerged = { contents: [hover.contents], alerts: [] }
         expect(mergeHoverResults([hover, null, LOADING, undefined])).toEqual(merged)
     })
 
@@ -48,6 +48,7 @@ describe('mergeHoverResults', () => {
                 { value: 'c2', kind: MarkupKind.PlainText },
             ],
             range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+            alerts: [],
         }
 
         expect(mergeHoverResults([hover1, hover2])).toEqual(merged)
@@ -108,7 +109,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
             { isLoading: true, result: null },
             {
                 isLoading: false,
-                result: { contents: [textHover('a1').contents] },
+                result: { contents: [textHover('a1').contents], alerts: [] },
             },
         ])
         results = []
@@ -121,12 +122,13 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
         expect(results).toEqual<MaybeLoadingResult<HoverMerged | null>[]>([
             {
                 isLoading: true,
-                result: { contents: [textHover('a2').contents] },
+                result: { contents: [textHover('a2').contents], alerts: [] },
             },
             {
                 isLoading: false,
                 result: {
                     contents: ['a2', 'b'].map(value => textHover(value).contents),
+                    alerts: [],
                 },
             },
         ])
@@ -139,7 +141,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
             { isLoading: true, result: null },
             {
                 isLoading: false,
-                result: { contents: [textHover('a3').contents] },
+                result: { contents: [textHover('a3').contents], alerts: [] },
             },
         ])
     })

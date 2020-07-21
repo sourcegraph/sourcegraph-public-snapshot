@@ -63,7 +63,7 @@ interface Props
     prependQueryForSuggestions?: string
 
     /** Whether the input should be autofocused (and the behavior thereof) */
-    autoFocus?: true | 'cursor-at-end'
+    autoFocus?: boolean | 'cursor-at-end'
 
     /** The input placeholder, if different from the default is desired. */
     placeholder?: string
@@ -359,7 +359,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     <input
                                         onFocus={this.onInputFocus}
                                         onBlur={this.onInputBlur}
-                                        className={`form-control query-input2__input e2e-query-input ${
+                                        className={`form-control query-input2__input test-query-input ${
                                             this.props.withSearchModeToggle
                                                 ? 'query-input2__input-with-mode--toggle'
                                                 : 'rounded-left'
@@ -387,7 +387,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     />
                                     {showSuggestions && (
                                         <ul
-                                            className="query-input2__suggestions e2e-query-suggestions"
+                                            className="query-input2__suggestions test-query-suggestions"
                                             {...getMenuProps()}
                                         >
                                             {this.state.suggestions.values.map((suggestion, index) => {

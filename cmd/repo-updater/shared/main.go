@@ -89,9 +89,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
-		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Count)
-		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Duration)
-		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Errors)
+		m.MustRegister(prometheus.DefaultRegisterer)
 
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
 	}
@@ -116,19 +114,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
 		debugDumpers = enterpriseInit(db, store, cf, server)
-	}
-
-	var handler http.Handler
-	{
-		m := repoupdater.NewHandlerMetrics()
-		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Count)
-		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Duration)
-		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Errors)
-		handler = repoupdater.ObservedHandler(
-			log15.Root(),
-			m,
-			opentracing.GlobalTracer(),
-		)(server.Handler())
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -212,8 +197,18 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	addr := net.JoinHostPort(host, port)
 	log15.Info("repo-updater: listening", "addr", addr)
-	srv := &http.Server{Addr: addr, Handler: handler}
-	go func() { log.Fatal(srv.ListenAndServe()) }()
+
+	var handler http.Handler
+	{
+		m := repoupdater.NewHandlerMetrics()
+		m.MustRegister(prometheus.DefaultRegisterer)
+
+		handler = repoupdater.ObservedHandler(
+			log15.Root(),
+			m,
+			opentracing.GlobalTracer(),
+		)(server.Handler())
+	}
 
 	go debugserver.Start(debugserver.Endpoint{
 		Name: "Repo Updater State",
@@ -236,7 +231,8 @@ func Main(enterpriseInit EnterpriseInit) {
 		}),
 	})
 
-	select {}
+	srv := &http.Server{Addr: addr, Handler: handler}
+	log.Fatal(srv.ListenAndServe())
 }
 
 type scheduler interface {
@@ -274,17 +270,11 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 // syncCloned will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list.
 func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(repos.GetUpdateInterval() / 2):
-		}
-
+	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
 			log15.Warn("failed to update git fetch scheduler with list of cloned repositories", "error", err)
-			continue
+			return
 		}
 
 		sched.SetCloned(cloned)
@@ -292,7 +282,15 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		err = store.SetClonedRepos(ctx, cloned...)
 		if err != nil {
 			log15.Warn("failed to set cloned repository list", "error", err)
-			continue
+			return
+		}
+	}
+
+	for ctx.Err() == nil {
+		doSync()
+		select {
+		case <-ctx.Done():
+		case <-time.After(10 * time.Second):
 		}
 	}
 }

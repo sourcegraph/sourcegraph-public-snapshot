@@ -137,3 +137,6 @@ storybook-static/
 # tilt files
 /dev/tilt/generated-cluster
 /dev/tilt/tilt-watch-targets
+
+# sonarqube
+.scannerwork

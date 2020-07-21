@@ -295,6 +295,7 @@ type panelOptions struct {
 	minAuto      bool
 	legendFormat string
 	unitType     UnitType
+	interval     string
 }
 
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
@@ -328,6 +329,11 @@ func (p panelOptions) LegendFormat(format string) panelOptions {
 // Unit sets the panel's Y axis unit type.
 func (p panelOptions) Unit(t UnitType) panelOptions {
 	p.unitType = t
+	return p
+}
+
+func (p panelOptions) Interval(ms int) panelOptions {
+	p.interval = fmt.Sprintf("%dms", ms)
 	return p
 }
 
@@ -566,6 +572,7 @@ func (c *Container) dashboard() *sdk.Board {
 				panel.AddTarget(&sdk.Target{
 					Expr:         o.Query,
 					LegendFormat: opt.legendFormat,
+					Interval:     opt.interval,
 				})
 				if rowPanel != nil && group.Hidden {
 					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
@@ -766,14 +773,19 @@ for assistance.
 					fmt.Fprintf(&b, "# %s: %s\n\n", c.Name, o.Name)
 
 					fmt.Fprintf(&b, "**Descriptions:**\n")
-					for _, alert := range []Alert{
-						o.Warning,
-						o.Critical,
+					for _, alert := range []struct {
+						level     string
+						threshold Alert
+					}{
+						{level: "warning", threshold: o.Warning},
+						{level: "critical", threshold: o.Critical},
 					} {
-						if alert.isEmpty() {
+						if alert.threshold.isEmpty() {
 							continue
 						}
-						fmt.Fprintf(&b, "\n- _%s_\n\n", c.alertDescription(o, alert))
+						fmt.Fprintf(&b, "\n- _%s_ (`%s`)\n\n",
+							c.alertDescription(o, alert.threshold),
+							prometheusAlertName(alert.level, c.Name, o.Name))
 					}
 
 					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
@@ -851,7 +863,6 @@ func main() {
 		Searcher(),
 		Symbols(),
 		SyntectServer(),
-		UpdateCheck(),
 		ZoektIndexServer(),
 		ZoektWebServer(),
 	}
@@ -954,7 +965,7 @@ func (g *promGroup) AppendRow(alertQuery string, labels map[string]string) {
 		},
 		// a "real" prometheus alert to attach onto alert_count
 		promRule{
-			Alert:  fmt.Sprintf("%s_%s_%s", labels["level"], labels["service_name"], labels["name"]),
+			Alert:  prometheusAlertName(labels["level"], labels["service_name"], labels["name"]),
 			Labels: labels,
 			Expr: fmt.Sprintf(`alert_count{service_name=%q,level=%q,name=%q} >= 1`,
 				labels["service_name"], labels["level"], labels["name"]),
@@ -984,4 +995,8 @@ func setPanelPos(p *sdk.Panel, x, y int) {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func prometheusAlertName(level, service, name string) string {
+	return fmt.Sprintf("%s_%s_%s", level, service, name)
 }

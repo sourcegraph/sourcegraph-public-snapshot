@@ -10,7 +10,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful search request duration over 5m_
+- _frontend: 20s+ 99th percentile successful search request duration over 5m_ (`warning_frontend_99th_percentile_search_request_duration`)
 
 **Possible solutions:**
 
@@ -23,7 +23,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 15s+ 90th percentile successful search request duration over 5m_
+- _frontend: 15s+ 90th percentile successful search request duration over 5m_ (`warning_frontend_90th_percentile_search_request_duration`)
 
 **Possible solutions:**
 
@@ -36,7 +36,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 50+ search alert user suggestions shown every 5m_
+- _frontend: 50+ search alert user suggestions shown every 5m_ (`warning_frontend_search_alert_user_suggestions`)
 
 **Possible solutions:**
 
@@ -46,7 +46,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile code-intel successful search request duration over 5m_
+- _frontend: 20s+ 99th percentile code-intel successful search request duration over 5m_ (`warning_frontend_99th_percentile_search_codeintel_request_duration`)
 
 **Possible solutions:**
 
@@ -59,7 +59,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 15s+ 90th percentile code-intel successful search request duration over 5m_
+- _frontend: 15s+ 90th percentile code-intel successful search request duration over 5m_ (`warning_frontend_90th_percentile_search_codeintel_request_duration`)
 
 **Possible solutions:**
 
@@ -72,7 +72,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 50+ search code-intel alert user suggestions shown every 5m_
+- _frontend: 50+ search code-intel alert user suggestions shown every 5m_ (`warning_frontend_search_codeintel_alert_user_suggestions`)
 
 **Possible solutions:**
 
@@ -82,7 +82,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 50s+ 99th percentile successful search API request duration over 5m_
+- _frontend: 50s+ 99th percentile successful search API request duration over 5m_ (`warning_frontend_99th_percentile_search_api_request_duration`)
 
 **Possible solutions:**
 
@@ -96,7 +96,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 40s+ 90th percentile successful search API request duration over 5m_
+- _frontend: 40s+ 90th percentile successful search API request duration over 5m_ (`warning_frontend_90th_percentile_search_api_request_duration`)
 
 **Possible solutions:**
 
@@ -110,7 +110,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 50+ search API alert user suggestions shown every 5m_
+- _frontend: 50+ search API alert user suggestions shown every 5m_ (`warning_frontend_search_api_alert_user_suggestions`)
 
 **Possible solutions:**
 
@@ -120,7 +120,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 5+ internal indexed search error responses every 5m_
+- _frontend: 5+ internal indexed search error responses every 5m_ (`warning_frontend_internal_indexed_search_error_responses`)
 
 **Possible solutions:**
 
@@ -130,7 +130,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 5+ internal unindexed search error responses every 5m_
+- _frontend: 5+ internal unindexed search error responses every 5m_ (`warning_frontend_internal_unindexed_search_error_responses`)
 
 **Possible solutions:**
 
@@ -140,7 +140,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 25+ internal API error responses every 5m by route_
+- _frontend: 25+ internal API error responses every 5m by route_ (`warning_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -150,7 +150,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 1+ container restarts every 5m by instance_
+- _frontend: 1+ container restarts every 5m by instance_ (`warning_frontend_container_restarts`)
 
 **Possible solutions:**
 
@@ -165,7 +165,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 99%+ container memory usage by instance_
+- _frontend: 99%+ container memory usage by instance_ (`warning_frontend_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -176,18 +176,18 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_frontend_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
 
-# frontend: provisioning_container_cpu_usage_1d
+# frontend: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _frontend: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -196,11 +196,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the frontend container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# frontend: provisioning_container_memory_usage_1d
+# frontend: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _frontend: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_frontend_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -213,7 +213,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -224,7 +224,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 90%+ container memory usage (5m average) by instance_
+- _frontend: 90%+ container memory usage (5m maximum) by instance_ (`warning_frontend_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -235,10 +235,10 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: less than 25% disk space remaining by instance_
+- _gitserver: less than 25% disk space remaining by instance_ (`warning_gitserver_disk_space_remaining`)
 
 
-- _gitserver: less than 15% disk space remaining by instance_
+- _gitserver: less than 15% disk space remaining by instance_ (`critical_gitserver_disk_space_remaining`)
 
 **Possible solutions:**
 
@@ -248,10 +248,10 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 50+ running git commands (signals load)_
+- _gitserver: 50+ running git commands (signals load)_ (`warning_gitserver_running_git_commands`)
 
 
-- _gitserver: 100+ running git commands (signals load)_
+- _gitserver: 100+ running git commands (signals load)_ (`critical_gitserver_running_git_commands`)
 
 **Possible solutions:**
 
@@ -263,7 +263,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 25+ repository clone queue size_
+- _gitserver: 25+ repository clone queue size_ (`warning_gitserver_repository_clone_queue_size`)
 
 **Possible solutions:**
 
@@ -274,7 +274,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 25+ repository existence check queue size_
+- _gitserver: 25+ repository existence check queue size_ (`warning_gitserver_repository_existence_check_queue_size`)
 
 **Possible solutions:**
 
@@ -286,10 +286,10 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 1s+ echo command duration test_
+- _gitserver: 1s+ echo command duration test_ (`warning_gitserver_echo_command_duration_test`)
 
 
-- _gitserver: 2s+ echo command duration test_
+- _gitserver: 2s+ echo command duration test_ (`critical_gitserver_echo_command_duration_test`)
 
 **Possible solutions:**
 
@@ -301,7 +301,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 5+ frontend-internal API error responses every 5m by route_
+- _gitserver: 5+ frontend-internal API error responses every 5m by route_ (`warning_gitserver_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -317,7 +317,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 1+ container restarts every 5m by instance_
+- _gitserver: 1+ container restarts every 5m by instance_ (`warning_gitserver_container_restarts`)
 
 **Possible solutions:**
 
@@ -332,7 +332,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 99%+ container memory usage by instance_
+- _gitserver: 99%+ container memory usage by instance_ (`warning_gitserver_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -343,18 +343,18 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_gitserver_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 
-# gitserver: provisioning_container_cpu_usage_1d
+# gitserver: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _gitserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -363,11 +363,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# gitserver: provisioning_container_memory_usage_1d
+# gitserver: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _gitserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -380,7 +380,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -391,7 +391,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container memory usage (5m average) by instance_
+- _gitserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -402,7 +402,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 1+ container restarts every 5m by instance_
+- _github-proxy: 1+ container restarts every 5m by instance_ (`warning_github-proxy_container_restarts`)
 
 **Possible solutions:**
 
@@ -417,7 +417,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 99%+ container memory usage by instance_
+- _github-proxy: 99%+ container memory usage by instance_ (`warning_github-proxy_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -428,18 +428,18 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_github-proxy_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 
-# github-proxy: provisioning_container_cpu_usage_1d
+# github-proxy: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _github-proxy: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -448,11 +448,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# github-proxy: provisioning_container_memory_usage_1d
+# github-proxy: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _github-proxy: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -465,7 +465,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -476,7 +476,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container memory usage (5m average) by instance_
+- _github-proxy: 90%+ container memory usage (5m maximum) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -487,10 +487,10 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_
+- _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_ (`warning_precise-code-intel-bundle-manager_disk_space_remaining`)
 
 
-- _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_
+- _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_ (`critical_precise-code-intel-bundle-manager_disk_space_remaining`)
 
 **Possible solutions:**
 
@@ -500,7 +500,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 5+ frontend-internal API error responses every 5m by route_
+- _precise-code-intel-bundle-manager: 5+ frontend-internal API error responses every 5m by route_ (`warning_precise-code-intel-bundle-manager_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -516,7 +516,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_
+- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-bundle-manager_container_restarts`)
 
 **Possible solutions:**
 
@@ -531,7 +531,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_
+- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_ (`warning_precise-code-intel-bundle-manager_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -542,18 +542,18 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 
-# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_1d
+# precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -562,11 +562,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-bundle-manager: provisioning_container_memory_usage_1d
+# precise-code-intel-bundle-manager: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -579,7 +579,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -590,7 +590,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m average) by instance_
+- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -601,7 +601,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 5+ frontend-internal API error responses every 5m by route_
+- _precise-code-intel-worker: 5+ frontend-internal API error responses every 5m by route_ (`warning_precise-code-intel-worker_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -617,7 +617,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 1+ container restarts every 5m by instance_
+- _precise-code-intel-worker: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-worker_container_restarts`)
 
 **Possible solutions:**
 
@@ -632,7 +632,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 99%+ container memory usage by instance_
+- _precise-code-intel-worker: 99%+ container memory usage by instance_ (`warning_precise-code-intel-worker_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -643,18 +643,18 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-worker_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 
-# precise-code-intel-worker: provisioning_container_cpu_usage_1d
+# precise-code-intel-worker: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -663,11 +663,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-worker: provisioning_container_memory_usage_1d
+# precise-code-intel-worker: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -680,7 +680,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -691,7 +691,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container memory usage (5m average) by instance_
+- _precise-code-intel-worker: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -702,7 +702,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 5+ frontend-internal API error responses every 5m by route_
+- _precise-code-intel-indexer: 5+ frontend-internal API error responses every 5m by route_ (`warning_precise-code-intel-indexer_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -718,7 +718,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_
+- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-indexer_container_restarts`)
 
 **Possible solutions:**
 
@@ -733,7 +733,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container memory usage by instance_
+- _precise-code-intel-indexer: 99%+ container memory usage by instance_ (`warning_precise-code-intel-indexer_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -744,18 +744,18 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-indexer_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 
-# precise-code-intel-indexer: provisioning_container_cpu_usage_1d
+# precise-code-intel-indexer: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -764,11 +764,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-indexer: provisioning_container_memory_usage_1d
+# precise-code-intel-indexer: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -781,7 +781,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -792,7 +792,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container memory usage (5m average) by instance_
+- _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -803,7 +803,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 5+ frontend-internal API error responses every 5m by route_
+- _query-runner: 5+ frontend-internal API error responses every 5m by route_ (`warning_query-runner_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -819,7 +819,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 1+ container restarts every 5m by instance_
+- _query-runner: 1+ container restarts every 5m by instance_ (`warning_query-runner_container_restarts`)
 
 **Possible solutions:**
 
@@ -834,7 +834,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 99%+ container memory usage by instance_
+- _query-runner: 99%+ container memory usage by instance_ (`warning_query-runner_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -845,18 +845,18 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _query-runner: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_query-runner_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
 
-# query-runner: provisioning_container_cpu_usage_1d
+# query-runner: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _query-runner: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -865,11 +865,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# query-runner: provisioning_container_memory_usage_1d
+# query-runner: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _query-runner: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_query-runner_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -882,7 +882,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -893,7 +893,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container memory usage (5m average) by instance_
+- _query-runner: 90%+ container memory usage (5m maximum) by instance_ (`warning_query-runner_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -904,7 +904,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 5+ frontend-internal API error responses every 5m by route_
+- _replacer: 5+ frontend-internal API error responses every 5m by route_ (`warning_replacer_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -920,7 +920,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 1+ container restarts every 5m by instance_
+- _replacer: 1+ container restarts every 5m by instance_ (`warning_replacer_container_restarts`)
 
 **Possible solutions:**
 
@@ -935,7 +935,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 99%+ container memory usage by instance_
+- _replacer: 99%+ container memory usage by instance_ (`warning_replacer_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -946,18 +946,18 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_replacer_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
 
-# replacer: provisioning_container_cpu_usage_1d
+# replacer: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _replacer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -966,11 +966,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# replacer: provisioning_container_memory_usage_1d
+# replacer: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _replacer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -983,7 +983,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _replacer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -994,7 +994,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 90%+ container memory usage (5m average) by instance_
+- _replacer: 90%+ container memory usage (5m maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1005,7 +1005,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 5+ frontend-internal API error responses every 5m by route_
+- _repo-updater: 5+ frontend-internal API error responses every 5m by route_ (`warning_repo-updater_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -1021,7 +1021,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 1+ container restarts every 5m by instance_
+- _repo-updater: 1+ container restarts every 5m by instance_ (`warning_repo-updater_container_restarts`)
 
 **Possible solutions:**
 
@@ -1036,7 +1036,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container memory usage by instance_
+- _repo-updater: 99%+ container memory usage by instance_ (`warning_repo-updater_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -1047,18 +1047,18 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_repo-updater_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 
-# repo-updater: provisioning_container_cpu_usage_1d
+# repo-updater: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _repo-updater: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1067,11 +1067,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# repo-updater: provisioning_container_memory_usage_1d
+# repo-updater: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _repo-updater: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1084,7 +1084,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1095,7 +1095,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container memory usage (5m average) by instance_
+- _repo-updater: 90%+ container memory usage (5m maximum) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1106,7 +1106,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 5+ frontend-internal API error responses every 5m by route_
+- _searcher: 5+ frontend-internal API error responses every 5m by route_ (`warning_searcher_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -1122,7 +1122,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 1+ container restarts every 5m by instance_
+- _searcher: 1+ container restarts every 5m by instance_ (`warning_searcher_container_restarts`)
 
 **Possible solutions:**
 
@@ -1137,7 +1137,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 99%+ container memory usage by instance_
+- _searcher: 99%+ container memory usage by instance_ (`warning_searcher_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -1148,18 +1148,18 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_searcher_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
 
-# searcher: provisioning_container_cpu_usage_1d
+# searcher: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _searcher: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1168,11 +1168,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the searcher container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# searcher: provisioning_container_memory_usage_1d
+# searcher: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _searcher: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_searcher_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1185,7 +1185,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1196,7 +1196,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 90%+ container memory usage (5m average) by instance_
+- _searcher: 90%+ container memory usage (5m maximum) by instance_ (`warning_searcher_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1207,7 +1207,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 5+ frontend-internal API error responses every 5m by route_
+- _symbols: 5+ frontend-internal API error responses every 5m by route_ (`warning_symbols_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
@@ -1223,7 +1223,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 1+ container restarts every 5m by instance_
+- _symbols: 1+ container restarts every 5m by instance_ (`warning_symbols_container_restarts`)
 
 **Possible solutions:**
 
@@ -1238,7 +1238,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 99%+ container memory usage by instance_
+- _symbols: 99%+ container memory usage by instance_ (`warning_symbols_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -1249,18 +1249,18 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_symbols_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
 
-# symbols: provisioning_container_cpu_usage_1d
+# symbols: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _symbols: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1269,11 +1269,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the symbols container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# symbols: provisioning_container_memory_usage_1d
+# symbols: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _symbols: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_symbols_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1286,7 +1286,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1297,7 +1297,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 90%+ container memory usage (5m average) by instance_
+- _symbols: 90%+ container memory usage (5m maximum) by instance_ (`warning_symbols_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1308,7 +1308,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 1+ container restarts every 5m by instance_
+- _syntect-server: 1+ container restarts every 5m by instance_ (`warning_syntect-server_container_restarts`)
 
 **Possible solutions:**
 
@@ -1323,7 +1323,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 99%+ container memory usage by instance_
+- _syntect-server: 99%+ container memory usage by instance_ (`warning_syntect-server_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -1334,18 +1334,18 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_syntect-server_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 
-# syntect-server: provisioning_container_cpu_usage_1d
+# syntect-server: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _syntect-server: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1354,11 +1354,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# syntect-server: provisioning_container_memory_usage_1d
+# syntect-server: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _syntect-server: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1371,7 +1371,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1382,7 +1382,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container memory usage (5m average) by instance_
+- _syntect-server: 90%+ container memory usage (5m maximum) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1393,7 +1393,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 1+ container restarts every 5m by instance_
+- _zoekt-indexserver: 1+ container restarts every 5m by instance_ (`warning_zoekt-indexserver_container_restarts`)
 
 **Possible solutions:**
 
@@ -1408,7 +1408,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 99%+ container memory usage by instance_
+- _zoekt-indexserver: 99%+ container memory usage by instance_ (`warning_zoekt-indexserver_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -1419,18 +1419,18 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_zoekt-indexserver_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 
-# zoekt-indexserver: provisioning_container_cpu_usage_1d
+# zoekt-indexserver: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1439,11 +1439,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-indexserver: provisioning_container_memory_usage_1d
+# zoekt-indexserver: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1456,7 +1456,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1467,7 +1467,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container memory usage (5m average) by instance_
+- _zoekt-indexserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1478,7 +1478,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 1+ container restarts every 5m by instance_
+- _zoekt-webserver: 1+ container restarts every 5m by instance_ (`warning_zoekt-webserver_container_restarts`)
 
 **Possible solutions:**
 
@@ -1493,7 +1493,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 99%+ container memory usage by instance_
+- _zoekt-webserver: 99%+ container memory usage by instance_ (`warning_zoekt-webserver_container_memory_usage`)
 
 **Possible solutions:**
 
@@ -1504,18 +1504,18 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance_
+- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_zoekt-webserver_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 
-# zoekt-webserver: provisioning_container_cpu_usage_1d
+# zoekt-webserver: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance_
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1524,11 +1524,11 @@ for assistance.
 	- **Docker Compose:** Consider descreasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# zoekt-webserver: provisioning_container_memory_usage_1d
+# zoekt-webserver: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d average) by instance_
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1541,7 +1541,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container cpu usage total (5m average) across all cores by instance_
+- _zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1552,7 +1552,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container memory usage (5m average) by instance_
+- _zoekt-webserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 

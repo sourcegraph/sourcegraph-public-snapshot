@@ -15,12 +15,21 @@ import { Services } from '../../../shared/src/api/client/services'
 import { MemoryRouter } from 'react-router'
 import webStyles from '../SourcegraphWebApp.scss'
 
-const { add } = storiesOf('web/RepogroupPage', module).addDecorator(story => (
-    <>
-        <style>{webStyles}</style>
-        <div className="theme-light">{story()}</div>
-    </>
-))
+const { add } = storiesOf('web/RepogroupPage', module)
+    .addParameters({
+        percy: { widths: [993] },
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
+        },
+        chromatic: { viewports: [769, 993, 1200] },
+    })
+    .addDecorator(story => (
+        <>
+            <style>{webStyles}</style>
+            <div className="theme-light">{story()}</div>
+        </>
+    ))
 
 const history = H.createMemoryHistory()
 
@@ -64,7 +73,7 @@ const authUser = {
         __typename: 'SettingsCascade',
         ...NOOP_SETTINGS_CASCADE,
         subjects: [],
-        final: '{}',
+        final: '{search.repositoryGroups: "python": ["github.com/python/test"]}',
         merged: NOOP_CONFIG,
     },
     configurationCascade: NOOP_CONFIG_CASCADE,
@@ -110,7 +119,20 @@ const authUser = {
 } as GQL.IUser
 
 const commonProps: RepogroupPageProps = {
-    settingsCascade: NOOP_SETTINGS_CASCADE,
+    settingsCascade: {
+        ...NOOP_SETTINGS_CASCADE,
+        subjects: [],
+        final: {
+            'search.repositoryGroups': {
+                python: [
+                    'github.com/python/test',
+                    'github.com/python/test2',
+                    'github.com/python/test3',
+                    'github.com/python/test4',
+                ],
+            },
+        },
+    },
     isLightTheme: true,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: sinon.spy(() => {}),
@@ -146,10 +168,17 @@ const commonProps: RepogroupPageProps = {
     showCampaigns: false,
     authenticatedUser: authUser,
     repogroupMetadata: python2To3Metadata,
+    autoFocus: false,
 }
 
-add('Site admin', () => (
+add('Repogroup page with smart search field', () => (
     <MemoryRouter>
         <RepogroupPage {...commonProps} />
+    </MemoryRouter>
+))
+
+add('Repogroup page without smart search field', () => (
+    <MemoryRouter>
+        <RepogroupPage {...commonProps} smartSearchField={false} />
     </MemoryRouter>
 ))

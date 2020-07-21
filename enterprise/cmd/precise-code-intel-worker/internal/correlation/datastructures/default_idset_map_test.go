@@ -9,29 +9,26 @@ import (
 
 func TestDefaultIDSetMap(t *testing.T) {
 	m := DefaultIDSetMap{}
-	m.GetOrCreate("foo").Add("bar")
-	m.GetOrCreate("foo").Add("baz")
-	m.GetOrCreate("bar").Add("bonk")
-	m.GetOrCreate("bar").Add("quux")
+	m.GetOrCreate(50).Add(51)
+	m.GetOrCreate(50).Add(52)
+	m.GetOrCreate(51).Add(53)
+	m.GetOrCreate(51).Add(54)
 
-	keys := []string{}
+	keys := []int{}
 	for k := range m {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	sort.Ints(keys)
 
-	expected := []string{"bar", "foo"}
-	if diff := cmp.Diff(expected, keys); diff != "" {
+	if diff := cmp.Diff([]int{50, 51}, keys); diff != "" {
 		t.Errorf("unexpected keys (-want +got):\n%s", diff)
 	}
 
-	expected = []string{"bar", "baz"}
-	if diff := cmp.Diff(expected, m["foo"].Keys()); diff != "" {
+	if diff := cmp.Diff([]int{51, 52}, m[50].Identifiers()); diff != "" {
 		t.Errorf("unexpected keys (-want +got):\n%s", diff)
 	}
 
-	expected = []string{"bonk", "quux"}
-	if diff := cmp.Diff(expected, m["bar"].Keys()); diff != "" {
+	if diff := cmp.Diff([]int{53, 54}, m[51].Identifiers()); diff != "" {
 		t.Errorf("unexpected keys (-want +got):\n%s", diff)
 	}
 }

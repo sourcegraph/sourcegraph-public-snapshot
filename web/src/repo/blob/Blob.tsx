@@ -479,7 +479,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         return (
             <div className={`blob ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
-                    className={`blob__code ${this.props.wrapCode ? ' blob__code--wrapped' : ''} e2e-blob`}
+                    className={`blob__code ${this.props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
                     ref={this.nextCodeViewElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                 />

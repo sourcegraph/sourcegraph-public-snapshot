@@ -5,3 +5,4 @@ See also our [TypeScript guide](https://about.sourcegraph.com/handbook/engineeri
 
 - [Build documentation](build.md)
 - [Web app guide](web_app.md)
+- [Code host integration guide](../code_host_integrations.md)

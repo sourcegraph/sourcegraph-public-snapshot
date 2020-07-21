@@ -8,7 +8,7 @@ export interface HiddenExternalChangesetNodeProps {
 }
 
 export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (
-    <li className="list-group-item e2e-changeset-node">
+    <li className="list-group-item test-changeset-node">
         <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
             <div className="d-flex align-items-start m-1 ml-2">
                 <div className="changeset-node__content flex-fill">

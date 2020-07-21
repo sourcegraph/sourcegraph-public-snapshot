@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
@@ -20,7 +20,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
     queryGraphQL(
         isSiteAdmin
             ? gql`
-                  query ActivationStatus {
+                  query SiteAdminActivationStatus {
                       externalServices {
                           totalCount
                       }
@@ -83,7 +83,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
  */
 const fetchReferencesLink = (): Observable<string | null> =>
     queryGraphQL(gql`
-        query {
+        query LinksForRepositories {
             repositories(cloned: true, first: 100, indexed: true) {
                 nodes {
                     url

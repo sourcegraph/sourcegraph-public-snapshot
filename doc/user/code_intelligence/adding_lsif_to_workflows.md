@@ -43,6 +43,7 @@ jobs:
 ### Sub-projects
 
 If your repository contains multiple code projects in different folders, your CI framework likely provides a "working directory" option so that you can do something like:
+
 ```yaml
 jobs:
   lsif-go:
@@ -71,6 +72,7 @@ Depending on which language you're using, you may need to perform some pre-index
 - Do the pre-indexing steps in your environment, and then make those artifacts available to our container.
 
 This second step is easy in GitHub actions because our container can be used as an action. Here's an example for a TypeScript project:
+
 ```yaml
 jobs:
   lsif-node:
@@ -91,11 +93,23 @@ jobs:
         with:
           # this will upload to Sourcegraph.com, you may need to substitute a different command
           # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
-          args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
+          args: lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
+The following projects have example GitHub Action workflows to generate and upload LSIF indexes.
+
+- [elastic/kibana](https://github.com/sourcegraph-codeintel-showcase/kibana/blob/7ed559df0e2036487ae6d606e9ffa29d90d49e38/.github/workflows/lsif.yml)
+- [golang/go](https://github.com/sourcegraph-codeintel-showcase/go/blob/f40606b1241b0ca4802d7b00a763241b03404eea/.github/workflows/lsif.yml)
+- [kubernetes/kubernetes](https://github.com/sourcegraph-codeintel-showcase/kubernetes/blob/359b6469d85cc7cd4f6634e50651633eefeaea4e/.github/workflows/lsif.yml)
+- [lodash/lodash](https://github.com/sourcegraph-codeintel-showcase/lodash/blob/b90ea221bd1b1e036f2dfcd199a2327883f9451f/.github/workflows/lsif.yml)
+- [moby/moby](https://github.com/sourcegraph-codeintel-showcase/moby/blob/380429abb05846de773d5aa07de052f40c9e8208/.github/workflows/lsif.yml)
+- [ReactiveX/IxJS](https://github.com/sourcegraph-codeintel-showcase/IxJS/blob/e53d323314043afb016b6deceaeb068d8d23c303/.github/workflows/lsif.yml)
+
 Other frameworks may require you to explicitly cache artifacts between jobs. In CircleCI this might look like:
+
 ```yaml
+version: 2.1
+
 jobs:
   install-deps:
     docker:
@@ -131,6 +145,26 @@ workflows:
             - install-deps
 ```
 
+The following projects have example CircleCI configurations to generate and upload LSIF indexes.
+
+- [angular/angular](https://github.com/sourcegraph-codeintel-showcase/angular/blob/f06eec98cadab2ff7a1cef2a03ba7c42015eb399/.circleci/config.yml)
+- [facebook/jest](https://github.com/sourcegraph-codeintel-showcase/jest/blob/b781fa2b6683f04324edbc4b41552a94f97cd479/.circleci/config.yml)
+- [facebook/react](https://github.com/sourcegraph-codeintel-showcase/react/blob/e488420f686b88803cfb1bb09bbc4d3991db8c55/.circleci/config.yml)
+- [grafana](https://github.com/sourcegraph-codeintel-showcase/grafana/blob/664a694955ea40575a1cffe9db47a7adf4d3c2bb/.circleci/config.yml)
+- [helm](https://github.com/sourcegraph-codeintel-showcase/helm/blob/62c38f152d0802719aad1ec4c1c281f01dc75173/.circleci/config.yml)
+- [prometheus/prometheus](https://github.com/sourcegraph-codeintel-showcase/prometheus/blob/a0a8a249fff9d1c6ce4c097ccc4f5e120c723c51/.circleci/config.yml)
+- [ReactiveX/rxjs](https://github.com/sourcegraph-codeintel-showcase/rxjs/blob/c9d3c1a76a68273863fc59075a71b4cc43c06114/.circleci/config.yml)
+
+The following projects have example Travis CI configurations to generate and upload LSIF indexes.
+
+- [aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml)
+- [etcd-io/etcd](https://github.com/sourcegraph-codeintel-showcase/etcd/blob/eae726706fe8ebf7e08b45ba29a70388595db31b/.travis.yml)
+- [expressjs/express](https://github.com/sourcegraph-codeintel-showcase/express/blob/bd1ae153f19656183257ed223d518aeb9f5091ec/.travis.yml)
+- [hugo/hugo](https://github.com/sourcegraph-codeintel-showcase/hugo/blob/6704b7c125d7b21ccf2048d7bff0f1ffe2b0867d/.travis.yml)
+- [Microsoft/TypeScript](https://github.com/sourcegraph-codeintel-showcase/TypeScript/blob/f37f1dee1b3e63b12df2935590c8707a5ec3993b/.travis.yml)
+- [moment/moment](https://github.com/sourcegraph-codeintel-showcase/moment/blob/eedccdc2c07fb5abe931b427d50f5b3c3f44ac95/.travis.yml)
+- [sindresorhus/got](https://github.com/sourcegraph-codeintel-showcase/got/blob/164d55a029512cea7f245de870cbb1eaba114734/.travis.yml)
+
 ## CI from scratch
 
 If you're indexing a language we haven't documented yet in our [language-specific guides](languages/index.md), follow the instructions in this section. We want to have containers available for every language with a robust indexer, so please also consider [filing an issue](https://github.com/sourcegraph/sourcegraph/issues/new) to let us know we're missing one.
@@ -157,6 +191,6 @@ With periodic jobs, you should still receive precise code intelligence on non-in
 
 ## Uploading LSIF data to Sourcegraph.com
 
-LSIF data can be uploaded to a self-hosted Sourcegraph instance or to [Sourcegraph.com](https://sourcegraph.com). Using the [Sourcegraph.com](https://sourcegraph.com) endpoint will surface code intelligence for your public repositories directly on GitHub via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension) and at `https://sourcegraph.com/github.com/<your-username>/<your-repo>`. 
+LSIF data can be uploaded to a self-hosted Sourcegraph instance or to [Sourcegraph.com](https://sourcegraph.com). Using the [Sourcegraph.com](https://sourcegraph.com) endpoint will surface code intelligence for your public repositories directly on GitHub via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension) and at `https://sourcegraph.com/github.com/<your-username>/<your-repo>`.
 
 Using the [Sourcegraph.com](https://sourcegraph.com) endpoint is free and your LSIF data is treated as User-Generated Content (you own it, as covered in our [Sourcegraph.com terms of service](https://about.sourcegraph.com/terms-dotcom#3-proprietary-rights-and-licenses)). If you run into trouble, or a situation arises where you need all of your LSIF data expunged, please reach out to us at [support@sourcegraph.com](mailto:support@sourcegraph.com).

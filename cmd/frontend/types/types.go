@@ -2,6 +2,7 @@
 package types
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,6 +29,9 @@ type RepoFields struct {
 
 	// Archived is whether this repository has been archived.
 	Archived bool
+
+	// Cloned is whether this repository is cloned.
+	Cloned bool
 }
 
 // Repo represents a source code repository.
@@ -371,4 +375,21 @@ type Event struct {
 	Source          string
 	Version         string
 	Timestamp       time.Time
+}
+
+// Secret represents the secrets table
+type Secret struct {
+	ID int32
+
+	// The table containing an object whose token is being encrypted.
+	SourceType sql.NullString
+
+	// The ID of the object in the SourceType table.
+	SourceID sql.NullInt32
+
+	// KeyName represents a unique key for the case where we're storing key-value pairs.
+	KeyName sql.NullString
+
+	// Value contains the encrypted string
+	Value string
 }

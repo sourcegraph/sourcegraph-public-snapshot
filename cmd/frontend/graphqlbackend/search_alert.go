@@ -601,6 +601,14 @@ func addRegexpField(p syntax.ParseTree, field, pattern string) string {
 	return modified.String()
 }
 
+// Wrap an alert in a SearchResultsResolver. ElapsedMilliseconds() will
+// calculate a very large value for duration if start takes on the nil-value of
+// year 1. As a workaround, wrap instantiates start with time.now().
+// TODO(rvantonder): #10801.
+func (a searchAlert) wrap() *SearchResultsResolver {
+	return &SearchResultsResolver{alert: &a, start: time.Now()}
+}
+
 func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 	alert := &searchAlert{
 		prometheusType:  a.prometheusType,
@@ -608,8 +616,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	// ElapsedMilliseconds() will calculate a very large value for duration if start takes on the nil-value of year 1. As a workaround, instantiate start with time.now(). TODO(rvantonder): #10801.
-	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
+	return alert.wrap(), nil
 }
 
 func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {

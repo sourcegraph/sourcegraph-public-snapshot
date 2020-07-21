@@ -12,10 +12,10 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
@@ -363,12 +363,16 @@ func TestDetectSearchType(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(*testing.T) {
-			got, err := detectSearchType(test.version, test.patternType, test.input)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got != test.want {
-				t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
+			got, err := detectSearchType(test.version, test.patternType)
+			useNewParser := []bool{true, false}
+			for _, parserOpt := range useNewParser {
+				got = overrideSearchType(test.input, got, parserOpt)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got != test.want {
+					t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
+				}
 			}
 		})
 	}

@@ -362,7 +362,7 @@ func TestParseAndOrLiteral(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run("literal search parse", func(t *testing.T) {
-			result, err := ParseAndOrLiteral(tt.Input)
+			result, err := ParseAndOr(tt.Input, SearchTypeLiteral)
 			if err != nil {
 				if diff := cmp.Diff(tt.WantError, err.Error()); diff != "" {
 					t.Error(diff)

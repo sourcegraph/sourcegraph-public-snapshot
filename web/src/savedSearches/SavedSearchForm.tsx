@@ -89,7 +89,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         <input
                             type="text"
                             name="description"
-                            className="form-control e2e-saved-search-form-input-description"
+                            className="form-control test-saved-search-form-input-description"
                             placeholder="Description"
                             required={true}
                             value={description}
@@ -101,7 +101,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         <input
                             type="text"
                             name="query"
-                            className="form-control e2e-saved-search-form-input-query"
+                            className="form-control test-saved-search-form-input-query"
                             placeholder="Query"
                             required={true}
                             value={query}
@@ -165,7 +165,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                     <button
                         type="submit"
                         disabled={this.props.loading}
-                        className="btn btn-primary saved-search-form__submit-button e2e-saved-search-form-submit-button"
+                        className="btn btn-primary saved-search-form__submit-button test-saved-search-form-submit-button"
                     >
                         {this.props.submitLabel}
                     </button>

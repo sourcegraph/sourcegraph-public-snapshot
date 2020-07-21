@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React, { useCallback, useState, useMemo } from 'react'
-import H from 'history'
+import * as H from 'history'
 import { Form } from '../../../components/Form'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { querySearchResultsStats } from './backend'
@@ -62,7 +62,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
                 <div className="form-group d-flex align-items-stretch">
                     <input
                         id="stats-page__query"
-                        className="form-control flex-1 e2e-stats-query"
+                        className="form-control flex-1 test-stats-query"
                         type="search"
                         placeholder="Enter a Sourcegraph search query"
                         value={uncommittedQuery}
@@ -73,7 +73,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
                         autoComplete="off"
                     />
                     {uncommittedQuery !== query && (
-                        <button type="submit" className="btn btn-primary ml-2 e2e-stats-query-update">
+                        <button type="submit" className="btn btn-primary ml-2 test-stats-query-update">
                             Update
                         </button>
                     )}

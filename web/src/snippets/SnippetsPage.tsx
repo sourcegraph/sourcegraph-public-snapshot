@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import { uniqueId } from 'lodash'
 import React, { createRef, useEffect, useLayoutEffect, useState } from 'react'
 import { map } from 'rxjs/operators'

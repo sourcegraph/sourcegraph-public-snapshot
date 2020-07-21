@@ -1157,6 +1157,7 @@ type Query {
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
+        # DEPRECATED: This will be removed.
         cloneInProgress: Boolean = true
         # Include repositories that are not yet cloned and for which cloning is not in progress.
         notCloned: Boolean = true

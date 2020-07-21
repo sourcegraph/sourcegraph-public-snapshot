@@ -21,7 +21,7 @@ import {
 } from '../schema/site.schema'
 import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
-const oktaUserAmy = 'beyang+sg-e2e-regression-test-amy@sourcegraph.com'
+const oktaUserAmy = 'beyang+sg-test-regression-test-amy@sourcegraph.com'
 
 async function testLogin(
     driver: Driver,
@@ -47,8 +47,8 @@ async function testLogin(
     )
     await login(driver, { sourcegraphBaseUrl, authProviderDisplayName: authProvider.displayName }, loginToAuthProvider)
 
-    await driver.page.waitForSelector('.e2e-user-nav-item-toggle')
-    await driver.page.click('.e2e-user-nav-item-toggle')
+    await driver.page.waitForSelector('.test-user-nav-item-toggle')
+    await driver.page.click('.test-user-nav-item-toggle')
     await driver.findElementWithText('Sign out', { action: 'click', wait: { timeout: 2000 } })
     await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 2000 } })
     await driver.page.goto(sourcegraphBaseUrl)
@@ -124,7 +124,7 @@ describe('Auth regression test suite', () => {
                 allowSignup: true,
             },
             loginToAuthProvider: () =>
-                loginToGitHub(driver, 'sg-e2e-regression-test-amy', config.gitHubUserAmyPassword),
+                loginToGitHub(driver, 'sg-test-regression-test-amy', config.gitHubUserAmyPassword),
         })
     })
 
@@ -139,7 +139,7 @@ describe('Auth regression test suite', () => {
                 clientSecret: config.gitLabClientSecret,
             },
             loginToAuthProvider: () =>
-                loginToGitLab(driver, 'sg-e2e-regression-test-amy', config.gitLabUserAmyPassword),
+                loginToGitLab(driver, 'sg-test-regression-test-amy', config.gitLabUserAmyPassword),
         })
     })
 

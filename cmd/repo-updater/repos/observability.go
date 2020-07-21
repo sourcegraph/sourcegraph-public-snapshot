@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,6 +37,14 @@ type observedSource struct {
 // SourceMetrics encapsulates the Prometheus metrics of a Source.
 type SourceMetrics struct {
 	ListRepos *metrics.OperationMetrics
+}
+
+// MustRegister registers all metrics in SourceMetrics in the given
+// prometheus.Registerer. It panics in case of failure.
+func (sm SourceMetrics) MustRegister(r prometheus.Registerer) {
+	r.MustRegister(sm.ListRepos.Count)
+	r.MustRegister(sm.ListRepos.Duration)
+	r.MustRegister(sm.ListRepos.Errors)
 }
 
 // NewSourceMetrics returns SourceMetrics that need to be registered
@@ -251,15 +259,15 @@ func NewStoreMetrics() StoreMetrics {
 		CountNotClonedRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_store_count_not_cloned_repos_duration_seconds",
-				Help: "Time spent counting cloned repos",
+				Help: "Time spent counting not-cloned repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_count_not_cloned_repos_total",
-				Help: "Total number of count cloned repos calls",
+				Help: "Total number of count not-cloned repos calls",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_count_not_cloned_repos_errors_total",
-				Help: "Total number of errors when counting cloned repos",
+				Help: "Total number of errors when counting not-cloned repos",
 			}, []string{}),
 		},
 	}
