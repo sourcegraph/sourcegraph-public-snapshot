@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -54,11 +53,9 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 
 func TestAuthzProvidersFromConfig(t *testing.T) {
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
-		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
 	gitlab.NewSudoProvider = func(op gitlab.SudoProviderOp) authz.Provider {
-		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{SudoOp: op}
 	}
 
@@ -110,11 +107,8 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						Token:             "asdf",
-						CacheTTL:          48 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						Token:   "asdf",
 					},
 				},
 			),
@@ -214,20 +208,14 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						Token:             "asdf",
-						CacheTTL:          3 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						Token:   "asdf",
 					},
 				},
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.com"),
-						Token:             "asdf",
-						CacheTTL:          3 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
+						BaseURL: mustURLParse(t, "https://gitlab.com"),
+						Token:   "asdf",
 					},
 				},
 			),
@@ -256,34 +244,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders:            nil,
-		},
-		{
-			description: "TTL error",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
-							ClientID:     "clientID",
-							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.mine",
-						},
-					}},
-				},
-			},
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "invalid",
-					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"authorization.ttl: time: invalid duration invalid"},
 		},
 		{
 			description: "external auth provider",
@@ -322,7 +282,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 						},
 						GitLabProvider:    "my-external",
 						SudoToken:         "asdf",
-						CacheTTL:          3 * time.Hour,
 						UseNativeUsername: false,
 					},
 				},
@@ -350,7 +309,6 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					SudoOp: gitlab.SudoProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
 						SudoToken:         "asdf",
-						CacheTTL:          3 * time.Hour,
 						UseNativeUsername: true,
 					},
 				},

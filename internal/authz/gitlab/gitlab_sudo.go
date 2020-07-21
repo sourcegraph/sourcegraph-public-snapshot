@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"net/http"
 	"net/url"
 	"strconv"
 	"time"
@@ -122,54 +121,6 @@ func (p *SudoProvider) ServiceID() string {
 
 func (p *SudoProvider) ServiceType() string {
 	return p.codeHost.ServiceType
-}
-
-// fetchProjVis fetches a repository's visibility with usr's credentials. It returns:
-// - whether the project is accessible to the user,
-// - the visibility if the repo is accessible (otherwise this is empty),
-// - whether the repository contents are accessible to usr, and
-// - any error encountered in fetching (not including an error due to the repository not being visible);
-//   if the error is non-nil, all other return values should be disregraded
-func (p *SudoProvider) fetchProjVis(ctx context.Context, sudo string, projID int) (
-	isAccessible bool, vis gitlab.Visibility, isContentAccessible bool, err error,
-) {
-	proj, err := p.clientProvider.GetPATClient(p.sudoToken, sudo).GetProject(ctx, gitlab.GetProjectOp{
-		ID:       projID,
-		CommonOp: gitlab.CommonOp{NoCache: true},
-	})
-	if err != nil {
-		return false, "", false, err
-	}
-
-	if proj.Visibility == gitlab.Public {
-		return true, proj.Visibility, true, nil
-	}
-
-	if sudo == "" {
-		return false, proj.Visibility, false, nil
-	}
-
-	// At this point, sudo is non-nil *and* project visibility is internal or private
-
-	if proj.Visibility == gitlab.Internal {
-		// All authenticated users can read the contents of all internal/public projects
-		// (https://docs.gitlab.com/ee/user/permissions.html).
-		return true, proj.Visibility, true, nil
-	}
-
-	// If project visibility is private and it's accessible to user, we still need to check if the user
-	// can read the repository contents (i.e., does not merely have "Guest" permissions).
-
-	if _, err := p.clientProvider.GetPATClient(p.sudoToken, sudo).ListTree(ctx, gitlab.ListTreeOp{
-		ProjID:   projID,
-		CommonOp: gitlab.CommonOp{NoCache: true},
-	}); err != nil {
-		if errCode := gitlab.HTTPErrorCode(err); errCode == http.StatusNotFound {
-			return true, proj.Visibility, false, nil
-		}
-		return false, "", false, err
-	}
-	return true, proj.Visibility, true, nil
 }
 
 // FetchAccount satisfies the authz.Provider interface. It iterates through the current list of

@@ -547,7 +547,7 @@ type GitLabAuthProvider struct {
 type GitLabAuthorization struct {
 	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 	IdentityProvider IdentityProvider `json:"identityProvider"`
-	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
+	// Ttl description: DEPRECATED: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
 	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
@@ -791,9 +791,9 @@ type NotifierWebhook struct {
 	Username    string `json:"username,omitempty"`
 }
 type OAuthIdentity struct {
-	// MaxBatchRequests description: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
+	// MaxBatchRequests description: DEPRECATED: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
-	// MinBatchingThreshold description: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
+	// MinBatchingThreshold description: DEPRECATED: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
 	Type                 string `json:"type"`
 }
