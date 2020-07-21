@@ -2,6 +2,7 @@
 package types
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -381,13 +382,13 @@ type Secret struct {
 	ID int32
 
 	// The table containing an object whose token is being encrypted.
-	SourceType string
+	SourceType sql.NullString
 
 	// The ID of the object in the SourceType table.
-	SourceID int32
+	SourceID sql.NullInt32
 
 	// KeyName represents a unique key for the case where we're storing key-value pairs.
-	KeyName string
+	KeyName sql.NullString
 
 	// Value contains the encrypted string
 	Value string

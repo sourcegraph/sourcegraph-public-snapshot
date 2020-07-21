@@ -63,14 +63,14 @@ func (s *secrets) DeleteBySource(ctx context.Context, sourceType string, sourceI
 		return Mocks.Secrets.DeleteBySource(ctx, sourceType, sourceID)
 	}
 
-	q :=
+	q := sqlf.Sprintf(
 		`DELETE FROM
 			secrets
 		WHERE
 			source_type=%s AND source_id=%d
-		`
+		`, sourceType, sourceID)
 
-	_, err := dbconn.Global.ExecContext(ctx, q, sourceType, sourceID)
+	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
@@ -85,7 +85,7 @@ func (s *secrets) getBySQL(ctx context.Context, query *sqlf.Query) (*types.Secre
 
 	for res.Next() {
 		var obj types.Secret
-		if err := res.Scan(&obj.ID, &obj.SourceType, &obj.SourceID, &obj.Value); err != nil {
+		if err := res.Scan(&obj.ID, &obj.SourceType, &obj.SourceID, &obj.KeyName, &obj.Value); err != nil {
 			return nil, err
 		}
 		results = append(results, &obj)
@@ -231,7 +231,7 @@ func (s *secrets) UpdateBySource(ctx context.Context, sourceType string, sourceI
 		`UPDATE
 			secrets
 		SET
-			value=$1
+			value=%s
 		WHERE
 			source_type=%s AND source_id=%d
 		`, value, sourceType, sourceID)
