@@ -840,10 +840,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			for _, c := range changesets {
 				c.SetDeleted()
 				c.UpdatedAt = clock.now()
-			}
 
-			if err := s.UpdateChangesets(ctx, changesets...); err != nil {
-				t.Fatal(err)
+				if err := s.UpdateChangeset(ctx, c); err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
@@ -1144,6 +1144,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(diff)
 		}
 
+		clock.add(1 * time.Second)
+		want = want[0:0]
+		have = have[0:0]
 		for _, c := range changesets {
 			c.Metadata = &gitlab.MergeRequest{ID: 1234, IID: 123}
 			c.ExternalServiceType = extsvc.TypeGitLab
@@ -1161,7 +1164,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatal(diff)
 		}
-
 	})
 }
 
@@ -1576,7 +1578,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		// Attach cs1 to both an open and closed campaign
 		openCampaignID := changesets[1].CampaignIDs[0]
 		changesets[0].CampaignIDs = []int64{closedCampaignID, openCampaignID}
-		err = s.UpdateChangesets(ctx, changesets[0])
+		err = s.UpdateChangeset(ctx, changesets[0])
 		if err != nil {
 			t.Fatal(err)
 		}

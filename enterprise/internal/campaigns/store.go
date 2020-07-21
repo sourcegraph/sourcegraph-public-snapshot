@@ -795,83 +795,117 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 
 // UpdateChangesets updates the given Changesets.
 func (s *Store) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
-	q, err := s.updateChangesetsQuery(cs)
+	for _, c := range cs {
+		if err := s.UpdateChangeset(ctx, c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// UpdateChangeset updates the given Changeset.
+func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error {
+	q, err := s.updateChangesetQuery(cs)
 	if err != nil {
 		return err
 	}
 
-	i := -1
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		i++
-		err = scanChangeset(cs[i], sc)
-		return cs[i].ID, 1, err
+		err = scanChangeset(cs, sc)
+		return cs.ID, 1, err
 	})
 }
 
-const updateChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
--- source: enterprise/internal/campaigns/store.go:UpdateChangesets
-changed AS (
-  UPDATE changesets
-  SET
-    repo_id               = batch.repo_id,
-    created_at            = batch.created_at,
-    updated_at            = batch.updated_at,
-    metadata              = batch.metadata,
-    campaign_ids          = batch.campaign_ids,
-    external_id           = batch.external_id,
-    external_service_type = batch.external_service_type,
-    external_branch       = batch.external_branch,
-    external_deleted_at   = batch.external_deleted_at,
-    external_updated_at   = batch.external_updated_at,
-    external_state        = batch.external_state,
-    external_review_state = batch.external_review_state,
-    external_check_state  = batch.external_check_state,
-    created_by_campaign   = batch.created_by_campaign,
-    added_to_campaign     = batch.added_to_campaign,
-    diff_stat_added       = batch.diff_stat_added,
-    diff_stat_changed     = batch.diff_stat_changed,
-    diff_stat_deleted     = batch.diff_stat_deleted,
-    sync_state            = batch.sync_state
-  FROM batch
-  WHERE changesets.id = batch.id
-  RETURNING changesets.*
-)
-` + batchChangesetsQuerySuffix
-
-const batchChangesetsQuerySuffix = `
-SELECT
-  changed.id,
-  changed.repo_id,
-  changed.created_at,
-  changed.updated_at,
-  changed.metadata,
-  changed.campaign_ids,
-  changed.external_id,
-  changed.external_service_type,
-  changed.external_branch,
-  changed.external_deleted_at,
-  changed.external_updated_at,
-  changed.external_state,
-  changed.external_review_state,
-  changed.external_check_state,
-  changed.created_by_campaign,
-  changed.added_to_campaign,
-  changed.diff_stat_added,
-  changed.diff_stat_changed,
-  changed.diff_stat_deleted,
-  changed.sync_state
-FROM changed
-LEFT JOIN batch ON batch.repo_id = changed.repo_id
-AND batch.external_id = changed.external_id
-ORDER BY batch.ordinality
+var updateChangesetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangeset
+UPDATE changesets
+SET (
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type,
+  external_branch,
+  external_deleted_at,
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state,
+  created_by_campaign,
+  added_to_campaign,
+  diff_stat_added,
+  diff_stat_changed,
+  diff_stat_deleted,
+  sync_state
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+WHERE id = %s
+RETURNING 
+  id,
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type,
+  external_branch,
+  external_deleted_at,
+  external_updated_at,
+  external_state,
+  external_review_state,
+  external_check_state,
+  created_by_campaign,
+  added_to_campaign,
+  diff_stat_added,
+  diff_stat_changed,
+  diff_stat_deleted,
+  sync_state
 `
 
-func (s *Store) updateChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, error) {
-	now := s.now()
-	for _, c := range cs {
-		c.UpdatedAt = now
+func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error) {
+	metadata, err := jsonbColumn(c.Metadata)
+	if err != nil {
+		return nil, err
 	}
-	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
+
+	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	syncState, err := json.Marshal(c.SyncState)
+	if err != nil {
+		return nil, err
+	}
+
+	c.UpdatedAt = s.now()
+
+	return sqlf.Sprintf(
+		updateChangesetQueryFmtstr,
+		c.RepoID,
+		c.CreatedAt,
+		c.UpdatedAt,
+		metadata,
+		campaignIDs,
+		nullStringColumn(c.ExternalID),
+		nullStringColumn(c.ExternalServiceType),
+		nullStringColumn(c.ExternalBranch),
+		nullTimeColumn(c.ExternalDeletedAt),
+		nullTimeColumn(c.ExternalUpdatedAt),
+		c.ExternalState,       // TODO: null column?
+		c.ExternalReviewState, // TODO: null column?
+		c.ExternalCheckState,  // TODO: null column?
+		c.CreatedByCampaign,
+		c.AddedToCampaign,
+		c.DiffStatAdded,
+		c.DiffStatChanged,
+		c.DiffStatDeleted,
+		syncState,
+		// ID
+		c.ID,
+	), nil
 }
 
 // GetChangesetEventOpts captures the query options needed for getting a ChangesetEvent
@@ -2780,9 +2814,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.UpdatedAt,
 		&metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
-		&t.ExternalID,
-		&t.ExternalServiceType,
-		&t.ExternalBranch,
+		&dbutil.NullString{S: &t.ExternalID},
+		&dbutil.NullString{S: &t.ExternalServiceType},
+		&dbutil.NullString{S: &t.ExternalBranch},
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
 		&dbutil.NullString{S: &externalState},
