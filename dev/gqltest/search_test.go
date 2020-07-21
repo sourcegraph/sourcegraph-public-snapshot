@@ -262,47 +262,36 @@ func TestSearch(t *testing.T) {
 
 	t.Run("global text search", func(t *testing.T) {
 		tests := []struct {
-			name              string
-			query             string
-			wantMinResults    int
-			wantMaxResults    int
-			wantMinMatchCount int64
+			name          string
+			query         string
+			zeroResult    bool
+			minMatchCount int64
 		}{
 			{
-				name:           "error",
-				query:          "error",
-				wantMinResults: 10,
-				wantMaxResults: -1,
+				name:  "error",
+				query: "error",
 			},
 			{
-				name:           "error count:1000",
-				query:          "error count:1000",
-				wantMinResults: 10,
-				wantMaxResults: -1,
+				name:  "error count:1000",
+				query: "error count:1000",
 			},
 			{
-				name:              "something with more than 1000 results and use count:1000",
-				query:             ". count:1000",
-				wantMinResults:    10,
-				wantMaxResults:    -1,
-				wantMinMatchCount: 1001,
+				name:          "something with more than 1000 results and use count:1000",
+				query:         ". count:1000",
+				minMatchCount: 1001,
 			},
 			{
-				name:           "regular expression without indexed search",
-				query:          "index:no patterntype:regexp ^func.*$",
-				wantMinResults: 10,
-				wantMaxResults: -1,
+				name:  "regular expression without indexed search",
+				query: "index:no patterntype:regexp ^func.*$",
 			},
 			{
-				name:           "fork:only",
-				query:          "fork:only router",
-				wantMinResults: 10,
-				wantMaxResults: -1,
+				name:  "fork:only",
+				query: "fork:only router",
 			},
 			{
-				name:           "fork:no",
-				query:          "fork:no FORK_SENTINEL",
-				wantMaxResults: 0,
+				name:       "fork:no",
+				query:      "fork:no FORK_SENTINEL",
+				zeroResult: true,
 			},
 		}
 		for _, test := range tests {
@@ -312,12 +301,18 @@ func TestSearch(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if test.wantMaxResults != -1 && len(results.Results) > test.wantMaxResults {
-					t.Fatalf("Want results to be less than %d but got %d", test.wantMaxResults, len(results.Results))
-				} else if len(results.Results) < test.wantMinResults {
-					t.Fatalf("Want at least %d results but got %d", test.wantMinResults, len(results.Results))
-				} else if results.MatchCount < test.wantMinMatchCount {
-					t.Fatalf("Want at least %d match count but got %d", test.wantMinMatchCount, results.MatchCount)
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+
+				if results.MatchCount < test.minMatchCount {
+					t.Fatalf("Want at least %d match count but got %d", test.minMatchCount, results.MatchCount)
 				}
 			})
 		}
