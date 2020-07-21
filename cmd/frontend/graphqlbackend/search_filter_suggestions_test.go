@@ -61,5 +61,4 @@ func TestSearchFilterSuggestions(t *testing.T) {
 			t.Errorf("got != want\ngot:  %v\nwant: %v", r, tt.want)
 		}
 	}
-
 }

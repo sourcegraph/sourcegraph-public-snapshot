@@ -291,7 +291,6 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 				} else {
 					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file", scoreDefault)
 				}
-
 			}
 		}
 	}
