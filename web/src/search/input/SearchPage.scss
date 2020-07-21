@@ -24,9 +24,13 @@
         max-width: 90%;
     }
 
+    &__cloud-tag-line{
+        margin-top:1rem;
+    }
+
     &__container {
         flex: 1 1 auto;
-        margin-top: 4rem;
+        margin-top: 1.5rem;
         width: 49rem;
         max-width: 90%;
         position: relative;
@@ -120,7 +124,18 @@
 .theme-light {
     .search-page {
         &__sign-in {
-            color: $color-light-text-4;
+            color: $gray-11;
+        }
+        &__cloud-tag-line{
+            color: $gray-11;
+        }
+    }
+}
+
+.theme-dark {
+    .search-page {
+        &__cloud-tag-line{
+            color: $gray-07;
         }
     }
 }
