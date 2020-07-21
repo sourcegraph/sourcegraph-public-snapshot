@@ -24,8 +24,8 @@
         max-width: 90%;
     }
 
-    &__cloud-tag-line{
-        margin-top:1rem;
+    &__cloud-tag-line {
+        margin-top: 1rem;
     }
 
     &__container {
@@ -126,7 +126,7 @@
         &__sign-in {
             color: $gray-11;
         }
-        &__cloud-tag-line{
+        &__cloud-tag-line {
             color: $gray-11;
         }
     }
@@ -134,7 +134,7 @@
 
 .theme-dark {
     .search-page {
-        &__cloud-tag-line{
+        &__cloud-tag-line {
             color: $gray-07;
         }
     }
