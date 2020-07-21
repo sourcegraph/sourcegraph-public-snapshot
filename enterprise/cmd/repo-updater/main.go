@@ -83,7 +83,7 @@ func enterpriseInit(
 
 // startBackgroundPermsSync sets up background permissions syncing.
 func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer) {
-	globals.WatchPermissionsBackgroundSync()
+	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
