@@ -450,7 +450,7 @@ type GitHubAuthProvider struct {
 
 // GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
-	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
+	// Ttl description: DEPRECATED: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
 	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
