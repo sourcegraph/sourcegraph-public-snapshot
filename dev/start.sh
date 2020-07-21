@@ -81,11 +81,6 @@ export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
 # Enable sharded indexed search mode
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
 
-# webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
-# until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
-# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
-# having port 3080.
-export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
 
 export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
@@ -93,25 +88,33 @@ export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-./dev/global-settings.json}
 export SITE_CONFIG_ALLOW_EDITS=true
 export GLOBAL_SETTINGS_ALLOW_EDITS=true
 
-# WebApp
-export NODE_ENV=development
-export NODE_OPTIONS="--max_old_space_size=4096"
+yarn_pid=''
+if [ "$WARRANTY" != "void" ]; then
+  # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
+  # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
+  # Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
+  # having port 3080.
+  export SRC_HTTP_ADDR=":3082"
+
+  # WebApp
+  export NODE_ENV=development
+  export NODE_OPTIONS="--max_old_space_size=4096"
+
+  # Ensure ctags image is built
+  ./cmd/symbols/build-ctags.sh
+
+  # Make sure chokidar-cli is installed in the background
+  printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
+  [ -n "${OFFLINE-}" ] || {
+    yarn --no-progress &
+    yarn_pid="$!"
+  }
+fi
 
 # Ensure SQLite for symbols is built
 ./dev/libsqlite3-pcre/build.sh
 LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
 export LIBSQLITE3_PCRE
-
-# Ensure ctags image is built
-./cmd/symbols/build-ctags.sh
-
-# Make sure chokidar-cli is installed in the background
-printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
-yarn_pid=''
-[ -n "${OFFLINE-}" ] || {
-  yarn --no-progress &
-  yarn_pid="$!"
-}
 
 if ! ./dev/go-install.sh; then
   # let Yarn finish, otherwise we get Yarn diagnostics AFTER the
@@ -133,12 +136,14 @@ type ulimit >/dev/null && ulimit -n 10000 || true
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
-# Build once in the background to make sure editor codeintel works
-# This is fast if no changes were made.
-# Don't fail if it errors as this is only for codeintel, not for the build.
-trap 'kill $build_ts_pid; exit' EXIT
-(yarn run build-ts || true) &
-build_ts_pid="$!"
+if [ "$WARRANTY" != "void" ]; then
+  # Build once in the background to make sure editor codeintel works
+  # This is fast if no changes were made.
+  # Don't fail if it errors as this is only for codeintel, not for the build.
+  trap 'kill $build_ts_pid; exit' EXIT
+  (yarn run build-ts || true) &
+  build_ts_pid="$!"
+fi
 
 export PROCFILE=${PROCFILE:-dev/Procfile}
 
@@ -161,6 +166,14 @@ while [[ "$#" -gt 0 ]]; do
   esac
   shift
 done
+
+if [ "$WARRANTY" == "void" ]; then
+  if [ -n "${except}" ]; then
+    except="${except},web"
+  else
+    except="web"
+  fi
+fi
 
 if [ -n "${only}" ] || [ -n "${except}" ]; then
   services=${only:-$except}
