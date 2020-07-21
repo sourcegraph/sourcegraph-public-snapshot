@@ -465,6 +465,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		descr                     string
 		searchResults             []SearchResultResolver
 		expectedDynamicFilterStrs map[string]struct{}
+		globbing                  bool
 	}
 
 	tests := []testCase{
@@ -525,11 +526,81 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`lang:"ignore list"`: {},
 			},
 		},
+
+		// globbing
+
+		{
+			descr:         "single repo match",
+			searchResults: []SearchResultResolver{repoMatch},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`: {},
+			},
+			globbing: true,
+		},
+
+		{
+			descr:         "single file match without revision in query",
+			searchResults: []SearchResultResolver{fileMatch},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`: {},
+				`lang:markdown`: {},
+			},
+			globbing: true,
+		},
+
+		{
+			descr:         "single file match with specified revision",
+			searchResults: []SearchResultResolver{fileMatchRev},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo@develop3.0`: {},
+				`lang:markdown`:            {},
+			},
+			globbing: true,
+		},
+		{
+			descr:         "file match from a language with two file extensions, using first extension",
+			searchResults: []SearchResultResolver{tsFileMatch},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`:   {},
+				`lang:typescript`: {},
+			},
+			globbing: true,
+		},
+		{
+			descr:         "file match from a language with two file extensions, using second extension",
+			searchResults: []SearchResultResolver{tsxFileMatch},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`:   {},
+				`lang:typescript`: {},
+			},
+			globbing: true,
+		},
+
+		// If there are no search results, no filters should be displayed.
+		{
+			descr:                     "no results",
+			searchResults:             []SearchResultResolver{},
+			expectedDynamicFilterStrs: map[string]struct{}{},
+			globbing:                  true,
+		},
+		{
+			descr:         "values containing spaces are quoted",
+			searchResults: []SearchResultResolver{ignoreListFileMatch},
+			expectedDynamicFilterStrs: map[string]struct{}{
+				`repo:testRepo`:      {},
+				`lang:"ignore list"`: {},
+			},
+			globbing: true,
+		},
 	}
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
 
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			actualDynamicFilters := (&SearchResultsResolver{SearchResults: test.searchResults}).DynamicFilters()
+			mockDecodedViewerFinalSettings.SearchGlobbing = &test.globbing
+			actualDynamicFilters := (&SearchResultsResolver{SearchResults: test.searchResults}).DynamicFilters(context.Background())
 			actualDynamicFilterStrs := make(map[string]struct{})
 
 			for _, filter := range actualDynamicFilters {
