@@ -1,7 +1,7 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'

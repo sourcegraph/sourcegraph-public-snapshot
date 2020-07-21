@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { Subject, Subscription, combineLatest } from 'rxjs'
 import { switchMap } from 'rxjs/operators'

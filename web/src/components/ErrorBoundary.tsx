@@ -1,5 +1,5 @@
 import * as sentry from '@sentry/browser'
-import H from 'history'
+import * as H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
