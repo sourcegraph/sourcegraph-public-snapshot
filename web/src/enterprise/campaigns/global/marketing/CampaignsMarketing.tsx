@@ -20,7 +20,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
 
             <div className="text-center">
                 <iframe
-                    className="percy-hide"
+                    className="percy-hide chromatic-ignore"
                     width="560"
                     height="315"
                     src="https://www.youtube.com/embed/aqcCrqRB17w"

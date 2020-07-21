@@ -18,6 +18,7 @@ import { IGraphQLResponseError } from '../../graphql/schema'
 import { readEnvironmentBoolean } from '../utils'
 import { ResourceType } from 'puppeteer'
 import * as mime from 'mime-types'
+import { asError } from '../../util/errors'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -101,7 +102,16 @@ export const createSharedIntegrationTestContext = async <
     if (record) {
         await mkdirp(recordingsDirectory)
     }
-    const requestResourceTypes: ResourceType[] = ['xhr', 'fetch', 'document', 'script', 'stylesheet', 'image', 'font']
+    const requestResourceTypes: ResourceType[] = [
+        'xhr',
+        'fetch',
+        'document',
+        'script',
+        'stylesheet',
+        'image',
+        'font',
+        'other', // Favicon
+    ]
     const polly = new Polly(snakeCase(currentTest.title), {
         adapters: ['puppeteer'],
         adapterOptions: {
@@ -133,20 +143,37 @@ export const createSharedIntegrationTestContext = async <
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()
 
+    // Avoid 404 error logs from missing favicon
+    server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+        response
+            .status(302)
+            .setHeader('Location', new URL('/.assets/img/sourcegraph-mark.svg', driver.sourcegraphBaseUrl).href)
+            .send('')
+    })
+
     // Serve assets from disk
     server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
         const asset = request.params.path
-        const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
-            // Polly doesn't support Buffers or streams at the moment
-            encoding: 'utf-8',
-        })
-        const contentType = mime.contentType(path.basename(asset))
-        if (contentType) {
-            response.type(contentType)
-        }
         // Cache all responses for the entire lifetime of the test run
         response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-        response.send(content)
+        try {
+            const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
+                // Polly doesn't support Buffers or streams at the moment
+                encoding: 'utf-8',
+            })
+            const contentType = mime.contentType(path.basename(asset))
+            if (contentType) {
+                response.type(contentType)
+            }
+            response.send(content)
+        } catch (error) {
+            if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
+                response.sendStatus(404)
+            } else {
+                console.error(error)
+                response.status(500).send(asError(error).message)
+            }
+        }
     })
 
     // GraphQL requests are not handled by HARs, but configured per-test.

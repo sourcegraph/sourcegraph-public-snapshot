@@ -187,7 +187,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_7d`)
+- _frontend: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -200,7 +200,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_frontend_provisioning_container_memory_usage_7d`)
+- _frontend: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_frontend_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -213,7 +213,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_5m`)
+- _frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_frontend_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -224,7 +224,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 90%+ container memory usage (5m average) by instance_ (`warning_frontend_provisioning_container_memory_usage_5m`)
+- _frontend: 90%+ container memory usage (5m maximum) by instance_ (`warning_frontend_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -354,7 +354,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_7d`)
+- _gitserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -367,7 +367,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
+- _gitserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -380,7 +380,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_5m`)
+- _gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_gitserver_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -391,7 +391,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container memory usage (5m average) by instance_ (`warning_gitserver_provisioning_container_memory_usage_5m`)
+- _gitserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -439,7 +439,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_7d`)
+- _github-proxy: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -452,7 +452,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_7d`)
+- _github-proxy: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -465,7 +465,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_5m`)
+- _github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_github-proxy_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -476,7 +476,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container memory usage (5m average) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_5m`)
+- _github-proxy: 90%+ container memory usage (5m maximum) by instance_ (`warning_github-proxy_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -553,7 +553,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d`)
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -566,7 +566,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d`)
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -579,7 +579,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_5m`)
+- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -590,7 +590,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m average) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_5m`)
+- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -654,7 +654,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d`)
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -667,7 +667,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_7d`)
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -680,7 +680,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_5m`)
+- _precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-worker_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -691,7 +691,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container memory usage (5m average) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_5m`)
+- _precise-code-intel-worker: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-worker_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -755,7 +755,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d`)
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -768,7 +768,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d`)
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -781,7 +781,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m`)
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -792,7 +792,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container memory usage (5m average) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m`)
+- _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -856,7 +856,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_7d`)
+- _query-runner: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -869,7 +869,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_query-runner_provisioning_container_memory_usage_7d`)
+- _query-runner: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_query-runner_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -882,7 +882,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_5m`)
+- _query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_query-runner_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -893,7 +893,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container memory usage (5m average) by instance_ (`warning_query-runner_provisioning_container_memory_usage_5m`)
+- _query-runner: 90%+ container memory usage (5m maximum) by instance_ (`warning_query-runner_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -957,7 +957,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_7d`)
+- _replacer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -970,7 +970,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_replacer_provisioning_container_memory_usage_7d`)
+- _replacer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -983,7 +983,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_5m`)
+- _replacer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -994,7 +994,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: 90%+ container memory usage (5m average) by instance_ (`warning_replacer_provisioning_container_memory_usage_5m`)
+- _replacer: 90%+ container memory usage (5m maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1058,7 +1058,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_7d`)
+- _repo-updater: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1071,7 +1071,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_7d`)
+- _repo-updater: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1084,7 +1084,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_5m`)
+- _repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_repo-updater_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1095,7 +1095,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container memory usage (5m average) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_5m`)
+- _repo-updater: 90%+ container memory usage (5m maximum) by instance_ (`warning_repo-updater_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1159,7 +1159,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_7d`)
+- _searcher: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1172,7 +1172,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_searcher_provisioning_container_memory_usage_7d`)
+- _searcher: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_searcher_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1185,7 +1185,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_5m`)
+- _searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_searcher_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1196,7 +1196,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: 90%+ container memory usage (5m average) by instance_ (`warning_searcher_provisioning_container_memory_usage_5m`)
+- _searcher: 90%+ container memory usage (5m maximum) by instance_ (`warning_searcher_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1260,7 +1260,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_7d`)
+- _symbols: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1273,7 +1273,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_symbols_provisioning_container_memory_usage_7d`)
+- _symbols: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_symbols_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1286,7 +1286,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_5m`)
+- _symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_symbols_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1297,7 +1297,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: 90%+ container memory usage (5m average) by instance_ (`warning_symbols_provisioning_container_memory_usage_5m`)
+- _symbols: 90%+ container memory usage (5m maximum) by instance_ (`warning_symbols_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1345,7 +1345,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_7d`)
+- _syntect-server: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1358,7 +1358,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_7d`)
+- _syntect-server: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1371,7 +1371,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_5m`)
+- _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_syntect-server_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1382,7 +1382,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container memory usage (5m average) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_5m`)
+- _syntect-server: 90%+ container memory usage (5m maximum) by instance_ (`warning_syntect-server_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1430,7 +1430,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_7d`)
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1443,7 +1443,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_7d`)
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1456,7 +1456,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_5m`)
+- _zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-indexserver_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1467,7 +1467,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container memory usage (5m average) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_5m`)
+- _zoekt-indexserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-indexserver_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
@@ -1515,7 +1515,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (7d average) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_7d`)
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
@@ -1528,7 +1528,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (7d average) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_7d`)
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
@@ -1541,7 +1541,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container cpu usage total (5m average) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_5m`)
+- _zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_zoekt-webserver_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
@@ -1552,7 +1552,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container memory usage (5m average) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_5m`)
+- _zoekt-webserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_zoekt-webserver_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 

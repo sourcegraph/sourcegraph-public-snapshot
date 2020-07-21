@@ -82,6 +82,7 @@ require (
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
+	github.com/jordan-wright/email v0.0.0-20200602115436-fd8a7622303e
 	github.com/json-iterator/go v1.1.10
 	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
@@ -134,7 +135,6 @@ require (
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sirupsen/logrus v1.6.0 // indirect
-	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/codeintelutils v0.0.0-20200706141440-54ddac67b5b6
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
@@ -175,7 +175,6 @@ require (
 	google.golang.org/api v0.28.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/grpc v1.30.0 // indirect
-	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.3.0
@@ -199,7 +198,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200714221025-dea986a54d01
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200720095407-6597aebe357e
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
