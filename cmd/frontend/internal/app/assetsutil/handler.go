@@ -2,6 +2,7 @@
 package assetsutil
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,6 +18,32 @@ import (
 // Mount mounts the static asset handler.
 func Mount(mux *http.ServeMux) {
 	const urlPathPrefix = "/.assets"
+
+	if true {
+		respHeaders := map[string]struct{}{
+			"Content-Type": {},
+		}
+
+		mux.Handle(urlPathPrefix+"/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			u := *(r.URL)
+			u.Scheme = "https"
+			u.Host = "sourcegraph.com"
+			resp, err := http.Get(u.String())
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			defer resp.Body.Close()
+			h := w.Header()
+			for k, v := range resp.Header {
+				if _, ok := respHeaders[k]; ok {
+					h[k] = v
+				}
+			}
+			io.Copy(w, resp.Body)
+		}))
+		return
+	}
 
 	fs := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{})
 	mux.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
