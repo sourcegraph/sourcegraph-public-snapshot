@@ -44,15 +44,18 @@ func TestAllByKeyValue(t *testing.T) {
 		t.Fatalf("Expected %s received %s", newVal, s.Value)
 	}
 
-	Secrets.DeleteByKeyName(ctx, key)
-	s, err = Secrets.GetByKeyName(ctx, key)
+	err = Secrets.DeleteByKeyName(ctx, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Secrets.GetByKeyName(ctx, key)
 	if err == nil {
 		t.Fatal(err)
 	}
 }
 
 func TestAllByKeySource(t *testing.T) {
-
 	if testing.Short() {
 		t.Skip()
 	}
@@ -90,15 +93,18 @@ func TestAllByKeySource(t *testing.T) {
 		t.Fatalf("Expected %s received %s", newVal, s.Value)
 	}
 
-	Secrets.DeleteBySource(ctx, sourceType, sourceID)
-	s, err = Secrets.GetBySource(ctx, sourceType, sourceID)
+	err = Secrets.DeleteBySource(ctx, sourceType, sourceID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Secrets.GetBySource(ctx, sourceType, sourceID)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestAllByID(t *testing.T) {
-
 	if testing.Short() {
 		t.Skip()
 	}
@@ -113,7 +119,7 @@ func TestAllByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := Secrets.GetByKeyName(ctx, key)
+	s, _ := Secrets.GetByKeyName(ctx, key)
 	sec, err := Secrets.GetByID(ctx, s.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -133,8 +139,12 @@ func TestAllByID(t *testing.T) {
 		t.Fatalf("Expected %s received %s", newVal, s.Value)
 	}
 
-	Secrets.DeleteByID(ctx, sec.ID)
-	s, err = Secrets.GetByID(ctx, sec.ID)
+	err = Secrets.DeleteByID(ctx, sec.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Secrets.GetByID(ctx, sec.ID)
 	if err == nil { // to fail this would error since we're removing the object
 		t.Fatal(err)
 	}
