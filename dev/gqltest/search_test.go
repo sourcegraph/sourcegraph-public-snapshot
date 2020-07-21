@@ -204,6 +204,62 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
+	t.Run("repository text search", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+		}{
+			{
+				name:  "repo search by name, nonzero result",
+				query: "repo:go-diff$",
+			},
+			{
+				name:  "repo search by name, case yes, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes`,
+			},
+			{
+				name:  "true is an alias for yes when fork is set",
+				query: `repo:github\.com/sgtest/mux fork:true`,
+			},
+			{
+				name:  "non-master branch, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes`,
+			},
+			{
+				name:  "indexed multiline search, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes`,
+			},
+			{
+				name:  "unindexed multiline search, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes`,
+			},
+			{
+				name:       "random characters, zero result",
+				query:      `repo:^github\.com/sgtest/java-langserver$ doesnot734734743734743exist`,
+				zeroResult: true,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
+
 	t.Run("global text search", func(t *testing.T) {
 		tests := []struct {
 			name              string

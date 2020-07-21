@@ -295,6 +295,7 @@ type panelOptions struct {
 	minAuto      bool
 	legendFormat string
 	unitType     UnitType
+	interval     string
 }
 
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
@@ -328,6 +329,11 @@ func (p panelOptions) LegendFormat(format string) panelOptions {
 // Unit sets the panel's Y axis unit type.
 func (p panelOptions) Unit(t UnitType) panelOptions {
 	p.unitType = t
+	return p
+}
+
+func (p panelOptions) Interval(ms int) panelOptions {
+	p.interval = fmt.Sprintf("%dms", ms)
 	return p
 }
 
@@ -566,6 +572,7 @@ func (c *Container) dashboard() *sdk.Board {
 				panel.AddTarget(&sdk.Target{
 					Expr:         o.Query,
 					LegendFormat: opt.legendFormat,
+					Interval:     opt.interval,
 				})
 				if rowPanel != nil && group.Hidden {
 					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)

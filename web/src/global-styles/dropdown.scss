@@ -1,17 +1,3 @@
-$dropdown-bg: var(--dropdown-bg);
-$dropdown-border-color: var(--dropdown-border-color);
-$dropdown-divider-bg: var(--border-color);
-$dropdown-link-color: var(--body-color);
-$dropdown-link-hover-color: var(--body-color);
-$dropdown-link-hover-bg: var(--dropdown-link-hover-bg);
-$dropdown-link-active-color: #ffffff;
-$dropdown-link-active-bg: var(--primary);
-$dropdown-link-disabled-color: var(--text-muted);
-$dropdown-header-color: var(--dropdown-header-color);
-$dropdown-item-padding-y: 0.25rem;
-$dropdown-item-padding-x: 0.5rem;
-$dropdown-padding-y: $dropdown-item-padding-y;
-
 @import 'bootstrap/scss/dropdown';
 
 .dropdown-divider {

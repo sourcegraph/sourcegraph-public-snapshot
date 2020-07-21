@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": "^v14.4.0",
+    "node": "^v14.5.0",
     "yarn": "^1.10.1"
   },
   "scripts": {
@@ -268,7 +268,7 @@
     "@sourcegraph/extension-api-types": "link:packages/@sourcegraph/extension-api-types",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
-    "bootstrap": "^4.4.1",
+    "bootstrap": "^4.5.0",
     "classnames": "^2.2.6",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",

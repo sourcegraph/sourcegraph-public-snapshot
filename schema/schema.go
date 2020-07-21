@@ -617,8 +617,6 @@ type GitLabRateLimit struct {
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
-	// Blacklist description: DEPRECATED. Will be removed in 3.19. Use 'exclude' patterns instead. Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.
-	Blacklist string `json:"blacklist,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({"name": "foo"}).
 	Exclude []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
 	// Host description: Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).
@@ -934,7 +932,7 @@ type SAMLAuthProvider struct {
 type SMTPServerConfig struct {
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
-	// DisableTLS description: Disable TLS verification - only compatible with observability.alerts today, see https://github.com/sourcegraph/sourcegraph/issues/10702
+	// DisableTLS description: Disable TLS verification
 	DisableTLS bool `json:"disableTLS,omitempty"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
 	Domain string `json:"domain,omitempty"`

@@ -68,7 +68,7 @@ exports[`CampaignsUserMarketingPage renders for disabled 1`] = `
         <iframe
           allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen={true}
-          className="percy-hide"
+          className="percy-hide chromatic-ignore"
           frameBorder="0"
           height="315"
           src="https://www.youtube.com/embed/aqcCrqRB17w"
@@ -234,7 +234,7 @@ exports[`CampaignsUserMarketingPage renders for enabled 1`] = `
         <iframe
           allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen={true}
-          className="percy-hide"
+          className="percy-hide chromatic-ignore"
           frameBorder="0"
           height="315"
           src="https://www.youtube.com/embed/aqcCrqRB17w"

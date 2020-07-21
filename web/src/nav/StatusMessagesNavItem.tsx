@@ -213,7 +213,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             <ButtonDropdown
                 isOpen={this.state.isOpen}
                 toggle={this.toggleIsOpen}
-                className="nav-link py-0 px-0 percy-hide"
+                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
             >
                 <DropdownToggle caret={false} className="btn btn-link" nav={true}>
                     {this.renderIcon()}

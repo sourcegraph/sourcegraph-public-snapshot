@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PageTitle } from '../components/PageTitle'
-import H from 'history'
+import * as H from 'history'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { getView } from '../../../shared/src/api/client/services/viewService'

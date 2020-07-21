@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'

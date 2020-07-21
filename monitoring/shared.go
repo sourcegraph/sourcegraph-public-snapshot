@@ -84,7 +84,7 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -99,7 +99,7 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -112,11 +112,11 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "provisioning_container_cpu_usage_5m",
-		Description:     "container cpu usage total (5m average) across all cores by instance",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
+		Description:     "container cpu usage total (5m maximum) across all cores by instance",
+		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -127,11 +127,11 @@ var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) O
 var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "provisioning_container_memory_usage_5m",
-		Description:     "container memory usage (5m average) by instance",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
+		Description:     "container memory usage (5m maximum) by instance",
+		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -144,8 +144,8 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 var sharedProvisioningCPUUsage7d sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "provisioning_container_cpu_usage_7d",
-		Description:     "container cpu usage total (7d average) across all cores by instance",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
+		Description:     "container cpu usage total (7d maximum) across all cores by instance",
+		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
@@ -161,8 +161,8 @@ var sharedProvisioningCPUUsage7d sharedObservable = func(containerName string) O
 var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "provisioning_container_memory_usage_7d",
-		Description:     "container memory usage (7d average) by instance",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
+		Description:     "container memory usage (7d maximum) by instance",
+		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[7d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),

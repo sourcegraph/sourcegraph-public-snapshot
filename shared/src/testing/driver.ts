@@ -778,7 +778,8 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
                         !message.text().includes('Download the React DevTools') &&
                         !message.text().includes('[HMR]') &&
                         !message.text().includes('[WDS]') &&
-                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                        !message.text().includes('Warning: componentWillReceiveProps has been renamed') &&
+                        !message.text().includes('React-Hot-Loader')
                 ),
                 // Immediately format remote handles to strings, but maintain order.
                 map(formatPuppeteerConsoleMessage),

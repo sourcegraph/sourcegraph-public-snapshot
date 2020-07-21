@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React, { useCallback, useState, useMemo } from 'react'
-import H from 'history'
+import * as H from 'history'
 import { Form } from '../../../components/Form'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { querySearchResultsStats } from './backend'
