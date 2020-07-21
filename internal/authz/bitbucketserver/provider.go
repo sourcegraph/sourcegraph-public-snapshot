@@ -34,8 +34,6 @@ type Provider struct {
 
 var _ authz.Provider = (*Provider)(nil)
 
-var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }
-
 // NewProvider returns a new Bitbucket Server authorization provider that uses
 // the given bitbucketserver.Client to talk to a Bitbucket Server API that is
 // the source of truth for permissions. It assumes usernames of Sourcegraph accounts

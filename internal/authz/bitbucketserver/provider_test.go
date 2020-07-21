@@ -463,14 +463,6 @@ type codeHost struct {
 	*extsvc.CodeHost
 }
 
-func (h codeHost) externalRepo(r *bitbucketserver.Repo) api.ExternalRepoSpec {
-	return api.ExternalRepoSpec{
-		ServiceType: h.ServiceType,
-		ServiceID:   h.ServiceID,
-		ID:          strconv.Itoa(r.ID),
-	}
-}
-
 func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc.Account {
 	bs := marshalJSON(u)
 	return &extsvc.Account{
