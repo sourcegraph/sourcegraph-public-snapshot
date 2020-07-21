@@ -167,6 +167,8 @@ func gitInitRepos(t *testing.T, names ...string) string {
 }
 
 func TestIgnoreGitSubmodules(t *testing.T) {
+	t.Skipf("This test is disabled because it was identified as flaky. See https://github.com/sourcegraph/sourcegraph/issues/12351.")
+
 	root, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
