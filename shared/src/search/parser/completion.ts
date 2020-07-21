@@ -52,32 +52,35 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
         sortText: `0${index}`,
     }))
 
-const insertText = (name: string, isFilterValue: boolean, globbing: boolean, filter: string): string => {
-    const text = globbing ? name : `^${escapeRegExp(name)}$`
-    return isFilterValue ? text : `${filter}:${text}`
-}
-
 const repositoryToCompletion = (
     { name }: IRepository,
     options: { isFilterValue: boolean; globbing: boolean }
-): PartialCompletionItem => ({
-    label: name,
-    kind: repositoryCompletionItemKind,
-    insertText: insertText(name, options.isFilterValue, options.globbing, 'repo'),
-    filterText: name,
-    detail: options.isFilterValue ? undefined : 'Repository',
-})
+): PartialCompletionItem => {
+    let insertText = options.globbing ? name : `^${escapeRegExp(name)}$`
+    insertText = (options.isFilterValue ? insertText : `${FilterType.repo}:${insertText}`) + ' '
+    return {
+        label: name,
+        kind: repositoryCompletionItemKind,
+        insertText,
+        filterText: name,
+        detail: options.isFilterValue ? undefined : 'Repository',
+    }
+}
 
 const fileToCompletion = (
     { name, path, repository, isDirectory }: IFile,
     options: { isFilterValue: boolean; globbing: boolean }
-): PartialCompletionItem => ({
-    label: name,
-    kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
-    insertText: insertText(name, options.isFilterValue, options.globbing, 'file'),
-    filterText: name,
-    detail: `${path} - ${repository.name}`,
-})
+): PartialCompletionItem => {
+    let insertText = options.globbing ? path : `^${escapeRegExp(name)}$`
+    insertText = (options.isFilterValue ? insertText : `${FilterType.file}:${insertText}`) + ' '
+    return {
+        label: name,
+        kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
+        insertText,
+        filterText: name,
+        detail: `${path} - ${repository.name}`,
+    }
+}
 
 /**
  * Maps Sourcegraph SymbolKinds to Monaco CompletionItemKinds.
