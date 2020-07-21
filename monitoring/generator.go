@@ -104,6 +104,25 @@ func (r Row) validate() error {
 	return nil
 }
 
+// ObservableOwner denotes a team that owns an Observable. The current teams are described in
+// the handbook: https://about.sourcegraph.com/handbook/engineering/2021_org
+type ObservableOwner string
+
+const (
+	// Core Products teams
+	ObservableOwnerSearch               ObservableOwner = "search"
+	ObservableOwnerCampaigns            ObservableOwner = "campaigns"
+	ObservableOwnerCodeIntel            ObservableOwner = "code-intel"
+	ObservableOwnerExtensibility        ObservableOwner = "extensibility"
+	ObservableOwnerCodeHostIntegrations ObservableOwner = "code-host-integrations"
+
+	// Core Services teams
+	ObservableOwnerBackendInfrastructure ObservableOwner = "backend-infrastructure"
+	ObservableOwnerDistribution          ObservableOwner = "distribution"
+	ObservableOwnerSecurity              ObservableOwner = "security"
+	ObservableOwnerWebInfrastructure     ObservableOwner = "web-infrastructure"
+)
+
 // Observable describes a metric about a container that can be observed. For example, memory usage.
 type Observable struct {
 	// Name is a short and human-readable lower_snake_case name describing what is being observed.
@@ -137,6 +156,9 @@ type Observable struct {
 	// 	"P90 search latency"
 	//
 	Description string
+
+	// Owner indicates the team that owns any alerts associated with this Observable.
+	Owner ObservableOwner
 
 	// Query is the actual Prometheus query that should be observed.
 	Query string
@@ -219,6 +241,9 @@ func (o Observable) validate() error {
 		if _, err := goMarkdown(o.PossibleSolutions); err != nil {
 			return fmt.Errorf("PossibleSolutions: %v", err)
 		}
+	}
+	if o.Owner == "" {
+		return errors.New("Observable.Owner must be defined")
 	}
 	return nil
 }
@@ -650,6 +675,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							"level":        level,
 							"service_name": c.Name,
 							"description":  description,
+							"owner":        string(o.Owner),
 						}
 					}
 
