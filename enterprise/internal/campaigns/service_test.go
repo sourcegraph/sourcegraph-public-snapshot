@@ -195,7 +195,15 @@ func TestService(t *testing.T) {
 	}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not a site-admin")
+	}
+
 	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user is admin, want non-admin")
+	}
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
@@ -234,13 +242,13 @@ func TestService(t *testing.T) {
 	}
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		patchSet := &campaigns.PatchSet{UserID: admin.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(user.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID, patchSet.ID)
 		svc := NewServiceWithClock(store, cf, clock)
 
 		// Without Patches it should fail
@@ -282,7 +290,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		patchSet := &campaigns.PatchSet{UserID: admin.ID}
 		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
 			t.Fatal(err)
 		}
@@ -292,7 +300,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(user.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID, patchSet.ID)
 
 		svc := NewServiceWithClock(store, cf, clock)
 
@@ -340,7 +348,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		patchSet := &campaigns.PatchSet{UserID: admin.ID}
 		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
 			t.Fatal(err)
 		}
@@ -350,7 +358,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(user.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID, patchSet.ID)
 
 		svc := NewServiceWithClock(store, cf, clock)
 
@@ -402,7 +410,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		patchSet := &campaigns.PatchSet{UserID: admin.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
 			t.Fatal(err)
@@ -415,7 +423,7 @@ func TestService(t *testing.T) {
 			}
 		}
 
-		campaign := testCampaign(user.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID, patchSet.ID)
 		svc := NewServiceWithClock(store, cf, clock)
 
 		err = svc.CreateCampaign(ctx, campaign)
@@ -423,7 +431,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otherCampaign := testCampaign(user.ID, patchSet.ID)
+		otherCampaign := testCampaign(admin.ID, patchSet.ID)
 		err = svc.CreateCampaign(ctx, otherCampaign)
 		if err != ErrPatchSetDuplicate {
 			t.Fatal("no error even though another campaign has same patch set")
@@ -433,7 +441,7 @@ func TestService(t *testing.T) {
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
 		svc := NewServiceWithClock(store, cf, clock)
 
-		campaign := testCampaign(user.ID, 0)
+		campaign := testCampaign(admin.ID, 0)
 		if err = store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -513,7 +521,7 @@ func TestService(t *testing.T) {
 		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
-			cs := &campaigns.ChangesetSpec{RepoID: r.ID, UserID: user.ID}
+			cs := &campaigns.ChangesetSpec{RepoID: r.ID, UserID: admin.ID}
 			if err := store.CreateChangesetSpec(ctx, cs); err != nil {
 				t.Fatal(err)
 			}
@@ -521,21 +529,26 @@ func TestService(t *testing.T) {
 			changesetSpecRandIDs = append(changesetSpecRandIDs, cs.RandID)
 		}
 
+		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+
 		t.Run("success", func(t *testing.T) {
 			opts := CreateCampaignSpecOpts{
-				UserID:               user.ID,
-				NamespaceUserID:      user.ID,
+				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawCampaignSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			spec, err := svc.CreateCampaignSpec(ctx, opts)
+			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			if spec.ID == 0 {
 				t.Fatalf("CampaignSpec ID is 0")
+			}
+
+			if have, want := spec.UserID, admin.ID; have != want {
+				t.Fatalf("UserID is %d, want %d", have, want)
 			}
 
 			var wantFields campaigns.CampaignSpecFields
@@ -561,12 +574,11 @@ func TestService(t *testing.T) {
 
 		t.Run("success with YAML raw spec", func(t *testing.T) {
 			opts := CreateCampaignSpecOpts{
-				UserID:          user.ID,
-				NamespaceUserID: user.ID,
+				NamespaceUserID: admin.ID,
 				RawSpec:         ct.TestRawCampaignSpecYAML,
 			}
 
-			spec, err := svc.CreateCampaignSpec(ctx, opts)
+			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -590,29 +602,80 @@ func TestService(t *testing.T) {
 			ct.AuthzFilterRepos(t, changesetSpecs[0].RepoID)
 
 			opts := CreateCampaignSpecOpts{
-				UserID:               user.ID,
-				NamespaceUserID:      user.ID,
+				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawCampaignSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if _, err := svc.CreateCampaignSpec(ctx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
-
 		})
 
 		t.Run("invalid changesetspec id", func(t *testing.T) {
 			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
 			opts := CreateCampaignSpecOpts{
-				UserID:               user.ID,
-				NamespaceUserID:      user.ID,
+				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawCampaignSpec,
 				ChangesetSpecRandIDs: containsInvalidID,
 			}
 
-			if _, err := svc.CreateCampaignSpec(ctx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
+			}
+		})
+
+		t.Run("namespace user is not admin and not creator", func(t *testing.T) {
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID: admin.ID,
+				RawSpec:         ct.TestRawCampaignSpecYAML,
+			}
+
+			_, err := svc.CreateCampaignSpec(userCtx, opts)
+			if !errcode.IsUnauthorized(err) {
+				t.Fatalf("expected unauthorized error but got %s", err)
+			}
+
+			// Try again as admin
+			adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+
+			opts.NamespaceUserID = user.ID
+
+			_, err = svc.CreateCampaignSpec(adminCtx, opts)
+			if err != nil {
+				t.Fatalf("expected no error but got %s", err)
+			}
+		})
+
+		t.Run("missing access to namespace org", func(t *testing.T) {
+			org, err := db.Orgs.Create(ctx, "test-org", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opts := CreateCampaignSpecOpts{
+				NamespaceOrgID:       org.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
+			}
+
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+
+			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+				t.Fatalf("expected %s error but got %s", want, have)
+			}
+
+			// Create org membership and try again
+			if _, err := db.OrgMembers.Create(ctx, org.ID, user.ID); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			if err != nil {
+				t.Fatalf("expected no error but got %s", err)
 			}
 		})
 	})
@@ -624,7 +687,7 @@ func TestService(t *testing.T) {
 		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
-			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
+			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -645,7 +708,7 @@ func TestService(t *testing.T) {
 
 		t.Run("invalid raw spec", func(t *testing.T) {
 			invalidRaw := `{"externalComputer": "beepboop"}`
-			_, err := svc.CreateChangesetSpec(ctx, invalidRaw, user.ID)
+			_, err := svc.CreateChangesetSpec(ctx, invalidRaw, admin.ID)
 			if err == nil {
 				t.Fatal("expected error but got nil")
 			}
@@ -661,7 +724,7 @@ func TestService(t *testing.T) {
 			// Single repository filtered out by authzFilter
 			ct.AuthzFilterRepos(t, repo.ID)
 
-			_, err := svc.CreateChangesetSpec(ctx, rawSpec, user.ID)
+			_, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
 			if !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
@@ -694,7 +757,7 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("new campaign", func(t *testing.T) {
-			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
+			campaignSpec := createCampaignSpec(t, "campaign-name", admin.ID)
 			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
@@ -727,7 +790,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("existing campaign", func(t *testing.T) {
-			campaignSpec := createCampaignSpec(t, "campaign-name", user.ID)
+			campaignSpec := createCampaignSpec(t, "campaign-name", admin.ID)
 			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
@@ -753,7 +816,7 @@ func TestService(t *testing.T) {
 			})
 
 			t.Run("apply campaign spec with same name", func(t *testing.T) {
-				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
+				campaignSpec2 := createCampaignSpec(t, "campaign-name", admin.ID)
 				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
 				})
@@ -787,7 +850,7 @@ func TestService(t *testing.T) {
 			})
 
 			t.Run("campaign spec with same name and same ensureCampaignID", func(t *testing.T) {
-				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
+				campaignSpec2 := createCampaignSpec(t, "campaign-name", admin.ID)
 
 				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
@@ -802,7 +865,7 @@ func TestService(t *testing.T) {
 			})
 
 			t.Run("campaign spec with same name but different ensureCampaignID", func(t *testing.T) {
-				campaignSpec2 := createCampaignSpec(t, "campaign-name", user.ID)
+				campaignSpec2 := createCampaignSpec(t, "campaign-name", admin.ID)
 
 				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
 					CampaignSpecRandID: campaignSpec2.RandID,
@@ -836,7 +899,7 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("new name", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewName: "new-name"}
 			moved, err := svc.MoveCampaign(ctx, opts)
@@ -850,7 +913,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new user namespace", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
 			user2 := createTestUser(ctx, t)
 
@@ -869,8 +932,22 @@ func TestService(t *testing.T) {
 			}
 		})
 
-		t.Run("new org namespace", func(t *testing.T) {
+		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+
+			user2 := createTestUser(ctx, t)
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
+
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+			_, err := svc.MoveCampaign(userCtx, opts)
+			if !errcode.IsUnauthorized(err) {
+				t.Fatalf("expected unauthorized error but got %s", err)
+			}
+		})
+
+		t.Run("new org namespace", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
 			org, err := db.Orgs.Create(ctx, "org", nil)
 			if err != nil {
@@ -889,6 +966,23 @@ func TestService(t *testing.T) {
 
 			if have, want := moved.NamespaceOrgID, opts.NewNamespaceOrgID; have != want {
 				t.Fatalf("wrong NamespaceOrgID. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+
+			org, err := db.Orgs.Create(ctx, "org-no-access", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+			_, err = svc.MoveCampaign(userCtx, opts)
+			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
 	})

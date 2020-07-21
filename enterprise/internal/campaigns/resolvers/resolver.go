@@ -235,7 +235,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	opts := ee.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec, UserID: user.ID}
+	opts := ee.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
 
 	switch relay.UnmarshalKind(args.Namespace) {
 	case "User":
