@@ -43,8 +43,6 @@ func TestReposHandler(t *testing.T) {
 				Debug: discardLogger,
 				Addr:  testAddress,
 				Root:  root,
-
-				updatingServerInfo: 2, // disables background updates
 			}).handler()
 
 			var want []Repo
@@ -73,8 +71,6 @@ func TestReposHandler(t *testing.T) {
 				Debug: discardLogger,
 				Addr:  testAddress,
 				Root:  root,
-
-				updatingServerInfo: 2, // disables background updates
 			}).handler()
 
 			// project-root is served from /repos, etc
@@ -183,9 +179,7 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 		Info:  testLogger(t),
 		Debug: discardLogger,
 		Root:  root,
-
-		updatingServerInfo: 2, // disables background updates
-	}).configureRepos()
+	}).repos()
 	if len(repos) != 0 {
 		t.Fatalf("expected no repos, got %v", repos)
 	}
