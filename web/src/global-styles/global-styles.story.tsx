@@ -65,10 +65,6 @@ add('Text', () => (
         </p>
 
         <p>
-            <label>'Labels'</label> help label things
-        </p>
-
-        <p>
             Text can be <span className="text-muted">'muted'</span>
         </p>
 
