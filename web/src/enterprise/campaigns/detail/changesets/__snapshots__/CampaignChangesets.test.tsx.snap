@@ -21,28 +21,28 @@ exports[`CampaignChangesets renders 1`] = `
         All
       </option>
       <option
-        key="OPEN"
-        value="OPEN"
+        key="UNPUBLISHED"
+        value="UNPUBLISHED"
       >
-        Open
+        Unpublished
       </option>
       <option
-        key="CLOSED"
-        value="CLOSED"
+        key="PUBLISHING"
+        value="PUBLISHING"
       >
-        Closed
+        Publishing
       </option>
       <option
-        key="MERGED"
-        value="MERGED"
+        key="ERRORED"
+        value="ERRORED"
       >
-        Merged
+        Errored
       </option>
       <option
-        key="DELETED"
-        value="DELETED"
+        key="SYNCED"
+        value="SYNCED"
       >
-        Deleted
+        Synced
       </option>
     </select>
     <label

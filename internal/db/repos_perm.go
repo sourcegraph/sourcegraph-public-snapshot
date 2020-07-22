@@ -6,12 +6,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -33,8 +33,9 @@ var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 //
 // It accepts a list of repositories and a permission type `p` and returns a subset of those
 // repositories (preserving their order) for which the currently authenticated user has the specified
-// permissions. NOTE: The repos slice is filtered in place and returned. Do not use it after calling
-// this function.
+// permissions.
+//
+// NOTE: The repos slice is filtered in place and returned. Do not use it after calling this function.
 //
 // The enforcement policy:
 //
@@ -42,9 +43,6 @@ var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 //
 // - If there are no authz providers and `authzAllowByDefault` is true, then the repository is
 //   accessible to everyone.
-//
-// - If permissions background sync is enabled, ensure the user has an external account for each
-//   authz provider respectively then check permissions against local Postgres.
 //
 // - Otherwise, each repository must have an external repo spec. If a repo doesn't have one, we
 //   cannot definitively associate the repository with an authz provider, and therefore we
@@ -139,221 +137,123 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	}
 
 	// Perform authorization against permissions tables.
-	if globals.PermissionsBackgroundSync().Enabled {
-		toVerify := repos[:0]
-		filtered := make([]*types.Repo, 0, len(repos))
+	filtered = repos[:0]
 
-		hasAuthzProvider := make(map[string]bool, len(authzProviders))
-		for _, p := range authzProviders {
-			hasAuthzProvider[p.ServiceID()] = true
-		}
+	toVerify := getSlice(&reposPool, len(repos))
+	defer func() {
+		clear(*toVerify)
+		reposPool.Put(toVerify)
+	}()
 
-		// Add public repositories to filtered, others to toVerify.
-		for _, r := range repos {
-			// Bypass non-private repositories
-			if !r.Private {
-				filtered = append(filtered, r)
-				continue
-			}
-
-			// Bypass private repositories but no authz provider configured for the code host,
-			// but only when authzAllowByDefault is true.
-			if authzAllowByDefault && !hasAuthzProvider[r.ExternalRepo.ServiceID] {
-				filtered = append(filtered, r)
-				continue
-			}
-
-			toVerify = append(toVerify, r)
-		}
-
-		// At this point, only show filtered repositories when:
-		//   1. The user is unauthenticated.
-		//   2. Permissions are not enforced by authz providers but NOT everyone can see all repositories.
-		//      Wouldn't reach this far when "authzAllowByDefault" is true and no authz providers.
-		if currentUser == nil || len(authzProviders) == 0 {
-			return filtered, nil
-		}
-
-		extAccounts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
-		if err != nil {
-			return nil, errors.Wrap(err, "list external accounts")
-		}
-
-		serviceToAccounts := make(map[string]*extsvc.Account)
-		for _, acct := range extAccounts {
-			serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
-		}
-
-		// Check if the user has an external account for every authz provider respectively,
-		// and try to fetch the account when not.
-		newAccount := false // If any new external account is associated
-		for _, provider := range authzProviders {
-			_, ok := serviceToAccounts[provider.ServiceType()+":"+provider.ServiceID()]
-			if ok {
-				continue
-			}
-
-			acct, err := provider.FetchAccount(ctx, currentUser, extAccounts)
-			if err != nil {
-				tr.LogFields(
-					otlog.String("event", "authz provider account failed"),
-					otlog.String("username", currentUser.Username),
-					otlog.String("authzProvider", provider.ServiceID()),
-					otlog.Error(err),
-				)
-				log15.Warn("Could not fetch authz provider account for user",
-					"username", currentUser.Username,
-					"authzProvider", provider.ServiceID(),
-					"error", err)
-				continue
-			}
-
-			// Not an operation failure but the authz provider is unable to determine
-			// the external account for the current user.
-			if acct == nil {
-				continue
-			}
-
-			// Save the external account and grant pending permissions for it later.
-			err = ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, acct.AccountSpec, acct.AccountData)
-			if err != nil {
-				return nil, errors.Wrap(err, "associate external account to user")
-			}
-
-			newAccount = true
-		}
-
-		if newAccount {
-			if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
-				UserID: currentUser.ID,
-				Perm:   p,
-				Type:   authz.PermRepos,
-			}); err != nil {
-				tr.LogFields(
-					otlog.String("event", "grant pending permissions failed"),
-					otlog.String("username", currentUser.Username),
-					otlog.Error(err),
-				)
-				log15.Warn("Could not grant pending permissions for user",
-					"username", currentUser.Username,
-					"error", err)
-			}
-		}
-
-		// We should have no known pending permissions for the user at this point.
-		verified, err := Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
-			Repos:  toVerify,
-			UserID: currentUser.ID,
-			Perm:   p,
-			Type:   authz.PermRepos,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "authorize repositories")
-		}
-
-		return append(filtered, verified...), nil
+	hasAuthzProvider := make(map[string]bool, len(authzProviders))
+	for _, p := range authzProviders {
+		hasAuthzProvider[p.ServiceID()] = true
 	}
 
-	var accts []*extsvc.Account
-	if len(authzProviders) > 0 && currentUser != nil {
-		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	toverify := make(map[string]*[]*types.Repo, len(authzProviders))
+	// Add public repositories to filtered, others to toVerify.
 	for _, r := range repos {
-		group := toverify[r.ExternalRepo.ServiceID]
-		if group == nil {
-			group = getSlice(&reposPool, len(repos))
-			toverify[r.ExternalRepo.ServiceID] = group
-			defer func() {
-				clear(*group)
-				reposPool.Put(group)
-			}()
-		}
-		*group = append(*group, r)
-	}
-
-	// Walk through all authz providers, checking repo permissions against each. If any own a given
-	// repo, we use its permissions for that repo.
-	verified := roaring.NewBitmap()
-	for _, authzProvider := range authzProviders {
-		// determine external account to use
-		var providerAcct *extsvc.Account
-		for _, acct := range accts {
-			if acct.ServiceID == authzProvider.ServiceID() && acct.ServiceType == authzProvider.ServiceType() {
-				providerAcct = acct
-				break
-			}
-		}
-
-		if providerAcct == nil && currentUser != nil { // no existing external account for authz provider
-			if pr, err := authzProvider.FetchAccount(ctx, currentUser, accts); err == nil {
-				providerAcct = pr
-				if providerAcct != nil {
-					err := ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, providerAcct.AccountSpec, providerAcct.AccountData)
-					if err != nil {
-						return nil, err
-					}
-				}
-			} else {
-				tr.LogFields(
-					otlog.String("event", "authz provider account failed"),
-					otlog.String("username", currentUser.Username),
-					otlog.String("authzProvider", authzProvider.ServiceID()),
-					otlog.Error(err),
-				)
-				log15.Warn("Could not fetch authz provider account for user", "username", currentUser.Username, "authzProvider", authzProvider.ServiceID(), "error", err)
-			}
-		}
-
-		serviceID := authzProvider.ServiceID()
-		ours, ok := toverify[serviceID]
-		if !ok {
+		// Bypass non-private repositories
+		if !r.Private {
+			filtered = append(filtered, r)
 			continue
 		}
 
-		// check the perms on our repos
-		perms, err := authzProvider.RepoPerms(ctx, providerAcct, *ours)
+		// Bypass private repositories but no authz provider configured for the code host,
+		// but only when authzAllowByDefault is true.
+		if authzAllowByDefault && !hasAuthzProvider[r.ExternalRepo.ServiceID] {
+			filtered = append(filtered, r)
+			continue
+		}
+
+		*toVerify = append(*toVerify, r)
+	}
+
+	// At this point, only show filtered repositories when:
+	//   1. The user is unauthenticated.
+	//   2. Permissions are not enforced by authz providers but NOT everyone can see all repositories.
+	//      Wouldn't reach this far when "authzAllowByDefault" is true and no authz providers.
+	if currentUser == nil || len(authzProviders) == 0 {
+		return filtered, nil
+	}
+
+	extAccounts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
+	if err != nil {
+		return nil, errors.Wrap(err, "list external accounts")
+	}
+
+	serviceToAccounts := make(map[string]*extsvc.Account)
+	for _, acct := range extAccounts {
+		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
+	}
+
+	// Check if the user has an external account for every authz provider respectively,
+	// and try to fetch the account when not.
+	newAccount := false // If any new external account is associated
+	for _, provider := range authzProviders {
+		_, ok := serviceToAccounts[provider.ServiceType()+":"+provider.ServiceID()]
+		if ok {
+			continue
+		}
+
+		acct, err := provider.FetchAccount(ctx, currentUser, extAccounts)
 		if err != nil {
-			return nil, err
+			tr.LogFields(
+				otlog.String("event", "authz provider account failed"),
+				otlog.String("username", currentUser.Username),
+				otlog.String("authzProvider", provider.ServiceID()),
+				otlog.Error(err),
+			)
+			log15.Warn("Could not fetch authz provider account for user",
+				"username", currentUser.Username,
+				"authzProvider", provider.ServiceID(),
+				"error", err)
+			continue
 		}
 
-		for _, r := range perms {
-			if r.Perms.Include(p) {
-				verified.Add(uint32(r.Repo.ID))
-			}
+		// Not an operation failure but the authz provider is unable to determine
+		// the external account for the current user.
+		if acct == nil {
+			continue
 		}
 
-		delete(toverify, serviceID)
+		// Save the external account and grant pending permissions for it later.
+		err = ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, acct.AccountSpec, acct.AccountData)
+		if err != nil {
+			return nil, errors.Wrap(err, "associate external account to user")
+		}
+
+		newAccount = true
 	}
 
-	if authzAllowByDefault {
-		for serviceID, rs := range toverify {
-			// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
-			// where they came from, so can't reliably enforce permissions).
-			if serviceID == "" {
-				continue
-			}
-
-			for _, r := range *rs {
-				verified.Add(uint32(r.ID))
-			}
+	if newAccount {
+		if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
+			UserID: currentUser.ID,
+			Perm:   p,
+			Type:   authz.PermRepos,
+		}); err != nil {
+			tr.LogFields(
+				otlog.String("event", "grant pending permissions failed"),
+				otlog.String("username", currentUser.Username),
+				otlog.Error(err),
+			)
+			log15.Warn("Could not grant pending permissions for user",
+				"username", currentUser.Username,
+				"error", err)
 		}
 	}
 
-	filtered = repos[:0]
-	for _, r := range repos {
-		if verified.Contains(uint32(r.ID)) {
-			filtered = append(filtered, r) // In-place filtering
-		}
+	// We should have no known pending permissions for the user at this point.
+	verified, err := Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
+		Repos:  *toVerify,
+		UserID: currentUser.ID,
+		Perm:   p,
+		Type:   authz.PermRepos,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "authorize repositories")
 	}
 
-	clear(repos[len(filtered):])
-
-	return filtered, nil
+	return append(filtered, verified...), nil
 }
 
 // isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound

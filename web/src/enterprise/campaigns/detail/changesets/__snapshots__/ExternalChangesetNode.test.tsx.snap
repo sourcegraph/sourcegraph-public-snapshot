@@ -23,7 +23,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                 className="m-0 d-inline"
               >
                 <ChangesetStateIcon
-                  state="OPEN"
+                  externalState="OPEN"
                 />
                 <LinkOrSpan
                   rel="noopener noreferrer"
@@ -100,6 +100,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                       "deleted": 100,
                     },
                     "externalID": "123",
+                    "externalState": "OPEN",
                     "externalURL": Object {
                       "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",
                     },
@@ -117,7 +118,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                       "url": "github.com/sourcegraph/sourcegraph",
                     },
                     "reviewState": "PENDING",
-                    "state": "OPEN",
+                    "state": "UNPUBLISHED",
                     "title": "Remove lodash",
                     "updatedAt": "2020-01-01T00:00:00.000Z",
                   }
