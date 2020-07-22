@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-// changesetHistory is a collection of a changesets states (open/closed/merged
-// state and review state) over time.
+// changesetHistory is a collection of external changeset states
+// (open/closed/merged state and review state) over time.
 type changesetHistory []changesetStatesAtTime
 
 // StatesAtTime returns the changeset's states valid at the given time. If the
@@ -37,9 +37,9 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 }
 
 type changesetStatesAtTime struct {
-	t           time.Time
-	state       campaigns.ChangesetState
-	reviewState campaigns.ChangesetReviewState
+	t             time.Time
+	externalState campaigns.ChangesetExternalState
+	reviewState   campaigns.ChangesetReviewState
 }
 
 // computeHistory calculates the changesetHistory for the given Changeset and
@@ -53,7 +53,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 	var (
 		states = []changesetStatesAtTime{}
 
-		currentState       = campaigns.ChangesetStateOpen
+		currentExtState    = campaigns.ChangesetExternalStateOpen
 		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
@@ -61,9 +61,9 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 
 	pushStates := func(t time.Time) {
 		states = append(states, changesetStatesAtTime{
-			t:           t,
-			state:       currentState,
-			reviewState: currentReviewState,
+			t:             t,
+			externalState: currentExtState,
+			reviewState:   currentReviewState,
 		})
 	}
 
@@ -82,19 +82,19 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		switch e.Kind {
 		case campaigns.ChangesetEventKindGitHubClosed, campaigns.ChangesetEventKindBitbucketServerDeclined:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != campaigns.ChangesetStateMerged {
-				currentState = campaigns.ChangesetStateClosed
+			if currentExtState != campaigns.ChangesetExternalStateMerged {
+				currentExtState = campaigns.ChangesetExternalStateClosed
 				pushStates(et)
 			}
 
 		case campaigns.ChangesetEventKindGitHubMerged, campaigns.ChangesetEventKindBitbucketServerMerged:
-			currentState = campaigns.ChangesetStateMerged
+			currentExtState = campaigns.ChangesetExternalStateMerged
 			pushStates(et)
 
 		case campaigns.ChangesetEventKindGitHubReopened, campaigns.ChangesetEventKindBitbucketServerReopened:
 			// Merged is a final state. We can ignore everything after.
-			if currentState != campaigns.ChangesetStateMerged {
-				currentState = campaigns.ChangesetStateOpen
+			if currentExtState != campaigns.ChangesetExternalStateMerged {
+				currentExtState = campaigns.ChangesetExternalStateOpen
 				pushStates(et)
 			}
 
@@ -136,7 +136,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 				lastReviewByAuthor[author] = s
 			}
 
-			newReviewState := computeReviewState(lastReviewByAuthor)
+			newReviewState := reduceReviewStates(lastReviewByAuthor)
 
 			if newReviewState != oldReviewState {
 				currentReviewState = newReviewState
@@ -186,7 +186,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			// recompute overall review state
 			oldReviewState := currentReviewState
 			delete(lastReviewByAuthor, author)
-			newReviewState := computeReviewState(lastReviewByAuthor)
+			newReviewState := reduceReviewStates(lastReviewByAuthor)
 
 			if newReviewState != oldReviewState {
 				currentReviewState = newReviewState
@@ -199,9 +199,19 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 	// ExternalDeletedAt manually in the Syncer.
 	deletedAt := ch.ExternalDeletedAt
 	if !deletedAt.IsZero() {
-		currentState = campaigns.ChangesetStateClosed
+		currentExtState = campaigns.ChangesetExternalStateClosed
 		pushStates(deletedAt)
 	}
 
 	return states, nil
+}
+
+// reduceReviewStates reduces the given a map of review per author down to a
+// single overall ChangesetReviewState.
+func reduceReviewStates(statesByAuthor map[string]campaigns.ChangesetReviewState) campaigns.ChangesetReviewState {
+	states := make(map[campaigns.ChangesetReviewState]bool)
+	for _, s := range statesByAuthor {
+		states[s] = true
+	}
+	return selectReviewState(states)
 }
