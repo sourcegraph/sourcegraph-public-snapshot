@@ -287,6 +287,52 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	}
 }
 
+func TestExpandOr(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: `a or b`,
+			want:  `("a") OR ("b")`,
+		},
+		{
+			input: `a and b AND c OR d`,
+			want:  `("a" "b" "c") OR ("d")`,
+		},
+		{
+			input: "(repo:a (file:b or file:c))",
+			want:  `("repo:a" "file:b") OR ("repo:a" "file:c")`,
+		},
+		{
+			input: "(repo:a (file:b or file:c) (file:d or file:e))",
+			want:  `("repo:a" "file:b" "file:d") OR ("repo:a" "file:c" "file:d") OR ("repo:a" "file:b" "file:e") OR ("repo:a" "file:c" "file:e")`,
+		},
+		{
+			input: "(repo:a (file:b or file:c) (a b) (x z))",
+			want:  `("repo:a" "file:b" "(a b)" "(x z)") OR ("repo:a" "file:c" "(a b)" "(x z)")`,
+		},
+		{
+			input: `a and b AND c or d and (e OR f) g h i or j`,
+			want:  `("a" "b" "c") OR ("d" "e" "g" "h" "i") OR ("d" "f" "g" "h" "i") OR ("j")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run("Map query", func(t *testing.T) {
+			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			queries := dnf(query)
+			var queriesStr []string
+			for _, q := range queries {
+				queriesStr = append(queriesStr, prettyPrint(q))
+			}
+			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestMap(t *testing.T) {
 	cases := []struct {
 		input string
