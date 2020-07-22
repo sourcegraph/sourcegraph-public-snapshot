@@ -96,9 +96,9 @@ const CampaignSpecSchemaJSON = `{
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["repo", "externalIDs"],
+        "required": ["repository", "externalIDs"],
         "properties": {
-          "repo": {
+          "repository": {
             "type": "string",
             "description": "The repository name as configured on your Sourcegraph instance."
           },
@@ -109,7 +109,7 @@ const CampaignSpecSchemaJSON = `{
             "items": {
               "oneOf": [{ "type": "string" }, { "type": "integer" }]
             },
-            "examples": [120, "120", "!120", "#120"]
+            "examples": [120, "120"]
           }
         }
       }
