@@ -4,6 +4,18 @@
     text-transform: uppercase;
 }
 
+:root {
+    // Fallback for Chrome <82, Firefox <69, iOS Safari.
+    // Effective font-size is 18px for a <sup> in an <h1> (24px) and 10.5px for regular text (14px).
+    --badge-font-size: 75%;
+    @supports (font-size: unquote('max(0.5em, 10.5px)')) {
+        // Scale badge linearly with the parent font size,
+        // but not smaller than a certain threshold for accessibility reasons.
+        // Effective font-size is 12px for a <sup> in an <h1> (24px) and 10.5px for regular text (14px).
+        --badge-font-size: max(0.5em, 10.5px);
+    }
+}
+
 // Light theme badge variants
 .theme-light {
     @each $color, $value in $theme-colors-light {
