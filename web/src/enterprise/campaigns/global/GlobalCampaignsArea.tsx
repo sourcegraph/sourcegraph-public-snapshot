@@ -9,7 +9,6 @@ import { CreateCampaign } from './create/CreateCampaign'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
 import { CampaignCliHelp } from './create/CampaignCliHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
@@ -85,11 +84,6 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
                         <Route
                             path={`${match.url}/new`}
                             render={props => <CampaignDetails {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/update`}
-                            render={props => <CampaignUpdateSelection {...outerProps} {...props} />}
                             exact={true}
                         />
                         <Route
