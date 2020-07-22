@@ -15,14 +15,11 @@ import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
+import { TelemetryProps, TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, TelemetryProps {
     history: H.History
     externalService: AddExternalServiceOptions
-    eventLogger: {
-        logViewEvent: (event: 'AddExternalService') => void
-        log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
-    }
 }
 
 const LOADING = 'loading' as const
@@ -35,8 +32,8 @@ export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = p
     const [displayName, setDisplayName] = useState(props.externalService.defaultDisplayName)
 
     useEffect(() => {
-        props.eventLogger.logViewEvent('AddExternalService')
-    }, [props.eventLogger])
+        props.telemetryService.logViewEvent('AddExternalService')
+    }, [props.telemetryService])
 
     const [nextSubmit, createdServiceOrError] = useEventObservable(
         useCallback(
@@ -47,11 +44,13 @@ export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = p
                     switchMap(input =>
                         concat(
                             [LOADING],
-                            addExternalService(input, props.eventLogger).pipe(catchError(error => [asError(error)]))
+                            addExternalService(input, props.telemetryService).pipe(
+                                catchError(error => [asError(error)])
+                            )
                         )
                     )
                 ),
-            [props.eventLogger]
+            [props.telemetryService]
         )
     )
 
@@ -143,7 +142,7 @@ export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = p
 
 export function addExternalService(
     input: GQL.IAddExternalServiceInput,
-    eventLogger: Pick<Props['eventLogger'], 'log'>
+    eventLogger: TelemetryService
 ): Observable<GQL.IExternalService> {
     return mutateGraphQL(
         gql`

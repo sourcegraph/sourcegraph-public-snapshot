@@ -1,6 +1,9 @@
 const path = require('path')
 const { remove } = require('lodash')
 const { DefinePlugin, ProgressPlugin } = require('webpack')
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
+
+const monacoEditorPaths = [path.resolve(__dirname, '..', 'node_modules', 'monaco-editor')]
 
 const config = {
   stories: ['../**/*.story.tsx'],
@@ -35,12 +38,31 @@ const config = {
 
     config.resolve.extensions.push('.ts', '.tsx')
 
+    config.plugins.push(
+      new MonacoWebpackPlugin({
+        languages: ['json'],
+        features: [
+          'bracketMatching',
+          'clipboard',
+          'coreCommands',
+          'cursorUndo',
+          'find',
+          'format',
+          'hover',
+          'inPlaceReplace',
+          'iPadShowKeyboard',
+          'links',
+          'suggest',
+        ],
+      })
+    )
+
     const storybookDirectory = path.resolve(__dirname, '../node_modules/@storybook')
 
     // Put our style rules at the beginning so they're processed by the time it
     // gets to storybook's style rules.
     config.module.rules.unshift({
-      test: /\.(css|sass|scss)$/,
+      test: /\.(sass|scss)$/,
       use: [
         'to-string-loader',
         'css-loader',
@@ -55,6 +77,20 @@ const config = {
       ],
       // Make sure Storybook styles get handled by the Storybook config
       exclude: storybookDirectory,
+    })
+
+    config.module.rules.unshift({
+      // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
+      test: /\.css$/,
+      include: monacoEditorPaths,
+      // Make sure Storybook styles get handled by the Storybook config
+      exclude: storybookDirectory,
+      use: ['to-string-loader', 'css-loader'],
+    })
+
+    Object.assign(config.entry, {
+      'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
+      'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
     })
 
     // Make sure Storybook style loaders are only evaluated for Storybook styles.
