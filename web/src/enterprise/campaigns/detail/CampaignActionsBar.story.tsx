@@ -32,7 +32,5 @@ add('Bar', () => (
                 },
             },
         }}
-        mode="viewing"
-        onClose={async () => undefined}
     />
 ))

@@ -1,15 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignDetails creation form for empty manual campaign 1`] = `
-<Fragment>
-  <PageTitle />
-  <CampaignActionsBar
-    formID="campaign-form"
-    mode="editing"
-    onClose={[Function]}
-    onDelete={[Function]}
-  />
-</Fragment>
+<HeroPage
+  icon={
+    Object {
+      "$$typeof": Symbol(react.memo),
+      "compare": null,
+      "type": [Function],
+    }
+  }
+  title="Campaign not found"
+/>
 `;
 
 exports[`CampaignDetails creation form given existing patch set 1`] = `
@@ -31,53 +32,43 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
     }
   }
 >
-  <PageTitle />
-  <CampaignActionsBar
-    formID="campaign-form"
-    mode="editing"
-    onClose={[Function]}
-    onDelete={[Function]}
+  <HeroPage
+    icon={
+      Object {
+        "$$typeof": Symbol(react.memo),
+        "compare": null,
+        "type": [Function],
+      }
+    }
+    title="Campaign not found"
   >
     <div
-      className="d-flex mb-2 position-relative"
+      className="hero-page "
     >
-      <h2
-        className="m-0"
+      <div
+        className="hero-page__icon"
       >
-        <CampaignsIcon
-          className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2"
-        />
-        <span>
-          <AnchorLink
-            to="/campaigns"
+        <Memo(AlertCircleIcon)>
+          <svg
+            className="mdi-icon "
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
           >
-            <a
-              href="/campaigns"
-            >
-              Campaigns
-            </a>
-          </AnchorLink>
-           
-          <span
-            className="badge badge-info"
-          >
-            Beta
-          </span>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <span>
-          New campaign
-        </span>
-      </h2>
-      <span
-        className="flex-grow-1 d-flex justify-content-end align-items-center"
-      />
+            <path
+              d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+            />
+          </svg>
+        </Memo(AlertCircleIcon)>
+      </div>
+      <div
+        className="hero-page__title"
+      >
+        Campaign not found
+      </div>
     </div>
-  </CampaignActionsBar>
+  </HeroPage>
 </CampaignDetails>
 `;
 
@@ -115,6 +106,11 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
+          "stats": Object {
+            "closed": 0,
+            "merged": 0,
+            "total": 10,
+          },
           "totalCount": 2,
         },
         "closedAt": null,
@@ -133,54 +129,64 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "viewerCanAdminister": false,
       }
     }
-    formID="campaign-form"
-    mode="viewing"
-    onClose={[Function]}
-    onDelete={[Function]}
   >
+    <div
+      className="mb-2"
+    >
+      <span>
+        <AnchorLink
+          to="/campaigns"
+        >
+          <a
+            href="/campaigns"
+          >
+            Campaigns
+          </a>
+        </AnchorLink>
+      </span>
+      <span
+        className="text-muted d-inline-block mx-1"
+      >
+        /
+      </span>
+      <span>
+        n
+      </span>
+    </div>
     <div
       className="d-flex mb-2 position-relative"
     >
-      <h2
-        className="m-0"
-      >
-        <span
-          className="badge badge-success mr-2"
+      <div>
+        <h1
+          className="m-0"
         >
-          <CampaignsIcon
-            className="icon-inline campaign-actions-bar__campaign-icon"
-          />
-           Open
-        </span>
-        <span>
-          <AnchorLink
-            to="/campaigns"
-          >
-            <a
-              href="/campaigns"
-            >
-              Campaigns
-            </a>
-          </AnchorLink>
-           
-          <span
-            className="badge badge-info"
-          >
-            Beta
-          </span>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <span>
           n
-        </span>
-      </h2>
-      <span
-        className="flex-grow-1 d-flex justify-content-end align-items-center"
-      />
+        </h1>
+        <h2
+          className="m-0"
+        >
+          <CampaignStateBadge
+            isClosed={false}
+          >
+            <span
+              className="badge badge-success mr-2"
+            >
+              <CampaignsIcon
+                className="icon-inline campaign-actions-bar__campaign-icon"
+              />
+               Open
+            </span>
+          </CampaignStateBadge>
+          <small
+            className="text-muted"
+          >
+            0
+            % complete . 
+            10
+             changesets total
+          </small>
+        </h2>
+      </div>
     </div>
   </CampaignActionsBar>
   <div
@@ -256,96 +262,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     2
      
     Changesets
-     
-    <CampaignDiffStat
-      campaign={
-        Object {
-          "__typename": "Campaign",
-          "author": Object {
-            "username": "alice",
-          },
-          "branch": "awesome-branch",
-          "changesetCountsOverTime": Array [],
-          "changesets": Object {
-            "totalCount": 2,
-          },
-          "closedAt": null,
-          "createdAt": "2020-01-01",
-          "description": "d",
-          "diffStat": Object {
-            "__typename": "IDiffStat",
-            "added": 5,
-            "changed": 3,
-            "deleted": 2,
-          },
-          "hasUnpublishedPatches": false,
-          "id": "c",
-          "name": "n",
-          "updatedAt": "2020-01-01",
-          "viewerCanAdminister": false,
-        }
-      }
-      className="ml-2 mb-0"
-    >
-      <div
-        className="ml-2 mb-0"
-      >
-        <DiffStat
-          added={5}
-          changed={3}
-          deleted={2}
-          expandedCounts={true}
-        >
-          <div
-            className="diff-stat "
-            data-tooltip="5 additions, 3 changes, 2 deletions"
-          >
-            <span
-              className="diff-stat__total font-weight-bold"
-            >
-              <span
-                className="diff-stat__text-added mr-1"
-              >
-                +
-                5
-              </span>
-              <span
-                className="diff-stat__text-changed mr-1"
-              >
-                •
-                3
-              </span>
-              <span
-                className="diff-stat__text-deleted mr-1"
-              >
-                −
-                2
-              </span>
-            </span>
-            <div
-              className="diff-stat__square diff-stat__added"
-              key="0"
-            />
-            <div
-              className="diff-stat__square diff-stat__added"
-              key="1"
-            />
-            <div
-              className="diff-stat__square diff-stat__added"
-              key="2"
-            />
-            <div
-              className="diff-stat__square diff-stat__changed"
-              key="3"
-            />
-            <div
-              className="diff-stat__square diff-stat__deleted"
-              key="4"
-            />
-          </div>
-        </DiffStat>
-      </div>
-    </CampaignDiffStat>
   </h3>
   <CampaignChangesets
     campaign={
@@ -357,6 +273,11 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
+          "stats": Object {
+            "closed": 0,
+            "merged": 0,
+            "total": 10,
+          },
           "totalCount": 2,
         },
         "closedAt": null,
@@ -424,6 +345,11 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
+          "stats": Object {
+            "closed": 0,
+            "merged": 0,
+            "total": 10,
+          },
           "totalCount": 2,
         },
         "closedAt": null,
@@ -442,193 +368,64 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "viewerCanAdminister": true,
       }
     }
-    formID="campaign-form"
-    mode="viewing"
-    onClose={[Function]}
-    onDelete={[Function]}
   >
+    <div
+      className="mb-2"
+    >
+      <span>
+        <AnchorLink
+          to="/campaigns"
+        >
+          <a
+            href="/campaigns"
+          >
+            Campaigns
+          </a>
+        </AnchorLink>
+      </span>
+      <span
+        className="text-muted d-inline-block mx-1"
+      >
+        /
+      </span>
+      <span>
+        n
+      </span>
+    </div>
     <div
       className="d-flex mb-2 position-relative"
     >
-      <h2
-        className="m-0"
-      >
-        <span
-          className="badge badge-success mr-2"
+      <div>
+        <h1
+          className="m-0"
         >
-          <CampaignsIcon
-            className="icon-inline campaign-actions-bar__campaign-icon"
-          />
-           Open
-        </span>
-        <span>
-          <AnchorLink
-            to="/campaigns"
-          >
-            <a
-              href="/campaigns"
-            >
-              Campaigns
-            </a>
-          </AnchorLink>
-           
-          <span
-            className="badge badge-info"
-          >
-            Beta
-          </span>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <span>
           n
-        </span>
-      </h2>
-      <span
-        className="flex-grow-1 d-flex justify-content-end align-items-center"
-      >
-        <CloseDeleteCampaignPrompt
-          buttonClassName="btn-secondary mr-1"
-          buttonText="Close"
-          disabled={false}
-          disabledTooltip="Cannot close while campaign is being created"
-          message={
-            <p>
-              Close campaign 
-              <strong>
-                n
-              </strong>
-              ?
-            </p>
-          }
-          onButtonClick={[Function]}
+        </h1>
+        <h2
+          className="m-0"
         >
-          <details
-            className="campaign-prompt__details"
+          <CampaignStateBadge
+            isClosed={false}
           >
-            <summary>
-              <span
-                className="btn dropdown-toggle btn-secondary mr-1"
-                onClick={[Function]}
-              >
-                Close
-              </span>
-            </summary>
-            <div
-              className="position-absolute campaign-prompt__details-menu"
+            <span
+              className="badge badge-success mr-2"
             >
-              <div
-                className="card mt-1"
-              >
-                <div
-                  className="card-body"
-                >
-                  <p>
-                    Close campaign 
-                    <strong>
-                      n
-                    </strong>
-                    ?
-                  </p>
-                  <div
-                    className="form-group"
-                  >
-                    <label>
-                      <input
-                        checked={false}
-                        onChange={[Function]}
-                        type="checkbox"
-                      />
-                       
-                      Close open changesets on code hosts
-                    </label>
-                  </div>
-                  <button
-                    className="btn mr-1 btn-secondary mr-1"
-                    disabled={false}
-                    onClick={[Function]}
-                    type="button"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </details>
-        </CloseDeleteCampaignPrompt>
-        <CloseDeleteCampaignPrompt
-          buttonClassName="btn-danger"
-          buttonText="Delete"
-          disabled={false}
-          disabledTooltip="Cannot delete while campaign is being created"
-          message={
-            <p>
-              Delete campaign 
-              <strong>
-                n
-              </strong>
-              ?
-            </p>
-          }
-          onButtonClick={[Function]}
-        >
-          <details
-            className="campaign-prompt__details"
+              <CampaignsIcon
+                className="icon-inline campaign-actions-bar__campaign-icon"
+              />
+               Open
+            </span>
+          </CampaignStateBadge>
+          <small
+            className="text-muted"
           >
-            <summary>
-              <span
-                className="btn dropdown-toggle btn-danger"
-                onClick={[Function]}
-              >
-                Delete
-              </span>
-            </summary>
-            <div
-              className="position-absolute campaign-prompt__details-menu"
-            >
-              <div
-                className="card mt-1"
-              >
-                <div
-                  className="card-body"
-                >
-                  <p>
-                    Delete campaign 
-                    <strong>
-                      n
-                    </strong>
-                    ?
-                  </p>
-                  <div
-                    className="form-group"
-                  >
-                    <label>
-                      <input
-                        checked={false}
-                        onChange={[Function]}
-                        type="checkbox"
-                      />
-                       
-                      Close open changesets on code hosts
-                    </label>
-                  </div>
-                  <button
-                    className="btn mr-1 btn-danger"
-                    disabled={false}
-                    onClick={[Function]}
-                    type="button"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </details>
-        </CloseDeleteCampaignPrompt>
-      </span>
+            0
+            % complete . 
+            10
+             changesets total
+          </small>
+        </h2>
+      </div>
     </div>
   </CampaignActionsBar>
   <div
@@ -704,96 +501,6 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     2
      
     Changesets
-     
-    <CampaignDiffStat
-      campaign={
-        Object {
-          "__typename": "Campaign",
-          "author": Object {
-            "username": "alice",
-          },
-          "branch": "awesome-branch",
-          "changesetCountsOverTime": Array [],
-          "changesets": Object {
-            "totalCount": 2,
-          },
-          "closedAt": null,
-          "createdAt": "2020-01-01",
-          "description": "d",
-          "diffStat": Object {
-            "__typename": "IDiffStat",
-            "added": 5,
-            "changed": 3,
-            "deleted": 2,
-          },
-          "hasUnpublishedPatches": false,
-          "id": "c",
-          "name": "n",
-          "updatedAt": "2020-01-01",
-          "viewerCanAdminister": true,
-        }
-      }
-      className="ml-2 mb-0"
-    >
-      <div
-        className="ml-2 mb-0"
-      >
-        <DiffStat
-          added={5}
-          changed={3}
-          deleted={2}
-          expandedCounts={true}
-        >
-          <div
-            className="diff-stat "
-            data-tooltip="5 additions, 3 changes, 2 deletions"
-          >
-            <span
-              className="diff-stat__total font-weight-bold"
-            >
-              <span
-                className="diff-stat__text-added mr-1"
-              >
-                +
-                5
-              </span>
-              <span
-                className="diff-stat__text-changed mr-1"
-              >
-                •
-                3
-              </span>
-              <span
-                className="diff-stat__text-deleted mr-1"
-              >
-                −
-                2
-              </span>
-            </span>
-            <div
-              className="diff-stat__square diff-stat__added"
-              key="0"
-            />
-            <div
-              className="diff-stat__square diff-stat__added"
-              key="1"
-            />
-            <div
-              className="diff-stat__square diff-stat__added"
-              key="2"
-            />
-            <div
-              className="diff-stat__square diff-stat__changed"
-              key="3"
-            />
-            <div
-              className="diff-stat__square diff-stat__deleted"
-              key="4"
-            />
-          </div>
-        </DiffStat>
-      </div>
-    </CampaignDiffStat>
   </h3>
   <CampaignChangesets
     campaign={
@@ -805,6 +512,11 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
+          "stats": Object {
+            "closed": 0,
+            "merged": 0,
+            "total": 10,
+          },
           "totalCount": 2,
         },
         "closedAt": null,

@@ -70,11 +70,6 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
                             exact={true}
                         />
                         <Route
-                            path={`${match.url}/new`}
-                            render={props => <CampaignDetails {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
                             path={`${match.url}/:campaignID`}
                             render={({ match, ...props }: RouteComponentProps<{ campaignID: string }>) => (
                                 <CampaignDetails {...outerProps} {...props} campaignID={match.params.campaignID} />
