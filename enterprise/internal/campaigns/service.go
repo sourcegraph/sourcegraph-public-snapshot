@@ -45,8 +45,7 @@ type Service struct {
 	clock func() time.Time
 }
 
-// CreateCampaign creates the Campaign. When a PatchSetID is set on the
-// Campaign it validates that the PatchSet contains Patches.
+// CreateCampaign creates the Campaign.
 func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
@@ -65,17 +64,6 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) err
 	}
 	defer tx.Done(&err)
 
-	if c.PatchSetID != 0 {
-		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
-		if err != nil && err != ErrNoResults {
-			return err
-		}
-		if err != ErrNoResults {
-			err = ErrPatchSetDuplicate
-			return err
-		}
-	}
-
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
@@ -84,22 +72,11 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) err
 		return err
 	}
 
-	if c.PatchSetID == 0 {
-		return nil
-	}
-	err = validateCampaignBranch(c.Branch)
-	if err != nil {
-		return err
-	}
-	// Validate we don't have an empty patchset.
-	var patchCount int64
-	patchCount, err = tx.CountPatches(ctx, CountPatchesOpts{PatchSetID: c.PatchSetID, OnlyWithDiff: true, OnlyUnpublishedInCampaign: c.ID})
-	if err != nil {
-		return err
-	}
-	if patchCount == 0 {
-		err = ErrNoPatches
-		return err
+	if c.Branch != "" {
+		err = validateCampaignBranch(c.Branch)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -388,18 +365,10 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 // in the given namespace but has a different ID.
 var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
-// ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
-// PatchSetID was specified but the PatchSet does not have any
-// (finished) Patches.
-var ErrNoPatches = errors.New("cannot create or update a Campaign without any changesets")
-
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
 // been published at the time of closing but its ChangesetJobs have not
 // finished execution.
 var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
-
-// ErrUnsupportedCodehost is returned by EnqueueChangesetJobForPatch if the target repo of a patch is an unsupported repo.
-var ErrUnsupportedCodehost = errors.New("cannot publish patch for unsupported codehost")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
@@ -622,16 +591,12 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
 // ErrCampaignBranchBlank is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
-// branch is blank. This is only enforced when creating published campaigns with a patch set.
+// branch is blank.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 
 // ErrCampaignBranchInvalid is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
-// branch is invalid. This is only enforced when creating published campaigns with a patch set.
+// branch is invalid.
 var ErrCampaignBranchInvalid = errors.New("Campaign branch is invalid")
-
-// ErrPatchSetDuplicate is return by CreateCampaign or UpdateCampaign if the
-// specified patch set is already attached to another campaign.
-var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same patch set as another campaign")
 
 func validateCampaignBranch(branch string) error {
 	if branch == "" {

@@ -43,7 +43,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		truncateTables(t, db, "changeset_jobs", "changeset_events", "changesets")
+		truncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
 		defer save()
@@ -202,7 +202,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		truncateTables(t, db, "changeset_jobs", "changeset_events", "changesets")
+		truncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "bitbucket-webhooks")
 		defer save()
@@ -279,6 +279,15 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		// Set up mocks to prevent the diffstat computation from trying to
+		// use a real gitserver, and so we can control what diff is used to
+		// create the diffstat.
+		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+			Name: "repo",
+			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
+		})
+		defer state.Unmock()
 
 		err = SyncChangesets(ctx, repoStore, store, cf, changesets...)
 		if err != nil {
