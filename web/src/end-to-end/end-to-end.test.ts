@@ -11,7 +11,6 @@ import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import expect from 'expect'
-import { asError } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
@@ -1472,90 +1471,6 @@ describe('e2e test suite', () => {
             await driver.page.click('.test-stats-query-update')
             await driver.page.waitForSelector(`a[href*="${wantQuery}+lang:go"]`)
             assert.ok(driver.page.url().endsWith(`/stats?q=${wantQuery}`))
-        })
-    })
-
-    describe('Campaigns', () => {
-        let previousExperimentalFeatures: any
-        before(async () => {
-            await driver.setConfig(['experimentalFeatures'], previous => {
-                previousExperimentalFeatures = previous?.value
-                return { automation: 'enabled' }
-            })
-            // wait for configuration to be applied
-            await retry(async () => {
-                await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-                try {
-                    // wait for splash page to disappear
-                    await driver.page.waitForSelector('.test-campaign-form', { visible: true, timeout: 1000 })
-                } catch (error) {
-                    await new Promise(resolve => setTimeout(resolve, 1000))
-                    throw asError(error)
-                }
-            })
-        })
-        after(async () => {
-            await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
-        })
-        async function testCampaignPreview({
-            previewURL,
-            changesetCount,
-            snapshotName,
-        }: {
-            previewURL: string
-            changesetCount: number
-            snapshotName: string
-        }): Promise<void> {
-            await driver.page.goto(previewURL.replace('127.0.0.1', 'localhost'))
-            await driver.page.waitForSelector('.test-campaign-form')
-
-            // fill campaign preview form
-            await driver.page.type('.test-campaign-title', 'E2E campaign')
-
-            await driver.page.waitForSelector('.test-changeset-node')
-            // check there were exactly as expected diffs generated
-            const generatedChangesetCount = await driver.page.evaluate(
-                () => document.querySelectorAll('.test-changeset-node').length
-            )
-            expect(generatedChangesetCount).toEqual(changesetCount)
-            await percySnapshot(driver.page, snapshotName)
-        }
-        test('View campaign preview for patch set', async () => {
-            const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-test-test')
-            const { previewURL } = await driver.createPatchSetFromPatches([
-                {
-                    repository: repo.id,
-                    baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',
-                    baseRef: 'refs/heads/master',
-                    patch: `diff --unified file1.txt file1.txt
---- file1.txt 2020-01-01 01:02:03 -0700
-+++ file1.txt 2020-01-01 03:04:05 -0700
-@@ -1 +1,2 @@
- this is file 1
-+hello
-`,
-                },
-            ])
-            await testCampaignPreview({
-                previewURL,
-                changesetCount: 1,
-                snapshotName: 'Campaign preview page',
-            })
-        })
-        // TODO(eseliger): reenable once the dates of the chart are stable
-        test.skip('Manual campaign workflow', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-            await driver.page.waitForSelector('.test-campaign-form')
-            await percySnapshot(driver.page, 'Create manual campaign form')
-            await driver.page.type('.test-campaign-title', 'E2E manual campaign')
-            await driver.page.click('.test-campaign-create-btn')
-            await driver.page.waitForSelector('.test-campaign-get-started')
-            await percySnapshot(driver.page, 'Create manual campaign empty')
-            await driver.page.type('.test-track-changeset-repo', 'github.com/sourcegraph-testing/automation-test-test')
-            await driver.page.type('.test-track-changeset-id', '1')
-            await driver.page.click('.test-track-changeset-btn')
-            await driver.page.waitForSelector('.test-changeset-node')
-            await percySnapshot(driver.page, 'Create manual campaign added changeset')
         })
     })
 

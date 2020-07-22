@@ -1,11 +1,10 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import H from 'history'
+import * as H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
 import { Observable, Subject, merge, of } from 'rxjs'
-import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { upperFirst, lowerCase } from 'lodash'
 import { queryChangesets as _queryChangesets } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
@@ -207,7 +206,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
-                    defaultFirst={DEFAULT_CHANGESET_PATCH_LIST_COUNT}
+                    defaultFirst={15}
                     noun="changeset"
                     pluralNoun="changesets"
                     history={history}

@@ -1,0 +1,46 @@
+.private-code-cta {
+    padding: 1.5rem;
+    border-radius: 3px;
+    background: $gray-21;
+    border: 1px solid $gray-18;
+    color: $gray-17;
+
+    &__icon-column {
+        margin-right: 1.5rem;
+    }
+}
+
+.theme-light {
+    .private-code-cta {
+        background: $white;
+        border: 1px solid $color-light-bg-2;
+    }
+}
+
+.theme-dark {
+    .private-code-cta {
+        h1,
+        h2 {
+            color: $gray-09;
+        }
+
+        h3,
+        h4,
+        h6 {
+            color: $gray-08;
+        }
+
+        h5 {
+            color: $gray-03;
+        }
+
+        p,
+        i {
+            color: $gray-06;
+        }
+
+        strong {
+            color: $gray-11;
+        }
+    }
+}

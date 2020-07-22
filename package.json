@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": "^v14.4.0",
+    "node": "^v14.5.0",
     "yarn": "^1.10.1"
   },
   "scripts": {
@@ -148,7 +148,6 @@
     "@types/react-router-dom": "5.1.5",
     "@types/react-stripe-elements": "6.0.4",
     "@types/react-test-renderer": "16.9.2",
-    "@types/react-textarea-autosize": "4.3.5",
     "@types/reactstrap": "8.4.2",
     "@types/recharts": "1.8.14",
     "@types/resize-observer-browser": "0.1.3",
@@ -268,7 +267,7 @@
     "@sourcegraph/extension-api-types": "link:packages/@sourcegraph/extension-api-types",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
-    "bootstrap": "^4.4.1",
+    "bootstrap": "^4.5.0",
     "classnames": "^2.2.6",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
@@ -303,7 +302,6 @@
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
     "react-stripe-elements": "^6.1.2",
-    "react-textarea-autosize": "^7.1.2",
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.4.1",
     "recharts": "^1.8.5",

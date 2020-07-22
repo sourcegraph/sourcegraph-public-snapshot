@@ -4,9 +4,9 @@ exports[`HiddenExternalChangesetNode renders 1`] = `
 <HiddenExternalChangesetNode
   node={
     Object {
+      "externalState": "OPEN",
       "id": "test",
       "nextSyncAt": "2006-01-03T22:04:05.000Z",
-      "state": "OPEN",
       "updatedAt": "2006-01-02T22:04:05.000Z",
     }
   }
@@ -33,7 +33,7 @@ exports[`HiddenExternalChangesetNode renders 1`] = `
                 className="m-0 d-inline"
               >
                 <ChangesetStateIcon
-                  state="OPEN"
+                  externalState="OPEN"
                 >
                   <Memo(SourcePullIcon)
                     className="mr-1 icon-inline text-success"
@@ -64,9 +64,9 @@ exports[`HiddenExternalChangesetNode renders 1`] = `
               <ChangesetLastSynced
                 changeset={
                   Object {
+                    "externalState": "OPEN",
                     "id": "test",
                     "nextSyncAt": "2006-01-03T22:04:05.000Z",
-                    "state": "OPEN",
                     "updatedAt": "2006-01-02T22:04:05.000Z",
                   }
                 }

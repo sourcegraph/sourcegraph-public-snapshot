@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import { flatMap } from 'lodash'
 import * as React from 'react'
 import { Observable } from 'rxjs'

@@ -28,6 +28,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { RepogroupMetadata } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
+import { PrivateCodeCta } from '../search/input/PrivateCodeCta'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,
@@ -142,31 +143,36 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     ))}
                 </div>
                 <div className="repogroup-page__column col-xs-12 col-lg-5">
-                    <div className="repogroup-page__repo-card card">
-                        <h2 className="font-weight-normal">
-                            <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
-                            Repositories
-                        </h2>
-                        <p>
-                            Using the syntax{' '}
-                            <span className="text-monospace">
-                                <span className="repogroup-page__keyword-text">repogroup:</span>
-                                {props.repogroupMetadata.name}
-                            </span>{' '}
-                            in a query will search these repositories:
-                        </p>
-                        <div className="repogroup-page__repo-list row">
-                            <div className="col-lg-6">
-                                {repogroupRepoList?.slice(0, Math.ceil(repogroupRepoList.length / 2)).map(repo => (
-                                    <RepoLink key={repo} repo={repo} />
-                                ))}
-                            </div>
-                            <div className="col-lg-6">
-                                {repogroupRepoList
-                                    ?.slice(Math.ceil(repogroupRepoList.length / 2), repogroupRepoList.length)
-                                    .map(repo => (
+                    <div className="order-1-lg order-2-xs">
+                        <PrivateCodeCta />
+                    </div>
+                    <div className="order-2-lg order-1-xs">
+                        <div className="repogroup-page__repo-card card">
+                            <h2 className="font-weight-normal">
+                                <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
+                                Repositories
+                            </h2>
+                            <p>
+                                Using the syntax{' '}
+                                <span className="text-monospace">
+                                    <span className="repogroup-page__keyword-text">repogroup:</span>
+                                    {props.repogroupMetadata.name}
+                                </span>{' '}
+                                in a query will search these repositories:
+                            </p>
+                            <div className="repogroup-page__repo-list row">
+                                <div className="col-lg-6">
+                                    {repogroupRepoList?.slice(0, Math.ceil(repogroupRepoList.length / 2)).map(repo => (
                                         <RepoLink key={repo} repo={repo} />
                                     ))}
+                                </div>
+                                <div className="col-lg-6">
+                                    {repogroupRepoList
+                                        ?.slice(Math.ceil(repogroupRepoList.length / 2), repogroupRepoList.length)
+                                        .map(repo => (
+                                            <RepoLink key={repo} repo={repo} />
+                                        ))}
+                                </div>
                             </div>
                         </div>
                     </div>

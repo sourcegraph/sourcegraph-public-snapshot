@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import CalculatorIcon from 'mdi-react/CalculatorIcon'

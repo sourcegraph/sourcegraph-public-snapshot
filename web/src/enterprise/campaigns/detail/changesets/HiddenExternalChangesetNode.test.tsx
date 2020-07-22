@@ -1,7 +1,7 @@
 import React from 'react'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { addDays } from 'date-fns'
-import { ChangesetState } from '../../../../../../shared/src/graphql/schema'
+import { ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
 import { mount } from 'enzyme'
 
 describe('HiddenExternalChangesetNode', () => {
@@ -12,7 +12,7 @@ describe('HiddenExternalChangesetNode', () => {
                     node={{
                         id: 'test',
                         nextSyncAt: addDays(new Date(), 1).toISOString(),
-                        state: ChangesetState.OPEN,
+                        externalState: ChangesetExternalState.OPEN,
                         updatedAt: new Date().toISOString(),
                     }}
                 />

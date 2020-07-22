@@ -5,6 +5,7 @@
 @import './LazyMonacoQueryInput';
 @import './InfoDropdown';
 @import './interactive/InteractiveModeInput';
+@import './PrivateCodeCta';
 
 .search-page {
     display: flex;
@@ -39,9 +40,13 @@
         max-width: 90%;
     }
 
+    &__cloud-tag-line {
+        margin-top: 1rem;
+    }
+
     &__search-container {
         flex: 1 1 auto;
-        margin-top: 4rem;
+        margin-top: 1.5rem;
         width: 49rem;
         max-width: 90%;
         position: relative;
@@ -125,7 +130,18 @@
 .theme-light {
     .search-page {
         &__sign-in {
-            color: $color-light-text-4;
+            color: $gray-11;
+        }
+        &__cloud-tag-line {
+            color: $gray-11;
+        }
+    }
+}
+
+.theme-dark {
+    .search-page {
+        &__cloud-tag-line {
+            color: $gray-07;
         }
 
         h1,
@@ -163,48 +179,6 @@
 
         &__keyword-text {
             color: #1c7cd6;
-        }
-    }
-}
-
-.theme-dark {
-    .search-page {
-        h1,
-        h2 {
-            color: $gray-09;
-        }
-
-        h3,
-        h4,
-        h6 {
-            color: $gray-08;
-        }
-
-        h5 {
-            color: $gray-03;
-        }
-
-        p,
-        i {
-            color: $gray-06;
-        }
-
-        strong {
-            color: $gray-11;
-        }
-
-        &__example-searches {
-            a {
-                color: $white;
-            }
-        }
-
-        &__web-link {
-            color: #329af0;
-        }
-
-        &__keyword-text {
-            color: #329af0;
         }
     }
 }

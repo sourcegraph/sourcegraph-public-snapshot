@@ -20,28 +20,6 @@ import (
 // In most cases, an authz provider represents a code host, because it is the source of truth for
 // repository permissions.
 type Provider interface {
-	// RepoPerms accepts an external user account and a set of repos whose external service id and type
-	// matches the Provider's `ServiceID()` and `ServiceType()`. The external user account identifies the
-	// user to the authz source (e.g., the code host). The return value is a slice of repository permissions.
-	// If a repo in the input slice is missing from the returned permissions slice, that means "no permissions"
-	// on that repo.
-	//
-	// Implementations should handle any external account whose ServiceID and ServiceType values
-	// match the `ServiceID()` and `ServiceType()` return values of this authz provider. The caller
-	// can call the `FetchAccount` method to compute such an account from existing accounts. (Note:
-	// implementations should use only the userAccount parameter to compute permissions. They should
-	// NOT use any information about the currently authenticated user, including what might be
-	// inferred from the ctx parameter.) The userAccount parameter may be nil, in which case the set
-	// of permissions for an code-host-unauthenticated user is returned.
-	//
-	// Design note: this is a better interface than ListAllRepos, because the list of all repos may
-	// be very long (especially if the returned list includes public repos). RepoPerms is a
-	// sufficient interface for all current use cases and leaves up to the implementation which repo
-	// permissions it needs to compute.  In practice, most will probably use a combination of (1)
-	// "list all private repos the user has access to", (2) a mechanism to determine which repos are
-	// public/private, and (3) a cache of some sort.
-	RepoPerms(ctx context.Context, userAccount *extsvc.Account, repos []*types.Repo) ([]RepoPerms, error)
-
 	// FetchAccount returns the external account that identifies the user to this authz provider,
 	// taking as input the current list of external accounts associated with the
 	// user. Implementations should always recompute the returned account (rather than returning an

@@ -212,12 +212,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "bad blacklist regex",
-			config: `{"blacklist": "]["}`,
-			assert: includes("blacklist: Does not match format 'regex'"),
-		},
-		{
-			kind:   extsvc.KindGitolite,
 			desc:   "phabricator without url nor callsignCommand",
 			config: `{"phabricator": {}}`,
 			assert: includes(
@@ -570,24 +564,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid authorization ttl",
-			config: `{"authorization": {"ttl": "foo"}}`,
-			assert: includes(`authorization.ttl: time: invalid duration foo`),
-		},
-		{
-			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid authorization hardTTL",
-			config: `{"authorization": {"ttl": "3h", "hardTTL": "1h"}}`,
-			assert: includes(`authorization.hardTTL: must be larger than ttl`),
-		},
-		{
-			kind:   extsvc.KindBitbucketServer,
-			desc:   "valid authorization ttl 0",
-			config: `{"authorization": {"ttl": "0"}}`,
-			assert: excludes(`authorization.ttl: time: invalid duration 0`),
-		},
-		{
 			kind: extsvc.KindBitbucketServer,
 			desc: "missing oauth in authorization",
 			config: `
@@ -752,18 +728,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "invalid repos",
 			config: `{"repos": [""]}`,
 			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
-		},
-		{
-			kind:   extsvc.KindGitHub,
-			desc:   "invalid authorization ttl",
-			config: `{"authorization": {"ttl": "foo"}}`,
-			assert: includes(`authorization.ttl: time: invalid duration foo`),
-		},
-		{
-			kind:   extsvc.KindGitHub,
-			desc:   "valid authorization ttl 0",
-			config: `{"authorization": {"ttl": "0"}}`,
-			assert: excludes(`authorization.ttl: time: invalid duration 0`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
@@ -973,18 +937,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "invalid certificate",
 			config: `{"certificate": ""}`,
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
-		},
-		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid authorization ttl",
-			config: `{"authorization": {"ttl": "foo"}}`,
-			assert: includes(`authorization.ttl: time: invalid duration foo`),
-		},
-		{
-			kind:   extsvc.KindGitLab,
-			desc:   "valid authorization ttl 0",
-			config: `{"authorization": {"ttl": "0"}}`,
-			assert: excludes(`authorization.ttl: time: invalid duration 0`),
 		},
 		{
 			kind: extsvc.KindGitLab,
