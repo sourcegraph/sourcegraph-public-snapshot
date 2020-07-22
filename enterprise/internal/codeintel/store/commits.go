@@ -210,7 +210,7 @@ func (s *store) DirtyRepositories(ctx context.Context) (map[int]int, error) {
 // If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
-func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) error {
+func (s *store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return err
