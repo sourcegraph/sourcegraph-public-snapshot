@@ -1,8 +1,8 @@
 # Campaigns
 
-Campaigns let you make large-scale code changes across many repositories.
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
 
-> NOTE: Campaigns are in beta.
+Campaigns let you make large-scale code changes across many repositories.
 
 ## About campaigns
 
@@ -64,7 +64,7 @@ For more information, see:
 
 - [Creating a campaign](#creating-a-campaign) from a campaign spec
 - [Updating a campaign](#updating-a-campaign) from a campaign spec
-- TODO(sqs) <u>Campaign spec YAML reference</u>
+<!-- - TODO(sqs) <u>Campaign spec YAML reference</u> -->
 - [Example campaign specs](examples/index.md)
 
 ## Creating a campaign
@@ -134,7 +134,7 @@ After you've added patches, you can see a preview of the changesets (e.g., GitHu
 
 When you're ready, you can publish some or all of a campaign's changesets.
 
-> TODO(sqs): add steps for updating campaign spec's `changesetTemplate` to publish
+<!-- > TODO(sqs): add steps for updating campaign spec's `changesetTemplate` to publish -->
 
 You'll see a progress indicator when changesets are being published. Any errors will be shown, and you can retry publishing after you've resolved the problem. You don't need to worry about it creating multiple branches or pull requests when you retry, because it uses the same branch name.
 
@@ -150,11 +150,11 @@ A campaign tracks all of its changesets for updates to:
 
 You can see the overall trend of a campaign in the burndown chart, which shows the proportion of changesets that have been merged over time since the campaign was created.
 
-> TODO(sqs) screenshot
+<!-- > TODO(sqs) screenshot -->
 
 In the list of changesets, you can see the detailed status for each changeset.
 
-> TODO(sqs) screenshot
+<!-- > TODO(sqs) screenshot -->
 
 If you lack read access to a repository, you can only see [limited information about the changes to that repository](managing_access.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
 
