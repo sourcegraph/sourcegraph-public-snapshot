@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react'
 import { queryCampaigns as _queryCampaigns } from './backend'
-import AddIcon from 'mdi-react/AddIcon'
-import { Link } from '../../../../../../shared/src/components/Link'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
 import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'

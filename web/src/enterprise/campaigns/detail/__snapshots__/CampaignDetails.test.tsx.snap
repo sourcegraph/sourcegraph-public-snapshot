@@ -181,8 +181,8 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             className="text-muted"
           >
             0
-            % complete . 
-            10
+            % complete. 
+            2
              changesets total
           </small>
         </h2>
@@ -420,8 +420,8 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             className="text-muted"
           >
             0
-            % complete . 
-            10
+            % complete. 
+            2
              changesets total
           </small>
         </h2>

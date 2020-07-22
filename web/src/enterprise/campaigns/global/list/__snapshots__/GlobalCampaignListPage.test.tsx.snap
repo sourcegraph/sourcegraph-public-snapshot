@@ -270,15 +270,6 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
         </a>
       </p>
     </div>
-    <AnchorLink
-      className="btn btn-primary ml-3"
-      to="/campaigns/create"
-    >
-      <Memo(AddIcon)
-        className="icon-inline"
-      />
-       New campaign
-    </AnchorLink>
   </div>
   <div
     className="card mt-4 mb-4"
@@ -400,15 +391,6 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
         </a>
       </p>
     </div>
-    <AnchorLink
-      className="btn btn-primary ml-3"
-      to="/campaigns/create"
-    >
-      <Memo(AddIcon)
-        className="icon-inline"
-      />
-       New campaign
-    </AnchorLink>
   </div>
   <div
     className="card mt-4 mb-4"

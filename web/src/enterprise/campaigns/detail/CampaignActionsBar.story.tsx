@@ -25,6 +25,7 @@ add('Bar', () => (
             closedAt: boolean('Closed', false) ? new Date().toISOString() : null,
             viewerCanAdminister: boolean('viewerCanAdminister', false),
             changesets: {
+                totalCount: 107,
                 stats: {
                     total: 107,
                     closed: 10,

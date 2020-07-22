@@ -6,7 +6,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 interface Props {
     campaign: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
         changesets: {
-            totalCount: number
+            totalCount: GQL.ICampaign['changesets']['totalCount']
             stats: Pick<GQL.ICampaign['changesets']['stats'], 'total' | 'closed' | 'merged'>
         }
     }
