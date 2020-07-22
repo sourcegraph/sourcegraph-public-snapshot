@@ -9,7 +9,6 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
     onClose={[Function]}
     onDelete={[Function]}
   />
-  0
 </Fragment>
 `;
 
@@ -79,7 +78,6 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
       />
     </div>
   </CampaignActionsBar>
-  0
 </CampaignDetails>
 `;
 
