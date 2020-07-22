@@ -55,13 +55,21 @@ add('Text', () => (
         </p>
 
         <p>
-            Text can be <em>emphasized</em> or made <strong>strong</strong>.
+            Text can be <em>'emphasized'</em> or made <strong>'strong'</strong>.
         </p>
 
         <p>
             <small>
                 You can use <code>{'<small>'}</code> to make small text. Use sparingly.
             </small>
+        </p>
+
+        <p>
+            <label>'Labels'</label> help label things
+        </p>
+
+        <p>
+            Text can be <span className="text-muted">'muted'</span>
         </p>
 
         <h2>Headings</h2>
