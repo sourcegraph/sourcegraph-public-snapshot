@@ -2,13 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -31,19 +29,19 @@ type campaignsConnectionResolver struct {
 }
 
 func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignResolver, error) {
-	campaigns, _, err := r.compute(ctx)
+	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(campaigns))
-	for _, c := range campaigns {
+	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(nodes))
+	for _, c := range nodes {
 		resolvers = append(resolvers, &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: c})
 	}
 	return resolvers, nil
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID, State: r.opts.State, HasPatchSet: r.opts.HasPatchSet, OnlyForAuthor: r.opts.OnlyForAuthor}
+	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID, State: r.opts.State, OnlyForAuthor: r.opts.OnlyForAuthor}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
@@ -98,7 +96,7 @@ func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserReso
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return currentUserCanAdministerCampaign(ctx, r.Campaign)
+	return checkSiteAdminOrSameUser(ctx, r.Campaign.AuthorID)
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
@@ -144,55 +142,6 @@ func (r *campaignResolver) Changesets(
 		opts:     opts,
 		optsSafe: safe,
 	}, nil
-}
-
-func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	state := campaigns.ChangesetStateOpen
-	return &changesetsConnectionResolver{
-		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			CampaignID:    r.Campaign.ID,
-			ExternalState: &state,
-			Limit:         -1,
-		},
-		optsSafe: true,
-	}, nil
-}
-
-func (r *campaignResolver) Patches(
-	ctx context.Context,
-	args *graphqlutil.ConnectionArgs,
-) graphqlbackend.PatchConnectionResolver {
-	if r.Campaign.PatchSetID == 0 {
-		return &emptyPatchConnectionResolver{}
-	}
-
-	return &patchesConnectionResolver{
-		store: r.store,
-		opts: ee.ListPatchesOpts{
-			PatchSetID:                r.Campaign.PatchSetID,
-			Limit:                     int(args.GetFirst()),
-			OnlyWithDiff:              true,
-			OnlyUnpublishedInCampaign: r.Campaign.ID,
-		},
-	}
-}
-
-func (r *campaignResolver) HasUnpublishedPatches(ctx context.Context) (bool, error) {
-	if r.Campaign.PatchSetID == 0 {
-		return false, nil
-	}
-
-	unpublishedCount, err := r.store.CountPatches(ctx, ee.CountPatchesOpts{
-		PatchSetID:              r.Campaign.PatchSetID,
-		OnlyWithoutChangesetJob: r.Campaign.ID,
-		OnlyWithDiff:            true,
-	})
-	if err != nil {
-		return false, errors.Wrap(err, "getting unpublished patches count")
-	}
-
-	return unpublishedCount != 0, nil
 }
 
 func (r *campaignResolver) ChangesetCountsOverTime(
@@ -244,34 +193,6 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	return resolvers, nil
 }
 
-func (r *campaignResolver) PatchSet(ctx context.Context) (graphqlbackend.PatchSetResolver, error) {
-	if r.Campaign.PatchSetID == 0 {
-		return nil, nil
-	}
-
-	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: r.Campaign.PatchSetID})
-	if err != nil {
-		return nil, err
-	}
-
-	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
-}
-
-func (r *campaignResolver) RepositoryDiffs(
-	ctx context.Context,
-	args *graphqlutil.ConnectionArgs,
-) (graphqlbackend.RepositoryComparisonConnectionResolver, error) {
-	changesetsConnection := &changesetsConnectionResolver{
-		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			CampaignID: r.Campaign.ID,
-			Limit:      int(args.GetFirst()),
-		},
-		optsSafe: true,
-	}
-	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
-}
-
 func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	changesetsConnection := &changesetsConnectionResolver{
 		store: r.store,
@@ -302,74 +223,5 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 		}
 	}
 
-	// We don't have a patch set, so we don't have patches and can return
-	if r.Campaign.PatchSetID == 0 {
-		return totalStat, nil
-	}
-
-	patchSetStat, err := patchSetDiffStat(ctx, r.store, ee.ListPatchesOpts{
-		PatchSetID:                r.Campaign.PatchSetID,
-		Limit:                     -1, // Fetch all patches in a patch set
-		OnlyWithDiff:              true,
-		OnlyUnpublishedInCampaign: r.Campaign.ID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	totalStat.AddDiffStat(patchSetStat)
-
 	return totalStat, nil
-}
-
-func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
-	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: GetCampaignStatus checks whether current user is authorized.
-	return svc.GetCampaignStatus(ctx, r.Campaign)
-}
-
-type changesetDiffsConnectionResolver struct {
-	*changesetsConnectionResolver
-}
-
-func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
-	changesets, err := r.changesetsConnectionResolver.Nodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	resolvers := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(changesets))
-	for _, c := range changesets {
-		switch c := c.(type) {
-		case *changesetResolver:
-			comp, err := c.Diff(ctx)
-			if err != nil {
-				return nil, err
-			}
-
-			if comp != nil {
-				resolvers = append(resolvers, comp)
-			}
-		case *hiddenChangesetResolver:
-			// Do not include hidden changesets in diff and diffstats
-			continue
-		default:
-			return nil, fmt.Errorf("changesetResolver has unknown type: %T", c)
-		}
-
-	}
-	return resolvers, nil
-}
-
-type emptyPatchConnectionResolver struct{}
-
-func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchInterfaceResolver, error) {
-	return []graphqlbackend.PatchInterfaceResolver{}, nil
-}
-
-func (r *emptyPatchConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return 0, nil
-}
-
-func (r *emptyPatchConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
 }

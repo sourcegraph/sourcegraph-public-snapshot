@@ -3,59 +3,41 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { Observable } from 'rxjs'
+import { Connection } from '../../../../components/FilteredConnection'
+import { CampaignNodeProps } from '../../list/CampaignNode'
 
 export const queryCampaigns = ({
     first,
     state,
-    hasPatchSet,
     viewerCanAdminister,
-}: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
+}: GQL.ICampaignsOnQueryArguments): Observable<Connection<CampaignNodeProps['node']>> =>
     queryGraphQL(
         gql`
-            query Campaigns($first: Int, $state: CampaignState, $hasPatchSet: Boolean, $viewerCanAdminister: Boolean) {
-                campaigns(
-                    first: $first
-                    state: $state
-                    hasPatchSet: $hasPatchSet
-                    viewerCanAdminister: $viewerCanAdminister
-                ) {
+            query Campaigns($first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
+                campaigns(first: $first, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
                         id
                         name
                         description
-                        url
                         createdAt
                         closedAt
-                        changesets {
-                            totalCount
-                            nodes {
-                                state
-                            }
+                        author {
+                            username
                         }
-                        patches {
-                            totalCount
+                        changesets {
+                            stats {
+                                open
+                                closed
+                                merged
+                            }
                         }
                     }
                     totalCount
                 }
             }
         `,
-        { first, state, hasPatchSet, viewerCanAdminister }
+        { first, state, viewerCanAdminister }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
-    )
-
-export const queryCampaignsCount = (): Observable<number> =>
-    queryGraphQL(
-        gql`
-            query CampaignsCount {
-                campaigns(first: 1) {
-                    totalCount
-                }
-            }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.campaigns.totalCount)
     )

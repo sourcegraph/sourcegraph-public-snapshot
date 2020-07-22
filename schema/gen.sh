@@ -22,12 +22,14 @@ stringdata() {
 stringdata aws_codecommit.schema.json AWSCodeCommitSchemaJSON
 stringdata bitbucket_cloud.schema.json BitbucketCloudSchemaJSON
 stringdata bitbucket_server.schema.json BitbucketServerSchemaJSON
-stringdata site.schema.json SiteSchemaJSON
-stringdata settings.schema.json SettingsSchemaJSON
+stringdata campaign_spec.schema.json CampaignSpecSchemaJSON
+stringdata changeset_spec.schema.json ChangesetSpecSchemaJSON
 stringdata github.schema.json GitHubSchemaJSON
 stringdata gitlab.schema.json GitLabSchemaJSON
 stringdata gitolite.schema.json GitoliteSchemaJSON
 stringdata other_external_service.schema.json OtherExternalServiceSchemaJSON
 stringdata phabricator.schema.json PhabricatorSchemaJSON
+stringdata settings.schema.json SettingsSchemaJSON
+stringdata site.schema.json SiteSchemaJSON
 
 gofmt -s -w site_stringdata.go settings_stringdata.go

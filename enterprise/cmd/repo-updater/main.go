@@ -57,13 +57,16 @@ func enterpriseInit(
 	sourcer := repos.NewSourcer(cf)
 	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
 
-	// Set up expired patch set deletion
+	// Set up expired spec deletion
 	go func() {
 		for {
-			err := campaignsStore.DeleteExpiredPatchSets(ctx)
-			if err != nil {
-				log15.Error("DeleteExpiredPatchSets", "error", err)
+			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
 			}
+			if err := campaignsStore.DeleteExpiredChangesetSpecs(ctx); err != nil {
+				log15.Error("DeleteExpiredChangesetSpecs", "error", err)
+			}
+
 			time.Sleep(2 * time.Minute)
 		}
 	}()

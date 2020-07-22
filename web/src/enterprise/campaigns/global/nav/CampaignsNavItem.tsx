@@ -1,6 +1,7 @@
 import React from 'react'
 import { LinkWithIconOnlyTooltip } from '../../../../components/LinkWithIconOnlyTooltip'
 import { CampaignsIcon } from '../../icons'
+import classNames from 'classnames'
 
 interface Props {
     className?: string
@@ -9,12 +10,12 @@ interface Props {
 /**
  * An item in {@link GlobalNavbar} that links to the campaigns area.
  */
-export const CampaignsNavItem: React.FunctionComponent<Props> = ({ className = '' }) => (
+export const CampaignsNavItem: React.FunctionComponent<Props> = ({ className }) => (
     <LinkWithIconOnlyTooltip
         to="/campaigns"
         text="Campaigns"
         icon={CampaignsIcon}
-        className={`nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry ${className}`}
+        className={classNames('nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry', className)}
         activeClassName="active"
     />
 )

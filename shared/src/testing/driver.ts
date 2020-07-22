@@ -14,7 +14,7 @@ import puppeteer, {
 } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
+import { IMutation, IQuery, ExternalServiceKind, IRepository } from '../graphql/schema'
 import { readEnvironmentBoolean, retry } from './utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
@@ -477,21 +477,6 @@ export class Driver {
             throw new Error(`repository not found: ${name}`)
         }
         return repository
-    }
-
-    public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
-        const response = await this.makeGraphQLRequest<IMutation>({
-            request: gql`
-                mutation($patches: [PatchInput!]!) {
-                    createPatchSetFromPatches(patches: $patches) {
-                        previewURL
-                    }
-                }
-            `,
-            variables: { patches },
-        })
-        const { createPatchSetFromPatches } = dataOrThrowErrors(response)
-        return createPatchSetFromPatches
     }
 
     public async setConfig(
