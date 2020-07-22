@@ -1,5 +1,7 @@
 # Managing access to campaigns
 
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
+
 You can customize access to a campaign and propose changes to repositories with varying permission levels. Other people see the campaign's proposed changes to a repository if they can view that repository; otherwise, they can see only limited, non-identifying information about the change.
 
 ## Permission levels for campaigns

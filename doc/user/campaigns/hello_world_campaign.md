@@ -1,6 +1,8 @@
 # Hello World Campaign
 
-> TODO(sqs): This will eventually go in a new "Sourcegraph Guides" docs section, but it lives here for now.
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
+
+<!-- TODO(sqs): This will eventually go in a new "Sourcegraph Guides" docs section, but it lives here for now. -->
 
 Have you ever needed to make the same kind of change to many repositories at once? Campaigns make this much easier. To get you started, let's run a very simple campaign: adding the line `Hello World` to all of your repositories' `README.md` files. After completing this exercise, you'll be able to create your own campaigns to make useful changes, fixes, refactors, and more.
 

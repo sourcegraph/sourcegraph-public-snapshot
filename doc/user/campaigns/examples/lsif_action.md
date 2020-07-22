@@ -1,6 +1,8 @@
 # Example: Adding a GitHub action to upload LSIF data to Sourcegraph
 
-> TODO(sqs): update for new campaigns flow
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
+
+<!-- TODO(sqs): update for new campaigns flow -->
 
 Our goal for this campaign is to add a GitHub Action that generates and uploads LSIF data to Sourcegraph by adding a `.github/workflows/lsif.yml` file to each repository that doesn't have it yet.
 
