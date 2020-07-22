@@ -590,7 +590,7 @@ func (s *ObservedStore) HasCommit(ctx context.Context, repositoryID int, commit 
 }
 
 // UpdateCommits calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) (_ bool, err error) {
+func (s *ObservedStore) UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) (err error) {
 	ctx, endObservation := s.updateCommitsOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.UpdateCommits(ctx, repositoryID, commits)
