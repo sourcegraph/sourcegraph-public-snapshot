@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/grafana-tools/sdk"
@@ -232,6 +233,10 @@ type Alert struct {
 	// LessOrEqual, when non-zero, indicates the alert should fire when less
 	// than or equal to this value.
 	LessOrEqual float64
+
+	// For indicates how long the given thresholds must be exceeded for this
+	// alert to be considered firing. Defaults to 0s.
+	For time.Duration
 }
 
 func (a Alert) isEmpty() bool {
@@ -682,7 +687,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"))
+						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"), alert.For)
 					}
 					if alert.LessOrEqual != 0 {
 						//
@@ -709,7 +714,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"))
+						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"), alert.For)
 					}
 				}
 			}
@@ -944,31 +949,31 @@ type promGroup struct {
 	Rules []promRule
 }
 
-func (g *promGroup) AppendRow(alertQuery string, labels map[string]string) {
-	// This wrapper clamp/floor/default vector should be present on ALL alert_count rule
-	// definitions because:
-	//
-	// 1. Clamping and flooring ensures that a single alert definition can only ever
-	//    contribute a single 0 OR 1 value, and as such cannot artificially inflate
-	//    alert_count or cause it to become a non-whole number.
-	//
-	// 3. "OR on() vector(1)" ensures that the alert is always firing if the inner
-	//    alertQuery does not return values for any reason (e.g. the query is for a
-	//    metric that does not exist.)
-	//
-	expr := "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)"
+func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, duration time.Duration) {
+	labels["alert_type"] = "builtin" // indicate alert is generated
+	var forDuration *time.Duration
+	if duration > 0 {
+		forDuration = &duration
+	}
+
+	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
 	g.Rules = append(g.Rules,
+		// Native prometheus alert, based on alertQuery which returns 0 if not firing or 1 if firing.
+		promRule{
+			Alert:  alertName,
+			Labels: labels,
+			Expr:   fmt.Sprintf(`%s > 0`, alertQuery),
+			For:    forDuration,
+		},
+		// Record for generated alert, useful for indicating in Grafana dashboards if this alert
+		// is defined at all. Prometheus's ALERTS metric does not track alerts with state="inactive".
+		//
+		// Since ALERTS{alertname="value"} does not exist if the alert has never fired, we add set
+		// the series to vector(0) instead.
 		promRule{
 			Record: "alert_count",
 			Labels: labels,
-			Expr:   expr,
-		},
-		// a "real" prometheus alert to attach onto alert_count
-		promRule{
-			Alert:  prometheusAlertName(labels["level"], labels["service_name"], labels["name"]),
-			Labels: labels,
-			Expr: fmt.Sprintf(`alert_count{service_name=%q,level=%q,name=%q} >= 1`,
-				labels["service_name"], labels["level"], labels["name"]),
+			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q} OR on() vector(0))`, alertName),
 		})
 }
 
@@ -979,6 +984,9 @@ type promRule struct {
 
 	Labels map[string]string
 	Expr   string
+
+	// for Alert only
+	For *time.Duration `yaml:",omitempty"`
 }
 
 // setPanelSize is a helper to set a panel's size.
@@ -997,6 +1005,7 @@ func stringPtr(s string) *string {
 	return &s
 }
 
+// prometheusAlertName creates an alertname that is unique given the combination of parameters
 func prometheusAlertName(level, service, name string) string {
 	return fmt.Sprintf("%s_%s_%s", level, service, name)
 }
