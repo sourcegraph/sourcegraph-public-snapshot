@@ -3,6 +3,8 @@ package workerutil
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -56,7 +58,8 @@ type Record interface {
 
 type store struct {
 	*basestore.Store
-	options StoreOptions
+	options        StoreOptions
+	columnReplacer *strings.Replacer
 }
 
 var _ Store = &store{}
@@ -76,9 +79,17 @@ type StoreOptions struct {
 	//   - process_after: timestamp with time zone
 	//   - num_resets: integer not null
 	//
-	// It's recommended to put an index or (or partial index) on the state field for more efficient
+	// The names of these columns may be customized based on the table name by adding a replacement
+	// pair in the AlternateColumnNames mapping.
+	//
+	// It's recommended to put an index or (or partial index) on the state column for more efficient
 	// dequeue operations.
 	TableName string
+
+	// AlternateColumnNames is a map from expected column names to actual column names in the target
+	// table. This allows existing tables to be more easily retrofitted into the expected record
+	// shape.
+	AlternateColumnNames map[string]string
 
 	// ViewName is an optional name of a view on top of the table containing work records to query when
 	// selecting a candidate and when selecting the record after it has been locked. If this value is
@@ -86,7 +97,7 @@ type StoreOptions struct {
 	// can be referenced in `OrderByExpression`, `ColumnExpressions`, and the conditions suplied to
 	// `Dequeue`.
 	//
-	// The target of this field must be a view on top of the configured table with the same column
+	// The target of this column must be a view on top of the configured table with the same column
 	// requirements as the base table descried above.
 	//
 	// Example use case:
@@ -139,10 +150,35 @@ func newStore(handle *basestore.TransactableHandle, options StoreOptions) *store
 		options.ViewName = options.TableName
 	}
 
-	return &store{
-		Store:   basestore.NewWithHandle(handle),
-		options: options,
+	alternateColumnNames := map[string]string{}
+	for _, name := range columnNames {
+		alternateColumnNames[name] = name
 	}
+	for k, v := range options.AlternateColumnNames {
+		alternateColumnNames[k] = v
+	}
+
+	var replacements []string
+	for k, v := range alternateColumnNames {
+		replacements = append(replacements, fmt.Sprintf("{%s}", k), v)
+	}
+
+	return &store{
+		Store:          basestore.NewWithHandle(handle),
+		options:        options,
+		columnReplacer: strings.NewReplacer(replacements...),
+	}
+}
+
+// ColumnNames are the names of the columns expected to be defined by the target table.
+var columnNames = []string{
+	"id",
+	"state",
+	"failure_message",
+	"started_at",
+	"finished_at",
+	"process_after",
+	"num_resets",
 }
 
 func (s *store) Transact(ctx context.Context) (*store, error) {
@@ -151,7 +187,7 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 		return nil, err
 	}
 
-	return &store{Store: txBase, options: s.options}, nil
+	return &store{Store: txBase, options: s.options, columnReplacer: s.columnReplacer}, nil
 }
 
 // Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that
@@ -167,7 +203,7 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record R
 		return nil, nil, false, ErrDequeueTransaction
 	}
 
-	query := sqlf.Sprintf(
+	query := s.formatQuery(
 		selectCandidateQuery,
 		quote(s.options.ViewName),
 		makeConditionSuffix(conditions),
@@ -196,7 +232,7 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record R
 		// Select the candidate record within the transaction to lock it from other processes. Note
 		// that SKIP LOCKED here is necessary, otherwise this query would block on race conditions
 		// until the other process has finished with the record.
-		_, exists, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		_, exists, err = basestore.ScanFirstInt(tx.Query(ctx, s.formatQuery(
 			lockQuery,
 			quote(s.options.TableName),
 			id,
@@ -224,7 +260,7 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record R
 		// The record is now locked in this transaction. As `TableName` and `ViewName` may have distinct
 		// values, we need to perform a second select in order to pass the correct data to the scan
 		// function.
-		record, exists, err = s.options.Scan(tx.Query(ctx, sqlf.Sprintf(
+		record, exists, err = s.options.Scan(tx.Query(ctx, s.formatQuery(
 			selectRecordQuery,
 			sqlf.Join(s.options.ColumnExpressions, ", "),
 			quote(s.options.ViewName),
@@ -245,10 +281,10 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record R
 const selectCandidateQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 WITH candidate AS (
-	SELECT id FROM %s
+	SELECT {id} FROM %s
 	WHERE
-		state = 'queued' AND
-		(process_after IS NULL OR process_after <= NOW())
+		{state} = 'queued' AND
+		({process_after} IS NULL OR {process_after} <= NOW())
 		%s
 	ORDER BY %s
 	FOR UPDATE SKIP LOCKED
@@ -256,16 +292,16 @@ WITH candidate AS (
 )
 UPDATE %s
 SET
-	state = 'processing',
-	started_at = NOW()
-WHERE id IN (SELECT id FROM candidate)
-RETURNING id
+	{state} = 'processing',
+	{started_at} = NOW()
+WHERE {id} IN (SELECT {id} FROM candidate)
+RETURNING {id}
 `
 
 const lockQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 SELECT 1 FROM %s
-WHERE id = %s
+WHERE {id} = %s
 FOR UPDATE SKIP LOCKED
 LIMIT 1
 `
@@ -273,14 +309,14 @@ LIMIT 1
 const selectRecordQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 SELECT %s FROM %s
-WHERE id = %s
+WHERE {id} = %s
 LIMIT 1
 `
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 // the next dequeue of this record can be performed.
 func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
-	return s.Exec(ctx, sqlf.Sprintf(
+	return s.Exec(ctx, s.formatQuery(
 		requeueQuery,
 		quote(s.options.TableName),
 		after,
@@ -291,40 +327,40 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) error {
 const requeueQuery = `
 -- source: internal/workerutil/store.go:Requeue
 UPDATE %s
-SET state = 'queued', process_after = %s
-WHERE id = %s
+SET {state} = 'queued', {process_after} = %s
+WHERE {id} = %s
 `
 
 // MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 // the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 // indicating if the record was updated.
 func (s *store) MarkComplete(ctx context.Context, id int) (bool, error) {
-	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(markCompleteQuery, quote(s.options.TableName), id)))
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markCompleteQuery, quote(s.options.TableName), id)))
 	return ok, err
 }
 
 const markCompleteQuery = `
 -- source: internal/workerutil/store.go:MarkComplete
 UPDATE %s
-SET state = 'completed', finished_at = clock_timestamp()
-WHERE id = %s AND state = 'processing'
-RETURNING id
+SET {state} = 'completed', {finished_at} = clock_timestamp()
+WHERE {id} = %s AND {state} = 'processing'
+RETURNING {id}
 `
 
 // MarkErrored attempts to update the state of the record to errored. This method will only have an effect
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error) {
-	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(markErroredQuery, quote(s.options.TableName), failureMessage, id)))
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markErroredQuery, quote(s.options.TableName), failureMessage, id)))
 	return ok, err
 }
 
 const markErroredQuery = `
 -- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
-SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
-WHERE id = %s AND (state = 'processing' OR state = 'completed')
-RETURNING id
+SET {state} = 'errored', {finished_at} = clock_timestamp(), {failure_message} = %s
+WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
+RETURNING {id}
 `
 
 // ResetStalled moves all unlocked records in the processing state for more than `StalledMaxAge` back to the queued
@@ -348,7 +384,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetIDs, erroredIDs []int, e
 func (s *store) resetStalled(ctx context.Context, q string) ([]int, error) {
 	return basestore.ScanInts(s.Query(
 		ctx,
-		sqlf.Sprintf(
+		s.formatQuery(
 			q,
 			quote(s.options.TableName),
 			int(s.options.StalledMaxAge/time.Second),
@@ -361,40 +397,44 @@ func (s *store) resetStalled(ctx context.Context, q string) ([]int, error) {
 const resetStalledQuery = `
 -- source: internal/workerutil/store.go:ResetStalled
 WITH stalled AS (
-	SELECT id FROM %s
+	SELECT {id} FROM %s
 	WHERE
-		state = 'processing' AND
-		NOW() - started_at > (%s * '1 second'::interval) AND
-		num_resets < %s
+		{state} = 'processing' AND
+		NOW() - {started_at} > (%s * '1 second'::interval) AND
+		{num_resets} < %s
 	FOR UPDATE SKIP LOCKED
 )
 UPDATE %s
 SET
-	state = 'queued',
-	started_at = null,
-	num_resets = num_resets + 1
-WHERE id IN (SELECT id FROM stalled)
-RETURNING id
+	{state} = 'queued',
+	{started_at} = null,
+	{num_resets} = {num_resets} + 1
+WHERE {id} IN (SELECT {id} FROM stalled)
+RETURNING {id}
 `
 
 const resetStalledMaxResetsQuery = `
 -- source: internal/workerutil/store.go:ResetStalled
 WITH stalled AS (
-	SELECT id FROM %s
+	SELECT {id} FROM %s
 	WHERE
-		state = 'processing' AND
-		NOW() - started_at > (%s * '1 second'::interval) AND
-		num_resets >= %s
+		{state} = 'processing' AND
+		NOW() - {started_at} > (%s * '1 second'::interval) AND
+		{num_resets} >= %s
 	FOR UPDATE SKIP LOCKED
 )
 UPDATE %s
 SET
-	state = 'errored',
-	finished_at = clock_timestamp(),
-	failure_message = 'failed to process'
-WHERE id IN (SELECT id FROM stalled)
-RETURNING id
+	{state} = 'errored',
+	{finished_at} = clock_timestamp(),
+	{failure_message} = 'failed to process'
+WHERE {id} IN (SELECT {id} FROM stalled)
+RETURNING {id}
 `
+
+func (s *store) formatQuery(query string, args ...interface{}) *sqlf.Query {
+	return sqlf.Sprintf(s.columnReplacer.Replace(query), args...)
+}
 
 // quote wraps the given string in a *sqlf.Query so that it is not passed to the database
 // as a parameter. It is necessary to quote things such as table names, columns, and other
