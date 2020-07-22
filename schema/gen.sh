@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e
 
@@ -6,17 +6,28 @@ export GOBIN="$PWD/.bin"
 export GO111MODULE=on
 
 go install github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler
-"$GOBIN"/go-jsonschema-compiler -o schema.go -pkg schema aws_codecommit.schema.json bitbucket_cloud.schema.json bitbucket_server.schema.json site.schema.json settings.schema.json github.schema.json gitlab.schema.json gitolite.schema.json other_external_service.schema.json phabricator.schema.json
 
-go run stringdata.go -i aws_codecommit.schema.json -name AWSCodeCommitSchemaJSON -pkg schema -o aws_codecommit_stringdata.go
-go run stringdata.go -i bitbucket_cloud.schema.json -name BitbucketCloudSchemaJSON -pkg schema -o bitbucket_cloud_stringdata.go
-go run stringdata.go -i bitbucket_server.schema.json -name BitbucketServerSchemaJSON -pkg schema -o bitbucket_server_stringdata.go
-go run stringdata.go -i site.schema.json -name SiteSchemaJSON -pkg schema -o site_stringdata.go
-go run stringdata.go -i settings.schema.json -name SettingsSchemaJSON -pkg schema -o settings_stringdata.go
-go run stringdata.go -i github.schema.json -name GitHubSchemaJSON -pkg schema -o github_stringdata.go
-go run stringdata.go -i gitlab.schema.json -name GitLabSchemaJSON -pkg schema -o gitlab_stringdata.go
-go run stringdata.go -i gitolite.schema.json -name GitoliteSchemaJSON -pkg schema -o gitolite_stringdata.go
-go run stringdata.go -i other_external_service.schema.json -name OtherExternalServiceSchemaJSON -pkg schema -o other_external_service_stringdata.go
-go run stringdata.go -i phabricator.schema.json -name PhabricatorSchemaJSON -pkg schema -o phabricator_stringdata.go
+# shellcheck disable=SC2010
+schemas="$(ls -- *.schema.json | grep -v json-schema-draft)"
+
+# shellcheck disable=SC2086
+"$GOBIN"/go-jsonschema-compiler -o schema.go -pkg schema $schemas
+
+stringdata() {
+  # shellcheck disable=SC2039
+  target="${1/.schema.json/_stringdata.go}"
+  go run stringdata.go -i "$1" -name "$2" -pkg schema -o "$target"
+}
+
+stringdata aws_codecommit.schema.json AWSCodeCommitSchemaJSON
+stringdata bitbucket_cloud.schema.json BitbucketCloudSchemaJSON
+stringdata bitbucket_server.schema.json BitbucketServerSchemaJSON
+stringdata site.schema.json SiteSchemaJSON
+stringdata settings.schema.json SettingsSchemaJSON
+stringdata github.schema.json GitHubSchemaJSON
+stringdata gitlab.schema.json GitLabSchemaJSON
+stringdata gitolite.schema.json GitoliteSchemaJSON
+stringdata other_external_service.schema.json OtherExternalServiceSchemaJSON
+stringdata phabricator.schema.json PhabricatorSchemaJSON
 
 gofmt -s -w site_stringdata.go settings_stringdata.go
