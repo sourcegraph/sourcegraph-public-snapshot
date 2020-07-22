@@ -109,14 +109,14 @@ func (r Row) validate() error {
 type ObservableOwner string
 
 const (
-	// Core Products teams
+	// Core products teams
 	ObservableOwnerSearch               ObservableOwner = "search"
 	ObservableOwnerCampaigns            ObservableOwner = "campaigns"
 	ObservableOwnerCodeIntel            ObservableOwner = "code-intel"
 	ObservableOwnerExtensibility        ObservableOwner = "extensibility"
 	ObservableOwnerCodeHostIntegrations ObservableOwner = "code-host-integrations"
 
-	// Core Services teams
+	// Core services teams
 	ObservableOwnerBackendInfrastructure ObservableOwner = "backend-infrastructure"
 	ObservableOwnerDistribution          ObservableOwner = "distribution"
 	ObservableOwnerSecurity              ObservableOwner = "security"
