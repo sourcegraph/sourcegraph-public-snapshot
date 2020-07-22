@@ -106,3 +106,43 @@ func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {
 
 	return 0, false, nil
 }
+
+// ScanBools reads integer values from the given row object.
+func ScanBools(rows *sql.Rows, queryErr error) (_ []bool, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	var values []bool
+	for rows.Next() {
+		var value bool
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// ScanFirstBool reads integer values from the given row object and returns the first one.
+// If no rows match the query, a false-valued flag is returned.
+func ScanFirstBool(rows *sql.Rows, queryErr error) (_ bool, _ bool, err error) {
+	if queryErr != nil {
+		return false, false, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var value bool
+		if err := rows.Scan(&value); err != nil {
+			return false, false, err
+		}
+
+		return value, true, nil
+	}
+
+	return false, false, nil
+}
