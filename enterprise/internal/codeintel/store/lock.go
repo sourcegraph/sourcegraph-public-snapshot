@@ -5,10 +5,11 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"github.com/segmentio/fasthash/fnv1"
 )
 
 // appLockKey is the namespace in which all advisory locks are taken.
-const appLockKey = 176380398
+var appLockKey = int(fnv1.HashString32("codeintel"))
 
 // UnlockFunc unlocks the advisory lock taken by a successful call to Lock. If an error
 // occurs during unlock, the error is added to the resulting error value.
