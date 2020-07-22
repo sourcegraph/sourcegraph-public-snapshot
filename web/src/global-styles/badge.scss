@@ -1,5 +1,9 @@
 @import 'bootstrap/scss/badge';
 
+.badge {
+    text-transform: uppercase;
+}
+
 // Light theme badge variants
 .theme-light {
     @each $color, $value in $theme-colors-light {
