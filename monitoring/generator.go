@@ -388,7 +388,7 @@ func (c *Container) dashboard() *sdk.Board {
 	description.TextPanel.Mode = "html"
 	description.TextPanel.Content = fmt.Sprintf(`
 	<div style="text-align: left;">
-	  <img src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
+	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
 	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/architecture">(⧉ architecture diagram)</a></span>
 	</div>
 	`, c.Name, c.Description)
