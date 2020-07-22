@@ -4,6 +4,9 @@
 # Vim
 *.swp
 
+# envme
+.envme
+
 # JetBrains/IntelliJ
 .idea
 
