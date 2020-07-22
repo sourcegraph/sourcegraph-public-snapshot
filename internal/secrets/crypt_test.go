@@ -33,6 +33,29 @@ func TestDBEncryptingAndDecrypting(t *testing.T) {
 	if decrypted != toEncrypt {
 		t.Fatalf("failed to decrypt")
 	}
+
+}
+
+// Test the negative result - we should fail to decrypt with bad keys
+func TestBadKeysFailToDecrypt(t *testing.T) {
+	key := []byte(randstring.NewLen(32))
+	e := EncryptionStore{EncryptionKey: key}
+
+	message := "The secret is to bang the rocks together guys."
+	encrypted, _ := e.Encrypt(message)
+	decrypted, _ := e.Decrypt(encrypted)
+
+	notTheSameKey := []byte(randstring.NewLen(32))
+	e.EncryptionKey = notTheSameKey
+	decryptAgain, err := e.Decrypt(encrypted)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if decrypted == decryptAgain {
+		t.Fatal("Should not have been able to decrypt string with a second set of secrets.")
+	}
+
 }
 
 // Test that different strings encrypt to different outputs
@@ -113,5 +136,9 @@ func TestDBKeyRotation(t *testing.T) {
 
 	if decrypted != toEncrypt {
 		t.Fatal("failed to decrypt")
+	}
+
+	if !reflect.DeepEqual(e.EncryptionKey, secondKey) {
+		t.Fatalf("Expected key to be %s, got %s.", secondKey, e.EncryptionKey)
 	}
 }

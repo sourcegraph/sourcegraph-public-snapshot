@@ -79,5 +79,6 @@ func (e *EncryptionStore) RotateKey(newKey []byte, encryptedValue string) (strin
 		return "", err
 	}
 
+	e.EncryptionKey = newKey
 	return e.encrypt(newKey, decrypted)
 }
