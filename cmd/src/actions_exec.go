@@ -448,9 +448,15 @@ fragment repositoryFields on Repository {
 		}
 
 		// Skip repos from unsupported code hosts but don't report them explicitly.
-		if !includeUnsupported && strings.ToLower(repo.ExternalRepository.ServiceType) != "github" && strings.ToLower(repo.ExternalRepository.ServiceType) != "bitbucketserver" {
-			unsupported = append(unsupported, repo.Name)
-			continue
+		if !includeUnsupported {
+			ok, err := isCodeHostSupportedForCampaigns(repo.ExternalRepository.ServiceType)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed code host check")
+			}
+			if !ok {
+				unsupported = append(unsupported, repo.Name)
+				continue
+			}
 		}
 
 		if repo.DefaultBranch == nil || repo.DefaultBranch.Name == "" {
@@ -516,4 +522,45 @@ func askForConfirmation(s string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+type minimumVersionDate struct {
+	version string
+	date    string
+}
+
+// codeHostCampaignVersions contains the minimum Sourcegraph version and build
+// date required for the given code host kind. If a code host is present with a
+// value of nil, this means that any Sourcegraph version will pass the check.
+var codeHostCampaignVersions = map[string]*minimumVersionDate{
+	"github":          nil,
+	"bitbucketserver": nil,
+	"gitlab": {
+		version: "3.18.0",
+		date:    "2020-07-14",
+	},
+}
+
+func isCodeHostSupportedForCampaigns(kind string) (bool, error) {
+	// TODO(LawnGnome): this is a temporary hack; I intend to improve our
+	// testing story including mocking requests to Sourcegraph as part of
+	// https://github.com/sourcegraph/sourcegraph/issues/12333
+	return isCodeHostSupportedForCampaignsImpl(kind, getSourcegraphVersion)
+}
+
+func isCodeHostSupportedForCampaignsImpl(kind string, getVersion func() (string, error)) (bool, error) {
+	mvd, ok := codeHostCampaignVersions[strings.ToLower(kind)]
+	if !ok {
+		return false, nil
+	}
+	if mvd == nil {
+		return true, nil
+	}
+
+	ver, err := getVersion()
+	if err != nil {
+		return false, errors.Wrap(err, "getting Sourcegraph version")
+	}
+
+	return sourcegraphVersionCheck(ver, fmt.Sprintf(">= %s", mvd.version), mvd.date)
 }
