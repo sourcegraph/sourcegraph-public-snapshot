@@ -6,6 +6,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 interface Props {
     campaign: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
         changesets: {
+            totalCount: number
             stats: Pick<GQL.ICampaign['changesets']['stats'], 'total' | 'closed' | 'merged'>
         }
     }
@@ -35,7 +36,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign })
                     <h2 className="m-0">
                         <CampaignStateBadge isClosed={campaignClosed} />
                         <small className="text-muted">
-                            {0}% complete . {campaign.changesets.stats.total} changesets total
+                            {0}% complete. {campaign.changesets.totalCount} changesets total
                         </small>
                     </h2>
                 </div>

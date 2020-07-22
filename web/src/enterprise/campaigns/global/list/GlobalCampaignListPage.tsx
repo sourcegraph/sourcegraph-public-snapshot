@@ -54,12 +54,6 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                         <a href="https://docs.sourcegraph.com/user/campaigns">Learn how.</a>
                     </p>
                 </div>
-                {/* TODO: Remove. */}
-                {props.authenticatedUser.siteAdmin && (
-                    <Link to="/campaigns/create" className="btn btn-primary ml-3">
-                        <AddIcon className="icon-inline" /> New campaign
-                    </Link>
-                )}
             </div>
 
             <div className="card mt-4 mb-4">
