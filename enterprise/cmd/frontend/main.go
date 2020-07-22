@@ -142,18 +142,6 @@ func initCampaigns(ctx context.Context, enterpriseServices *enterprise.Services)
 	}
 
 	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, msResolutionClock)
-
-	// Migrate all patches in the database to cache their diff stats.
-	// Since we validate each Patch's diff before we store it in the database,
-	// this migration should never fail, except in exceptional circumstances
-	// (database not reachable), in which case it's okay to exit.
-	//
-	// This can be removed in 3.19.
-
-	if err := campaigns.MigratePatchesWithoutDiffStats(ctx, campaignsStore); err != nil {
-		log.Fatalf("FATAL: Migrating patches without diff stats: %v", err)
-	}
-
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	enterpriseServices.CampaignsResolver = campaignsResolvers.NewResolver(dbconn.Global)

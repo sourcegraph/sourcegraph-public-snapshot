@@ -226,14 +226,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 </>
             )}
 
-            {totalChangesetCount && (
+            {totalChangesetCount > 0 && (
                 <>
                     <h3 className="mt-4 d-flex align-items-end mb-0">
-                        {(totalChangesetCount > 0 || !!campaign) && (
-                            <>
-                                {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
-                            </>
-                        )}{' '}
+                        {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}{' '}
                         {campaign && <CampaignDiffStat campaign={campaign} className="ml-2 mb-0" />}
                     </h3>
                     {totalChangesetCount > 0 && (

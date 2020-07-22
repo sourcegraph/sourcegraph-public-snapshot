@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -70,7 +71,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
-		campaign := testCampaign(author, 0)
+		campaign := testCampaign(author)
 		if err = s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -242,30 +243,9 @@ func TestService(t *testing.T) {
 	}
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: admin.ID}
-		err = store.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		campaign := testCampaign(admin.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID)
 		svc := NewServiceWithClock(store, cf, clock)
 
-		// Without Patches it should fail
-		err = svc.CreateCampaign(ctx, campaign)
-		if err != ErrNoPatches {
-			t.Fatal("CreateCampaign did not produce expected error")
-		}
-
-		for _, repo := range rs {
-			patch := testPatch(patchSet.ID, repo.ID, now)
-			err := store.CreatePatch(ctx, patch)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		// With Patches it should succeed
 		err = svc.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
@@ -275,90 +255,23 @@ func TestService(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-			CampaignID: campaign.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Validate no changeset jobs have been created yet.
-		if len(haveJobs) != 0 {
-			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), 0)
-		}
 	})
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: admin.ID}
-		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
-			t.Fatal(err)
-		}
-
-		patch := testPatch(patchSet.ID, rs[0].ID, now)
-		if err := store.CreatePatch(ctx, patch); err != nil {
-			t.Fatal(err)
-		}
-
-		campaign := testCampaign(admin.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID)
 
 		svc := NewServiceWithClock(store, cf, clock)
 
 		if err = svc.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
-
-		// TODO: Fix this as soon as we have "processing" campaigns.
-		//
-		// // Create a processing changeset job.
-		// err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
-		// if err != nil {
-		// 	t.Fatalf("Failed to create ChangesetJob: %s", err)
-		// }
-		//
-		// if err := svc.DeleteCampaign(ctx, campaign.ID, true); err != ErrDeleteProcessingCampaign {
-		// 	t.Fatalf("DeleteCampaign returned unexpected error: %s", err)
-		// }
-		//
-		// jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-		// 	CampaignID: campaign.ID,
-		// 	Limit:      -1,
-		// })
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
-		//
-		// if len(jobs) != 1 {
-		// 	t.Fatalf("wrong number of changeset jobs: %d", len(jobs))
-		// }
-		//
-		// for _, j := range jobs {
-		// 	j.Error = "failed"
-		// 	j.FinishedAt = clock()
-		// 	if err := store.UpdateChangesetJob(ctx, j); err != nil {
-		// 		t.Fatalf("updating changeset job failed: %s\n", err)
-		// 	}
-		// }
-
-		// Now it should work, since the jobs failed to execute and campaign is
-		// no longer processing.
 		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
 			t.Fatalf("campaign not deleted: %s", err)
 		}
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: admin.ID}
-		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
-			t.Fatal(err)
-		}
-
-		patch := testPatch(patchSet.ID, rs[0].ID, now)
-		if err := store.CreatePatch(ctx, patch); err != nil {
-			t.Fatal(err)
-		}
-
-		campaign := testCampaign(admin.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID)
 
 		svc := NewServiceWithClock(store, cf, clock)
 
@@ -366,40 +279,6 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// TODO: Fix this as soon as we have "processing" campaigns.
-		//
-		// // Create a processing changeset job.
-		// err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
-		// if err != nil {
-		// 	t.Fatalf("Failed to create ChangesetJob: %s", err)
-		// }
-		//
-		// if _, err = svc.CloseCampaign(ctx, campaign.ID, true); err != ErrCloseProcessingCampaign {
-		// 	t.Fatalf("CloseCampaign returned unexpected error: %s", err)
-		// }
-		//
-		// jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-		// 	CampaignID: campaign.ID,
-		// 	Limit:      -1,
-		// })
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
-		//
-		// if len(jobs) != 1 {
-		// 	t.Fatalf("wrong number of changeset jobs: %d", len(jobs))
-		// }
-		//
-		// for _, j := range jobs {
-		// 	j.Error = "failed"
-		// 	j.FinishedAt = clock()
-		// 	if err := store.UpdateChangesetJob(ctx, j); err != nil {
-		// 		t.Fatalf("updating changeset job failed: %s\n", err)
-		// 	}
-		// }
-
-		// Now it should work, since the jobs failed to execute and campaign is
-		// no longer processing.
 		campaign, err = svc.CloseCampaign(ctx, campaign.ID, true)
 		if err != nil {
 			t.Fatalf("campaign not closed: %s", err)
@@ -409,39 +288,10 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: admin.ID}
-		err = store.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		for _, repo := range rs {
-			err := store.CreatePatch(ctx, testPatch(patchSet.ID, repo.ID, now))
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		campaign := testCampaign(admin.ID, patchSet.ID)
-		svc := NewServiceWithClock(store, cf, clock)
-
-		err = svc.CreateCampaign(ctx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		otherCampaign := testCampaign(admin.ID, patchSet.ID)
-		err = svc.CreateCampaign(ctx, otherCampaign)
-		if err != ErrPatchSetDuplicate {
-			t.Fatal("no error even though another campaign has same patch set")
-		}
-	})
-
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
 		svc := NewServiceWithClock(store, cf, clock)
 
-		campaign := testCampaign(admin.ID, 0)
+		campaign := testCampaign(admin.ID)
 		if err = store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
@@ -703,6 +553,15 @@ func TestService(t *testing.T) {
 
 			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
 				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+
+			wantDiffStat := diff.Stat{
+				Added:   1,
+				Changed: 2,
+				Deleted: 1,
+			}
+			if diff := cmp.Diff(wantDiffStat, spec.DiffStat()); diff != "" {
+				t.Fatalf("wrong diff stat (-want +got):\n%s", diff)
 			}
 		})
 
@@ -1016,27 +875,12 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 	}
 }()
 
-func testPatch(patchSet int64, repo api.RepoID, t time.Time) *campaigns.Patch {
-	return &campaigns.Patch{
-		PatchSetID: patchSet,
-		RepoID:     repo,
-		Rev:        "deadbeef",
-		BaseRef:    "refs/heads/master",
-		Diff:       "cool diff",
-	}
-}
-
-func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
+func testCampaign(user int32) *campaigns.Campaign {
 	c := &campaigns.Campaign{
 		Name:            "Testing Campaign",
 		Description:     "Testing Campaign",
 		AuthorID:        user,
 		NamespaceUserID: user,
-		PatchSetID:      patchSet,
-	}
-
-	if patchSet != 0 {
-		c.Branch = "test-branch"
 	}
 
 	return c

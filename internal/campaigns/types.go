@@ -52,94 +52,6 @@ func IsKindSupported(extSvcKind string) bool {
 	return ok
 }
 
-// A PatchSet is a collection of multiple Patches.
-type PatchSet struct {
-	ID int64
-
-	UserID int32
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// Clone returns a clone of a PatchSet.
-func (c *PatchSet) Clone() *PatchSet {
-	cc := *c
-	return &cc
-}
-
-// A Patch is the application of a CampaignType over PatchSet arguments in
-// a specific repository at a specific revision.
-type Patch struct {
-	ID         int64
-	PatchSetID int64
-
-	RepoID  api.RepoID
-	Rev     api.CommitID
-	BaseRef string
-
-	Diff string
-
-	DiffStatAdded   *int32
-	DiffStatChanged *int32
-	DiffStatDeleted *int32
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// Clone returns a clone of a Patch.
-func (p *Patch) Clone() *Patch {
-	cc := *p
-	return &cc
-}
-
-// ComputeDiffStat parses the Diff of the Patch and sets the diff stat fields
-// that can be retrieved with DiffStat().
-// If the Diff is invalid or parsing failed, an error is returned.
-func (p *Patch) ComputeDiffStat() error {
-	stats := diff.Stat{}
-
-	diffReader := diff.NewMultiFileDiffReader(strings.NewReader(p.Diff))
-	for {
-		diff, err := diffReader.ReadFile()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		stat := diff.Stat()
-		stats.Added += stat.Added
-		stats.Deleted += stat.Deleted
-		stats.Changed += stat.Changed
-	}
-
-	p.DiffStatAdded = &stats.Added
-	p.DiffStatDeleted = &stats.Deleted
-	p.DiffStatChanged = &stats.Changed
-
-	return nil
-}
-
-// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged,
-// DiffStatDeleted are set. The second return value indicates whether these
-// fields are set and a diff.Stat has been returned.
-func (p *Patch) DiffStat() (diff.Stat, bool) {
-	s := diff.Stat{}
-
-	if p.DiffStatAdded == nil || p.DiffStatDeleted == nil || p.DiffStatChanged == nil {
-		return s, false
-	}
-
-	s.Added = *p.DiffStatAdded
-	s.Deleted = *p.DiffStatDeleted
-	s.Changed = *p.DiffStatChanged
-
-	return s, true
-}
-
 // A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
 	ID              int64
@@ -152,7 +64,6 @@ type Campaign struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
-	PatchSetID      int64
 	ClosedAt        time.Time
 	CampaignSpecID  int64
 }
@@ -294,57 +205,6 @@ func (s ChangesetCheckState) Valid() bool {
 	default:
 		return false
 	}
-}
-
-// A ChangesetJob is the creation of a Changeset on an external host from a
-// local Patch for a given Campaign.
-type ChangesetJob struct {
-	ID         int64
-	CampaignID int64
-	PatchID    int64
-
-	// Only set once the ChangesetJob has successfully finished.
-	ChangesetID int64
-
-	Branch string
-
-	Error string
-
-	StartedAt  time.Time
-	FinishedAt time.Time
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// Clone returns a clone of a ChangesetJob.
-func (c *ChangesetJob) Clone() *ChangesetJob {
-	cc := *c
-	return &cc
-}
-
-// Completed returns true for jobs that have completed, regardless of whether
-// that was successful or not.
-func (c *ChangesetJob) Completed() bool {
-	return !c.FinishedAt.IsZero()
-}
-
-// SuccessfullyCompleted returns true for jobs that have already successfully run
-func (c *ChangesetJob) SuccessfullyCompleted() bool {
-	return c.Error == "" && c.ChangesetID != 0 && c.Completed()
-}
-
-// UnsuccessfullyCompleted returns true for jobs that have run, but failed.
-func (c *ChangesetJob) UnsuccessfullyCompleted() bool {
-	return c.Error != "" && c.ChangesetID == 0 && c.Completed()
-}
-
-// Reset sets the Error, StartedAt and FinishedAt fields to their respective
-// zero values, so that the ChangesetJob can be executed again.
-func (c *ChangesetJob) Reset() {
-	c.Error = ""
-	c.StartedAt = time.Time{}
-	c.FinishedAt = time.Time{}
 }
 
 // A Changeset is a changeset on a code host belonging to a Repository and many
@@ -1705,8 +1565,14 @@ type CommitTemplate struct {
 
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 	c := &ChangesetSpec{RawSpec: rawSpec}
+	err := c.UnmarshalValidate()
+	if err != nil {
+		return nil, err
+	}
 
-	return c, c.UnmarshalValidate()
+	c.computeDiffStat()
+
+	return c, nil
 }
 
 type ChangesetSpec struct {
@@ -1716,6 +1582,10 @@ type ChangesetSpec struct {
 	RawSpec string
 	// TODO(mrnugget): should we rename the "spec" column to "description"?
 	Spec ChangesetSpecDescription
+
+	DiffStatAdded   int32
+	DiffStatChanged int32
+	DiffStatDeleted int32
 
 	CampaignSpecID int64
 	RepoID         api.RepoID
@@ -1729,6 +1599,52 @@ type ChangesetSpec struct {
 func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 	cc := *cs
 	return &cc
+}
+
+// computeDiffStat parses the Diff of the ChangesetSpecDescription and sets the
+// diff stat fields that can be retrieved with DiffStat().
+// If the Diff is invalid or parsing failed, an error is returned.
+func (cs *ChangesetSpec) computeDiffStat() error {
+	if cs.Spec.IsExisting() {
+		return nil
+	}
+
+	d, err := cs.Spec.Diff()
+	if err != nil {
+		return err
+	}
+
+	stats := diff.Stat{}
+	reader := diff.NewMultiFileDiffReader(strings.NewReader(d))
+	for {
+		fileDiff, err := reader.ReadFile()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		stat := fileDiff.Stat()
+		stats.Added += stat.Added
+		stats.Deleted += stat.Deleted
+		stats.Changed += stat.Changed
+	}
+
+	cs.DiffStatAdded = stats.Added
+	cs.DiffStatDeleted = stats.Deleted
+	cs.DiffStatChanged = stats.Changed
+
+	return nil
+}
+
+// DiffStat returns a *diff.Stat.
+func (cs *ChangesetSpec) DiffStat() diff.Stat {
+	return diff.Stat{
+		Added:   cs.DiffStatAdded,
+		Deleted: cs.DiffStatDeleted,
+		Changed: cs.DiffStatChanged,
+	}
 }
 
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against

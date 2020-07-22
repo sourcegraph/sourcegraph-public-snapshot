@@ -26,6 +26,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			UserID:         int32(i + 1234),
 			CampaignSpecID: int64(i + 910),
 			RepoID:         repo.ID,
+
+			DiffStatAdded:   123,
+			DiffStatChanged: 456,
+			DiffStatDeleted: 789,
 		}
 
 		if i == cap(changesetSpecs)-1 {
@@ -242,6 +246,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	t.Run("Update", func(t *testing.T) {
 		for _, c := range changesetSpecs {
 			c.UserID += 1234
+			c.DiffStatAdded += 1234
+			c.DiffStatChanged += 1234
+			c.DiffStatDeleted += 1234
 
 			clock.add(1 * time.Second)
 
