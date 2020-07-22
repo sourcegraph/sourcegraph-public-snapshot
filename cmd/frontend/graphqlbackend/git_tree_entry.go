@@ -205,61 +205,27 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return repoName, nil
 	}
 
-	var repoSources []reposource.RepoSource
-
-	// The following code makes serial database calls.
-	// Ideally these could be done in parallel, but the table is small
-	// and I don't think real world perf is going to be bad.
-	// It is also unclear to me if deterministic order is important here (it seems like it might be),
-	// so if this is parallelized in the future, consider whether order is important.
-
-	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
+	externalServices, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
 	if err != nil {
 		return "", err
 	}
-	for _, c := range githubs {
-		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c.GitHubConnection})
-	}
 
-	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range gitlabs {
-		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c.GitLabConnection})
-	}
+	for _, svc := range externalServices {
+		if svc.DeletedAt != nil {
+			continue
+		}
 
-	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range bitbuckets {
-		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c.BitbucketServerConnection})
-	}
-
-	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range awscodecommits {
-		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c.AWSCodeCommitConnection})
-	}
-
-	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range gitolites {
-		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c.GitoliteConnection})
-	}
-
-	// Fallback for github.com
-	repoSources = append(repoSources, reposource.GitHub{
-		GitHubConnection: &schema.GitHubConnection{Url: "https://github.com"},
-	})
-	for _, ch := range repoSources {
-		repoName, err := ch.CloneURLToRepoName(cloneURL)
+		src, err := reposource.ParseConfig(svc.Kind, svc.Config)
 		if err != nil {
+			return "", err
+		}
+
+		repoName, err := src.CloneURLToRepoName(cloneURL)
+		if err != nil {
+			if _, ok := err.(*reposource.UnsupportedRepoSourceError); ok {
+				// Skip unsupported repo sources (like phabricator)
+				continue
+			}
 			return "", err
 		}
 		if repoName != "" {
@@ -267,7 +233,10 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		}
 	}
 
-	return "", nil
+	// Fallback for github.com
+	return reposource.GitHub{
+		GitHubConnection: &schema.GitHubConnection{Url: "https://github.com"},
+	}.CloneURLToRepoName(cloneURL)
 }
 
 func CreateFileInfo(path string, isDir bool) os.FileInfo {

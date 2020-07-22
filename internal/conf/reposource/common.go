@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // RepoSource is a wrapper around a repository source (typically a code host config) that provides a
@@ -24,6 +25,40 @@ type RepoSource interface {
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
 	// returned.
 	CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error)
+}
+
+type UnsupportedRepoSourceError struct {
+	Kind string
+}
+
+func (e *UnsupportedRepoSourceError) Error() string {
+	return fmt.Sprintf("reposource not supported for Kind %s", e.Kind)
+}
+
+func ParseConfig(kind, config string) (RepoSource, error) {
+	cfg, err := extsvc.ParseConfig(kind, config)
+	if err != nil {
+		return nil, err
+	}
+
+	switch conn := cfg.(type) {
+	case *schema.AWSCodeCommitConnection:
+		return AWS{AWSCodeCommitConnection: conn}, nil
+	case *schema.BitbucketServerConnection:
+		return BitbucketServer{BitbucketServerConnection: conn}, nil
+	case *schema.BitbucketCloudConnection:
+		return BitbucketCloud{BitbucketCloudConnection: conn}, nil
+	case *schema.GitHubConnection:
+		return GitHub{GitHubConnection: conn}, nil
+	case *schema.GitLabConnection:
+		return GitLab{GitLabConnection: conn}, nil
+	case *schema.GitoliteConnection:
+		return Gitolite{GitoliteConnection: conn}, nil
+	case *schema.OtherExternalServiceConnection:
+		return Other{OtherExternalServiceConnection: conn}, nil
+	default:
+		return nil, &UnsupportedRepoSourceError{Kind: kind}
+	}
 }
 
 var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
