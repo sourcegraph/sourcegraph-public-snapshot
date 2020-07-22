@@ -85,7 +85,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
     )
 
     return (
-        <div className="search-page">
+        <div className="web-content search-page">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} />
             <div
                 className={classNames('search-page__search-container', {
@@ -101,7 +101,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                         <div className="d-flex align-items-baseline mb-3">
                             <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
                             <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                <span className="search-page__keyword-text">repogroup:</span>
+                                <span className="web-content__link">repogroup:</span>
                                 <i>name</i>
                             </span>
                         </div>
@@ -115,7 +115,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <div className="d-flex flex-column">
                                         <Link
                                             to={repogroup.url}
-                                            className="search-page__repogroup-listing-title search-page__web-link font-weight-bold"
+                                            className="search-page__repogroup-listing-title web-content__link font-weight-bold"
                                         >
                                             {repogroup.title}
                                         </Link>
@@ -135,7 +135,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural"
                                             className="text-monospace mb-2"
                                         >
-                                            <span className="search-page__keyword-text">lang:</span>javascript
+                                            <span className="web-content__link">lang:</span>javascript
                                             alert(:[variable])
                                         </Link>{' '}
                                         <p className="mt-2">
@@ -147,8 +147,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             to="/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
                                             className="text-monospace mb-2"
                                         >
-                                            <span className="search-page__keyword-text">repogroup:</span>python from
-                                            \B\.\w+ import \w+
+                                            <span className="web-content__link">repogroup:</span>python from \B\.\w+
+                                            import \w+
                                         </Link>{' '}
                                         <p className="mt-2">
                                             Search for explicit imports with one or more leading dots that indicate
@@ -160,10 +160,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             to='/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                             className="text-monospace mb-2"
                                         >
-                                            <span className="search-page__keyword-text">repo:</span>
-                                            ^github\.com/golang/go${' '}
-                                            <span className="search-page__keyword-text">type:</span>
-                                            diff <span className="search-page__keyword-text">after:</span>"1 week ago"
+                                            <span className="web-content__link">repo:</span>
+                                            ^github\.com/golang/go$ <span className="web-content__link">type:</span>
+                                            diff <span className="web-content__link">after:</span>"1 week ago"
                                         </Link>{' '}
                                         <p className="mt-2">
                                             Browse diffs for recent code changes in the 'golang/go' GitHub repository.
@@ -174,8 +173,8 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             to='/search?q=file:pod.yaml+content:"kind:+ReplicationController"&patternType=literal'
                                             className="text-monospace mb-2"
                                         >
-                                            <span className="search-page__keyword-text">file:</span>pod.yaml{' '}
-                                            <span className="search-page__keyword-text">content:</span>"kind:
+                                            <span className="web-content__link">file:</span>pod.yaml{' '}
+                                            <span className="web-content__link">content:</span>"kind:
                                             ReplicationController"
                                         </Link>{' '}
                                         <p className="mt-2">
@@ -190,7 +189,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                     <h3 className="search-page__help-content-header">
                                         Search a language{' '}
                                         <span className="text-monospace font-weight-normal search-page__lang-ref">
-                                            <span className="search-page__keyword-text ml-1">lang:</span>
+                                            <span className="web-content__link ml-1">lang:</span>
                                             <i className="search-page__keyword-value-text">name</i>
                                         </span>
                                     </h3>
@@ -201,7 +200,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             .slice(0, Math.ceil(homepageLanguageList.length / 2))
                                             .map(language => (
                                                 <Link
-                                                    className="search-page__web-link search-page__lang-link text-monospace mb-3"
+                                                    className="web-content__link search-page__lang-link text-monospace mb-3"
                                                     to={`/search?q=lang:${language.filterName}`}
                                                     key={language.name}
                                                 >
@@ -217,7 +216,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                             )
                                             .map(language => (
                                                 <Link
-                                                    className="search-page__web-link search-page__lang-link text-monospace mb-3"
+                                                    className="web-content__link search-page__lang-link text-monospace mb-3"
                                                     to={`/search?q=lang:${language.filterName}`}
                                                     key={language.name}
                                                 >

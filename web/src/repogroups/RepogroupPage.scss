@@ -77,10 +77,6 @@
     &__example-search-button {
         font-size: 12px;
     }
-
-    &__web-link {
-        font-size: 12px;
-    }
 }
 
 .theme-light {
@@ -103,14 +99,6 @@
 
         h5 {
             color: $gray-18;
-        }
-
-        &__web-link {
-            color: #1c7cd6;
-        }
-
-        &__keyword-text {
-            color: #1c7cd6;
         }
 
         &__repo-list-icon {
@@ -142,16 +130,8 @@
             color: $gray-06;
         }
 
-        &__web-link {
-            color: #329af0;
-        }
-
         &__repo-list-icon {
             color: $gray-15;
-        }
-
-        &__keyword-text {
-            color: #329af0;
         }
     }
 }

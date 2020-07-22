@@ -16,10 +16,6 @@
     overflow: auto;
     padding-bottom: 4rem;
 
-    &__web-link {
-        color: #1c7cd6;
-    }
-
     h5 {
         text-transform: uppercase;
         letter-spacing: 0.1em;
@@ -157,14 +153,6 @@
                 color: $gray-19;
             }
         }
-
-        &__web-link {
-            color: #1c7cd6;
-        }
-
-        &__keyword-text {
-            color: #1c7cd6;
-        }
     }
 }
 
@@ -198,14 +186,6 @@
             a {
                 color: $white;
             }
-        }
-
-        &__web-link {
-            color: #329af0;
-        }
-
-        &__keyword-text {
-            color: #329af0;
         }
     }
 }

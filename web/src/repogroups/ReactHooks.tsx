@@ -33,7 +33,7 @@ export const reactHooks: RepogroupMetadata = {
             exampleQuery: (
                 <>
                     useState(:[string])
-                    <span className="repogroup-page__keyword-text">lang:</span>typescript
+                    <span className="web-content__link">lang:</span>typescript
                 </>
             ),
             rawQuery: 'useState(:[string]) count:1000 lang:typescript',
