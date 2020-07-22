@@ -333,7 +333,9 @@ func product(left [][]Node, right []Node) [][]Node {
 	}
 
 	for _, row := range left {
-		result = append(result, append(row, right...))
+		newRow := make([]Node, len(row))
+		copy(newRow, row)
+		result = append(result, append(newRow, right...))
 	}
 	return result
 }

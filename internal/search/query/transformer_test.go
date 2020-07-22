@@ -316,6 +316,14 @@ func TestExpandOr(t *testing.T) {
 			input: `a and b AND c or d and (e OR f) g h i or j`,
 			want:  `("a" "b" "c") OR ("d" "e" "g" "h" "i") OR ("d" "f" "g" "h" "i") OR ("j")`,
 		},
+		{
+			input: "(repo:a (file:b (file:c or file:d) (file:e or file:f)))",
+			want:  `("repo:a" "file:b" "file:c" "file:e") OR ("repo:a" "file:b" "file:d" "file:e") OR ("repo:a" "file:b" "file:c" "file:f") OR ("repo:a" "file:b" "file:d" "file:f")`,
+		},
+		{
+			input: "(repo:a (file:b (file:c or file:d) file:q (file:e or file:f)))",
+			want:  `("repo:a" "file:b" "file:c" "file:q" "file:e") OR ("repo:a" "file:b" "file:d" "file:q" "file:e") OR ("repo:a" "file:b" "file:c" "file:q" "file:f") OR ("repo:a" "file:b" "file:d" "file:q" "file:f")`,
+		},
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
