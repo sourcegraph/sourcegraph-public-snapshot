@@ -1,6 +1,8 @@
 # Example: Using ESLint to automatically migrate to a new TypeScript version
 
-> TODO(sqs): update for new campaigns flow
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
+
+<!-- TODO(sqs): update for new campaigns flow -->
 
 Our goal for this campaign is to convert all TypeScript code synced to our Sourcegraph instance to make use of new TypeScript features. To do this we convert the code, then update the TypeScript version.
 
