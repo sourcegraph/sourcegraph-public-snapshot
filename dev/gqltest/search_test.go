@@ -204,69 +204,14 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
-	t.Run("repository text search", func(t *testing.T) {
-		tests := []struct {
-			name       string
-			query      string
-			zeroResult bool
-		}{
-			{
-				name:  "repo search by name, nonzero result",
-				query: "repo:go-diff$",
-			},
-			{
-				name:  "repo search by name, case yes, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes`,
-			},
-			{
-				name:  "true is an alias for yes when fork is set",
-				query: `repo:github\.com/sgtest/mux fork:true`,
-			},
-			{
-				name:  "non-master branch, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes`,
-			},
-			{
-				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes`,
-			},
-			{
-				name:  "unindexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes`,
-			},
-			{
-				name:       "random characters, zero result",
-				query:      `repo:^github\.com/sgtest/java-langserver$ doesnot734734743734743exist`,
-				zeroResult: true,
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchFiles(test.query)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if test.zeroResult {
-					if len(results.Results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results.Results))
-					}
-				} else {
-					if len(results.Results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
-					}
-				}
-			})
-		}
-	})
-
-	t.Run("global text search", func(t *testing.T) {
+	t.Run("global search", func(t *testing.T) {
 		tests := []struct {
 			name          string
 			query         string
 			zeroResult    bool
 			minMatchCount int64
 		}{
+			// Global search
 			{
 				name:  "error",
 				query: "error",
@@ -306,138 +251,62 @@ func TestSearch(t *testing.T) {
 				query:      "asdfalksd+jflaksjdfklas patterntype:literal -repo:sourcegraph",
 				zeroResult: true,
 			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchFiles(test.query)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if test.zeroResult {
-					if len(results.Results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results.Results))
-					}
-				} else {
-					if len(results.Results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
-					}
-				}
-
-				if results.MatchCount < test.minMatchCount {
-					t.Fatalf("Want at least %d match count but got %d", test.minMatchCount, results.MatchCount)
-				}
-			})
-		}
-	})
-
-	t.Run("global filename search", func(t *testing.T) {
-		tests := []struct {
-			name           string
-			query          string
-			wantMinResults int
-			wantMaxResults int
-		}{
+			// Repo search
 			{
-				name:           "search for a non-existent file",
-				query:          "file:asdfasdf.go",
-				wantMaxResults: 0,
+				name:  "repo search by name, nonzero result",
+				query: "repo:go-diff$",
 			},
 			{
-				name:           "search for a known file",
-				query:          "file:doc.go",
-				wantMinResults: 4,
-				wantMaxResults: -1,
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchFiles(test.query)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if test.wantMaxResults != -1 && len(results.Results) > test.wantMaxResults {
-					t.Fatalf("Want results to be less than %d but got %d", test.wantMaxResults, len(results.Results))
-				} else if len(results.Results) < test.wantMinResults {
-					t.Fatalf("Want at least %d results but got %d", test.wantMinResults, len(results.Results))
-				}
-			})
-		}
-	})
-
-	t.Run("global symbol search", func(t *testing.T) {
-		tests := []struct {
-			name           string
-			query          string
-			wantMinResults int
-			wantMaxResults int
-		}{
-			{
-				name:           "search for a non-existent symbol",
-				query:          "type:symbol asdfasdf",
-				wantMaxResults: 0,
+				name:  "repo search by name, case yes, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes`,
 			},
 			{
-				name:           "search for a known symbol",
-				query:          "type:symbol count:100 patterntype:regexp ^newroute",
-				wantMinResults: 1,
-				wantMaxResults: -1,
+				name:  "true is an alias for yes when fork is set",
+				query: `repo:github\.com/sgtest/mux fork:true`,
 			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchFiles(test.query)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if test.wantMaxResults != -1 && len(results.Results) > test.wantMaxResults {
-					t.Fatalf("Want results to be less than %d but got %d", test.wantMaxResults, len(results.Results))
-				} else if len(results.Results) < test.wantMinResults {
-					t.Fatalf("Want at least %d results but got %d", test.wantMinResults, len(results.Results))
-				}
-			})
-		}
-	})
-
-	t.Run("commit search", func(t *testing.T) {
-		tests := []struct {
-			name       string
-			query      string
-			zeroResult bool
-		}{
+			{
+				name:  "non-master branch, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes`,
+			},
+			{
+				name:  "indexed multiline search, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes`,
+			},
+			{
+				name:  "unindexed multiline search, nonzero result",
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes`,
+			},
+			{
+				name:       "random characters, zero result",
+				query:      `repo:^github\.com/sgtest/java-langserver$ doesnot734734743734743exist`,
+				zeroResult: true,
+			},
+			// Filename search
+			{
+				name:  "search for a known file",
+				query: "file:doc.go",
+			},
+			{
+				name:       "search for a non-existent file",
+				query:      "file:asdfasdf.go",
+				zeroResult: true,
+			},
+			// Symbol search
+			{
+				name:  "search for a known symbol",
+				query: "type:symbol count:100 patterntype:regexp ^newroute",
+			},
+			{
+				name:       "search for a non-existent symbol",
+				query:      "type:symbol asdfasdf",
+				zeroResult: true,
+			},
+			// Commit search
 			{
 				name:  "commit search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:commit count:1`,
 			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchFiles(test.query)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if test.zeroResult {
-					if len(results.Results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results.Results))
-					}
-				} else {
-					if len(results.Results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
-					}
-				}
-			})
-		}
-	})
-
-	t.Run("diff search", func(t *testing.T) {
-		tests := []struct {
-			name       string
-			query      string
-			zeroResult bool
-		}{
+			// Diff search
 			{
 				name:  "diff search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:diff main count:1`,
@@ -458,6 +327,10 @@ func TestSearch(t *testing.T) {
 					if len(results.Results) == 0 {
 						t.Fatal("Want non-zero results but got 0")
 					}
+				}
+
+				if results.MatchCount < test.minMatchCount {
+					t.Fatalf("Want at least %d match count but got %d", test.minMatchCount, results.MatchCount)
 				}
 			})
 		}
