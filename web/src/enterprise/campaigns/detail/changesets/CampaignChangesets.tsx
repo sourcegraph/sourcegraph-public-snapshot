@@ -3,11 +3,11 @@ import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
-import { Observable, Subject, merge, of } from 'rxjs'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { Subject, merge, of } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { upperFirst, lowerCase } from 'lodash'
-import { queryChangesets as _queryChangesets } from '../backend'
+import { queryChangesets } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
@@ -37,8 +37,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
 
-    /** For testing only. */
-    queryChangesets?: (campaignID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<Connection<GQL.Changeset>>
+    queryChangesets: typeof queryChangesets
 }
 
 function getLSPTextDocumentPositionParameters(
@@ -67,7 +66,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     extensionsController,
     platformContext,
     telemetryService,
-    queryChangesets = _queryChangesets,
+    queryChangesets,
 }) => {
     const [state, setState] = useState<GQL.ChangesetState | undefined>()
     const [reviewState, setReviewState] = useState<GQL.ChangesetReviewState | undefined>()

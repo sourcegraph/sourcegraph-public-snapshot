@@ -63,7 +63,7 @@ describe('CampaignDetails', () => {
             extensionsController={undefined as any}
             platformContext={undefined as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            _fetchCampaignById={() =>
+            fetchCampaignById={() =>
                 of({
                     __typename: 'Campaign' as const,
                     id: 'c',

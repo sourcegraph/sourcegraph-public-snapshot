@@ -7,7 +7,12 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { noop, isEqual } from 'lodash'
-import { fetchCampaignById, deleteCampaign, closeCampaign } from './backend'
+import {
+    fetchCampaignById as _fetchCampaignById,
+    deleteCampaign,
+    closeCampaign,
+    queryChangesets as _queryChangesets,
+} from './backend'
 import { useError } from '../../../../../shared/src/util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
@@ -58,7 +63,9 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
     location: H.Location
 
     /** For testing only. */
-    _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.ID) => Observable<Campaign | null>)
+    fetchCampaignById?: typeof _fetchCampaignById | ((campaign: GQL.ID) => Observable<Campaign | null>)
+    /** For testing only. */
+    queryChangesets?: typeof _queryChangesets
 }
 
 /**
@@ -73,7 +80,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     extensionsController,
     platformContext,
     telemetryService,
-    _fetchCampaignById = fetchCampaignById,
+    fetchCampaignById = _fetchCampaignById,
+    queryChangesets = _queryChangesets,
 }) => {
     // For errors during fetching
     const triggerError = useError()
@@ -99,9 +107,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         // Fetch campaign if ID was given
         const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
-                switchMap(() =>
-                    _fetchCampaignById(campaignID).pipe(repeatWhen(observer => observer.pipe(delay(5000))))
-                ),
+                switchMap(() => fetchCampaignById(campaignID).pipe(repeatWhen(observer => observer.pipe(delay(5000))))),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
             .subscribe({
@@ -115,7 +121,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
+    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, fetchCampaignById])
 
     const [mode, setMode] = useState<CampaignUIMode>(campaignID ? 'viewing' : 'editing')
 
@@ -241,6 +247,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             campaign={campaign!}
                             changesetUpdates={changesetUpdates}
                             campaignUpdates={campaignUpdates}
+                            queryChangesets={queryChangesets}
                             history={history}
                             location={location}
                             isLightTheme={isLightTheme}

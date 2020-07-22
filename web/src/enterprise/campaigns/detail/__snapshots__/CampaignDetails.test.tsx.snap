@@ -85,7 +85,6 @@ exports[`CampaignDetails creation form given existing patch set 1`] = `
 
 exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
 <CampaignDetails
-  _fetchCampaignById={[Function]}
   authenticatedUser={
     Object {
       "avatarURL": null,
@@ -94,6 +93,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     }
   }
   campaignID="c"
+  fetchCampaignById={[Function]}
   history="[History]"
   isLightTheme={true}
   location="[Location path=/]"
@@ -382,6 +382,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
@@ -394,7 +395,6 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
 
 exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
 <CampaignDetails
-  _fetchCampaignById={[Function]}
   authenticatedUser={
     Object {
       "avatarURL": null,
@@ -403,6 +403,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     }
   }
   campaignID="c"
+  fetchCampaignById={[Function]}
   history="[History]"
   isLightTheme={true}
   location="[Location path=/]"
@@ -830,6 +831,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     history="[History]"
     isLightTheme={true}
     location="[Location path=/]"
+    queryChangesets={[Function]}
     telemetryService={
       Object {
         "log": [Function],
