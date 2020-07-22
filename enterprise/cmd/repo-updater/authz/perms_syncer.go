@@ -617,8 +617,8 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		// Skip if not enabled or no authz provider is configured
-		if !globals.PermissionsBackgroundSync().Enabled ||
+		// Skip if permissions user mapping is enabled or no authz provider is configured
+		if globals.PermissionsUserMapping().Enabled ||
 			len(s.providersByServiceID()) == 0 {
 			continue
 		}

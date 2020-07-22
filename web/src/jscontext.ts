@@ -55,11 +55,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      */
     site: Pick<
         SiteConfiguration,
-        | 'auth.public'
-        | 'update.channel'
-        | 'campaigns.readAccess.enabled'
-        | 'disableNonCriticalTelemetry'
-        | 'permissions.backgroundSync'
+        'auth.public' | 'update.channel' | 'campaigns.readAccess.enabled' | 'disableNonCriticalTelemetry'
     >
 
     /** Whether access tokens are enabled. */

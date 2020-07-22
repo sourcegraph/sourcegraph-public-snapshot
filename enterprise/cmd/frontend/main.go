@@ -125,7 +125,7 @@ func initAuthz(ctx context.Context, enterpriseServices *enterprise.Services) {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
