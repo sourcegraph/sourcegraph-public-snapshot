@@ -64,14 +64,14 @@ describe('CampaignDetails', () => {
             platformContext={undefined as any}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             _fetchCampaignById={() =>
-                of({
+                of(({
                     __typename: 'Campaign' as const,
                     id: 'c',
                     name: 'n',
                     description: 'd',
                     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                     author: { username: 'alice' } as GQL.IUser,
-                    changesets: { totalCount: 2 },
+                    changesets: { totalCount: 2, stats: { total: 10, closed: 0, merged: 0 } },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
                     hasUnpublishedPatches: false,
@@ -85,7 +85,7 @@ describe('CampaignDetails', () => {
                         changed: 3,
                         deleted: 2,
                     },
-                })
+                } as any) as GQL.ICampaign)
             }
         />
     )

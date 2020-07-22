@@ -3,12 +3,14 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { Observable } from 'rxjs'
+import { Connection } from '../../../../components/FilteredConnection'
+import { CampaignNodeProps } from '../../list/CampaignNode'
 
 export const queryCampaigns = ({
     first,
     state,
     viewerCanAdminister,
-}: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
+}: GQL.ICampaignsOnQueryArguments): Observable<Connection<CampaignNodeProps['node']>> =>
     queryGraphQL(
         gql`
             query Campaigns($first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
@@ -17,13 +19,16 @@ export const queryCampaigns = ({
                         id
                         name
                         description
-                        url
                         createdAt
                         closedAt
+                        author {
+                            username
+                        }
                         changesets {
-                            totalCount
-                            nodes {
-                                state
+                            stats {
+                                open
+                                closed
+                                merged
                             }
                         }
                     }
@@ -35,18 +40,4 @@ export const queryCampaigns = ({
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
-    )
-
-export const queryCampaignsCount = (): Observable<number> =>
-    queryGraphQL(
-        gql`
-            query CampaignsCount {
-                campaigns(first: 1) {
-                    totalCount
-                }
-            }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.campaigns.totalCount)
     )

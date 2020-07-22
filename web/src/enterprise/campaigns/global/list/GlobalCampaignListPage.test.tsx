@@ -1,14 +1,10 @@
 import * as H from 'history'
 import React from 'react'
 import { GlobalCampaignListPage } from './GlobalCampaignListPage'
-import { IUser } from '../../../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
-import { mount } from 'enzyme'
-
-jest.mock('../../../../components/FilteredConnection', () => ({
-    FilteredConnection: 'FilteredConnection',
-}))
+import { shallow } from 'enzyme'
+import { nodes } from '../../list/CampaignNode.story'
 
 const history = H.createMemoryHistory()
 
@@ -16,12 +12,12 @@ describe('GlobalCampaignListPage', () => {
     for (const totalCount of [0, 1]) {
         test(`renders for siteadmin and totalCount: ${totalCount}`, () => {
             expect(
-                mount(
+                shallow(
                     <GlobalCampaignListPage
                         history={history}
                         location={history.location}
-                        authenticatedUser={{ siteAdmin: true } as IUser}
-                        queryCampaignsCount={() => of(totalCount)}
+                        authenticatedUser={{ siteAdmin: true }}
+                        queryCampaigns={() => of({ nodes: Object.values(nodes) })}
                         telemetryService={NOOP_TELEMETRY_SERVICE}
                     />
                 )
@@ -29,12 +25,12 @@ describe('GlobalCampaignListPage', () => {
         })
         test(`renders for non-siteadmin and totalCount: ${totalCount}`, () => {
             expect(
-                mount(
+                shallow(
                     <GlobalCampaignListPage
                         history={history}
                         location={history.location}
-                        authenticatedUser={{ siteAdmin: false } as IUser}
-                        queryCampaignsCount={() => of(totalCount)}
+                        authenticatedUser={{ siteAdmin: false }}
+                        queryCampaigns={() => of({ nodes: Object.values(nodes) })}
                         telemetryService={NOOP_TELEMETRY_SERVICE}
                     />
                 )

@@ -48,49 +48,6 @@ const campaignFragment = gql`
     ${DiffStatFields}
 `
 
-export async function createCampaign(campaignSpec: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CreateCampaign($campaignSpec: ID!) {
-                createCampaign(campaignSpec: $campaignSpec) {
-                    id
-                    url
-                }
-            }
-        `,
-        { campaignSpec }
-    ).toPromise()
-    return dataOrThrowErrors(result).createCampaign
-}
-
-export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CloseCampaign($campaign: ID!, $closeChangesets: Boolean!) {
-                closeCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
-                    id
-                }
-            }
-        `,
-        { campaign, closeChangesets }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
-export async function deleteCampaign(campaign: ID): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation DeleteCampaign($campaign: ID!) {
-                deleteCampaign(campaign: $campaign) {
-                    alwaysNil
-                }
-            }
-        `,
-        { campaign }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
 export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
     queryGraphQL(
         gql`
