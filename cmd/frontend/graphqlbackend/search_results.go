@@ -227,11 +227,8 @@ var commonFileFilters = []struct {
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
 
-	var globbing bool
-	settings, err := decodedViewerFinalSettings(ctx)
-	if err != nil {
-		globbing = false
-	} else {
+	globbing := false
+	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
 		globbing = getBoolPtr(settings.SearchGlobbing, false)
 	}
 
@@ -276,15 +273,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
-
-			// We match against the regex pattern regardless of whether globbing is enabled or not.
-			// Why?
-			// To match glob patterns, the most obvious choice would be golang's path.Match. However Match does
-			// not support **, which means we would have to map between golang's standard patterns and the patterns we support.
-			// Since we anyway have to map, we might as well map to regex.
-			//
-			// In the future we might want to evaluate external matchers or roll our own, in which case we can
-			// update the code here.
+			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
+			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
 				if globbing {
 					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file", scoreDefault)
