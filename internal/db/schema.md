@@ -374,6 +374,18 @@ Check constraints:
 
 ```
 
+# Table "public.lsif_dirty_repositories"
+```
+    Column     |  Type   | Modifiers 
+---------------+---------+-----------
+ repository_id | integer | not null
+ dirty_token   | integer | not null
+ update_token  | integer | not null
+Indexes:
+    "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
 # Table "public.lsif_indexable_repositories"
 ```
          Column         |           Type           |                                Modifiers                                 
@@ -409,6 +421,19 @@ Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
+
+```
+
+# Table "public.lsif_nearest_uploads"
+```
+    Column     |  Type   | Modifiers 
+---------------+---------+-----------
+ repository_id | integer | not null
+ commit        | text    | not null
+ upload_id     | integer | not null
+ distance      | integer | not null
+Indexes:
+    "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
 
 ```
 
@@ -478,6 +503,17 @@ Check constraints:
 Referenced by:
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
+
+# Table "public.lsif_uploads_visible_at_tip"
+```
+    Column     |  Type   | Modifiers 
+---------------+---------+-----------
+ repository_id | integer | not null
+ upload_id     | integer | not null
+Indexes:
+    "lsif_uploads_visible_at_tip_repository_id" btree (repository_id)
 
 ```
 
