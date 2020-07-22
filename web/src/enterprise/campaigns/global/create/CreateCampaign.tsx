@@ -12,7 +12,10 @@ interface Props {
 export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
         <h1>
-            Create a new campaign <span className="badge badge-info">Beta</span>
+            Create a new campaign{' '}
+            <sup>
+                <span className="badge badge-info">Beta</span>
+            </sup>
         </h1>
         <ul className="list-group">
             <li className="list-group-item p-3">

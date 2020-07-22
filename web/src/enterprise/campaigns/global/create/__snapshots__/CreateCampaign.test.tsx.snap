@@ -4,12 +4,15 @@ exports[`CreateCampaign renders 1`] = `
 <CreateCampaign>
   <div>
     <h1>
-      Create a new campaign 
-      <span
-        className="badge badge-info"
-      >
-        Beta
-      </span>
+      Create a new campaign
+       
+      <sup>
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
+      </sup>
     </h1>
     <ul
       className="list-group"

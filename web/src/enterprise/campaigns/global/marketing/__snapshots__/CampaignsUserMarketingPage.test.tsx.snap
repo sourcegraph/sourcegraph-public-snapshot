@@ -50,12 +50,15 @@ exports[`CampaignsUserMarketingPage renders for disabled 1`] = `
       <h1
         className="font-weight-bold display-4"
       >
-        Campaigns 
-        <span
-          className="badge badge-info"
-        >
-          Beta
-        </span>
+        Campaigns
+         
+        <sup>
+          <span
+            className="badge badge-info"
+          >
+            Beta
+          </span>
+        </sup>
       </h1>
       <h2
         className="mb-5"
@@ -216,12 +219,15 @@ exports[`CampaignsUserMarketingPage renders for enabled 1`] = `
       <h1
         className="font-weight-bold display-4"
       >
-        Campaigns 
-        <span
-          className="badge badge-info"
-        >
-          Beta
-        </span>
+        Campaigns
+         
+        <sup>
+          <span
+            className="badge badge-info"
+          >
+            Beta
+          </span>
+        </sup>
       </h1>
       <h2
         className="mb-5"

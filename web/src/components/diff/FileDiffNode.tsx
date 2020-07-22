@@ -14,6 +14,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import classNames from 'classnames'
+import { dirname } from '../../util/path'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: GQL.IFileDiff
@@ -97,10 +98,12 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             )}
                         </button>
                         <div className="file-diff-node__header-path-stat align-items-baseline">
-                            {!node.oldPath && <span className="badge badge-success mr-2">Added file</span>}
-                            {!node.newPath && <span className="badge badge-danger mr-2">Deleted file</span>}
+                            {!node.oldPath && <span className="badge badge-success mr-2">Added</span>}
+                            {!node.newPath && <span className="badge badge-danger mr-2">Deleted</span>}
                             {node.newPath && node.oldPath && node.newPath !== node.oldPath && (
-                                <span className="badge badge-merged mr-2">Moved file</span>
+                                <span className="badge badge-warning mr-2">
+                                    {dirname(node.newPath) !== dirname(node.oldPath) ? 'Moved' : 'Renamed'}
+                                </span>
                             )}
                             {stat}
                             <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">

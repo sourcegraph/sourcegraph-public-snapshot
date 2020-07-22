@@ -14,7 +14,10 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
     <>
         <section className="mt-3 mb-5">
             <h1 className="font-weight-bold display-4">
-                Campaigns <span className="badge badge-info">Beta</span>
+                Campaigns{' '}
+                <sup>
+                    <span className="badge badge-info">Beta</span>
+                </sup>
             </h1>
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 

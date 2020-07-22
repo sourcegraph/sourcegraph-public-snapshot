@@ -8,12 +8,15 @@ exports[`CampaignCliHelp renders 1`] = `
     className="test"
   >
     <h1>
-      Create a campaign 
-      <span
-        className="badge badge-info"
-      >
-        Beta
-      </span>
+      Create a campaign
+       
+      <sup>
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
+      </sup>
     </h1>
     <div
       className="card"

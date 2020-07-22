@@ -45,7 +45,10 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
             <div className="d-flex justify-content-between align-items-end mb-3">
                 <div>
                     <h1 className="mb-2">
-                        Campaigns <span className="badge badge-info">Beta</span>
+                        Campaigns{' '}
+                        <sup>
+                            <span className="badge badge-info">Beta</span>
+                        </sup>
                     </h1>
                     <p className="mb-0">
                         Perform and track large-scale code changes.{' '}
