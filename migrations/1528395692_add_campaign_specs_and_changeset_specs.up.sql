@@ -37,6 +37,10 @@ CREATE TABLE changeset_specs (
 
   user_id integer NOT NULL,
 
+  diff_stat_added integer,
+  diff_stat_changed integer,
+  diff_stat_deleted integer,
+
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
 
@@ -46,5 +50,8 @@ CREATE TABLE changeset_specs (
 );
 
 CREATE INDEX IF NOT EXISTS changeset_specs_rand_id ON changeset_specs(rand_id);
+
+ALTER TABLE changesets
+  ADD COLUMN IF NOT EXISTS changeset_spec_id bigint REFERENCES changeset_specs(id) DEFERRABLE;
 
 COMMIT;

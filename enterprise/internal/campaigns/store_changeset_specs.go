@@ -20,6 +20,9 @@ const changesetSpecInsertCols = `
   campaign_spec_id,
   repo_id,
   user_id,
+  diff_stat_added,
+  diff_stat_changed,
+  diff_stat_deleted,
   created_at,
   updated_at
 `
@@ -34,6 +37,9 @@ const changesetSpecColsFullyQualified = `
   changeset_specs.campaign_spec_id,
   changeset_specs.repo_id,
   changeset_specs.user_id,
+  changeset_specs.diff_stat_added,
+  changeset_specs.diff_stat_changed,
+  changeset_specs.diff_stat_deleted,
   changeset_specs.created_at,
   changeset_specs.updated_at
 `
@@ -54,7 +60,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 var createChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:CreateChangesetSpec
 INSERT INTO changeset_specs (` + changesetSpecInsertCols + `)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING` + changesetSpecCols + `;`
 
 func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Query, error) {
@@ -85,6 +91,9 @@ func (s *Store) createChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 		nullInt64Column(c.CampaignSpecID),
 		c.RepoID,
 		c.UserID,
+		c.DiffStatAdded,
+		c.DiffStatChanged,
+		c.DiffStatDeleted,
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -106,7 +115,7 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 var updateChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:UpdateChangesetSpec
 UPDATE changeset_specs
-SET (` + changesetSpecInsertCols + `) = (%s, %s, %s, %s, %s, %s, %s, %s)
+SET (` + changesetSpecInsertCols + `) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING ` + changesetSpecCols
 
@@ -126,6 +135,9 @@ func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 		nullInt64Column(c.CampaignSpecID),
 		c.RepoID,
 		c.UserID,
+		c.DiffStatAdded,
+		c.DiffStatChanged,
+		c.DiffStatDeleted,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -353,6 +365,9 @@ func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 		&dbutil.NullInt64{N: &c.CampaignSpecID},
 		&c.RepoID,
 		&c.UserID,
+		&c.DiffStatAdded,
+		&c.DiffStatChanged,
+		&c.DiffStatDeleted,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
