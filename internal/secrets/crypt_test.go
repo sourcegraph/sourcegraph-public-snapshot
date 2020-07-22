@@ -9,7 +9,6 @@ import (
 
 // Test that encrypting and decryption the message yields the same value
 func TestDBEncryptingAndDecrypting(t *testing.T) {
-
 	// 32 bytes means an AES-256 cipher
 	key := []byte(randstring.NewLen(32))
 	e := EncryptionStore{EncryptionKey: key}
