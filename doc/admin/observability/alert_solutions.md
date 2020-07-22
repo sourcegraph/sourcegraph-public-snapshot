@@ -146,21 +146,6 @@ for assistance.
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
 
-# frontend: container_restarts
-
-**Descriptions:**
-
-- _frontend: 1+ container restarts every 5m by instance_ (`warning_frontend_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod frontend` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p frontend`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' frontend` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the frontend container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs frontend` (note this will include logs from the previous and currently running container).
-
 # frontend: container_memory_usage
 
 **Descriptions:**
@@ -182,6 +167,21 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
+
+# frontend: container_restarts
+
+**Descriptions:**
+
+- _frontend: 1+ container restarts every 5m by instance_ (`warning_frontend_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod frontend` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p frontend`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' frontend` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the frontend container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs frontend` (note this will include logs from the previous and currently running container).
 
 # frontend: provisioning_container_cpu_usage_7d
 
@@ -313,21 +313,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs gitserver` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# gitserver: container_restarts
-
-**Descriptions:**
-
-- _gitserver: 1+ container restarts every 5m by instance_ (`warning_gitserver_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod gitserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p gitserver`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
-
 # gitserver: container_memory_usage
 
 **Descriptions:**
@@ -349,6 +334,21 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+
+# gitserver: container_restarts
+
+**Descriptions:**
+
+- _gitserver: 1+ container restarts every 5m by instance_ (`warning_gitserver_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod gitserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p gitserver`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
 
 # gitserver: provisioning_container_cpu_usage_7d
 
@@ -1558,4 +1558,99 @@ for assistance.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+
+# prometheus: alertmanager_notifications_failed_total
+
+**Descriptions:**
+
+- _prometheus: 1+ failed alertmanager notifications rate over 1m_ (`warning_prometheus_alertmanager_notifications_failed_total`)
+
+**Possible solutions:**
+
+Ensure that your `observability.alerts` configuration (in site configuration) is valid.
+
+# prometheus: container_memory_usage
+
+**Descriptions:**
+
+- _prometheus: 99%+ container memory usage by instance_ (`warning_prometheus_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+
+# prometheus: container_cpu_usage
+
+**Descriptions:**
+
+- _prometheus: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_prometheus_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+
+# prometheus: container_restarts
+
+**Descriptions:**
+
+- _prometheus: 1+ container restarts every 5m by instance_ (`warning_prometheus_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod prometheus` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p prometheus`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
+
+# prometheus: provisioning_container_cpu_usage_7d
+
+**Descriptions:**
+
+- _prometheus: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_prometheus_provisioning_container_cpu_usage_7d`)
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the prometheus container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+
+# prometheus: provisioning_container_memory_usage_7d
+
+**Descriptions:**
+
+- _prometheus: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_prometheus_provisioning_container_memory_usage_7d`)
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of prometheus container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+
+# prometheus: provisioning_container_cpu_usage_5m
+
+**Descriptions:**
+
+- _prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_prometheus_provisioning_container_cpu_usage_5m`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+
+# prometheus: provisioning_container_memory_usage_5m
+
+**Descriptions:**
+
+- _prometheus: 90%+ container memory usage (5m maximum) by instance_ (`warning_prometheus_provisioning_container_memory_usage_5m`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
 

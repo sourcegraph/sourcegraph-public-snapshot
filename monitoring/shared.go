@@ -50,9 +50,13 @@ var sharedFrontendInternalAPIErrorResponses sharedObservable = func(containerNam
 }
 
 // promCadvisorContainerMatchers generates Prometheus matchers that capture metrics that match the given container name
-// while excluding some irrelevant metrics (namely pods and jaeger sidecars)
+// while excluding some irrelevant series
 func promCadvisorContainerMatchers(containerName string) string {
-	return fmt.Sprintf(`name=~".*%s.*",name!~".*(_POD_|_jaeger-agent_).*"`, containerName)
+	// This matcher excludes:
+	// * jaeger sidecar (jaeger-agent)
+	// * pod sidecars (_POD_)
+	// as well as matching on the name of the container exactly with "_{container}_"
+	return fmt.Sprintf(`name=~".*_%s_.*",name!~".*(_POD_|_jaeger-agent_).*"`, containerName)
 }
 
 // Container monitoring overviews - alert on all container failures, but only alert on extreme resource usage.
@@ -104,6 +108,17 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
+	}
+}
+
+var sharedContainerFsInodes sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:              "fs_inodes_used",
+		Description:       "fs inodes in use by instance",
+		Query:             fmt.Sprintf(`sum by (instance) (container_fs_inodes_total{%s})`, promCadvisorContainerMatchers(containerName)),
+		DataMayNotExist:   true,
+		Critical:          Alert{GreaterOrEqual: 3e+06},
+		PossibleSolutions: "none", // TODO I think we do have some recommendations for this
 	}
 }
 
@@ -172,5 +187,42 @@ var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string
 				- **Docker Compose:** Consider decreasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 			- If usage is low, consider decreasing the above values.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
+	}
+}
+
+// Golang monitoring overviews
+
+var sharedGoGoroutines sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:              "go_goroutines",
+		Description:       "maximum active goroutines for 10m",
+		Query:             fmt.Sprintf(`max by (instance) (go_goroutines{job=~".*%s"})`, containerName), // TODO over 10m
+		DataMayNotExist:   true,
+		Warning:           Alert{GreaterOrEqual: 10000},
+		PossibleSolutions: "none",
+	}
+}
+
+var sharedGoGcDuration sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:              "go_gc_duration_seconds",
+		Description:       "maximum go garbage collection duration",
+		Query:             fmt.Sprintf(`max by (instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
+		DataMayNotExist:   true,
+		Warning:           Alert{GreaterOrEqual: 2},
+		PossibleSolutions: "none",
+	}
+}
+
+// Kubernetes monitoring overviews
+
+var sharedKubernetesPodsAvailable sharedObservable = func(containerName string) Observable {
+	return Observable{
+		Name:              "pods_missing",
+		Description:       "maximum missing pods for a service for 10m",
+		Query:             fmt.Sprintf(`sum by (app) (up{app="%[1]s"}) / count by (app) (up{app="%[1]s"})`, containerName), // TODO over 10m
+		Critical:          Alert{LessOrEqual: 0.9},
+		DataMayNotExist:   true,
+		PossibleSolutions: "none",
 	}
 }

@@ -82,13 +82,26 @@ func GitServer() *Container {
 				},
 			},
 			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("gitserver"),
+						sharedGoGcDuration("gitserver"),
+					},
+				},
+			},
+			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("gitserver"),
 						sharedContainerMemoryUsage("gitserver"),
 						sharedContainerCPUUsage("gitserver"),
+					},
+					{
+						sharedContainerRestarts("gitserver"),
+						sharedContainerFsInodes("gitserver"),
 					},
 				},
 			},
@@ -103,6 +116,15 @@ func GitServer() *Container {
 					{
 						sharedProvisioningCPUUsage5m("gitserver"),
 						sharedProvisioningMemoryUsage5m("gitserver"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (only available on k8s)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("gitserver"),
 					},
 				},
 			},

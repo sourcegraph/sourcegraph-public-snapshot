@@ -7,6 +7,16 @@ func GitHubProxy() *Container {
 		Description: "Proxies all requests to github.com, keeping track of and managing rate limits.",
 		Groups: []Group{
 			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("github-proxy"),
+						sharedGoGcDuration("github-proxy"),
+					},
+				},
+			},
+			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -28,6 +38,15 @@ func GitHubProxy() *Container {
 					{
 						sharedProvisioningCPUUsage5m("github-proxy"),
 						sharedProvisioningMemoryUsage5m("github-proxy"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (only available on k8s)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("github-proxy"),
 					},
 				},
 			},

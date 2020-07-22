@@ -181,6 +181,16 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-indexer"),
+						sharedGoGcDuration("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -202,6 +212,15 @@ func PreciseCodeIntelIndexer() *Container {
 					{
 						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),
 						sharedProvisioningMemoryUsage5m("precise-code-intel-indexer"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (only available on k8s)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("precise-code-intel-indexer"),
 					},
 				},
 			},

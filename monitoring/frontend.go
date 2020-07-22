@@ -83,6 +83,15 @@ func Frontend() *Container {
 							`,
 						},
 					},
+					{
+						{
+							Name:              "page_load_latency",
+							Description:       "90th percentile page load latency over all routes over 10m",
+							Query:             `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{job="sourcegraph-frontend",route!="raw"}[10m])))`,
+							Critical:          Alert{GreaterOrEqual: 20},
+							PossibleSolutions: "none",
+						},
+					},
 				},
 			},
 			{
@@ -401,13 +410,26 @@ func Frontend() *Container {
 				},
 			},
 			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("frontend"),
+						sharedGoGcDuration("frontend"),
+					},
+				},
+			},
+			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("frontend"),
 						sharedContainerMemoryUsage("frontend"),
 						sharedContainerCPUUsage("frontend"),
+					},
+					{
+						sharedContainerRestarts("frontend"),
+						sharedContainerFsInodes("frontend"),
 					},
 				},
 			},
@@ -422,6 +444,15 @@ func Frontend() *Container {
 					{
 						sharedProvisioningCPUUsage5m("frontend"),
 						sharedProvisioningMemoryUsage5m("frontend"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (only available on k8s)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("frontend"),
 					},
 				},
 			},

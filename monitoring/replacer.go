@@ -15,6 +15,16 @@ func Replacer() *Container {
 				},
 			},
 			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("replacer"),
+						sharedGoGcDuration("replacer"),
+					},
+				},
+			},
+			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -36,6 +46,15 @@ func Replacer() *Container {
 					{
 						sharedProvisioningCPUUsage5m("replacer"),
 						sharedProvisioningMemoryUsage5m("replacer"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (only available on k8s)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("replacer"),
 					},
 				},
 			},

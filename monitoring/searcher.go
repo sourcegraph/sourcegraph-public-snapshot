@@ -19,7 +19,24 @@ func Searcher() *Container {
 							PanelOptions:      PanelOptions().LegendFormat("{{code}}"),
 							PossibleSolutions: "none",
 						},
+						{
+							Name:              "error_ratio",
+							Description:       "error ratio over 10m",
+							Query:             `searcher_errors:ratio10m`, // TODO: 20m
+							Warning:           Alert{GreaterOrEqual: 0.1},
+							PossibleSolutions: "none",
+						},
 						sharedFrontendInternalAPIErrorResponses("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("searcher"),
+						sharedGoGcDuration("searcher"),
 					},
 				},
 			},
@@ -45,6 +62,15 @@ func Searcher() *Container {
 					{
 						sharedProvisioningCPUUsage5m("searcher"),
 						sharedProvisioningMemoryUsage5m("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (only available on k8s)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("searcher"),
 					},
 				},
 			},

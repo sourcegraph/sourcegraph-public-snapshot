@@ -48,6 +48,15 @@ func ZoektIndexServer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Kubernetes monitoring (only available on k8s)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("zoekt-indexserver"),
+					},
+				},
+			},
 		},
 	}
 }
