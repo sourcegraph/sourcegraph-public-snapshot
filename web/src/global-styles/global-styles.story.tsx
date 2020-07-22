@@ -159,52 +159,61 @@ add('Code', () => (
     </>
 ))
 
-add('Colors', () => (
-    <>
-        <h1>Colors</h1>
+add(
+    'Colors',
+    () => (
+        <>
+            <h1>Colors</h1>
 
-        <h2>Semantic colors</h2>
-        <p>
-            These can be used to give semantic clues and always work both in light and dark theme. They are availeble on
-            most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
-        </p>
-        <div className="d-flex flex-wrap">
-            {semanticColors.map(semantic => (
-                <div className="m-2 text-center" key={semantic}>
-                    <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
-                    {semantic}
-                </div>
-            ))}
-        </div>
-
-        <h2>Color Palette</h2>
-        <p>
-            Our color palette is the <a href="https://yeun.github.io/open-color/">Open Color</a> palette. All colors are
-            available as SCSS and CSS variables. It's generally not advised to use these directly, but they may be used
-            in rare cases, like charts. In other cases, rely on CSS components, utilities for borders and background,
-            and dynamic CSS variables.
-        </p>
-        {Object.entries(openColor).map(
-            ([name, colors]) =>
-                Array.isArray(colors) && (
-                    <div key={name}>
-                        <h5>{name}</h5>
-                        <div className="d-flex flex-wrap">
-                            {colors.map((color, number) => (
-                                <div key={color} className="m-2 text-right">
-                                    <div
-                                        className="rounded"
-                                        style={{ background: color, width: '3rem', height: '3rem' }}
-                                    />
-                                    {number}
-                                </div>
-                            ))}
-                        </div>
+            <h2>Semantic colors</h2>
+            <p>
+                These can be used to give semantic clues and always work both in light and dark theme. They are
+                available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
+            </p>
+            <div className="d-flex flex-wrap">
+                {semanticColors.map(semantic => (
+                    <div className="m-2 text-center" key={semantic}>
+                        <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
+                        {semantic}
                     </div>
-                )
-        )}
-    </>
-))
+                ))}
+            </div>
+
+            <h2>Color Palette</h2>
+            <p>
+                Our color palette is the <a href="https://yeun.github.io/open-color/">Open Color</a> palette. All colors
+                are available as SCSS and CSS variables. It's generally not advised to use these directly, but they may
+                be used in rare cases, like charts. In other cases, rely on CSS components, utilities for borders and
+                background, and dynamic CSS variables.
+            </p>
+            {Object.entries(openColor).map(
+                ([name, colors]) =>
+                    Array.isArray(colors) && (
+                        <div key={name}>
+                            <h5>{name}</h5>
+                            <div className="d-flex flex-wrap">
+                                {colors.map((color, number) => (
+                                    <div key={color} className="m-2 text-right">
+                                        <div
+                                            className="rounded"
+                                            style={{ background: color, width: '3rem', height: '3rem' }}
+                                        />
+                                        {number}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )
+            )}
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
+        },
+    }
+)
 
 add('Layout', () => (
     <>
