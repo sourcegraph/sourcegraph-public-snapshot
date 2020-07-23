@@ -192,7 +192,7 @@ type GetChangesetSpecOpts struct {
 	RandID string
 }
 
-// GetChangesetSpec gets a code mod matching the given options.
+// GetChangesetSpec gets a changeset spec matching the given options.
 func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (*campaigns.ChangesetSpec, error) {
 	q := getChangesetSpecQuery(&opts)
 
@@ -209,6 +209,11 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 	}
 
 	return &c, nil
+}
+
+// GetChangesetSpecByID gets a changeset spec with the given ID.
+func (s *Store) GetChangesetSpecByID(ctx context.Context, id int64) (*campaigns.ChangesetSpec, error) {
+	return s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: id})
 }
 
 var getChangesetSpecsQueryFmtstr = `

@@ -16,6 +16,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -43,6 +44,20 @@ var SupportedExternalServices = map[string]struct{}{
 func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	_, ok := SupportedExternalServices[spec.ServiceType]
 	return ok
+}
+
+// CheckRepoSupported checks whether the given repository is supported by campaigns
+// and if not it returns an error.
+func CheckRepoSupported(repo *types.Repo) error {
+	if IsRepoSupported(&repo.ExternalRepo) {
+		return nil
+	}
+
+	return errors.Errorf(
+		"External service type %s of repository %q is currently not supported for use with campaigns",
+		repo.ExternalRepo.ServiceType,
+		repo.Name,
+	)
 }
 
 // IsKindSupported returns whether the given extsvc Kind is supported by
@@ -94,24 +109,49 @@ func (c *Campaign) GenChangesetBody(externalURL string) string {
 	return description
 }
 
-// ChangesetState defines the possible states of a Changeset.
-type ChangesetState string
+// ChangesetPublicationState defines the possible publication states of a Changeset.
+type ChangesetPublicationState string
 
 // ChangesetState constants.
 const (
-	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
-	ChangesetStatePublishing  ChangesetState = "PUBLISHING"
-	ChangesetStateErrored     ChangesetState = "ERRORED"
-	ChangesetStateSynced      ChangesetState = "SYNCED"
+	ChangesetPublicationStateUnpublished ChangesetPublicationState = "UNPUBLISHED"
+	ChangesetPublicationStatePublished   ChangesetPublicationState = "PUBLISHED"
 )
 
-// Valid returns true if the given ChangesetState is valid.
-func (s ChangesetState) Valid() bool {
+// Valid returns true if the given ChangesetPublicationState is valid.
+func (s ChangesetPublicationState) Valid() bool {
 	switch s {
-	case ChangesetStateUnpublished,
-		ChangesetStatePublishing,
-		ChangesetStateErrored,
-		ChangesetStateSynced:
+	case ChangesetPublicationStateUnpublished, ChangesetPublicationStatePublished:
+		return true
+	default:
+		return false
+	}
+}
+
+// Published returns true if the given state is ChangesetPublicationStatePublished.
+func (s ChangesetPublicationState) Published() bool { return s == ChangesetPublicationStatePublished }
+
+// Unpublished returns true if the given state is ChangesetPublicationStateUnpublished.
+func (s ChangesetPublicationState) Unpublished() bool { return s == ChangesetPublicationStatePublished }
+
+// ReconcilerState defines the possible states of a Reconciler.
+type ReconcilerState string
+
+// ReconcilerState constants.
+const (
+	ReconcilerStateQueued     ReconcilerState = "queued"
+	ReconcilerStateProcessing ReconcilerState = "processing"
+	ReconcilerStateErrored    ReconcilerState = "errored"
+	ReconcilerStateCompleted  ReconcilerState = "completed"
+)
+
+// Valid returns true if the given ReconcilerState is valid.
+func (s ReconcilerState) Valid() bool {
+	switch s {
+	case ReconcilerStateQueued,
+		ReconcilerStateProcessing,
+		ReconcilerStateErrored,
+		ReconcilerStateCompleted:
 		return true
 	default:
 		return false
@@ -224,13 +264,34 @@ type Changeset struct {
 	ExternalState       ChangesetExternalState
 	ExternalReviewState ChangesetReviewState
 	ExternalCheckState  ChangesetCheckState
-	CreatedByCampaign   bool
-	AddedToCampaign     bool
-	DiffStatAdded       *int32
-	DiffStatChanged     *int32
-	DiffStatDeleted     *int32
-	SyncState           ChangesetSyncState
+
+	// The campaign that "owns" this changeset: it can create/close it on code host.
+	OwnedByCampaignID int64
+	// Whether this changeset was created by a campaign on a code host.
+	CreatedByCampaign bool
+	// Whether it was imported/tracked by a campaign.
+	AddedToCampaign bool
+
+	DiffStatAdded   *int32
+	DiffStatChanged *int32
+	DiffStatDeleted *int32
+	SyncState       ChangesetSyncState
+
+	CurrentSpecID  int64
+	PreviousSpecID int64
+
+	PublicationState ChangesetPublicationState // "unpublished", "published"
+
+	ReconcilerState ReconcilerState // "queued", "processing", "completed", "errored"
+	FailureMessage  *string
+	StartedAt       time.Time
+	FinishedAt      time.Time
+	ProcessAfter    time.Time
+	NumResets       int64
 }
+
+// RecordID is needed to implement the workerutil.Record interface.
+func (c *Changeset) RecordID() int { return int(c.ID) }
 
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
@@ -449,6 +510,30 @@ func (cs Changesets) Filter(predicate func(*Changeset) bool) (filtered Changeset
 	}
 
 	return filtered
+}
+
+// Find returns the first changeset in the slice for which the predicate
+// returned true.
+func (cs Changesets) Find(predicate func(*Changeset) bool) *Changeset {
+	for _, c := range cs {
+		if predicate(c) {
+			return c
+		}
+	}
+
+	return nil
+}
+
+// WithCurrentSpecID returns a predicate function that can be passed to
+// Changesets.Filter/Find, etc.
+func WithCurrentSpecID(id int64) func(*Changeset) bool {
+	return func(c *Changeset) bool { return c.CurrentSpecID == id }
+}
+
+// WithExternalID returns a predicate function that can be passed to
+// Changesets.Filter/Find, etc.
+func WithExternalID(id string) func(*Changeset) bool {
+	return func(c *Changeset) bool { return c.ExternalID == id }
 }
 
 // Keyer represents items that return a unique key
@@ -1579,6 +1664,9 @@ type ChangesetSpec struct {
 
 	RawSpec string
 	// TODO(mrnugget): should we rename the "spec" column to "description"?
+	// TODO: should we make this a pointer? Otherwise we're passing around a
+	// really heavy struct all the time, since ChangesetSpecDescription
+	// includes the diff
 	Spec ChangesetSpecDescription
 
 	DiffStatAdded   int32
@@ -1748,6 +1836,18 @@ func (d *ChangesetSpecDescription) Diff() (string, error) {
 		return "", ErrNoCommits
 	}
 	return d.Commits[0].Diff, nil
+}
+
+// CommitMessage returns the Message of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) CommitMessage() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].Message, nil
 }
 
 type GitCommitDescription struct {

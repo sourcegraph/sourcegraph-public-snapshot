@@ -499,6 +499,8 @@ func TestRepositoryPermissions(t *testing.T) {
 				ExternalState:       campaigns.ChangesetExternalStateOpen,
 				ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 				ExternalReviewState: campaigns.ChangesetReviewStateChangesRequested,
+				PublicationState:               campaigns.ChangesetPublicationStatePublished,
+				ReconcilerState:         campaigns.ReconcilerStateCompleted,
 				Metadata: &github.PullRequest{
 					BaseRefOid: changesetBaseRefOid,
 					HeadRefOid: changesetHeadRefOid,

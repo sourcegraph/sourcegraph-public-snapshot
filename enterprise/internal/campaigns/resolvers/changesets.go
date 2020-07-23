@@ -402,9 +402,12 @@ func (r *changesetResolver) Body() (string, error) {
 	return r.changeset.Body()
 }
 
-func (r *changesetResolver) State() campaigns.ChangesetState {
-	// TODO: Implement.
-	return campaigns.ChangesetStateUnpublished
+func (r *changesetResolver) PublicationState() campaigns.ChangesetPublicationState {
+	return r.changeset.PublicationState
+}
+
+func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
+	return r.changeset.ReconcilerState
 }
 
 func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
@@ -420,8 +423,10 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
-	// TODO: Implement this properly by checking whether the changeset has been published on the code host.
-	return &r.changeset.ExternalReviewState
+	if r.changeset.PublicationState.Published() {
+		return &r.changeset.ExternalReviewState
+	}
+	return nil
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {

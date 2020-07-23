@@ -490,6 +490,11 @@ func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Conte
 
 	ids := make([]int64, 0, len(changesets))
 	for _, cs := range changesets {
+		// TODO: This needs to go into ListChangesetsOpts
+		if cs.PublicationState != campaigns.ChangesetPublicationStatePublished ||
+			cs.ReconcilerState != campaigns.ReconcilerStateCompleted {
+			continue
+		}
 		ids = append(ids, cs.ID)
 	}
 	s.priorityNotify <- ids
@@ -509,9 +514,19 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, cs)
 }
 
+// MockSyncChangesets can be set to mock SyncChangesets.
+//
+// Once Service.ApplyCampaign enqueues changesets to be synced in the
+// background it can be removed.
+var MockSyncChangesets func(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) error
+
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
 func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
+	if MockSyncChangesets != nil {
+		return MockSyncChangesets(ctx, repoStore, syncStore, cf, cs...)
+	}
+
 	return syncChangesets(ctx, repoStore, syncStore, cf, cs...)
 }
 

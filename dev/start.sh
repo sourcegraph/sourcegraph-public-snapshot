@@ -105,14 +105,14 @@ export LIBSQLITE3_PCRE
 # Ensure ctags image is built
 ./cmd/symbols/build-ctags.sh
 
-# Make sure chokidar-cli is installed in the background
-printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
-yarn_pid=''
-[ -n "${OFFLINE-}" ] || {
-  yarn --no-progress &
-  yarn_pid="$!"
-}
-
+# # Make sure chokidar-cli is installed in the background
+# printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
+# yarn_pid=''
+# [ -n "${OFFLINE-}" ] || {
+#   yarn --no-progress &
+#   yarn_pid="$!"
+# }
+#
 if ! ./dev/go-install.sh; then
   # let Yarn finish, otherwise we get Yarn diagnostics AFTER the
   # actual reason we're failing.
@@ -121,10 +121,10 @@ if ! ./dev/go-install.sh; then
   exit 1
 fi
 
-# Wait for yarn if it is still running
-if [[ -n "$yarn_pid" ]]; then
-  wait "$yarn_pid"
-fi
+# # Wait for yarn if it is still running
+# if [[ -n "$yarn_pid" ]]; then
+#   wait "$yarn_pid"
+# fi
 
 # Increase ulimit (not needed on Windows/WSL)
 # shellcheck disable=SC2015
@@ -136,9 +136,9 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 # Build once in the background to make sure editor codeintel works
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
-trap 'kill $build_ts_pid; exit' EXIT
-(yarn run build-ts || true) &
-build_ts_pid="$!"
+# trap 'kill $build_ts_pid; exit' EXIT
+# (yarn run build-ts || true) &
+# build_ts_pid="$!"
 
 export PROCFILE=${PROCFILE:-dev/Procfile}
 

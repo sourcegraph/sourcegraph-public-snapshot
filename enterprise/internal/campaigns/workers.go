@@ -2,45 +2,75 @@ package campaigns
 
 import (
 	"context"
-	"strconv"
+	"database/sql"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-// maxWorkers defines the maximum number of changeset jobs to run in parallel.
-var maxWorkers = env.Get("CAMPAIGNS_MAX_WORKERS", "8", "maximum number of repository jobs to run in parallel")
+// RunWorkers starts a workerutil.NewWorker that fetches enqueued changesets
+// from the database and passed them to the changeset reconciler for
+// processing.
+func RunWorkers(
+	ctx context.Context,
+	s *Store,
+	gitClient GitserverClient,
+	sourcer repos.Sourcer,
+) {
+	r := &reconciler{gitserverClient: gitClient, sourcer: sourcer, store: s}
 
-const defaultWorkerCount = 8
+	options := workerutil.WorkerOptions{
+		Handler:     r.HandlerFunc(),
+		NumHandlers: 5,
+		Interval:    5 * time.Second,
+		Metrics: workerutil.WorkerMetrics{
+			HandleOperation: newObservationOperation(),
+		},
+	}
 
-type GitserverClient interface {
-	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
+	workerStore := workerutil.NewStore(s.Handle(), workerutil.StoreOptions{
+		TableName:            "changesets",
+		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
+		ColumnExpressions:    changesetColumns,
+		Scan:                 scanFirstChangesetRecord,
+		OrderByExpression:    sqlf.Sprintf("changesets.updated_at"),
+		StalledMaxAge:        60 * time.Second,
+		MaxNumResets:         5,
+	})
+
+	worker := workerutil.NewWorker(ctx, workerStore, options)
+	worker.Start()
 }
 
-// RunWorkers should be executed in a background goroutine and is responsible
-// for finding pending ChangesetJobs and executing them.
-// ctx should be canceled to terminate the function.
-func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient GitserverClient, sourcer repos.Sourcer, backoffDuration time.Duration) {
-	workerCount, err := strconv.Atoi(maxWorkers)
-	if err != nil {
-		log15.Error("Parsing max worker count failed. Falling back to default.", "default", defaultWorkerCount, "err", err)
-		workerCount = defaultWorkerCount
+func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return scanFirstChangeset(rows, err)
+}
+
+func newObservationOperation() *observation.Operation {
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	worker := func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				time.Sleep(backoffDuration)
-			}
-		}
-	}
-	for i := 0; i < workerCount; i++ {
-		go worker()
-	}
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
+		"campaigns_reconciler",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of results returned"),
+	)
+
+	return observationContext.Operation(observation.Op{
+		Name:         "Reconciler.Process",
+		MetricLabels: []string{"process"},
+		Metrics:      metrics,
+	})
 }
