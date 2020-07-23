@@ -1183,7 +1183,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 func isPatternNegated(q []query.Node) bool {
 	isNegated := false
 	patternsFound := 0
-	query.VisitPattern(q, func(value string, negated bool, annotation query.Annotation) {
+	query.VisitPattern(q, func(_ string, negated bool, _ query.Annotation) {
 		patternsFound++
 		if patternsFound > 1 {
 			return
