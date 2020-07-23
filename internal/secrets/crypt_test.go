@@ -32,7 +32,6 @@ func TestDBEncryptingAndDecrypting(t *testing.T) {
 	if decrypted != toEncrypt {
 		t.Fatalf("failed to decrypt")
 	}
-
 }
 
 // Test the negative result - we should fail to decrypt with bad keys
