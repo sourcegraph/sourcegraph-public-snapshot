@@ -830,6 +830,8 @@ func goMarkdown(m string) (string, error) {
 
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
 
+const alertSuffix = "_alert_rules.yml"
+
 func main() {
 	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")
 	if !ok {
@@ -866,6 +868,7 @@ func main() {
 		ZoektIndexServer(),
 		ZoektWebServer(),
 	}
+	var filelist []string
 	for _, container := range containers {
 		if err := container.validate(); err != nil {
 			log.Fatal(err)
@@ -881,6 +884,8 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+			filelist = append(filelist, container.Name+".json")
+
 			if reload {
 				ctx := context.Background()
 				client := sdk.NewClient("http://127.0.0.1:3370", "admin:admin", sdk.DefaultHTTPClient)
@@ -897,7 +902,8 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fileName := strings.Replace(container.Name, "-", "_", -1) + "_alert_rules.yml"
+			fileName := strings.Replace(container.Name, "-", "_", -1) + alertSuffix
+			filelist = append(filelist, fileName)
 			// #nosec G306  grafana runs as UID 472
 			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
 			if err != nil {
@@ -905,6 +911,7 @@ func main() {
 			}
 		}
 	}
+	deleteRemnants(filelist, grafanaDir, prometheusDir)
 
 	if prometheusDir != "" && reload {
 		resp, err := http.Post("http://127.0.0.1:9090/-/reload", "", nil)
@@ -927,6 +934,56 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+func deleteRemnants(filelist []string, grafanaDir, promDir string) {
+	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
+		if filepath.Ext(path) != ".json" || info.IsDir() {
+			return nil
+		}
+		for _, f := range filelist {
+			if filepath.Ext(f) != ".json" || filepath.Ext(path) != ".json" || info.IsDir() {
+				continue
+			}
+			if filepath.Base(path) == f {
+				return nil
+			}
+		}
+		err = os.Remove(path)
+		log.Println("Removed orphan grafana file: ", path)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
+		if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
+			return nil
+		}
+
+		for _, f := range filelist {
+			if filepath.Ext(f) != ".yml" {
+				continue
+			}
+			if filepath.Base(path) == f {
+				return nil
+			}
+		}
+		err = os.Remove(path)
+		log.Println("Removed orphan prometheus alert file: ", path)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
