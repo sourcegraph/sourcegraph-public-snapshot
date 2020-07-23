@@ -20,7 +20,7 @@ interface Props
     history: H.History
 
     /** Whether globbing is enabled for filters. */
-    globbing: true
+    globbing: boolean
 }
 
 /**

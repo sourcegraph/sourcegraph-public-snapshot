@@ -67,6 +67,8 @@ export interface RepoContainerContext
 
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
+
+    globbing: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -327,6 +329,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repoSettingsSidebarGroups: this.props.repoSettingsSidebarGroups,
             copyQueryButton: this.props.copyQueryButton,
             versionContext: this.props.versionContext,
+            globbing: this.props.globbing,
         }
 
         return (
