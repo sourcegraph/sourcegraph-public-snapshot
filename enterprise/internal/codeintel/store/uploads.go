@@ -457,7 +457,7 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 			SELECT r.id AS id FROM repo r
 			WHERE
 				%s - r.deleted_at >= %s * interval '1 second' AND
-				EXISTS (SELECT COUNT(*) from lsif_uploads u WHERE u.repository_id = r.id)
+				EXISTS (SELECT 1 from lsif_uploads u WHERE u.repository_id = r.id)
 		),
 		deleted_uploads AS (
 			DELETE FROM lsif_uploads u WHERE repository_id IN (SELECT id FROM deleted_repos)
