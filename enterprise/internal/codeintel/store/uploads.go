@@ -123,27 +123,6 @@ func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
 	return states, nil
 }
 
-// scanVisibility scans pairs of id/visibleAtTip from the return value of `*store.query`.
-func scanVisibilities(rows *sql.Rows, queryErr error) (_ map[int]bool, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = closeRows(rows, err) }()
-
-	visibilities := map[int]bool{}
-	for rows.Next() {
-		var id int
-		var visibleAtTip bool
-		if err := rows.Scan(&id, &visibleAtTip); err != nil {
-			return nil, err
-		}
-
-		visibilities[id] = visibleAtTip
-	}
-
-	return visibilities, nil
-}
-
 // scanCounts scans pairs of id/counts from the return value of `*store.query`.
 func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	if queryErr != nil {
