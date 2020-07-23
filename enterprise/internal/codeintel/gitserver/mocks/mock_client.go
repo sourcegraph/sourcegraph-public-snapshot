@@ -335,32 +335,32 @@ func (c ClientCommitGraphFuncCall) Results() []interface{} {
 
 // ClientCommitsNearFunc describes the behavior when the CommitsNear method
 // of the parent MockClient instance is invoked.
-type ClientCommitsNearFunc struct {
-	defaultHook func(context.Context, store.Store, int, string) (map[string][]string, error)
-	hooks       []func(context.Context, store.Store, int, string) (map[string][]string, error)
-	history     []ClientCommitsNearFuncCall
+type ClientCommitGraphFunc struct {
+	defaultHook func(context.Context, store.Store, int) (map[string][]string, error)
+	hooks       []func(context.Context, store.Store, int) (map[string][]string, error)
+	history     []ClientCommitGraphFuncCall
 	mutex       sync.Mutex
 }
 
-// CommitsNear delegates to the next hook function in the queue and stores
+// CommitGraph delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) CommitsNear(v0 context.Context, v1 store.Store, v2 int, v3 string) (map[string][]string, error) {
-	r0, r1 := m.CommitsNearFunc.nextHook()(v0, v1, v2, v3)
-	m.CommitsNearFunc.appendCall(ClientCommitsNearFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockClient) CommitGraph(v0 context.Context, v1 store.Store, v2 int) (map[string][]string, error) {
+	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2)
+	m.CommitGraphFunc.appendCall(ClientCommitGraphFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the CommitsNear method
+// SetDefaultHook sets function that is called when the CommitGraph method
 // of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommitsNearFunc) SetDefaultHook(hook func(context.Context, store.Store, int, string) (map[string][]string, error)) {
+func (f *ClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, store.Store, int) (map[string][]string, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitsNear method of the parent MockClient instance inovkes the hook at
+// CommitGraph method of the parent MockClient instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientCommitsNearFunc) PushHook(hook func(context.Context, store.Store, int, string) (map[string][]string, error)) {
+func (f *ClientCommitGraphFunc) PushHook(hook func(context.Context, store.Store, int) (map[string][]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -368,21 +368,21 @@ func (f *ClientCommitsNearFunc) PushHook(hook func(context.Context, store.Store,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ClientCommitsNearFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int, string) (map[string][]string, error) {
+func (f *ClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
+	f.SetDefaultHook(func(context.Context, store.Store, int) (map[string][]string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ClientCommitsNearFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int, string) (map[string][]string, error) {
+func (f *ClientCommitGraphFunc) PushReturn(r0 map[string][]string, r1 error) {
+	f.PushHook(func(context.Context, store.Store, int) (map[string][]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientCommitsNearFunc) nextHook() func(context.Context, store.Store, int, string) (map[string][]string, error) {
+func (f *ClientCommitGraphFunc) nextHook() func(context.Context, store.Store, int) (map[string][]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -395,26 +395,26 @@ func (f *ClientCommitsNearFunc) nextHook() func(context.Context, store.Store, in
 	return hook
 }
 
-func (f *ClientCommitsNearFunc) appendCall(r0 ClientCommitsNearFuncCall) {
+func (f *ClientCommitGraphFunc) appendCall(r0 ClientCommitGraphFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ClientCommitsNearFuncCall objects
+// History returns a sequence of ClientCommitGraphFuncCall objects
 // describing the invocations of this function.
-func (f *ClientCommitsNearFunc) History() []ClientCommitsNearFuncCall {
+func (f *ClientCommitGraphFunc) History() []ClientCommitGraphFuncCall {
 	f.mutex.Lock()
-	history := make([]ClientCommitsNearFuncCall, len(f.history))
+	history := make([]ClientCommitGraphFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ClientCommitsNearFuncCall is an object that describes an invocation of
-// method CommitsNear on an instance of MockClient.
-type ClientCommitsNearFuncCall struct {
+// ClientCommitGraphFuncCall is an object that describes an invocation of
+// method CommitGraph on an instance of MockClient.
+type ClientCommitGraphFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -424,9 +424,6 @@ type ClientCommitsNearFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string][]string
@@ -437,13 +434,13 @@ type ClientCommitsNearFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ClientCommitsNearFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+func (c ClientCommitGraphFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ClientCommitsNearFuncCall) Results() []interface{} {
+func (c ClientCommitGraphFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
