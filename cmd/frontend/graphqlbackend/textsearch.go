@@ -495,6 +495,12 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return nil, nil, errors.New("no indexed repositories for structural search")
 	}
 
+	// unindexed search does not yet support negated patterns. If there are no indexed repos
+	// and the pattern is negated, raise a friendly alert.
+	if args.PatternInfo.IsNegated && len(indexed.Repos()) == 0 {
+		return nil, nil, errors.New("no indexed repositories for negated content")
+	}
+
 	common.repos = make([]*types.Repo, len(args.Repos))
 	for i, repo := range args.Repos {
 		common.repos[i] = repo.Repo
