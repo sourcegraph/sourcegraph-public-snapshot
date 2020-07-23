@@ -741,8 +741,10 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		}
 	}()
 
-	// This guard disables unindexed structural search for now.
-	if !args.PatternInfo.IsStructuralPat {
+	// This guard disables
+	// - unindexed structural search
+	// - unindexed search of negated content
+	if !(args.PatternInfo.IsStructuralPat || args.PatternInfo.IsNegated) {
 		if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
 			mu.Lock()
 			searchErr = err
