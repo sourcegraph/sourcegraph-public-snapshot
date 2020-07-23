@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -192,8 +193,13 @@ func inform(client *k8s.Client, m *Map, u *k8sURL) error {
 		}
 		urls, err := endpointsToMap(u, &endpoints)
 		m.mu.Lock()
+		oldURLs, oldErr := m.urls, m.err
 		m.urls, m.err = urls, err
 		m.mu.Unlock()
+
+		if !reflect.Equal(urls, oldURLs) {
+			log15.Debug("kubernetes endpoint changed", "service", u.Service, "oldUrls", oldUrls, "urls", urls, "oldErr", oldErr, "err", err)
+		}
 	}
 }
 
@@ -208,6 +214,7 @@ func endpointsToMap(u *k8sURL, eps *corev1.Endpoints) (*hashMap, error) {
 			}
 		}
 	}
+	sort.Strings(urls)
 	metricEndpointSize.WithLabelValues(u.Service).Set(float64(len(urls)))
 	if len(urls) == 0 {
 		return nil, errors.Errorf("no %s endpoints could be found (this may indicate more %s replicas are needed, contact support@sourcegraph.com for assistance)", u.Service, u.Service)
