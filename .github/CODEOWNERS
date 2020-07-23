@@ -55,6 +55,7 @@
 /.prettierignore @felixfbecker
 /.github @beyang
 /.github/workflows/lsif.yml @efritz
+/.github/workflows/codeql.yml @sourcegraph/security
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
