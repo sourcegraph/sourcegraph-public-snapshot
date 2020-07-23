@@ -9,9 +9,9 @@ import (
 var CryptObject EncryptionStore
 
 const (
-	sourcegraphCryptEnvvar = "SOURCEGRAPH_CRYPT_KEY"
 	// #nosec G101
 	sourcegraphSecretfileEnvvar = "SOURCEGRAPH_SECRET_FILE"
+	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 	validKeyLength              = 32
 )
 
