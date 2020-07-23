@@ -79,22 +79,30 @@ const config = {
       exclude: storybookDirectory,
     })
 
+    // Make sure Storybook style loaders are only evaluated for Storybook styles.
+    config.module.rules.find(rule => rule.test?.toString() === /\.css$/.toString()).include = storybookDirectory
+
     config.module.rules.unshift({
-      // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
+      // CSS rule for external plain CSS (skip SASS and PostCSS for build perf)
+      test: /\.css$/,
+      // Make sure Storybook styles get handled by the Storybook config
+      exclude: [storybookDirectory, ...monacoEditorPaths],
+      use: ['to-string-loader', 'css-loader'],
+    })
+
+    config.module.rules.unshift({
+      // CSS rule for monaco-editor, it expects styles to be loaded with `style-loader`.
       test: /\.css$/,
       include: monacoEditorPaths,
       // Make sure Storybook styles get handled by the Storybook config
-      exclude: storybookDirectory,
-      use: ['to-string-loader', 'css-loader'],
+      exclude: [storybookDirectory],
+      use: ['style-loader', 'css-loader'],
     })
 
     Object.assign(config.entry, {
       'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
       'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
     })
-
-    // Make sure Storybook style loaders are only evaluated for Storybook styles.
-    config.module.rules.find(rule => rule.test?.toString() === /\.css$/.toString()).include = storybookDirectory
 
     return config
   },
