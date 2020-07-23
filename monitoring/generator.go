@@ -830,6 +830,8 @@ func goMarkdown(m string) (string, error) {
 
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
 
+const alertSuffix = "_alert_rules.yml"
+
 func main() {
 	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")
 	if !ok {
@@ -900,7 +902,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fileName := strings.Replace(container.Name, "-", "_", -1) + "_alert_rules.yml"
+			fileName := strings.Replace(container.Name, "-", "_", -1) + alertSuffix
 			filelist = append(filelist, fileName)
 			// #nosec G306  grafana runs as UID 472
 			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
@@ -934,10 +936,12 @@ func main() {
 		}
 	}
 }
-
 func deleteRemnants(filelist []string, grafanaDir, promDir string) {
-
 	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
 		if filepath.Ext(path) != ".json" || info.IsDir() {
 			return nil
 		}
@@ -958,8 +962,11 @@ func deleteRemnants(filelist []string, grafanaDir, promDir string) {
 	}
 
 	err = filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
-
-		if !strings.Contains(filepath.Base(path), "_alert_rules.yml") || info.IsDir() {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
+		if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
 			return nil
 		}
 
