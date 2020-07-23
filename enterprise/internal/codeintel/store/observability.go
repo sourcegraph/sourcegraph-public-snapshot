@@ -646,9 +646,9 @@ func (s *ObservedStore) GetIndexByID(ctx context.Context, id int) (_ Index, _ bo
 }
 
 // GetIndexes calls into the inner store and registers the observed results.
-func (s *ObservedStore) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
+func (s *ObservedStore) GetIndexes(ctx context.Context, opts GetIndexesOptions) (indexes []Index, _ int, err error) {
 	ctx, endObservation := s.getIndexesOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(float64(len(indexes)), observation.Args{}) }()
 	return s.store.GetIndexes(ctx, opts)
 }
 
