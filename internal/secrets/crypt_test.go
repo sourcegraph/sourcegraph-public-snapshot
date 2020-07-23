@@ -1,17 +1,17 @@
 package secrets
 
 import (
-	"reflect"
+	"bytes"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 )
 
 // Test that encrypting and decryption the message yields the same value
-func TestDBEncryptingAndDecrypting(t *testing.T) {
+func TestEncryptingAndDecrypting(t *testing.T) {
 	// 32 bytes means an AES-256 cipher
 	key := []byte(randstring.NewLen(32))
-	e := EncryptionStore{EncryptionKey: key}
+	e := Encrypter{EncryptionKey: key}
 	toEncrypt := "i am the super secret string, shhhhh"
 
 	encrypted, err := e.Encrypt(toEncrypt)
@@ -20,7 +20,7 @@ func TestDBEncryptingAndDecrypting(t *testing.T) {
 	}
 
 	// better way to compare byte arrays
-	if reflect.DeepEqual(encrypted, []byte(toEncrypt)) {
+	if encrypted == toEncrypt {
 		t.Fatal(err)
 	}
 
@@ -38,7 +38,7 @@ func TestDBEncryptingAndDecrypting(t *testing.T) {
 // Test the negative result - we should fail to decrypt with bad keys
 func TestBadKeysFailToDecrypt(t *testing.T) {
 	key := []byte(randstring.NewLen(32))
-	e := EncryptionStore{EncryptionKey: key}
+	e := Encrypter{EncryptionKey: key}
 
 	message := "The secret is to bang the rocks together guys."
 	encrypted, _ := e.Encrypt(message)
@@ -60,7 +60,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 // Test that different strings encrypt to different outputs
 func TestDifferentOutputs(t *testing.T) {
 	key := []byte(randstring.NewLen(32))
-	e := EncryptionStore{EncryptionKey: key}
+	e := Encrypter{EncryptionKey: key}
 	messages := []string{
 		"This may or may",
 		"This is not the same as that",
@@ -76,7 +76,7 @@ func TestDifferentOutputs(t *testing.T) {
 	}
 
 	for _, c := range crypts {
-		if isInSliceOnce(c, crypts) == false {
+		if !isInSliceOnce(c, crypts) {
 			t.Fatalf("Duplicate encryption string: %v.", c)
 		}
 	}
@@ -96,7 +96,7 @@ func isInSliceOnce(item string, slice []string) bool {
 func TestSampleNoRepeats(t *testing.T) {
 	key := []byte(randstring.NewLen(32))
 	toEncrypt := "All in, fall in, call in, wall in"
-	e := EncryptionStore{EncryptionKey: key}
+	e := Encrypter{EncryptionKey: key}
 
 	var crypts []string
 	for i := 0; i < 10000; i++ {
@@ -112,12 +112,12 @@ func TestSampleNoRepeats(t *testing.T) {
 }
 
 // Test that rotating keys returns different encrypted strings
-func TestDBKeyRotation(t *testing.T) {
+func TestKeyRotation(t *testing.T) {
 	initialKey := []byte(randstring.NewLen(32))
 	secondKey := []byte(randstring.NewLen(32))
 	toEncrypt := "Chickens, pigs, giraffes, llammas, monkeys, birds, spiders"
 
-	e := EncryptionStore{EncryptionKey: initialKey}
+	e := Encrypter{EncryptionKey: initialKey}
 	encrypted, _ := e.Encrypt(toEncrypt) // another test validates
 
 	reEncrypted, _ := e.RotateKey(secondKey, encrypted) // another test validates
@@ -127,8 +127,8 @@ func TestDBKeyRotation(t *testing.T) {
 	}
 
 	// validate decrypting the message works with the new key
-	anotherDB := EncryptionStore{EncryptionKey: secondKey}
-	decrypted, err := anotherDB.Decrypt(reEncrypted)
+	anotherES := Encrypter{EncryptionKey: secondKey}
+	decrypted, err := anotherES.Decrypt(reEncrypted)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,8 @@ func TestDBKeyRotation(t *testing.T) {
 		t.Fatal("failed to decrypt")
 	}
 
-	if !reflect.DeepEqual(e.EncryptionKey, secondKey) {
+	if !bytes.Equal(e.EncryptionKey, secondKey) {
+		// if !reflect.DeepEqual(e.EncryptionKey, secondKey) {
 		t.Fatalf("Expected key to be %s, got %s.", secondKey, e.EncryptionKey)
 	}
 }
