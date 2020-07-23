@@ -73,7 +73,7 @@ interface SuggestionIconProps {
  */
 const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
-export function createSuggestion(item: SearchSuggestion, globbing:boolean): Suggestion | undefined {
+export function createSuggestion(item: SearchSuggestion, globbing: boolean): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
@@ -96,7 +96,7 @@ export function createSuggestion(item: SearchSuggestion, globbing:boolean): Sugg
             if (item.isDirectory) {
                 return {
                     type: NonFilterSuggestionType.Directory,
-                    value: globbing ? item.path :'^' + escapeRegExp(item.path),
+                    value: globbing ? item.path : '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: appendSubtreeQueryParameter(item.url),
                     label: 'go to dir',
