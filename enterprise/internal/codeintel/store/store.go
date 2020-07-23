@@ -70,10 +70,10 @@ type Store interface {
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 
-	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
-	// commit on the default branch when invoked.
-	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFunc) (bool, error)
+	// DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
+	// was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
+	// the background.
+	DeleteUploadByID(ctx context.Context, id int) (bool, error)
 
 	// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
 	// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
@@ -95,7 +95,8 @@ type Store interface {
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]Dump, error)
 
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
-	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
+	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence. The associated repository
+	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
 
 	// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
@@ -123,6 +124,9 @@ type Store interface {
 	// and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
 	// default branch.
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
+
+	// HasRepository determines if there is LSIF data for the given repository.
+	HasRepository(ctx context.Context, repositoryID int) (bool, error)
 
 	// HasCommit determines if the given commit is known for the given repository.
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
@@ -209,9 +213,6 @@ type Store interface {
 	// RepoName returns the name for the repo with the given identifier.
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
-
-// GetTipCommitFunc returns the head commit for the given repository.
-type GetTipCommitFunc func(ctx context.Context, repositoryID int) (string, error)
 
 type store struct {
 	*basestore.Store

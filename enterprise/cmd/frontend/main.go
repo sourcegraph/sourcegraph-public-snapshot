@@ -35,6 +35,7 @@ import (
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
@@ -175,7 +176,8 @@ func initCodeIntel(enterpriseServices *enterprise.Services) {
 
 	store := store.NewObserved(store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global)), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
-	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
+	commitUpdater := commits.NewUpdater(store, codeintelgitserver.DefaultClient)
+	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient, commitUpdater), observationContext)
 	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
 	if err != nil {
 		log.Fatalf("failed to initialize hunk cache: %s", err)
