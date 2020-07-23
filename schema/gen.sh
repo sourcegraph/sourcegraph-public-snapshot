@@ -32,4 +32,4 @@ stringdata phabricator.schema.json PhabricatorSchemaJSON
 stringdata settings.schema.json SettingsSchemaJSON
 stringdata site.schema.json SiteSchemaJSON
 
-gofmt -s -w site_stringdata.go settings_stringdata.go
+gofmt -s -w ./*.go
