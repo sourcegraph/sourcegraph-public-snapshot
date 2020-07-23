@@ -1180,6 +1180,24 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	return getPatternInfo(r.query, opts)
 }
 
+func isPatternNegated(q []query.Node) bool {
+	isNegated := false
+	patternsFound := 0
+	query.VisitPattern(q, func(value string, negated bool, annotation query.Annotation) {
+		patternsFound++
+		if patternsFound > 1 {
+			return
+		}
+		isNegated = negated
+	})
+
+	// we only support negation for queries with atomic patterns
+	if patternsFound > 1 {
+		return false
+	}
+	return isNegated
+}
+
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
 func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool, bool) {
@@ -1191,10 +1209,9 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 
 	patternValues := q.Values(query.FieldDefault)
 
-	// TODO: explain why we have len(patternValue)==1 as condition here
 	isNegated := false
-	if len(patternValues) == 1 && getBoolPtr(patternValues[0].Negated, false) {
-		isNegated = true
+	if andOrQuery, ok := q.(*query.AndOrQuery); ok {
+		isNegated = isPatternNegated(andOrQuery.Query)
 	}
 
 	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
