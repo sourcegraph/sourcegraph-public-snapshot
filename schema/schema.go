@@ -311,6 +311,34 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
+// CampaignSpec description: A campaign specification, which describes the campaign and what kinds of changes to make (or what existing changesets to track).
+type CampaignSpec struct {
+	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
+	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
+	// Description description: The description of the campaign.
+	Description string `json:"description,omitempty"`
+	// Name description: The name of the campaign, which is unique among all campaigns in the namespace. A campaign's name is case-preserving.
+	Name string `json:"name"`
+	// On description: The set of repositories (and branches) to run the campaign on, specified as a list of search queries (that match repositories) and/or specific repositories.
+	On []interface{} `json:"on,omitempty"`
+	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.
+	Steps []*Step `json:"steps,omitempty"`
+}
+
+// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
+type ChangesetTemplate struct {
+	// Body description: The body (description) of the changeset.
+	Body string `json:"body,omitempty"`
+	// Branch description: The name of the Git branch to create or update on each repository with the changes.
+	Branch string `json:"branch"`
+	// Commit description: The Git commit to create with the changes.
+	Commit ExpandedGitCommitDescription `json:"commit"`
+	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
+	Published bool `json:"published"`
+	// Title description: The title of the changeset.
+	Title string `json:"title"`
+}
+
 // CloneURLToRepositoryName description: Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is "^../(?P<name>\w+)$" and `to` is "github.com/user/{name}", the clone URL "../myRepository" would be mapped to the repository name "github.com/user/myRepository".
 type CloneURLToRepositoryName struct {
 	// From description: A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use "^...$" if whole-string matching is desired.
@@ -385,6 +413,12 @@ type ExcludedGitoliteRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 
+// ExpandedGitCommitDescription description: The Git commit to create with the changes.
+type ExpandedGitCommitDescription struct {
+	// Message description: The Git commit message.
+	Message string `json:"message"`
+}
+
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
 	// AndOrQuery description: Interpret a search input query as an and/or query.
@@ -430,6 +464,14 @@ type ExternalIdentity struct {
 	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
+}
+
+// GitCommitDescription description: The Git commit to create with the changes.
+type GitCommitDescription struct {
+	// Diff description: The commit diff (in unified diff format).
+	Diff string `json:"diff"`
+	// Message description: The Git commit message.
+	Message string `json:"message"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -811,6 +853,20 @@ type ObservabilityTracing struct {
 	Sampling string `json:"sampling,omitempty"`
 }
 
+// OnQuery description: A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.
+type OnQuery struct {
+	// RepositoriesMatchingQuery description: A Sourcegraph search query that matches a set of repositories (and branches). If the query matches files, symbols, or some other object inside a repository, the object's repository is included.
+	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery"`
+}
+
+// OnRepository description: A specific repository (and branch) that is added to the list of repositories that the campaign will be run on.
+type OnRepository struct {
+	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
+	Branch string `json:"branch,omitempty"`
+	// Repository description: The name of the repository (as it is known to Sourcegraph).
+	Repository string `json:"repository"`
+}
+
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
 	// ClientID description: The client ID for the OpenID Connect client for this site.
@@ -1164,6 +1220,16 @@ type SiteConfiguration struct {
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
+}
+
+// Step description: A command to run (as part of a sequence) in a repository branch to produce the campaign's changes.
+type Step struct {
+	// Container description: The Docker image used to launch the Docker container in which the shell command is run.
+	Container string `json:"container"`
+	// Env description: Environment variables to set in the environment when running this command.
+	Env map[string]string `json:"env,omitempty"`
+	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
+	Run string `json:"run"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
