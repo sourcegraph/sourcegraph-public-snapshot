@@ -71,7 +71,7 @@ const fileToCompletion = (
     { name, path, repository, isDirectory }: IFile,
     options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem => {
-    let insertText = options.globbing ? path : `^${escapeRegExp(name)}$`
+    let insertText = options.globbing ? path : `^${escapeRegExp(path)}$`
     insertText = (options.isFilterValue ? insertText : `${FilterType.file}:${insertText}`) + ' '
     return {
         label: name,

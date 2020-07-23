@@ -120,8 +120,12 @@ describe('getCompletionItems()', () => {
     test('returns suggestions for an empty query', async () => {
         expect(
             (
-                await getCompletionItems((parseSearchQuery('') as ParseSuccess<Sequence>).token, { column: 1 },
-                    NEVER, false)
+                await getCompletionItems(
+                    (parseSearchQuery('') as ParseSuccess<Sequence>).token,
+                    { column: 1 },
+                    NEVER,
+                    false
+                )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
             'after',
@@ -302,7 +306,7 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
-        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$' }])
+        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
     })
 
     test('inserts valid filters when selecting a file or repository suggestion', async () => {
@@ -401,6 +405,6 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toStrictEqual(['^some/path/main\\.go$'])
+        ).toStrictEqual(['^some/path/main\\.go$ '])
     })
 })
