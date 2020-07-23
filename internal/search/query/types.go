@@ -119,12 +119,12 @@ func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
 func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
 	if field == "" {
-		VisitPattern(q.Query, func(value string, negated bool, annotation Annotation) {
-			values = append(values, valueToTypedValue(field, value, negated, annotation.Labels)...)
+		VisitPattern(q.Query, func(value string, _ bool, annotation Annotation) {
+			values = append(values, q.valueToTypedValue(field, value, annotation.Labels)...)
 		})
 	} else {
-		VisitField(q.Query, field, func(value string, negated bool) {
-			values = append(values, valueToTypedValue(field, value, negated, None)...)
+		VisitField(q.Query, field, func(value string, _ bool) {
+			values = append(values, q.valueToTypedValue(field, value, None)...)
 		})
 	}
 	return values
@@ -188,39 +188,39 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func valueToTypedValue(field, value string, negated bool, label labels) []*types.Value {
+func (q AndOrQuery) valueToTypedValue(field, value string, label labels) []*types.Value {
 	switch field {
 	case
 		FieldDefault:
 		if label.isSet(Literal) {
-			return []*types.Value{{String: &value, Negated: &negated}}
+			return []*types.Value{{String: &value}}
 		}
 		if label.isSet(Regexp) {
 			regexp, err := regexp.Compile(value)
 			if err != nil {
 				panic(fmt.Sprintf("Invariant broken: value must have been checked to be valid regexp. Error: %s", err))
 			}
-			return []*types.Value{{Regexp: regexp, Negated: &negated}}
+			return []*types.Value{{Regexp: regexp}}
 		}
 		// All patterns should have a label after parsing, but if not, treat the pattern as a string literal.
-		return []*types.Value{{String: &value, Negated: &negated}}
+		return []*types.Value{{String: &value}}
 
 	case
 		FieldCase:
 		b, _ := parseBool(value)
-		return []*types.Value{{Bool: &b, Negated: &negated}}
+		return []*types.Value{{Bool: &b}}
 
 	case
 		FieldRepo, "r":
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value), Negated: &negated}}
+		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldRepoGroup, "g":
-		return []*types.Value{{String: &value, Negated: &negated}}
+		return []*types.Value{{String: &value}}
 
 	case
 		FieldFile, "f":
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value), Negated: &negated}}
+		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldFork,
@@ -229,22 +229,22 @@ func valueToTypedValue(field, value string, negated bool, label labels) []*types
 		FieldType,
 		FieldPatternType,
 		FieldContent:
-		return []*types.Value{{String: &value, Negated: &negated}}
+		return []*types.Value{{String: &value}}
 
 	case FieldRepoHasFile:
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value), Negated: &negated}}
+		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldRepoHasCommitAfter,
 		FieldBefore, "until",
 		FieldAfter, "since":
-		return []*types.Value{{String: &value, Negated: &negated}}
+		return []*types.Value{{String: &value}}
 
 	case
 		FieldAuthor,
 		FieldCommitter,
 		FieldMessage, "m", "msg":
-		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value), Negated: &negated}}
+		return []*types.Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
 		FieldIndex,
@@ -253,7 +253,7 @@ func valueToTypedValue(field, value string, negated bool, label labels) []*types
 		FieldTimeout,
 		FieldReplace,
 		FieldCombyRule:
-		return []*types.Value{{String: &value, Negated: &negated}}
+		return []*types.Value{{String: &value}}
 	}
-	return []*types.Value{{String: &value, Negated: &negated}}
+	return []*types.Value{{String: &value}}
 }

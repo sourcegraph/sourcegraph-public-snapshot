@@ -47,10 +47,9 @@ const (
 type Value struct {
 	syntax *syntax.Expr // the underlying query expression
 
-	String  *string        // if a string value, the string value (with escape sequences interpreted)
-	Regexp  *regexp.Regexp // if a regexp pattern, the compiled regular expression (call its String method to get source pattern string)
-	Bool    *bool          // if a bool value, the bool value
-	Negated *bool          // whether the value is negated
+	String *string        // if a string value, the string value (with escape sequences interpreted)
+	Regexp *regexp.Regexp // if a regexp pattern, the compiled regular expression (call its String method to get source pattern string)
+	Bool   *bool          // if a bool value, the bool value
 }
 
 // Not returns whether the value is negated in the query (e.g., -value or -field:value).
