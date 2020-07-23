@@ -2,7 +2,6 @@ package gitserver
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
@@ -14,17 +13,6 @@ const MaxCommitsPerUpdate = 150
 // Head determines the tip commit of the default branch for the given repository.
 func Head(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 	return execGitCommand(ctx, store, repositoryID, "rev-parse", "HEAD")
-}
-
-// CommitsNear returns a map from a commit to parent commits. The commits populating the
-// map are the MaxCommitsPerUpdate closest ancestors from the given commit.
-func CommitsNear(ctx context.Context, store store.Store, repositoryID int, commit string) (map[string][]string, error) {
-	out, err := execGitCommand(ctx, store, repositoryID, "log", "--pretty=%H %P", commit, fmt.Sprintf("-%d", MaxCommitsPerUpdate))
-	if err != nil {
-		return nil, err
-	}
-
-	return parseParents(strings.Split(out, "\n")), nil
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
