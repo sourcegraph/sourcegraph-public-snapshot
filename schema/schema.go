@@ -332,7 +332,7 @@ type ChangesetTemplate struct {
 	// Branch description: The name of the Git branch to create or update on each repository with the changes.
 	Branch string `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
-	Commit GitCommitDescription `json:"commit"`
+	Commit ExpandedGitCommitDescription `json:"commit"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
 	Published bool `json:"published"`
 	// Title description: The title of the changeset.
@@ -413,6 +413,12 @@ type ExcludedGitoliteRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 
+// ExpandedGitCommitDescription description: The Git commit to create with the changes.
+type ExpandedGitCommitDescription struct {
+	// Message description: The Git commit message.
+	Message string `json:"message"`
+}
+
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
 	// AndOrQuery description: Interpret a search input query as an and/or query.
@@ -458,12 +464,6 @@ type ExternalIdentity struct {
 	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
-}
-
-// GitCommitDescription description: The Git commit to create with the changes.
-type GitCommitDescription struct {
-	// Message description: The Git commit message.
-	Message string `json:"message"`
 }
 
 // GitCommitDescription description: The Git commit to create with the changes.
