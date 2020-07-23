@@ -79,24 +79,24 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             this.componentUpdates
                 .pipe(
                     distinctUntilChanged(
-                        (x, y) =>
-                            x.repoName === y.repoName &&
-                            x.rev === y.rev &&
-                            x.commitID === y.commitID &&
-                            x.parentPath === y.parentPath &&
-                            x.isExpanded === y.isExpanded &&
-                            x.location === y.location
+                        (a, b) =>
+                            a.repoName === b.repoName &&
+                            a.revision === b.revision &&
+                            a.commitID === b.commitID &&
+                            a.parentPath === b.parentPath &&
+                            a.isExpanded === b.isExpanded &&
+                            a.location === b.location
                     ),
                     filter(props => props.isExpanded),
                     switchMap(props => {
                         const treeFetch = fetchTreeEntries({
                             repoName: props.repoName,
-                            rev: props.rev,
+                            revision: props.revision,
                             commitID: props.commitID,
                             filePath: props.parentPath || '',
                             first: maxEntries,
                         }).pipe(
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             share()
                         )
                         return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
@@ -104,7 +104,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                 )
                 .subscribe(
                     treeOrError => this.setState({ treeOrError }),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -118,11 +118,11 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     mergeMap(path =>
                         fetchTreeEntries({
                             repoName: this.props.repoName,
-                            rev: this.props.rev,
+                            revision: this.props.revision,
                             commitID: this.props.commitID,
                             filePath: path,
                             first: maxEntries,
-                        }).pipe(catchError(err => [asError(err)]))
+                        }).pipe(catchError(error => [asError(error)]))
                     )
                 )
                 .subscribe()

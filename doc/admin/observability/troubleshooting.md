@@ -38,6 +38,24 @@ If this is the case, this could indicate high gitserver load. To confirm, take t
 Solution: set `USE_ENHANCED_LANGUAGE_DETECTION=false` in the Sourcegraph runtime
 environment.
 
+#### Scenario: no cloning, syncing, updating or deleting is happening
+
+Observed state: Sourcegraph instance does not react to any updates to code hosts and no cloning is happening.
+The cause of this state could be repo-updater queries that are too large for the limits of the running Postgres DB.
+One symptom is seeing a line like the one below in the repo-updater logs: 
+
+```text
+t=2020-05-28T18:41:02+0000 lvl=eror msg=Syncer error="syncer.sync.store.upsert-repos: delete: driver: bad connection
+```
+
+or seeing the same error in the "Code host status panel" (Clicking the cloud icon).
+
+The fix is to increase the memory on Postgres DB which will increase certain Postgres-internal limits and will allow
+the queries from repo-updater to go through.
+
+Another cause could be that the `repo-updater` is in a crash loop for some reason. If there are large numbers of repos
+to be updated it could be from `Out of memory` errors. A fix here is to increase the memory for `repo-updater` instead.
+
 ## General scenarios
 
 This section contains a list of scenarios, each of which contains instructions that include
@@ -160,6 +178,34 @@ If your users are experiencing search timeouts or search performance issues, ple
 1. Once the dashboard appears, include screenshots of **the entire** dashboard in the issue report.
 1. Include the logs of `zoekt-webserver` container in the `indexed-search` pods. If you are using single Docker container enable [debug logs](index.md#Logs) first.
 
+#### Scenario: zoekt-webserver is in a `CrashloopBackOff` and `err cannot allocate memory`
+
+Sourcegraph uses a mmap to store its indices. The default operating system limits on mmap counts may to be too low, which may result in out of memory exceptions.
+If you are seeing this error on large scale deployments with a lot repos to be indexed, please use the following steps to verify the source of the errors:
+
+1. Ensure pods are not actually running out of allocated memory and being OOMKilled by running (if they are, then you should give them more memory and the below will not help you):
+
+        
+        kubectl top pod indexed-search-<pod_number>
+        
+        kubectl describe nodes 
+
+
+1. On the host operating system execute `sudo sysctl -n vm.max_map_count`.
+
+        $ sysctl -n vm.max_map_count
+        65530
+1. Calculate the number of repos in your deployment divided by the number of `indexed-search` replicas. For example:
+    
+    * 250,000 repositories / 2 indexed-search repliacas = 125,000 repos to index per replica. 
+1. If the `vm.max_map_count` is lower than the result of the above calculation. Adjust the `vm.max_map_count` by executing:
+
+        sudo sysctl -w vm.max_map_count=262144
+1. Verify the change.
+
+        $ sudo sysctl -n vm.max_map_count
+        262144
+1. Ensure the change will persist a system reboot by updating the `vm.max_map_count` setting in `/etc/sysctl.conf`.
 
 ## Actions
 

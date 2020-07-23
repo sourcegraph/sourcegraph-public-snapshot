@@ -122,7 +122,6 @@ type TextPatternInfo struct {
 	FilePatternsReposMustInclude []string
 	FilePatternsReposMustExclude []string
 
-	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
 
 	PatternMatchesContent bool
@@ -169,10 +168,7 @@ func (p *TextPatternInfo) String() string {
 		args = append(args, fmt.Sprintf("-repositoryPathPattern:%s", dec))
 	}
 
-	path := "glob"
-	if p.PathPatternsAreRegExps {
-		path = "f"
-	}
+	path := "f"
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
 	}

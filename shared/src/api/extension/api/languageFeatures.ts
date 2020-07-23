@@ -1,12 +1,11 @@
 /* eslint-disable no-sync */
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {
     CompletionItemProvider,
     DefinitionProvider,
     DocumentSelector,
-    HoverProvider,
     Location,
     LocationProvider,
     ReferenceProvider,
@@ -15,24 +14,12 @@ import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
-import { ExtDocuments } from './documents'
-import { fromHover, fromLocation, toPosition, fromDocumentSelector } from './types'
+import { ExtensionDocuments } from './documents'
+import { fromLocation, toPosition, fromDocumentSelector } from './types'
 
 /** @internal */
-export class ExtLanguageFeatures {
-    constructor(private proxy: comlink.Remote<ClientLanguageFeaturesAPI>, private documents: ExtDocuments) {}
-
-    public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {
-        const providerFunction: comlink.Local<
-            Parameters<ClientLanguageFeaturesAPI['$registerHoverProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParams) =>
-            toProxyableSubscribable(
-                provider.provideHover(await this.documents.getSync(textDocument.uri), toPosition(position)),
-                hover => (hover ? fromHover(hover) : hover)
-            )
-        )
-        return syncSubscription(this.proxy.$registerHoverProvider(fromDocumentSelector(selector), providerFunction))
-    }
+export class ExtensionLanguageFeatures {
+    constructor(private proxy: comlink.Remote<ClientLanguageFeaturesAPI>, private documents: ExtensionDocuments) {}
 
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
         const providerFunction: comlink.Local<
@@ -65,7 +52,7 @@ export class ExtLanguageFeatures {
     }
 
     public registerLocationProvider(
-        idStr: string,
+        idString: string,
         selector: DocumentSelector,
         provider: LocationProvider
     ): Unsubscribable {
@@ -78,7 +65,11 @@ export class ExtLanguageFeatures {
             )
         )
         return syncSubscription(
-            this.proxy.$registerLocationProvider(idStr, fromDocumentSelector(selector), comlink.proxy(providerFunction))
+            this.proxy.$registerLocationProvider(
+                idString,
+                fromDocumentSelector(selector),
+                comlink.proxy(providerFunction)
+            )
         )
     }
 

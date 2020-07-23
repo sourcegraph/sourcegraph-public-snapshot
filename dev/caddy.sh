@@ -11,10 +11,10 @@ fi
 
 mkdir -p .bin
 
-version="2.0.0-rc.3"
+version="2.0.0"
 case "$(go env GOOS)" in
   linux)
-    os="Linux"
+    os="linux"
     ;;
   darwin)
     os="mac"

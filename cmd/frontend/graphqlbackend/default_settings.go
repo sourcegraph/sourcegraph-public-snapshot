@@ -4,19 +4,21 @@ import (
 	"context"
 	"encoding/json"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 var builtinExtensions = map[string]bool{
 	"sourcegraph/clojure":    true,
+	"sourcegraph/cobol":      true,
 	"sourcegraph/cpp":        true,
 	"sourcegraph/csharp":     true,
 	"sourcegraph/cuda":       true,
 	"sourcegraph/dart":       true,
 	"sourcegraph/elixir":     true,
 	"sourcegraph/erlang":     true,
+	"sourcegraph/git-extras": true,
 	"sourcegraph/go":         true,
 	"sourcegraph/graphql":    true,
 	"sourcegraph/groovy":     true,
@@ -39,11 +41,11 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/scala":      true,
 	"sourcegraph/shell":      true,
 	"sourcegraph/swift":      true,
+	"sourcegraph/tcl":        true,
 	"sourcegraph/thrift":     true,
 	"sourcegraph/typescript": true,
 	"sourcegraph/verilog":    true,
 	"sourcegraph/vhdl":       true,
-	"sourcegraph/git-extras": true,
 }
 
 const singletonDefaultSettingsGQLID = "DefaultSettings"

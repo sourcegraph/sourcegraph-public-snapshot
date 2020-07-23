@@ -8,7 +8,7 @@ export type SuggestionType = FilterType | NonFilterSuggestionType
  * For example, there is no `symbol:` filter, but there are symbol suggestion results.
  */
 export enum NonFilterSuggestionType {
-    filters = 'filters',
-    dir = 'dir',
-    symbol = 'symbol',
+    Filters = 'filters',
+    Directory = 'dir',
+    Symbol = 'symbol',
 }

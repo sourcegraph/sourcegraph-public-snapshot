@@ -2,7 +2,7 @@ import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import AmazonIcon from 'mdi-react/AmazonIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
@@ -312,6 +312,15 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
             return { edits: [edit], selectText: comment }
         },
     },
+    {
+        id: 'addWebhooks',
+        label: 'Add webhook',
+        run: config => {
+            const value = { org: '<your_org_on_GitHub>', secret: '<any_secret_string>' }
+            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<your_org_on_GitHub>' }
+        },
+    },
 ]
 
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
@@ -480,7 +489,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITHUB,
     title: 'GitHub.com',
-    icon: GithubCircleIcon,
+    icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
     instructions: githubInstructions(false),
@@ -851,6 +860,15 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                 const value = '<certificate>'
                 const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'enableWebhooks',
+            label: 'Enable webhooks',
+            run: config => {
+                const value = { webhooks: { secret: '<any_secret_string>' } }
+                const edits = setProperty(config, ['plugin'], value, defaultFormattingOptions)
+                return { edits, selectText: '<any_secret_string>' }
             },
         },
     ],

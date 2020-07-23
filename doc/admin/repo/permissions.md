@@ -181,9 +181,9 @@ Finally, **save the configuration**. You're done!
 
 ## Background permissions syncing
 
-Starting with 3.14, Sourcegraph supports syncing permissions in the background to better handle repository permissions at scale. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
+Sourcegraph 3.17+ supports syncing permissions in the background by default to better handle repository permissions at scale for GitHub, GitLab, and Bitbucket Server code hosts, and has become the only permissions mirror option since Sourcegraph 3.19. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
 
-Background permissions syncing is currently behind a feature flag in the [site configuration](../config/site_config.md):
+For older versions (Sourcegraph 3.14, 3.15, and 3.16), background permissions syncing is behind a feature flag in the [site configuration](../config/site_config.md):
 
 ```json
 "permissions.backgroundSync": {
@@ -191,15 +191,13 @@ Background permissions syncing is currently behind a feature flag in the [site c
 }
 ```
 
->NOTE: Support for GitHub has been added in 3.15. Previously, only GitLab and Bitbucket Server were supported.
-
-Background permissions syncing has the following benefits:
+Benefits of backround syncing:
 
 1. More predictable load on the code host API due to maintaining a schedule of permission updates.
 1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
 1. Users who sign up on the Sourcegraph instance can immediately get search results from the repositories they have access to on the code host.
 
-Since the syncing of permissions happens in the background, there are a few things to keep in mind:
+Considerations when enabling for the first time:
 
 1. While the initial sync for all repositories and users is happening, users can gradually see more and more search results from repositories they have access to.
 1. It takes time to complete the first sync. Depending on how many private repositories and users you have on the Sourcegraph instance, it can take from a few minutes to several hours. This is generally not a problem for fresh installations, since admins should only make the instance available after it's ready, but for existing installations, active users may not see the repositories they expect in search results because the initial permissions syncing hasn't finished yet.
@@ -207,9 +205,15 @@ Since the syncing of permissions happens in the background, there are a few thin
 
 Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
 
+### Complete sync vs incremental sync
+
+A complete sync means a repository or user has done a repository-centric or user-centric syncing respectively, which presists the most accurate permissions from code hosts to Sourcegraph.
+
+An incremental sync is in fact a side effect of a complete sync because a user may grant or lose access to repositories and we react to such changes as soon as we know to improve permissions accuracy.
+
 ## Explicit permissions API
 
-Sourcegraph exposes a GraphQL API to explicitly set repository ACLs. This will become the primary
+Sourcegraph exposes a GraphQL API to explicitly set repository permissions. This will become the primary
 way to specify permissions in the future and will eventually replace the other repository
 permissions mechanisms.
 
@@ -222,19 +226,26 @@ To enable the permissions API, add the following to the [site configuration](../
 }
 ```
 
-> The `bindID` value is used to uniquely identify users when setting permissions. Alternatively, it
-> can be set to `"username"` if that is preferable to email.
+The `bindID` value specifies how to uniquely identify users when setting permissions:
 
-The following GraphQL calls can be tested out in the [GraphQL API
-console](../../api/graphql.md#api-console), which is accessible at the URL path `/api/console` on any
-Sourcegraph instance.
+- `email`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
+- `username`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
 
-Setting the permissions for a repository can be accomplished with two GraphQL API calls. First,
-obtain the ID of the repository from its name:
+If the permissions API is enabled, all other repository permissions mechanisms are disabled.
+
+After you enable the permissions API, you must [set permissions](#settings-repository-permissions-for-users) to allow users to view repositories. (Site admins bypass all permissions checks and can always view all repositories.) 
+
+> If you were previously using [background permissions syncing](#background-permissions-syncing), then those permissions are used as the initial state. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
+
+### Setting repository permissions for users
+
+Setting the permissions for a repository can be accomplished with 2 [GraphQL API](../../api/graphql.md) calls.
+
+First, obtain the ID of the repository from its name:
 
 ```graphql
-{
-  repository(name:"github.com/owner/repo"){
+query {
+  repository(name: "github.com/owner/repo") {
     id
   }
 }
@@ -244,18 +255,27 @@ Next, set the list of users allowed to view the repository:
 
 ```graphql
 mutation {
-  setRepositoryPermissionsForUsers(repository: "<repo ID>", bindIDs: ["user@example.com"]) {
+  setRepositoryPermissionsForUsers(
+    repository: "<repo ID>", 
+    userPermissions: [
+      { bindID: "user@example.com" }
+    ]) {
     alwaysNil
   }
 }
 ```
 
-You may query the set of repositories visible to a particular user with the
-`authorizedUserRepositories` endpoint, which accepts either username or email:
+Now, only the users specified in the `userPermissions` parameter will be allowed to view the repository. Sourcegraph automatically enforces these permissions for all operations. (Site admins bypass all permissions checks and can always view all repositories.)
+
+You can call `setRepositoryPermissionsForUsers` repeatedly to set permissions for each repository, and whenever you want to change the list of authorized users.
+
+### Listing a user's authorized repositories
+
+You may query the set of repositories visible to a particular user with the `authorizedUserRepositories` [GraphQL API](../../api/graphql.md) mutation, which accepts a `username` or `email` parameter to specify the user:
 
 ```graphql
 query {
-  authorizedUserRepositories(email:"user@example.com", first:100) {
+  authorizedUserRepositories(email: "user@example.com", first: 100) {
     nodes {
       name
     }

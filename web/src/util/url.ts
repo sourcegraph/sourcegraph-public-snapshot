@@ -1,6 +1,6 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import {
-    encodeRepoRev,
+    encodeRepoRevision,
     LineOrPositionOrRange,
     lprToRange,
     ParsedRepoURI,
@@ -9,20 +9,19 @@ import {
     toPositionHashComponent,
 } from '../../../shared/src/util/url'
 
-export function toTreeURL(ctx: RepoFile): string {
-    const rev = ctx.commitID || ctx.rev || ''
-    return `/${encodeRepoRev(ctx.repoName, rev)}/-/tree/${ctx.filePath}`
+export function toTreeURL(target: RepoFile): string {
+    return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
 }
 
 /**
  * Returns the LineOrPositionOrRange and given URLSearchParams as a string.
  */
-export function formatHash(lpr: LineOrPositionOrRange, searchParams: URLSearchParams): string {
+export function formatHash(lpr: LineOrPositionOrRange, searchParameters: URLSearchParams): string {
     if (!lpr.line) {
-        return `#${searchParams.toString()}`
+        return `#${searchParameters.toString()}`
     }
-    const anyParams = Array.from(searchParams).length > 0
-    return `#L${formatLineOrPositionOrRange(lpr)}${anyParams ? '&' + searchParams.toString() : ''}`
+    const anyParameters = [...searchParameters].length > 0
+    return `#L${formatLineOrPositionOrRange(lpr)}${anyParameters ? '&' + searchParameters.toString() : ''}`
 }
 
 /**
@@ -48,26 +47,28 @@ function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
  *
  * @param href The URL whose revision should be replaced.
  */
-export function replaceRevisionInURL(href: string, newRev: string): string {
+export function replaceRevisionInURL(href: string, newRevision: string): string {
     const parsed = parseBrowserRepoURL(href)
-    const repoRev = `/${encodeRepoRev(parsed.repoName, parsed.rev)}`
+    const repoRevision = `/${encodeRepoRevision(parsed)}`
 
-    const u = new URL(href, window.location.href)
-    u.pathname = `/${encodeRepoRev(parsed.repoName, newRev)}${u.pathname.slice(repoRev.length)}`
-    return `${u.pathname}${u.search}${u.hash}`
+    const url = new URL(href, window.location.href)
+    url.pathname = `/${encodeRepoRevision({ ...parsed, revision: newRevision })}${url.pathname.slice(
+        repoRevision.length
+    )}`
+    return `${url.pathname}${url.search}${url.hash}`
 }
 
 /**
  * Parses the properties of a blob URL.
  */
 export function parseBrowserRepoURL(href: string): ParsedRepoURI {
-    const loc = new URL(href, window.location.href)
-    let pathname = loc.pathname.slice(1) // trim leading '/'
+    const url = new URL(href, window.location.href)
+    let pathname = url.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
-        pathname = pathname.substr(0, pathname.length - 1) // trim trailing '/'
+        pathname = pathname.slice(0, -1) // trim trailing '/'
     }
 
-    const indexOfSep = pathname.indexOf('/-/')
+    const indexOfSeparator = pathname.indexOf('/-/')
 
     // examples:
     // - 'github.com/gorilla/mux'
@@ -76,36 +77,36 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     // - 'foo/bar@revision' (from 'sourcegraph.mycompany.com/foo/bar@revision')
     // - 'foobar' (from 'sourcegraph.mycompany.com/foobar')
     // - 'foobar@revision' (from 'sourcegraph.mycompany.com/foobar@revision')
-    let repoRev: string
-    if (indexOfSep === -1) {
-        repoRev = pathname // the whole string
+    let repoRevision: string
+    if (indexOfSeparator === -1) {
+        repoRevision = pathname // the whole string
     } else {
-        repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
+        repoRevision = pathname.slice(0, indexOfSeparator) // the whole string leading up to the separator (allows revision to be multiple path parts)
     }
-    const { repoName, rev } = parseRepoRev(repoRev)
+    const { repoName, revision } = parseRepoRevision(repoRevision)
     if (!repoName) {
         throw new Error('unexpected repo url: ' + href)
     }
-    const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
+    const commitID = revision && /^[\da-f]{40}$/i.test(revision) ? revision : undefined
 
     let filePath: string | undefined
     let commitRange: string | undefined
-    const treeSep = pathname.indexOf('/-/tree/')
-    const blobSep = pathname.indexOf('/-/blob/')
-    const comparisonSep = pathname.indexOf('/-/compare/')
-    if (treeSep !== -1) {
-        filePath = pathname.substr(treeSep + '/-/tree/'.length)
+    const treeSeparator = pathname.indexOf('/-/tree/')
+    const blobSeparator = pathname.indexOf('/-/blob/')
+    const comparisonSeparator = pathname.indexOf('/-/compare/')
+    if (treeSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(treeSeparator + '/-/tree/'.length))
     }
-    if (blobSep !== -1) {
-        filePath = pathname.substr(blobSep + '/-/blob/'.length)
+    if (blobSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(blobSeparator + '/-/blob/'.length))
     }
-    if (comparisonSep !== -1) {
-        commitRange = pathname.substr(comparisonSep + '/-/compare/'.length)
+    if (comparisonSeparator !== -1) {
+        commitRange = pathname.slice(comparisonSeparator + '/-/compare/'.length)
     }
     let position: Position | undefined
     let range: Range | undefined
-    if (loc.hash) {
-        const parsedHash = parseHash(loc.hash.substr('#'.length))
+    if (url.hash) {
+        const parsedHash = parseHash(url.hash.slice('#'.length))
         if (parsedHash.line) {
             position = {
                 line: parsedHash.line,
@@ -123,28 +124,28 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
         }
     }
 
-    return { repoName, rev, commitID, filePath, commitRange, position, range }
+    return { repoName, revision, commitID, filePath, commitRange, position, range }
 }
 
-/** The results of parsing a repo-rev string like "my/repo@my/rev". */
-export interface ParsedRepoRev {
+/** The results of parsing a repo-revision string like "my/repo@my/revision". */
+export interface ParsedRepoRevision {
     repoName: string
 
     /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
-    rev?: string
+    revision?: string
 
     /** The raw revision (e.g., "my%23branch" in "my/repo@my%23branch"). */
-    rawRev?: string
+    rawRevision?: string
 }
 
 /**
- * Parses a repo-rev string like "my/repo@my/rev" to the repo and rev components.
+ * Parses a repo-revision string like "my/repo@my/revision" to the repo and revision components.
  */
-export function parseRepoRev(repoRev: string): ParsedRepoRev {
-    const [repo, rev] = repoRev.split('@', 2) as [string, string | undefined]
+export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
+    const [repository, revision] = repoRevision.split('@', 2) as [string, string | undefined]
     return {
-        repoName: decodeURIComponent(repo),
-        rev: rev && decodeURIComponent(rev),
-        rawRev: rev,
+        repoName: decodeURIComponent(repository),
+        revision: revision && decodeURIComponent(revision),
+        rawRevision: revision,
     }
 }

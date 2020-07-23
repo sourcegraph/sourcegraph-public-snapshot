@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestLatestDockerVersionPushed(t *testing.T) {
@@ -135,7 +136,7 @@ func TestSerializeBasic(t *testing.T) {
 		DeployType:           "server",
 		ClientVersionString:  "3.12.6",
 		AuthProviders:        []string{"foo", "bar"},
-		ExternalServices:     []string{"GITHUB", "GITLAB"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		BuiltinSignupAllowed: true,
 		HasExtURL:            false,
 		UniqueUsers:          123,
@@ -239,7 +240,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		DeployType:           "server",
 		ClientVersionString:  "3.12.6",
 		AuthProviders:        []string{"foo", "bar"},
-		ExternalServices:     []string{"GITHUB", "GITLAB"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		BuiltinSignupAllowed: true,
 		HasExtURL:            false,
 		UniqueUsers:          123,
@@ -311,7 +312,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		DeployType:           "server",
 		ClientVersionString:  "3.12.6",
 		AuthProviders:        []string{"foo", "bar"},
-		ExternalServices:     []string{"GITHUB", "GITLAB"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		BuiltinSignupAllowed: true,
 		HasExtURL:            false,
 		UniqueUsers:          123,

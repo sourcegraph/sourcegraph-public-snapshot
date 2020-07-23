@@ -10,15 +10,18 @@ import { FilterType } from '../../../shared/src/search/interactive/util'
 import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 import { InteractiveSearchProps, CaseSensitivityProps, PatternTypeProps } from '.'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
-interface SubmitSearchParams
+export interface SubmitSearchParams
     extends Partial<Pick<ActivationProps, 'activation'>>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'> {
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
+        VersionContextProps {
     history: H.History
     query: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage'
+    searchParameters?: { key: string; value: string }[]
 }
 
 /**
@@ -30,14 +33,23 @@ export function submitSearch({
     query,
     patternType,
     caseSensitive,
+    versionContext,
     activation,
     filtersInQuery,
     source,
+    searchParameters,
 }: SubmitSearchParams): void {
-    const searchQueryParam = buildSearchURLQuery(query, patternType, caseSensitive, filtersInQuery)
+    const searchQueryParameter = buildSearchURLQuery(
+        query,
+        patternType,
+        caseSensitive,
+        versionContext,
+        filtersInQuery,
+        searchParameters
+    )
 
     // Go to search results page
-    const path = '/search?' + searchQueryParam
+    const path = '/search?' + searchQueryParameter
     eventLogger.log('SearchSubmitted', {
         query: [query, generateFiltersQuery(filtersInQuery || {})].filter(query => query.length > 0).join(' '),
         source,
@@ -57,21 +69,21 @@ export function submitSearch({
  * @returns The index in `query`, or `-1` if not found
  */
 export function queryIndexOfScope(query: string, scope: string): number {
-    let idx = 0
+    let index = 0
     while (true) {
-        idx = query.indexOf(scope, idx)
-        if (idx === -1) {
+        index = query.indexOf(scope, index)
+        if (index === -1) {
             break
         }
 
         // prevent matching scopes that are substrings of other scopes
-        if (idx > 0 && query[idx - 1] !== ' ') {
-            idx = idx + 1
+        if (index > 0 && query[index - 1] !== ' ') {
+            index = index + 1
         } else {
             break
         }
     }
-    return idx
+    return index
 }
 
 /**
@@ -83,14 +95,14 @@ export function queryIndexOfScope(query: string, scope: string): number {
  * @returns The new query.
  */
 export function toggleSearchFilter(query: string, searchFilter: string): string {
-    const idx = queryIndexOfScope(query, searchFilter)
-    if (idx === -1) {
+    const index = queryIndexOfScope(query, searchFilter)
+    if (index === -1) {
         // Scope doesn't exist in search query, so add it now.
-        return [query.trim(), searchFilter].filter(s => s).join(' ') + ' '
+        return [query.trim(), searchFilter].filter(string => string).join(' ') + ' '
     }
 
     // Scope exists in the search query, so remove it now.
-    return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
+    return (query.slice(0, index).trim() + ' ' + query.slice(index + searchFilter.length).trim()).trim()
 }
 
 export function getSearchTypeFromQuery(query: string): SearchType {
@@ -137,8 +149,8 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 }
 
 /** Returns true if the given value is of the GraphQL SearchResults type */
-export const isSearchResults = (val: any): val is GQL.ISearchResults =>
-    val && typeof val === 'object' && val.__typename === 'SearchResults'
+export const isSearchResults = (value: any): value is GQL.ISearchResults =>
+    value && typeof value === 'object' && value.__typename === 'SearchResults'
 
 const isValidFilter = (filter: string = ''): filter is FilterSuggestionTypes =>
     Object.prototype.hasOwnProperty.call(FilterType, filter) ||
@@ -149,8 +161,8 @@ const isValidFilter = (filter: string = ''): filter is FilterSuggestionTypes =>
  * E.g: ('query', 3) => { firstPart: 'que', lastPart: 'ry' }
  */
 const splitStringAtPosition = (value: string, position: number): { firstPart: string; lastPart: string } => ({
-    firstPart: value.substring(0, position),
-    lastPart: value.substring(position),
+    firstPart: value.slice(0, Math.max(0, position)),
+    lastPart: value.slice(Math.max(0, position)),
 })
 
 interface FilterAndValueMatch {
@@ -217,7 +229,7 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
     if (
         // suggest values for selected filter
         resolvedFilterType &&
-        resolvedFilterType !== NonFilterSuggestionType.filters &&
+        resolvedFilterType !== NonFilterSuggestionType.Filters &&
         (value || filterAndValue.endsWith(':'))
     ) {
         const suggestionsToShow = suggestions[resolvedFilterType] ?? []
@@ -261,7 +273,7 @@ export const insertSuggestionInQuery = (
     cursorPosition: number
 ): QueryState => {
     const { firstPart, lastPart } = splitStringAtPosition(queryToInsertIn, cursorPosition)
-    const isFiltersSuggestion = selectedSuggestion.type === NonFilterSuggestionType.filters
+    const isFiltersSuggestion = selectedSuggestion.type === NonFilterSuggestionType.Filters
     // Know where to place the suggestion later on
     const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? ':' : ' ')
     // If a filter value or separate word suggestion was selected, then append a whitespace
@@ -276,17 +288,12 @@ export const insertSuggestionInQuery = (
         // e.g: (with "|" being the cursor)
         // without: "archived:Yes Query|" -> selection -> "archived:QueryInput"
         // with: "archived:Yes Query|" -> selection -> "archived:Yes QueryInput"
-        if (
-            !isFiltersSuggestion &&
-            isSeparateWordSuggestion &&
-            lastWordOfFirstPartMatch &&
-            lastWordOfFirstPartMatch.index
-        ) {
+        if (!isFiltersSuggestion && isSeparateWordSuggestion && lastWordOfFirstPartMatch?.index) {
             // adds a space because a separate word was being typed
-            return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + valueToAppend + lastPart
+            return firstPart.slice(0, lastWordOfFirstPartMatch.index) + ' ' + valueToAppend + lastPart
         }
 
-        return firstPart.substring(0, separatorIndex + 1) + valueToAppend
+        return firstPart.slice(0, separatorIndex + 1) + valueToAppend
     })()
 
     return {
@@ -298,13 +305,14 @@ export const insertSuggestionInQuery = (
 
 /**
  * Returns true if word being typed is not a filter value.
+ *
  * E.g: where "|" is cursor
- *     "QueryInput lang:|" => false
- *     "archived:Yes QueryInp|" => true
+ * - "QueryInput lang:|" => false
+ * - "archived:Yes QueryInp|" => true
  */
 export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
-    const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
+    const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^\s:]+$/))
     return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
 }
 
@@ -349,7 +357,7 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     // Split the query so `formattedFilterAndValue` can be placed in between
     const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
 
-    return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
+    return firstPart.slice(0, filterIndex) + formattedFilterAndValue + lastPart
 }
 
 /**

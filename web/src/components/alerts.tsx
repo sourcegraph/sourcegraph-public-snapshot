@@ -8,7 +8,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 const renderError = (error: unknown): string =>
-    renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')))
+    renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')), { breaks: true })
         .trim()
         .replace(/^<p>/, '')
         .replace(/<\/p>$/, '')

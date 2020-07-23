@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Test_requestedScopes(t *testing.T) {
+func TestRequestedScopes(t *testing.T) {
 	defer envvar.MockSourcegraphDotComMode(false)
 
 	tests := []struct {

@@ -5,11 +5,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 )
 
 func init() {
+	// TODO(efritz) - de-globalize assignments in this function
 	graphqlbackend.UserURLForSiteAdminBilling = func(ctx context.Context, userID int32) (*string, error) {
 		// 🚨 SECURITY: Only site admins may view the billing URL, because it may contain sensitive
 		// data or identifiers.

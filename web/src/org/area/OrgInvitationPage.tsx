@@ -77,14 +77,14 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                         refreshAuthenticatedUser(),
                                         { submissionOrError: null },
                                     ]),
-                                    catchError(err => [{ submissionOrError: asError(err) }])
+                                    catchError(error => [{ submissionOrError: asError(error) }])
                                 )
                             )
                         )
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        err => console.error(err)
+                        error => console.error(error)
                     )
             )
 
@@ -177,13 +177,13 @@ export const OrgInvitationPage = withAuthenticatedUser(
             )
         }
 
-        private onAcceptInvitation: React.MouseEventHandler<HTMLButtonElement> = e => {
-            e.preventDefault()
+        private onAcceptInvitation: React.MouseEventHandler<HTMLButtonElement> = event => {
+            event.preventDefault()
             this.responses.next(GQL.OrganizationInvitationResponseType.ACCEPT)
         }
 
-        private onDeclineInvitation: React.MouseEventHandler<HTMLButtonElement> = e => {
-            e.preventDefault()
+        private onDeclineInvitation: React.MouseEventHandler<HTMLButtonElement> = event => {
+            event.preventDefault()
             this.responses.next(GQL.OrganizationInvitationResponseType.REJECT)
         }
 

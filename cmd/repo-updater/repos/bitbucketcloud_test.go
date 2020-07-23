@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -86,7 +87,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind:   "BITBUCKETCLOUD",
+				Kind:   extsvc.KindBitbucketCloud,
 				Config: marshalJSON(t, tc.conf),
 			}
 
@@ -118,7 +119,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETCLOUD"}
+	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketCloud}
 
 	tests := []struct {
 		name   string
@@ -219,7 +220,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETCLOUD"}
+	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketCloud}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {

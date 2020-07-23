@@ -1,253 +1,31 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ChangesetNode renders an externalchangeset 1`] = `
-Object {
-  "children": <Collapsible
-    expandedButtonClassName="mb-3"
-    title={
-      <div
-        className="d-flex align-items-start m-1 ml-2"
-      >
-        <div
-          className="changeset-node__content flex-fill"
-        >
-          <div
-            className="d-flex flex-column"
-          >
-            <div
-              className="m-0 mb-2"
-            >
-              <h3
-                className="m-0 d-inline"
-              >
-                <SourcePullIcon
-                  className="mr-1 icon-inline text-success"
-                  data-tooltip="open"
-                />
-                <LinkOrSpan
-                  rel="noopener noreferrer"
-                  target="_blank"
-                  to="https://github.com/sourcegraph/sourcegraph/pull/111111"
-                >
-                  Remove lodash
-                   (#
-                  123
-                  )
-                   
-                  <Memo(ExternalLinkIcon)
-                    size="1rem"
-                  />
-                </LinkOrSpan>
-              </h3>
-              <small>
-                <Memo(ErrorIcon)
-                  className="ml-1 changeset-node__check-state text-danger"
-                  data-tooltip="Some checks failed"
-                />
-              </small>
-              <span
-                className="ml-2"
-              >
-                <ChangesetLabel
-                  label={
-                    Object {
-                      "__typename": "ChangesetLabel",
-                      "color": "93ba13",
-                      "description": "Something is broken",
-                      "text": "bug",
-                    }
-                  }
-                />
-              </span>
-            </div>
-            <div>
-              <strong>
-                <AnchorLink
-                  rel="noopener noreferrer"
-                  target="_blank"
-                  to="github.com/sourcegraph/sourcegraph"
-                >
-                  sourcegraph
-                </AnchorLink>
-              </strong>
-              <ChangesetLastSynced
-                campaignUpdates={
-                  Subject {
-                    "_isScalar": false,
-                    "closed": false,
-                    "hasError": false,
-                    "isStopped": false,
-                    "observers": Array [],
-                    "thrownError": null,
-                  }
-                }
-                changeset={
-                  Object {
-                    "__typename": "ExternalChangeset",
-                    "body": "We should remove lodash",
-                    "checkState": "FAILED",
-                    "diff": Object {
-                      "fileDiffs": Object {
-                        "diffStat": Object {
-                          "added": 100,
-                          "changed": 200,
-                          "deleted": 100,
-                        },
-                        "nodes": Array [
-                          Object {
-                            "__typename": "FileDiff",
-                          },
-                        ],
-                      },
-                    },
-                    "externalID": "123",
-                    "externalURL": Object {
-                      "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",
-                    },
-                    "labels": Array [
-                      Object {
-                        "__typename": "ChangesetLabel",
-                        "color": "93ba13",
-                        "description": "Something is broken",
-                        "text": "bug",
-                      },
-                    ],
-                    "repository": Object {
-                      "__typename": "Repository",
-                      "name": "sourcegraph",
-                      "url": "github.com/sourcegraph/sourcegraph",
-                    },
-                    "reviewState": "PENDING",
-                    "state": "OPEN",
-                    "title": "Remove lodash",
-                    "updatedAt": "2020-01-01T00:00:00.000Z",
-                  }
-                }
-              />
-            </div>
-          </div>
-        </div>
-        <div
-          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
-        >
-          <DiffStat
-            added={100}
-            changed={200}
-            deleted={100}
-            expandedCounts={true}
-          />
-        </div>
-        <div
-          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
-        >
-          <AccountQuestionIcon
-            className="text-warning"
-            data-tooltip="pending review"
-          />
-        </div>
-      </div>
+exports[`ChangesetNode renders ExternalChangeset 1`] = `
+<ExternalChangesetNode
+  campaignUpdates="[Subject]"
+  history="[History]"
+  isLightTheme={true}
+  location="[Location path=/campaigns]"
+  node={
+    Object {
+      "__typename": "ExternalChangeset",
     }
-    titleClassName="changeset-node__content flex-fill"
-    wholeTitleClickable={false}
-  >
-    <FileDiffConnection
-      defaultFirst={25}
-      hideSearch={true}
-      history={
-        Object {
-          "action": "POP",
-          "block": [Function],
-          "canGo": [Function],
-          "createHref": [Function],
-          "entries": Array [
-            Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-          ],
-          "go": [Function],
-          "goBack": [Function],
-          "goForward": [Function],
-          "index": 0,
-          "length": 1,
-          "listen": [Function],
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-          "push": [Function],
-          "replace": [Function],
-        }
-      }
-      listClassName="list-group list-group-flush"
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/campaigns",
-          "search": "",
-          "state": undefined,
-        }
-      }
-      noSummaryIfAllNodesVisible={true}
-      nodeComponent={[Function]}
-      nodeComponentProps={
-        Object {
-          "extensionInfo": undefined,
-          "history": Object {
-            "action": "POP",
-            "block": [Function],
-            "canGo": [Function],
-            "createHref": [Function],
-            "entries": Array [
-              Object {
-                "hash": "",
-                "key": undefined,
-                "pathname": "/",
-                "search": "",
-                "state": undefined,
-              },
-            ],
-            "go": [Function],
-            "goBack": [Function],
-            "goForward": [Function],
-            "index": 0,
-            "length": 1,
-            "listen": [Function],
-            "location": Object {
-              "hash": "",
-              "key": undefined,
-              "pathname": "/",
-              "search": "",
-              "state": undefined,
-            },
-            "push": [Function],
-            "replace": [Function],
-          },
-          "isLightTheme": true,
-          "lineNumbers": true,
-          "location": Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/campaigns",
-            "search": "",
-            "state": undefined,
-          },
-          "persistLines": true,
-        }
-      }
-      noun="changed file"
-      pluralNoun="changed files"
-      queryConnection={[Function]}
-      useURLQuery={false}
-    />
-  </Collapsible>,
-  "className": "list-group-item e2e-changeset-node",
-}
+  }
+  viewerCanAdminister={false}
+/>
+`;
+
+exports[`ChangesetNode renders HiddenExternalChangeset 1`] = `
+<HiddenExternalChangesetNode
+  campaignUpdates="[Subject]"
+  history="[History]"
+  isLightTheme={true}
+  location="[Location path=/campaigns]"
+  node={
+    Object {
+      "__typename": "HiddenExternalChangeset",
+    }
+  }
+  viewerCanAdminister={false}
+/>
 `;

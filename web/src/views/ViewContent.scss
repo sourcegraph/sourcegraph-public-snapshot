@@ -1,0 +1,19 @@
+@import './ChartViewContent';
+
+.view-content {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+
+    // Allow view contents to scroll vertically
+    overflow-y: auto;
+
+    &__markdown {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        // Prevent overflow of misbehaving extensions
+        overflow-x: hidden;
+    }
+}

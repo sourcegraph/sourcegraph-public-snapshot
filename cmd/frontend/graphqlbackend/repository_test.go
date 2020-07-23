@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -63,7 +63,7 @@ func TestRepositoryHydration(t *testing.T) {
 			Name: api.RepoName(name),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          name,
-				ServiceType: "github",
+				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com",
 			},
 		}

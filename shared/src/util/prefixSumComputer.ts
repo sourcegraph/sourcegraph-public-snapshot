@@ -45,15 +45,15 @@ export class PrefixSumComputer {
         insertIndex = toUint32(insertIndex)
         const oldValues = this.values
         const oldPrefixSum = this.prefixSum
-        const insertValuesLen = insertValues.length
+        const insertValuesLength = insertValues.length
 
-        if (insertValuesLen === 0) {
+        if (insertValuesLength === 0) {
             return false
         }
 
-        this.values = new Uint32Array(oldValues.length + insertValuesLen)
+        this.values = new Uint32Array(oldValues.length + insertValuesLength)
         this.values.set(oldValues.subarray(0, insertIndex), 0)
-        this.values.set(oldValues.subarray(insertIndex), insertIndex + insertValuesLen)
+        this.values.set(oldValues.subarray(insertIndex), insertIndex + insertValuesLength)
         this.values.set(insertValues, insertIndex)
 
         if (insertIndex - 1 < this.prefixSumValidIndex[0]) {
@@ -131,9 +131,9 @@ export class PrefixSumComputer {
         return this._getAccumulatedValue(index)
     }
 
-    private _getAccumulatedValue(index: number): number {
-        if (index <= this.prefixSumValidIndex[0]) {
-            return this.prefixSum[index]
+    private _getAccumulatedValue(valueIndex: number): number {
+        if (valueIndex <= this.prefixSumValidIndex[0]) {
+            return this.prefixSum[valueIndex]
         }
 
         let startIndex = this.prefixSumValidIndex[0] + 1
@@ -142,15 +142,15 @@ export class PrefixSumComputer {
             startIndex++
         }
 
-        if (index >= this.values.length) {
-            index = this.values.length - 1
+        if (valueIndex >= this.values.length) {
+            valueIndex = this.values.length - 1
         }
 
-        for (let i = startIndex; i <= index; i++) {
-            this.prefixSum[i] = this.prefixSum[i - 1] + this.values[i]
+        for (let index = startIndex; index <= valueIndex; index++) {
+            this.prefixSum[index] = this.prefixSum[index - 1] + this.values[index]
         }
-        this.prefixSumValidIndex[0] = Math.max(this.prefixSumValidIndex[0], index)
-        return this.prefixSum[index]
+        this.prefixSumValidIndex[0] = Math.max(this.prefixSumValidIndex[0], valueIndex)
+        return this.prefixSum[valueIndex]
     }
 
     public getIndexOf(accumulatedValue: number): PrefixSumIndexOfResult {
@@ -187,12 +187,12 @@ export class PrefixSumComputer {
 /** Max unsigned 32-bit integer. */
 const MAX_UINT_32 = 4294967295 // 2^32 - 1
 
-export function toUint32(v: number): number {
-    if (v < 0) {
+export function toUint32(number: number): number {
+    if (number < 0) {
         return 0
     }
-    if (v > MAX_UINT_32) {
+    if (number > MAX_UINT_32) {
         return MAX_UINT_32
     }
-    return v | 0
+    return number | 0
 }

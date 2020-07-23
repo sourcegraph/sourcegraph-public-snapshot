@@ -24,7 +24,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		return mockSearchRepositories(args)
 	}
 
-	fieldWhitelist := map[string]struct{}{
+	fieldAllowlist := map[string]struct{}{
 		query.FieldRepo:               {},
 		query.FieldRepoGroup:          {},
 		query.FieldType:               {},
@@ -40,10 +40,10 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		query.FieldRepoHasFile:        {},
 		query.FieldRepoHasCommitAfter: {},
 	}
-	// Don't return repo results if the search contains fields that aren't on the whitelist.
+	// Don't return repo results if the search contains fields that aren't on the allowlist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
 	for field := range args.Query.Fields() {
-		if _, ok := fieldWhitelist[field]; !ok {
+		if _, ok := fieldAllowlist[field]; !ok {
 			return nil, nil, nil
 		}
 	}
@@ -84,7 +84,9 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 			common.limitHit = true
 			break
 		}
-		results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon})
+		for _, rev := range r.RevSpecs() {
+			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+		}
 	}
 
 	return results, common, nil
@@ -99,7 +101,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			// The high FileMatchLimit here is to make sure we get all the repo matches we can. Setting it to
 			// len(repos) could mean we miss some repos since there could be for example len(repos) file matches in
 			// the first repo and some more in other repos.
-			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err
@@ -114,7 +116,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = true
+				matchingIDs[m.Repo.repo.ID] = true
 			}
 		}
 	} else {
@@ -126,7 +128,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 {
 		for _, pattern := range args.PatternInfo.FilePatternsReposMustExclude {
-			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err
@@ -141,7 +143,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = false
+				matchingIDs[m.Repo.repo.ID] = false
 			}
 		}
 	}

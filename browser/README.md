@@ -5,7 +5,7 @@
 
 [![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg?logo=Google%20Chrome&logoColor=white)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome users](https://img.shields.io/chrome-web-store/users/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
-[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)\
+[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 
 ## Overview
 
@@ -26,8 +26,8 @@ It works as follows:
 - there is a background script running to access certain chrome APIs, like storage (background.bundle.js)
 - a "code view" contains rendered (syntax highlighted) code (in an HTML table); the extension adds event listeners to the code view which control the tooltip
 - when the user mouses over a code table cell, the extension modifies the DOM node:
-  - text nodes are wrapped in <span> (so hover/click events have appropriate specificity)
-  - element nodes may be recursively split into multiple element nodes (e.g. a <span>&Router{namedRoutes:<span> contains multiple code tokens, and event targets need more granular ranges)
+  - text nodes are wrapped in `<span>` (so hover/click events have appropriate specificity)
+  - element nodes may be recursively split into multiple element nodes (e.g. a `<span>&Router{namedRoutes:<span>` contains multiple code tokens, and event targets need more granular ranges)
   - We assume syntax highlighting takes care of the base case of wrapping a discrete language symbol
   - tooltip data is fetched from the Sourcegraph API
 - when an event occurs, we modify a central state store about what kind of tooltip to display
@@ -35,26 +35,29 @@ It works as follows:
 
 ## Project layout
 
-- `src/extension/`
-  - Entrypoint for browser extension builds. (Includes bundled assets, background scripts, options)
-- `src/browser`
-  - [A wrapper around the browser APIs.](./src/browser/README.md)
-- `src/libs/`
-  - Isolated pieces of the browser extension. This contains code that is specific to code hosts and separate "mini applications" included in the browser extension such as the `src` omnibar cli.
-- `src/libs/phabricator/`
-  - Entrypoint for Phabricator extension. This is used by the browser extension and [sourcegraph/phabricator-extension](https://github.com/sourcegraph/phabricator-extension).
-- `src/shared/`
-  - Code shared by the extension and the libraries. Ideally, nothing in here should reach into any other directory.
-- `src/config/`
-  - Polyfills and configuration/plumbing code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
-- `src/e2e/`
-  - E2e test suite.
+- `src/`
+  - `browser-extension/`
+    Entrypoint for browser extension builds. (Includes bundled assets, background scripts, options)
+    - `web-extension-api/`
+      [A wrapper around the web extension APIs.](./src/browser-extension/web-extension-api/README.md)
+  - `native-integration/`
+    Entrypoint for the native code host integrations (Phabricator, Gitlab and Bitbucket).
+  - `shared/`
+    Code shared by the browser extension and the native integrations. Ideally, nothing in here should reach into any other directory.
+    - `code-hosts/`
+      Contains the implementations of code-host specific features for each supported code host.
+      - `shared/`
+        Code shared between multiple code hosts.
+  - `config/`
+    Configuration code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
+  - `end-to-end/`
+    E2E test suite.
 - `scripts/`
-  - Development scripts.
-- `webpack`
-  - Build configs.
-- `build`
-  - Generated directory containing the output from webpack and the generated bundles for each browser.
+  Build scripts.
+- `config/`
+  Build configs.
+- `build/`
+  Generated directory containing the output from webpack and the generated bundles for each browser.
 
 ## Requirements
 
@@ -127,16 +130,16 @@ Click reload for Sourcegraph at `about:debugging`
 
 ### e2e tests
 
-The test suite in e2e/github.test.ts runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
+The test suite in `end-to-end/github.test.ts` runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
 
-The test suite in e2e/phabricator.test.ts tests the Phabricator native integration.
+The test suite in end-to-end/phabricator.test.ts tests the Phabricator native integration.
 It assumes an existing Sourcegraph and Phabricator instance that has the Phabricator extension installed.
 There are automated scripts to set up the Phabricator instance, see https://docs.sourcegraph.com/dev/phabricator_gitolite.
 It currently does not run in CI and is intended to be run manually for release testing.
 
-e2e/bitbucket.test.ts tests the browser extension on a Bitbucket Server instance.
+`end-to-end/bitbucket.test.ts` tests the browser extension on a Bitbucket Server instance.
 
-e2e/gitlab.test.ts tests the browser extension on gitlab.com (or a private Gitlab instance).
+`end-to-end/gitlab.test.ts` tests the browser extension on gitlab.com (or a private Gitlab instance).
 
 ## Deploy
 
@@ -150,3 +153,43 @@ To release the latest commit on master, ensure your master is up-to-date and run
 ```sh
 git push origin master:bext/release
 ```
+
+## Manual build of the browser extension
+
+This describes the manual build process to produce the packed extension (xpi/zip) from scratch from the source code.
+
+Requires `node` version specified in [`.nvmrc`](../.nvmrc). In the steps below we use [`nvm`](https://github.com/nvm-sh/nvm) to automatically select the node version.
+
+Tested on Ubuntu 20.04 and Mac OS 10.15.5.
+
+First, clone the repository.
+
+```sh
+git clone git@github.com:sourcegraph/sourcegraph
+cd sourcegraph
+```
+
+Use `nvm` to select the Node.js version specified in `.nvmrc`
+
+```sh
+nvm use
+```
+
+Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build from the `browser` directory.
+
+```sh
+yarn
+cd browser
+yarn build
+```
+
+The build step automatically pulls in [sourcegraph/code-intel-extensions](https://github.com/sourcegraph/code-intel-extensions) as a dependency.
+
+The output will be in `browser/build`:
+
+- Firefox add-on:
+  - Packed: `browser/build/bundles/firefox-bundle.xpi`
+  - Unpacked: `browser/build/firefox`
+- Chrome extension: `browser/build/bundles/chrome-bundle.zip`
+  - Packed: `browser/build/bundles/chrome-bundle.zip`
+  - Unpacked: `browser/build/chrome`

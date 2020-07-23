@@ -39,7 +39,7 @@ func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConn
 }
 
 func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
 	if err != nil {
 		return nil, err
 	}

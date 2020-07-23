@@ -18,28 +18,24 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "field_seconds",
-	Help:      "GraphQL field resolver latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Name:    "src_graphql_field_seconds",
+	Help:    "GraphQL field resolver latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error", "source", "request_name"})
 
 var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "code_intel_search_seconds",
-	Help:      "Code intel search latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Name:    "src_graphql_code_intel_search_seconds",
+	Help:    "Code intel search latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"exact", "error"})
 
 func init() {
@@ -79,9 +75,11 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 		lvl = log15.Info
 	}
 	requestSource := sgtrace.RequestSource(ctx)
-	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
-	if !disableLog && requestName == "unknown" {
-		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
+
+	if !disableLog {
+		lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
+		if requestName == "unknown" {
+			log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
 QUERY
 -----
 %s
@@ -91,7 +89,9 @@ VARIABLES
 %v
 
 `, requestName, currentUserName, requestSource, queryString, variables)
+		}
 	}
+
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
 			finish(err)
@@ -144,7 +144,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
+var allowedPrometheusFieldNames = map[[2]string]struct{}{
 	{"AccessTokenConnection", "nodes"}:          {},
 	{"File", "isDirectory"}:                     {},
 	{"File", "name"}:                            {},
@@ -218,7 +218,6 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 	{"Mutation", "logUserEvent"}:                {},
 	{"Query", "clientConfiguration"}:            {},
 	{"Query", "currentUser"}:                    {},
-	{"Query", "discussionThreads"}:              {},
 	{"Query", "dotcom"}:                         {},
 	{"Query", "extensionRegistry"}:              {},
 	{"Query", "highlightCode"}:                  {},
@@ -286,13 +285,13 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 //
 // See https://github.com/sourcegraph/sourcegraph/issues/9895
 func prometheusFieldName(typeName, fieldName string) string {
-	if _, ok := whitelistedPrometheusFieldNames[[2]string{typeName, fieldName}]; ok {
+	if _, ok := allowedPrometheusFieldNames[[2]string{typeName, fieldName}]; ok {
 		return fieldName
 	}
 	return "other"
 }
 
-var blacklistedPrometheusTypeNames = map[string]struct{}{
+var blocklistedPrometheusTypeNames = map[string]struct{}{
 	"__Type":                                 {},
 	"__Schema":                               {},
 	"__InputValue":                           {},
@@ -311,7 +310,7 @@ var blacklistedPrometheusTypeNames = map[string]struct{}{
 }
 
 // prometheusTypeName reduces the cardinality of GraphQL type names to make it
-// suitable for use in a Prometheus metric. This is a blacklist of type names
+// suitable for use in a Prometheus metric. This is a blocklist of type names
 // which involve non-complex calculations in the GraphQL backend and thus are
 // not worth tracking. You can find a complete list of the ones Prometheus is
 // currently tracking via:
@@ -319,13 +318,13 @@ var blacklistedPrometheusTypeNames = map[string]struct{}{
 // 	sum by (type)(src_graphql_field_seconds_count)
 //
 func prometheusTypeName(typeName string) string {
-	if _, ok := blacklistedPrometheusTypeNames[typeName]; ok {
+	if _, ok := blocklistedPrometheusTypeNames[typeName]; ok {
 		return "other"
 	}
 	return typeName
 }
 
-// prometheusGraphQLRequestName is a whitelist of GraphQL request names (e.g. /.api/graphql?Foobar)
+// prometheusGraphQLRequestName is a allowlist of GraphQL request names (e.g. /.api/graphql?Foobar)
 // to include in a Prometheus metric. Be extremely careful
 func prometheusGraphQLRequestName(requestName string) string {
 	if requestName == "CodeIntelSearch" {
@@ -336,7 +335,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 
 func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
-		CampaignsResolver: defaultCampaignsResolver{},
+		// CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
 	}
@@ -387,19 +386,20 @@ func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToPatchSet() (PatchSetResolver, bool) {
-	n, ok := r.Node.(PatchSetResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
-	n, ok := r.Node.(ExternalChangesetResolver)
-	return n, ok
+	n, ok := r.Node.(ChangesetResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToExternalChangeset()
 }
 
-func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
-	n, ok := r.Node.(PatchResolver)
-	return n, ok
+func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool) {
+	n, ok := r.Node.(ChangesetResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToHiddenExternalChangeset()
 }
 
 func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
@@ -407,14 +407,25 @@ func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
-	n, ok := r.Node.(*discussionCommentResolver)
+func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
+	n, ok := r.Node.(CampaignSpecResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
-	n, ok := r.Node.(*discussionThreadResolver)
-	return n, ok
+func (r *NodeResolver) ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool) {
+	n, ok := r.Node.(ChangesetSpecResolver)
+	if !ok {
+		return nil, ok
+	}
+	return n.ToHiddenChangesetSpec()
+}
+
+func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool) {
+	n, ok := r.Node.(ChangesetSpecResolver)
+	if !ok {
+		return nil, ok
+	}
+	return n.ToVisibleChangesetSpec()
 }
 
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
@@ -489,6 +500,16 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
+	n, ok := r.Node.(LSIFIndexResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
+	n, ok := r.Node.(*versionContextResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
@@ -530,16 +551,12 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
-	case "PatchSet":
-		return r.PatchSetByID(ctx, id)
-	case "ExternalChangeset":
+	case "CampaignSpec":
+		return r.CampaignSpecByID(ctx, id)
+	case "ChangesetSpec":
+		return r.ChangesetSpecByID(ctx, id)
+	case "Changeset":
 		return r.ChangesetByID(ctx, id)
-	case "Patch":
-		return r.PatchByID(ctx, id)
-	case "DiscussionComment":
-		return discussionCommentByID(ctx, id)
-	case "DiscussionThread":
-		return discussionThreadByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)
@@ -574,6 +591,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return siteByGQLID(ctx, id)
 	case "LSIFUpload":
 		return r.LSIFUploadByID(ctx, id)
+	case "LSIFIndex":
+		return r.LSIFIndexByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

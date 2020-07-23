@@ -141,7 +141,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             merge(this.submits.pipe(filter(() => !this.viewerCanAddUserToOrganization)), this.inviteClicks)
                 .pipe(
-                    tap(e => e.preventDefault()),
+                    tap(event => event.preventDefault()),
                     withLatestFrom(orgChanges, this.usernameChanges),
                     tap(() => eventLogger.log('InviteOrgMemberClicked')),
                     mergeMap(([, { orgID }, username]) =>
@@ -176,7 +176,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -185,7 +185,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
             this.submits
                 .pipe(filter(() => this.viewerCanAddUserToOrganization))
                 .pipe(
-                    tap(e => e.preventDefault()),
+                    tap(event => event.preventDefault()),
                     withLatestFrom(orgChanges, this.usernameChanges),
                     mergeMap(([, { orgID }, username]) =>
                         addUserToOrganization(username, orgID).pipe(
@@ -215,7 +215,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -281,6 +281,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                 <div className="form-group flex-column mb-2 mr-sm-2">
                                     {/* eslint-disable-next-line react/button-has-type */}
                                     <button
+                                        // eslint-disable-next-line react/button-has-type
                                         type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                         disabled={!!this.state.loading}
                                         className={`btn ${
@@ -309,30 +310,27 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         </Form>
                     </div>
                 </div>
-                {this.props.authenticatedUser &&
-                    this.props.authenticatedUser.siteAdmin &&
-                    !window.context.emailEnabled && (
-                        <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
-                            <p className=" mb-0">
-                                Set <code>email.smtp</code> in{' '}
-                                <Link to="/site-admin/configuration">site configuration</Link> to send email
-                                notfications about invitations.
-                            </p>
-                        </DismissibleAlert>
-                    )}
-                {this.state.invited &&
-                    this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
-                        /* eslint-disable react/jsx-no-bind */
-                        <InvitedNotification
-                            key={i}
-                            className="alert alert-success invite-form__alert"
-                            username={username}
-                            sentInvitationEmail={sentInvitationEmail}
-                            invitationURL={invitationURL}
-                            onDismiss={() => this.dismissNotification(i)}
-                        />
-                        /* eslint-enable react/jsx-no-bind */
-                    ))}
+                {this.props.authenticatedUser?.siteAdmin && !window.context.emailEnabled && (
+                    <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
+                        <p className=" mb-0">
+                            Set <code>email.smtp</code> in{' '}
+                            <Link to="/site-admin/configuration">site configuration</Link> to send email notfications
+                            about invitations.
+                        </p>
+                    </DismissibleAlert>
+                )}
+                {this.state.invited?.map(({ username, sentInvitationEmail, invitationURL }, index) => (
+                    /* eslint-disable react/jsx-no-bind */
+                    <InvitedNotification
+                        key={index}
+                        className="alert alert-success invite-form__alert"
+                        username={username}
+                        sentInvitationEmail={sentInvitationEmail}
+                        invitationURL={invitationURL}
+                        onDismiss={() => this.dismissNotification(index)}
+                    />
+                    /* eslint-enable react/jsx-no-bind */
+                ))}
                 {this.state.error && (
                     <ErrorAlert className="invite-form__alert" error={this.state.error} history={this.props.history} />
                 )}
@@ -340,12 +338,14 @@ export class InviteForm extends React.PureComponent<Props, State> {
         )
     }
 
-    private onUsernameChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.usernameChanges.next(e.currentTarget.value)
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
-    private onInviteClick: React.MouseEventHandler<HTMLButtonElement> = e => this.inviteClicks.next(e)
+    private onUsernameChange: React.ChangeEventHandler<HTMLInputElement> = event =>
+        this.usernameChanges.next(event.currentTarget.value)
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
+    private onInviteClick: React.MouseEventHandler<HTMLButtonElement> = event => this.inviteClicks.next(event)
 
-    private dismissNotification = (i: number): void => {
-        this.setState(prevState => ({ invited: (prevState.invited || []).filter((_, j) => i !== j) }))
+    private dismissNotification = (dismissedIndex: number): void => {
+        this.setState(previousState => ({
+            invited: (previousState.invited || []).filter((invite, index) => dismissedIndex !== index),
+        }))
     }
 }

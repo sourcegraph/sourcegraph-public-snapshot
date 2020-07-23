@@ -21,6 +21,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -113,7 +114,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 			Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "a",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/c/d",
@@ -134,7 +135,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 func TestServer_SetRepoEnabled(t *testing.T) {
 	githubService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 		{
@@ -149,7 +150,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Sources: map[string]*repos.SourceInfo{},
@@ -161,7 +162,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 	gitlabService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITLAB",
+		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab.com - test",
 		Config: formatJSON(`
 		{
@@ -176,7 +177,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		Name: "gitlab.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "http://gitlab.com",
 		},
 		Sources: map[string]*repos.SourceInfo{},
@@ -190,7 +191,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 	bitbucketServerService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
 		Config: formatJSON(`
 		{
@@ -335,7 +336,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Metadata: new(github.Repository),
@@ -452,7 +453,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 func TestServer_RepoExternalServices(t *testing.T) {
 	service1 := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 		{
@@ -463,7 +464,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	}
 	service2 := &repos.ExternalService{
 		ID:          2,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test2",
 		Config: formatJSON(`
 		{
@@ -478,7 +479,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		Name: "gitolite.example.com/oldschool",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "nosources",
-			ServiceType: "gitolite",
+			ServiceType: extsvc.TypeGitolite,
 			ServiceID:   "http://gitolite.my.corp",
 		},
 	}
@@ -487,7 +488,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		Name: "github.com/foo/sources",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "sources",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Metadata: new(github.Repository),
@@ -544,7 +545,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 func TestServer_StatusMessages(t *testing.T) {
 	githubService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 	}
 
@@ -560,7 +561,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "all cloned",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "foobar"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -581,7 +582,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		},
 		{
 			name:            "subset cloned",
-			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}, {Name: "barfoo"}},
 			gitserverCloned: []string{"foobar"},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
@@ -595,7 +596,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		},
 		{
 			name:            "more cloned than stored",
-			stored:          []*repos.Repo{{Name: "foobar"}},
+			stored:          []*repos.Repo{{Name: "foobar", Cloned: true}},
 			gitserverCloned: []string{"foobar", "barfoo"},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
@@ -618,7 +619,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "case insensitivity",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			stored:          []*repos.Repo{{Name: "FOOBar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -626,7 +627,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:            "case insensitivity to gitserver names",
 			gitserverCloned: []string{"FOOBar"},
-			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			stored:          []*repos.Repo{{Name: "FOOBar", Cloned: true}},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -652,7 +653,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						SyncError: &protocol.SyncError{
-							Message: "syncer.sync.streaming: syncer.storedExternalIDs: could not connect to database",
+							Message: "syncer.sync.store.list-repos: could not connect to database",
 						},
 					},
 				},
@@ -668,11 +669,15 @@ func TestServer_StatusMessages(t *testing.T) {
 			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
 
 			stored := tc.stored.Clone()
+			var cloned []string
 			for i, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
 					ID:          strconv.Itoa(i),
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
+				}
+				if r.Cloned {
+					cloned = append(cloned, r.Name)
 				}
 			}
 
@@ -681,6 +686,11 @@ func TestServer_StatusMessages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			err = store.SetClonedRepos(ctx, cloned...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			err = store.UpsertExternalServices(ctx, githubService)
 			if err != nil {
 				t.Fatal(err)
@@ -766,7 +776,7 @@ func TestRepoLookup(t *testing.T) {
 		UpdatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -793,7 +803,7 @@ func TestRepoLookup(t *testing.T) {
 		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			ServiceType: awscodecommit.ServiceType,
+			ServiceType: extsvc.TypeAWSCodeCommit,
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -821,7 +831,7 @@ func TestRepoLookup(t *testing.T) {
 		UpdatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "2009901",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -871,7 +881,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",
@@ -894,17 +904,17 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-					ServiceType: awscodecommit.ServiceType,
+					ServiceType: extsvc.TypeAWSCodeCommit,
 					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 				},
 				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 				Description: "The stripe-go lib",
 				VCS:         protocol.VCSInfo{URL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"},
 				Links: &protocol.RepoLinks{
-					Root:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go",
-					Tree:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
-					Blob:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
-					Commit: "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/commit/{commit}",
+					Root:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse",
+					Tree:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{path}",
+					Blob:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{path}",
+					Commit: "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/commit/{commit}",
 				},
 			}},
 		},
@@ -920,7 +930,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",
@@ -947,7 +957,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",
@@ -960,7 +970,6 @@ func TestRepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			assert: repos.Assert.ReposEqual(githubRepository),
 		},
 		{
 			name: "not found - GitHub.com on Sourcegraph.com",
@@ -1050,7 +1059,6 @@ func TestRepoLookup(t *testing.T) {
 				},
 				ExternalRepo: gitlabRepository.ExternalRepo,
 			}},
-			assert: repos.Assert.ReposEqual(gitlabRepository),
 		},
 		{
 			name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
@@ -1077,6 +1085,7 @@ func TestRepoLookup(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			clock := clock
 			syncer := &repos.Syncer{
 				Store: store,
 				Now:   clock.Now,
@@ -1147,6 +1156,86 @@ type fakeGitserverClient struct {
 
 func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) {
 	return g.listClonedResponse, nil
+}
+
+type fakePermsSyncer struct{}
+
+func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
+}
+
+func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
+}
+
+func TestServer_handleSchedulePermsSync(t *testing.T) {
+	tests := []struct {
+		name           string
+		permsSyncer    *fakePermsSyncer
+		body           string
+		wantStatusCode int
+		wantBody       string
+	}{
+		{
+			name:           "PermsSyncer not available",
+			wantStatusCode: http.StatusForbidden,
+			wantBody:       "null",
+		},
+		{
+			name:           "bad JSON",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           "{",
+			wantStatusCode: http.StatusBadRequest,
+			wantBody:       "unexpected EOF",
+		},
+		{
+			name:           "missing ids",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           "{}",
+			wantStatusCode: http.StatusBadRequest,
+			wantBody:       "neither user and repo ids provided",
+		},
+
+		{
+			name:           "successful call with user IDs",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"user_ids": [1]}`,
+			wantStatusCode: http.StatusOK,
+			wantBody:       "null",
+		},
+		{
+			name:           "successful call with repo IDs",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"repo_ids":[1]}`,
+			wantStatusCode: http.StatusOK,
+			wantBody:       "null",
+		},
+		{
+			name:           "successful call with both IDs",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"user_ids": [1], "repo_ids":[1]}`,
+			wantStatusCode: http.StatusOK,
+			wantBody:       "null",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := httptest.NewRequest("POST", "/schedule-perms-sync", strings.NewReader(test.body))
+			w := httptest.NewRecorder()
+
+			s := &Server{}
+			// NOTE: An interface has nil value is not a nil interface,
+			// so should only assign to the interface when the value is not nil.
+			if test.permsSyncer != nil {
+				s.PermsSyncer = test.permsSyncer
+			}
+			s.handleSchedulePermsSync(w, r)
+
+			if w.Code != test.wantStatusCode {
+				t.Fatalf("Code: want %v but got %v", test.wantStatusCode, w.Code)
+			} else if diff := cmp.Diff(test.wantBody, w.Body.String()); diff != "" {
+				t.Fatalf("Body mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 func formatJSON(s string) string {

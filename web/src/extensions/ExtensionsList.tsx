@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
@@ -106,8 +106,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     }
 
     private getQueryFromProps(props: Pick<Props, 'location'>): string {
-        const params = new URLSearchParams(props.location.search)
-        return params.get(ExtensionsList.URL_QUERY_PARAM) || ''
+        const parameters = new URLSearchParams(props.location.search)
+        return parameters.get(ExtensionsList.URL_QUERY_PARAM) || ''
     }
 
     public componentDidMount(): void {
@@ -124,9 +124,9 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
             debouncedQueryChanges.subscribe(({ query }) => {
                 let search: string
                 if (query) {
-                    const searchParams = new URLSearchParams()
-                    searchParams.set(ExtensionsList.URL_QUERY_PARAM, query)
-                    search = searchParams.toString()
+                    const searchParameters = new URLSearchParams()
+                    searchParameters.set(ExtensionsList.URL_QUERY_PARAM, query)
+                    search = searchParameters.toString()
                 } else {
                     search = ''
                 }
@@ -154,7 +154,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 .pipe(
                     switchMap(({ query, immediate }) => {
                         const resultOrError = this.queryRegistryExtensions({ query }).pipe(
-                            catchError(err => [asError(err)])
+                            catchError(error => [asError(error)])
                         )
                         return concat(
                             of(LOADING).pipe(delay(immediate ? 0 : 250), takeUntil(resultOrError)),
@@ -224,11 +224,11 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                             )
                         ) : (
                             <div className="extensions-list__cards mt-1">
-                                {this.state.data.resultOrError.extensions.map((e, i) => (
+                                {this.state.data.resultOrError.extensions.map((extension, index) => (
                                     <ExtensionCard
-                                        key={i}
+                                        key={index}
                                         subject={this.props.subject}
-                                        node={e}
+                                        node={extension}
                                         settingsCascade={this.props.settingsCascade}
                                         platformContext={this.props.platformContext}
                                     />
@@ -241,10 +241,10 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         )
     }
 
-    private onSubmit: React.FormEventHandler = e => e.preventDefault()
+    private onSubmit: React.FormEventHandler = event => event.preventDefault()
 
-    private onQueryChangeEvent: React.FormEventHandler<HTMLInputElement> = e =>
-        this.onQueryChange({ query: e.currentTarget.value })
+    private onQueryChangeEvent: React.FormEventHandler<HTMLInputElement> = event =>
+        this.onQueryChange({ query: event.currentTarget.value })
 
     private onQueryChangeImmediate = (query: string): void => this.queryChanges.next({ query, immediate: true })
 
@@ -297,7 +297,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         ? this.props.settingsCascade.final
                         : {},
                     registryExtensions
-                ).map(x => toConfiguredRegistryExtension(x)),
+                ).map(extension => toConfiguredRegistryExtension(extension)),
                 error,
             }))
         )
@@ -318,9 +318,11 @@ export function applyExtensionsQuery<X extends { extensionID: string }>(
     const enabled = query.includes(extensionsQuery({ enabled: true }))
     const disabled = query.includes(extensionsQuery({ disabled: true }))
     return registryExtensions.filter(
-        x =>
-            (!installed || isExtensionAdded(settings, x.extensionID)) &&
-            (!enabled || isExtensionEnabled(settings, x.extensionID)) &&
-            (!disabled || (isExtensionAdded(settings, x.extensionID) && !isExtensionEnabled(settings, x.extensionID)))
+        extension =>
+            (!installed || isExtensionAdded(settings, extension.extensionID)) &&
+            (!enabled || isExtensionEnabled(settings, extension.extensionID)) &&
+            (!disabled ||
+                (isExtensionAdded(settings, extension.extensionID) &&
+                    !isExtensionEnabled(settings, extension.extensionID)))
     )
 }

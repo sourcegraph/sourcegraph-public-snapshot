@@ -7,7 +7,6 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ProductPlanPrice } from './ProductPlanPrice'
-import { ProductPlanTiered } from './ProductPlanTiered'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
@@ -40,6 +39,8 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     history,
     _queryProductPlans = queryProductPlans,
 }) => {
+    const noPlanSelected = value === null // don't recompute observable below on every value change
+
     /**
      * The list of all possible product plans, loading, or an error.
      */
@@ -50,20 +51,20 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                     _queryProductPlans().pipe(
                         tap(plans => {
                             // If no plan is selected, select the 1st plan when the plans have loaded.
-                            if (plans.length > 0 && value === null) {
+                            if (plans.length > 0 && noPlanSelected) {
                                 onChange(plans[0].billingPlanID)
                             }
                         }),
-                        catchError(err => [asError(err)]),
+                        catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
-                [_queryProductPlans, onChange, value]
+                [_queryProductPlans, onChange, noPlanSelected]
             )
         ) || LOADING
 
     const onPlanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => {
-            onChange(e.currentTarget.value)
+        event => {
+            onChange(event.currentTarget.value)
         },
         [onChange]
     )
@@ -79,14 +80,14 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
             ) : (
                 <>
                     <div className="list-group">
-                        {plans.map((plan, i) => (
+                        {plans.map((plan, index) => (
                             <div key={plan.billingPlanID} className="list-group-item p-0">
-                                <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${i}`}>
+                                <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${index}`}>
                                     <input
                                         type="radio"
                                         name="product-plan-form-control__plan"
                                         className="mr-2"
-                                        id={`product-plan-form-control__plan${i}`}
+                                        id={`product-plan-form-control__plan${index}`}
                                         value={plan.billingPlanID}
                                         onChange={onPlanChange}
                                         required={true}
@@ -96,15 +97,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                                     <div>
                                         <strong>{plan.name}</strong>
                                         <div className="text-muted">
-                                            {plan.planTiers.length > 0 ? (
-                                                <ProductPlanTiered
-                                                    planTiers={plan.planTiers}
-                                                    tierMode={plan.tiersMode}
-                                                    minQuantity={plan.minQuantity}
-                                                />
-                                            ) : (
-                                                <ProductPlanPrice pricePerUserPerYear={plan.pricePerUserPerYear} />
-                                            )}
+                                            <ProductPlanPrice plan={plan} />
                                         </div>
                                     </div>
                                 </label>
@@ -131,6 +124,7 @@ function queryProductPlans(): Observable<GQL.IProductPlan[]> {
                         name
                         pricePerUserPerYear
                         minQuantity
+                        maxQuantity
                         tiersMode
                         planTiers {
                             unitAmount

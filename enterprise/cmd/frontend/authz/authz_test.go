@@ -6,25 +6,19 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type gitlabAuthzProviderParams struct {
 	OAuthOp gitlab.OAuthProviderOp
 	SudoOp  gitlab.SudoProviderOp
-}
-
-func (m gitlabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.Account, repos []*types.Repo) ([]authz.RepoPerms, error) {
-	panic("should never be called")
 }
 
 func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
@@ -40,7 +34,11 @@ func (m gitlabAuthzProviderParams) ServiceID() string {
 }
 
 func (m gitlabAuthzProviderParams) ServiceType() string {
-	return "gitlab"
+	return extsvc.TypeGitLab
+}
+
+func (m gitlabAuthzProviderParams) URN() string {
+	panic("should never be called")
 }
 
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
@@ -53,13 +51,11 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
-func Test_authzProvidersFromConfig(t *testing.T) {
+func TestAuthzProvidersFromConfig(t *testing.T) {
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
-		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
 	gitlab.NewSudoProvider = func(op gitlab.SudoProviderOp) authz.Provider {
-		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{SudoOp: op}
 	}
 
@@ -91,7 +87,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -111,11 +107,8 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						Token:             "asdf",
-						CacheTTL:          48 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						Token:   "asdf",
 					},
 				},
 			),
@@ -129,7 +122,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.com",
 						},
 					}},
@@ -180,7 +173,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.com",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.com",
 							},
 						}, {
@@ -188,7 +181,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.mine",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.mine",
 							},
 						},
@@ -215,20 +208,14 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						Token:             "asdf",
-						CacheTTL:          3 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						Token:   "asdf",
 					},
 				},
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						BaseURL:           mustURLParse(t, "https://gitlab.com"),
-						Token:             "asdf",
-						CacheTTL:          3 * time.Hour,
-						MinBatchThreshold: 200,
-						MaxBatchRequests:  300,
+						BaseURL: mustURLParse(t, "https://gitlab.com"),
+						Token:   "asdf",
 					},
 				},
 			),
@@ -242,7 +229,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -257,34 +244,6 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders:            nil,
-		},
-		{
-			description: "TTL error",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
-							ClientID:     "clientID",
-							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         "gitlab",
-							Url:          "https://gitlab.mine",
-						},
-					}},
-				},
-			},
-			gitlabConnections: []*schema.GitLabConnection{
-				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
-						Ttl:              "invalid",
-					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"authorization.ttl: time: invalid duration invalid"},
 		},
 		{
 			description: "external auth provider",
@@ -323,7 +282,6 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 						},
 						GitLabProvider:    "my-external",
 						SudoToken:         "asdf",
-						CacheTTL:          3 * time.Hour,
 						UseNativeUsername: false,
 					},
 				},
@@ -351,7 +309,6 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					SudoOp: gitlab.SudoProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
 						SudoToken:         "asdf",
-						CacheTTL:          3 * time.Hour,
 						UseNativeUsername: true,
 					},
 				},
@@ -369,31 +326,6 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			},
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders:            providersEqual(),
-		},
-		{
-			description: "Bitbucket Server TTL error",
-			cfg:         conf.Unified{},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
-				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
-							},
-						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
-							SigningKey:  bogusKey,
-						},
-						Ttl: "invalid",
-					},
-					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
-					Token:    "secret-token",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.ttl: time: invalid duration invalid\n\n"},
 		},
 		{
 			description: "Bitbucket Server Oauth config error",
@@ -448,7 +380,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					t.Fatalf("no providers")
 				}
 
-				if have[0].ServiceType() != bitbucketserver.ServiceType {
+				if have[0].ServiceType() != extsvc.TypeBitbucketServer {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
@@ -468,7 +400,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -530,7 +462,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		}
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ :=
-			ProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
+			ProvidersFromConfig(context.Background(), &test.cfg, &store)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
@@ -565,14 +497,26 @@ type fakeStore struct {
 	bitbucketServers []*schema.BitbucketServerConnection
 }
 
-func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error) {
-	return s.githubs, nil
+func (s fakeStore) ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error) {
+	conns := make([]*types.GitHubConnection, 0, len(s.githubs))
+	for _, github := range s.githubs {
+		conns = append(conns, &types.GitHubConnection{GitHubConnection: github})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error) {
-	return s.gitlabs, nil
+func (s fakeStore) ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error) {
+	conns := make([]*types.GitLabConnection, 0, len(s.gitlabs))
+	for _, gitlab := range s.gitlabs {
+		conns = append(conns, &types.GitLabConnection{GitLabConnection: gitlab})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error) {
-	return s.bitbucketServers, nil
+func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error) {
+	conns := make([]*types.BitbucketServerConnection, 0, len(s.bitbucketServers))
+	for _, bbs := range s.bitbucketServers {
+		conns = append(conns, &types.BitbucketServerConnection{BitbucketServerConnection: bbs})
+	}
+	return conns, nil
 }

@@ -52,7 +52,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
             useMemo(
                 () =>
                     _queryProductSubscription(subscriptionUUID).pipe(
-                        catchError(err => [asError(err)]),
+                        catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
                 [_queryProductSubscription, subscriptionUUID]
@@ -81,28 +81,25 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
             ) : (
                 <>
                     <h2>Subscription {productSubscription.name}</h2>
-                    {(productSubscription.invoiceItem ||
-                        (productSubscription.activeLicense && productSubscription.activeLicense.info)) && (
+                    {(productSubscription.invoiceItem || productSubscription.activeLicense?.info) && (
                         <UserProductSubscriptionStatus
                             subscriptionName={productSubscription.name}
                             productNameWithBrand={
-                                productSubscription.activeLicense && productSubscription.activeLicense.info
+                                productSubscription.activeLicense?.info
                                     ? productSubscription.activeLicense.info.productNameWithBrand
                                     : productSubscription.invoiceItem!.plan.nameWithBrand
                             }
                             userCount={
-                                productSubscription.activeLicense && productSubscription.activeLicense.info
+                                productSubscription.activeLicense?.info
                                     ? productSubscription.activeLicense.info.userCount
                                     : productSubscription.invoiceItem!.userCount
                             }
                             expiresAt={
-                                productSubscription.activeLicense && productSubscription.activeLicense.info
+                                productSubscription.activeLicense?.info
                                     ? parseISO(productSubscription.activeLicense.info.expiresAt)
                                     : parseISO(productSubscription.invoiceItem!.expiresAt)
                             }
-                            licenseKey={
-                                productSubscription.activeLicense && productSubscription.activeLicense.licenseKey
-                            }
+                            licenseKey={productSubscription.activeLicense?.licenseKey ?? null}
                         />
                     )}
                     <div className="card mt-3">

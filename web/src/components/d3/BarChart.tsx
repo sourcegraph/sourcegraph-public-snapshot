@@ -66,20 +66,22 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
         const series = Object.keys(data[0].yValues)
         const xLabels = data.map(({ xLabel }) => xLabel)
         const yValues = data.map(({ yValues }) => yValues)
-        const yHeights = data.map(({ yValues }) => Object.keys(yValues).reduce((acc, k) => acc + yValues[k], 0))
+        const yHeights = data.map(({ yValues }) =>
+            Object.keys(yValues).reduce((accumulator, key) => accumulator + yValues[key], 0)
+        )
 
-        if (!data.length) {
+        if (data.length === 0) {
             return
         }
 
         const columns = xLabels.length
 
-        const x = scaleBand().domain(xLabels).rangeRound([0, width])
-        const y = scaleLinear()
+        const xScaleBand = scaleBand().domain(xLabels).rangeRound([0, width])
+        const yScaleBand = scaleLinear()
             .domain([0, Math.max(...yHeights)])
             .range([height, 0])
-        const z = scaleOrdinal<string, string>().domain(series).range(barColors)
-        const xAxis = axisBottom(x)
+        const zScaleOrdinal = scaleOrdinal<string, string>().domain(series).range(barColors)
+        const xAxis = axisBottom(xScaleBand)
 
         const svg = select(this.svgRef)
         svg.selectAll('*').remove()
@@ -94,7 +96,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
 
         const stackData = stack()
             .keys(series)
-            .value((d, key) => d[key])(yValues, series)
+            .value((data, key) => data[key])(yValues, series)
 
         // Generate bars.
         barHolder
@@ -103,17 +105,17 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
             .data(stackData)
             .enter()
             .append('g')
-            .attr('fill', d => z(d.key))
+            .attr('fill', data => zScaleOrdinal(data.key))
             .selectAll('rect')
-            .data(d => d)
+            .data(data => data)
             .enter()
             .append('rect')
             .classed('bar', true)
-            .attr('x', (d, i) => x(xLabels[i]) || 0 + 1)
-            .attr('y', d => y(d[1]))
+            .attr('x', (data, index) => xScaleBand(xLabels[index]) || 0 + 1)
+            .attr('y', data => yScaleBand(data[1]))
             .attr('width', barWidth)
-            .attr('height', d => y(d[0]) - y(d[1]))
-            .attr('data-tooltip', d => `${d[1] - d[0]} users`)
+            .attr('height', data => yScaleBand(data[0]) - yScaleBand(data[1]))
+            .attr('data-tooltip', data => `${data[1] - data[0]} users`)
 
         if (this.props.showLabels) {
             // Generate value labels on top of each column.
@@ -124,11 +126,11 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
                 .enter()
                 .append('text')
                 .attr('text-anchor', 'middle')
-                .attr('x', d => x(d.xLabel) || 0)
+                .attr('x', data => xScaleBand(data.xLabel) || 0)
                 .attr('dx', barWidth / 2)
-                .attr('y', (d, i) => y(yHeights[i]))
+                .attr('y', (data, index) => yScaleBand(yHeights[index]))
                 .attr('dy', '-0.5em')
-                .text((d, i) => yHeights[i])
+                .text((data, index) => yHeights[index])
         }
 
         // Generate x-axis and labels.
@@ -151,25 +153,25 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
                 .data(series.slice().reverse())
                 .enter()
                 .append('g')
-                .attr('transform', (d, i) => 'translate(0,' + i * 20 + ')')
+                .attr('transform', (data, index) => `translate(0,${index * 20})`)
             legend
                 .append('rect')
                 .attr('x', width - 19)
                 .attr('width', 19)
                 .attr('height', 19)
-                .attr('fill', z)
+                .attr('fill', zScaleOrdinal)
             legend
                 .append('text')
                 .attr('x', width - 24)
                 .attr('y', 9.5)
                 .attr('dy', '0.32em')
-                .text(d => d)
+                .text(data => data)
         }
     }
 
     public render(): JSX.Element | null {
         const { width, height } = this.props
-        return <svg viewBox={`0 0 ${width} ${height}`} ref={ref => (this.svgRef = ref)} />
+        return <svg viewBox={`0 0 ${width} ${height}`} ref={reference => (this.svgRef = reference)} />
     }
 }
 
@@ -179,19 +181,14 @@ function wrapLabel(text: Selection<any, any, any, any>, width: number): void {
         const text = select(this)
         const words = text.text().split(/\s+/).reverse()
         const lineHeight = 1.1
-        const y = text.attr('y')
-        const dy = parseFloat(text.attr('dy'))
+        const yAttribute = text.attr('y')
+        const dyAttribute = parseFloat(text.attr('dy'))
         let lineNumber = 0
         let currentWord
         // currentLine holds the line as it grows, until it overflows.
         let currentLine: string[] = []
         // tspan holds the current <tspan> element as it grows, until it overflows.
-        let tspan = text
-            .text(null)
-            .append('tspan')
-            .attr('x', 0)
-            .attr('y', y)
-            .attr('dy', dy + 'em')
+        let tspan = text.text(null).append('tspan').attr('x', 0).attr('y', yAttribute).attr('dy', `${dyAttribute}em`)
 
         while (words.length) {
             currentWord = words.pop() || ''
@@ -205,8 +202,8 @@ function wrapLabel(text: Selection<any, any, any, any>, width: number): void {
                 tspan = text
                     .append('tspan')
                     .attr('x', 0)
-                    .attr('y', y)
-                    .attr('dy', ++lineNumber * lineHeight + dy + 'em')
+                    .attr('y', yAttribute)
+                    .attr('dy', `${++lineNumber * lineHeight + dyAttribute}em`)
                     .text(currentWord)
             }
         }

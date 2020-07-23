@@ -53,9 +53,9 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
         )
     }
 
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
-        const id = e.currentTarget.value
-        const filter = this.props.filters.find(f => f.id === id)!
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        const id = event.currentTarget.value
+        const filter = this.props.filters.find(filter => filter.id === id)!
         this.props.onDidSelectFilter(filter)
     }
 }
@@ -220,7 +220,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                         </small>
                     </p>
                 )
-            } else if (this.props.connection.pageInfo && this.props.connection.pageInfo.hasNextPage) {
+            } else if (this.props.connection.pageInfo?.hasNextPage) {
                 // No total count to show, but it will show a 'Show more' button.
             } else if (totalCount === 0) {
                 summary = this.props.emptyElement || (
@@ -238,8 +238,8 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
             }
         }
 
-        const nodes = this.props.connection.nodes.map((node, i) => (
-            <NodeComponent key={hasID(node) ? node.id : i} node={node} {...this.props.nodeComponentProps!} />
+        const nodes = this.props.connection.nodes.map((node, index) => (
+            <NodeComponent key={hasID(node) ? node.id : index} node={node} {...this.props.nodeComponentProps!} />
         ))
 
         return (
@@ -315,6 +315,12 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
      * Filters are mutually exclusive.
      */
     filters?: FilteredConnectionFilter[]
+
+    /**
+     * The filter to select by default. If not supplied, this defaults to the first
+     * filter defined in the list.
+     */
+    defaultFilter?: string
 
     /** Called when a filter is selected and on initial render. */
     onFilterSelect?: (filterID: string | undefined) => void
@@ -440,7 +446,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
     constructor(props: FilteredConnectionProps<C, N, NP>) {
         super(props)
 
-        const q = new URLSearchParams(this.props.location.search)
+        const searchParameters = new URLSearchParams(this.props.location.search)
 
         // Note: in the initial state, do not set `after` from the URL, as this doesn't
         // track the number of results on the previous page. This makes the count look
@@ -456,10 +462,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         this.state = {
             loading: true,
-            query: (!this.props.hideSearch && this.props.useURLQuery && q.get(QUERY_KEY)) || '',
-            activeFilter: (this.props.useURLQuery && getFilterFromURL(q, this.props.filters)) || undefined,
-            first: (this.props.useURLQuery && parseQueryInt(q, 'first')) || this.props.defaultFirst!,
-            visible: (this.props.useURLQuery && parseQueryInt(q, 'visible')) || 0,
+            query: (!this.props.hideSearch && this.props.useURLQuery && searchParameters.get(QUERY_KEY)) || '',
+            activeFilter:
+                (this.props.useURLQuery &&
+                    getFilterFromURL(searchParameters, this.props.filters, this.props.defaultFilter)) ||
+                undefined,
+            first: (this.props.useURLQuery && parseQueryInt(searchParameters, 'first')) || this.props.defaultFirst!,
+            visible: (this.props.useURLQuery && parseQueryInt(searchParameters, 'visible')) || 0,
         }
     }
 
@@ -609,7 +618,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         }
                         this.setState({ connectionOrError, ...rest })
                     },
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -675,36 +684,41 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.componentUpdates.next(this.props)
     }
 
-    private urlQuery(arg: {
+    private urlQuery({
+        first,
+        query,
+        filter,
+        visible,
+    }: {
         first?: number
         query?: string
         filter?: FilteredConnectionFilter
         visible?: number
     }): string {
-        if (!arg.first) {
-            arg.first = this.state.first
+        if (!first) {
+            first = this.state.first
         }
-        if (!arg.query) {
-            arg.query = this.state.query
+        if (!query) {
+            query = this.state.query
         }
-        if (!arg.filter) {
-            arg.filter = this.state.activeFilter
+        if (!filter) {
+            filter = this.state.activeFilter
         }
-        const q = new URLSearchParams()
-        if (arg.query) {
-            q.set(QUERY_KEY, arg.query)
+        const searchParameters = new URLSearchParams(this.props.location.search)
+        if (query) {
+            searchParameters.set(QUERY_KEY, query)
         }
 
-        if (arg.first !== this.props.defaultFirst) {
-            q.set('first', String(arg.first))
+        if (first !== this.props.defaultFirst) {
+            searchParameters.set('first', String(first))
         }
-        if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
-            q.set('filter', arg.filter.id)
+        if (filter && this.props.filters && filter !== this.props.filters[0]) {
+            searchParameters.set('filter', filter.id)
         }
-        if (arg.visible !== 0 && arg.visible !== arg.first) {
-            q.set('visible', String(arg.visible))
+        if (visible !== 0 && visible !== first) {
+            searchParameters.set('visible', String(visible))
         }
-        return q.toString()
+        return searchParameters.toString()
     }
 
     public componentDidUpdate(): void {
@@ -731,7 +745,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${
+                className={`filtered-connection test-filtered-connection ${compactnessClass} ${
                     this.props.className || ''
                 }`}
             >
@@ -768,8 +782,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 )}
                 {errors.length > 0 && (
                     <div className="alert alert-danger filtered-connection__error">
-                        {errors.map((error, i) => (
-                            <React.Fragment key={i}>
+                        {errors.map((error, index) => (
+                            <React.Fragment key={index}>
                                 <ErrorMessage error={error} history={this.props.history} />
                             </React.Fragment>
                         ))}
@@ -800,7 +814,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     />
                 )}
                 {this.state.loading && (
-                    <span className="filtered-connection__loader e2e-filtered-connection__loader">
+                    <span className="filtered-connection__loader test-filtered-connection__loader">
                         <LoadingSpinner className="icon-inline" />
                     </span>
                 )}
@@ -808,12 +822,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         )
     }
 
-    private setFilterRef = (e: HTMLInputElement | null): void => {
-        this.filterRef = e
-        if (e && this.props.autoFocus) {
+    private setFilterRef = (element: HTMLInputElement | null): void => {
+        this.filterRef = element
+        if (element && this.props.autoFocus) {
             // TODO(sqs): The 30 msec delay is needed, or else the input is not
             // reliably focused. Find out why.
-            setTimeout(() => e.focus(), 30)
+            setTimeout(() => element.focus(), 30)
         }
     }
 
@@ -823,13 +837,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         }
     }
 
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
         // Do nothing. The <input onChange> handler will pick up any changes shortly.
-        e.preventDefault()
+        event.preventDefault()
     }
 
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
-        this.queryInputChanges.next(e.currentTarget.value)
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        this.queryInputChanges.next(event.currentTarget.value)
     }
 
     private onDidSelectFilter = (filter: FilteredConnectionFilter): void => this.activeFilterChanges.next(filter)
@@ -839,28 +853,29 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
     }
 }
 
-function parseQueryInt(q: URLSearchParams, name: string): number | null {
-    const s = q.get(name)
-    if (s === null) {
+function parseQueryInt(searchParameters: URLSearchParams, name: string): number | null {
+    const valueString = searchParameters.get(name)
+    if (valueString === null) {
         return null
     }
-    const n = parseInt(s, 10)
-    if (n > 0) {
-        return n
+    const valueNumber = parseInt(valueString, 10)
+    if (valueNumber > 0) {
+        return valueNumber
     }
     return null
 }
 
 function getFilterFromURL(
-    q: URLSearchParams,
-    filters: FilteredConnectionFilter[] | undefined
+    searchParameters: URLSearchParams,
+    filters: FilteredConnectionFilter[] | undefined,
+    defaultFilterId: string | undefined
 ): FilteredConnectionFilter | undefined {
     if (filters === undefined || filters.length === 0) {
         return undefined
     }
-    const id = q.get('filter')
+    const id = searchParameters.get('filter') || defaultFilterId
     if (id !== null) {
-        const filter = filters.find(f => f.id === id)
+        const filter = filters.find(filter => filter.id === id)
         if (filter) {
             return filter
         }

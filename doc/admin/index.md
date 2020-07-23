@@ -6,14 +6,15 @@ Site administrators are the admins responsible for deploying, managing, and conf
 
 - [Install Sourcegraph with Docker](install/docker/index.md)
 - [Install Sourcegraph with Docker Compose](install/docker-compose/index.md)
+- [Install Sourcegraph with Kubernetes](install/kubernetes/index.md)
 - [Install Sourcegraph on a cluster](install/cluster.md)
-  
+- [Set up a managed instance](install/managed.md)
+
 ## Management, deployment, and configuration
 
 - [Configuration](config/index.md)
 - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
 - [HTTP and HTTPS/SSL configuration](http_https_configuration.md)
-- [Management console (removed in v3.11)](management_console.md)
 - [Monorepo](monorepo.md)
 - [Repository webhooks](repo/webhooks.md)
 - [User authentication](auth/index.md)

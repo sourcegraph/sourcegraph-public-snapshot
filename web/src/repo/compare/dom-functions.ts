@@ -55,5 +55,5 @@ export const diffDomFunctions: DOMFunctions = {
         throw new Error('Could not figure out diff part for code element')
     },
 
-    isFirstCharacterDiffIndicator: () => true,
+    isFirstCharacterDiffIndicator: () => false,
 }

@@ -50,7 +50,6 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 type problemKind string
 
 const (
-	problemCritical        problemKind = "CriticalConfig"
 	problemSite            problemKind = "SiteConfig"
 	problemExternalService problemKind = "ExternalService"
 )
@@ -77,11 +76,6 @@ func NewExternalServiceProblem(msg string) *Problem {
 	}
 }
 
-// IsCritical returns true if the problem is about critical config.
-func (p Problem) IsCritical() bool {
-	return p.kind == problemCritical
-}
-
 // IsSite returns true if the problem is about site config.
 func (p Problem) IsSite() bool {
 	return p.kind == problemSite
@@ -94,6 +88,23 @@ func (p Problem) IsExternalService() bool {
 
 func (p Problem) String() string {
 	return p.description
+}
+
+func (p *Problem) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]string{
+		"kind":        string(p.kind),
+		"description": p.description,
+	})
+}
+
+func (p *Problem) UnmarshalJSON(b []byte) error {
+	var m map[string]string
+	if err := json.Unmarshal(b, &m); err != nil {
+		return err
+	}
+	p.kind = problemKind(m["kind"])
+	p.description = m["description"]
+	return nil
 }
 
 // Problems is a list of problems.
@@ -134,16 +145,6 @@ func (ps Problems) Messages() []string {
 	return msgs
 }
 
-// Critical returns all critical config problems in the list.
-func (ps Problems) Critical() (problems Problems) {
-	for i := range ps {
-		if ps[i].IsCritical() {
-			problems = append(problems, ps[i])
-		}
-	}
-	return problems
-}
-
 // Site returns all site config problems in the list.
 func (ps Problems) Site() (problems Problems) {
 	for i := range ps {
@@ -174,8 +175,7 @@ func Validate(input conftypes.RawUnified) (problems Problems, err error) {
 	problems = append(problems, NewSiteProblems(siteProblems...)...)
 
 	customProblems, err := validateCustomRaw(conftypes.RawUnified{
-		Critical: string(jsonc.Normalize(input.Critical)),
-		Site:     string(jsonc.Normalize(input.Site)),
+		Site: string(jsonc.Normalize(input.Site)),
 	})
 	if err != nil {
 		return nil, err

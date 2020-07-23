@@ -329,7 +329,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, nil, "master", nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, "master", ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -387,7 +387,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, nil, "master", nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, "master", ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}

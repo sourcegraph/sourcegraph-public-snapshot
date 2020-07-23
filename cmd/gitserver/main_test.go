@@ -3,7 +3,7 @@ package main
 
 import "testing"
 
-func Test_parsePercent(t *testing.T) {
+func TestParsePercent(t *testing.T) {
 	tests := []struct {
 		s       string
 		want    int

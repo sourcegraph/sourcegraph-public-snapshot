@@ -1,6 +1,5 @@
 import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
-import { createExtensionHostClient } from '../api/client/client'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParams } from '../api/client/services/command'
 import { ContributionRegistry, parseContributionExpressions } from '../api/client/services/contribution'
@@ -12,6 +11,9 @@ import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
+import { createExtensionHostClientConnection } from '../api/client/connection'
+import { Remote } from 'comlink'
+import { FlatExtHostAPI } from '../api/contract'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -41,6 +43,8 @@ export interface Controller extends Unsubscribable {
      * Frees all resources associated with this client.
      */
     unsubscribe(): void
+
+    extHostAPI: Promise<Remote<FlatExtHostAPI>>
 }
 
 /**
@@ -54,6 +58,10 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
     extensionsController: Pick<Controller, K>
 }
 
+function messageFromExtension(message: string): string {
+    return `From extension:\n\n${message}`
+}
+
 /**
  * Creates the controller, which handles all communication between the client application and extensions.
  *
@@ -64,13 +72,18 @@ export function createController(context: PlatformContext): Controller {
     const subscriptions = new Subscription()
 
     const services = new Services(context)
-    const extensionHostEndpoint = context.createExtensionHost()
-    const initData: InitData = {
+    const initData: Omit<InitData, 'initialSettings'> = {
         sourcegraphURL: context.sourcegraphURL,
         clientApplication: context.clientApplication,
     }
-    const client = createExtensionHostClient(services, extensionHostEndpoint, initData)
-    subscriptions.add(client)
+    const extensionHostClientPromise = createExtensionHostClientConnection(
+        context.createExtensionHost(),
+        services,
+        initData,
+        context
+    )
+
+    subscriptions.add(() => extensionHostClientPromise.then(({ subscription }) => subscription.unsubscribe()))
 
     const notifications = new Subject<Notification>()
 
@@ -86,10 +99,6 @@ export function createController(context: PlatformContext): Controller {
             notifications.next({ message: title, progress, type: NotificationType.Log })
         })
     )
-
-    function messageFromExtension(message: string): string {
-        return `From extension:\n\n${message}`
-    }
     subscriptions.add(
         services.notifications.showMessageRequests.subscribe(({ message, actions, resolve }) => {
             if (!actions || actions.length === 0) {
@@ -119,7 +128,7 @@ export function createController(context: PlatformContext): Controller {
         const LOG_EDITORS = false
         if (LOG_EDITORS) {
             subscriptions.add(
-                services.editor.editorUpdates.subscribe(() => log('info', 'editors', services.editor.editors))
+                services.viewer.viewerUpdates.subscribe(() => log('info', 'editors', services.viewer.viewers))
             )
         }
 
@@ -130,17 +139,18 @@ export function createController(context: PlatformContext): Controller {
     return {
         notifications,
         services,
-        executeCommand: (params, suppressNotificationOnError) =>
-            services.commands.executeCommand(params).catch(err => {
+        executeCommand: (parameters, suppressNotificationOnError) =>
+            services.commands.executeCommand(parameters).catch(error => {
                 if (!suppressNotificationOnError) {
                     notifications.next({
-                        message: asError(err).message,
+                        message: asError(error).message,
                         type: NotificationType.Error,
-                        source: params.command,
+                        source: parameters.command,
                     })
                 }
-                return Promise.reject(err)
+                return Promise.reject(error)
             }),
+        extHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }
 }
@@ -162,12 +172,12 @@ export function registerExtensionContributions(
                 .map(contributions => {
                     try {
                         return parseContributionExpressions(contributions)
-                    } catch (err) {
+                    } catch (error) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
                         console.warn('Discarding contributions: parsing expressions or templates failed.', {
                             contributions,
-                            err,
+                            error,
                         })
                         return {}
                     }
@@ -183,19 +193,19 @@ export function registerExtensionContributions(
 
 /** Prints a nicely formatted console log or error message. */
 function log(level: 'info' | 'error', subject: string, message: any, other?: { [name: string]: any }): void {
-    let f: typeof console.log
+    let log: typeof console.log
     let color: string
     let backgroundColor: string
     if (level === 'info') {
-        f = console.log.bind(console)
+        log = console.log.bind(console)
         color = '#000'
         backgroundColor = '#eee'
     } else {
-        f = console.error.bind(console)
+        log = console.error.bind(console)
         color = 'white'
         backgroundColor = 'red'
     }
-    f(
+    log(
         '%c EXT %s %c',
         `font-weight:bold;background-color:${backgroundColor};color:${color}`,
         subject,

@@ -23,10 +23,10 @@ export class LocalStorageSubject<T> extends Observable<T>
     }
 
     public next(value: T): void {
-        const v = JSON.stringify(value)
-        localStorage.setItem(this.key, v)
+        const json = JSON.stringify(value)
+        localStorage.setItem(this.key, json)
         // Does not set oldValue or other StorageEventInit keys because we don't need them.
-        window.dispatchEvent(new StorageEvent('storage', { key: this.key, newValue: v }))
+        window.dispatchEvent(new StorageEvent('storage', { key: this.key, newValue: json }))
     }
 
     public get value(): T {
@@ -34,13 +34,13 @@ export class LocalStorageSubject<T> extends Observable<T>
     }
 }
 
-function parseValue<T>(v: string | null, defaultValue: T): T {
-    if (v === null) {
+function parseValue<T>(value: string | null, defaultValue: T): T {
+    if (value === null) {
         return defaultValue
     }
     try {
-        return JSON.parse(v) as T
-    } catch (err) {
+        return JSON.parse(value) as T
+    } catch {
         return defaultValue
     }
 }

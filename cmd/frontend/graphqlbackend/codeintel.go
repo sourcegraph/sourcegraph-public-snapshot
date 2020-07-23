@@ -4,30 +4,39 @@ import (
 	"context"
 	"errors"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// NewCodeIntelResolver will be set by enterprise.
-var NewCodeIntelResolver func() CodeIntelResolver
-
 type CodeIntelResolver interface {
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
 	DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
-	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
+	LSIFIndexByID(ctx context.Context, id graphql.ID) (LSIFIndexResolver, error)
+	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 }
 
 var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
 
 type defaultCodeIntelResolver struct{}
 
+var DefaultCodeIntelResolver CodeIntelResolver = defaultCodeIntelResolver{}
+
 func (defaultCodeIntelResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
-func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
@@ -35,13 +44,40 @@ func (defaultCodeIntelResolver) DeleteLSIFUpload(ctx context.Context, id graphql
 	return nil, codeIntelOnlyInEnterprise
 }
 
-func (defaultCodeIntelResolver) LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error) {
+func (defaultCodeIntelResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (LSIFIndexResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
+func (defaultCodeIntelResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (r *schemaResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return r.CodeIntelResolver.LSIFUploads(ctx, args)
+}
+
+func (r *schemaResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return r.CodeIntelResolver.LSIFIndexes(ctx, args)
+}
+
 func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	// We need to override the embedded method here as it takes slightly different arguments
 	return r.CodeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
+}
+
+func (r *schemaResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	return r.CodeIntelResolver.DeleteLSIFIndex(ctx, args.ID)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -59,22 +95,17 @@ type LSIFRepositoryUploadsQueryArgs struct {
 
 type LSIFUploadResolver interface {
 	ID() graphql.ID
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	InputCommit() string
 	InputRoot() string
-	InputIndexer() string
-	State() string
+	IsLatestForRepo() bool
 	UploadedAt() DateTime
+	State() string
+	Failure() *string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	Failure() LSIFUploadFailureReasonResolver
-	IsLatestForRepo() bool
+	InputIndexer() string
 	PlaceInQueue() *int32
-}
-
-type LSIFUploadFailureReasonResolver interface {
-	Summary() string
-	Stacktrace() string
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -83,17 +114,62 @@ type LSIFUploadConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type LSIFQueryResolver interface {
+type LSIFIndexesQueryArgs struct {
+	graphqlutil.ConnectionArgs
+	Query *string
+	State *string
+	After *string
+}
+
+type LSIFRepositoryIndexesQueryArgs struct {
+	*LSIFIndexesQueryArgs
+	RepositoryID graphql.ID
+}
+
+type LSIFIndexResolver interface {
+	ID() graphql.ID
+	InputCommit() string
+	QueuedAt() DateTime
+	State() string
+	Failure() *string
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+	PlaceInQueue() *int32
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+}
+
+type LSIFIndexConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type GitTreeLSIFDataResolver interface {
+	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+}
+
+type GitBlobLSIFDataResolver interface {
+	GitTreeLSIFDataResolver
+	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
+	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
+
+	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 }
 
-type LSIFQueryArgs struct {
-	Repository *RepositoryResolver
-	Commit     api.CommitID
-	Path       string
-	UploadID   int64
+type GitBlobLSIFDataArgs struct {
+	Repo      *types.Repo
+	Commit    api.CommitID
+	Path      string
+	ExactPath bool
+	ToolName  string
+}
+
+type LSIFRangesArgs struct {
+	StartLine int32
+	EndLine   int32
 }
 
 type LSIFQueryPositionArgs struct {
@@ -107,6 +183,21 @@ type LSIFPagedQueryPositionArgs struct {
 	After *string
 }
 
+type LSIFDiagnosticsArgs struct {
+	graphqlutil.ConnectionArgs
+}
+
+type CodeIntelligenceRangeConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CodeIntelligenceRangeResolver, error)
+}
+
+type CodeIntelligenceRangeResolver interface {
+	Range(ctx context.Context) (RangeResolver, error)
+	Definitions(ctx context.Context) (LocationConnectionResolver, error)
+	References(ctx context.Context) (LocationConnectionResolver, error)
+	Hover(ctx context.Context) (HoverResolver, error)
+}
+
 type LocationConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LocationResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
@@ -115,4 +206,18 @@ type LocationConnectionResolver interface {
 type HoverResolver interface {
 	Markdown() MarkdownResolver
 	Range() RangeResolver
+}
+
+type DiagnosticConnectionResolver interface {
+	Nodes(ctx context.Context) ([]DiagnosticResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type DiagnosticResolver interface {
+	Severity() (*string, error)
+	Code() (*string, error)
+	Source() (*string, error)
+	Message() (*string, error)
+	Location(ctx context.Context) (LocationResolver, error)
 }

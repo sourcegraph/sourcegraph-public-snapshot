@@ -4,8 +4,8 @@ import {
     isPrivateRepoPublicSourcegraphComErrorLike,
     PrivateRepoPublicSourcegraphComError,
     RepoNotFoundError,
-    isRevNotFoundErrorLike,
-    RevNotFoundError,
+    isRevisionNotFoundErrorLike,
+    RevisionNotFoundError,
     CloneInProgressError,
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
@@ -17,9 +17,9 @@ describe('backend errors', () => {
             expect(isCloneInProgressErrorLike(new CloneInProgressError('foobar'))).toBe(true)
         })
     })
-    describe('isRevNotFoundErrorLike()', () => {
-        it('returns true for RevNotFoundError', () => {
-            expect(isRevNotFoundErrorLike(new RevNotFoundError('foobar'))).toBe(true)
+    describe('isRevisionNotFoundErrorLike()', () => {
+        it('returns true for RevisionNotFoundError', () => {
+            expect(isRevisionNotFoundErrorLike(new RevisionNotFoundError('foobar'))).toBe(true)
         })
     })
     describe('isRepoNotFoundErrorLike()', () => {

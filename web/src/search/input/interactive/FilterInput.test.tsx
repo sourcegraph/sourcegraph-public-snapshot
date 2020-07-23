@@ -76,12 +76,12 @@ describe('FilterInput', () => {
             container = render(
                 <FilterInput {...defaultProps} value="diff" filterType={FilterType.type} mapKey="type" />
             ).container
-            const codeRadioButton = container.querySelector('.e2e-filter-input-radio-button-')
+            const codeRadioButton = container.querySelector('.test-filter-input-radio-button-')
             expect(codeRadioButton).toBeTruthy()
             fireEvent.click(codeRadioButton!)
-            const confirmBtn = container.querySelector('.e2e-confirm-filter-button')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
+            const confirmButton = container.querySelector('.test-confirm-filter-button')
+            expect(confirmButton).toBeTruthy()
+            fireEvent.click(confirmButton!)
             expect(defaultProps.onFilterEdited.calledOnce).toBe(true)
         })
     })
@@ -89,11 +89,11 @@ describe('FilterInput', () => {
     describe('For all other filters', () => {
         it('Updating filters with an empty value does not work', () => {
             container = render(<FilterInput {...defaultProps} />).container
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
+            const inputElement = container.querySelector('.filter-input__input-field')
+            expect(inputElement).toBeTruthy()
+            const confirmButton = container.querySelector('.check-button__btn')
+            expect(confirmButton).toBeTruthy()
+            fireEvent.click(confirmButton!)
             expect(defaultProps.onFilterEdited.notCalled).toBe(true)
         })
 
@@ -108,13 +108,13 @@ describe('FilterInput', () => {
                 />
             ).container
 
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: 'test query' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
+            const inputElement = container.querySelector('.filter-input__input-field')
+            expect(inputElement).toBeTruthy()
+            fireEvent.click(inputElement!)
+            fireEvent.change(inputElement!, { target: { value: 'test query' } })
+            const confirmButton = container.querySelector('.check-button__btn')
+            expect(confirmButton).toBeTruthy()
+            fireEvent.click(confirmButton!)
             container = render(
                 <FilterInput
                     {...defaultProps}
@@ -140,13 +140,13 @@ describe('FilterInput', () => {
                 />
             ).container
 
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: '"foo' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
+            const inputElement = container.querySelector('.filter-input__input-field')
+            expect(inputElement).toBeTruthy()
+            fireEvent.click(inputElement!)
+            fireEvent.change(inputElement!, { target: { value: '"foo' } })
+            const confirmButton = container.querySelector('.check-button__btn')
+            expect(confirmButton).toBeTruthy()
+            fireEvent.click(confirmButton!)
             container = render(
                 <FilterInput
                     {...defaultProps}
@@ -173,13 +173,13 @@ describe('FilterInput', () => {
                 />
             ).container
 
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: 'test query' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
+            const inputElement = container.querySelector('.filter-input__input-field')
+            expect(inputElement).toBeTruthy()
+            fireEvent.click(inputElement!)
+            fireEvent.change(inputElement!, { target: { value: 'test query' } })
+            const confirmButton = container.querySelector('.check-button__btn')
+            expect(confirmButton).toBeTruthy()
+            fireEvent.click(confirmButton!)
             container = render(
                 <FilterInput
                     {...defaultProps}
@@ -192,9 +192,9 @@ describe('FilterInput', () => {
                     editable={false}
                 />
             ).container
-            const btnText = container.querySelector('.filter-input__button-text')
-            expect(btnText).toBeTruthy()
-            fireEvent.click(btnText!)
+            const buttonText = container.querySelector('.filter-input__button-text')
+            expect(buttonText).toBeTruthy()
+            fireEvent.click(buttonText!)
             container = render(
                 <FilterInput
                     {...defaultProps}
@@ -221,13 +221,13 @@ describe('FilterInput', () => {
                 />
             ).container
 
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: '"""' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
+            const inputElement = container.querySelector('.filter-input__input-field')
+            expect(inputElement).toBeTruthy()
+            fireEvent.click(inputElement!)
+            fireEvent.change(inputElement!, { target: { value: '"""' } })
+            const confirmButton = container.querySelector('.check-button__btn')
+            expect(confirmButton).toBeTruthy()
+            fireEvent.click(confirmButton!)
             expect(defaultProps.onFilterEdited.calledWith('content', '"\\"\\"\\""')).toBe(true)
         })
 
@@ -242,13 +242,13 @@ describe('FilterInput', () => {
                 />
             ).container
 
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: '2 months ago' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
+            const inputElement = container.querySelector('.filter-input__input-field')
+            expect(inputElement).toBeTruthy()
+            fireEvent.click(inputElement!)
+            fireEvent.change(inputElement!, { target: { value: '2 months ago' } })
+            const confirmButton = container.querySelector('.check-button__btn')
+            expect(confirmButton).toBeTruthy()
+            fireEvent.click(confirmButton!)
             expect(defaultProps.onFilterEdited.calledWith('after', '"2 months ago"')).toBe(true)
         })
     })

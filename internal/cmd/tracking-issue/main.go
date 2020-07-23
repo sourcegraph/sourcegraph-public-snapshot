@@ -5,7 +5,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -18,6 +17,14 @@ import (
 
 	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
+)
+
+const (
+	beginWorkMarker        = "<!-- BEGIN WORK -->"
+	endWorkMarker          = "<!-- END WORK -->"
+	labelMarkerRegexp      = "<!-- LABEL: (.*) -->"
+	beginAssigneeMarkerFmt = "<!-- BEGIN ASSIGNEE: %s -->"
+	endAssigneeMarker      = "<!-- END ASSIGNEE -->"
 )
 
 func main() {
@@ -49,19 +56,14 @@ func run(token, org string, dry, verbose bool) (err error) {
 		))),
 	)
 
-	issues, err := listTrackingIssues(ctx, cli, org)
+	tracking, err := listTrackingIssues(ctx, cli, fmt.Sprintf("org:%q label:tracking is:open", org))
 	if err != nil {
 		return err
 	}
 
-	if len(issues) == 0 {
+	if len(tracking) == 0 {
 		log.Printf("No tracking issues found. Exiting.")
 		return nil
-	}
-
-	tracking := make([]*TrackingIssue, 0, len(issues))
-	for _, issue := range issues {
-		tracking = append(tracking, &TrackingIssue{Issue: issue})
 	}
 
 	err = loadTrackingIssues(ctx, cli, org, tracking)
@@ -71,7 +73,8 @@ func run(token, org string, dry, verbose bool) (err error) {
 
 	var toUpdate []*Issue
 	for _, issue := range tracking {
-		if updated, err := issue.UpdateWork(issue.Workloads().Markdown()); err != nil {
+		work := issue.Workloads().Markdown(issue.LabelAllowlist)
+		if updated, err := issue.UpdateWork(work); err != nil {
 			log.Printf("failed to patch work section in %q %s: %v", issue.Title, issue.URL, err)
 		} else if !updated {
 			log.Printf("%q %s not modified.", issue.Title, issue.URL)
@@ -128,23 +131,30 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 	return cli.Run(ctx, r, nil)
 }
 
-func patch(s, replacement, opening, closing string) (string, error) {
-	start := strings.Index(s, opening)
-	if start == -1 {
-		return s, errors.New("could not find opening marker in issue body")
+func findMarker(s, marker string) (int, error) {
+	location := strings.Index(s, marker)
+	if location == -1 {
+		return -1, fmt.Errorf("could not find marker %s in issue body", marker)
+	}
+	return location, nil
+}
+
+func patch(s, replacement string) (string, error) {
+	start, err := findMarker(s, beginWorkMarker)
+	if err != nil {
+		return s, err
+	}
+	end, err := findMarker(s, endWorkMarker)
+	if err != nil {
+		return s, err
 	}
 
-	end := strings.Index(s, closing)
-	if end == -1 {
-		return s, errors.New("could not find closing marker in issue body")
-	}
-
-	return s[:start+len(opening)] + replacement + s[end:], nil
+	return s[:start+len(beginWorkMarker)] + replacement + s[end:], nil
 }
 
 type Workloads map[string]*Workload
 
-func (ws Workloads) Markdown() string {
+func (ws Workloads) Markdown(labelAllowlist []string) string {
 	assignees := make([]string, 0, len(ws))
 	for assignee := range ws {
 		assignees = append(assignees, assignee)
@@ -153,8 +163,9 @@ func (ws Workloads) Markdown() string {
 	sort.Strings(assignees)
 
 	var b strings.Builder
+
 	for _, assignee := range assignees {
-		b.WriteString(ws[assignee].Markdown())
+		b.WriteString(ws[assignee].Markdown(labelAllowlist))
 	}
 
 	return b.String()
@@ -165,9 +176,19 @@ type Workload struct {
 	Days         float64
 	Issues       []*Issue
 	PullRequests []*PullRequest
+	Labels       []string
 }
 
-func (wl *Workload) Markdown() string {
+func (wl *Workload) AddIssue(newIssue *Issue) {
+	for _, issue := range wl.Issues {
+		if issue.URL == newIssue.URL {
+			return
+		}
+	}
+	wl.Issues = append(wl.Issues, newIssue)
+}
+
+func (wl *Workload) Markdown(labelAllowlist []string) string {
 	var b strings.Builder
 
 	var days string
@@ -175,10 +196,11 @@ func (wl *Workload) Markdown() string {
 		days = fmt.Sprintf(": __%.2fd__", wl.Days)
 	}
 
-	fmt.Fprintf(&b, "\n@%s%s\n\n", wl.Assignee, days)
+	fmt.Fprintf(&b, "\n"+beginAssigneeMarkerFmt+"\n", wl.Assignee)
+	fmt.Fprintf(&b, "@%s%s\n\n", wl.Assignee, days)
 
 	for _, issue := range wl.Issues {
-		b.WriteString(issue.Markdown())
+		b.WriteString(issue.Markdown(labelAllowlist))
 
 		for _, pr := range issue.LinkedPRs {
 			b.WriteString("  ") // Nested list
@@ -193,7 +215,40 @@ func (wl *Workload) Markdown() string {
 		}
 	}
 
+	fmt.Fprintf(&b, "%s\n", endAssigneeMarker)
+
 	return b.String()
+}
+
+var issueURLMatcher = regexp.MustCompile(`https://github\.com/.+/.+/issues/\d+`)
+
+func (wl *Workload) FillExistingIssuesFromTrackingBody(tracking *TrackingIssue) {
+	beginAssigneeMarker := fmt.Sprintf(beginAssigneeMarkerFmt, wl.Assignee)
+
+	start, err := findMarker(tracking.Body, beginAssigneeMarker)
+	if err != nil {
+		return
+	}
+
+	end, err := findMarker(tracking.Body[start:], endAssigneeMarker)
+	if err != nil {
+		return
+	}
+
+	lines := strings.Split(tracking.Body[start:start+end], "\n")
+
+	for _, line := range lines {
+		parsedIssueURL := issueURLMatcher.FindString(line)
+		if parsedIssueURL == "" {
+			continue
+		}
+
+		for _, issue := range tracking.Issues {
+			if parsedIssueURL == issue.URL && Assignee(issue.Assignees) == wl.Assignee {
+				wl.AddIssue(issue)
+			}
+		}
+	}
 }
 
 func Days(estimate string) float64 {
@@ -211,10 +266,10 @@ func Estimate(labels []string) string {
 	return ""
 }
 
-var matcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/2762526/company/\d+`)
+var customerMatcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/2762526/company/\d+`)
 
 func Customer(body string) string {
-	customer := matcher.FindString(body)
+	customer := customerMatcher.FindString(body)
 	if customer == "" {
 		return "👩"
 	}
@@ -230,19 +285,34 @@ func Assignee(assignees []string) string {
 
 type TrackingIssue struct {
 	*Issue
-	Issues []*Issue
-	PRs    []*PullRequest
+	Issues         []*Issue
+	PRs            []*PullRequest
+	LabelAllowlist []string
+}
+
+func NewTrackingIssue(issue *Issue) *TrackingIssue {
+	t := &TrackingIssue{Issue: issue}
+	t.FillLabelAllowlist()
+	return t
+}
+
+var labelMatcher = regexp.MustCompile(labelMarkerRegexp)
+
+// NOTE: labels specified inside the WORK section will be silently discarded
+func (t *TrackingIssue) FillLabelAllowlist() {
+	lines := strings.Split(t.Body, "\n")
+	for _, line := range lines {
+		matches := labelMatcher.FindStringSubmatch(line)
+		if matches != nil {
+			t.LabelAllowlist = append(t.LabelAllowlist, matches[1])
+		}
+	}
 }
 
 func (t *TrackingIssue) UpdateWork(work string) (updated bool, err error) {
-	const (
-		openingMarker = "<!-- BEGIN WORK -->"
-		closingMarker = "<!-- END WORK -->"
-	)
-
 	before := t.Body
 
-	after, err := patch(t.Body, work, openingMarker, closingMarker)
+	after, err := patch(t.Body, work)
 	if err != nil {
 		return false, err
 	}
@@ -259,6 +329,7 @@ func (t *TrackingIssue) Workloads() Workloads {
 		if w == nil {
 			w = &Workload{Assignee: assignee}
 			workloads[assignee] = w
+			w.FillExistingIssuesFromTrackingBody(t)
 		}
 		return w
 	}
@@ -269,9 +340,14 @@ func (t *TrackingIssue) Workloads() Workloads {
 	}
 
 	for _, issue := range t.Issues {
+		// Exclude listing the tracking issue in the tracking issue.
+		if issue.URL == t.Issue.URL {
+			continue
+		}
+
 		w := workload(Assignee(issue.Assignees))
 
-		w.Issues = append(w.Issues, issue)
+		w.AddIssue(issue)
 
 		linked := issue.LinkedPullRequests(t.PRs)
 		for _, pr := range linked {
@@ -311,7 +387,7 @@ type Issue struct {
 	LinkedPRs     []*PullRequest `json:"-"`
 }
 
-func (issue *Issue) Markdown() string {
+func (issue *Issue) Markdown(labelAllowlist []string) string {
 	state := " "
 	if strings.EqualFold(issue.State, "closed") {
 		state = "x"
@@ -323,14 +399,30 @@ func (issue *Issue) Markdown() string {
 		estimate = "__" + estimate + "__ "
 	}
 
-	return fmt.Sprintf("- [%s] %s [#%d](%s) %s%s\n",
+	labels := issue.RenderedLabels(labelAllowlist)
+
+	return fmt.Sprintf("- [%s] %s [#%d](%s) %s%s%s\n",
 		state,
 		issue.title(),
 		issue.Number,
 		issue.URL,
+		labels,
 		estimate,
 		issue.Emojis(),
 	)
+}
+
+func (issue *Issue) RenderedLabels(labelAllowlist []string) string {
+	var b strings.Builder
+	for _, label := range issue.Labels {
+		for _, allowedLabel := range labelAllowlist {
+			if allowedLabel == label {
+				b.WriteString(fmt.Sprintf("`%s` ", label))
+				break
+			}
+		}
+	}
+	return b.String()
 }
 
 func (issue *Issue) Emojis() string {
@@ -357,15 +449,6 @@ func Emojis(categories map[string]string) string {
 	return string(s)
 }
 
-func has(label string, labels []string) bool {
-	for _, l := range labels {
-		if label == l {
-			return true
-		}
-	}
-	return false
-}
-
 func (issue *Issue) title() string {
 	var title string
 
@@ -386,7 +469,11 @@ func (issue *Issue) title() string {
 
 func (issue *Issue) LinkedPullRequests(prs []*PullRequest) (linked []*PullRequest) {
 	for _, pr := range prs {
-		if strings.Contains(pr.Body, "#"+strconv.Itoa(issue.Number)) {
+		hasMatch, err := regexp.MatchString(fmt.Sprintf(`#%d([^\d]|$)`, issue.Number), pr.Body)
+		if err != nil {
+			panic(err)
+		}
+		if hasMatch {
 			linked = append(linked, pr)
 		}
 	}
@@ -621,7 +708,7 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 		for query, s := range data {
 			q := queries[query]
 
-			if s.PageInfo.HasNextPage {
+			if s.PageInfo.HasNextPage && len(s.Nodes) > 0 {
 				hasNextPage = true
 				q.cursor = s.PageInfo.EndCursor
 			} else {
@@ -641,7 +728,7 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 	return nil
 }
 
-func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) (all []*Issue, _ error) {
+func listTrackingIssues(ctx context.Context, cli *graphql.Client, issuesQuery string) (all []*TrackingIssue, _ error) {
 	var q strings.Builder
 	q.WriteString("query($trackingCount: Int!, $trackingCursor: String, $trackingQuery: String!) {\n")
 	q.WriteString(searchGraphQLQuery("tracking"))
@@ -650,7 +737,7 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) (a
 	r := graphql.NewRequest(q.String())
 
 	r.Var("trackingCount", 100)
-	r.Var("trackingQuery", fmt.Sprintf("org:%q label:tracking is:open", org))
+	r.Var("trackingQuery", issuesQuery)
 
 	for {
 		var data struct{ Tracking search }
@@ -661,7 +748,12 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) (a
 		}
 
 		issues, _ := unmarshalSearchNodes(data.Tracking.Nodes)
-		all = append(all, issues...)
+
+		for _, issue := range issues {
+			if len(issue.Labels) > 1 { // Skip tracking issues that have only the "tracking" label
+				all = append(all, NewTrackingIssue(issue))
+			}
+		}
 
 		if data.Tracking.PageInfo.HasNextPage {
 			r.Var("trackingCursor", data.Tracking.PageInfo.EndCursor)

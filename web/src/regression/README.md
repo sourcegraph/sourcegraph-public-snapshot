@@ -37,7 +37,7 @@ Run the tests:
    need to be set. The required set of env vars varies with each test suite, so you can set the
    union of all the env vars or just the ones for the test cases you wish to run. Set these in your
    `.envrc` file and run `direnv allow`. (There are also optional environment variables. You can
-   view a full list in `shared/src/e2e/config.ts`.)
+   view a full list in `shared/src/testing/config.ts`.)
 1. You should see a Chrome window pop up and the tests will play in that window. The initial run may
    take awhile, because test repositories need to be cloned.
 1. some tests require additional manual verification of screenshots after the test completes.
@@ -84,7 +84,7 @@ Tips:
 
 Test files live in `web/src/regression` and are split into different files according to feature
 area (e.g., `search.test.ts`, `onboarding.test.ts`). The `util` subdirectory provides utility
-packages. Tests also make use of the utility packages in `shared/src/e2e`.
+packages. Tests also make use of the utility packages in `shared/src/testing`.
 
 Add your test case to the appropriate file in `web/src/regression` or create a new one if it doesn't
 match any of the existing files.

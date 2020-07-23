@@ -3,17 +3,26 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"sync"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type externalServiceResolver struct {
 	externalService *types.ExternalService
 	warning         string
+
+	webhookURLOnce sync.Once
+	webhookURL     string
+	webhookErr     error
 }
 
 const externalServiceIDKind = "ExternalService"
@@ -72,6 +81,34 @@ func (r *externalServiceResolver) CreatedAt() DateTime {
 
 func (r *externalServiceResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.externalService.UpdatedAt}
+}
+
+func (r *externalServiceResolver) WebhookURL() (*string, error) {
+	r.webhookURLOnce.Do(func() {
+		parsed, err := extsvc.ParseConfig(r.externalService.Kind, r.externalService.Config)
+		if err != nil {
+			r.webhookErr = errors.Wrap(err, "parsing external service config")
+			return
+		}
+		u := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, conf.ExternalURL())
+		switch c := parsed.(type) {
+		case *schema.BitbucketServerConnection:
+			if c.Webhooks != nil {
+				r.webhookURL = u
+			}
+			if c.Plugin != nil && c.Plugin.Webhooks != nil {
+				r.webhookURL = u
+			}
+		case *schema.GitHubConnection:
+			if len(c.Webhooks) > 0 {
+				r.webhookURL = u
+			}
+		}
+	})
+	if r.webhookURL == "" {
+		return nil, r.webhookErr
+	}
+	return &r.webhookURL, r.webhookErr
 }
 
 func (r *externalServiceResolver) Warning() *string {

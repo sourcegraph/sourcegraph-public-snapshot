@@ -1,6 +1,6 @@
 # Product documentation guidelines
 
-The [documentation guidelines](https://about.sourcegraph.com/handbook/documentation) apply to product documentation. This page has information specific to this repository's documentation.
+The [documentation guidelines](https://about.sourcegraph.com/handbook/engineering/product_documentation) apply to product documentation. This page has information specific to this repository's documentation.
 
 ## Documentation directory structure
 

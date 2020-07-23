@@ -21,10 +21,10 @@ import {
     ModeSpec,
     UIPositionSpec,
     RepoSpec,
-    ResolvedRevSpec,
-    RevSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
 } from '../../../../shared/src/util/url'
-import { getHover } from '../../backend/features'
+import { getHover, getDocumentHighlights } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
 import { EventLoggerProps } from '../../tracking/eventLogger'
@@ -68,10 +68,10 @@ export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     repo: GQL.IRepository
 
     /** The base of the comparison. */
-    base: { repoName: string; repoID: GQL.ID; rev?: string | null }
+    base: { repoName: string; repoID: GQL.ID; revision?: string | null }
 
     /** The head of the comparison. */
-    head: { repoName: string; repoID: GQL.ID; rev?: string | null }
+    head: { repoName: string; repoID: GQL.ID; revision?: string | null }
 
     /** The URL route prefix for the comparison. */
     routePrefix: string
@@ -97,12 +97,16 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    private hoverifier: Hoverifier<
+        RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
+        HoverMerged,
+        ActionItemAction
+    >
 
     constructor(props: RepositoryCompareAreaProps) {
         super(props)
         this.hoverifier = createHoverifier<
-            RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+            RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
             HoverMerged,
             ActionItemAction
         >({
@@ -119,6 +123,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                 filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            getDocumentHighlights: hoveredToken =>
+                getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
             pinningEnabled: true,
         })
@@ -128,11 +134,11 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     }
 
     private getLSPTextDocumentPositionParams(
-        hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
+        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+    ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
-            rev: hoveredToken.rev,
+            revision: hoveredToken.revision,
             filePath: hoveredToken.filePath,
             commitID: hoveredToken.commitID,
             position: hoveredToken,
@@ -174,8 +180,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
         const commonProps: RepositoryCompareAreaPageProps = {
             repo: this.props.repo,
-            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec?.base },
-            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec?.head },
+            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, revision: spec?.base },
+            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, revision: spec?.head },
             routePrefix: this.props.match.url,
             platformContext: this.props.platformContext,
         }

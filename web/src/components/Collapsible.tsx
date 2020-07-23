@@ -61,8 +61,8 @@ export const Collapsible: React.FunctionComponent<Props> = ({
 }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
-        e => {
-            e.preventDefault()
+        event => {
+            event.preventDefault()
             setIsExpanded(!isExpanded)
         },
         [isExpanded]

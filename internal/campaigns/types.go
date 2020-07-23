@@ -1,18 +1,31 @@
 package campaigns
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
+	"github.com/ghodss/yaml"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/xeipuuv/gojsonschema"
+
+	yamlv3 "gopkg.in/yaml.v3"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -20,8 +33,9 @@ import (
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]struct{}{
-	github.ServiceType:          {},
-	bitbucketserver.ServiceType: {},
+	extsvc.TypeGitHub:          {},
+	extsvc.TypeBitbucketServer: {},
+	extsvc.TypeGitLab:          {},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -31,42 +45,11 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-// A PatchSet is a collection of multiple Patchs.
-type PatchSet struct {
-	ID int64
-
-	UserID int32
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// Clone returns a clone of a PatchSet.
-func (c *PatchSet) Clone() *PatchSet {
-	cc := *c
-	return &cc
-}
-
-// A Patch is the application of a CampaignType over PatchSet arguments in
-// a specific repository at a specific revision.
-type Patch struct {
-	ID         int64
-	PatchSetID int64
-
-	RepoID  api.RepoID
-	Rev     api.CommitID
-	BaseRef string
-
-	Diff string
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// Clone returns a clone of a Patch.
-func (c *Patch) Clone() *Patch {
-	cc := *c
-	return &cc
+// IsKindSupported returns whether the given extsvc Kind is supported by
+// campaigns.
+func IsKindSupported(extSvcKind string) bool {
+	_, ok := SupportedExternalServices[extsvc.KindToType(extSvcKind)]
+	return ok
 }
 
 // A Campaign of changesets over multiple Repos over time.
@@ -81,8 +64,8 @@ type Campaign struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
-	PatchSetID      int64
 	ClosedAt        time.Time
+	CampaignSpecID  int64
 }
 
 // Clone returns a clone of a Campaign.
@@ -102,24 +85,57 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 	}
 }
 
+// GenChangesetBody creates the markdown to be used as the body of a changeset.
+// It includes a URL back to the campaign on the Sourcegraph instance.
+func (c *Campaign) GenChangesetBody(externalURL string) string {
+	campaignID := MarshalCampaignID(c.ID)
+	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
+	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
+	return description
+}
+
 // ChangesetState defines the possible states of a Changeset.
 type ChangesetState string
 
 // ChangesetState constants.
 const (
-	ChangesetStateOpen    ChangesetState = "OPEN"
-	ChangesetStateClosed  ChangesetState = "CLOSED"
-	ChangesetStateMerged  ChangesetState = "MERGED"
-	ChangesetStateDeleted ChangesetState = "DELETED"
+	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
+	ChangesetStatePublishing  ChangesetState = "PUBLISHING"
+	ChangesetStateErrored     ChangesetState = "ERRORED"
+	ChangesetStateSynced      ChangesetState = "SYNCED"
 )
 
-// Valid returns true if the given Changeset is valid.
+// Valid returns true if the given ChangesetState is valid.
 func (s ChangesetState) Valid() bool {
 	switch s {
-	case ChangesetStateOpen,
-		ChangesetStateClosed,
-		ChangesetStateMerged,
-		ChangesetStateDeleted:
+	case ChangesetStateUnpublished,
+		ChangesetStatePublishing,
+		ChangesetStateErrored,
+		ChangesetStateSynced:
+		return true
+	default:
+		return false
+	}
+}
+
+// ChangesetExternalState defines the possible states of a Changeset on a code host.
+type ChangesetExternalState string
+
+// ChangesetExternalState constants.
+const (
+	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
+	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"
+	ChangesetExternalStateMerged  ChangesetExternalState = "MERGED"
+	ChangesetExternalStateDeleted ChangesetExternalState = "DELETED"
+)
+
+// Valid returns true if the given ChangesetExternalState is valid.
+func (s ChangesetExternalState) Valid() bool {
+	switch s {
+	case ChangesetExternalStateOpen,
+		ChangesetExternalStateClosed,
+		ChangesetExternalStateMerged,
+		ChangesetExternalStateDeleted:
 		return true
 	default:
 		return false
@@ -140,40 +156,6 @@ const (
 	CampaignStateAny    CampaignState = "ANY"
 	CampaignStateOpen   CampaignState = "OPEN"
 	CampaignStateClosed CampaignState = "CLOSED"
-)
-
-// BackgroundProcessStatus defines the status of a background process.
-type BackgroundProcessStatus struct {
-	Canceled      bool
-	Total         int32
-	Completed     int32
-	Pending       int32
-	ProcessState  BackgroundProcessState
-	ProcessErrors []string
-}
-
-func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Completed }
-func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
-func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
-func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
-func (b BackgroundProcessStatus) Finished() bool {
-	return b.ProcessState != BackgroundProcessStateProcessing
-}
-func (b BackgroundProcessStatus) Processing() bool {
-	return b.ProcessState == BackgroundProcessStateProcessing
-}
-
-// BackgroundProcessState defines the possible states of a background process.
-type BackgroundProcessState string
-
-// BackgroundProcessState constants
-const (
-	BackgroundProcessStateProcessing BackgroundProcessState = "PROCESSING"
-	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
-	BackgroundProcessStateCompleted  BackgroundProcessState = "COMPLETED"
-	BackgroundProcessStateCanceled   BackgroundProcessState = "CANCELED"
-
-	// Remember to update Finished() above if a new state is added
 )
 
 // ChangesetReviewState defines the possible states of a Changeset's review.
@@ -225,46 +207,6 @@ func (s ChangesetCheckState) Valid() bool {
 	}
 }
 
-// A ChangesetJob is the creation of a Changeset on an external host from a
-// local Patch for a given Campaign.
-type ChangesetJob struct {
-	ID         int64
-	CampaignID int64
-	PatchID    int64
-
-	// Only set once the ChangesetJob has successfully finished.
-	ChangesetID int64
-
-	Branch string
-
-	Error string
-
-	StartedAt  time.Time
-	FinishedAt time.Time
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// Clone returns a clone of a ChangesetJob.
-func (c *ChangesetJob) Clone() *ChangesetJob {
-	cc := *c
-	return &cc
-}
-
-// SuccessfullyCompleted returns true for jobs that have already successfully run
-func (c *ChangesetJob) SuccessfullyCompleted() bool {
-	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
-}
-
-// Reset sets the Error, StartedAt and FinishedAt fields to their respective
-// zero values, so that the ChangesetJob can be executed again.
-func (c *ChangesetJob) Reset() {
-	c.Error = ""
-	c.StartedAt = time.Time{}
-	c.FinishedAt = time.Time{}
-}
-
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
@@ -279,9 +221,15 @@ type Changeset struct {
 	ExternalBranch      string
 	ExternalDeletedAt   time.Time
 	ExternalUpdatedAt   time.Time
-	ExternalState       ChangesetState
+	ExternalState       ChangesetExternalState
 	ExternalReviewState ChangesetReviewState
 	ExternalCheckState  ChangesetCheckState
+	CreatedByCampaign   bool
+	AddedToCampaign     bool
+	DiffStatAdded       *int32
+	DiffStatChanged     *int32
+	DiffStatDeleted     *int32
+	SyncState           ChangesetSyncState
 }
 
 // Clone returns a clone of a Changeset.
@@ -291,20 +239,57 @@ func (c *Changeset) Clone() *Changeset {
 	return &tt
 }
 
+// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
+// DiffStatDeleted are set, or nil if one or more is not.
+func (c *Changeset) DiffStat() *diff.Stat {
+	if c.DiffStatAdded == nil || c.DiffStatChanged == nil || c.DiffStatDeleted == nil {
+		return nil
+	}
+
+	return &diff.Stat{
+		Added:   *c.DiffStatAdded,
+		Changed: *c.DiffStatChanged,
+		Deleted: *c.DiffStatDeleted,
+	}
+}
+
+func (c *Changeset) SetDiffStat(stat *diff.Stat) {
+	if stat == nil {
+		c.DiffStatAdded = nil
+		c.DiffStatChanged = nil
+		c.DiffStatDeleted = nil
+	} else {
+		added := stat.Added
+		c.DiffStatAdded = &added
+
+		changed := stat.Changed
+		c.DiffStatChanged = &changed
+
+		deleted := stat.Deleted
+		c.DiffStatDeleted = &deleted
+	}
+}
+
 func (c *Changeset) SetMetadata(meta interface{}) error {
 	switch pr := meta.(type) {
 	case *github.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
-		c.ExternalServiceType = github.ServiceType
+		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = pr.HeadRefName
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-		c.ExternalServiceType = bitbucketserver.ServiceType
+		c.ExternalServiceType = extsvc.TypeBitbucketServer
 		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+	case *gitlab.MergeRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
+		c.ExternalServiceType = extsvc.TypeGitLab
+		c.ExternalBranch = pr.SourceBranch
+		c.ExternalUpdatedAt = pr.UpdatedAt
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -328,6 +313,8 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *bitbucketserver.PullRequest:
 		return m.Title, nil
+	case *gitlab.MergeRequest:
+		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -342,6 +329,8 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreatedAt
 	case *bitbucketserver.PullRequest:
 		return unixMilliToTime(int64(m.CreatedDate))
+	case *gitlab.MergeRequest:
+		return m.CreatedAt
 	default:
 		return time.Time{}
 	}
@@ -353,6 +342,8 @@ func (c *Changeset) Body() (string, error) {
 	case *github.PullRequest:
 		return m.Body, nil
 	case *bitbucketserver.PullRequest:
+		return m.Description, nil
+	case *gitlab.MergeRequest:
 		return m.Description, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -371,21 +362,32 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// state of a Changeset based on the metadata.
-// It does NOT reflect the final calculated state, use `ExternalState` instead.
-func (c *Changeset) state() (s ChangesetState, err error) {
+// externalState of a Changeset based on the metadata.
+// It does NOT reflect the final calculated externalState, use `ExternalState` instead.
+func (c *Changeset) externalState() (s ChangesetExternalState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
-		return ChangesetStateDeleted, nil
+		return ChangesetExternalStateDeleted, nil
 	}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		s = ChangesetState(m.State)
+		s = ChangesetExternalState(m.State)
 	case *bitbucketserver.PullRequest:
 		if m.State == "DECLINED" {
-			s = ChangesetStateClosed
+			s = ChangesetExternalStateClosed
 		} else {
-			s = ChangesetState(m.State)
+			s = ChangesetExternalState(m.State)
+		}
+	case *gitlab.MergeRequest:
+		switch m.State {
+		case gitlab.MergeRequestStateOpened:
+			s = ChangesetExternalStateOpen
+		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
+			s = ChangesetExternalStateClosed
+		case gitlab.MergeRequestStateMerged:
+			s = ChangesetExternalStateMerged
+		default:
+			return "", errors.Errorf("unknown merge request state: %s", m.State)
 		}
 	default:
 		return "", errors.New("unknown changeset type")
@@ -409,9 +411,44 @@ func (c *Changeset) URL() (s string, err error) {
 		}
 		selfLink := m.Links.Self[0]
 		return selfLink.Href, nil
+	case *gitlab.MergeRequest:
+		return m.WebURL, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
+}
+
+// Changesets is a slice of *Changesets.
+type Changesets []*Changeset
+
+// IDs returns the IDs of all changesets in the slice.
+func (cs Changesets) IDs() []int64 {
+	ids := make([]int64, len(cs))
+	for i, c := range cs {
+		ids[i] = c.ID
+	}
+	return ids
+}
+
+// IDs returns the RepoIDs of all changesets in the slice.
+func (cs Changesets) RepoIDs() []api.RepoID {
+	repoIDs := make([]api.RepoID, len(cs))
+	for i, c := range cs {
+		repoIDs[i] = c.RepoID
+	}
+	return repoIDs
+}
+
+// Filter returns a new Changesets slice in which changesets have been filtered
+// out for which the predicate didn't return true.
+func (cs Changesets) Filter(predicate func(*Changeset) bool) (filtered Changesets) {
+	for _, c := range cs {
+		if predicate(c) {
+			filtered = append(filtered, c)
+		}
+	}
+
+	return filtered
 }
 
 // Keyer represents items that return a unique key
@@ -436,6 +473,19 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					ev.Metadata = c
 					events = append(events, &ev)
 				}
+
+			case *github.ReviewRequestedEvent:
+				// If the reviewer of a ReviewRequestedEvent has been deleted,
+				// the fields are blank and we cannot match the event to an
+				// entry in the database and/or reliably use it, so we drop it.
+				if e.ReviewerDeleted() {
+					continue
+				}
+				ev.Key = e.Key()
+				ev.Kind = ChangesetEventKindFor(e)
+				ev.Metadata = e
+				events = append(events, &ev)
+
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
@@ -461,6 +511,28 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 			addEvent(s)
 		}
 
+	case *gitlab.MergeRequest:
+		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Pipelines))
+
+		for _, note := range m.Notes {
+			if review := note.ToReview(); review != nil {
+				events = append(events, &ChangesetEvent{
+					ChangesetID: c.ID,
+					Key:         review.(Keyer).Key(),
+					Kind:        ChangesetEventKindFor(review),
+					Metadata:    review,
+				})
+			}
+		}
+
+		for _, pipeline := range m.Pipelines {
+			events = append(events, &ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         pipeline.Key(),
+				Kind:        ChangesetEventKindFor(pipeline),
+				Metadata:    pipeline,
+			})
+		}
 	}
 	return events
 }
@@ -474,6 +546,8 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return m.HeadRefOid, nil
 	case *bitbucketserver.PullRequest:
 		return "", nil
+	case *gitlab.MergeRequest:
+		return m.DiffRefs.HeadSHA, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -487,6 +561,8 @@ func (c *Changeset) HeadRef() (string, error) {
 		return "refs/heads/" + m.HeadRefName, nil
 	case *bitbucketserver.PullRequest:
 		return m.FromRef.ID, nil
+	case *gitlab.MergeRequest:
+		return "refs/heads/" + m.SourceBranch, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -501,6 +577,8 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return m.BaseRefOid, nil
 	case *bitbucketserver.PullRequest:
 		return "", nil
+	case *gitlab.MergeRequest:
+		return m.DiffRefs.BaseSHA, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -514,8 +592,22 @@ func (c *Changeset) BaseRef() (string, error) {
 		return "refs/heads/" + m.BaseRefName, nil
 	case *bitbucketserver.PullRequest:
 		return m.ToRef.ID, nil
+	case *gitlab.MergeRequest:
+		return "refs/heads/" + m.TargetBranch, nil
 	default:
 		return "", errors.New("unknown changeset type")
+	}
+}
+
+// SupportsLabels returns whether the code host on which the changeset is
+// hosted supports labels and whether it's safe to call the
+// (*Changeset).Labels() method.
+func (c *Changeset) SupportsLabels() bool {
+	switch c.Metadata.(type) {
+	case *github.PullRequest, *gitlab.MergeRequest:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -531,9 +623,37 @@ func (c *Changeset) Labels() []ChangesetLabel {
 			}
 		}
 		return labels
+	case *gitlab.MergeRequest:
+		// Similarly to GitHub above, GitLab labels can have colors (foreground
+		// _and_ background, in fact) and descriptions. Unfortunately, the REST
+		// API only returns this level of detail on the list endpoint (with an
+		// option added in GitLab 12.7), and not when retrieving individual MRs.
+		//
+		// When our minimum GitLab version is 12.0, we should be able to switch
+		// to retrieving MRs via GraphQL, and then we can start retrieving
+		// richer label data.
+		labels := make([]ChangesetLabel, len(m.Labels))
+		for i, l := range m.Labels {
+			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
+		}
+		return labels
 	default:
 		return []ChangesetLabel{}
 	}
+}
+
+type ChangesetSyncState struct {
+	BaseRefOid string
+	HeadRefOid string
+
+	// This is essentially the result of c.ExternalState != CampaignStateOpen
+	// the last time a sync occured. We use this to short circuit computing the
+	// sync state if the changeset remains closed.
+	IsComplete bool
+}
+
+func (state *ChangesetSyncState) Equals(old *ChangesetSyncState) bool {
+	return state.BaseRefOid == old.BaseRefOid && state.HeadRefOid == old.HeadRefOid && state.IsComplete == old.IsComplete
 }
 
 // A ChangesetEvent is an event that happened in the lifetime
@@ -613,6 +733,28 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 			return "", errors.New("activity user is blank")
 		}
 		return username, nil
+
+	case *bitbucketserver.ParticipantStatusEvent:
+		username := meta.User.Name
+		if username == "" {
+			return "", errors.New("activity user is blank")
+		}
+		return username, nil
+
+	case *gitlab.ReviewApproved:
+		username := meta.Author.Username
+		if username == "" {
+			return "", errors.New("review user is blank")
+		}
+		return username, nil
+
+	case *gitlab.ReviewUnapproved:
+		username := meta.Author.Username
+		if username == "" {
+			return "", errors.New("review user is blank")
+		}
+		return username, nil
+
 	default:
 		return "", nil
 	}
@@ -621,7 +763,8 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 // ReviewState returns the review state of the ChangesetEvent if it is a review event.
 func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	switch e.Kind {
-	case ChangesetEventKindBitbucketServerApproved:
+	case ChangesetEventKindBitbucketServerApproved,
+		ChangesetEventKindGitLabApproved:
 		return ChangesetReviewStateApproved, nil
 
 	// BitbucketServer's "REVIEWED" activity is created when someone clicks
@@ -644,7 +787,9 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		return s, nil
 
 	case ChangesetEventKindGitHubReviewDismissed,
-		ChangesetEventKindBitbucketServerUnapproved:
+		ChangesetEventKindBitbucketServerUnapproved,
+		ChangesetEventKindBitbucketServerDismissed,
+		ChangesetEventKindGitLabUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -702,8 +847,14 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		return e.ReceivedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
+	case *bitbucketserver.ParticipantStatusEvent:
+		t = unixMilliToTime(int64(e.CreatedDate))
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(int64(e.Status.DateAdded))
+	case *gitlab.ReviewApproved:
+		return e.CreatedAt
+	case *gitlab.ReviewUnapproved:
+		return e.CreatedAt
 	}
 
 	return t
@@ -1006,6 +1157,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.Commit = o.Commit
 		}
 
+	case *bitbucketserver.ParticipantStatusEvent:
+		o := o.Metadata.(*bitbucketserver.ParticipantStatusEvent)
+
+		if e.CreatedDate == 0 {
+			e.CreatedDate = o.CreatedDate
+		}
+
+		if e.Action == "" {
+			e.Action = o.Action
+		}
+
+		if e.User == (bitbucketserver.User{}) {
+			e.User = o.User
+		}
+
 	case *bitbucketserver.CommitStatus:
 		o := o.Metadata.(*bitbucketserver.CommitStatus)
 		// We always get the full event, so safe to replace it
@@ -1024,6 +1190,16 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.Conclusion = o.Conclusion
 		}
 		e.CheckRuns = o.CheckRuns
+
+	case *gitlab.ReviewApproved:
+		o := o.Metadata.(*gitlab.ReviewApproved)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlab.ReviewUnapproved:
+		o := o.Metadata.(*gitlab.ReviewUnapproved)
+		// We always get the full event, so safe to replace it
+		*e = *o
 
 	default:
 		panic(errors.Errorf("unknown changeset event metadata %T", e))
@@ -1154,8 +1330,16 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindCheckRun
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
+	case *bitbucketserver.ParticipantStatusEvent:
+		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
 	case *bitbucketserver.CommitStatus:
 		return ChangesetEventKindBitbucketServerCommitStatus
+	case *gitlab.Pipeline:
+		return ChangesetEventKindGitLabPipeline
+	case *gitlab.ReviewApproved:
+		return ChangesetEventKindGitLabApproved
+	case *gitlab.ReviewUnapproved:
+		return ChangesetEventKindGitLabUnapproved
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -1169,6 +1353,8 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		switch k {
 		case ChangesetEventKindBitbucketServerCommitStatus:
 			return new(bitbucketserver.CommitStatus), nil
+		case ChangesetEventKindBitbucketServerDismissed:
+			return new(bitbucketserver.ParticipantStatusEvent), nil
 		default:
 			return new(bitbucketserver.Activity), nil
 		}
@@ -1211,6 +1397,15 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		case ChangesetEventKindCheckRun:
 			return new(github.CheckRun), nil
 		}
+	case strings.HasPrefix(string(k), "gitlab"):
+		switch k {
+		case ChangesetEventKindGitLabApproved:
+			return new(gitlab.ReviewApproved), nil
+		case ChangesetEventKindGitLabPipeline:
+			return new(gitlab.Pipeline), nil
+		case ChangesetEventKindGitLabUnapproved:
+			return new(gitlab.ReviewUnapproved), nil
+		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
 }
@@ -1252,6 +1447,14 @@ const (
 	ChangesetEventKindBitbucketServerCommented    ChangesetEventKind = "bitbucketserver:commented"
 	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
 	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
+
+	// BitbucketServer calls this an Unapprove event but we've called it Dismissed to more
+	// clearly convey that it only occurs when a request for changes has been dismissed.
+	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
+
+	ChangesetEventKindGitLabApproved   ChangesetEventKind = "gitlab:approved"
+	ChangesetEventKindGitLabPipeline   ChangesetEventKind = "gitlab:pipeline"
+	ChangesetEventKindGitLabUnapproved ChangesetEventKind = "gitlab:unapproved"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset
@@ -1263,10 +1466,329 @@ type ChangesetSyncData struct {
 	LatestEvent time.Time
 	// ExternalUpdatedAt is the time the external changeset last changed
 	ExternalUpdatedAt time.Time
-	// ExternalServiceID is the ID of the external service to which the changeset belongs
-	ExternalServiceIDs []int64
+	// RepoExternalServiceID is the external_service_id in the repo table, usually
+	// represented by the code host URL
+	RepoExternalServiceID string
+}
+
+func MarshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID("Campaign", id)
+}
+
+func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
 }
 
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
+}
+
+// ****************************
+// TODO: NEW CAMPAIGNS WORKFLOW BELOW
+// ****************************
+
+func NewCampaignSpecFromRaw(rawSpec string) (*CampaignSpec, error) {
+	c := &CampaignSpec{RawSpec: rawSpec}
+
+	return c, c.UnmarshalValidate()
+}
+
+type CampaignSpec struct {
+	ID     int64
+	RandID string
+
+	RawSpec string
+	Spec    CampaignSpecFields
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	UserID int32
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a CampaignSpec.
+func (cs *CampaignSpec) Clone() *CampaignSpec {
+	cc := *cs
+	return &cc
+}
+
+// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
+// the CampaignSpec schema and does additional semantic validation.
+func (cs *CampaignSpec) UnmarshalValidate() error {
+	return unmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
+}
+
+// CampaignSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
+// yet.
+const CampaignSpecTTL = 7 * 24 * time.Hour
+
+// ExpiresAt returns the time when the CampaignSpec will be deleted if not
+// applied.
+func (cs *CampaignSpec) ExpiresAt() time.Time {
+	return cs.CreatedAt.Add(CampaignSpecTTL)
+}
+
+type CampaignSpecFields struct {
+	Name              string             `json:"name"`
+	Description       string             `json:"description"`
+	On                []CampaignSpecOn   `json:"on"`
+	Steps             []CampaignSpecStep `json:"steps"`
+	ChangesetTemplate ChangesetTemplate  `json:"changesetTemplate"`
+}
+
+type CampaignSpecOn struct {
+	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty"`
+	Repository                string `json:"repository,omitempty"`
+}
+
+type CampaignSpecStep struct {
+	Run       string            `json:"run"`
+	Container string            `json:"container"`
+	Env       map[string]string `json:"env"`
+}
+
+type ChangesetTemplate struct {
+	Title     string         `json:"title"`
+	Body      string         `json:"body"`
+	Branch    string         `json:"branch"`
+	Commit    CommitTemplate `json:"commit"`
+	Published bool           `json:"published"`
+}
+
+type CommitTemplate struct {
+	Message string `json:"message"`
+}
+
+func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
+	c := &ChangesetSpec{RawSpec: rawSpec}
+	err := c.UnmarshalValidate()
+	if err != nil {
+		return nil, err
+	}
+
+	c.computeDiffStat()
+
+	return c, nil
+}
+
+type ChangesetSpec struct {
+	ID     int64
+	RandID string
+
+	RawSpec string
+	// TODO(mrnugget): should we rename the "spec" column to "description"?
+	Spec ChangesetSpecDescription
+
+	DiffStatAdded   int32
+	DiffStatChanged int32
+	DiffStatDeleted int32
+
+	CampaignSpecID int64
+	RepoID         api.RepoID
+	UserID         int32
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a ChangesetSpec.
+func (cs *ChangesetSpec) Clone() *ChangesetSpec {
+	cc := *cs
+	return &cc
+}
+
+// computeDiffStat parses the Diff of the ChangesetSpecDescription and sets the
+// diff stat fields that can be retrieved with DiffStat().
+// If the Diff is invalid or parsing failed, an error is returned.
+func (cs *ChangesetSpec) computeDiffStat() error {
+	if cs.Spec.IsExisting() {
+		return nil
+	}
+
+	d, err := cs.Spec.Diff()
+	if err != nil {
+		return err
+	}
+
+	stats := diff.Stat{}
+	reader := diff.NewMultiFileDiffReader(strings.NewReader(d))
+	for {
+		fileDiff, err := reader.ReadFile()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		stat := fileDiff.Stat()
+		stats.Added += stat.Added
+		stats.Deleted += stat.Deleted
+		stats.Changed += stat.Changed
+	}
+
+	cs.DiffStatAdded = stats.Added
+	cs.DiffStatDeleted = stats.Deleted
+	cs.DiffStatChanged = stats.Changed
+
+	return nil
+}
+
+// DiffStat returns a *diff.Stat.
+func (cs *ChangesetSpec) DiffStat() diff.Stat {
+	return diff.Stat{
+		Added:   cs.DiffStatAdded,
+		Deleted: cs.DiffStatDeleted,
+		Changed: cs.DiffStatChanged,
+	}
+}
+
+// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
+// the ChangesetSpec schema and does additional semantic validation.
+func (cs *ChangesetSpec) UnmarshalValidate() error {
+	err := unmarshalValidate(schema.ChangesetSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
+	if err != nil {
+		return err
+	}
+
+	headRepo := cs.Spec.HeadRepository
+	baseRepo := cs.Spec.BaseRepository
+	if headRepo != "" && baseRepo != "" && headRepo != baseRepo {
+		return ErrHeadBaseMismatch
+	}
+
+	return nil
+}
+
+// ChangesetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
+// attached to a CampaignSpec.
+// It's lower than CampaignSpecTTL because ChangesetSpecs should be attached to
+// a CampaignSpec immediately after having been created, whereas a CampaignSpec
+// might take a while to be complete and might also go through a lengthy review
+// phase.
+const ChangesetSpecTTL = 2 * 24 * time.Hour
+
+// ExpiresAt returns the time when the ChangesetSpec will be deleted if not
+// attached to a CampaignSpec.
+func (cs *ChangesetSpec) ExpiresAt() time.Time {
+	return cs.CreatedAt.Add(ChangesetSpecTTL)
+}
+
+// ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if
+// the head and base repositories do not match (a case which we do not support
+// yet).
+var ErrHeadBaseMismatch = errors.New("headRepository does not match baseRepository")
+
+type ChangesetSpecDescription struct {
+	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
+
+	// If this is not empty, the description is a reference to an existing
+	// changeset and the rest of these fields are empty.
+	// TODO(mrnugget): Id or ID, that is the question?
+	ExternalID string `json:"externalId,omitempty"`
+
+	BaseRev string `json:"baseRev,omitempty"`
+	BaseRef string `json:"baseRef,omitempty"`
+
+	HeadRepository graphql.ID `json:"headRepository,omitempty"`
+	HeadRef        string     `json:"headRef,omitempty"`
+
+	Title string `json:"title,omitempty"`
+	Body  string `json:"body,omitempty"`
+
+	Commits []GitCommitDescription `json:"commits,omitempty"`
+
+	Published bool `json:"published,omitempty"`
+}
+
+// Type returns the ChangesetSpecDescriptionType of the ChangesetSpecDescription.
+func (d *ChangesetSpecDescription) Type() ChangesetSpecDescriptionType {
+	if d.ExternalID != "" {
+		return ChangesetSpecDescriptionTypeExisting
+	}
+	return ChangesetSpecDescriptionTypeBranch
+}
+
+// IsExisting returns whether the description is of type
+// ChangesetSpecDescriptionTypeExisting.
+func (d *ChangesetSpecDescription) IsExisting() bool {
+	return d.Type() == ChangesetSpecDescriptionTypeExisting
+}
+
+// IsBranch returns whether the description is of type
+// ChangesetSpecDescriptionTypeBranch.
+func (d *ChangesetSpecDescription) IsBranch() bool {
+	return d.Type() == ChangesetSpecDescriptionTypeBranch
+}
+
+// ChangesetSpecDescriptionType tells the consumer what the type of a
+// ChangesetSpecDescription is without having to look into the description.
+// Useful in the GraphQL when a HiddenChangesetSpec is returned.
+type ChangesetSpecDescriptionType string
+
+// Valid ChangesetSpecDescriptionTypes kinds
+const (
+	ChangesetSpecDescriptionTypeExisting ChangesetSpecDescriptionType = "EXISTING"
+	ChangesetSpecDescriptionTypeBranch   ChangesetSpecDescriptionType = "BRANCH"
+)
+
+// ErrNoCommits is returned by (*ChangesetSpecDescription).Diff if the
+// description doesn't have any commits descriptions.
+var ErrNoCommits = errors.New("changeset description doesn't contain commit descriptions")
+
+// Diff returns the Diff of the first GitCommitDescription in Commits. If the
+// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+//
+// We currently only support a single commit in Commits. Once we support more,
+// this method will need to be revisited.
+func (d *ChangesetSpecDescription) Diff() (string, error) {
+	if len(d.Commits) == 0 {
+		return "", ErrNoCommits
+	}
+	return d.Commits[0].Diff, nil
+}
+
+type GitCommitDescription struct {
+	Message string `json:"message,omitempty"`
+	Diff    string `json:"diff,omitempty"`
+}
+
+// unmarshalValidate validates the input, which can be YAML or JSON, against
+// the provided JSON schema. If the validation is successful is unmarshals the
+// validated input into the target.
+func unmarshalValidate(schema string, input []byte, target interface{}) error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema))
+	if err != nil {
+		return errors.Wrap(err, "failed to compile JSON schema")
+	}
+
+	normalized, err := yaml.YAMLToJSONCustom(input, yamlv3.Unmarshal)
+	if err != nil {
+		return errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate input against schema")
+	}
+
+	var errs *multierror.Error
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+
+	if err := json.Unmarshal(normalized, target); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	return errs.ErrorOrNil()
 }

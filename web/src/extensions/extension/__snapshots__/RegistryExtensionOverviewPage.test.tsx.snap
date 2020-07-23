@@ -124,7 +124,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           <div
             className="d-flex"
           >
-            <GithubCircleIcon
+            <GithubIcon
               className="icon-inline mr-1"
             />
             <a

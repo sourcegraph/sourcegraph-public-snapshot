@@ -10,7 +10,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { isErrorLike, asError } from '../util/errors'
 import { renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
 import { BadgeAttachment } from '../components/BadgeAttachment'
 import { ThemeProps } from '../theme'
@@ -22,14 +22,12 @@ const LOADING = 'loading' as const
 const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
     handler(toNativeEvent(event))
 
-export type HoverContext = RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-
-export type HoverData<A extends string> = HoverMerged & HoverAlerts<A>
+export type HoverContext = RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
 export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
-    closeButtonClassName?: string
+    iconButtonClassName?: string
 
     iconClassName?: string
 
@@ -40,30 +38,8 @@ export interface HoverOverlayClassProps {
     errorAlertClassName?: string
 }
 
-/**
- * A dismissable alert to be displayed in the hover overlay.
- */
-export interface HoverAlert<T extends string> {
-    /**
-     * The type of the alert, eg. `'nativeTooltips'`
-     */
-    type: T
-    /**
-     * The content of the alert
-     */
-    content: React.ReactElement
-}
-
-/**
- * One or more dismissable that should be displayed before the hover content.
- * Alerts are only displayed in a non-empty hover.
- */
-export interface HoverAlerts<A extends string> {
-    alerts?: HoverAlert<A>[]
-}
-
-export interface HoverOverlayProps<A extends string>
-    extends GenericHoverOverlayProps<HoverContext, HoverData<A>, ActionItemAction>,
+export interface HoverOverlayProps
+    extends GenericHoverOverlayProps<HoverContext, HoverMerged, ActionItemAction>,
         ActionItemComponentProps,
         HoverOverlayClassProps,
         TelemetryProps,
@@ -75,26 +51,26 @@ export interface HoverOverlayProps<A extends string>
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
     /** Called when an alert is dismissed, with the type of the dismissed alert. */
-    onAlertDismissed?: (alertType: A) => void
+    onAlertDismissed?: (alertType: string) => void
 }
 
 interface HoverOverlayState {
     showBadges: boolean
 }
 
-const isEmptyHover = <A extends string>({
+const isEmptyHover = ({
     hoveredToken,
     hoverOrError,
     actionsOrError,
-}: Pick<HoverOverlayProps<A>, 'hoveredToken' | 'hoverOrError' | 'actionsOrError'>): boolean =>
+}: Pick<HoverOverlayProps, 'hoveredToken' | 'hoverOrError' | 'actionsOrError'>): boolean =>
     !hoveredToken ||
     ((!hoverOrError || hoverOrError === LOADING || isErrorLike(hoverOrError)) &&
         (!actionsOrError || actionsOrError === LOADING || isErrorLike(actionsOrError)))
 
-export class HoverOverlay<A extends string> extends React.PureComponent<HoverOverlayProps<A>, HoverOverlayState> {
+export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOverlayState> {
     private subscription = new Subscription()
 
-    constructor(props: HoverOverlayProps<A>) {
+    constructor(props: HoverOverlayProps) {
         super(props)
         this.state = {
             showBadges: false,
@@ -105,13 +81,13 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         this.logTelemetryEvent()
 
         this.subscription.add(
-            this.props.platformContext.settings.subscribe(s => {
-                if (s.final && !isErrorLike(s.final)) {
+            this.props.platformContext.settings.subscribe(settingsCascadeOrError => {
+                if (settingsCascadeOrError.final && !isErrorLike(settingsCascadeOrError.final)) {
                     // Default to true if experimentalFeatures or showBadgeAttachments are not set
                     this.setState({
                         showBadges:
-                            !s.final.experimentalFeatures ||
-                            s.final.experimentalFeatures.showBadgeAttachments !== false,
+                            !settingsCascadeOrError.final.experimentalFeatures ||
+                            settingsCascadeOrError.final.experimentalFeatures.showBadgeAttachments !== false,
                     })
                 } else {
                     this.setState({ showBadges: false })
@@ -120,12 +96,12 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         )
     }
 
-    public componentDidUpdate(prevProps: HoverOverlayProps<A>): void {
+    public componentDidUpdate(previousProps: HoverOverlayProps): void {
         // Log a telemetry event for this hover being displayed, but only do it once per position and when it is
         // non-empty.
         if (
             !isEmptyHover(this.props) &&
-            (!isEqual(this.props.hoveredToken, prevProps.hoveredToken) || isEmptyHover(prevProps))
+            (!isEqual(this.props.hoveredToken, previousProps.hoveredToken) || isEmptyHover(previousProps))
         ) {
             this.logTelemetryEvent()
         }
@@ -160,8 +136,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                         ? {
                               opacity: 1,
                               visibility: 'visible',
-                              left: overlayPosition.left + 'px',
-                              top: overlayPosition.top + 'px',
+                              left: `${overlayPosition.left}px`,
+                              top: `${overlayPosition.top}px`,
                           }
                         : {
                               opacity: 0,
@@ -171,101 +147,118 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                 className={classNames('hover-overlay', className)}
                 ref={hoverRef}
             >
-                {showCloseButton && (
-                    <button
-                        type="button"
-                        className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
-                        onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
-                    >
-                        <CloseIcon className="icon-inline" />
-                    </button>
-                )}
-                <div className="hover-overlay__contents">
+                <div className={classNames('hover-overlay__contents')}>
+                    {showCloseButton && (
+                        <button
+                            type="button"
+                            className={classNames(
+                                'hover-overlay__close-button',
+                                this.props.iconButtonClassName,
+                                hoverOrError === LOADING && 'hover-overlay__close-button--loading'
+                            )}
+                            onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
+                        >
+                            <CloseIcon className={this.props.iconClassName} />
+                        </button>
+                    )}
                     {hoverOrError === LOADING ? (
-                        <div className="hover-overlay__row hover-overlay__loader-row">
-                            <LoadingSpinner className="icon-inline" />
+                        <div className="hover-overlay__loader-row">
+                            <LoadingSpinner className={this.props.iconClassName} />
                         </div>
                     ) : isErrorLike(hoverOrError) ? (
-                        <div
-                            className={classNames(
-                                'hover-overlay__row',
-                                'hover-overlay__hover-error',
-                                this.props.errorAlertClassName
-                            )}
-                        >
+                        <div className={classNames('hover-overlay__hover-error', this.props.errorAlertClassName)}>
                             {upperFirst(hoverOrError.message)}
                         </div>
+                    ) : hoverOrError === null ? (
+                        // Show some content to give the close button space
+                        // and communicate to the user we couldn't find a hover.
+                        <em>No hover information available.</em>
                     ) : (
-                        hoverOrError?.contents.map((content, i) => {
+                        hoverOrError?.contents.map((content, index) => {
                             if (content.kind === 'markdown') {
                                 try {
-                                    // Offset first badge when the close button is shown to avoid conflict.
-                                    const offsetBadge = showCloseButton && i === 0
                                     return (
-                                        <div className="hover-overlay__row e2e-tooltip-badged-content" key={i}>
-                                            {'badge' in content && content.badge && this.state.showBadges && (
-                                                <div
-                                                    className={classNames(
-                                                        'hover-overlay__badge',
-                                                        'e2e-hover-badge',
-                                                        offsetBadge && 'hover-overlay__badge--offset'
-                                                    )}
-                                                >
-                                                    <BadgeAttachment
-                                                        attachment={content.badge}
-                                                        isLightTheme={this.props.isLightTheme}
-                                                    />
-                                                </div>
+                                        <React.Fragment key={index}>
+                                            {index !== 0 && <hr />}
+
+                                            {content.badge && this.state.showBadges && (
+                                                <BadgeAttachment
+                                                    className="hover-overlay__badge test-hover-badge"
+                                                    iconClassName={this.props.iconClassName}
+                                                    iconButtonClassName={this.props.iconButtonClassName}
+                                                    attachment={content.badge}
+                                                    isLightTheme={this.props.isLightTheme}
+                                                />
                                             )}
 
-                                            <div
-                                                className="hover-overlay__content e2e-tooltip-content"
+                                            <span
+                                                className="hover-overlay__content test-tooltip-content"
                                                 dangerouslySetInnerHTML={{
                                                     __html: renderMarkdown(content.value),
                                                 }}
                                             />
-                                        </div>
+                                        </React.Fragment>
                                     )
-                                } catch (err) {
+                                } catch (error) {
                                     return (
-                                        <div
-                                            className={classNames('hover-overlay__row', this.props.errorAlertClassName)}
-                                            key={i}
-                                        >
-                                            {upperFirst(asError(err).message)}
+                                        <div className={classNames(this.props.errorAlertClassName)} key={index}>
+                                            {upperFirst(asError(error).message)}
                                         </div>
                                     )
                                 }
                             }
                             return (
-                                <div className="hover-overlay__content hover-overlay__row" key={i}>
+                                <span className="hover-overlay__content" key={index}>
                                     {content.value}
-                                </div>
+                                </span>
                             )
                         })
                     )}
                 </div>
                 {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
                     <div className="hover-overlay__alerts">
-                        {hoverOrError.alerts.map(({ content, type }) => (
+                        {hoverOrError.alerts.map(({ summary, badge, type }, index) => (
                             <div
-                                className={classNames(
-                                    'hover-overlay__row',
-                                    'hover-overlay__alert',
-                                    this.props.infoAlertClassName
-                                )}
-                                key={type}
+                                className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
+                                key={index}
                             >
-                                <div className="hover-overlay__alert-content">
-                                    <small>{content}</small>
-                                    <a
-                                        className="hover-overlay__alert-close"
-                                        href=""
-                                        onClick={this.onAlertDismissedCallback(type)}
-                                    >
-                                        <small>Dismiss</small>
-                                    </a>
-                                </div>
+                                {/* Show badge in the top-right if there is no "Dismiss" action */}
+                                {badge && !type && (
+                                    <BadgeAttachment
+                                        className="hover-overlay__badge test-hover-badge"
+                                        iconClassName={this.props.iconClassName}
+                                        iconButtonClassName={this.props.iconButtonClassName}
+                                        attachment={badge}
+                                        isLightTheme={this.props.isLightTheme}
+                                    />
+                                )}
+
+                                {summary.kind === 'plaintext' ? (
+                                    <span className="hover-overlay__content">{summary.value}</span>
+                                ) : (
+                                    <span
+                                        className="hover-overlay__content"
+                                        dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.value) }}
+                                    />
+                                )}
+
+                                {/* Show badge and "Dismiss" in the bottom-right if there is a dismiss button */}
+                                {type && (
+                                    <div className="hover-overlay__alert-actions">
+                                        {badge && (
+                                            <BadgeAttachment
+                                                className="hover-overlay__badge test-hover-badge"
+                                                iconClassName={this.props.iconClassName}
+                                                iconButtonClassName={this.props.iconButtonClassName}
+                                                attachment={badge}
+                                                isLightTheme={this.props.isLightTheme}
+                                            />
+                                        )}
+                                        <a href="" onClick={this.onAlertDismissedCallback(type)}>
+                                            <small>Dismiss</small>
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -275,15 +268,15 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                     actionsOrError !== LOADING &&
                     !isErrorLike(actionsOrError) &&
                     actionsOrError.length > 0 && (
-                        <div className="hover-overlay__actions hover-overlay__row">
-                            {actionsOrError.map((action, i) => (
+                        <div className="hover-overlay__actions">
+                            {actionsOrError.map((action, index) => (
                                 <ActionItem
-                                    key={i}
+                                    key={index}
                                     {...action}
                                     className={classNames(
                                         'hover-overlay__action',
                                         actionItemClassName,
-                                        `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                        `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
                                     )}
                                     iconClassName={this.props.iconClassName}
                                     pressedClassName={actionItemPressedClassName}
@@ -303,9 +296,9 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         )
     }
 
-    private onAlertDismissedCallback(alertType: A): (e: React.MouseEvent<HTMLAnchorElement>) => void {
-        return e => {
-            e.preventDefault()
+    private onAlertDismissedCallback(alertType: string): (e: React.MouseEvent<HTMLAnchorElement>) => void {
+        return event => {
+            event.preventDefault()
             if (this.props.onAlertDismissed) {
                 this.props.onAlertDismissed(alertType)
             }

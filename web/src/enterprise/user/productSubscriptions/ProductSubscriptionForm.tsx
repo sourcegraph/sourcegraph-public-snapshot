@@ -9,7 +9,10 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { Form } from '../../../components/Form'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
-import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
+import {
+    ProductSubscriptionUserCountFormControl,
+    MIN_USER_COUNT,
+} from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
 import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
@@ -19,6 +22,12 @@ import { ErrorAlert } from '../../../components/alerts'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
 
+export enum PaymentValidity {
+    Valid = 'Valid',
+    Invalid = 'Invalid',
+    NoPaymentRequired = 'NoPaymentRequired',
+}
+
 /**
  * The form data that is submitted by the ProductSubscriptionForm component.
  */
@@ -26,7 +35,7 @@ export interface ProductSubscriptionFormData {
     /** The customer account (user) owning the product subscription. */
     accountID: GQL.ID
     productSubscription: GQL.IProductSubscriptionInput
-    paymentToken: string
+    paymentToken: string | null
 }
 
 const LOADING = 'loading' as const
@@ -61,13 +70,19 @@ interface Props extends ThemeProps {
     /** The text for the form's primary button. */
     primaryButtonText: string
 
+    /**
+     * The text for the form's primary button when no payment is required. Defaults to
+     * `primaryButtonText` if not set.
+     */
+    primaryButtonTextNoPaymentRequired?: string
+
     /** A fragment to render below the form's primary button. */
     afterPrimaryButton?: React.ReactFragment
 
     history: H.History
 }
 
-const DEFAULT_USER_COUNT = 1
+const DEFAULT_USER_COUNT = MIN_USER_COUNT
 
 /**
  * Displays a form for a product subscription.
@@ -79,6 +94,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
     initialValue,
     submissionState,
     primaryButtonText,
+    primaryButtonTextNoPaymentRequired = primaryButtonText,
     afterPrimaryButton,
     isLightTheme,
     stripe,
@@ -94,8 +110,8 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
     /** The user count input by the user. */
     const [userCount, setUserCount] = useState<number | null>(initialValue?.userCount || DEFAULT_USER_COUNT)
 
-    /** Whether the payment and billing information is valid. */
-    const [paymentValidity, setPaymentValidity] = useState(false)
+    /** The validity of the payment and billing information. */
+    const [paymentValidity, setPaymentValidity] = useState<PaymentValidity>(PaymentValidity.Invalid)
 
     // When Props#initialValue changes, clobber our values. It's unlikely that this prop would
     // change without the component being unmounted, but handle this case for completeness
@@ -115,13 +131,13 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                 submits.pipe(
                     switchMap(() =>
                         // TODO(sqs): store name, address, company, etc., in token
-                        from(stripe.createToken()).pipe(
+                        (paymentValidity !== PaymentValidity.NoPaymentRequired
+                            ? from(stripe.createToken())
+                            : of({ token: undefined, error: undefined })
+                        ).pipe(
                             switchMap(({ token, error }) => {
                                 if (error) {
                                     return throwError(error)
-                                }
-                                if (!token) {
-                                    return throwError(new Error('no payment token'))
                                 }
                                 if (!accountID) {
                                     return throwError(new Error('no account (unauthenticated user)'))
@@ -132,7 +148,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                                 if (userCount === null) {
                                     return throwError(new Error('invalid user count'))
                                 }
-                                if (!paymentValidity) {
+                                if (!token && paymentValidity !== PaymentValidity.NoPaymentRequired) {
                                     return throwError(new Error('invalid payment and billing'))
                                 }
                                 parentOnSubmit({
@@ -141,11 +157,11 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                                         billingPlanID,
                                         userCount,
                                     },
-                                    paymentToken: token.id,
+                                    paymentToken: token ? token.id : null,
                                 })
                                 return of(undefined)
                             }),
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
@@ -154,8 +170,8 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
         )
     )
     const onSubmit = useCallback<React.FormEventHandler>(
-        e => {
-            e.preventDefault()
+        event => {
+            event.preventDefault()
             nextSubmit()
         },
         [nextSubmit]
@@ -164,7 +180,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
     const disableForm = Boolean(
         submissionState === LOADING ||
             userCount === null ||
-            !paymentValidity ||
+            paymentValidity === PaymentValidity.Invalid ||
             paymentToken === LOADING ||
             (paymentToken && !isErrorLike(paymentToken))
     )
@@ -220,7 +236,12 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                                 </small>
                             </div>
                         )}
-                        <PaymentTokenFormControl disabled={disableForm || !accountID} isLightTheme={isLightTheme} />
+                        <PaymentTokenFormControl
+                            disabled={
+                                disableForm || !accountID || paymentValidity === PaymentValidity.NoPaymentRequired
+                            }
+                            isLightTheme={isLightTheme}
+                        />
                         <div className="form-group mt-3">
                             <button
                                 type="submit"
@@ -233,8 +254,10 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                                     <>
                                         <LoadingSpinner className="icon-inline mr-2" /> Processing...
                                     </>
-                                ) : (
+                                ) : paymentValidity !== PaymentValidity.NoPaymentRequired ? (
                                     primaryButtonText
+                                ) : (
+                                    primaryButtonTextNoPaymentRequired
                                 )}
                             </button>
                             {afterPrimaryButton}

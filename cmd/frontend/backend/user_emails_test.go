@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Test_checkEmailAbuse(t *testing.T) {
+func TestCheckEmailAbuse(t *testing.T) {
 	ctx := testContext()
 
 	cfg := conf.Get()

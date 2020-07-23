@@ -20,7 +20,7 @@ import PillarIcon from 'mdi-react/PillarIcon'
 import PoundIcon from 'mdi-react/PoundIcon'
 import ShapeIcon from 'mdi-react/ShapeIcon'
 import SitemapIcon from 'mdi-react/SitemapIcon'
-import TextboxIcon from 'mdi-react/TextboxIcon'
+import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
@@ -47,7 +47,7 @@ const getSymbolIconComponent = (kind: GQL.SymbolKind): MdiReactIconComponentType
         case 'PROPERTY':
             return WrenchIcon
         case 'FIELD':
-            return TextboxIcon
+            return TextBoxIcon
         case 'CONSTRUCTOR':
             return CubeOutlineIcon
         case 'ENUM':

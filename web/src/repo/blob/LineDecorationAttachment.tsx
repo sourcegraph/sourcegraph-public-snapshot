@@ -26,19 +26,19 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
     private portal: Element | null = null
 
     public UNSAFE_componentWillMount(): void {
-        this.portal = document.getElementById(this.props.portalID)
+        this.portal = document.querySelector(`#${this.props.portalID}`)
     }
 
     public UNSAFE_componentWillReceiveProps(nextProps: Readonly<LineDecorationAttachmentProps>): void {
         if (
             this.props.repoName !== nextProps.repoName ||
-            this.props.rev !== nextProps.rev ||
+            this.props.revision !== nextProps.revision ||
             this.props.filePath !== nextProps.filePath ||
             this.props.line !== nextProps.line ||
             this.props.portalID !== nextProps.portalID ||
             this.props.attachment !== nextProps.attachment
         ) {
-            this.portal = document.getElementById(nextProps.portalID)
+            this.portal = document.querySelector(`#${nextProps.portalID}`)
         }
     }
 

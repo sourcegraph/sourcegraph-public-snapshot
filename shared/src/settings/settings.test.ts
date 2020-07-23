@@ -84,6 +84,15 @@ describe('mergeSettings', () => {
         ).toEqual({
             extensions: { 'sourcegraph/cpp': false, 'sourcegraph/go': false, 'sourcegraph/typescript': true },
         }))
+    test('merges experimentalFeatures property', () =>
+        expect(
+            mergeSettings<Settings & { experimentalFeatures: { a?: boolean; b?: boolean; c?: boolean } }>([
+                { experimentalFeatures: { a: true, b: true } },
+                { experimentalFeatures: { b: false, c: true } },
+            ])
+        ).toEqual({
+            experimentalFeatures: { a: true, b: false, c: true },
+        }))
     test('merges search.scopes property', () =>
         expect(
             mergeSettings<

@@ -24,9 +24,9 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                         <div>
                             <h3>Create and track changesets</h3>
                             <p className="mb-0">
-                                Use the src CLI to make code changes across multiple repositories. Then turn the
-                                resulting set of patches into changesets (pull requests) on code hosts by creating a
-                                campaign. Track the progress of the changesets in the newly created campaign.
+                                Change code in multiple repositories. Turn the resulting set of patches into changesets
+                                (pull requests) on code hosts by creating a campaign. Track the progress of the
+                                changesets in the newly created campaign.
                             </p>
                         </div>
                     </div>
@@ -41,7 +41,7 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                         <div>
                             <h3>Track existing changesets</h3>
                             <p className="mb-0">
-                                Track a collection of already created changesets by adding them to a campaign. The
+                                Track a collection of already created changesets by collecting them in a campaign. The
                                 burndown chart provides an overview of progress, and filters help surface which
                                 changesets need action.
                             </p>

@@ -13,17 +13,9 @@ import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
-import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
 import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
 import * as H from 'history'
-
-// This module is not in @types/semver yet. We can't use the top-level semver module because it uses
-// dynamic requires, which Webpack complains about.
-//
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
-import semverParse from 'semver/functions/parse'
 
 interface Props extends SettingsCascadeProps {
     history: H.History
@@ -52,27 +44,12 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="global-alerts e2e-global-alert">
+            <div className="global-alerts test-global-alert">
                 {this.state.siteFlags && (
                     <>
                         {this.state.siteFlags.needsRepositoryConfiguration && (
                             <NeedsRepositoryConfigurationAlert className="global-alerts__alert" />
                         )}
-                        {this.props.isSiteAdmin &&
-                            this.state.siteFlags.updateCheck &&
-                            !this.state.siteFlags.updateCheck.errorMessage &&
-                            this.state.siteFlags.updateCheck.updateVersionAvailable &&
-                            ((isSettingsValid<Settings>(this.props.settingsCascade) &&
-                                this.props.settingsCascade.final['alerts.showPatchUpdates'] !== false) ||
-                                isMinorUpdateAvailable(
-                                    this.state.siteFlags.productVersion,
-                                    this.state.siteFlags.updateCheck.updateVersionAvailable
-                                )) && (
-                                <UpdateAvailableAlert
-                                    className="global-alerts__alert"
-                                    updateVersionAvailable={this.state.siteFlags.updateCheck.updateVersionAvailable}
-                                />
-                            )}
                         {this.state.siteFlags.freeUsersExceeded && (
                             <FreeUsersExceededAlert
                                 noLicenseWarningUserCount={
@@ -83,9 +60,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         )}
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
-                        {this.state.siteFlags.alerts.map((alert, i) => (
+                        {this.state.siteFlags.alerts.map((alert, index) => (
                             <GlobalAlert
-                                key={i}
+                                key={index}
                                 alert={alert}
                                 className="global-alerts__alert"
                                 history={this.props.history}
@@ -109,13 +86,13 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                 {isSettingsValid<Settings>(this.props.settingsCascade) &&
                     this.props.settingsCascade.final.motd &&
                     Array.isArray(this.props.settingsCascade.final.motd) &&
-                    this.props.settingsCascade.final.motd.map(m => (
+                    this.props.settingsCascade.final.motd.map(motd => (
                         <DismissibleAlert
-                            key={m}
-                            partialStorageKey={`motd.${m}`}
+                            key={motd}
+                            partialStorageKey={`motd.${motd}`}
                             className="alert alert-info global-alerts__alert"
                         >
-                            <Markdown dangerousInnerHTML={renderMarkdown(m)} history={this.props.history} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(motd)} history={this.props.history} />
                         </DismissibleAlert>
                     ))}
                 <Notices
@@ -127,16 +104,4 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             </div>
         )
     }
-}
-
-function isMinorUpdateAvailable(currentVersion: string, updateVersion: string): boolean {
-    const cv = semverParse(currentVersion, { loose: false })
-    const uv = semverParse(updateVersion, { loose: false })
-    // If either current or update versions aren't semvers (e.g., a user is on a date-based build version, or "dev"),
-    // always return true and allow any alerts to be shown. This has the effect of simply deferring to the response
-    // from Sourcegraph.com about whether an update alert is needed.
-    if (cv === null || uv === null) {
-        return true
-    }
-    return cv.major !== uv.major || cv.minor !== uv.minor
 }

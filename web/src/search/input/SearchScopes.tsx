@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React, { useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -8,8 +8,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter } from '../helpers'
 import { PatternTypeProps } from '..'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
-interface Props extends SettingsCascadeProps, Pick<PatternTypeProps, 'patternType'> {
+interface Props extends SettingsCascadeProps, Pick<PatternTypeProps, 'patternType'>, VersionContextProps {
     history: H.History
     authenticatedUser: Pick<GQL.IUser, never> | null
 
@@ -28,6 +29,7 @@ export const SearchScopes: React.FunctionComponent<Props> = ({
     authenticatedUser,
     history,
     patternType,
+    versionContext,
 }) => {
     const scopes = (isSettingsValid<Settings>(settingsCascade) && settingsCascade.final['search.scopes']) || []
 
@@ -37,20 +39,27 @@ export const SearchScopes: React.FunctionComponent<Props> = ({
 
             const newQuery = toggleSearchFilter(query, value)
 
-            submitSearch({ history, query: newQuery, source: 'filter', patternType, caseSensitive: false })
+            submitSearch({
+                history,
+                query: newQuery,
+                source: 'filter',
+                patternType,
+                caseSensitive: false,
+                versionContext,
+            })
         },
-        [history, patternType, query]
+        [history, patternType, query, versionContext]
     )
 
     return (
         <>
             {scopes
                 .filter(scope => scope.value !== '') // clicking on empty scope would not trigger search
-                .map((scope, i) => (
+                .map((scope, index) => (
                     <FilterChip
                         query={query}
                         onFilterChosen={onSearchScopeClicked}
-                        key={i}
+                        key={index}
                         value={scope.value}
                         name={scope.name}
                     />

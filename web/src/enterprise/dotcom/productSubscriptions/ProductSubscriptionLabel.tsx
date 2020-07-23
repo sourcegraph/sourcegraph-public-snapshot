@@ -25,7 +25,7 @@ export const ProductSubscriptionLabel: React.FunctionComponent<{
                 {productSubscription.invoiceItem.plan[planField || 'nameWithBrand']} (
                 {formatUserCount(productSubscription.invoiceItem.userCount)})
             </>
-        ) : productSubscription.activeLicense && productSubscription.activeLicense.info ? (
+        ) : productSubscription.activeLicense?.info ? (
             <>
                 {productSubscription.activeLicense.info.productNameWithBrand} (
                 {formatUserCount(productSubscription.activeLicense.info.userCount)})

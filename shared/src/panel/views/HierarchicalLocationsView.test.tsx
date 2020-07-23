@@ -4,7 +4,7 @@
 jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
 
 import { Location } from '@sourcegraph/extension-api-types'
-import H from 'history'
+import * as H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
@@ -52,6 +52,7 @@ describe('<HierarchicalLocationsView />', () => {
             defaultGroup: 'git://github.com/foo/bar',
             isLightTheme: true,
             fetchHighlightedFileLines: sinon.spy(),
+            versionContext: undefined,
         }
         return { services, props }
     }

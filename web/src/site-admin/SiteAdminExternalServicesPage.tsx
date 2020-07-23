@@ -55,19 +55,25 @@ const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = (
                         )
                     ),
                     tap(onDidUpdate),
-                    tap(() => refreshSiteFlags().subscribe())
+                    tap(deletedOrError => {
+                        // eslint-disable-next-line rxjs/no-ignored-subscription
+                        refreshSiteFlags().subscribe()
+                        if (deletedOrError === true) {
+                            history.push('/site-admin/repositories?repositoriesUpdated')
+                        }
+                    })
                 ),
-            [node.displayName, node.id, onDidUpdate]
+            [history, node.displayName, node.id, onDidUpdate]
         )
     )
 
     return (
-        <li className="external-service-node list-group-item py-2" data-e2e-external-service-name={node.displayName}>
+        <li className="external-service-node list-group-item py-2" data-test-external-service-name={node.displayName}>
             <div className="d-flex align-items-center justify-content-between">
                 <div>{node.displayName}</div>
                 <div>
                     <Link
-                        className="btn btn-secondary btn-sm e2e-edit-external-service-button"
+                        className="btn btn-secondary btn-sm test-edit-external-service-button"
                         to={`/site-admin/external-services/${node.id}`}
                         data-tooltip="External service settings"
                     >
@@ -75,7 +81,7 @@ const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = (
                     </Link>{' '}
                     <button
                         type="button"
-                        className="btn btn-sm btn-danger e2e-delete-external-service-button"
+                        className="btn btn-sm btn-danger test-delete-external-service-button"
                         onClick={nextDeleteClick}
                         disabled={deletedOrError === 'in-progress'}
                         data-tooltip="Delete external service"
@@ -170,7 +176,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Manage repositories</h2>
                     <Link
-                        className="btn btn-primary e2e-goto-add-external-service-page"
+                        className="btn btn-primary test-goto-add-external-service-page"
                         to="/site-admin/external-services/new"
                     >
                         <AddIcon className="icon-inline" /> Add repositories

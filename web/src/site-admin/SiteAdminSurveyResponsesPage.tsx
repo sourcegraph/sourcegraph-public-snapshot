@@ -125,7 +125,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                         </strong>
                     </td>
                     <td>
-                        {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
+                        {this.props.node.usageStatistics?.lastActiveTime ? (
                             <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                         ) : (
                             '?'
@@ -152,8 +152,8 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                 {this.state.displayAll && (
                     <tr>
                         <td colSpan={4}>
-                            {responses.map((response, i) => (
-                                <dl key={i}>
+                            {responses.map((response, index) => (
+                                <dl key={index}>
                                     <div className="pl-3 border-left site-admin-survey-responses-connection__wide-border">
                                         <Timestamp date={response.createdAt} />
                                         <ScoreBadge score={response.score} />

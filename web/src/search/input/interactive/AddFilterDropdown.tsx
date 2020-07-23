@@ -9,15 +9,15 @@ interface Props {
 
 export const AddFilterDropdown: React.FunctionComponent<Props> = ({ onAddNewFilter }) => {
     const addNewFilter = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>): void => {
-            onAddNewFilter(e.target.value as FilterType)
+        (event: React.ChangeEvent<HTMLSelectElement>): void => {
+            onAddNewFilter(event.target.value as FilterType)
         },
         [onAddNewFilter]
     )
 
     return (
         <select
-            className="form-control add-filter-dropdown e2e-filter-dropdown"
+            className="form-control add-filter-dropdown test-filter-dropdown"
             onChange={addNewFilter}
             value="default"
         >
@@ -32,7 +32,7 @@ export const AddFilterDropdown: React.FunctionComponent<Props> = ({ onAddNewFilt
                         filter !== FilterType.patterntype
                 )
                 .map(filter => (
-                    <option key={filter} value={filter} className={`e2e-filter-dropdown-option-${filter}`}>
+                    <option key={filter} value={filter} className={`test-filter-dropdown-option-${filter}`}>
                         {FilterTypeToProseNames[filter]}
                     </option>
                 ))}

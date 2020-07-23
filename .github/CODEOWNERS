@@ -35,6 +35,7 @@
 /cmd/frontend/internal/httpapi @slimsag
 /cmd/frontend/types @slimsag
 /cmd/frontend/hooks @slimsag
+/internal/cmd/ghe-feeder @uwedeportivo
 /internal/comby @rvantonder
 /internal/db/ @keegancsmith
 /internal/processrestart @slimsag @keegancsmith
@@ -45,6 +46,8 @@
 /internal/src-cli @efritz
 /internal/linkheader @efritz
 /internal/sqliteutil @efritz
+/internal/workerutil @efritz
+/internal/tar @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /.stylelintignore @felixfbecker
@@ -57,20 +60,20 @@
 /.yarnrc @felixfbecker
 .eslintrc.js @felixfbecker
 /internal/buildkite @ggilmore
-/internal/httpcli @sourcegraph/core-services
+/internal/httpcli @sourcegraph/cloud
 /dev/release-ping.sh @sourcegraph/distribution
 /dev/grafana.sh @sourcegraph/distribution
 /dev/grafana @sourcegraph/distribution
 /dev/prometheus.sh @sourcegraph/distribution
 /dev/prometheus @sourcegraph/distribution
-/dev/zoekt @sourcegraph/core-services
+/dev/zoekt @sourcegraph/cloud
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
 /dev/squash_migrations.sh @efritz
 /dev/watchmanwrapper @keegancsmith
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
-/SECURITY.md @beyang @nicksnyder
+/SECURITY.md @sourcegraph/security
 /.mailmap @beyang
 /tsconfig.json @sourcegraph/web
 /.mocharc.json @sourcegraph/web
@@ -99,12 +102,6 @@
 /cmd/frontend/internal/pkg/usagestatsdeprecated @dadlerj
 /internal/eventlogger @dadlerj
 
-# Campaigns
-/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns-core
-/enterprise/internal/campaigns @sourcegraph/campaigns-core
-/internal/campaigns @sourcegraph/campaigns-core
-/web/**/campaigns/** @sourcegraph/campaigns-web @mrnugget @sourcegraph/web
-
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
 /cmd/frontend/internal/auth/ @beyang @unknwon
@@ -117,40 +114,47 @@
 /cmd/frontend/graphqlbackend/access_token.go @beyang @unknwon
 /internal/actor/ @beyang @unknwon
 
-# Core Services
-/cmd/frontend/authz/ @sourcegraph/core-services
-/cmd/frontend/db/ @sourcegraph/core-services
-/cmd/frontend/globals/ @sourcegraph/core-services @slimsag
-/cmd/frontend/graphqlbackend/ @sourcegraph/core-services @slimsag
-/cmd/frontend/internal/bg/ @sourcegraph/core-services @slimsag
-/cmd/github-proxy/ @sourcegraph/core-services
-/cmd/gitserver/ @sourcegraph/core-services
-/cmd/repo-updater/ @sourcegraph/core-services
-/enterprise/cmd/frontend/authz/ @sourcegraph/core-services
-/enterprise/cmd/frontend/db/ @sourcegraph/core-services
-/enterprise/cmd/frontend/internal/authz/ @sourcegraph/core-services
-/enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/core-services @slimsag
-/enterprise/cmd/repo-updater/ @sourcegraph/core-services
-/internal/api/ @sourcegraph/core-services
-/internal/extsvc/ @sourcegraph/core-services
-/internal/gitserver/ @sourcegraph/core-services
-/internal/jsonc/ @sourcegraph/core-services @tsenart @slimsag
-/internal/repoupdater/ @sourcegraph/core-services
-/internal/trace/ @sourcegraph/core-services
-/internal/tracer/ @sourcegraph/core-services
-/internal/vcs/ @sourcegraph/core-services
-/migrations/ @sourcegraph/core-services
-/schema/ @sourcegraph/core-services
+# Cloud
+/cmd/frontend/authz/ @sourcegraph/cloud
+/cmd/frontend/globals/ @sourcegraph/cloud @slimsag
+/cmd/frontend/internal/bg/ @sourcegraph/cloud @slimsag
+/cmd/github-proxy/ @sourcegraph/cloud
+/cmd/gitserver/ @sourcegraph/cloud
+/cmd/repo-updater/ @sourcegraph/cloud
+/enterprise/cmd/frontend/authz/ @sourcegraph/cloud
+/enterprise/internal/db/ @sourcegraph/cloud
+/enterprise/cmd/frontend/internal/authz/ @sourcegraph/cloud
+/enterprise/cmd/repo-updater/ @sourcegraph/cloud
+/internal/extsvc/ @sourcegraph/cloud
+/internal/gitserver/ @sourcegraph/cloud
+/internal/jsonc/ @sourcegraph/cloud @tsenart @slimsag
+/internal/repoupdater/ @sourcegraph/cloud
+/internal/trace/ @sourcegraph/cloud
+/internal/tracer/ @sourcegraph/cloud
+/internal/vcs/ @sourcegraph/cloud
+
+# Backend integration tests
+/dev/gqltest/ @unknwon
+/internal/gqltestutil/ @unknwon
+
+# Campaigns
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
+/doc/user/campaigns @sourcegraph/campaigns
+/enterprise/internal/campaigns @sourcegraph/campaigns
+/internal/campaigns @sourcegraph/campaigns
+/web/**/campaigns/** @sourcegraph/campaigns
 
 # Search and code mod
-*/search/**/* @sourcegraph/core-services
-/cmd/frontend/internal/pkg/search @sourcegraph/core-services
-/cmd/query-runner/ @sourcegraph/core-services
-/cmd/replacer/ @sourcegraph/core-services @rvantonder
-/cmd/searcher/ @sourcegraph/core-services
-/cmd/symbols/ @sourcegraph/core-services
-/internal/search/ @sourcegraph/core-services
-/internal/symbols/ @sourcegraph/core-services
+*/search/**/* @sourcegraph/search
+/cmd/frontend/internal/pkg/search @sourcegraph/search
+/cmd/frontend/graphqlbackend/*search* @sourcegraph/search
+/cmd/frontend/graphqlbackend/*zoekt* @sourcegraph/search
+/cmd/query-runner/ @sourcegraph/search
+/cmd/replacer/ @sourcegraph/search @rvantonder
+/cmd/searcher/ @sourcegraph/search
+/cmd/symbols/ @sourcegraph/search
+/internal/search/ @sourcegraph/search
+/internal/symbols/ @sourcegraph/search
 
 # Symbols
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
@@ -178,10 +182,14 @@ Dockerfile @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
+/cmd/frontend/graphqlbackend/site_monitoring* @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
 /internal/conf @slimsag
 /internal/db/confdb @slimsag
 /internal/db/globalstatedb @slimsag
+/internal/prometheusutil @sourcegraph/distribution
+/internal/cmd/resources-report @sourcegraph/distribution
+/.github/workflows/resources-report.yml @sourcegraph/distribution
 /enterprise/docs @sourcegraph/distribution
 /.buildkite @sourcegraph/distribution @ggilmore
 ## Regression testing
@@ -193,10 +201,9 @@ Dockerfile @sourcegraph/distribution
 
 # Documentation and homepage
 /README.md @sqs
-/doc/ @sourcegraph/distribution @ryan-blunden
+/doc/ @sourcegraph/distribution
 /doc/dev/ @nicksnyder
-/doc/dev/typescript/ @felixfbecker @sourcegraph/web
-/doc/dev/web_app.md @felixfbecker @sourcegraph/web
+/doc/dev/web/ @felixfbecker @sourcegraph/web
 
 # Browser extensions
 /browser/ @sourcegraph/web
@@ -210,30 +217,23 @@ Dockerfile @sourcegraph/distribution
 # Backend shared packages
 /internal/endpoint/ @keegancsmith @slimsag
 /internal/rcache/ @keegancsmith
+/internal/leader @sourcegraph/cloud
 /internal/redispool/ @keegancsmith
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
-
-# Code discussions
-**/*discussion* @slimsag
-/web/src/discussions @slimsag
-/web/src/repo/blob/discussions @slimsag
-/cmd/frontend/types/discussions.go @slimsag
-/cmd/frontend/internal/pkg/discussions @slimsag
-/cmd/frontend/graphqlbackend/discussion* @slimsag
-/cmd/frontend/db/discussion* @slimsag
+/internal/logging @keegancsmith @slimsag
+/internal/observation @keegancsmith @slimsag
 
 # Precise code intel
-/cmd/precise-code-intel/ @sourcegraph/code-intel
-/cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
-/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
-/internal/lsif @sourcegraph/code-intel
-/internal/codeintel @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
+/enterprise/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
+/internal/cmd/precise-code-intel-tester @sourcegraph/code-intel
 
 # Development
-/dev/repogen @sourcegraph/core-services
+/dev/repogen @sourcegraph/cloud
 /.vscode @felixfbecker
 /.graphqlconfig @felixfbecker
 
@@ -244,16 +244,16 @@ Dockerfile @sourcegraph/distribution
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
-/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
 /.github/ISSUE_TEMPLATE/security.md @sourcegraph/security
 
-# Third party license lists
-/ThirdPartyLicensesGo.csv @sourcegraph/core-services
-/ThirdPartyLicensesNpm.csv @sourcegraph/web
-/dev/licenses-npm.sh @sourcegraph/web
+# Third party license list
+/third-party-licenses/ThirdPartyLicenses.csv @sourcegraph/cloud @sourcegraph/web
+/third-party-licenses/ThirdPartyDistributedTools.csv @sourcegraph/distribution
+/.github/workflows/licenses* @sourcegraph/distribution
+/dev/licenses.sh @sourcegraph/distribution
 
 # Changes to the GraphQL API should be approved by both the team owning the backend and the consumers
-/cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web @sourcegraph/core-services
+/cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web
 
 # These are configured through Renovate config.
 # See ../renovate.json and https://github.com/sourcegraph/renovate-config/blob/master/renovate.json
@@ -261,8 +261,6 @@ Dockerfile @sourcegraph/distribution
 **/package.json
 **/yarn.lock
 
-/go.sum @sourcegraph/core-services
-/go.mod @sourcegraph/core-services
 /CHANGELOG.md
 
 /.tool-versions @sourcegraph/distribution

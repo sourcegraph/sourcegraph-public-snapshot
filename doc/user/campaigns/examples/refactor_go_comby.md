@@ -1,4 +1,8 @@
-# Example: Refactor Go code using Comby
+# Example: Refactoring Go code using Comby
+
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
+
+<!-- TODO(sqs): update for new campaigns flow -->
 
 Our goal for this campaign is to simplify Go code by using [Comby](https://comby.dev/) to rewrite statements of this form
 

@@ -4,7 +4,80 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
-## v3.13.2 -> v3.14.2 changes
+
+## v3.15.1 → v3.16.0 changes
+
+This release involves two steps:
+
+1. Change `3.15.1` image tags to `3.16.0`
+2. Update `prometheus/prometheus_targets.yml` [as shown here](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0#diff-1d4c5a677b37d150c65ea8356cad978a)
+
+Exact diff of changes to make: https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/customer-replica-v3.15.1...customer-replica-v3.16.0
+
+## v3.14.2 → v3.15.1 changes
+
+This release:
+
+- Removes the 4-container Jaeger deployment, which had performance issues, in favor of a single-container one that works well.
+- Removes the old `lsif-server` service deployment, replacing it with 3 `precise-code-intel` services.
+- Changes the versions of all Sourcegraph images to be consistent (just `3.15.1` instead of some being inconsistent), which in some cases required changing the names of the images (but the containers / services / shell scripts remain the same for now).
+
+### Update environment variables
+
+- On `frontend` and `frontend-internal` containers: Remove the `LSIF_SERVER_URL` environment variable.
+- On `frontend` and `frontend-internal` containers: Set `PRECISE_CODE_INTEL_API_SERVER_URL=http://precise-code-intel-api-server:3186`
+- On all containers: Change `JAEGER_AGENT_HOST=jaeger-agent` to `JAEGER_AGENT_HOST=jaeger`
+
+### Remove all old container deployments
+
+- `jaeger-agent` container (`deploy-jaeger-agent.sh`).
+- `jaeger-cassandra` container (`deploy-jaeger-cassandra.sh`).
+- `jaeger-collector` container (`deploy-jaeger-collector.sh`).
+- `jaeger-query` container (`deploy-jaeger-query.sh`).
+- `lsif-server` container (`deploy-lsif-server.sh`).
+
+### Add new container deployments
+
+- Add a single `jaeger` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-jaeger.sh#L1).
+- Add a single `precise-code-intel-api-server` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-api-server.sh)
+- Add a single `precise-code-intel-bundle-manager` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-bundle-manager.sh)
+- Add a single `precise-code-intel-worker` container [following this spec](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.15.1/deploy-precise-code-intel-worker.sh)
+
+### Update prometheus_targets.yml
+
+```diff
+-    - lsif-server:3186
+-    - lsif-server:3187
++    - precise-code-intel-api-server:3186
++    - precise-code-intel-bundle-manager:3187
+```
+
+### Update image tags to 3.15.1
+
+Please change *all sourcegraph/<service>* image tags to `3.15.1. This includes all images you previously had as `:3.14.2` AND all `sourcegraph/<service>` images:
+
+```
+index.docker.io/sourcegraph/grafana:3.15.1
+index.docker.io/sourcegraph/prometheus:3.15.1
+index.docker.io/sourcegraph/redis-cache:3.15.1
+index.docker.io/sourcegraph/redis-store:3.15.1
+index.docker.io/sourcegraph/pgsql:3.15.1
+```
+
+The following _images_ have been renamed AND use Sourcegraph versions now (their container names and shell script names remain the same for now):
+
+```diff
+- index.docker.io/sourcegraph/syntect_server:c0297a1@sha256:333abb45cfaae9c9d37e576c3853843b00eca33a40a7c71f6b93211ed96528df
++ index.docker.io/sourcegraph/syntax-highlighter:3.15.1
+
+- index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200318141948-0b140b7@sha256:b022fd7e4884a71786acae32e0ec8baf785c18350ebf5d574d52335a346364f9
++ index.docker.io/sourcegraph/search-indexer:3.15.1
+
+- index.docker.io/sourcegraph/zoekt-webserver:0.0.20200318141342-0b140b7@sha256:0d0fbce55b51ec7bdd37927539f50459cd0f207b7cf219ca5122d07792012fb1
++ index.docker.io/sourcegraph/indexed-searcher:3.15.1
+```
+
+## v3.13.2 → v3.14.2 changes
 
 ### Update image tags
 
@@ -32,7 +105,7 @@ Also change the follow which are not versioned alongside Sourcegraph currently:
 | zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200318141948-0b140b7@sha256:b022fd7e4884a71786acae32e0ec8baf785c18350ebf5d574d52335a346364f9 |
 | zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200318141342-0b140b7@sha256:0d0fbce55b51ec7bdd37927539f50459cd0f207b7cf219ca5122d07792012fb1 |
 
-## v3.12.5 -> v3.13.2 changes
+## v3.12.5 → v3.13.2 changes
 
 ### Confirm file permissions
 

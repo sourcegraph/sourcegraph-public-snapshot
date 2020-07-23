@@ -1,4 +1,4 @@
-// Package suspiciousnames contains a blacklist of suspicious names for users and organizations.
+// Package suspiciousnames contains a blocklist of suspicious names for users and organizations.
 package suspiciousnames
 
 import (

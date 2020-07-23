@@ -109,7 +109,7 @@ Click **OK** to apply the new claim rules and close the window.
     metadata](#error-prefetching-saml-service-provider-metadata) or [Other
     troubleshooting](#other-troubleshooting).
 
-See the [SAML auth provider documentation](../../config/critical_config.md#saml) for the full set of
+See the [SAML auth provider documentation](../../config/site_config.md#saml) for the full set of
 properties that the SAML auth provider supports.
 
 ## Authenticate to Sourcegraph using ADFS

@@ -5,7 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"html/template"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -14,22 +16,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
-// when computing the `git diff` of the root commit.
-const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-
-type RepositoryComparisonConnectionResolver interface {
-	Nodes(ctx context.Context) ([]*RepositoryComparisonResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type RepositoryComparisonInput struct {
+	Base         *string
+	Head         *string
+	FetchMissing bool
 }
 
-type RepositoryComparisonInput struct {
-	Base *string
-	Head *string
+type FileDiffsConnectionArgs struct {
+	First *int32
+	After *string
+}
+
+type RepositoryComparisonInterface interface {
+	BaseRepository() *RepositoryResolver
+	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
+
+	ToRepositoryComparison() (*RepositoryComparisonResolver, bool)
+	ToPreviewRepositoryComparison() (PreviewRepositoryComparisonResolver, bool)
+}
+
+type FileDiffConnection interface {
+	Nodes(ctx context.Context) ([]FileDiff, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
+	RawDiff(ctx context.Context) (string, error)
+}
+
+type FileDiff interface {
+	OldPath() *string
+	NewPath() *string
+	Hunks() []*DiffHunk
+	Stat() *DiffStat
+	OldFile() FileResolver
+	NewFile() FileResolver
+	MostRelevantFile() FileResolver
+	InternalID() string
 }
 
 func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
@@ -46,24 +72,27 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	}
 
 	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*GitCommitResolver, error) {
-		if revspec == devNullSHA {
+		if revspec == git.DevNullSHA {
 			return nil, nil
 		}
 
+		opt := git.ResolveRevisionOptions{
+			NoEnsureRevision: !args.FetchMissing,
+		}
 		// Optimistically fetch using revspec
-		commit, err := git.GetCommit(ctx, repo, nil, api.CommitID(revspec))
+		commit, err := git.GetCommit(ctx, repo, nil, api.CommitID(revspec), opt)
 		if err == nil {
 			return toGitCommitResolver(r, commit), nil
 		}
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, nil)
+		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, opt)
 		if err != nil {
 			return nil, err
 		}
 
-		commit, err = git.GetCommit(ctx, repo, nil, commitID)
+		commit, err = git.GetCommit(ctx, repo, nil, commitID, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +113,17 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		base, baseErr = getCommit(ctx, *grepo, baseRevspec)
+		// Find the common merge-base for the diff. That's the revision the diff applies to,
+		// not the baseRevspec.
+		mergeBaseCommit, err := git.MergeBase(ctx, *grepo, api.CommitID(baseRevspec), api.CommitID(headRevspec))
+		if err != nil {
+			baseErr = err
+			return
+		}
+		// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
+		// applicable to the file from that revision.
+		commitString := strings.TrimSpace(string(mergeBaseCommit))
+		base, baseErr = getCommit(ctx, *grepo, commitString)
 	}()
 	go func() {
 		defer wg.Done()
@@ -117,6 +156,17 @@ type RepositoryComparisonResolver struct {
 	repo                     *RepositoryResolver
 }
 
+// Type guard.
+var _ RepositoryComparisonInterface = &RepositoryComparisonResolver{}
+
+func (r *RepositoryComparisonResolver) ToPreviewRepositoryComparison() (PreviewRepositoryComparisonResolver, bool) {
+	return nil, false
+}
+
+func (r *RepositoryComparisonResolver) ToRepositoryComparison() (*RepositoryComparisonResolver, bool) {
+	return r, true
+}
+
 func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { return r.repo }
 
 func (r *RepositoryComparisonResolver) HeadRepository() *RepositoryResolver { return r.repo }
@@ -140,119 +190,172 @@ func (r *RepositoryComparisonResolver) Commits(
 	}
 }
 
-func (r *RepositoryComparisonResolver) FileDiffs(
-	args *graphqlutil.ConnectionArgs,
+func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
+	return NewFileDiffConnectionResolver(
+		r.base,
+		r.head,
+		args,
+		computeRepositoryComparisonDiff(r),
+		repositoryComparisonNewFile,
+	), nil
+}
+
+// repositoryComparisonNewFile is the default NewFileFunc used by
+// RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
+func repositoryComparisonNewFile(r *FileDiffResolver) FileResolver {
+	return &GitTreeEntryResolver{
+		commit: r.Head,
+		stat:   CreateFileInfo(r.FileDiff.NewName, false),
+	}
+}
+
+// computeRepositoryComparisonDiff returns a ComputeDiffFunc for the given
+// RepositoryComparisonResolver.
+func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeDiffFunc {
+	var (
+		once        sync.Once
+		fileDiffs   []*diff.FileDiff
+		afterIdx    int32
+		hasNextPage bool
+		err         error
+	)
+	return func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
+		once.Do(func() {
+			// Todo: It's possible that the rangeSpec changes in between two executions, then the cursor would be invalid and the
+			// whole pagination should not be continued.
+			if args.After != nil {
+				parsedIdx, err := strconv.ParseInt(*args.After, 0, 32)
+				if err != nil {
+					return
+				}
+				if parsedIdx < 0 {
+					parsedIdx = 0
+				}
+				afterIdx = int32(parsedIdx)
+			}
+
+			var base string
+			if cmp.base == nil {
+				base = cmp.baseRevspec
+			} else {
+				base = string(cmp.base.OID())
+			}
+
+			var cachedRepo *gitserver.Repo
+			cachedRepo, err = backend.CachedGitRepo(ctx, cmp.repo.repo)
+			if err != nil {
+				return
+			}
+
+			var iter *git.DiffFileIterator
+			iter, err = git.Diff(ctx, git.DiffOptions{
+				Repo: *cachedRepo,
+				Base: base,
+				Head: string(cmp.head.OID()),
+			})
+			if err != nil {
+				return
+			}
+			defer iter.Close()
+
+			if args.First != nil {
+				fileDiffs = make([]*diff.FileDiff, 0, int(*args.First)) // preallocate
+			}
+			for {
+				var fileDiff *diff.FileDiff
+				fileDiff, err = iter.Next()
+				if err == io.EOF {
+					err = nil
+					break
+				}
+				if err != nil {
+					return
+				}
+				fileDiffs = append(fileDiffs, fileDiff)
+				if args.First != nil && len(fileDiffs) == int(*args.First+afterIdx) {
+					// Check for hasNextPage.
+					_, err = iter.Next()
+					if err != nil && err != io.EOF {
+						return
+					}
+					if err == io.EOF {
+						err = nil
+					} else {
+						hasNextPage = true
+					}
+					break
+				}
+			}
+		})
+		return fileDiffs, afterIdx, hasNextPage, err
+	}
+}
+
+// ComputeDiffFunc is a function that computes FileDiffs for the given args. It
+// returns the diffs, the starting index from which to return entries (`after`
+// param), whether there's a next page, and an optional error.
+type ComputeDiffFunc func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error)
+
+// NewFileFunc is a function that returns the "new" file in a FileDiff as a
+// FileResolver.
+type NewFileFunc func(r *FileDiffResolver) FileResolver
+
+func NewFileDiffConnectionResolver(
+	base, head *GitCommitResolver,
+	args *FileDiffsConnectionArgs,
+	compute ComputeDiffFunc,
+	newFileFunc NewFileFunc,
 ) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
-		cmp:   r,
-		first: args.First,
+		base:    base,
+		head:    head,
+		first:   args.First,
+		after:   args.After,
+		compute: compute,
+		newFile: newFileFunc,
 	}
 }
 
 type fileDiffConnectionResolver struct {
-	cmp   *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
-	first *int32
-
-	// cache result because it is used by multiple fields
-	once        sync.Once
-	fileDiffs   []*diff.FileDiff
-	hasNextPage bool
-	err         error
+	base    *GitCommitResolver
+	head    *GitCommitResolver
+	first   *int32
+	after   *string
+	compute ComputeDiffFunc
+	newFile NewFileFunc
 }
 
-func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
-	do := func() ([]*diff.FileDiff, error) {
-		var rangeSpec string
-		hOid := r.cmp.head.OID()
-		if r.cmp.base == nil {
-			// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
-			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(hOid)
-		} else {
-			rangeSpec = string(r.cmp.base.OID()) + "..." + string(hOid)
-		}
-		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
-			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
-			// extra careful to avoid letting user input add additional `git diff` command-line
-			// flags or refer to a file.
-			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
-		}
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo)
-		if err != nil {
-			return nil, err
-		}
-		rdr, err := git.ExecReader(ctx, *cachedRepo, []string{
-			"diff",
-			"--find-renames",
-			"--find-copies",
-			"--full-index",
-			"--inter-hunk-context=3",
-			"--no-prefix",
-			rangeSpec,
-			"--",
-		})
-		if err != nil {
-			return nil, err
-		}
-		defer rdr.Close()
-
-		var fileDiffs []*diff.FileDiff
-		if r.first != nil {
-			fileDiffs = make([]*diff.FileDiff, 0, int(*r.first)) // preallocate
-		}
-		dr := diff.NewMultiFileDiffReader(rdr)
-		for {
-			fileDiff, err := dr.ReadFile()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return nil, err
-			}
-			fileDiffs = append(fileDiffs, fileDiff)
-			if r.first != nil && len(fileDiffs) == int(*r.first) {
-				// Check for hasNextPage.
-				_, err := dr.ReadFile()
-				if err != nil && err != io.EOF {
-					return nil, err
-				}
-				r.hasNextPage = err != io.EOF
-				break
-			}
-		}
-		return fileDiffs, nil
-	}
-
-	r.once.Do(func() { r.fileDiffs, r.err = do() })
-	return r.fileDiffs, r.err
-}
-
-func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffResolver, error) {
-	fileDiffs, err := r.compute(ctx)
+func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, error) {
+	fileDiffs, afterIdx, _, err := r.compute(ctx, &FileDiffsConnectionArgs{First: r.first, After: r.after})
 	if err != nil {
 		return nil, err
 	}
-
-	if r.first != nil && len(fileDiffs) > int(*r.first) {
-		// Don't return +1 results, which is used to determine if next page exists.
-		fileDiffs = fileDiffs[:*r.first]
+	if int(afterIdx) <= len(fileDiffs) {
+		// If the lower boundary is within bounds, return from the lower boundary.
+		fileDiffs = fileDiffs[afterIdx:]
+	} else {
+		// If the lower boundary is out of bounds, return an empty result.
+		fileDiffs = []*diff.FileDiff{}
 	}
 
-	resolvers := make([]*fileDiffResolver, len(fileDiffs))
+	resolvers := make([]FileDiff, len(fileDiffs))
 	for i, fileDiff := range fileDiffs {
-		resolvers[i] = &fileDiffResolver{
-			fileDiff: fileDiff,
-			cmp:      r.cmp,
+		resolvers[i] = &FileDiffResolver{
+			newFile:  r.newFile,
+			FileDiff: fileDiff,
+			Base:     r.base,
+			Head:     r.head,
 		}
 	}
 	return resolvers, nil
 }
 
 func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
 	if err != nil {
 		return nil, err
 	}
-	if r.first == nil || (len(fileDiffs) > int(*r.first)) {
+	if !hasNextPage {
 		n := int32(len(fileDiffs))
 		return &n, nil
 	}
@@ -260,14 +363,22 @@ func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, er
 }
 
 func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if _, err := r.compute(ctx); err != nil {
+	_, afterIdx, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.hasNextPage), nil
+	if !hasNextPage {
+		return graphqlutil.HasNextPage(hasNextPage), nil
+	}
+	next := afterIdx
+	if r.first != nil {
+		next += *r.first
+	}
+	return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
 }
 
 func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +392,7 @@ func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, e
 }
 
 func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
 	if err != nil {
 		return "", err
 	}
@@ -289,55 +400,60 @@ func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error
 	return string(b), err
 }
 
-type fileDiffResolver struct {
-	fileDiff *diff.FileDiff
-	cmp      *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
+type FileDiffResolver struct {
+	FileDiff *diff.FileDiff
+	Base     *GitCommitResolver
+	Head     *GitCommitResolver
+
+	newFile NewFileFunc
 }
 
-func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
-func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
-func (r *fileDiffResolver) Hunks() []*DiffHunk {
-	hunks := make([]*DiffHunk, len(r.fileDiff.Hunks))
-	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = NewDiffHunk(hunk)
+func (r *FileDiffResolver) OldPath() *string { return diffPathOrNull(r.FileDiff.OrigName) }
+func (r *FileDiffResolver) NewPath() *string { return diffPathOrNull(r.FileDiff.NewName) }
+
+func (r *FileDiffResolver) Hunks() []*DiffHunk {
+	highlighter := &fileDiffHighlighter{
+		oldFile: r.OldFile(),
+		newFile: r.NewFile(),
+	}
+	hunks := make([]*DiffHunk, len(r.FileDiff.Hunks))
+	for i, hunk := range r.FileDiff.Hunks {
+		hunks[i] = NewDiffHunk(hunk, highlighter)
 	}
 	return hunks
 }
 
-func (r *fileDiffResolver) Stat() *DiffStat {
-	stat := r.fileDiff.Stat()
+func (r *FileDiffResolver) Stat() *DiffStat {
+	stat := r.FileDiff.Stat()
 	return NewDiffStat(stat)
 }
 
-func (r *fileDiffResolver) OldFile() *GitTreeEntryResolver {
-	if diffPathOrNull(r.fileDiff.OrigName) == nil {
+func (r *FileDiffResolver) OldFile() FileResolver {
+	if diffPathOrNull(r.FileDiff.OrigName) == nil {
 		return nil
 	}
 	return &GitTreeEntryResolver{
-		commit: r.cmp.base,
-		stat:   CreateFileInfo(r.fileDiff.OrigName, false),
+		commit: r.Base,
+		stat:   CreateFileInfo(r.FileDiff.OrigName, false),
 	}
 }
 
-func (r *fileDiffResolver) NewFile() *GitTreeEntryResolver {
-	if diffPathOrNull(r.fileDiff.NewName) == nil {
+func (r *FileDiffResolver) NewFile() FileResolver {
+	if diffPathOrNull(r.FileDiff.NewName) == nil {
 		return nil
 	}
-	return &GitTreeEntryResolver{
-		commit: r.cmp.head,
-		stat:   CreateFileInfo(r.fileDiff.NewName, false),
-	}
+	return r.newFile(r)
 }
 
-func (r *fileDiffResolver) MostRelevantFile() *GitTreeEntryResolver {
+func (r *FileDiffResolver) MostRelevantFile() FileResolver {
 	if newFile := r.NewFile(); newFile != nil {
 		return newFile
 	}
 	return r.OldFile()
 }
 
-func (r *fileDiffResolver) InternalID() string {
-	b := sha256.Sum256([]byte(fmt.Sprintf("%d:%s:%s", len(r.fileDiff.OrigName), r.fileDiff.OrigName, r.fileDiff.NewName)))
+func (r *FileDiffResolver) InternalID() string {
+	b := sha256.Sum256([]byte(fmt.Sprintf("%d:%s:%s", len(r.FileDiff.OrigName), r.FileDiff.OrigName, r.FileDiff.NewName)))
 	return hex.EncodeToString(b[:])[:32]
 }
 
@@ -348,12 +464,62 @@ func diffPathOrNull(path string) *string {
 	return &path
 }
 
-func NewDiffHunk(hunk *diff.Hunk) *DiffHunk {
-	return &DiffHunk{hunk: hunk}
+func NewDiffHunk(hunk *diff.Hunk, highlighter FileDiffHighlighter) *DiffHunk {
+	return &DiffHunk{hunk: hunk, highlighter: highlighter}
+}
+
+type FileDiffHighlighter interface {
+	Highlight(ctx context.Context, args *HighlightArgs) ([]template.HTML, []template.HTML, bool, error)
+}
+
+type fileDiffHighlighter struct {
+	oldFile          FileResolver
+	newFile          FileResolver
+	highlightedBase  []template.HTML
+	highlightedHead  []template.HTML
+	highlightOnce    sync.Once
+	highlightErr     error
+	highlightAborted bool
+}
+
+func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]template.HTML, []template.HTML, bool, error) {
+	r.highlightOnce.Do(func() {
+		highlightFile := func(ctx context.Context, file FileResolver) ([]template.HTML, error) {
+			if file == nil {
+				return nil, nil
+			}
+			content, err := file.Content(ctx)
+			if err != nil {
+				return nil, err
+			}
+			lines, aborted, err := highlight.CodeAsLines(ctx, highlight.Params{
+				Content:            []byte(content),
+				Filepath:           file.Path(),
+				DisableTimeout:     args.DisableTimeout,
+				HighlightLongLines: args.HighlightLongLines,
+				IsLightTheme:       args.IsLightTheme,
+			})
+			if aborted {
+				r.highlightAborted = aborted
+			}
+			// It is okay to fail on binary files, we won't have to pick lines from such files in the Highlight resolver.
+			if err != nil && err == highlight.ErrBinary {
+				return []template.HTML{}, nil
+			}
+			return lines, err
+		}
+		r.highlightedBase, r.highlightErr = highlightFile(ctx, r.oldFile)
+		if r.highlightErr != nil {
+			return
+		}
+		r.highlightedHead, r.highlightErr = highlightFile(ctx, r.newFile)
+	})
+	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
 }
 
 type DiffHunk struct {
-	hunk *diff.Hunk
+	hunk        *diff.Hunk
+	highlighter FileDiffHighlighter
 }
 
 func (r *DiffHunk) OldRange() *DiffHunkRange {
@@ -372,6 +538,73 @@ func (r *DiffHunk) Section() *string {
 }
 
 func (r *DiffHunk) Body() string { return string(r.hunk.Body) }
+
+func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedDiffHunkBodyResolver, error) {
+	highlightedBase, highlightedHead, aborted, err := r.highlighter.Highlight(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	hunkLines := strings.Split(string(r.hunk.Body), "\n")
+	// Remove final empty line on files that end with a newline, as most code hosts do.
+	if hunkLines[len(hunkLines)-1] == "" {
+		hunkLines = hunkLines[:len(hunkLines)-1]
+	}
+	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
+	// Lines in highlightedBase and highlightedHead are 0-indexed.
+	baseLine := r.hunk.OrigStartLine - 1
+	headLine := r.hunk.NewStartLine - 1
+	for i, hunkLine := range hunkLines {
+		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
+		if hunkLine[0] == ' ' {
+			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
+			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
+			baseLine++
+			headLine++
+		} else if hunkLine[0] == '+' {
+			highlightedDiffHunkLineResolver.kind = "ADDED"
+			highlightedDiffHunkLineResolver.html = string(highlightedHead[headLine])
+			headLine++
+		} else if hunkLine[0] == '-' {
+			highlightedDiffHunkLineResolver.kind = "DELETED"
+			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
+			baseLine++
+		} else {
+			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
+		}
+
+		highlightedDiffHunkLineResolvers[i] = &highlightedDiffHunkLineResolver
+	}
+	return &highlightedDiffHunkBodyResolver{
+		highlightedDiffHunkLineResolvers: highlightedDiffHunkLineResolvers,
+		aborted:                          aborted,
+	}, nil
+}
+
+type highlightedDiffHunkBodyResolver struct {
+	highlightedDiffHunkLineResolvers []*highlightedDiffHunkLineResolver
+	aborted                          bool
+}
+
+func (r *highlightedDiffHunkBodyResolver) Aborted() bool {
+	return r.aborted
+}
+
+func (r *highlightedDiffHunkBodyResolver) Lines() []*highlightedDiffHunkLineResolver {
+	return r.highlightedDiffHunkLineResolvers
+}
+
+type highlightedDiffHunkLineResolver struct {
+	html string
+	kind string
+}
+
+func (r *highlightedDiffHunkLineResolver) HTML() string {
+	return r.html
+}
+
+func (r *highlightedDiffHunkLineResolver) Kind() string {
+	return r.kind
+}
 
 func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {
 	return &DiffHunkRange{startLine: startLine, lines: lines}

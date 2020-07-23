@@ -298,20 +298,36 @@ export interface SearchFilters {
 }
 
 /** The containers to which an extension can contribute views. */
-export enum ContributableViewContainer {
+export const ContributableViewContainer = {
     /**
      * A view that is displayed in the panel for a window.
      *
      * Clients: The client should render this as a resizable panel in a window, with multiple tabs to switch
      * between different panel views.
      */
-    Panel = 'window/panel',
+    Panel: 'window/panel',
 
     /**
      * A global page view, displayed as a standalone page at `/views/ID`.
      */
-    GlobalPage = 'global/page',
-}
+    GlobalPage: 'global/page',
+
+    /**
+     * A view contributed to directory pages.
+     */
+    Directory: 'directory',
+
+    /**
+     * A view contributed to the area on the homepage below the search box.
+     */
+    Homepage: 'homepage',
+
+    /**
+     * A view contributed to the dashboard on the insights page.
+     */
+    InsightsPage: 'insightsPage',
+} as const
+export type ContributableViewContainer = typeof ContributableViewContainer[keyof typeof ContributableViewContainer]
 
 /**
  * A view contributed by an extension.
@@ -323,10 +339,7 @@ export interface ViewContribution {
     id: string
 
     /**
-     * The title of this view.
-     *
-     * Currently only 'global' is supported; the other values of {@link ContributableViewContainer}
-     * are intended for the panel view API (which will eventually be merged into the new view API).
+     * The container where this view will be displayed.
      */
-    where: typeof ContributableViewContainer.GlobalPage
+    where: ContributableViewContainer
 }

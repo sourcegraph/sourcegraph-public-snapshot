@@ -11,7 +11,7 @@ import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isDefined } from '../../../../shared/src/util/types'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toURIWithPath } from '../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toURIWithPath } from '../../../../shared/src/util/url'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { DiffHunk } from './DiffHunk'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
@@ -19,7 +19,7 @@ import { diffDomFunctions } from '../../repo/compare/dom-functions'
 interface PartFileInfo {
     repoName: string
     repoID: GQL.ID
-    rev: string
+    revision: string
     commitID: string
 
     /**
@@ -42,7 +42,7 @@ interface FileHunksProps extends ThemeProps {
 
         /** The head repository, revision, and file. */
         head: PartFileInfo
-        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
 
     /** The file's hunks. */
@@ -98,11 +98,11 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                     positionJumps: NEVER, // TODO support diff URLs
                     resolveContext: hoveredToken => {
                         // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                        const { repoName, rev, filePath, commitID } = this.props.extensionInfo![
+                        const { repoName, revision, filePath, commitID } = this.props.extensionInfo![
                             hoveredToken.part || 'head'
                         ]
                         // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                        return { repoName, filePath: filePath!, rev, commitID }
+                        return { repoName, filePath: filePath!, revision, commitID }
                     },
                 })
             )
@@ -180,10 +180,10 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                                 </colgroup>
                             )}
                             <tbody>
-                                {this.props.hunks.map((hunk, i) => (
+                                {this.props.hunks.map((hunk, index) => (
                                     <DiffHunk
                                         {...this.props}
-                                        key={i}
+                                        key={index}
                                         hunk={hunk}
                                         decorations={this.state.decorations}
                                     />

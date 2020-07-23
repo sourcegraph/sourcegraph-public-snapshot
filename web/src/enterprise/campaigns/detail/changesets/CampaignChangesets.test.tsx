@@ -1,21 +1,21 @@
 import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { CampaignChangesets } from './CampaignChangesets'
-import { createRenderer } from 'react-test-renderer/shallow'
 import * as H from 'history'
 import { of, Subject } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
+import { shallow } from 'enzyme'
 
 describe('CampaignChangesets', () => {
     const history = H.createMemoryHistory()
     test('renders', () =>
         expect(
-            createRenderer().render(
+            shallow(
                 <CampaignChangesets
                     queryChangesets={() =>
-                        of({ nodes: [{ id: '0' } as GQL.IExternalChangeset] } as GQL.IExternalChangesetConnection)
+                        of({ nodes: [{ id: '0' } as GQL.IExternalChangeset] } as GQL.IChangesetConnection)
                     }
-                    campaign={{ id: '123', closedAt: null }}
+                    campaign={{ id: '123', closedAt: null, viewerCanAdminister: true }}
                     history={history}
                     location={history.location}
                     isLightTheme={true}

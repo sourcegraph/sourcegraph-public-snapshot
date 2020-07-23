@@ -38,6 +38,6 @@ $deleted: #c91111;
         color: lighten($deleted, 10%);
     }
     &__empty {
-        background-color: var(--bg-deep);
+        background-color: var(--text-muted);
     }
 }

@@ -2,9 +2,9 @@ import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { TestResourceManager } from './util/TestResourceManager'
-import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
+import { Driver } from '../../../shared/src/testing/driver'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser, login, loginToGitHub, editSiteConfig } from './util/helpers'
 import {
@@ -17,7 +17,7 @@ import {
     updateExternalService,
 } from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('External services GUI', () => {
     const testUsername = 'test-extsvc'
@@ -92,7 +92,7 @@ describe('External services GUI', () => {
                     "repositoryPathPattern": "github-prefix/{nameWithOwner}"
                 `
                 await driver.replaceText({
-                    selector: '#e2e-external-service-form-display-name',
+                    selector: '#test-external-service-form-display-name',
                     newText: externalServiceName,
                     selectMethod: 'selectall',
                     enterTextMethod: 'paste',
@@ -193,15 +193,15 @@ describe('External services API', () => {
             uniqueDisplayName,
             config: {
                 url: 'https://bitbucket.org',
-                username: 'sg-e2e-regression-test-bob',
+                username: 'sg-test-regression-test-bob',
                 appPassword: config.bitbucketCloudUserBobAppPassword,
                 repositoryPathPattern: '{nameWithOwner}',
             },
         }
         const repos = [
-            'sg-e2e-regression-test-bob/jsonrpc2',
-            'sg-e2e-regression-test-bob/codeintellify',
-            'sg-e2e-regression-test-bob/mux',
+            'sg-test-regression-test-bob/jsonrpc2',
+            'sg-test-regression-test-bob/codeintellify',
+            'sg-test-regression-test-bob/mux',
         ]
         await ensureNoTestExternalServices(gqlClient, { ...externalServiceInput, deleteIfExist: true })
         await waitForRepos(gqlClient, repos, { ...config, shouldNotExist: true })
@@ -216,11 +216,11 @@ describe('External services API', () => {
             id,
             config: JSON.stringify({
                 ...externalServiceInput.config,
-                exclude: [{ name: 'sg-e2e-regression-test-bob/jsonrpc2' }],
+                exclude: [{ name: 'sg-test-regression-test-bob/jsonrpc2' }],
             }),
         })
         // Check that the excluded repository is no longer synced
-        await waitForRepos(gqlClient, ['sg-e2e-regression-test-bob/jsonrpc2'], { ...config, shouldNotExist: true })
+        await waitForRepos(gqlClient, ['sg-test-regression-test-bob/jsonrpc2'], { ...config, shouldNotExist: true })
     })
 })
 
@@ -273,8 +273,8 @@ describe('External services permissions', () => {
             },
         }
         const repos = [
-            'github.com/sg-e2e-regression-test-bob/about',
-            'github.com/sg-e2e-regression-test-bob/shared-with-amy',
+            'github.com/sg-test-regression-test-bob/about',
+            'github.com/sg-test-regression-test-bob/shared-with-amy',
         ]
         await ensureNoTestExternalServices(gqlClient, { ...externalService, deleteIfExist: true })
         resourceManager.add(
@@ -299,27 +299,27 @@ describe('External services permissions', () => {
             )
         )
 
-        // Ensure user sg-e2e-regression-test-amy exists
+        // Ensure user sg-test-regression-test-amy exists
         await login(driver, { ...config, authProviderDisplayName: authProvider.displayName }, () =>
-            loginToGitHub(driver, 'sg-e2e-regression-test-amy', config.gitHubUserAmyPassword)
+            loginToGitHub(driver, 'sg-test-regression-test-amy', config.gitHubUserAmyPassword)
         )
 
         {
             const response = await driver.page.goto(
-                config.sourcegraphBaseUrl + '/github.com/sg-e2e-regression-test-bob/shared-with-amy'
+                config.sourcegraphBaseUrl + '/github.com/sg-test-regression-test-bob/shared-with-amy'
             )
             if (!response) {
                 throw new Error('no response')
             }
             expect(response.status()).toBe(200)
         }
-        await driver.findElementWithText('sg-e2e-regression-test-bob/shared-with-amy', {
+        await driver.findElementWithText('sg-test-regression-test-bob/shared-with-amy', {
             wait: { timeout: 2 * 1000 },
         })
 
         {
             const response = await driver.page.goto(
-                config.sourcegraphBaseUrl + '/github.com/sg-e2e-regression-test-bob/about'
+                config.sourcegraphBaseUrl + '/github.com/sg-test-regression-test-bob/about'
             )
             if (!response) {
                 throw new Error('no response')

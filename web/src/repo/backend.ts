@@ -4,14 +4,21 @@ import {
     CloneInProgressError,
     RepoNotFoundError,
     RepoSeeOtherError,
-    RevNotFoundError,
+    RevisionNotFoundError,
 } from '../../../shared/src/backend/errors'
 import { FetchFileCtx } from '../../../shared/src/components/CodeExcerpt'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '../../../shared/src/util/url'
+import {
+    AbsoluteRepoFile,
+    makeRepoURI,
+    RepoRev,
+    RevisionSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+} from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
 
 /**
@@ -62,8 +69,7 @@ export const fetchRepository = memoizeObservable(
     makeRepoURI
 )
 
-export interface ResolvedRev {
-    commitID: string
+export interface ResolvedRevision extends ResolvedRevisionSpec {
     defaultBranch: string
 
     /** The URL to the repository root tree at the revision. */
@@ -71,16 +77,15 @@ export interface ResolvedRev {
 }
 
 /**
- * When `rev` is undefined, the default branch is resolved.
+ * When `revision` is undefined, the default branch is resolved.
  *
- * @returns Observable that emits the commit ID
- *         Errors with a `CloneInProgressError` if the repo is still being cloned.
+ * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
-export const resolveRev = memoizeObservable(
-    (ctx: { repoName: string; rev?: string }): Observable<ResolvedRev> =>
+export const resolveRevision = memoizeObservable(
+    ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision> =>
         queryGraphQL(
             gql`
-                query ResolveRev($repoName: String!, $rev: String!) {
+                query ResolveRev($repoName: String!, $revision: String!) {
                     repositoryRedirect(name: $repoName) {
                         __typename
                         ... on Repository {
@@ -89,7 +94,7 @@ export const resolveRev = memoizeObservable(
                                 cloneProgress
                                 cloned
                             }
-                            commit(rev: $rev) {
+                            commit(rev: $revision) {
                                 oid
                                 tree(path: "") {
                                     url
@@ -105,32 +110,32 @@ export const resolveRev = memoizeObservable(
                     }
                 }
             `,
-            { ...ctx, rev: ctx.rev || '' }
+            { repoName, revision: revision || '' }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data) {
                     throw createAggregateError(errors)
                 }
                 if (!data.repositoryRedirect) {
-                    throw new RepoNotFoundError(ctx.repoName)
+                    throw new RepoNotFoundError(repoName)
                 }
                 if (data.repositoryRedirect.__typename === 'Redirect') {
                     throw new RepoSeeOtherError(data.repositoryRedirect.url)
                 }
                 if (data.repositoryRedirect.mirrorInfo.cloneInProgress) {
                     throw new CloneInProgressError(
-                        ctx.repoName,
+                        repoName,
                         data.repositoryRedirect.mirrorInfo.cloneProgress || undefined
                     )
                 }
                 if (!data.repositoryRedirect.mirrorInfo.cloned) {
-                    throw new CloneInProgressError(ctx.repoName, 'queued for cloning')
+                    throw new CloneInProgressError(repoName, 'queued for cloning')
                 }
                 if (!data.repositoryRedirect.commit) {
-                    throw new RevNotFoundError(ctx.rev)
+                    throw new RevisionNotFoundError(revision)
                 }
                 if (!data.repositoryRedirect.defaultBranch || !data.repositoryRedirect.commit.tree) {
-                    throw new RevNotFoundError('HEAD')
+                    throw new RevisionNotFoundError('HEAD')
                 }
                 return {
                     commitID: data.repositoryRedirect.commit.oid,
@@ -149,7 +154,7 @@ interface HighlightedFileResult {
 }
 
 const fetchHighlightedFile = memoizeObservable(
-    (ctx: FetchFileCtx): Observable<HighlightedFileResult> =>
+    (context: FetchFileCtx): Observable<HighlightedFileResult> =>
         queryGraphQL(
             gql`
                 query HighlightedFile(
@@ -173,7 +178,7 @@ const fetchHighlightedFile = memoizeObservable(
                     }
                 }
             `,
-            ctx
+            context
         ).pipe(
             map(({ data, errors }) => {
                 if (!data?.repository?.commit?.file?.highlight) {
@@ -183,38 +188,39 @@ const fetchHighlightedFile = memoizeObservable(
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
-    ctx => makeRepoURI(ctx) + `?disableTimeout=${String(ctx.disableTimeout)}&isLightTheme=${String(ctx.isLightTheme)}`
+    context =>
+        makeRepoURI(context) +
+        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}`
 )
 
 /**
  * Produces a list like ['<tr>...</tr>', ...]
  */
 export const fetchHighlightedFileLines = memoizeObservable(
-    (ctx: FetchFileCtx, force?: boolean): Observable<string[]> =>
-        fetchHighlightedFile(ctx, force).pipe(
+    (context: FetchFileCtx, force?: boolean): Observable<string[]> =>
+        fetchHighlightedFile(context, force).pipe(
             map(result => {
                 if (result.isDirectory) {
                     return []
                 }
-                let parsed = result.highlightedFile.html.substr('<table>'.length)
-                parsed = parsed.substr(0, parsed.length - '</table>'.length)
+                const parsed = result.highlightedFile.html.slice('<table>'.length, -'</table>'.length)
                 const rows = parsed.split('</tr>')
-                for (let i = 0; i < rows.length; ++i) {
-                    rows[i] += '</tr>'
+                for (let index = 0; index < rows.length; ++index) {
+                    rows[index] += '</tr>'
                 }
                 return rows
             })
         ),
-    ctx => makeRepoURI(ctx) + `?isLightTheme=${String(ctx.isLightTheme)}`
+    context => makeRepoURI(context) + `?isLightTheme=${String(context.isLightTheme)}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
-    (ctx: RepoRev & { filePath: string }): Observable<GQL.IExternalLink[]> =>
+    (context: RepoRev & { filePath: string }): Observable<GQL.IExternalLink[]> =>
         queryGraphQL(
             gql`
-                query FileExternalLinks($repoName: String!, $rev: String!, $filePath: String!) {
+                query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
                     repository(name: $repoName) {
-                        commit(rev: $rev) {
+                        commit(rev: $revision) {
                             file(path: $filePath) {
                                 externalURLs {
                                     url
@@ -225,7 +231,7 @@ export const fetchFileExternalLinks = memoizeObservable(
                     }
                 }
             `,
-            ctx
+            context
         ).pipe(
             map(({ data, errors }) => {
                 if (!data?.repository?.commit?.file?.externalURLs) {
@@ -243,13 +249,13 @@ export const fetchTreeEntries = memoizeObservable(
             gql`
                 query TreeEntries(
                     $repoName: String!
-                    $rev: String!
+                    $revision: String!
                     $commitID: String!
                     $filePath: String!
                     $first: Int
                 ) {
                     repository(name: $repoName) {
-                        commit(rev: $commitID, inputRevspec: $rev) {
+                        commit(rev: $commitID, inputRevspec: $revision) {
                             tree(path: $filePath) {
                                 isRoot
                                 url

@@ -87,19 +87,19 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                 concat(
                     [{ publishersOrError: 'loading' }],
                     queryViewerRegistryPublishers().pipe(
-                        map(result => ({ publishersOrError: result, publisher: result[0] && result[0].id })),
+                        map(result => ({ publishersOrError: result, publisher: result[0]?.id })),
                         catchError(error => [{ publishersOrError: asError(error) }])
                     )
                 ).subscribe(
                     stateUpdate => this.setState(stateUpdate as State),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
             )
 
             this.subscriptions.add(
                 this.submits
                     .pipe(
-                        tap(e => e.preventDefault()),
+                        tap(event => event.preventDefault()),
                         concatMap(() =>
                             concat(
                                 [{ creationOrError: 'loading' }],
@@ -116,7 +116,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        err => console.error(err)
+                        error => console.error(error)
                     )
             )
 
@@ -138,9 +138,9 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                 !isErrorLike(this.state.publishersOrError) &&
                 this.state.publisher
             ) {
-                const p = this.state.publishersOrError.find(p => p.id === this.state.publisher)
-                if (p) {
-                    extensionID = toExtensionID(p, this.state.name)
+                const publisher = this.state.publishersOrError.find(publisher => publisher.id === this.state.publisher)
+                if (publisher) {
+                    extensionID = toExtensionID(publisher, this.state.name)
                 }
             }
 
@@ -209,12 +209,12 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             )
         }
 
-        private onPublisherChange: React.ChangeEventHandler<HTMLSelectElement> = e =>
-            this.setState({ publisher: e.currentTarget.value })
+        private onPublisherChange: React.ChangeEventHandler<HTMLSelectElement> = event =>
+            this.setState({ publisher: event.currentTarget.value })
 
-        private onNameChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-            this.setState({ name: e.currentTarget.value })
+        private onNameChange: React.ChangeEventHandler<HTMLInputElement> = event =>
+            this.setState({ name: event.currentTarget.value })
 
-        private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
+        private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
     }
 )

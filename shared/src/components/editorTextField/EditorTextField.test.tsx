@@ -1,5 +1,5 @@
 import { of } from 'rxjs'
-import { EditorId, CodeEditorData } from '../../api/client/services/editorService'
+import { ViewerId, CodeEditorData } from '../../api/client/services/viewerService'
 import { EditorTextFieldUtils } from './EditorTextField'
 import { Selection } from '@sourcegraph/extension-api-types'
 import * as sinon from 'sinon'
@@ -9,10 +9,10 @@ import { TextModel } from '../../api/client/services/modelService'
 describe('EditorTextFieldUtils', () => {
     describe('getEditorDataFromElement', () => {
         test('empty selection', () => {
-            const e = document.createElement('textarea')
-            e.value = 'abc'
-            e.setSelectionRange(2, 2)
-            expect(EditorTextFieldUtils.getEditorDataFromElement(e)).toEqual({
+            const textArea = document.createElement('textarea')
+            textArea.value = 'abc'
+            textArea.setSelectionRange(2, 2)
+            expect(EditorTextFieldUtils.getEditorDataFromElement(textArea)).toEqual({
                 text: 'abc',
                 selections: [
                     {
@@ -26,10 +26,10 @@ describe('EditorTextFieldUtils', () => {
             })
         })
         test('forward selection', () => {
-            const e = document.createElement('textarea')
-            e.value = 'abc'
-            e.setSelectionRange(2, 3)
-            expect(EditorTextFieldUtils.getEditorDataFromElement(e)).toEqual({
+            const textArea = document.createElement('textarea')
+            textArea.value = 'abc'
+            textArea.setSelectionRange(2, 3)
+            expect(EditorTextFieldUtils.getEditorDataFromElement(textArea)).toEqual({
                 text: 'abc',
                 selections: [
                     {
@@ -43,10 +43,10 @@ describe('EditorTextFieldUtils', () => {
             })
         })
         test('backward selection', () => {
-            const e = document.createElement('textarea')
-            e.value = 'abc'
-            e.setSelectionRange(2, 3, 'backward')
-            expect(EditorTextFieldUtils.getEditorDataFromElement(e)).toEqual({
+            const textArea = document.createElement('textarea')
+            textArea.value = 'abc'
+            textArea.setSelectionRange(2, 3, 'backward')
+            expect(EditorTextFieldUtils.getEditorDataFromElement(textArea)).toEqual({
                 text: 'abc',
                 selections: [
                     {
@@ -62,13 +62,13 @@ describe('EditorTextFieldUtils', () => {
     })
 
     test('updateEditorSelectionFromElement', () => {
-        const e = document.createElement('textarea')
-        e.value = 'abc'
-        e.setSelectionRange(2, 3, 'backward')
-        const setSelections = sinon.spy<(editor: EditorId, selections: Selection[]) => void>(noop)
-        EditorTextFieldUtils.updateEditorSelectionFromElement({ setSelections }, { editorId: 'e' }, e)
+        const textArea = document.createElement('textarea')
+        textArea.value = 'abc'
+        textArea.setSelectionRange(2, 3, 'backward')
+        const setSelections = sinon.spy<(editor: ViewerId, selections: Selection[]) => void>(noop)
+        EditorTextFieldUtils.updateEditorSelectionFromElement({ setSelections }, { viewerId: 'e' }, textArea)
         sinon.assert.calledOnce(setSelections)
-        expect(setSelections.args[0][0]).toEqual({ editorId: 'e' })
+        expect(setSelections.args[0][0]).toEqual({ viewerId: 'e' })
         expect(setSelections.args[0][1]).toEqual([
             {
                 anchor: { line: 0, character: 3 },
@@ -81,11 +81,11 @@ describe('EditorTextFieldUtils', () => {
     })
 
     test('updateModelFromElement', () => {
-        const e = document.createElement('textarea')
-        e.value = 'abc'
-        e.setSelectionRange(2, 3, 'backward')
+        const textArea = document.createElement('textarea')
+        textArea.value = 'abc'
+        textArea.setSelectionRange(2, 3, 'backward')
         const updateModel = sinon.spy<(uri: string, text: string) => void>(noop)
-        EditorTextFieldUtils.updateModelFromElement({ updateModel }, 'u', e)
+        EditorTextFieldUtils.updateModelFromElement({ updateModel }, 'u', textArea)
         sinon.assert.calledOnce(updateModel)
         expect(updateModel.args[0][0]).toEqual('u')
         expect(updateModel.args[0][1]).toEqual('abc')
@@ -93,12 +93,12 @@ describe('EditorTextFieldUtils', () => {
 
     describe('updateElementOnEditorOrModelChanges', () => {
         test('forward selection', () => {
-            const e = document.createElement('textarea')
-            e.value = 'abc'
+            const textArea = document.createElement('textarea')
+            textArea.value = 'abc'
             const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    observeEditor: () =>
+                    observeViewer: () =>
                         of<CodeEditorData>({
                             type: 'CodeEditor',
                             resource: 'u',
@@ -117,24 +117,24 @@ describe('EditorTextFieldUtils', () => {
                 {
                     observeModel: () => of<TextModel>({ uri: 'u', languageId: 'l', text: 'xyz' }),
                 },
-                { editorId: 'e' },
+                { viewerId: 'e' },
                 setValue,
-                { current: e }
+                { current: textArea }
             )
             sinon.assert.calledOnce(setValue)
             expect(setValue.args[0][0]).toEqual('xyz')
-            expect(e.selectionStart).toBe(2)
-            expect(e.selectionEnd).toBe(3)
-            expect(e.selectionDirection).toBe('forward')
+            expect(textArea.selectionStart).toBe(2)
+            expect(textArea.selectionEnd).toBe(3)
+            expect(textArea.selectionDirection).toBe('forward')
             subscription.unsubscribe()
         })
         test('backward selection', () => {
-            const e = document.createElement('textarea')
-            e.value = 'abc'
+            const textArea = document.createElement('textarea')
+            textArea.value = 'abc'
             const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    observeEditor: () =>
+                    observeViewer: () =>
                         of<CodeEditorData>({
                             type: 'CodeEditor',
                             resource: 'u',
@@ -153,13 +153,13 @@ describe('EditorTextFieldUtils', () => {
                 {
                     observeModel: () => of<TextModel>({ uri: 'u', languageId: 'l', text: 'xyz' }),
                 },
-                { editorId: 'e' },
+                { viewerId: 'e' },
                 setValue,
-                { current: e }
+                { current: textArea }
             )
-            expect(e.selectionStart).toBe(2)
-            expect(e.selectionEnd).toBe(3)
-            expect(e.selectionDirection).toBe('backward')
+            expect(textArea.selectionStart).toBe(2)
+            expect(textArea.selectionEnd).toBe(3)
+            expect(textArea.selectionDirection).toBe('backward')
             subscription.unsubscribe()
         })
     })

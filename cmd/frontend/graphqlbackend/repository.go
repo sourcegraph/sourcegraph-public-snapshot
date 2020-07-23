@@ -7,15 +7,15 @@ import (
 	"sync"
 	"time"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -23,14 +23,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+type RepositoryResolverCache map[api.RepoName]*RepositoryResolver
+
 type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
-	repo        *types.Repo
-	redirectURL *string
-	icon        string
-	matches     []*searchResultMatchResolver
+	repo    *types.Repo
+	icon    string
+	matches []*searchResultMatchResolver
+
+	defaultBranchOnce sync.Once
+	defaultBranch     *GitRefResolver
+	defaultBranchErr  error
+
+	// rev optionally specifies a revision to go to for search results.
+	rev string
 }
 
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
@@ -120,11 +128,6 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	return r.repo.Description, nil
 }
 
-// Deprecated: Use repositoryRedirect query instead.
-func (r *RepositoryResolver) RedirectURL() *string {
-	return r.redirectURL
-}
-
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
@@ -172,28 +175,34 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 }
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
-	if err != nil {
-		return nil, err
-	}
-
-	refBytes, _, exitCode, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "HEAD"})
-	refName := string(bytes.TrimSpace(refBytes))
-
-	if err == nil && exitCode == 0 {
-		// Check that our repo is not empty
-		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
-	}
-
-	// If we fail to get the default branch due to cloning or being empty, we return nothing.
-	if err != nil {
-		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
-			return nil, nil
+	do := func() (*GitRefResolver, error) {
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
+		if err != nil {
+			return nil, err
 		}
-		return nil, err
-	}
 
-	return &GitRefResolver{repo: r, name: refName}, nil
+		refBytes, _, exitCode, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "HEAD"})
+		refName := string(bytes.TrimSpace(refBytes))
+
+		if err == nil && exitCode == 0 {
+			// Check that our repo is not empty
+			_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+		}
+
+		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		if err != nil {
+			if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+
+		return &GitRefResolver{repo: r, name: refName}, nil
+	}
+	r.defaultBranchOnce.Do(func() {
+		r.defaultBranch, r.defaultBranchErr = do()
+	})
+	return r.defaultBranch, r.defaultBranchErr
 }
 
 func (r *RepositoryResolver) Language(ctx context.Context) string {
@@ -219,6 +228,10 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// No clients that we know of read this field. Additionally on performance profiles
+// the marshalling of timestamps is significant in our postgres client. So we
+// deprecate the fields and return fake data for created_at.
+// https://github.com/sourcegraph/sourcegraph/pull/4668
 func (r *RepositoryResolver) CreatedAt() DateTime {
 	return DateTime{Time: time.Now()}
 }
@@ -227,7 +240,12 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 	return nil
 }
 
-func (r *RepositoryResolver) URL() string { return "/" + string(r.repo.Name) }
+func (r *RepositoryResolver) URL() string {
+	if r.rev != "" {
+		return "/" + string(r.repo.Name) + "@" + r.rev
+	}
+	return "/" + string(r.repo.Name)
+}
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Repository(ctx, r.repo)
@@ -238,7 +256,13 @@ func (r *RepositoryResolver) Icon() string {
 }
 
 func (r *RepositoryResolver) Label() (*markdownResolver, error) {
-	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
+	var label string
+	if r.rev != "" {
+		label = string(r.repo.Name) + "@" + r.rev
+	} else {
+		label = string(r.repo.Name)
+	}
+	text := "[" + label + "](/" + label + ")"
 	return &markdownResolver{text: text}, nil
 }
 
@@ -290,15 +314,22 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 }
 
 func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploads(ctx, &LSIFRepositoryUploadsQueryArgs{
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
+		RepositoryID:         r.ID(),
+	})
+}
+
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &LSIFRepositoryIndexesQueryArgs{
+		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
 type AuthorizedUserArgs struct {
 	RepositoryID graphql.ID
-	Perm         string
+	Permission   string
 	First        int32
 	After        *string
 }
@@ -361,7 +392,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, targetRef, &git.ResolveRevisionOptions{
+		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, targetRef, git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {

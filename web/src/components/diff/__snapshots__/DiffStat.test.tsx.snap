@@ -53,7 +53,7 @@ exports[`DiffStat standard 1`] = `
   <small
     className="diff-stat__total"
   >
-    6
+    8
   </small>
   <div
     className="diff-stat__square diff-stat__added"

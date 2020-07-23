@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 )
 
@@ -30,7 +30,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 }
 
 type GitCommitResolver struct {
-	repo *RepositoryResolver
+	repoResolver *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
@@ -54,7 +54,7 @@ type GitCommitResolver struct {
 
 func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
 	res := &GitCommitResolver{
-		repo:            repo,
+		repoResolver:    repo,
 		includeUserInfo: true,
 		oid:             GitObjectID(commit.ID),
 	}
@@ -71,13 +71,13 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) {
 
 	r.once.Do(func() {
 		var cachedRepo *gitserver.Repo
-		cachedRepo, r.err = backend.CachedGitRepo(ctx, r.repo.repo)
+		cachedRepo, r.err = backend.CachedGitRepo(ctx, r.repoResolver.repo)
 		if r.err != nil {
 			return
 		}
 
 		var commit *git.Commit
-		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid))
+		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid), git.ResolveRevisionOptions{})
 		if r.err != nil {
 			return
 		}
@@ -111,10 +111,10 @@ func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID GitObjectI
 }
 
 func (r *GitCommitResolver) ID() graphql.ID {
-	return marshalGitCommitID(r.repo.ID(), r.oid)
+	return marshalGitCommitID(r.repoResolver.ID(), r.oid)
 }
 
-func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repo }
+func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
 func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 
@@ -162,7 +162,7 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	resolvers := make([]*GitCommitResolver, len(r.parents))
 	for i, parent := range r.parents {
 		var err error
-		resolvers[i], err = r.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
+		resolvers[i], err = r.repoResolver.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
 		if err != nil {
 			return nil, err
 		}
@@ -171,22 +171,22 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 }
 
 func (r *GitCommitResolver) URL() (string, error) {
-	return r.repo.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev()), nil
+	return r.repoResolver.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev()), nil
 }
 
 func (r *GitCommitResolver) CanonicalURL() (string, error) {
-	return r.repo.URL() + "/-/commit/" + string(r.oid), nil
+	return r.repoResolver.URL() + "/-/commit/" + string(r.oid), nil
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
+	return externallink.Commit(ctx, r.repoResolver.repo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repoResolver.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repoResolver.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid), false)
+	inventory, err := backend.Repos.GetInventory(ctx, r.repoResolver.repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid), false)
+	inventory, err := backend.Repos.GetInventory(ctx, r.repoResolver.repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -269,14 +269,14 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		query:         args.Query,
 		path:          args.Path,
 		after:         args.After,
-		repo:          r.repo,
+		repo:          r.repoResolver,
 	}, nil
 }
 
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repoResolver.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() (string, error) {
-	url := r.repo.URL()
+	url := r.repoResolver.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
@@ -324,7 +324,7 @@ func (r *GitCommitResolver) repoRevURL() (string, error) {
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() (string, error) {
-	return r.repo.URL() + "@" + string(r.oid), nil
+	return r.repoResolver.URL() + "@" + string(r.oid), nil
 }
 
 // gitCommitBody returns the first line of the Git commit message.

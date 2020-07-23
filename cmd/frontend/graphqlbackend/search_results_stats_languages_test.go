@@ -41,7 +41,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
 		return []byte(wantDefaultBranchRef), nil, 0, nil
 	}
-	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if want := "HEAD"; spec != want {
 			t.Errorf("got spec %q, want %q", spec, want)
 		}
@@ -67,7 +67,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			results: []SearchResultResolver{
 				&FileMatchResolver{
 					JPath:    "three.go",
-					Repo:     &types.Repo{Name: "r"},
+					Repo:     &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID: wantCommitID,
 				},
 			},
@@ -77,7 +77,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			results: []SearchResultResolver{
 				&FileMatchResolver{
 					JPath:        "three.go",
-					Repo:         &types.Repo{Name: "r"},
+					Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID:     wantCommitID,
 					JLineMatches: []*lineMatch{{JLineNumber: 1}},
 				},
@@ -88,13 +88,13 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			results: []SearchResultResolver{
 				&FileMatchResolver{
 					JPath:        "two.go",
-					Repo:         &types.Repo{Name: "r"},
+					Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID:     wantCommitID,
 					JLineMatches: []*lineMatch{{JLineNumber: 1}, {JLineNumber: 2}},
 				},
 				&FileMatchResolver{
 					JPath:        "three.go",
-					Repo:         &types.Repo{Name: "r"},
+					Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
 					CommitID:     wantCommitID,
 					JLineMatches: []*lineMatch{{JLineNumber: 1}},
 				},

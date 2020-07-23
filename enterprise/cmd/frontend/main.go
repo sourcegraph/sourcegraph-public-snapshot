@@ -9,87 +9,74 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
-	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
+	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func main() {
-	initLicensing()
-	initResolvers()
-	initLSIFEndpoints()
-
-	// Connect to the database.
-	if err := shared.InitDB(); err != nil {
-		log.Fatalf("FATAL: %v", err)
-	}
-
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	eauthz.Init(dbconn.Global, clock)
-
-	ctx := context.Background()
-	go func() {
-		t := time.NewTicker(5 * time.Second)
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _ :=
-				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
+	shared.Main(func() enterprise.Services {
+		debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+		if debug {
+			log.Println("enterprise edition")
 		}
-	}()
 
-	go licensing.StartMaxUserCount(&usersStore{})
+		ctx := context.Background()
+		enterpriseServices := enterprise.DefaultServices()
 
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
+		initLicensing()
+		initAuthz(ctx, &enterpriseServices)
+		initCampaigns(ctx, &enterpriseServices)
+		initCodeIntel(&enterpriseServices)
 
-	globalState, err := globalstatedb.Get(ctx)
-	if err != nil {
-		log.Fatalf("FATAL: %v", err)
-	}
+		return enterpriseServices
+	})
+}
 
-	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
-	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-
-	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
-
-	bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
-	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
-		campaignsStore,
-		repositories,
-		clock,
-		bitbucketWebhookName,
-	)
-
-	go bitbucketServerWebhook.SyncWebhooks(1 * time.Minute)
-
-	shared.Main(githubWebhook, bitbucketServerWebhook)
+var msResolutionClock = func() time.Time {
+	return time.Now().UTC().Truncate(time.Microsecond)
 }
 
 func initLicensing() {
+	// TODO(efritz) - de-globalize assignments in this function
+
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
 	db.Users.PreCreateUser = licensing.NewPreCreateUserHook(&usersStore{})
@@ -122,20 +109,88 @@ func initLicensing() {
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
 	}
-}
 
-func initResolvers() {
-	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
-	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
-	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
-		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
-			return time.Now().UTC().Truncate(time.Microsecond)
-		})
+	goroutine.Go(func() {
+		licensing.StartMaxUserCount(&usersStore{})
+	})
+	if envvar.SourcegraphDotComMode() {
+		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
 	}
 }
 
-func initLSIFEndpoints() {
-	httpapi.NewLSIFServerProxy = proxy.NewProxy
+func initAuthz(ctx context.Context, enterpriseServices *enterprise.Services) {
+	eauthz.Init(dbconn.Global, msResolutionClock)
+
+	go func() {
+		t := time.NewTicker(5 * time.Second)
+		for range t.C {
+			allowAccessByDefault, authzProviders, _, _ :=
+				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
+
+	enterpriseServices.AuthzResolver = authzResolvers.NewResolver(dbconn.Global, func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	})
+}
+
+func initCampaigns(ctx context.Context, enterpriseServices *enterprise.Services) {
+	globalState, err := globalstatedb.Get(ctx)
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
+	}
+
+	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, msResolutionClock)
+	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	enterpriseServices.CampaignsResolver = campaignsResolvers.NewResolver(dbconn.Global)
+	enterpriseServices.GithubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, msResolutionClock)
+	enterpriseServices.BitbucketServerWebhook = campaigns.NewBitbucketServerWebhook(
+		campaignsStore,
+		repositories,
+		msResolutionClock,
+		"sourcegraph-"+globalState.SiteID,
+	)
+}
+
+var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
+var rawHunkCacheSize = env.Get("PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY", "1000", "Maximum number of git diff hunk objects that can be loaded into the hunk cache at once.")
+
+func initCodeIntel(enterpriseServices *enterprise.Services) {
+	if bundleManagerURL == "" {
+		log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+	}
+
+	hunkCacheSize, err := strconv.ParseInt(rawHunkCacheSize, 10, 64)
+	if err != nil {
+		log.Fatalf("invalid int %q for PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY: %s", rawHunkCacheSize, err)
+	}
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	store := store.NewObserved(store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global)), observationContext)
+	bundleManagerClient := bundles.New(bundleManagerURL)
+	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
+	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
+	if err != nil {
+		log.Fatalf("failed to initialize hunk cache: %s", err)
+	}
+
+	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(codeintelresolvers.NewResolver(
+		store,
+		bundleManagerClient,
+		api,
+		hunkCache,
+	))
+
+	enterpriseServices.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
+		return codeintelhttpapi.NewUploadHandler(store, bundleManagerClient, internal)
+	}
 }
 
 type usersStore struct{}

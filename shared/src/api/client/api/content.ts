@@ -1,8 +1,8 @@
-import { Remote, ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { LinkPreview, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { LinkPreviewProviderRegistry } from '../services/linkPreview'
-import { wrapRemoteObservable } from './common'
+import { registerRemoteProvider } from './common'
 
 /** @internal */
 export interface ClientContentAPI extends ProxyMarked {
@@ -17,6 +17,6 @@ export function createClientContent(registry: LinkPreviewProviderRegistry): Clie
     return {
         [proxyMarker]: true,
         $registerLinkPreviewProvider: (urlMatchPattern, providerFunction) =>
-            proxy(registry.registerProvider({ urlMatchPattern }, url => wrapRemoteObservable(providerFunction(url)))),
+            registerRemoteProvider(registry, { urlMatchPattern }, providerFunction),
     }
 }

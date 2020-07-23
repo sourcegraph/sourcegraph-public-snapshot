@@ -192,28 +192,20 @@ func entryToSymbol(e ctags.Entry) protocol.Symbol {
 
 var (
 	parsing = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parsing",
-		Help:      "The number of parse jobs currently running.",
+		Name: "symbols_parse_parsing",
+		Help: "The number of parse jobs currently running.",
 	})
 	parseQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parse_queue_size",
-		Help:      "The number of parse jobs enqueued.",
+		Name: "symbols_parse_parse_queue_size",
+		Help: "The number of parse jobs enqueued.",
 	})
 	parseQueueTimeouts = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parse_queue_timeouts",
-		Help:      "The total number of parse jobs that timed out while enqueued.",
+		Name: "symbols_parse_parse_queue_timeouts",
+		Help: "The total number of parse jobs that timed out while enqueued.",
 	})
 	parseFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parse_failed",
-		Help:      "The total number of parse jobs that failed.",
+		Name: "symbols_parse_parse_failed",
+		Help: "The total number of parse jobs that failed.",
 	})
 )
 

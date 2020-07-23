@@ -1,6 +1,53 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`GlobalNavbar hideGlobalSearchInput 1`] = `
+exports[`GlobalNavbar default 1`] = `
+<div
+  className="global-navbar global-navbar--bg border-bottom py-1"
+>
+  <div
+    className="global-navbar__logo-link global-navbar__logo-animated"
+  >
+    <img
+      className="global-navbar__logo"
+      src="/.assets/img/sourcegraph-mark.svg"
+    />
+  </div>
+</div>
+`;
+
+exports[`GlobalNavbar low-profile 1`] = `
+<div
+  className="global-navbar  py-1"
+>
+  <div
+    className="flex-1"
+  />
+</div>
+`;
+
+exports[`GlobalNavbar low-profile-with-logo 1`] = `
+<div
+  className="global-navbar  py-1"
+>
+  <div
+    className="nav-item flex-1"
+  >
+    <a
+      to="/search"
+    >
+      <img
+        className="global-navbar__logo-with-name pl-2"
+        src="/.assets/img/sourcegraph-light-head-logo.svg"
+      />
+    </a>
+  </div>
+  <div
+    className="flex-1"
+  />
+</div>
+`;
+
+exports[`GlobalNavbar no-search-input 1`] = `
 <div
   className="global-navbar global-navbar--bg border-bottom py-1"
 >
@@ -21,31 +68,6 @@ exports[`GlobalNavbar hideGlobalSearchInput 1`] = `
     >
       Search
     </a>
-  </div>
-</div>
-`;
-
-exports[`GlobalNavbar lowProfile 1`] = `
-<div
-  className="global-navbar  py-1"
->
-  <div
-    className="flex-1"
-  />
-</div>
-`;
-
-exports[`GlobalNavbar normal 1`] = `
-<div
-  className="global-navbar global-navbar--bg border-bottom py-1"
->
-  <div
-    className="global-navbar__logo-link global-navbar__logo-animated"
-  >
-    <img
-      className="global-navbar__logo"
-      src="/.assets/img/sourcegraph-mark.svg"
-    />
   </div>
 </div>
 `;

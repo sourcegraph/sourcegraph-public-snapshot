@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -98,6 +98,10 @@ func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
 
 // List lists all product licenses that satisfy the options.
 func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error) {
+	if mocks.licenses.List != nil {
+		return mocks.licenses.List(ctx, opt)
+	}
+
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
@@ -142,4 +146,5 @@ type mockLicenses struct {
 	Create          func(subscriptionID, licenseKey string) (id string, err error)
 	GetByID         func(id string) (*dbLicense, error)
 	GetByLicenseKey func(licenseKey string) (*dbLicense, error)
+	List            func(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error)
 }

@@ -7,6 +7,7 @@
 #
 
 all_oss_commands=" gitserver query-runner github-proxy searcher replacer frontend repo-updater symbols "
+all_commands="${all_oss_commands}${ENTERPRISE_ONLY_COMMANDS}"
 
 # handle options
 verbose=false
@@ -25,11 +26,11 @@ shift "$(expr $OPTIND - 1)"
 # check provided commands
 ok=true
 case $# in
-  0) commands=$all_oss_commands ;;
+  0) commands=$all_commands ;;
   *)
     commands=" $* "
     for cmd in $commands; do
-      case $all_oss_commands in
+      case $all_commands in
         *" $cmd "*) ;;
         *)
           echo >&2 "unknown command: $cmd"
@@ -63,8 +64,8 @@ fi
 popd >/dev/null || exit 1
 
 INSTALL_GO_PKGS=(
-  "github.com/mattn/goreman"
   "github.com/google/zoekt/cmd/zoekt-archive-index"
+  "github.com/google/zoekt/cmd/zoekt-git-index"
   "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
   "github.com/google/zoekt/cmd/zoekt-webserver"
 )

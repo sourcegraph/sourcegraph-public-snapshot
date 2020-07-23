@@ -1,7 +1,9 @@
 package campaigns
 
 import (
+	"database/sql"
 	"flag"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -18,10 +20,40 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	t.Run("Store", testStore(db))
-	t.Run("GitHubWebhook", testGitHubWebhook(db))
+	userID := insertTestUser(t, db)
+
+	t.Run("Store", func(t *testing.T) {
+		t.Run("Campaigns", storeTest(db, testStoreCampaigns))
+		t.Run("Changesets", storeTest(db, testStoreChangesets))
+		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
+		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
+		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
+		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
+	})
+
+	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
+	t.Run("BitbucketWebhook", testBitbucketWebhook(db, userID))
 
 	// The following tests need to be separate because testStore above wraps everything in a global transaction
 	t.Run("StoreLocking", testStoreLocking(db))
-	t.Run("ProcessChangesetJob", testProcessChangesetJob(db))
+}
+
+func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
+	t.Helper()
+
+	_, err := db.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
+	t.Helper()
+
+	err := db.QueryRow("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id").Scan(&userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return userID
 }

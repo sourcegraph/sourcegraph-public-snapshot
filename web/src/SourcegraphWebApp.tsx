@@ -37,7 +37,7 @@ import { createPlatformContext } from './platform/context'
 import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
-import { RepoRevContainerRoute } from './repo/RepoRevContainer'
+import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
 import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -49,15 +49,21 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { parseSearchURLPatternType, searchURLIsCaseSensitive } from './search'
+import {
+    parseSearchURLPatternType,
+    searchURLIsCaseSensitive,
+    parseSearchURLVersionContext,
+    resolveVersionContext,
+} from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
+import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 import { generateFiltersQuery } from '../../shared/src/util/url'
 import { NotificationType } from '../../shared/src/api/client/services/notifications'
 import { SettingsExperimentalFeatures } from './schema/settings.schema'
+import { VersionContext } from './schema/site.schema'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -75,10 +81,10 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
     orgAreaRoutes: readonly OrgAreaRoute[]
     repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
-    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
     showCampaigns: boolean
 }
@@ -139,6 +145,28 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether to display the MonacoQueryInput search field.
      */
     smartSearchField: boolean
+
+    /**
+     * Whether to display the copy query button.
+     */
+    copyQueryButton: boolean
+
+    /*
+     * The version context the instance is in. If undefined, it means no version context is selected.
+     */
+    versionContext?: string
+
+    /**
+     * Available version contexts defined in the site configuration.
+     */
+    availableVersionContexts?: VersionContext[]
+
+    /**
+     * The previously used version context, as specified in localStorage.
+     */
+    previousVersionContext: string | null
+
+    showRepogroupHomepage: boolean
 }
 
 const notificationClassNames = {
@@ -151,6 +179,7 @@ const notificationClassNames = {
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const SEARCH_MODE_KEY = 'sg-search-mode'
+const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {
@@ -199,6 +228,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
         const urlCase = searchURLIsCaseSensitive(window.location.search)
         const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
+        const availableVersionContexts = window.context.experimentalFeatures.versionContexts
+        const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+        const resolvedVersionContext = availableVersionContexts
+            ? parseSearchURLVersionContext(window.location.search) ||
+              resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
+              undefined
+            : undefined
 
         this.state = {
             themePreference: readStoredThemePreference(),
@@ -209,9 +245,14 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
             filtersInQuery: {},
-            splitSearchModes: false,
+            splitSearchModes: true,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
-            smartSearchField: false,
+            copyQueryButton: false,
+            smartSearchField: true,
+            versionContext: resolvedVersionContext,
+            availableVersionContexts,
+            previousVersionContext,
+            showRepogroupHomepage: false,
         }
     }
 
@@ -267,9 +308,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         settingsCascade.final &&
                         !isErrorLike(settingsCascade.final) &&
                         settingsCascade.final['search.defaultPatternType']
-
                     const searchPatternType = defaultPatternType || 'literal'
-
                     this.setState({ searchPatternType })
                 }
             })
@@ -280,8 +319,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const experimentalFeatures: SettingsExperimentalFeatures =
                         settingsCascade.final.experimentalFeatures || {}
-                    const { splitSearchModes = true, smartSearchField = false } = experimentalFeatures
-                    this.setState({ splitSearchModes, smartSearchField })
+                    const {
+                        splitSearchModes = true,
+                        smartSearchField = true,
+                        copyQueryButton = false,
+                        showRepogroupHomepage = false,
+                    } = experimentalFeatures
+                    this.setState({ splitSearchModes, smartSearchField, copyQueryButton, showRepogroupHomepage })
                 }
             })
         )
@@ -296,6 +340,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 this.setState({ systemIsLightTheme: !event.matches })
             })
         )
+
+        // Send initial versionContext to extensions
+        this.extensionsController.services.workspace.versionContext.next(this.state.versionContext)
     }
 
     public componentWillUnmount(): void {
@@ -404,6 +451,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setPatternType={this.setPatternType}
                                     setCaseSensitivity={this.setCaseSensitivity}
                                     smartSearchField={this.state.smartSearchField}
+                                    copyQueryButton={this.state.copyQueryButton}
+                                    versionContext={this.state.versionContext}
+                                    setVersionContext={this.setVersionContext}
+                                    availableVersionContexts={this.state.availableVersionContexts}
+                                    previousVersionContext={this.state.previousVersionContext}
+                                    showRepogroupHomepage={this.state.showRepogroupHomepage}
                                 />
                             )}
                         />
@@ -442,6 +495,19 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({
             searchCaseSensitivity: caseSensitive,
         })
+    }
+
+    private setVersionContext = (versionContext: string | undefined): void => {
+        const resolvedVersionContext = resolveVersionContext(versionContext, this.state.availableVersionContexts)
+        if (!resolvedVersionContext) {
+            localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
+            this.setState({ versionContext: undefined, previousVersionContext: null })
+        } else {
+            localStorage.setItem(LAST_VERSION_CONTEXT_KEY, resolvedVersionContext)
+            this.setState({ versionContext: resolvedVersionContext, previousVersionContext: resolvedVersionContext })
+        }
+
+        this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
     }
 }
 

@@ -1,150 +1,269 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignsDotComPage renders 1`] = `
-Array [
-  <section
-    className="mt-3 mb-5"
-  >
-    <h1
-      className="font-weight-bold display-4"
-    >
-      Campaigns 
-      <span
-        className="badge badge-info"
+<CampaignsDotComPage>
+  <CampaignsMarketing
+    body={
+      <div
+        className="row"
       >
-        Beta
-      </span>
-    </h1>
-    <p
-      className="lead"
-    >
-      <em>
-        Campaigns are currently in beta. During the beta period, campaigns are free to use. After the beta period, campaigns will be available as a paid add-on. Please
-         
-        <a
-          href="mailto:sales@sourcegraph.com?subject=I'm interested in Campaigns!"
+        <section
+          className="my-3 col-md-8 col-xs-12"
         >
-          contact us
-        </a>
-         for more information.
-      </em>
-    </p>
-    <h2
-      className="mb-6"
+          <h2>
+            Get started
+          </h2>
+          <p>
+            <strong>
+              Campaigns are not available on Sourcegraph.com
+            </strong>
+            . Instead, use a private Sourcegraph instance to try them on your code.
+          </p>
+          <ol>
+            <li>
+              Install a private Sourcegraph instance using the
+               
+              <a
+                href="https://docs.sourcegraph.com/#quickstart-guide"
+                rel="noopener"
+              >
+                quickstart guide.
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://docs.sourcegraph.com/admin/repo/add"
+              >
+                Add repositories
+              </a>
+               from your code host to Sourcegraph.
+            </li>
+            <li>
+              Follow the
+               
+              <a
+                href="https://docs.sourcegraph.com/user/campaigns/getting_started"
+                rel="noopener"
+              >
+                Getting started with campaigns
+              </a>
+               
+              guide to enable campaigns on your instance and start using them.
+            </li>
+          </ol>
+          <p>
+            Learn more about campaigns
+             
+            <a
+              href="https://docs.sourcegraph.com/user/campaigns"
+              rel="noopener"
+            >
+              in the documentation
+            </a>
+            .
+          </p>
+          <section
+            className="my-3"
+          >
+            <h2>
+              Ask questions and share feedback
+            </h2>
+            <p>
+              Get in touch on Twitter 
+              <a
+                href="https://twitter.com/srcgraph"
+              >
+                @srcgraph
+              </a>
+              , file an issue in our 
+              <a
+                href="https://github.com/sourcegraph/sourcegraph/issues"
+              >
+                public issue tracker
+              </a>
+              , or email 
+              <a
+                href="mailto:feedback@sourcegraph.com"
+              >
+                feedback@sourcegraph.com
+              </a>
+              . We look forward to hearing from you!
+            </p>
+          </section>
+        </section>
+        <div
+          className="offset-md-1 col-md-10 offset-lg-0 col-lg-4"
+        >
+          <PrivateCodeCta />
+        </div>
+      </div>
+    }
+    hideShareFeedbackBlurb={true}
+  >
+    <section
+      className="mt-3 mb-5"
     >
-      Make and track large-scale changes across all code
-    </h2>
-    <p
-      className="mt-3"
-    >
-      <a
-        href="https://about.sourcegraph.com/product/code-change-management"
-        rel="noopener"
+      <h1
+        className="font-weight-bold display-4"
       >
-        Learn how to run campaigns
-      </a>
-       
-      to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below performing 
-      <code>
-        gofmt
-      </code>
-       over all Go repositories:
-    </p>
+        Campaigns 
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
+      </h1>
+      <h2
+        className="mb-5"
+      >
+        Make and track large-scale changes across all code
+      </h2>
+      <div
+        className="text-center"
+      >
+        <iframe
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen={true}
+          className="percy-hide chromatic-ignore"
+          frameBorder="0"
+          height="315"
+          src="https://www.youtube.com/embed/aqcCrqRB17w"
+          width="560"
+        />
+      </div>
+    </section>
     <div
-      className="position-relative campaign-marketing--video-wrapper"
+      className="row"
     >
-      <iframe
-        allow="autoplay; fullscreen"
-        allowFullScreen={true}
-        className="w-100 h-100 position-absolute campaign-marketing--video-frame"
-        frameBorder="0"
-        src="https://player.vimeo.com/video/398878670?autoplay=0&title=0&byline=0&portrait=0"
-      />
+      <section
+        className="my-3 col-md-8 col-xs-12"
+      >
+        <h2>
+          Get started
+        </h2>
+        <p>
+          <strong>
+            Campaigns are not available on Sourcegraph.com
+          </strong>
+          . Instead, use a private Sourcegraph instance to try them on your code.
+        </p>
+        <ol>
+          <li>
+            Install a private Sourcegraph instance using the
+             
+            <a
+              href="https://docs.sourcegraph.com/#quickstart-guide"
+              rel="noopener"
+            >
+              quickstart guide.
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://docs.sourcegraph.com/admin/repo/add"
+            >
+              Add repositories
+            </a>
+             from your code host to Sourcegraph.
+          </li>
+          <li>
+            Follow the
+             
+            <a
+              href="https://docs.sourcegraph.com/user/campaigns/getting_started"
+              rel="noopener"
+            >
+              Getting started with campaigns
+            </a>
+             
+            guide to enable campaigns on your instance and start using them.
+          </li>
+        </ol>
+        <p>
+          Learn more about campaigns
+           
+          <a
+            href="https://docs.sourcegraph.com/user/campaigns"
+            rel="noopener"
+          >
+            in the documentation
+          </a>
+          .
+        </p>
+        <section
+          className="my-3"
+        >
+          <h2>
+            Ask questions and share feedback
+          </h2>
+          <p>
+            Get in touch on Twitter 
+            <a
+              href="https://twitter.com/srcgraph"
+            >
+              @srcgraph
+            </a>
+            , file an issue in our 
+            <a
+              href="https://github.com/sourcegraph/sourcegraph/issues"
+            >
+              public issue tracker
+            </a>
+            , or email 
+            <a
+              href="mailto:feedback@sourcegraph.com"
+            >
+              feedback@sourcegraph.com
+            </a>
+            . We look forward to hearing from you!
+          </p>
+        </section>
+      </section>
+      <div
+        className="offset-md-1 col-md-10 offset-lg-0 col-lg-4"
+      >
+        <PrivateCodeCta>
+          <div
+            className="private-code-cta shadow d-flex flex-row card"
+          >
+            <div
+              className="private-code-cta__icon-column d-flex flex-column align-items-center"
+            >
+              <img
+                className="private-code-cta__logo"
+                src="/.assets/img/download-illus.svg"
+              />
+            </div>
+            <div>
+              <h3>
+                Search your private code
+              </h3>
+              <p>
+                Set up a private Sourcegraph instance to search your private repositories on GitHub, GitLab, Bitbucket and local installations of git, perforce, svn and other code repositories.
+              </p>
+              <AnchorLink
+                rel="noreferrer"
+                target="_blank"
+                to="https://docs.sourcegraph.com/"
+              >
+                <a
+                  href="https://docs.sourcegraph.com/"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <button
+                    className="btn btn-primary ga-cta-install-now"
+                    type="button"
+                  >
+                    Install now
+                  </button>
+                </a>
+              </AnchorLink>
+            </div>
+          </div>
+        </PrivateCodeCta>
+      </div>
     </div>
-  </section>,
-  <section
-    className="my-3"
-  >
-    <h2>
-      Get started
-    </h2>
-    <p>
-      Campaigns are not available on Sourcegraph.com. Instead, use a private Sourcegraph instance to try them on your code.
-    </p>
-    <ol>
-      <li>
-        Install a private Sourcegraph instance using the
-         
-        <a
-          href="https://docs.sourcegraph.com/#quickstart-guide"
-          rel="noopener"
-        >
-          quickstart guide.
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://docs.sourcegraph.com/admin/repo/add"
-        >
-          Add repositories
-        </a>
-         from your code host to Sourcegraph.
-      </li>
-      <li>
-        <a
-          href="https://docs.sourcegraph.com/user/campaigns"
-          rel="noopener"
-        >
-          Update the site configuration settings
-        </a>
-         
-        to enable campaigns.
-      </li>
-    </ol>
-    <a
-      className="btn btn-primary"
-      href="https://docs.sourcegraph.com/admin/install"
-      rel="noopener"
-    >
-      Get started now
-    </a>
-    <a
-      className="btn btn-primary ml-2"
-      href="https://docs.sourcegraph.com/user/campaigns"
-      rel="noopener"
-    >
-      Read more about campaigns
-    </a>
-  </section>,
-  <section
-    className="py-5"
-  >
-    <h2>
-      Ask questions and share feedback
-    </h2>
-    <p>
-      Get in touch on Twitter 
-      <a
-        href="https://twitter.com/srcgraph"
-      >
-        @srcgraph
-      </a>
-      , file an issue in our
-       
-      <a
-        href="https://github.com/sourcegraph/sourcegraph/issues"
-      >
-        public issue tracker
-      </a>
-      , or email
-       
-      <a
-        href="mailto:feedback@sourcegraph.com"
-      >
-        feedback@sourcegraph.com
-      </a>
-      . We look forward to hearing from you!
-    </p>
-  </section>,
-]
+  </CampaignsMarketing>
+</CampaignsDotComPage>
 `;

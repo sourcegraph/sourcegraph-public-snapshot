@@ -9,24 +9,58 @@ import (
 	"github.com/src-d/enry/v2"
 )
 
-type UnsupportedError struct {
-	Msg string
-}
-
-func (e *UnsupportedError) Error() string {
-	return e.Msg
-}
-
-// isPatternExpression returns true if every leaf node in a tree root at node is
-// a search pattern.
-func isPatternExpression(nodes []Node) bool {
-	result := true
-	VisitParameter(nodes, func(field, _ string, _, _ bool) {
-		if field != "" && field != "content" {
-			result = false
+// exists traverses every node in nodes and returns early as soon as fn is satisfied.
+func exists(nodes []Node, fn func(node Node) bool) bool {
+	found := false
+	for _, node := range nodes {
+		if fn(node) {
+			return true
 		}
+		if operator, ok := node.(Operator); ok {
+			return exists(operator.Operands, fn)
+		}
+	}
+	return found
+}
+
+// forAll traverses every node in nodes and returns whether all nodes satisfy fn.
+func forAll(nodes []Node, fn func(node Node) bool) bool {
+	sat := true
+	for _, node := range nodes {
+		if !fn(node) {
+			return false
+		}
+		if operator, ok := node.(Operator); ok {
+			return forAll(operator.Operands, fn)
+		}
+	}
+	return sat
+}
+
+// isPatternExpression returns true if every leaf node in nodes is a search
+// pattern expression.
+func isPatternExpression(nodes []Node) bool {
+	return !exists(nodes, func(node Node) bool {
+		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
+		_, ok := node.(Parameter)
+		return ok
 	})
-	return result
+}
+
+// containsPattern returns true if any descendent of nodes is a search pattern.
+func containsPattern(node Node) bool {
+	return exists([]Node{node}, func(node Node) bool {
+		_, ok := node.(Pattern)
+		return ok
+	})
+}
+
+// returns true if descendent of node contains and/or expressions.
+func containsAndOrExpression(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		term, ok := node.(Operator)
+		return ok && (term.Kind == And || term.Kind == Or)
+	})
 }
 
 // ContainsAndOrKeyword returns true if this query contains or- or and-
@@ -35,6 +69,19 @@ func isPatternExpression(nodes []Node) bool {
 func ContainsAndOrKeyword(input string) bool {
 	lower := strings.ToLower(input)
 	return strings.Contains(lower, " and ") || strings.Contains(lower, " or ")
+}
+
+// ContainsRegexpMetasyntax returns true if a string is a valid regular
+// expression and contains regex metasyntax (i.e., it is not a literal).
+func ContainsRegexpMetasyntax(input string) bool {
+	_, err := regexp.Compile(input)
+	if err == nil {
+		// It is a regexp. But does it contain metasyntax, or is it literal?
+		if len(regexp.QuoteMeta(input)) != len(input) {
+			return true
+		}
+	}
+	return false
 }
 
 // processTopLevel processes the top level of a query. It validates that we can
@@ -93,11 +140,8 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 // containing whitespace or balanced parentheses, can be treated as a search
 // pattern in the and/or grammar.
 func isPureSearchPattern(buf []byte) bool {
-	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the heuristic.
-	try := &parser{
-		buf:       buf,
-		heuristic: heuristic{parensAsPatterns: false},
-	}
+	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the parensAsPatterns heuristic.
+	try := &parser{buf: buf}
 	result, err := try.parseOr()
 	if err != nil {
 		// This is not an and/or expression, but it is balanced. It
@@ -209,20 +253,20 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldCase:
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
-		FieldRepo, "r":
+		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup, "g":
+		FieldRepoGroup:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldFile, "f":
+		FieldFile:
 		return satisfies(isValidRegexp)
 	case
 		FieldFork,
 		FieldArchived:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldLang, "l", "language":
+		FieldLang:
 		return satisfies(isLanguage)
 	case
 		FieldType:
@@ -238,13 +282,13 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepoHasCommitAfter:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldBefore, "until",
-		FieldAfter, "since":
+		FieldBefore,
+		FieldAfter:
 		return satisfies(isNotNegated)
 	case
 		FieldAuthor,
 		FieldCommitter,
-		FieldMessage, "m", "msg":
+		FieldMessage:
 		return satisfies(isValidRegexp)
 	case
 		FieldIndex:
@@ -270,12 +314,20 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 func validate(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated, _ bool) {
+	VisitParameter(nodes, func(field, value string, negated bool) {
 		if err != nil {
 			return
 		}
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
+	})
+	VisitPattern(nodes, func(value string, _ bool, annotation Annotation) {
+		if annotation.Labels.isSet(Regexp) {
+			if err != nil {
+				return
+			}
+			_, err = regexp.Compile(value)
+		}
 	})
 	return err
 }

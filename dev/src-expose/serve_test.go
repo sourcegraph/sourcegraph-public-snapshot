@@ -19,6 +19,8 @@ import (
 
 const testAddress = "test.local:3939"
 
+var discardLogger = log.New(ioutil.Discard, "", log.LstdFlags)
+
 func TestReposHandler(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -36,7 +38,14 @@ func TestReposHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			root := gitInitRepos(t, tc.repos...)
 
-			h, err := reposHandler(testLogger(t), testAddress, root)
+			h, err := (&Serve{
+				Info:  testLogger(t),
+				Debug: discardLogger,
+				Addr:  testAddress,
+				Root:  root,
+
+				updatingServerInfo: 2, // disables background updates
+			}).handler()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -62,7 +71,14 @@ func TestReposHandler(t *testing.T) {
 			// This is the difference to above, we point our root at the git repo
 			root = filepath.Join(root, "project-root")
 
-			h, err := reposHandler(testLogger(t), testAddress, root)
+			h, err := (&Serve{
+				Info:  testLogger(t),
+				Debug: discardLogger,
+				Addr:  testAddress,
+				Root:  root,
+
+				updatingServerInfo: 2, // disables background updates
+			}).handler()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,7 +185,13 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos := configureRepos(testLogger(t), root)
+	repos := (&Serve{
+		Info:  testLogger(t),
+		Debug: discardLogger,
+		Root:  root,
+
+		updatingServerInfo: 2, // disables background updates
+	}).configureRepos()
 	if len(repos) != 0 {
 		t.Fatalf("expected no repos, got %v", repos)
 	}

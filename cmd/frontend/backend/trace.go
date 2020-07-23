@@ -16,18 +16,14 @@ import (
 
 var metricLabels = []string{"method", "success"}
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "backend",
-	Name:      "client_request_duration_seconds",
-	Help:      "Total time spent on backend endpoints.",
-	Buckets:   tracepkg.UserLatencyBuckets,
+	Name:    "src_backend_client_request_duration_seconds",
+	Help:    "Total time spent on backend endpoints.",
+	Buckets: tracepkg.UserLatencyBuckets,
 }, metricLabels)
 
 var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "backend",
-	Name:      "client_requests",
-	Help:      "Current number of requests running for a method.",
+	Name: "src_backend_client_requests",
+	Help: "Current number of requests running for a method.",
 }, []string{"method"})
 
 func init() {

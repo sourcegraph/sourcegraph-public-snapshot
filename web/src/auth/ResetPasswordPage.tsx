@@ -78,12 +78,12 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value })
+    private onEmailFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ email: event.target.value })
     }
 
-    private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
+    private handleSubmitResetPasswordInit = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-init', {
             credentials: 'same-origin',
@@ -96,21 +96,22 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                 email: this.state.email,
             }),
         })
-            .then(resp => {
-                if (resp.status === 200) {
+            .then(response => {
+                if (response.status === 200) {
                     this.setState({ submitOrError: null })
-                } else if (resp.status === 429) {
+                } else if (response.status === 429) {
                     this.setState({
                         submitOrError: new Error('Too many password reset requests. Try again in a few minutes.'),
                     })
                 } else {
-                    resp.text()
+                    response
+                        .text()
                         .catch(() => null)
                         .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
-                        .catch(err => console.error(err))
+                        .catch(error => console.error(error))
                 }
             })
-            .catch(err => this.setState({ submitOrError: asError(err) }))
+            .catch(error => this.setState({ submitOrError: asError(error) }))
     }
 }
 
@@ -175,12 +176,12 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
         )
     }
 
-    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ password: e.target.value })
+    private onPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ password: event.target.value })
     }
 
-    private handleSubmitResetPassword = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
+    private handleSubmitResetPassword = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-code', {
             credentials: 'same-origin',
@@ -195,16 +196,16 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 password: this.state.password,
             }),
         })
-            .then(resp => {
-                if (resp.status === 200) {
+            .then(response => {
+                if (response.status === 200) {
                     this.setState({ submitOrError: null })
-                } else if (resp.status === 401) {
+                } else if (response.status === 401) {
                     this.setState({ submitOrError: new Error('Password reset code was invalid or expired.') })
                 } else {
                     this.setState({ submitOrError: new Error('Password reset failed.') })
                 }
             })
-            .catch(err => this.setState({ submitOrError: asError(err) }))
+            .catch(error => this.setState({ submitOrError: asError(error) }))
     }
 }
 
@@ -226,10 +227,10 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
         if (this.props.authenticatedUser) {
             body = <div className="alert alert-danger">Authenticated users may not perform password reset.</div>
         } else if (window.context.resetPasswordEnabled) {
-            const searchParams = new URLSearchParams(this.props.location.search)
-            if (searchParams.has('code') || searchParams.has('userID')) {
-                const code = searchParams.get('code')
-                const userID = parseInt(searchParams.get('userID') || '', 10)
+            const searchParameters = new URLSearchParams(this.props.location.search)
+            if (searchParameters.has('code') || searchParameters.has('userID')) {
+                const code = searchParameters.get('code')
+                const userID = parseInt(searchParameters.get('userID') || '', 10)
                 if (code && !isNaN(userID)) {
                     body = <ResetPasswordCodeForm code={code} userID={userID} history={this.props.history} />
                 } else {

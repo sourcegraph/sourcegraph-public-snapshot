@@ -9,6 +9,9 @@
     "**/out": true,
     "**/__fixtures__/**": true,
     "**/.cache": true,
+    "**/.nyc_output": true,
+    "doc/_resources/assets": true,
+    "**/.eslintcache": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
@@ -60,10 +63,6 @@
     },
     {
       "directory": "shared",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "cmd/precise-code-intel",
       "changeProcessCWD": true,
     },
   ],

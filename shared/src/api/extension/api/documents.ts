@@ -1,8 +1,8 @@
-import { ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from 'comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextModelUpdate } from '../../client/services/modelService'
-import { ExtDocument } from './textDocument'
+import { ExtensionDocument } from './textDocument'
 
 /** @internal */
 export interface ExtDocumentsAPI extends ProxyMarked {
@@ -18,10 +18,10 @@ class DocumentNotFoundError extends Error {
 }
 
 /** @internal */
-export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
+export class ExtensionDocuments implements ExtDocumentsAPI, ProxyMarked {
     public readonly [proxyMarker] = true
 
-    private documents = new Map<string, ExtDocument>()
+    private documents = new Map<string, ExtensionDocument>()
 
     constructor(private sync: () => Promise<void>) {}
 
@@ -30,12 +30,12 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
      *
      * @internal
      */
-    public get(resource: string): ExtDocument {
-        const doc = this.documents.get(resource)
-        if (!doc) {
+    public get(resource: string): ExtensionDocument {
+        const textDocument = this.documents.get(resource)
+        if (!textDocument) {
             throw new DocumentNotFoundError(resource)
         }
-        return doc
+        return textDocument
     }
 
     /**
@@ -44,11 +44,13 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
      *
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
+     *
+     * @deprecated `getSync()` makes no additional guarantees over `get()` anymore.
      */
-    public async getSync(resource: string): Promise<ExtDocument> {
-        const doc = this.documents.get(resource)
-        if (doc) {
-            return doc
+    public async getSync(resource: string): Promise<ExtensionDocument> {
+        const textDocument = this.documents.get(resource)
+        if (textDocument) {
+            return textDocument
         }
         await this.sync()
         return this.get(resource)
@@ -59,8 +61,8 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
      *
      * @internal
      */
-    public getAll(): ExtDocument[] {
-        return Array.from(this.documents.values())
+    public getAll(): ExtensionDocument[] {
+        return [...this.documents.values()]
     }
 
     public openedTextDocuments = new Subject<TextDocument>()
@@ -70,14 +72,14 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
             switch (update.type) {
                 case 'added': {
                     const { uri, languageId, text } = update
-                    const doc = new ExtDocument({ uri, languageId, text })
-                    this.documents.set(update.uri, doc)
-                    this.openedTextDocuments.next(doc)
+                    const textDocument = new ExtensionDocument({ uri, languageId, text })
+                    this.documents.set(update.uri, textDocument)
+                    this.openedTextDocuments.next(textDocument)
                     break
                 }
                 case 'updated': {
-                    const doc = this.get(update.uri)
-                    doc.update(update)
+                    const textDocument = this.get(update.uri)
+                    textDocument.update(update)
                     break
                 }
                 case 'deleted':

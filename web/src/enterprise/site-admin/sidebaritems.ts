@@ -1,5 +1,12 @@
 import HeartIcon from 'mdi-react/HeartIcon'
-import { otherGroup, siteAdminSidebarGroups, usersGroup, overviewGroup } from '../../site-admin/sidebaritems'
+import BrainIcon from 'mdi-react/BrainIcon'
+import {
+    otherGroup,
+    siteAdminSidebarGroups,
+    usersGroup,
+    repositoriesGroup,
+    overviewGroup,
+} from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
@@ -28,6 +35,21 @@ const dotcomGroup: SiteAdminSideBarGroup = {
     condition: () => SHOW_BUSINESS_FEATURES,
 }
 
+const codeIntelGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Code intelligence', icon: BrainIcon },
+    items: [
+        {
+            to: '/site-admin/code-intelligence/uploads',
+            label: 'Uploads',
+        },
+        {
+            to: '/site-admin/code-intelligence/indexes',
+            label: 'Auto indexing',
+            condition: () => Boolean(window.context?.sourcegraphDotComMode),
+        },
+    ],
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdminSidebarGroups.reduce<
     SiteAdminSideBarGroups
 >((enterpriseGroups, group) => {
@@ -45,6 +67,14 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdmi
                     },
                 ],
             },
+        ]
+    }
+    if (group === repositoriesGroup) {
+        return [
+            ...enterpriseGroups,
+            group,
+            // Insert codeintel group after repositories group
+            codeIntelGroup,
         ]
     }
     if (group === usersGroup) {

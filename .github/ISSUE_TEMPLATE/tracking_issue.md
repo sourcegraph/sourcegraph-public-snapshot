@@ -1,25 +1,26 @@
 ---
 name: Tracking issue
 about: An issue to capture planned and on-going work of a team's milestone.
-title: '$TEAM: $MILESTONE Tracking issue'
+title: 'WIP: $TEAM $MILESTONE Tracking issue'
 labels: 'tracking'
 assignees: ''
 
 ---
 
-### Status
+### Plan
 
-This tracking issue is being prepared.
+<!--
+Summarize what the team wants to achieve this iteration.
+- What are the problems we want to solve or what information do we want to gather?
+- Why is solving those problems or gathering that information important?
+- How do we plan to solve those problems or gather that information?
+-->
 
 ### Availability
 
-Period is from **$START_DATE** to **$END_DATE**. Please write the days you won't be working and the number of working days for the period.
+If you have planned unavailability this iteration (e.g., vacation), you can note that here.
 
-- Teammate A: 15d
-- Teammate B: 12d
-- Teammate ...
-
-### Workload
+### Tracked issues
 
 <!-- BEGIN WORK -->
 <!-- END WORK -->

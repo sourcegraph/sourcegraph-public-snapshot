@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -94,16 +95,14 @@ const (
 // A worker continuously dequeues repos and sends updates to gitserver, but its concurrency
 // is limited by the gitMaxConcurrentClones site configuration.
 type updateScheduler struct {
-	mu sync.Mutex
-
 	updateQueue *updateQueue
 	schedule    *schedule
 }
 
-// A configuredRepo2 represents the configuration data for a given repo from
+// A configuredRepo represents the configuration data for a given repo from
 // a configuration source, such as information retrieved from GitHub for a
 // given GitHubConnection.
-type configuredRepo2 struct {
+type configuredRepo struct {
 	URL  string
 	ID   api.RepoID
 	Name api.RepoName
@@ -186,7 +185,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				break
 			}
 
-			go func(ctx context.Context, repo configuredRepo2, cancel context.CancelFunc) {
+			go func(ctx context.Context, repo configuredRepo, cancel context.CancelFunc) {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
 
@@ -207,7 +206,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 }
 
 // requestRepoUpdate sends a request to gitserver to request an update.
-var requestRepoUpdate = func(ctx context.Context, repo configuredRepo2, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 	return gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repo.Name, URL: repo.URL}, since)
 }
 
@@ -226,11 +225,25 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 	return limiter
 }
 
-// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
+// UpdateFromDiff updates the scheduled and queued repos from the given sync
+// diff.
+//
+// We upsert all repos that exist to the scheduler. This is so the
+// scheduler can track the repositories and periodically update
+// them.
+//
+// Items on the update queue will be cloned/fetched as soon as
+// possible. We treat repos differently depending on which part of the
+// diff they are:
+//
+//
+//   Deleted    - remove from scheduler and queue.
+//   Added      - new repo, enqueue for asap clone.
+//   Modified   - likely new url or name. May also be a sign of new
+//                commits. Enqueue for asap clone (or fetch).
+//   Unmodified - we likely already have this cloned. Just rely on
+//                the scheduler and do not enqueue.
 func (s *updateScheduler) UpdateFromDiff(diff Diff) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	for _, r := range diff.Deleted {
 		s.remove(r)
 	}
@@ -256,8 +269,23 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	schedKnownRepos.Set(float64(known))
 }
 
+// SetCloned will ensure only repos in names are treated as cloned. All other
+// repositories in the scheduler will be marked as uncloned.
+//
+// This method should be called periodically with the list of all repositories
+// cloned on gitserver. This ensures the scheduler treats uncloned
+// repositories with a higher priority.
+func (s *updateScheduler) SetCloned(names []string) {
+	s.schedule.setCloned(names)
+}
+
+// upsert adds r to the scheduler for periodic updates. If r.ID is already in
+// the scheduler, then the fields are updated (upsert).
+//
+// If enqueue is true then r is also enqueued to the update queue for a git
+// fetch/clone soon.
 func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
-	repo := configuredRepo2FromRepo(r)
+	repo := configuredRepoFromRepo(r)
 
 	updated := s.schedule.upsert(repo)
 	log15.Debug("scheduler.schedule.upserted", "repo", r.Name, "updated", updated)
@@ -270,7 +298,7 @@ func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
 }
 
 func (s *updateScheduler) remove(r *Repo) {
-	repo := configuredRepo2FromRepo(r)
+	repo := configuredRepoFromRepo(r)
 
 	if s.schedule.remove(repo) {
 		log15.Debug("scheduler.schedule.removed", "repo", r.Name)
@@ -281,8 +309,8 @@ func (s *updateScheduler) remove(r *Repo) {
 	}
 }
 
-func configuredRepo2FromRepo(r *Repo) configuredRepo2 {
-	repo := configuredRepo2{
+func configuredRepoFromRepo(r *Repo) configuredRepo {
+	repo := configuredRepo{
 		ID:   r.ID,
 		Name: api.RepoName(r.Name),
 	}
@@ -297,7 +325,7 @@ func configuredRepo2FromRepo(r *Repo) configuredRepo2 {
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
 func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url string) {
-	repo := configuredRepo2{
+	repo := configuredRepo{
 		ID:   id,
 		Name: name,
 		URL:  url,
@@ -410,7 +438,7 @@ const (
 
 // repoUpdate is a repository that has been queued for an update.
 type repoUpdate struct {
-	Repo     configuredRepo2
+	Repo     configuredRepo
 	Priority priority
 	Seq      uint64 // the sequence number of the update
 	Updating bool   // whether the repo has been acquired for update
@@ -434,7 +462,7 @@ func (q *updateQueue) reset() {
 //
 // If the given priority is higher than the one in the queue,
 // the repo's position in the queue is updated accordingly.
-func (q *updateQueue) enqueue(repo configuredRepo2, p priority) (updated bool) {
+func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -479,7 +507,7 @@ func (q *updateQueue) nextSeq() uint64 {
 }
 
 // remove removes the repo from the queue if the repo.Updating matches the updating argument.
-func (q *updateQueue) remove(repo configuredRepo2, updating bool) (removed bool) {
+func (q *updateQueue) remove(repo configuredRepo, updating bool) (removed bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -499,16 +527,16 @@ func (q *updateQueue) remove(repo configuredRepo2, updating bool) (removed bool)
 // acquireNext acquires the next repo for update.
 // The acquired repo must be removed from the queue
 // when the update finishes (independent of success or failure).
-func (q *updateQueue) acquireNext() (configuredRepo2, bool) {
+func (q *updateQueue) acquireNext() (configuredRepo, bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if len(q.heap) == 0 {
-		return configuredRepo2{}, false
+		return configuredRepo{}, false
 	}
 	update := q.heap[0]
 	if update.Updating {
 		// Everything in the queue is already updating.
-		return configuredRepo2{}, false
+		return configuredRepo{}, false
 	}
 	update.Updating = true
 	heap.Fix(q, update.Index)
@@ -575,14 +603,14 @@ type schedule struct {
 
 // scheduledRepoUpdate is the update schedule for a single repo.
 type scheduledRepoUpdate struct {
-	Repo     configuredRepo2 // the repo to update
-	Interval time.Duration   // how regularly the repo is updated
-	Due      time.Time       // the next time that the repo will be enqueued for a update
-	Index    int             `json:"-"` // the index in the heap
+	Repo     configuredRepo // the repo to update
+	Interval time.Duration  // how regularly the repo is updated
+	Due      time.Time      // the next time that the repo will be enqueued for a update
+	Index    int            `json:"-"` // the index in the heap
 }
 
 // upsert inserts or updates a repo in the schedule.
-func (s *schedule) upsert(repo configuredRepo2) (updated bool) {
+func (s *schedule) upsert(repo configuredRepo) (updated bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -606,9 +634,44 @@ func (s *schedule) upsert(repo configuredRepo2) (updated bool) {
 	return false
 }
 
+func (s *schedule) setCloned(names []string) {
+	// Set of names created outside of lock for fast checking.
+	cloned := make(map[string]struct{}, len(names))
+	for _, n := range names {
+		cloned[strings.ToLower(n)] = struct{}{}
+	}
+
+	// All non-cloned repos will be due for cloning as if they are newly added
+	// repos.
+	notClonedDue := timeNow().Add(minDelay)
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Iterate over all repos in the scheduler. If it isn't in cloned bump it
+	// up the queue. Note: we iterate over index because we will be mutating
+	// heap.
+	rescheduleTimer := false
+	for _, repoUpdate := range s.index {
+		if _, ok := cloned[strings.ToLower(string(repoUpdate.Repo.Name))]; ok {
+			continue
+		}
+		if repoUpdate.Due.After(notClonedDue) {
+			repoUpdate.Due = notClonedDue
+			heap.Fix(s, repoUpdate.Index)
+			rescheduleTimer = true
+		}
+	}
+
+	// We updated the queue, inform the scheduler loop.
+	if rescheduleTimer {
+		s.rescheduleTimer()
+	}
+}
+
 // updateInterval updates the update interval of a repo in the schedule.
 // It does nothing if the repo is not in the schedule.
-func (s *schedule) updateInterval(repo configuredRepo2, interval time.Duration) {
+func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -632,7 +695,7 @@ func (s *schedule) updateInterval(repo configuredRepo2, interval time.Duration) 
 }
 
 // remove removes a repo from the schedule.
-func (s *schedule) remove(repo configuredRepo2) (removed bool) {
+func (s *schedule) remove(repo configuredRepo) (removed bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}

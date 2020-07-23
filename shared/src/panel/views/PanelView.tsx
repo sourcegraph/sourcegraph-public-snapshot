@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { PanelViewWithComponent, PanelViewProviderRegistrationOptions } from '../../api/client/services/panelViews'
@@ -6,12 +6,12 @@ import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { Markdown } from '../../components/Markdown'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { SettingsCascadeProps } from '../../settings/settings'
-import { createLinkClickHandler } from '../../util/linkClickHandler'
 import { renderMarkdown } from '../../util/markdown'
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
+import { VersionContextProps } from '../../search/util'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps {
     panelView: PanelViewWithComponent & Pick<PanelViewProviderRegistrationOptions, 'id'>
     repoName?: string
     history: H.History
@@ -28,10 +28,7 @@ interface State {}
 export class PanelView extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
-            <div
-                onClick={createLinkClickHandler(this.props.history)}
-                className="panel__tabs-content panel__tabs-content--scroll"
-            >
+            <div className="panel__tabs-content panel__tabs-content--scroll">
                 {this.props.panelView.content && (
                     <div className="px-2 pt-2">
                         <Markdown
@@ -50,6 +47,7 @@ export class PanelView extends React.PureComponent<Props, State> {
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         extensionsController={this.props.extensionsController}
                         settingsCascade={this.props.settingsCascade}
+                        versionContext={this.props.versionContext}
                     />
                 )}
                 {!this.props.panelView.content &&

@@ -96,7 +96,7 @@ export const SiteAdminProductSubscriptionNode: React.FunctionComponent<SiteAdmin
             )}
         </td>
         <td className="w-100">
-            {node.activeLicense && node.activeLicense.info && node.activeLicense.info.tags.length > 0 ? (
+            {node.activeLicense?.info && node.activeLicense.info.tags.length > 0 ? (
                 <ProductLicenseTags tags={node.activeLicense.info.tags} />
             ) : (
                 <span className="text-muted font-italic">None</span>

@@ -15,11 +15,6 @@ interface Props extends KeyboardShortcutsProps {
  */
 const LEGACY_KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     {
-        id: 'focusSearch',
-        title: 'Focus search bar',
-        keybindings: [{ ordered: ['/'] }],
-    },
-    {
         id: 'canonicalURL',
         title: 'Expand URL to its canonical form (on file or tree page)',
         keybindings: [{ ordered: ['y'] }],
@@ -35,8 +30,8 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            {keyboardShortcutForShow.keybindings.map((keybinding, i) => (
-                <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
+            {keyboardShortcutForShow.keybindings.map((keybinding, index) => (
+                <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
             <Modal isOpen={isOpen} toggle={toggleIsOpen} centered={true} autoFocus={true} keyboard={true} fade={false}>
                 <div className="modal-header">
@@ -62,12 +57,14 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
                                 >
                                     {title}
                                     <span>
-                                        {keybindings.map((keybinding, i) => (
-                                            <span key={i}>
-                                                {i !== 0 && ' or '}
-                                                {[...(keybinding.held || []), ...keybinding.ordered].map((key, i) => (
-                                                    <kbd key={i}>{key}</kbd>
-                                                ))}
+                                        {keybindings.map((keybinding, index) => (
+                                            <span key={index}>
+                                                {index !== 0 && ' or '}
+                                                {[...(keybinding.held || []), ...keybinding.ordered].map(
+                                                    (key, index) => (
+                                                        <kbd key={index}>{key}</kbd>
+                                                    )
+                                                )}
                                             </span>
                                         ))}
                                     </span>

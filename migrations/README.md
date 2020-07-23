@@ -40,14 +40,33 @@ or, to only run the DB generate scripts (subset of the command above):
 
 ```
 go generate ./migrations/
-go generate ./cmd/frontend/db/
+go generate ./internal/db/
 ```
 
-Verify that the migration is backward-compatible:
+Verify that the migration is backward-compatible with the following command. This check will determine the
+version of the code that is running on sourcegraph.com, then run those unit tests against the new schema.
+This helps to ensure that during a rolling upgrade from the current version to this version will not fail
+on any of the running instances until the rolling update is complete.
 
 ```
 dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so make sure the work tree is clean before running
 ```
+
+Some migrations are difficult to do in a single step. For instance, renaming a column, table, or view, or
+adding a column with a non-nullable constraint will all break existing code that accesses that table or view.
+In order to do such changes you may need to break your changes into several parts separated by a deployment.
+
+For example, a non-nullable column can be added to an existing table with the following steps:
+
+- Add a nullable column to the table
+- Update the code to always populate this row on writes
+- Deploy to sourcegraph.com
+- Add a non-nullable constraint to the table
+- Deploy to sourcegraph.com
+
+We have a hard requirement (enforced by CI) that rolling upgrades are always possible on sourcegraph.com. When
+possible, this same standard should be kept between minor release versions to ensure a smooth upgrade process
+for private instances (although there will be exceptions due to feature velocity and a monthly release cadence).
 
 ### Migrating up/down
 

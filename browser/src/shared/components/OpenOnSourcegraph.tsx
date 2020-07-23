@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { OpenInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
-import { SourcegraphIconButton, SourcegraphIconButtonProps } from './Button'
+import { SourcegraphIconButton, SourcegraphIconButtonProps } from './SourcegraphIconButton'
 import classNames from 'classnames'
 
 interface Props extends SourcegraphIconButtonProps {
@@ -27,15 +27,15 @@ export class OpenOnSourcegraph extends React.Component<Props, {}> {
         if (props.commit) {
             return `${url}/-/compare/${props.commit.baseRev}...${props.commit.headRev}?utm_source=${getPlatformName()}`
         }
-        if (props.rev) {
-            url = `${url}@${props.rev}`
+        if (props.revision) {
+            url = `${url}@${props.revision}`
         }
         if (props.filePath) {
             url = `${url}/-/blob/${props.filePath}`
         }
         if (props.query) {
             if (props.query.diff) {
-                url = `${url}?diff=${props.query.diff.rev}&utm_source=${getPlatformName()}`
+                url = `${url}?diff=${props.query.diff.revision}&utm_source=${getPlatformName()}`
             } else if (props.query.search) {
                 url = `${url}?q=${props.query.search}&utm_source=${getPlatformName()}`
             }

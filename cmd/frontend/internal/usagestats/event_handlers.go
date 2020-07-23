@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -60,6 +60,7 @@ type bigQueryEvent struct {
 	Source          string `json:"source"`
 	Timestamp       string `json:"timestamp"`
 	Version         string `json:"version"`
+	Argument        string `json:"argument"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -78,6 +79,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 		Source:          args.Source,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
 		Version:         version.Version(),
+		Argument:        string(args.Argument),
 	})
 	if err != nil {
 		return err

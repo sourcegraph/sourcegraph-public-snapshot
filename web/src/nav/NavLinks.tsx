@@ -10,7 +10,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
-import { isDiscussionsEnabled } from '../discussions'
 import { ThemeProps } from '../../../shared/src/theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -22,9 +21,13 @@ import {
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
+import { isErrorLike } from '../../../shared/src/util/errors'
+import { Settings } from '../schema/settings.schema'
+import CompassOutlineIcon from 'mdi-react/CompassOutlineIcon'
+import { InsightsNavItem } from '../insights/InsightsNavLink'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -67,10 +70,16 @@ export class NavLinks extends React.PureComponent<Props> {
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
                     <li className="nav-item">
                         <Link to="/explore" className="nav-link">
-                            Explore
+                            <CompassOutlineIcon className="icon-inline" /> Explore
                         </Link>
                     </li>
                 )}
+                {!isErrorLike(this.props.settingsCascade.final) &&
+                    this.props.settingsCascade.final?.experimentalFeatures?.codeInsights && (
+                        <li className="nav-item">
+                            <InsightsNavItem />
+                        </li>
+                    )}
                 {this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
@@ -129,7 +138,6 @@ export class NavLinks extends React.PureComponent<Props> {
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
                             showDotComMarketing={this.props.showDotComMarketing}
-                            showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
                             keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>

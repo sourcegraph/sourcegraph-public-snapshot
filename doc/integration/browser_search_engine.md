@@ -2,7 +2,7 @@
 
 You can add Sourcegraph as a browser search engine to quickly search Sourcegraph from your browser's location bar when you type a special shortcut, such as <kbd>src</kbd>. This is one of the most common ways to initiate a search on Sourcegraph.
 
-![](https://storage.googleapis.com/sourcegraph-assets/SearchShortcut2.gif)
+![](https://sourcegraphstatic.com/SearchShortcut2.gif)
 
 ---
 
@@ -35,17 +35,21 @@ For more information on setting Chrome search engines, [see Chrome's help page](
 
 To add Sourcegraph as a search engine in Firefox:
 
-1. Visit any page on the Sourcegraph instance you want to add as a search engine.
-1. Click the magnifying glass icon in the toolbar's search field.
-1. Click **Add "Sourcegraph Search"**.
+1. Visit https://sourcegraph.com/search (or your own Sourcegraph instance)
+2. Click the three dots in the URL bar and choose **Add Search Engine**:
+
+![image](https://user-images.githubusercontent.com/3173176/84444295-4e2b8180-abf6-11ea-8f96-61312ab40278.png)
+
+3. You may then search using your URL bar and select `Sourcegraph` from the list of search engines:
+
+![image](https://user-images.githubusercontent.com/3173176/84446118-b4fe6a00-abf9-11ea-9627-7ffc16abafca.png)
 
 To configure a shortcut (keyword) for quicker access:
 
-1. Click the magnifying glass icon in the toolbar's search field.
-1. Click **Change Search Settings**.
-1. In the **One-Click Search Engines** list, double-click the **Keyword** cell for **Sourcegraph Search** and type in a shortcut (such as <kbd>src</kbd>).
+1. In the URL bar, enter about:preferences#search
+1. Scroll down to **One-Click Search Engines**, double-click the **Keyword** cell for **Sourcegraph** and type in a shortcut (such as <kbd>src</kbd>).
 
-To use the search engine, type <kbd>src</kbd> <kbd>Space</kbd> in the location bar, then your Sourcegraph search query. Pressing <kbd>Enter</kbd> will go to the Sourcegraph search results page for your query.
+To use the search engine, type <kbd>src</kbd> <kbd>Space</kbd> in the URL bar, then type your Sourcegraph search query. Pressing <kbd>Enter</kbd> will then go right to Sourcegraph!
 
 See "[Add or remove a search engine in Firefox](https://support.mozilla.org/en-US/kb/add-or-remove-search-engine-firefox)" for more information.
 

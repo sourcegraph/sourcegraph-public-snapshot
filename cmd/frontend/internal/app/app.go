@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/NYTimes/gziphandler"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
@@ -62,6 +63,9 @@ func NewHandler() http.Handler {
 
 	r.Get(router.RegistryExtensionBundle).Handler(trace.TraceRoute(gziphandler.GzipHandler(http.HandlerFunc(registry.HandleRegistryExtensionBundle))))
 
+	// Usage statistics ZIP download
+	r.Get(router.UsageStatsDownload).Handler(trace.TraceRoute(http.HandlerFunc(usageStatsArchiveHandler)))
+
 	r.Get(router.GDDORefs).Handler(trace.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(trace.TraceRoute(errorutil.Handler(serveEditor)))
 
@@ -70,6 +74,13 @@ func NewHandler() http.Handler {
 		_ = r.Header.Write(w)
 	})))
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
+
+	rickRoll := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", http.StatusFound)
+	})
+	for _, p := range []string{"/.env", "/admin.php", "/wp-login.php", "/wp-admin"} {
+		m.Handle(p, rickRoll)
+	}
 
 	return m
 }

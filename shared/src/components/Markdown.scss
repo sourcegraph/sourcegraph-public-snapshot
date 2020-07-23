@@ -1,4 +1,11 @@
 .markdown {
+    // marked wraps all content in <p>, even if there is only one child.
+    // If that is the case, treat the <p> as if it wasn't there
+    // so that the child can influence the layout (e.g. in a flexbox).
+    > p:only-child {
+        display: contents;
+    }
+
     h1,
     h2,
     h3,

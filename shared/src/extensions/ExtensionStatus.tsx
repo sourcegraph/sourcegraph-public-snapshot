@@ -36,12 +36,12 @@ class ExtensionStatus extends React.PureComponent<Props, State> {
             extensionsController
                 .pipe(
                     switchMap(extensionsController => extensionsController.services.extensions.activeExtensions),
-                    catchError(err => [asError(err)]),
+                    catchError(error => [asError(error)]),
                     map(extensionsOrError => ({ extensionsOrError }))
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -76,9 +76,9 @@ class ExtensionStatus extends React.PureComponent<Props, State> {
                         <div className="alert alert-danger mb-0 rounded-0">{this.state.extensionsOrError.message}</div>
                     ) : this.state.extensionsOrError.length > 0 ? (
                         <div className="list-group list-group-flush">
-                            {this.state.extensionsOrError.map(({ id }, i) => (
+                            {this.state.extensionsOrError.map(({ id }, index) => (
                                 <div
-                                    key={i}
+                                    key={index}
                                     className="list-group-item py-2 d-flex align-items-center justify-content-between"
                                 >
                                     <this.props.link id={id} />

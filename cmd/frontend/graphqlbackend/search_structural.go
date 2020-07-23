@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"regexp"
 	"regexp/syntax"
 	"strings"
@@ -77,9 +76,6 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 
 	// Zoekt uses regular expressions for file paths.
 	// Unhandled cases: PathPatternsAreCaseSensitive and whitespace in file path patterns.
-	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
-	}
 	for _, p := range query.IncludePatterns {
 		q, err := fileRe(p, query.IsCaseSensitive)
 		if err != nil {
@@ -93,6 +89,27 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 			return nil, err
 		}
 		and = append(and, &zoektquery.Not{Child: q})
+	}
+
+	// For conditionals that happen on a repo we can use type:repo queries. eg
+	// (type:repo file:foo) (type:repo file:bar) will match all repos which
+	// contain a filename matching "foo" and a filename matchinb "bar".
+	//
+	// Note: (type:repo file:foo file:bar) will only find repos with a
+	// filename containing both "foo" and "bar".
+	for _, p := range query.FilePatternsReposMustInclude {
+		q, err := fileRe(p, query.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q})
+	}
+	for _, p := range query.FilePatternsReposMustExclude {
+		q, err := fileRe(p, query.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Not{Child: &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q}})
 	}
 
 	return zoektquery.NewAnd(and...), nil
@@ -114,19 +131,17 @@ func buildQuery(args *search.TextParameters, newRepoSet *zoektquery.RepoSet, fil
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos) == 0 {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repoMap map[string]*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+	if len(repoMap) == 0 {
 		return nil, false, nil, nil
 	}
 
-	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[api.RepoName]*search.RepositoryRevisions, len(repos))
-	for _, repoRev := range repos {
-		repoSet.Set[string(repoRev.Repo.Name)] = true
-		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
+	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repoMap))}
+	for name := range repoMap {
+		repoSet.Set[name] = true
 	}
 
-	k := zoektResultCountFactor(len(repos), args.PatternInfo)
+	k := zoektResultCountFactor(len(repoMap), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
 
 	if args.UseFullDeadline {
@@ -157,14 +172,8 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, err
 	}
 
-	// Handle `repohasfile` or `-repohasfile`
-	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, repoSet)
-	if err != nil {
-		return nil, false, nil, err
-	}
-
 	t0 := time.Now()
-	q, err := buildQuery(args, newRepoSet, filePathPatterns, true)
+	q, err := buildQuery(args, repoSet, filePathPatterns, true)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -181,7 +190,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.PatternInfo.FileMatchLimit != defaultMaxSearchResults {
-		q, err = buildQuery(args, newRepoSet, filePathPatterns, false)
+		q, err = buildQuery(args, repoSet, filePathPatterns, false)
 		resp, err = args.Zoekt.Client.Search(ctx, q, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err
@@ -225,6 +234,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 
 	maxLineMatches := 25 + k
 	matches := make([]*FileMatchResolver, len(resp.Files))
+	repoResolvers := make(RepositoryResolverCache)
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -232,13 +242,16 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 			fileLimitHit = true
 			limitHit = true
 		}
-		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		repoRev := repoMap[file.Repository]
+		if repoResolvers[repoRev.Repo.Name] == nil {
+			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
+		}
 		matches[i] = &FileMatchResolver{
 			JPath:     file.FileName,
 			JLimitHit: fileLimitHit,
 			uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
-			Repo:      repoRev.Repo,
-			CommitID:  repoRev.IndexedHEADCommit(),
+			Repo:      repoResolvers[repoRev.Repo.Name],
+			CommitID:  api.CommitID(file.Version),
 		}
 	}
 

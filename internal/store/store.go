@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -300,7 +300,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) 
 		}
 
 		// We do not search the content of large files unless they are
-		// whitelisted.
+		// allowed.
 		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
 			continue
 		}
@@ -375,34 +375,24 @@ func ignoreSizeMax(name string, patterns []string) bool {
 
 var (
 	cacheSizeBytes = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "cache_size_bytes",
-		Help:      "The total size of items in the on disk cache.",
+		Name: "searcher_store_cache_size_bytes",
+		Help: "The total size of items in the on disk cache.",
 	})
 	evictions = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "evictions",
-		Help:      "The total number of items evicted from the cache.",
+		Name: "searcher_store_evictions",
+		Help: "The total number of items evicted from the cache.",
 	})
 	fetching = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "fetching",
-		Help:      "The number of fetches currently running.",
+		Name: "searcher_store_fetching",
+		Help: "The number of fetches currently running.",
 	})
 	fetchQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "fetch_queue_size",
-		Help:      "The number of fetch jobs enqueued.",
+		Name: "searcher_store_fetch_queue_size",
+		Help: "The number of fetch jobs enqueued.",
 	})
 	fetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "fetch_failed",
-		Help:      "The total number of archive fetches that failed.",
+		Name: "searcher_store_fetch_failed",
+		Help: "The total number of archive fetches that failed.",
 	})
 )
 

@@ -7,6 +7,12 @@ import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     ...userSettingsAreaRoutes,
     {
+        path: '/permissions',
+        exact: true,
+        render: lazyComponent(() => import('./auth/UserSettingsPermissionsPage'), 'UserSettingsPermissionsPage'),
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
+    },
+    {
         path: '/external-accounts',
         exact: true,
         render: lazyComponent(() => import('./UserSettingsExternalAccountsPage'), 'UserSettingsExternalAccountsPage'),

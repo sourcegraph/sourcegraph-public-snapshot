@@ -19,13 +19,11 @@ CHECKS=(
   ./go-dbconn-import.sh
   ./go-generate.sh
   ./go-lint.sh
-  ./todo-security.sh
   ./no-localhost-guard.sh
   ./bash-syntax.sh
   ./check-owners.sh
   ./shfmt.sh
   ./shellcheck.sh
-  ./licenses.sh
 )
 
 echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"

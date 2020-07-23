@@ -9,8 +9,10 @@ import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 import { SuggestionType, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
+import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
+import { appendSubtreeQueryParameter } from '../../../../shared/src/util/url'
 
-export const filterAliases: Record<string, FilterSuggestionTypes | undefined> = {
+export const filterAliases: Record<string, FilterSuggestionTypes> = {
     r: FilterType.repo,
     g: FilterType.repogroup,
     f: FilterType.file,
@@ -71,7 +73,7 @@ interface SuggestionIconProps {
  */
 const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
+export function createSuggestion(item: SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
@@ -86,17 +88,17 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
         }
         case 'File': {
             const descriptionParts = []
-            const dir = dirname(item.path)
-            if (dir !== '.') {
-                descriptionParts.push(`${dir}/`)
+            const directory = dirname(item.path)
+            if (directory !== '.') {
+                descriptionParts.push(`${directory}/`)
             }
             descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {
                 return {
-                    type: NonFilterSuggestionType.dir,
+                    type: NonFilterSuggestionType.Directory,
                     value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
-                    url: `${item.url}?subtree=true`,
+                    url: appendSubtreeQueryParameter(item.url),
                     label: 'go to dir',
                 }
             }
@@ -105,13 +107,13 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
-                url: `${item.url}?subtree=true`,
+                url: appendSubtreeQueryParameter(item.url),
                 label: 'go to file',
             }
         }
         case 'Symbol': {
             return {
-                type: NonFilterSuggestionType.symbol,
+                type: NonFilterSuggestionType.Symbol,
                 symbolKind: item.kind,
                 value: item.name,
                 description: `${item.containerName || item.location.resource.path} — ${basename(
@@ -121,6 +123,11 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 label: 'go to definition',
             }
         }
+        case 'RepoGroup':
+            return {
+                type: FilterType.repogroup,
+                value: item.name,
+            }
         default:
             return undefined
     }
@@ -128,15 +135,16 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
 
 const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...props }) => {
     switch (suggestion.type) {
-        case NonFilterSuggestionType.filters:
+        case NonFilterSuggestionType.Filters:
             return <FilterIcon {...props} />
         case FilterType.repo:
+        case FilterType.repogroup:
             return <SourceRepositoryIcon {...props} />
         case FilterType.file:
             return <FileIcon {...props} />
         case FilterType.lang:
             return <LanguageIcon {...props} language={suggestion.value} {...props} />
-        case NonFilterSuggestionType.symbol:
+        case NonFilterSuggestionType.Symbol:
             if (!suggestion.symbolKind) {
                 return null
             }
@@ -163,7 +171,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     defaultLabel,
     ...props
 }) => (
-    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} e2e-suggestion-item`} {...props}>
+    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} test-suggestion-item`} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.displayValue ?? suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>

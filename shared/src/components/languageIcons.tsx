@@ -19,9 +19,9 @@ import LanguageTypescriptIcon from 'mdi-react/LanguageTypescriptIcon'
 import GraphqlIcon from 'mdi-react/GraphqlIcon'
 import PowershellIcon from 'mdi-react/PowershellIcon'
 import WebIcon from 'mdi-react/WebIcon'
-import MarkdownIcon from 'mdi-react/MarkdownIcon'
-import RubyIcon from 'mdi-react/RubyIcon'
-import JsonIcon from 'mdi-react/JsonIcon'
+import MarkdownIcon from 'mdi-react/LanguageMarkdownIcon'
+import RubyIcon from 'mdi-react/LanguageRubyIcon'
+import JsonIcon from 'mdi-react/CodeJsonIcon'
 import { MdiReactIconComponentType } from 'mdi-react'
 
 interface Props extends IconProps {

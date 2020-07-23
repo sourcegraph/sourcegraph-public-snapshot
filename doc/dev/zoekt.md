@@ -30,7 +30,7 @@ $ go install ./cmd/...
 $ go install ./cmd/<specific command> (ex zoekt-archive-index)
 ```
 
-The components that Sourcegraph uses from Zoekt are `zoekt-archive-index`, `zoekt-sourcegraph-indexserver`, and `zoekt-webserver`.
+The components that Sourcegraph uses from Zoekt are `zoekt-archive-index`, `zoekt-git-index`, `zoekt-sourcegraph-indexserver`, and `zoekt-webserver`.
 
 ```
 # Direct usage

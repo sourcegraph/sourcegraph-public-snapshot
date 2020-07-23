@@ -43,7 +43,7 @@ const configurationGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-const repositoriesGroup: SiteAdminSideBarGroup = {
+export const repositoriesGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Repositories',
         icon: SourceRepositoryIcon,

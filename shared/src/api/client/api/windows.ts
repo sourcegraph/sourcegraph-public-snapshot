@@ -1,4 +1,4 @@
-import { ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import {
@@ -54,10 +54,10 @@ export class ClientWindows implements ClientWindowsAPI {
         return this.showInput({
             message: options?.prompt ? options.prompt : '',
             defaultValue: options?.value,
-        }).then(v =>
+        }).then(input =>
             // TODO(sqs): update the showInput API to unify null/undefined etc between the old internal API and the new
             // external API.
-            v === null ? undefined : v
+            input === null ? undefined : input
         )
     }
 

@@ -2,9 +2,11 @@
 package types
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // RepoFields are lazy loaded data fields on a Repo (from the DB).
@@ -27,6 +29,9 @@ type RepoFields struct {
 
 	// Archived is whether this repository has been archived.
 	Archived bool
+
+	// Cloned is whether this repository is cloned.
+	Cloned bool
 }
 
 // Repo represents a source code repository.
@@ -67,6 +72,11 @@ type ExternalService struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time
+}
+
+// URN returns a unique resource identifier of this external service.
+func (e *ExternalService) URN() string {
+	return extsvc.URN(e.Kind, e.ID)
 }
 
 type GlobalState struct {
@@ -120,6 +130,21 @@ type UserUsageStatistics struct {
 	LastCodeHostIntegrationTime *time.Time
 }
 
+// UserUsageCounts captures the usage numbers of a user in a single day.
+type UserUsageCounts struct {
+	Date           time.Time
+	UserID         uint32
+	SearchCount    int32
+	CodeIntelCount int32
+}
+
+// UserDates captures the created and deleted dates of a single user.
+type UserDates struct {
+	UserID    int32
+	CreatedAt time.Time
+	DeletedAt time.Time
+}
+
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
@@ -162,7 +187,11 @@ type Stages struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CampaignsUsageStatistics struct {
-	CampaignsCount int32
+	CampaignsCount              int32
+	ActionChangesetsCount       int32
+	ActionChangesetsMergedCount int32
+	ManualChangesetsCount       int32
+	ManualChangesetsMergedCount int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -283,6 +312,49 @@ type SearchEventLatencies struct {
 	P99 float64
 }
 
+// SiteUsageSummary is an alternate view of SiteUsageStatistics which is
+// calculated in the database layer.
+type SiteUsageSummary struct {
+	Month                   time.Time
+	Week                    time.Time
+	Day                     time.Time
+	UniquesMonth            int32
+	UniquesWeek             int32
+	UniquesDay              int32
+	RegisteredUniquesMonth  int32
+	RegisteredUniquesWeek   int32
+	RegisteredUniquesDay    int32
+	IntegrationUniquesMonth int32
+	IntegrationUniquesWeek  int32
+	IntegrationUniquesDay   int32
+	ManageUniquesMonth      int32
+	CodeUniquesMonth        int32
+	VerifyUniquesMonth      int32
+	MonitorUniquesMonth     int32
+	ManageUniquesWeek       int32
+	CodeUniquesWeek         int32
+	VerifyUniquesWeek       int32
+	MonitorUniquesWeek      int32
+}
+
+// AggregatedEvent represents the total events, unique users, and
+// latencies over the current month, week, and day for a single event.
+type AggregatedEvent struct {
+	Name           string
+	Month          time.Time
+	Week           time.Time
+	Day            time.Time
+	TotalMonth     int32
+	TotalWeek      int32
+	TotalDay       int32
+	UniquesMonth   int32
+	UniquesWeek    int32
+	UniquesDay     int32
+	LatenciesMonth []float64
+	LatenciesWeek  []float64
+	LatenciesDay   []float64
+}
+
 type SurveyResponse struct {
 	ID        int32
 	UserID    *int32
@@ -303,4 +375,21 @@ type Event struct {
 	Source          string
 	Version         string
 	Timestamp       time.Time
+}
+
+// Secret represents the secrets table
+type Secret struct {
+	ID int32
+
+	// The table containing an object whose token is being encrypted.
+	SourceType sql.NullString
+
+	// The ID of the object in the SourceType table.
+	SourceID sql.NullInt32
+
+	// KeyName represents a unique key for the case where we're storing key-value pairs.
+	KeyName sql.NullString
+
+	// Value contains the encrypted string
+	Value string
 }

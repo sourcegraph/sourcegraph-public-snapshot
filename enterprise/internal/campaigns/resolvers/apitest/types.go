@@ -1,6 +1,9 @@
 package apitest
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+import (
+	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+)
 
 type GitTarget struct {
 	OID            string
@@ -21,7 +24,11 @@ type GitRef struct {
 
 type DiffRange struct{ StartLine, Lines int }
 
-type DiffStat struct{ Added, Deleted, Changed int }
+type DiffStat struct{ Added, Deleted, Changed int32 }
+
+func (ds DiffStat) ToDiffStat() *diff.Stat {
+	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted, Changed: ds.Changed}
+}
 
 type FileDiffHunk struct {
 	Body, Section      string
@@ -44,7 +51,11 @@ type FileDiff struct {
 type FileDiffs struct {
 	RawDiff  string
 	DiffStat DiffStat
-	Nodes    []FileDiff
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   string
+	}
+	Nodes []FileDiff
 }
 
 type PatchConnection struct {
@@ -56,7 +67,10 @@ type PatchConnection struct {
 }
 
 type Patch struct {
+	Typename            string `json:"__typename"`
+	ID                  string
 	PublicationEnqueued bool
+	Publishable         bool
 	Repository          struct{ Name, URL string }
 	Diff                struct {
 		FileDiffs FileDiffs
@@ -67,6 +81,7 @@ type PatchSet struct {
 	ID         string
 	Patches    PatchConnection
 	PreviewURL string
+	DiffStat   DiffStat
 }
 
 type User struct {
@@ -88,22 +103,21 @@ type UserOrg struct {
 }
 
 type Campaign struct {
-	ID          string
-	Name        string
-	Description string
-	Branch      string
-	Author      User
-	Namespace   UserOrg
-	CreatedAt   string
-	UpdatedAt   string
-	PublishedAt string
-	Status      struct {
-		State string
-	}
+	ID                      string
+	Name                    string
+	Description             string
+	Branch                  string
+	Author                  User
+	ViewerCanAdminister     bool
+	Namespace               UserOrg
+	CreatedAt               string
+	UpdatedAt               string
 	Patches                 PatchConnection
+	HasUnpublishedPatches   bool
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
+	PatchSet                PatchSet
 }
 
 type CampaignConnection struct {
@@ -118,16 +132,24 @@ type ChangesetEventConnection struct {
 	TotalCount int
 }
 
+type Repository struct {
+	ID   string
+	Name string
+}
+
 type Changeset struct {
-	ID          string
-	Repository  struct{ ID string }
-	Campaigns   CampaignConnection
-	CreatedAt   string
-	UpdatedAt   string
-	Title       string
-	Body        string
-	State       string
-	ExternalURL struct {
+	Typename      string `json:"__typename"`
+	ID            string
+	Repository    Repository
+	Campaigns     CampaignConnection
+	CreatedAt     string
+	UpdatedAt     string
+	NextSyncAt    string
+	Title         string
+	Body          string
+	State         string
+	ExternalState string
+	ExternalURL   struct {
 		URL         string
 		ServiceType string
 	}
@@ -159,4 +181,69 @@ type ChangesetCounts struct {
 	OpenApproved         int32
 	OpenChangesRequested int32
 	OpenPending          int32
+}
+
+type CampaignSpec struct {
+	Typename string `json:"__typename"`
+	ID       string
+
+	OriginalInput string
+	ParsedInput   graphqlbackend.JSONValue
+
+	PreviewURL string
+
+	Namespace UserOrg
+	Creator   User
+
+	ChangesetSpecs ChangesetSpecConnection
+
+	ViewerCanAdminister bool
+
+	CreatedAt graphqlbackend.DateTime
+	ExpiresAt *graphqlbackend.DateTime
+}
+
+type ChangesetSpec struct {
+	Typename string `json:"__typename"`
+	ID       string
+
+	Description ChangesetSpecDescription
+
+	ExpiresAt *graphqlbackend.DateTime
+}
+
+type ChangesetSpecConnection struct {
+	Nodes      []ChangesetSpec
+	TotalCount int
+	PageInfo   struct {
+		HasNextPage bool
+		EndCursor   *string
+	}
+}
+
+type ChangesetSpecDescription struct {
+	Typename string `json:"__typename"`
+
+	BaseRepository Repository
+	ExternalID     string
+	BaseRef        string
+
+	HeadRepository Repository
+	HeadRef        string
+
+	Title string
+	Body  string
+
+	Commits []GitCommitDescription
+
+	Published bool
+
+	Diff struct {
+		FileDiffs FileDiffs
+	}
+}
+
+type GitCommitDescription struct {
+	Message string
+	Diff    string
 }

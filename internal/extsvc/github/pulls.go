@@ -350,6 +350,13 @@ func (e ReviewRequestedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
 }
 
+// ReviewerDeleted returns true if both RequestedReviewer and RequestedTeam are
+// blank, indicating that one or the other has been deleted.
+// We use it to drop the event.
+func (e ReviewRequestedEvent) ReviewerDeleted() bool {
+	return e.RequestedReviewer.Login == "" && e.RequestedTeam.Name == ""
+}
+
 // UnassignedEvent represents an 'unassigned' event on a pull request.
 type UnassignedEvent struct {
 	Actor     Actor

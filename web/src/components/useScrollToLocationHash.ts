@@ -1,5 +1,6 @@
-import H from 'history'
+import * as H from 'history'
 import { useEffect, useState } from 'react'
+import { tryCatch } from '../../../shared/src/util/errors'
 
 /**
  * A React hook that scrolls the viewport to the element identified in the location hash (e.g., the
@@ -23,7 +24,9 @@ export const useScrollToLocationHash = (location: H.Location): void => {
         if (location.hash) {
             const idOrName = location.hash.slice(1)
             if (idOrName !== scrolledTo) {
-                const element = document.getElementById(idOrName) || document.getElementsByName(idOrName).item(0)
+                const element =
+                    tryCatch(() => document.querySelector(`#${idOrName}`)) ||
+                    document.getElementsByName(idOrName).item(0)
                 if (element) {
                     element.scrollIntoView()
                     setScrolledTo(idOrName)

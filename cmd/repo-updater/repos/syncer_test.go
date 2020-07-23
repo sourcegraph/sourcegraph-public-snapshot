@@ -10,9 +10,11 @@ import (
 
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -26,8 +28,8 @@ func TestSyncer_Sync(t *testing.T) {
 
 	testSyncerSync(new(repos.FakeStore))(t)
 
-	github := repos.ExternalService{ID: 1, Kind: "github"}
-	gitlab := repos.ExternalService{ID: 2, Kind: "gitlab"}
+	github := repos.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	gitlab := repos.ExternalService{ID: 2, Kind: extsvc.KindGitLab}
 
 	for _, tc := range []struct {
 		name    string
@@ -54,7 +56,7 @@ func TestSyncer_Sync(t *testing.T) {
 			name:    "store list error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
 			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
-			err:     "syncer.sync.streaming: syncer.storedExternalIDs: boom",
+			err:     "syncer.sync.store.list-repos: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
@@ -90,7 +92,7 @@ func TestSyncer_Sync(t *testing.T) {
 func testSyncerSync(s repos.Store) func(*testing.T) {
 	githubService := &repos.ExternalService{
 		ID:   1,
-		Kind: "GITHUB",
+		Kind: extsvc.KindGitHub,
 	}
 
 	githubRepo := (&repos.Repo{
@@ -99,7 +101,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo-external-12345",
 			ServiceID:   "https://github.com/",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 		},
 	}).With(
 		repos.Opt.RepoSources(githubService.URN()),
@@ -107,7 +109,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	gitlabService := &repos.ExternalService{
 		ID:   10,
-		Kind: "GITLAB",
+		Kind: extsvc.KindGitLab,
 	}
 
 	gitlabRepo := (&repos.Repo{
@@ -116,7 +118,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "12345",
 			ServiceID:   "https://gitlab.com/",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 		},
 	}).With(
 		repos.Opt.RepoSources(gitlabService.URN()),
@@ -124,7 +126,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	bitbucketServerService := &repos.ExternalService{
 		ID:   20,
-		Kind: "BITBUCKETSERVER",
+		Kind: extsvc.KindBitbucketServer,
 	}
 
 	bitbucketServerRepo := (&repos.Repo{
@@ -141,7 +143,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	awsCodeCommitService := &repos.ExternalService{
 		ID:   30,
-		Kind: "AWSCODECOMMIT",
+		Kind: extsvc.KindAWSCodeCommit,
 	}
 
 	awsCodeCommitRepo := (&repos.Repo{
@@ -150,7 +152,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
-			ServiceType: "awscodecommit",
+			ServiceType: extsvc.TypeAWSCodeCommit,
 		},
 	}).With(
 		repos.Opt.RepoSources(awsCodeCommitService.URN()),
@@ -158,7 +160,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	otherService := &repos.ExternalService{
 		ID:   40,
-		Kind: "OTHER",
+		Kind: extsvc.KindOther,
 	}
 
 	otherRepo := (&repos.Repo{
@@ -166,7 +168,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "git-host.com/org/foo",
 			ServiceID:   "https://git-host.com/",
-			ServiceType: "other",
+			ServiceType: extsvc.TypeOther,
 		},
 	}).With(
 		repos.Opt.RepoSources(otherService.URN()),
@@ -174,7 +176,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	gitoliteService := &repos.ExternalService{
 		ID:   50,
-		Kind: "GITOLITE",
+		Kind: extsvc.KindGitolite,
 	}
 
 	gitoliteRepo := (&repos.Repo{
@@ -183,7 +185,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo",
 			ServiceID:   "git@gitolite.mycorp.com",
-			ServiceType: "gitolite",
+			ServiceType: extsvc.TypeGitolite,
 		},
 	}).With(
 		repos.Opt.RepoSources(gitoliteService.URN()),
@@ -191,7 +193,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	bitbucketCloudService := &repos.ExternalService{
 		ID:   60,
-		Kind: "BITBUCKETCLOUD",
+		Kind: extsvc.KindBitbucketCloud,
 	}
 
 	bitbucketCloudRepo := (&repos.Repo{
@@ -200,7 +202,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "{e164a64c-bd73-4a40-b447-d71b43f328a8}",
 			ServiceID:   "https://bitbucket.org/",
-			ServiceType: "bitbucketCloud",
+			ServiceType: extsvc.TypeBitbucketCloud,
 		},
 	}).With(
 		repos.Opt.RepoSources(bitbucketCloudService.URN()),
@@ -470,21 +472,25 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			},
 			func() testCase {
 				var update interface{}
-				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
-				case "github":
+				typ, ok := extsvc.ParseServiceType(tc.repo.ExternalRepo.ServiceType)
+				if !ok {
+					panic(fmt.Sprintf("test must be extended with new external service kind: %q", strings.ToLower(tc.repo.ExternalRepo.ServiceType)))
+				}
+				switch typ {
+				case extsvc.TypeGitHub:
 					update = &github.Repository{IsArchived: true}
-				case "gitlab":
+				case extsvc.TypeGitLab:
 					update = &gitlab.Project{Archived: true}
-				case "bitbucketserver":
+				case extsvc.TypeBitbucketServer:
 					update = &bitbucketserver.Repo{Public: true}
-				case "bitbucketcloud":
+				case extsvc.TypeBitbucketCloud:
 					update = &bitbucketcloud.Repo{IsPrivate: true}
-				case "awscodecommit":
+				case extsvc.TypeAWSCodeCommit:
 					update = &awscodecommit.Repository{Description: "new description"}
-				case "other", "gitolite":
+				case extsvc.TypeOther, extsvc.TypeGitolite:
 					return testCase{}
 				default:
-					panic("test must be extended with new external service kind")
+					panic(fmt.Sprintf("test must be extended with new external service kind: %q", strings.ToLower(tc.repo.ExternalRepo.ServiceType)))
 				}
 
 				return testCase{
@@ -592,7 +598,7 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 		Fork:        false,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -973,4 +979,78 @@ func TestDiff(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSync_Run(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// some ceremony to setup metadata on our test repos
+	svc := &repos.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	mk := func(name string) *repos.Repo {
+		return &repos.Repo{
+			Name:     name,
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          name,
+				ServiceID:   "https://github.com",
+				ServiceType: svc.Kind,
+			},
+		}
+	}
+
+	// Our test will have 1 initial repo, and discover a new repo on sourcing.
+	stored := repos.Repos{mk("initial")}.With(repos.Opt.RepoSources(svc.URN()))
+	sourced := repos.Repos{mk("initial"), mk("new")}
+
+	syncer := &repos.Syncer{
+		Store:        &repos.FakeStore{},
+		Sourcer:      repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
+		Synced:       make(chan repos.Diff),
+		SubsetSynced: make(chan repos.Diff),
+		Now:          time.Now,
+	}
+
+	// Initial repos in store
+	syncer.Store.UpsertRepos(ctx, stored...)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		syncer.Run(ctx, func() time.Duration { return 0 })
+	}()
+
+	// Ignore fields store adds
+	ignore := cmpopts.IgnoreFields(repos.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
+
+	// The first thing sent down Synced is the list of repos in store.
+	diff := <-syncer.Synced
+	if d := cmp.Diff(repos.Diff{Unmodified: stored}, diff, ignore); d != "" {
+		t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
+	}
+
+	// Next up it should find the new repo and send it down SubsetSynced
+	diff = <-syncer.SubsetSynced
+	if d := cmp.Diff(repos.Diff{Added: repos.Repos{mk("new")}}, diff, ignore); d != "" {
+		t.Fatalf("SubsetSynced mismatch (-want +got):\n%s", d)
+	}
+
+	// Finally we get the final diff, which will have everything listed as
+	// Unmodified since we added when we did SubsetSynced.
+	diff = <-syncer.Synced
+	if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
+		t.Fatalf("final Synced mismatch (-want +got):\n%s", d)
+	}
+
+	// We check synced again to test us going around the Run loop 2 times in
+	// total.
+	diff = <-syncer.Synced
+	if d := cmp.Diff(repos.Diff{Unmodified: sourced}, diff, ignore); d != "" {
+		t.Fatalf("second final Synced mismatch (-want +got):\n%s", d)
+	}
+
+	// Cancel context and the run loop should stop
+	cancel()
+	<-done
 }

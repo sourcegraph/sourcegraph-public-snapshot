@@ -4,9 +4,9 @@
 export const mergeContext = <T extends { line: number }>(context: number, highlights: T[]): T[][] => {
     const groupsOfHighlights: T[][] = []
 
-    for (let i = 0; i < highlights.length; i++) {
-        const current = highlights[i]
-        const previous = highlights[i - 1]
+    for (let index = 0; index < highlights.length; index++) {
+        const current = highlights[index]
+        const previous = highlights[index - 1]
         if (!previous || current.line - previous.line - 2 * context > 1) {
             // Either this is the beginning of the file, or there is at
             // least one line between the end of the previous context

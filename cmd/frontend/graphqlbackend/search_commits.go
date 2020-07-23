@@ -15,8 +15,8 @@ import (
 	"github.com/xeonx/timeago"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -130,7 +130,7 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 			if strings.HasPrefix(rev.RevSpec, "-") {
 				// A revspec starting with "-" would be interpreted as a `git log` flag.
 				// It would not be a security vulnerability because the flags are checked
-				// against a whitelist, but it could cause unexpected errors by (e.g.)
+				// against a allowlist, but it could cause unexpected errors by (e.g.)
 				// changing the format of `git log` to a format that our parser doesn't
 				// expect.
 				return nil, false, false, fmt.Errorf("invalid revspec: %q", rev.RevSpec)

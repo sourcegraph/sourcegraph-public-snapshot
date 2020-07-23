@@ -7,7 +7,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-func Test_proposedQuotedQueries(t *testing.T) {
+func TestProposedQuotedQueries(t *testing.T) {
 	type args struct {
 		rawQuery string
 	}
@@ -66,7 +66,7 @@ func Test_proposedQuotedQueries(t *testing.T) {
 	}
 }
 
-func Test_capFirst(t *testing.T) {
+func TestCapFirst(t *testing.T) {
 	tests := []struct {
 		name string
 		in   string

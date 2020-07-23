@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
@@ -40,11 +40,11 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                     startWith(this.props),
                     map(props => props.activation.completed),
                     pairwise(),
-                    filter(([prev, cur]) => {
-                        if (!prev || !cur) {
+                    filter(([previous, current]) => {
+                        if (!previous || !current) {
                             return false
                         }
-                        return percentageDone(cur) > percentageDone(prev)
+                        return percentageDone(current) > percentageDone(previous)
                     }),
                     tap(didIncrease => {
                         if (didIncrease) {
@@ -72,7 +72,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
         if (!show) {
-            return null
+            return <div className="test-activation-hidden d-none" />
         }
 
         const confettiConfig = {
@@ -90,7 +90,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                     <>
                         <MenuButton
                             className={classNames(
-                                'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle',
+                                'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle',
                                 { animate: this.state.animate }
                             )}
                         >
@@ -115,14 +115,17 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                             </div>
                             <span className="activation-dropdown-button__progress-bar-container">
                                 <CircularProgressbar
-                                    className="activation-dropdown-button__circular-progress-bar"
+                                    className="activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
                                     strokeWidth={12}
                                     value={percentageDone(this.props.activation.completed)}
                                 />
                             </span>
                         </MenuButton>
                         <MenuPopover
-                            className={classNames('activation-dropdown', 'dropdown-menu', { show: isExpanded })}
+                            className={classNames('activation-dropdown', 'dropdown-menu', {
+                                show: isExpanded || this.props.alwaysShow,
+                            })}
+                            hidden={!(isExpanded || this.props.alwaysShow)}
                             portal={this.props.portal}
                         >
                             <div className="dropdown-item-text activation-dropdown-header">

@@ -2,7 +2,7 @@ package dbconn
 
 import "testing"
 
-func Test_buildConnectionString(t *testing.T) {
+func TestBuildConnectionString(t *testing.T) {
 	tests := []struct {
 		name                   string
 		dataSource             string

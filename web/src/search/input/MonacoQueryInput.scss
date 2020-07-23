@@ -6,10 +6,13 @@
     background-color: #0e121b;
     display: flex;
     align-items: center;
+    flex: 1 1 auto;
+    min-width: 12rem;
     &:focus-within {
         border: 1px solid $input-focus-border-color;
         box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
     }
+
     .monaco-editor {
         // stylelint-disable-next-line selector-class-pattern
         .decorationsOverviewRuler {

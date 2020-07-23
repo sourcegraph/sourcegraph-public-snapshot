@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/machinebox/graphql"
@@ -22,15 +24,15 @@ var (
 func TestIntegration(t *testing.T) {
 	ti := &TrackingIssue{
 		Issue: &Issue{
-			Number:    7719,
-			Milestone: "3.13",
-			Labels:    []string{"tracking", "team/core-services"},
+			Number:    9917,
+			Milestone: "3.16",
+			Labels:    []string{"tracking", "team/code-intelligence"},
 		},
 	}
 
 	loadTrackingIssueFixtures(t, "sourcegraph", ti)
 
-	got := ti.Workloads().Markdown()
+	got := ti.Workloads().Markdown(ti.LabelAllowlist)
 	path := filepath.Join("testdata", "issue.md")
 	testutil.AssertGolden(t, path, *update, got)
 }
@@ -46,7 +48,26 @@ func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 				&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
 			))),
 		)
-		err := loadTrackingIssues(ctx, cli, org, []*TrackingIssue{issue})
+
+		var q strings.Builder
+		fmt.Fprintf(&q, "org:sourcegraph milestone:%s", issue.Milestone)
+		for _, label := range issue.Labels {
+			fmt.Fprintf(&q, " label:%s", label)
+		}
+
+		tracking, err := listTrackingIssues(ctx, cli, q.String())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, ti := range tracking {
+			if ti.Number == issue.Number {
+				issue = ti
+				break
+			}
+		}
+
+		err = loadTrackingIssues(ctx, cli, org, []*TrackingIssue{issue})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,4 +92,6 @@ func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 	if err := json.NewDecoder(f).Decode(issue); err != nil {
 		t.Fatal(err)
 	}
+
+	issue.FillLabelAllowlist()
 }

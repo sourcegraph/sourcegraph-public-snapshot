@@ -33,10 +33,10 @@ export class Notifications extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.props.extensionsController.notifications
-                .pipe(map(n => ({ ...n, id: uniqueId('n') })))
+                .pipe(map(notification => ({ ...notification, id: uniqueId('n') })))
                 .subscribe(notification => {
-                    this.setState(prevState => ({
-                        notifications: [...prevState.notifications.slice(-Notifications.MAX_RETAIN), notification],
+                    this.setState(previousState => ({
+                        notifications: [...previousState.notifications.slice(-Notifications.MAX_RETAIN), notification],
                     }))
                     if (notification.progress) {
                         // Remove once progress is finished
@@ -48,22 +48,26 @@ export class Notifications extends React.PureComponent<Props, State> {
                                 )
                                 // eslint-disable-next-line rxjs/no-nested-subscribe
                                 .subscribe({
-                                    error: err => {
+                                    error: error => {
+                                        const erroredNotification = notification
                                         this.setState(({ notifications }) => ({
-                                            notifications: notifications.map(n =>
-                                                n === notification
+                                            notifications: notifications.map(notification =>
+                                                notification === erroredNotification
                                                     ? {
-                                                          ...n,
+                                                          ...notification,
                                                           type: NotificationType.Error,
-                                                          message: asError(err).message,
+                                                          message: asError(error).message,
                                                       }
-                                                    : n
+                                                    : notification
                                             ),
                                         }))
                                     },
                                     complete: () => {
-                                        this.setState(prevState => ({
-                                            notifications: prevState.notifications.filter(n => n !== notification),
+                                        const completedNotification = notification
+                                        this.setState(previousState => ({
+                                            notifications: previousState.notifications.filter(
+                                                notification => notification !== completedNotification
+                                            ),
                                         }))
                                     },
                                 })
@@ -93,7 +97,9 @@ export class Notifications extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDismiss = (notification: Notification): void => {
-        this.setState(prevState => ({ notifications: prevState.notifications.filter(n => n !== notification) }))
+    private onDismiss = (dismissedNotification: Notification): void => {
+        this.setState(previousState => ({
+            notifications: previousState.notifications.filter(notification => notification !== dismissedNotification),
+        }))
     }
 }

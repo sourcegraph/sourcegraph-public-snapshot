@@ -116,16 +116,12 @@ func (s *Service) watchAndEvict() {
 
 var (
 	cacheSizeBytes = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "cache_size_bytes",
-		Help:      "The total size of items in the on disk cache.",
+		Name: "symbols_store_cache_size_bytes",
+		Help: "The total size of items in the on disk cache.",
 	})
 	evictions = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "evictions",
-		Help:      "The total number of items evicted from the cache.",
+		Name: "symbols_store_evictions",
+		Help: "The total number of items evicted from the cache.",
 	})
 )
 

@@ -127,6 +127,12 @@ func TestIsValidUpgrade(t *testing.T) {
 		previous: "v4.1.4",
 		latest:   "v4.1.3",
 		want:     true,
+	}, {
+		// https://github.com/sourcegraph/sourcegraph/issues/11666
+		name:     "issue 11666",
+		previous: "v0.0.0+dev",
+		latest:   "v3.17.1",
+		want:     true,
 	},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

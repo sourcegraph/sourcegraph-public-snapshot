@@ -2,9 +2,9 @@
 #
 # This is wrapper that runs the DB schema backcompat test (db-backcompat.sh) in the CI environment.
 #
-# It finds the last migration by listing the migration SQL files (alphabetical order corresponds to
-# chronological order), then finds the commit in which those SQL files were added. It then uses the
-# commit immediately before that commit to run the DB unit tests against the *present* schema.
+# It finds the newest commit that is currently running in sourcegraph.com and to run the DB unit
+# tests against the *present* schema. This ensures that sourcegraph.com can write to the new
+# database schema if upgraded directly to this commit.
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
@@ -15,28 +15,32 @@ if [ -z "$HEAD" ]; then
   exit 1
 fi
 
+CURRENTLY_DEPLOYED=$(./dev/deployed-commit.sh)
+
 cat <<EOF
 Running ci-db-backcompat.sh with the following parameters:
-  HEAD:					$HEAD
-  git rev-parse HEAD:			$(git rev-parse HEAD)
-  git rev-parse --abbrev-ref HEAD: 	$(git rev-parse --abbrev-ref HEAD)
+  HEAD:                            ${HEAD}
+  git rev-parse HEAD:              $(git rev-parse HEAD)
+  git rev-parse --abbrev-ref HEAD: $(git rev-parse --abbrev-ref HEAD)
+  current deployed commit:         ${CURRENTLY_DEPLOYED}
 EOF
 
-LAST_MIGRATION=$(find ./migrations -type f -name '[0-9]*.up.sql' | cut -d'_' -f 1 | cut -d'/' -f 3 | sort -n | tail -n1)
-COMMIT_OF_LAST_MIGRATION=$(git log --pretty=format:"%H" "./migrations/${LAST_MIGRATION}"* | tail -n1)
-COMMIT_BEFORE_LAST_MIGRATION=$(git log -n1 --pretty=format:"%H" "${COMMIT_OF_LAST_MIGRATION}"^)
-
-echo "Last migration was	${LAST_MIGRATION},	added in     	${COMMIT_OF_LAST_MIGRATION}."
-echo "Testing current schema	${LAST_MIGRATION},	with tests at	${COMMIT_BEFORE_LAST_MIGRATION}."
-echo ""
-git log -n2 --stat "${COMMIT_OF_LAST_MIGRATION}" | sed 's/^/  /'
-echo ""
+# Older branches will fail leading to a PR requiring rebasing. Additionally
+# longer lived branches (release branches) will fail. We should avoid this
+# check in those cases. If this PR does indeed contain a failure, we will pick
+# it up in the master CI run.
+if ! git merge-base --is-ancestor "${CURRENTLY_DEPLOYED}" "${HEAD}"; then
+  echo
+  echo "This branch is out of date with sourcegraph.com."
+  echo "SKIPPED"
+  exit 0
+fi
 
 # Recreate the test DB and run TestMigrations once to ensure that the schema version is the latest.
 set -ex
 asdf install # in case the go version has changed in between these two commits
-go test -count=1 -v ./cmd/frontend/db/ -run=TestMigrations
-HEAD="$HEAD" OLD="${COMMIT_BEFORE_LAST_MIGRATION}" ./dev/ci/db-backcompat.sh
+go test -count=1 -v ./internal/db/ -run=TestMigrations
+HEAD="$HEAD" OLD="${CURRENTLY_DEPLOYED}" ./dev/ci/db-backcompat.sh
 set +ex
 
 echo "SUCCESS"

@@ -12,8 +12,8 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	//"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -41,7 +41,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		return []*git.LogCommitSearchResult{
 			{
 				Commit: git.Commit{ID: "c1", Author: gitSignatureWithDate},
-				Diff:   &git.Diff{Raw: "x"},
+				Diff:   &git.RawDiff{Raw: "x"},
 			},
 		}, true, nil
 	}
@@ -66,7 +66,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := GitCommitResolver{
-		repo:            &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		repoResolver:    &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
 		oid:             "c1",
 		author:          *toSignatureResolver(&gitSignatureWithDate, true),
 		includeUserInfo: true,
@@ -129,7 +129,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 	}
 }
 
-func Test_highlightMatches(t *testing.T) {
+func TestHighlightMatches(t *testing.T) {
 	type args struct {
 		pattern *regexp.Regexp
 		data    []byte

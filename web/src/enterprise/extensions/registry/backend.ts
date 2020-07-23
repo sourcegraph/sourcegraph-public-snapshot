@@ -7,8 +7,8 @@ import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Observable<boolean> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(
-        switchMap(ok => {
-            if (!ok) {
+        switchMap(wasConfirmed => {
+            if (!wasConfirmed) {
                 return [false]
             }
             return mutateGraphQL(
@@ -57,8 +57,8 @@ export function queryViewerRegistryPublishers(): Observable<GQL.RegistryPublishe
             if (!data?.extensionRegistry?.viewerPublishers || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
-            return data.extensionRegistry.viewerPublishers.map(p => ({
-                ...p,
+            return data.extensionRegistry.viewerPublishers.map(publisher => ({
+                ...publisher,
                 extensionIDPrefix: data.extensionRegistry.localExtensionIDPrefix || undefined,
             }))
         })

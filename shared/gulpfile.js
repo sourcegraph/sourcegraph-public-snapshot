@@ -18,8 +18,8 @@ const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend
  * @returns {Promise<void>}
  */
 async function graphQLTypes() {
-  const schemaStr = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
-  const schema = buildSchema(schemaStr)
+  const schemaString = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
+  const schema = buildSchema(schemaString)
 
   const result = /** @type {{ data: import('graphql').IntrospectionQuery }} */ (await graphql(
     schema,
@@ -47,10 +47,10 @@ async function graphQLTypes() {
       },
       {
         generateNamespace: (name, interfaces) => interfaces,
-        interfaceBuilder: (name, body) => 'export ' + DEFAULT_OPTIONS.interfaceBuilder(name, body),
+        interfaceBuilder: (name, body) => `export ${DEFAULT_OPTIONS.interfaceBuilder(name, body)}`,
         enumTypeBuilder: (name, values) =>
-          'export ' + DEFAULT_OPTIONS.enumTypeBuilder(name, values).replace(/^const enum/, 'enum'),
-        typeBuilder: (name, body) => 'export ' + DEFAULT_OPTIONS.typeBuilder(name, body),
+          `export ${DEFAULT_OPTIONS.enumTypeBuilder(name, values).replace(/^const enum/, 'enum')}`,
+        typeBuilder: (name, body) => `export ${DEFAULT_OPTIONS.typeBuilder(name, body)}`,
         wrapList: type => `${type}[]`,
         postProcessor: code => format(code, { ...formatOptions, parser: 'typescript' }),
       }
@@ -80,12 +80,12 @@ const draftV7resolver = {
  * @returns {Promise<void>}
  */
 async function schema() {
-  const outputDir = path.join(__dirname, '..', 'web', 'src', 'schema')
-  await mkdirp(outputDir)
-  const schemaDir = path.join(__dirname, '..', 'schema')
+  const outputDirectory = path.join(__dirname, '..', 'web', 'src', 'schema')
+  await mkdirp(outputDirectory)
+  const schemaDirectory = path.join(__dirname, '..', 'schema')
   await Promise.all(
     ['json-schema-draft-07', 'settings', 'site'].map(async file => {
-      let schema = await readFile(path.join(schemaDir, `${file}.schema.json`), 'utf8')
+      let schema = await readFile(path.join(schemaDirectory, `${file}.schema.json`), 'utf8')
       // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
       // when the schema is in a oneOf (to be merged with extension schemas).
       schema = schema.replace(
@@ -94,7 +94,7 @@ async function schema() {
       )
 
       const types = await compileJSONSchema(JSON.parse(schema), 'settings.schema', {
-        cwd: schemaDir,
+        cwd: schemaDirectory,
         $refOptions: {
           resolve: /** @type {import('json-schema-ref-parser').Options['resolve']} */ ({
             draftV7resolver,
@@ -104,15 +104,13 @@ async function schema() {
           }),
         },
       })
-      await writeFile(path.join(outputDir, `${file}.schema.d.ts`), types)
+      await writeFile(path.join(outputDirectory, `${file}.schema.d.ts`), types)
     })
   )
 }
 
-async function watchSchema() {
-  await new Promise((_resolve, reject) => {
-    gulp.watch(__dirname + '/../schema/*.schema.json', schema).on('error', reject)
-  })
+function watchSchema() {
+  return gulp.watch(path.join(__dirname, '../schema/*.schema.json'), schema)
 }
 
 module.exports = { watchSchema, schema, graphQLTypes, watchGraphQLTypes }

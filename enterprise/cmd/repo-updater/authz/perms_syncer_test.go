@@ -8,23 +8,23 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
-	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleUsers(context.Background(), PriorityHigh, 1)
+	s := NewPermsSyncer(nil, nil, nil, nil)
+	s.ScheduleUsers(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeUser,
 			ID:       1,
 		}, acquired: false, index: 0},
@@ -35,12 +35,12 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 }
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
-	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleRepos(context.Background(), PriorityHigh, 1)
+	s := NewPermsSyncer(nil, nil, nil, nil)
+	s.ScheduleRepos(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeRepo,
 			ID:       1,
 		}, acquired: false, index: 0},
@@ -51,6 +51,7 @@ func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 }
 
 type mockProvider struct {
+	id          int64
 	serviceType string
 	serviceID   string
 
@@ -58,25 +59,14 @@ type mockProvider struct {
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
-func (*mockProvider) RepoPerms(context.Context, *extsvc.Account, []*types.Repo) ([]authz.RepoPerms, error) {
-	return nil, nil
-}
-
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account) (*extsvc.Account, error) {
 	return nil, nil
 }
 
-func (p *mockProvider) ServiceType() string {
-	return p.serviceType
-}
-
-func (p *mockProvider) ServiceID() string {
-	return p.serviceID
-}
-
-func (*mockProvider) Validate() []string {
-	return nil
-}
+func (p *mockProvider) ServiceType() string { return p.serviceType }
+func (p *mockProvider) ServiceID() string   { return p.serviceID }
+func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p.id) }
+func (*mockProvider) Validate() []string    { return nil }
 
 func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.RepoID, error) {
 	return p.fetchUserPerms(ctx, acct)
@@ -106,21 +96,17 @@ func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
 	return nil
 }
 
-func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, error) {
-	return nil, nil
+func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+	return nil
 }
 
-type mockPermsStore struct {
-	listExternalAccounts func(context.Context, int32) ([]*extsvc.Account, error)
-}
-
-func (s *mockPermsStore) ListExternalAccounts(ctx context.Context, userID int32) ([]*extsvc.Account, error) {
-	return s.listExternalAccounts(ctx, userID)
+func (s *mockReposStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
+	return 0, nil
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
-		serviceType: gitlab.ServiceType,
+		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
@@ -141,9 +127,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 			return fmt.Errorf("UserID: want 1 but got %d", p.UserID)
 		}
 
-		expIDs := []uint32{1}
-		if diff := cmp.Diff(expIDs, p.IDs.ToArray()); diff != "" {
-			return fmt.Errorf("IDs: %v", diff)
+		wantIDs := []uint32{1}
+		if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			return fmt.Errorf("IDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
@@ -163,9 +149,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock)
-	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
+	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
 
 	tests := []struct {
 		name     string
@@ -197,8 +181,124 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
+		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
+	}
+
+	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {
+		calledSetRepoPermissions := false
+		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+			calledSetRepoPermissions = true
+			return nil
+		}
+		defer func() {
+			edb.Mocks.Perms = edb.MockPerms{}
+		}()
+
+		reposStore := &mockReposStore{
+			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
+				return []*repos.Repo{
+					{
+						ID:      1,
+						Private: true,
+						ExternalRepo: api.ExternalRepoSpec{
+							ServiceID: "https://gitlab.com/",
+						},
+						Sources: map[string]*repos.SourceInfo{
+							extsvc.URN(extsvc.TypeGitLab, 0): {},
+						},
+					},
+				}, nil
+			},
+		}
+		s := newPermsSyncer(reposStore)
+
+		err := s.syncRepoPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !calledSetRepoPermissions {
+			t.Fatal("!calledSetRepoPermissions")
+		}
+	})
+
+	t.Run("identify authz provider by URN", func(t *testing.T) {
+		// Even though both p1 and p2 are pointing to the same code host,
+		// but p2 should not be used because it is not responsible for listing
+		// test repository.
+		p1 := &mockProvider{
+			id:          1,
+			serviceType: extsvc.TypeGitLab,
+			serviceID:   "https://gitlab.com/",
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+				return []extsvc.AccountID{"user"}, nil
+			},
+		}
+		p2 := &mockProvider{
+			id:          2,
+			serviceType: extsvc.TypeGitLab,
+			serviceID:   "https://gitlab.com/",
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+				return nil, errors.New("not supposed to be called")
+			},
+		}
+		authz.SetProviders(false, []authz.Provider{p1, p2})
+		defer authz.SetProviders(true, nil)
+
+		edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
+			return &edb.PermsStore{}, nil
+		}
+		edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
+			return map[string]int32{"user": 1}, nil
+		}
+		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+			if p.RepoID != 1 {
+				return fmt.Errorf("RepoID: want 1 but got %d", p.RepoID)
+			}
+
+			wantUserIDs := []uint32{1}
+			if diff := cmp.Diff(wantUserIDs, p.UserIDs.ToArray()); diff != "" {
+				return fmt.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
+			}
+			return nil
+		}
+		edb.Mocks.Perms.SetRepoPendingPermissions = func(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) error {
+			return nil
+		}
+		defer func() {
+			edb.Mocks.Perms = edb.MockPerms{}
+		}()
+
+		reposStore := &mockReposStore{
+			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
+				return []*repos.Repo{
+					{
+						ID:      1,
+						Private: true,
+						ExternalRepo: api.ExternalRepoSpec{
+							ServiceID: p1.ServiceID(),
+						},
+						Sources: map[string]*repos.SourceInfo{
+							p1.URN(): {},
+						},
+					},
+				}, nil
+			},
+		}
+		s := newPermsSyncer(reposStore)
+
+		err := s.syncRepoPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	p := &mockProvider{
-		serviceType: gitlab.ServiceType,
+		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
@@ -215,20 +315,20 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			return fmt.Errorf("RepoID: want 1 but got %d", p.RepoID)
 		}
 
-		expUserIDs := []uint32{1}
-		if diff := cmp.Diff(expUserIDs, p.UserIDs.ToArray()); diff != "" {
-			return fmt.Errorf("UserIDs: %v", diff)
+		wantUserIDs := []uint32{1}
+		if diff := cmp.Diff(wantUserIDs, p.UserIDs.ToArray()); diff != "" {
+			return fmt.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
 	edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
-		expAccounts := &extsvc.Accounts{
+		wantAccounts := &extsvc.Accounts{
 			ServiceType: p.ServiceType(),
 			ServiceID:   p.ServiceID(),
 			AccountIDs:  []string{"pending_user"},
 		}
-		if diff := cmp.Diff(expAccounts, accounts); diff != "" {
-			return fmt.Errorf("accounts: %v", diff)
+		if diff := cmp.Diff(wantAccounts, accounts); diff != "" {
+			return fmt.Errorf("accounts mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
@@ -245,17 +345,14 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 					ExternalRepo: api.ExternalRepoSpec{
 						ServiceID: p.ServiceID(),
 					},
+					Sources: map[string]*repos.SourceInfo{
+						p.URN(): {},
+					},
 				},
 			}, nil
 		},
 	}
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock)
-	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
+	s := newPermsSyncer(reposStore)
 
 	tests := []struct {
 		name     string
@@ -286,6 +383,46 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 }
 
+func TestPermsSyncer_waitForRateLimit(t *testing.T) {
+	ctx := context.Background()
+	t.Run("no rate limit registry", func(t *testing.T) {
+		s := NewPermsSyncer(nil, nil, nil, nil)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err := s.waitForRateLimit(ctx, "https://github.com/", 100000)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("enough quota available", func(t *testing.T) {
+		rateLimiterRegistry := ratelimit.NewRegistry()
+		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err := s.waitForRateLimit(ctx, "https://github.com/", 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("not enough quota available", func(t *testing.T) {
+		rateLimiterRegistry := ratelimit.NewRegistry()
+		l := rateLimiterRegistry.Get("https://github.com/")
+		l.SetLimit(1)
+		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err := s.waitForRateLimit(ctx, "https://github.com/", 10)
+		if err == nil {
+			t.Fatalf("err: want %v but got nil", context.Canceled)
+		}
+	})
+}
+
 func TestPermsSyncer_syncPerms(t *testing.T) {
 	request := &syncRequest{
 		requestMeta: &requestMeta{
@@ -296,7 +433,7 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 	}
 
 	// Request should be removed from the queue even if error occurred.
-	s := NewPermsSyncer(nil, nil, nil)
+	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.queue.Push(request)
 
 	expErr := "unexpected request type: 3"

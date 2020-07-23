@@ -1,7 +1,14 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
-import { Observable, Subject } from 'rxjs'
-import { map, mergeMap, startWith, tap } from 'rxjs/operators'
-import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { Observable } from 'rxjs'
+import { map, tap, mapTo } from 'rxjs/operators'
+import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
+import {
+    createInvalidGraphQLMutationResponseError,
+    dataOrThrowErrors,
+    isErrorGraphQLResult,
+    gql,
+} from '../../../shared/src/graphql/graphql'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
@@ -153,18 +160,15 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
 export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     args: RepositoryArgs
 ): Observable<GQL.IRepositoryConnection> {
-    // Poll if there are repositories that are being cloned or the list is empty.
-    //
-    // TODO(sqs): This is hacky, but I couldn't figure out a better way.
-    const subject = new Subject<null>()
-    return subject.pipe(
-        startWith(null),
-        mergeMap(() => fetchAllRepositories(args)),
-        tap(result => {
-            if (result.nodes && (result.nodes.length === 0 || result.nodes.some(n => !n.mirrorInfo.cloned))) {
-                setTimeout(() => subject.next(), 5000)
-            }
-        })
+    return fetchAllRepositories(args).pipe(
+        // Poll every 5000ms if repositories are being cloned or the list is empty.
+        repeatUntil(
+            result =>
+                result.nodes &&
+                result.nodes.length > 0 &&
+                result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
+            { delay: 5000 }
+        )
     )
 }
 
@@ -207,6 +211,40 @@ export function checkMirrorRepositoryConnection(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
+    )
+}
+
+export function scheduleRepositoryPermissionsSync(args: { repository: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
+                scheduleRepositoryPermissionsSync(repository: $repository) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
+    )
+}
+
+export function scheduleUserPermissionsSync(args: { user: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleUserPermissionsSync($user: ID!) {
+                scheduleUserPermissionsSync(user: $user) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
     )
 }
 
@@ -408,9 +446,7 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
             const finalSettings = parseJSONC(data.viewerSettings.final)
             return {
                 site:
-                    data.site &&
-                    data.site.configuration &&
-                    data.site.configuration.effectiveContents &&
+                    data.site?.configuration?.effectiveContents &&
                     parseJSONC(data.site.configuration.effectiveContents),
                 externalServices,
                 settings: {
@@ -575,5 +611,48 @@ export function fetchSiteUpdateCheck(): Observable<{
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
+    )
+}
+
+/**
+ * Resolves to `false` if prometheus API is unavailable (due to being disabled or not configured in this deployment)
+ *
+ * @param days number of days of data to fetch
+ */
+export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics | false> {
+    // more details in /internal/prometheusutil.ErrPrometheusUnavailable
+    const errorPrometheusUnavailable = 'prometheus API is unavailable'
+    return queryGraphQL(
+        gql`
+            query SiteMonitoringStatistics($days: Int!) {
+                site {
+                    monitoringStatistics(days: $days) {
+                        alerts {
+                            serviceName
+                            name
+                            timestamp
+                            average
+                        }
+                    }
+                }
+            }
+        `,
+        { days }
+    ).pipe(
+        map(result => {
+            if (isErrorGraphQLResult(result)) {
+                if (result.errors.find(error => error.message.includes(errorPrometheusUnavailable))) {
+                    return false
+                }
+                throw createAggregateError(result.errors)
+            }
+            return result.data
+        }),
+        map(data => {
+            if (data) {
+                return data.site.monitoringStatistics
+            }
+            return data
+        })
     )
 }

@@ -109,7 +109,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         this.props.onDidUpdate()
                     }
                 },
-                err => this.setState({ loading: false, errorDescription: asError(err).message })
+                error => this.setState({ loading: false, errorDescription: asError(error).message })
             )
     }
 }

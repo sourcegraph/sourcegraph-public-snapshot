@@ -1,12 +1,12 @@
 package campaigns
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -21,18 +21,18 @@ func TestCalcCounts(t *testing.T) {
 		changesets []*campaigns.Changeset
 		start      time.Time
 		end        time.Time
-		events     []Event
+		events     []*campaigns.ChangesetEvent
 		want       []*ChangesetCounts
 	}{
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
@@ -47,8 +47,8 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
@@ -63,8 +63,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			end:   daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -73,15 +73,15 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset created and closed before start time",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(8)),
 			},
 			start: daysAgo(4),
 			end:   daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(7), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(7), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 1, Merged: 1},
@@ -97,8 +97,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			end:   daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(7), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(7), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 1, Merged: 1},
@@ -113,8 +113,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(3),
 			end:   now.Add(-18 * time.Hour),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2).Add(-18 * time.Hour), Total: 0, Merged: 0},
@@ -123,16 +123,16 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
 				ghChangeset(2, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 2},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 2),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
@@ -148,9 +148,9 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(2, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 2},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 2),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
@@ -159,16 +159,16 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open merged different times",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 				ghChangeset(2, daysAgo(2)),
 			},
 			start: daysAgo(4),
-			events: []Event{
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 2},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubMerged, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 2),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -186,9 +186,9 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(2, daysAgo(2)),
 			},
 			start: daysAgo(4),
-			events: []Event{
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 2},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(2), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 2),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -199,15 +199,15 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "changeset merged and closed at same time",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
@@ -216,15 +216,15 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "changeset merged and closed at same time, reversed order in slice",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
@@ -233,16 +233,16 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open closed reopened merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(4)),
 			},
 			start: daysAgo(5),
-			events: []Event{
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubReopened, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(3), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubReopened, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(5), Total: 0, Open: 0},
@@ -260,10 +260,10 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(4)),
 			},
 			start: daysAgo(5),
-			events: []Event{
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 1},
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindBitbucketServerReopened, id: 1},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(3), campaigns.ChangesetEventKindBitbucketServerDeclined, 1),
+				event(t, daysAgo(2), campaigns.ChangesetEventKindBitbucketServerReopened, 1),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(5), Total: 0, Open: 0},
@@ -275,20 +275,20 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open closed reopened merged different times",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(5)),
 				ghChangeset(2, daysAgo(4)),
 			},
 			start: daysAgo(6),
-			events: []Event{
-				fakeEvent{t: daysAgo(4), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindGitHubClosed, id: 2},
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindGitHubReopened, id: 1},
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubReopened, id: 2},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindGitHubMerged, id: 2},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(4), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(3), campaigns.ChangesetEventKindGitHubClosed, 2),
+				event(t, daysAgo(3), campaigns.ChangesetEventKindGitHubReopened, 1),
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubReopened, 2),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindGitHubMerged, 2),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(6), Total: 0, Open: 0},
@@ -308,13 +308,13 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(2, daysAgo(4)),
 			},
 			start: daysAgo(6),
-			events: []Event{
-				fakeEvent{t: daysAgo(4), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 1},
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 2},
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindBitbucketServerReopened, id: 1},
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindBitbucketServerReopened, id: 2},
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 2},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(4), campaigns.ChangesetEventKindBitbucketServerDeclined, 1),
+				event(t, daysAgo(3), campaigns.ChangesetEventKindBitbucketServerDeclined, 2),
+				event(t, daysAgo(3), campaigns.ChangesetEventKindBitbucketServerReopened, 1),
+				event(t, daysAgo(2), campaigns.ChangesetEventKindBitbucketServerReopened, 2),
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindBitbucketServerMerged, 2),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(6), Total: 0, Open: 0},
@@ -327,16 +327,16 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open closed reopened merged, unsorted events",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(4)),
 			},
 			start: daysAgo(5),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubReopened, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
+				event(t, daysAgo(3), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubReopened, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(5), Total: 0, Open: 0},
@@ -354,10 +354,10 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(4)),
 			},
 			start: daysAgo(5),
-			events: []Event{
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 1},
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindBitbucketServerReopened, id: 1},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
+				event(t, daysAgo(3), campaigns.ChangesetEventKindBitbucketServerDeclined, 1),
+				event(t, daysAgo(2), campaigns.ChangesetEventKindBitbucketServerReopened, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(5), Total: 0, Open: 0},
@@ -369,15 +369,15 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, approved, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -394,9 +394,9 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -407,16 +407,35 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: "bitbucketserver",
+			name:      "single changeset open, changes-requested, unapproved",
+			changesets: []*campaigns.Changeset{
+				bbsChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(4),
+			events: []*campaigns.ChangesetEvent{
+				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
+				bbsParticipantEvent(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerDismissed),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 0, Open: 0},
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, approved, closed, reopened",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindGitHubReopened, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindGitHubReopened, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
@@ -432,10 +451,10 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindBitbucketServerReopened, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerDeclined, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindBitbucketServerReopened, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
@@ -445,17 +464,17 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, approved, closed, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindGitHubReopened, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindGitHubReopened, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
@@ -471,11 +490,11 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindBitbucketServerReopened, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerDeclined, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindBitbucketServerReopened, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
@@ -485,16 +504,16 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, changes-requested, closed, reopened",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindGitHubReopened, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindGitHubReopened, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
@@ -510,10 +529,10 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindBitbucketServerReopened, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerDeclined, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindBitbucketServerReopened, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
@@ -523,16 +542,16 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, changes-requested, closed, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(3),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(0), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
@@ -542,16 +561,16 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, comment review, approved, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(3), "user1", "COMMENTED"),
 				ghReview(1, daysAgo(2), "user2", "APPROVED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -568,10 +587,10 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(3), "user1", campaigns.ChangesetEventKindBitbucketServerCommented),
 				bbsActivity(1, daysAgo(2), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -582,13 +601,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset multiple approvals counting once",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(1), "user1", "APPROVED"),
 				ghReview(1, daysAgo(0), "user2", "APPROVED"),
 			},
@@ -604,7 +623,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(0), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
 			},
@@ -614,13 +633,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset multiple changes-requested reviews counting once",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
 				ghReview(1, daysAgo(0), "user2", "CHANGES_REQUESTED"),
 			},
@@ -636,7 +655,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(1, daysAgo(0), "user2", campaigns.ChangesetEventKindBitbucketServerReviewed),
 			},
@@ -646,15 +665,15 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset open, changes-requested, merged",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -671,9 +690,9 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
@@ -684,7 +703,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "multiple changesets open different review stages before merge",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(6)),
@@ -692,15 +711,15 @@ func TestCalcCounts(t *testing.T) {
 				ghChangeset(3, daysAgo(6)),
 			},
 			start: daysAgo(7),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(5), "user1", "APPROVED"),
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(3), campaigns.ChangesetEventKindGitHubMerged, 1),
 				ghReview(2, daysAgo(4), "user1", "APPROVED"),
 				ghReview(2, daysAgo(3), "user2", "APPROVED"),
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubMerged, id: 2},
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubMerged, 2),
 				ghReview(3, daysAgo(2), "user1", "CHANGES_REQUESTED"),
 				ghReview(3, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 3},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 3),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(7), Total: 0, Open: 0},
@@ -722,15 +741,15 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(3, daysAgo(6)),
 			},
 			start: daysAgo(7),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(5), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 1},
+				event(t, daysAgo(3), campaigns.ChangesetEventKindBitbucketServerMerged, 1),
 				bbsActivity(2, daysAgo(4), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(2, daysAgo(3), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 2},
+				event(t, daysAgo(2), campaigns.ChangesetEventKindBitbucketServerMerged, 2),
 				bbsActivity(3, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(3, daysAgo(1), "user2", campaigns.ChangesetEventKindBitbucketServerReviewed),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 3},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 3),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(7), Total: 0, Open: 0},
@@ -744,7 +763,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "time slice of multiple changesets in different stages before merge",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(6)),
@@ -754,13 +773,13 @@ func TestCalcCounts(t *testing.T) {
 			// Same test as above, except we only look at 3 days in the middle
 			start: daysAgo(4),
 			end:   daysAgo(2),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(5), "user1", "APPROVED"),
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(3), campaigns.ChangesetEventKindGitHubMerged, 1),
 				ghReview(2, daysAgo(4), "user1", "APPROVED"),
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubMerged, id: 2},
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubMerged, 2),
 				ghReview(3, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 3},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 3),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
@@ -769,13 +788,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested then approved by same person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
 				ghReview(1, daysAgo(0), "user1", "APPROVED"),
 			},
@@ -791,7 +810,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(1, daysAgo(0), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 			},
@@ -801,13 +820,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approved then changes-requested by same person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(1), "user1", "APPROVED"),
 				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
 			},
@@ -823,7 +842,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(0), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 			},
@@ -833,13 +852,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approval by one person then changes-requested by another",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(1), "user1", "APPROVED"),
 				ghReview(1, daysAgo(0), "user2", "CHANGES_REQUESTED"), // This has higher precedence
 			},
@@ -855,7 +874,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(0), "user2", campaigns.ChangesetEventKindBitbucketServerReviewed),
 			},
@@ -865,13 +884,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested by one person then approval by another",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
 				ghReview(1, daysAgo(0), "user2", "APPROVED"),
 			},
@@ -887,7 +906,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(1, daysAgo(0), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
 			},
@@ -897,13 +916,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested by one person, approval by another, then approval by first person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
 				ghReview(1, daysAgo(1), "user2", "APPROVED"),
 				ghReview(1, daysAgo(0), "user1", "APPROVED"),
@@ -921,7 +940,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(1, daysAgo(1), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(0), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
@@ -933,13 +952,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approval by one person, changes-requested by another, then changes-requested by first person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "APPROVED"),
 				ghReview(1, daysAgo(1), "user2", "CHANGES_REQUESTED"),
 				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
@@ -957,7 +976,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(1), "user2", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(1, daysAgo(0), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
@@ -975,7 +994,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerUnapproved),
 			},
@@ -994,7 +1013,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(0), "user1", campaigns.ChangesetEventKindBitbucketServerUnapproved),
@@ -1014,7 +1033,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerUnapproved),
 				bbsActivity(1, daysAgo(0), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
@@ -1034,7 +1053,7 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(1), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(1, daysAgo(0), "user2", campaigns.ChangesetEventKindBitbucketServerUnapproved),
@@ -1059,25 +1078,25 @@ func TestCalcCounts(t *testing.T) {
 				bbsChangeset(6, daysAgo(6)),
 			},
 			start: daysAgo(7),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				// GitHub Events
 				ghReview(1, daysAgo(5), "user1", "APPROVED"),
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindGitHubMerged, id: 1},
+				event(t, daysAgo(3), campaigns.ChangesetEventKindGitHubMerged, 1),
 				ghReview(3, daysAgo(4), "user1", "APPROVED"),
 				ghReview(3, daysAgo(3), "user2", "APPROVED"),
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubMerged, id: 3},
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubMerged, 3),
 				ghReview(5, daysAgo(2), "user1", "CHANGES_REQUESTED"),
 				ghReview(5, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindGitHubMerged, id: 5},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubMerged, 5),
 				// Bitbucket Server Events
 				bbsActivity(2, daysAgo(5), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(3), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 2},
+				event(t, daysAgo(3), campaigns.ChangesetEventKindBitbucketServerMerged, 2),
 				bbsActivity(4, daysAgo(4), "user1", campaigns.ChangesetEventKindBitbucketServerApproved),
 				bbsActivity(4, daysAgo(3), "user2", campaigns.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 4},
+				event(t, daysAgo(2), campaigns.ChangesetEventKindBitbucketServerMerged, 4),
 				bbsActivity(6, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
 				bbsActivity(6, daysAgo(1), "user2", campaigns.ChangesetEventKindBitbucketServerReviewed),
-				fakeEvent{t: daysAgo(1), kind: campaigns.ChangesetEventKindBitbucketServerMerged, id: 6},
+				event(t, daysAgo(1), campaigns.ChangesetEventKindBitbucketServerMerged, 6),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(7), Total: 0, Open: 0},
@@ -1113,9 +1132,9 @@ func TestCalcCounts(t *testing.T) {
 				setExternalDeletedAt(bbsChangeset(2, daysAgo(3)), daysAgo(1)),
 			},
 			start: daysAgo(3),
-			events: []Event{
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindGitHubClosed, id: 1},
-				fakeEvent{t: daysAgo(2), kind: campaigns.ChangesetEventKindBitbucketServerDeclined, id: 2},
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(2), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(2), campaigns.ChangesetEventKindBitbucketServerDeclined, 2),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(3), Total: 2, Open: 2, OpenPending: 2},
@@ -1126,13 +1145,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested then dismissed event by same person with dismissed state",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				// GitHub updates the state of the reviews when they're dismissed
 				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
 				ghReviewDismissed(1, daysAgo(0), "user2", "user1"),
@@ -1143,13 +1162,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with approval by one person, changes-requested by another, then dismissal of changes-requested",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(2), "user1", "APPROVED"),
 				// GitHub updates the state of the changesets when they're dismissed
 				ghReview(1, daysAgo(1), "user2", "DISMISSED"),
@@ -1162,13 +1181,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			codehosts: "github",
+			codehosts: extsvc.TypeGitHub,
 			name:      "single changeset with changes-requested, then another dismissed review by same person",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
-			events: []Event{
+			events: []*campaigns.ChangesetEvent{
 				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
 				// After a dismissal, GitHub removes all of the author's
 				// reviews from the overall review state, which is why we don't
@@ -1198,22 +1217,12 @@ func TestCalcCounts(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(have, tc.want) {
-				t.Errorf("wrong counts calculated. diff=%s", cmp.Diff(have, tc.want))
+			if diff := cmp.Diff(have, tc.want); diff != "" {
+				t.Errorf("wrong counts calculated. diff=%s", diff)
 			}
 		})
 	}
 }
-
-type fakeEvent struct {
-	t    time.Time
-	kind campaigns.ChangesetEventKind
-	id   int64
-}
-
-func (e fakeEvent) Timestamp() time.Time               { return e.t }
-func (e fakeEvent) Type() campaigns.ChangesetEventKind { return e.kind }
-func (e fakeEvent) Changeset() int64                   { return e.id }
 
 func ghChangeset(id int64, t time.Time) *campaigns.Changeset {
 	return &campaigns.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}
@@ -1234,6 +1243,37 @@ func setExternalDeletedAt(c *campaigns.Changeset, t time.Time) *campaigns.Change
 
 func timeToUnixMilli(t time.Time) int {
 	return int(t.UnixNano()) / int(time.Millisecond)
+}
+
+func event(t *testing.T, ti time.Time, kind campaigns.ChangesetEventKind, id int64) *campaigns.ChangesetEvent {
+	ch := &campaigns.ChangesetEvent{ChangesetID: id, Kind: kind}
+
+	switch kind {
+	case campaigns.ChangesetEventKindGitHubMerged:
+		ch.Metadata = &github.MergedEvent{CreatedAt: ti}
+	case campaigns.ChangesetEventKindGitHubClosed:
+		ch.Metadata = &github.ClosedEvent{CreatedAt: ti}
+	case campaigns.ChangesetEventKindGitHubReopened:
+		ch.Metadata = &github.ReopenedEvent{CreatedAt: ti}
+
+	case campaigns.ChangesetEventKindBitbucketServerMerged,
+		campaigns.ChangesetEventKindBitbucketServerDeclined,
+		campaigns.ChangesetEventKindBitbucketServerReopened:
+
+		ch.Metadata = &bitbucketserver.Activity{CreatedDate: timeToUnixMilli(ti)}
+
+	default:
+		t.Fatalf("unknown changeset event kind: %s", kind)
+	}
+
+	want := ti.UTC().Truncate(time.Millisecond)
+	have := ch.Timestamp().UTC().Truncate(time.Millisecond)
+	if !have.Equal(want) {
+		t.Fatalf("ChangesetEvent.Timestamp() yields wrong timestamp, want=%s, have=%s (make sure to set the right attribute when constructing test event)",
+			want, have)
+	}
+
+	return ch
 }
 
 func ghReview(id int64, t time.Time, login, state string) *campaigns.ChangesetEvent {
@@ -1271,6 +1311,19 @@ func bbsActivity(id int64, t time.Time, username string, kind campaigns.Changese
 		ChangesetID: id,
 		Kind:        kind,
 		Metadata: &bitbucketserver.Activity{
+			CreatedDate: timeToUnixMilli(t),
+			User: bitbucketserver.User{
+				Name: username,
+			},
+		},
+	}
+}
+
+func bbsParticipantEvent(id int64, t time.Time, username string, kind campaigns.ChangesetEventKind) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        kind,
+		Metadata: &bitbucketserver.ParticipantStatusEvent{
 			CreatedDate: timeToUnixMilli(t),
 			User: bitbucketserver.User{
 				Name: username,

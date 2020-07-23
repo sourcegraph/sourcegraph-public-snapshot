@@ -35,20 +35,20 @@
     # zoekt-indexserver
     - 127.0.0.1:6072
 - labels:
-    job: precise-code-intel-api-server
-  targets:
-    # precise-code-intel-api-server
-    - 127.0.0.1:3186
-- labels:
     job: precise-code-intel-bundle-manager
   targets:
     # precise-code-intel-bundle-manager
-    - 127.0.0.1:3187
+    - 127.0.0.1:6087
 - labels:
     job: precise-code-intel-worker
   targets:
     # precise-code-intel-worker
-    - 127.0.0.1:3188
+    - 127.0.0.1:6088
+- labels:
+    job: precise-code-intel-indexer
+  targets:
+    # precise-code-intel-indexer
+    - 127.0.0.1:6089
 - labels:
     job: postgres_exporter
   targets:

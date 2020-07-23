@@ -32,12 +32,12 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                 body={
                     window.context.authProviders && window.context.authProviders.length > 0 ? (
                         <div className="mb-4">
-                            {window.context.authProviders.map((provider, i) =>
+                            {window.context.authProviders.map((provider, index) =>
                                 provider.isBuiltin ? (
-                                    <UsernamePasswordSignInForm key={i} {...props} />
+                                    <UsernamePasswordSignInForm key={index} {...props} />
                                 ) : (
                                     <div className="mb-2">
-                                        <a key={i} href={provider.authenticationURL} className="btn btn-secondary">
+                                        <a key={index} href={provider.authenticationURL} className="btn btn-secondary">
                                             Sign in with {provider.displayName}
                                         </a>
                                     </div>

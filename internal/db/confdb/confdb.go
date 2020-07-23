@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
@@ -15,24 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
-// Config contains the contents of a critical/site config along with associated metadata.
-type Config struct {
+// SiteConfig contains the contents of a site config along with associated metadata.
+type SiteConfig struct {
 	ID        int32     // the unique ID of this config
-	Type      string    // either "critical" or "site"
 	Contents  string    // the raw JSON content (with comments and trailing commas allowed)
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
 }
 
-// SiteConfig contains the contents of a site config along with associated metadata.
-type SiteConfig Config
-
-// CriticalConfig contains the contents of a critical config along with associated metadata.
-type CriticalConfig Config
-
-// ErrNewerEdit is returned by SiteCreateIfUpToDate and
-// CriticalCreateifUpToDate when a newer edit has already been applied and the
-// edit has been rejected.
+// ErrNewerEdit is returned by SiteCreateIfUpToDate when a newer edit has already been applied and
+// the edit has been rejected.
 var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
 
 // SiteCreateIfUpToDate saves the given site config "contents" to the database iff the
@@ -50,7 +42,7 @@ func SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (
 	}
 	defer done()
 
-	newLastID, err := addDefault(ctx, tx, typeSite, confdefaults.Default.Site)
+	newLastID, err := addDefault(ctx, tx, confdefaults.Default.Site)
 	if err != nil {
 		return nil, err
 	}
@@ -58,36 +50,7 @@ func SiteCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (
 		lastID = newLastID
 	}
 
-	criticalSite, err := createIfUpToDate(ctx, tx, typeSite, lastID, contents)
-	return (*SiteConfig)(criticalSite), err
-}
-
-// CriticalCreateIfUpToDate saves the given critical config "contents" to the
-// database iff the supplied "lastID" is equal to the one that was most
-// recently saved to the database (i.e. SiteGetlatest's ID field).
-//
-// The critical config that was most recently saved to the database is returned.
-// An error is returned if "contents" is invalid JSON.
-//
-// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-// responsible for ensuring this or that the response never makes it to a user.
-func CriticalCreateIfUpToDate(ctx context.Context, lastID *int32, contents string) (latest *CriticalConfig, err error) {
-	tx, done, err := newTransaction(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer done()
-
-	newLastID, err := addDefault(ctx, tx, typeCritical, confdefaults.Default.Critical)
-	if err != nil {
-		return nil, err
-	}
-	if newLastID != nil {
-		lastID = newLastID
-	}
-
-	criticalSite, err := createIfUpToDate(ctx, tx, typeCritical, lastID, contents)
-	return (*CriticalConfig)(criticalSite), err
+	return createIfUpToDate(ctx, tx, lastID, contents)
 }
 
 // SiteGetLatest returns the site config that was most recently saved to the database.
@@ -102,34 +65,12 @@ func SiteGetLatest(ctx context.Context) (latest *SiteConfig, err error) {
 	}
 	defer done()
 
-	_, err = addDefault(ctx, tx, typeSite, confdefaults.Default.Site)
+	_, err = addDefault(ctx, tx, confdefaults.Default.Site)
 	if err != nil {
 		return nil, err
 	}
 
-	site, err := getLatest(ctx, tx, typeSite)
-	return (*SiteConfig)(site), err
-}
-
-// CriticalGetLatest returns critical site config that was most recently saved to the database.
-// This returns nil, nil if there is not yet a critical config in the database.
-//
-// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-// responsible for ensuring this or that the response never makes it to a user.
-func CriticalGetLatest(ctx context.Context) (latest *CriticalConfig, err error) {
-	tx, done, err := newTransaction(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer done()
-
-	_, err = addDefault(ctx, tx, typeCritical, confdefaults.Default.Critical)
-	if err != nil {
-		return nil, err
-	}
-
-	critical, err := getLatest(ctx, tx, typeCritical)
-	return (*CriticalConfig)(critical), err
+	return getLatest(ctx, tx)
 }
 
 func newTransaction(ctx context.Context) (tx queryable, done func(), err error) {
@@ -150,8 +91,8 @@ func newTransaction(ctx context.Context) (tx queryable, done func(), err error) 
 	}, nil
 }
 
-func addDefault(ctx context.Context, tx queryable, configType configType, contents string) (newLastID *int32, err error) {
-	latest, err := getLatest(ctx, tx, configType)
+func addDefault(ctx context.Context, tx queryable, contents string) (newLastID *int32, err error) {
+	latest, err := getLatest(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -161,24 +102,22 @@ func addDefault(ctx context.Context, tx queryable, configType configType, conten
 	}
 
 	// Create the default.
-	latest, err = createIfUpToDate(ctx, tx, configType, nil, contents)
+	latest, err = createIfUpToDate(ctx, tx, nil, contents)
 	if err != nil {
 		return nil, err
 	}
 	return &latest.ID, nil
 }
 
-func createIfUpToDate(ctx context.Context, tx queryable, configType configType, lastID *int32, contents string) (latest *Config, err error) {
+func createIfUpToDate(ctx context.Context, tx queryable, lastID *int32, contents string) (latest *SiteConfig, err error) {
 	// Validate JSON syntax before saving.
 	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
 		return nil, fmt.Errorf("invalid settings JSON: %v", errs)
 	}
 
-	new := Config{
-		Contents: contents,
-	}
+	new := SiteConfig{Contents: contents}
 
-	latest, err = getLatest(ctx, tx, configType)
+	latest, err = getLatest(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +128,7 @@ func createIfUpToDate(ctx context.Context, tx queryable, configType configType, 
 	err = tx.QueryRowContext(
 		ctx,
 		"INSERT INTO critical_and_site_config(type, contents) VALUES($1, $2) RETURNING id, created_at, updated_at",
-		configType, new.Contents,
+		"site", new.Contents,
 	).Scan(&new.ID, &new.CreatedAt, &new.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -197,8 +136,8 @@ func createIfUpToDate(ctx context.Context, tx queryable, configType configType, 
 	return &new, nil
 }
 
-func getLatest(ctx context.Context, tx queryable, configType configType) (*Config, error) {
-	q := sqlf.Sprintf("SELECT s.id, s.type, s.contents, s.created_at, s.updated_at FROM critical_and_site_config s WHERE type=%s ORDER BY id DESC LIMIT 1", configType)
+func getLatest(ctx context.Context, tx queryable) (*SiteConfig, error) {
+	q := sqlf.Sprintf("SELECT s.id, s.contents, s.created_at, s.updated_at FROM critical_and_site_config s WHERE type=%s ORDER BY id DESC LIMIT 1", "site")
 	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -214,12 +153,12 @@ func getLatest(ctx context.Context, tx queryable, configType configType) (*Confi
 	return versions[0], nil
 }
 
-func parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*Config, error) {
-	versions := []*Config{}
+func parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*SiteConfig, error) {
+	versions := []*SiteConfig{}
 	defer rows.Close()
 	for rows.Next() {
-		f := Config{}
-		err := rows.Scan(&f.ID, &f.Type, &f.Contents, &f.CreatedAt, &f.UpdatedAt)
+		f := SiteConfig{}
+		err := rows.Scan(&f.ID, &f.Contents, &f.CreatedAt, &f.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -237,10 +176,3 @@ type queryable interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
-
-type configType string
-
-const (
-	typeCritical configType = "critical"
-	typeSite     configType = "site"
-)

@@ -6,13 +6,13 @@ import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
-    isRevNotFoundErrorLike,
+    isRevisionNotFoundErrorLike,
 } from '../../../shared/src/backend/errors'
 import { RepoQuestionIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { resolveRev } from './backend'
+import { resolveRevision } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
@@ -72,7 +72,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                     distinctUntilChanged(),
                     tap(() => this.setState({ gitDataPresentOrError: undefined })),
                     switchMap(repoName =>
-                        defer(() => resolveRev({ repoName })).pipe(
+                        defer(() => resolveRevision({ repoName })).pipe(
                             // On a CloneInProgress error, retry after 1s
                             retryWhen(errors =>
                                 errors.pipe(
@@ -128,7 +128,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                     />
                 )
             }
-            if (isRevNotFoundErrorLike(this.state.gitDataPresentOrError)) {
+            if (isRevisionNotFoundErrorLike(this.state.gitDataPresentOrError)) {
                 return <EmptyRepositoryPage />
             }
             return (

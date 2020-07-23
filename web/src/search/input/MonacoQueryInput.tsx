@@ -7,25 +7,30 @@ import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { toArray, map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
+import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { CaseSensitivityProps, PatternTypeProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
-import { hasProperty } from '../../../../shared/src/util/types'
+import { hasProperty, isDefined } from '../../../../shared/src/util/types'
+import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
+import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
+import { observeResize } from '../../util/dom'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
         ThemeProps,
         CaseSensitivityProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CopyQueryButtonProps {
     location: H.Location
     history: H.History
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     autoFocus?: boolean
+    keyboardShortcutForFocus?: KeyboardShortcut
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -53,9 +58,7 @@ function addSouregraphSearchCodeIntelligence(
     monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
     // Register providers
-    const providers = getProviders(searchQueries, patternTypes, (query: string) =>
-        fetchSuggestions(query).pipe(toArray())
-    )
+    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions)
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
@@ -126,8 +129,28 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         publishReplay(1),
         refCount()
     )
-    private containerRef: HTMLElement | null = null
+    private containerRefs = new Subject<HTMLElement | null>()
+    private editorRefs = new Subject<Monaco.editor.IStandaloneCodeEditor | null>()
     private subscriptions = new Subscription()
+
+    constructor(props: MonacoQueryInputProps) {
+        super(props)
+        // Trigger a layout of the Monaco editor when its container gets resized.
+        // The Monaco editor doesn't auto-resize with its container:
+        // https://github.com/microsoft/monaco-editor/issues/28
+        this.subscriptions.add(
+            this.containerRefs
+                .pipe(
+                    switchMap(container => (container ? observeResize(container) : [])),
+                    withLatestFrom(this.editorRefs),
+                    map(([, editor]) => editor),
+                    filter(isDefined)
+                )
+                .subscribe(editor => {
+                    editor.layout()
+                })
+        )
+    }
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
@@ -171,31 +194,30 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             cursorWidth: 1,
         }
         return (
-            <div ref={this.setContainerRef} className="monaco-query-input-container flex-1">
-                <div className="flex-1">
-                    <MonacoEditor
-                        id="monaco-query-input"
-                        language={SOURCEGRAPH_SEARCH}
-                        value={this.props.queryState.query}
-                        height={16}
-                        isLightTheme={this.props.isLightTheme}
-                        editorWillMount={this.editorWillMount}
-                        onEditorCreated={this.onEditorCreated}
-                        options={options}
-                        border={false}
+            <>
+                <div ref={this.containerRefs.next.bind(this.containerRefs)} className="monaco-query-input-container">
+                    <div className="flex-grow-1 flex-shrink-past-contents">
+                        <MonacoEditor
+                            id="monaco-query-input"
+                            language={SOURCEGRAPH_SEARCH}
+                            value={this.props.queryState.query}
+                            height={16}
+                            isLightTheme={this.props.isLightTheme}
+                            editorWillMount={this.editorWillMount}
+                            onEditorCreated={this.onEditorCreated}
+                            options={options}
+                            border={false}
+                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                        />
+                    </div>
+                    <Toggles
+                        {...this.props}
+                        navbarSearchQuery={this.props.queryState.query}
+                        className="monaco-query-input-container__toggle-container"
                     />
                 </div>
-                <Toggles
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                    className="monaco-query-input-container__toggle-container"
-                />
-            </div>
+            </>
         )
-    }
-
-    private setContainerRef = (ref: HTMLElement | null): void => {
-        this.containerRef = ref
     }
 
     private onChange = (query: string): void => {
@@ -213,6 +235,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
+        this.editorRefs.next(editor)
         // Accessibility: allow tab usage to move focus to
         // next previous focusable element (and not to insert the tab character).
         // - Cannot be set through IEditorOptions
@@ -277,22 +300,15 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             throw new Error('Cannot unbind default Monaco keybindings')
         }
         for (const action of Object.keys(editor._actions)) {
+            // Keep ctrl+space to show all available completions. Keep ctrl+k to delete text on right of cursor.
+            if (action === 'editor.action.triggerSuggest' || action === 'deleteAllRight') {
+                continue
+            }
             // Prefixing action ids with `-` to unbind the default actions.
             editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
         }
         // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
         // not exposed on editor._actions.
         editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
-
-        // Trigger a layout of the Monaco editor when its container gets resized.
-        // The Monaco editor doesn't auto-resize with its container:
-        // https://github.com/microsoft/monaco-editor/issues/28
-        if (this.containerRef) {
-            const resizeObserver = new ResizeObserver(() => {
-                editor.layout()
-            })
-            resizeObserver.observe(this.containerRef)
-            this.subscriptions.add(() => resizeObserver.disconnect())
-        }
     }
 }

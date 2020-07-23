@@ -34,13 +34,13 @@ export function createPlatformContext(): PlatformContext {
             if (!window.context.isAuthenticatedUser) {
                 const editDescription =
                     typeof edit === 'string' ? 'edit settings' : 'update setting `' + edit.path.join('.') + '`'
-                const u = new URL(window.context.externalURL)
+                const url = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
                         '\n\n' +
                         `[**Sign into Sourcegraph${
-                            u.hostname === 'sourcegraph.com' ? '' : ` on ${u.host}`
-                        }**](${`${u.href.replace(/\/$/, '')}/sign-in`})`
+                            url.hostname === 'sourcegraph.com' ? '' : ` on ${url.host}`
+                        }**](${`${url.href.replace(/\/$/, '')}/sign-in`})`
                 )
             }
 
@@ -58,15 +58,9 @@ export function createPlatformContext(): PlatformContext {
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
         },
-        requestGraphQL: ({ request, variables }) =>
-            requestGraphQL(
-                gql`
-                    ${request}
-                `,
-                variables
-            ),
+        requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => createExtensionHost({ wrapEndpoints: false }),
+        createExtensionHost: () => Promise.resolve(createExtensionHost()),
         urlToFile: toPrettyWebBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,
@@ -78,9 +72,13 @@ export function createPlatformContext(): PlatformContext {
 }
 
 function toPrettyWebBlobURL(
-    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
+    context: RepoFile &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec> &
+        Partial<RenderModeSpec>
 ): string {
-    const url = new URL(toPrettyBlobURL(ctx), location.href)
+    const url = new URL(toPrettyBlobURL(context), location.href)
     url.searchParams.set('subtree', 'true')
     return url.pathname + url.search + url.hash
 }

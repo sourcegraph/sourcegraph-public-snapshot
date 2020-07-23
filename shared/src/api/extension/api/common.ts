@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from 'comlink'
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
@@ -18,22 +18,22 @@ export interface ProxySubscribable<T> extends ProxyMarked {
  *
  * @param subscribable A normal Subscribable (from this thread)
  */
-const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
+export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
     [proxyMarker]: true,
     subscribe(observer): Unsubscribable & ProxyMarked {
         return proxy(
             // Don't pass the proxy to Rx directly because it will try to
             // access Symbol properties that cannot be proxied
             subscribable.subscribe({
-                next: val => {
+                next: value => {
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    observer.next(val as UnproxyOrClone<T>)
+                    observer.next(value as UnproxyOrClone<T>)
                 },
-                error: err => {
+                error: error => {
                     // Only pass a few well-known Error properties
                     // TODO should pass all properties serialized recursively, best handled on comlink level
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    observer.error(err && { message: err.message, name: err.name, stack: err.stack })
+                    observer.error(error && { message: error.message, name: error.name, stack: error.stack })
                 },
                 complete: () => {
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -54,11 +54,18 @@ export function toProxyableSubscribable<T, R>(
     result: ProviderResult<T>,
     mapFunc: (value: T | undefined | null) => R = identity
 ): ProxySubscribable<R> {
+    return proxySubscribable(providerResultToObservable(result, mapFunc))
+}
+
+export function providerResultToObservable<T, R = T>(
+    result: ProviderResult<T>,
+    mapFunc: (value: T | undefined | null) => R = identity
+): Observable<R> {
     let observable: Observable<R>
     if (result && (isPromiseLike(result) || isObservable<T>(result) || isSubscribable(result))) {
         observable = from(result).pipe(map(mapFunc))
     } else {
         observable = of(mapFunc(result))
     }
-    return proxySubscribable(observable)
+    return observable
 }

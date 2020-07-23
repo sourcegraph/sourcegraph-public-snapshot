@@ -1,17 +1,18 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
+import { BehaviorSubject, from, throwError, of, Subscription } from 'rxjs'
 import { filter, first, switchMap, take } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { isDefined } from '../../util/types'
-import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
-import { CodeEditorData } from '../client/services/editorService'
+import { ViewerData } from '../client/services/viewerService'
 import { TextModel } from '../client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
+import { FlatExtHostAPI } from '../contract'
+import { Remote } from 'comlink'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -22,13 +23,13 @@ export function assertToJSON(a: any, expected: any): void {
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
     models?: readonly TextModel[]
-    editors: readonly CodeEditorData[]
+    viewers: readonly ViewerData[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
     models: [{ uri: 'file:///f', text: 't', languageId: 'l' }],
-    editors: [
+    viewers: [
         {
             type: 'CodeEditor',
             resource: 'file:///f',
@@ -50,7 +51,7 @@ interface Mocks
     > {}
 
 const NOOP_MOCKS: Mocks = {
-    settings: NEVER,
+    settings: of({ final: {}, subjects: [] }),
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
     requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
     getScriptURLForExtension: scriptURL => scriptURL,
@@ -67,9 +68,9 @@ export async function integrationTestContext(
     partialMocks: Partial<Mocks> = NOOP_MOCKS,
     initModel: TestInitData = FIXTURE_INIT_DATA
 ): Promise<{
-    client: ExtensionHostClient
     extensionAPI: typeof sourcegraph
     services: Services
+    extensionHost: Remote<FlatExtHostAPI>
 }> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
@@ -87,11 +88,20 @@ export async function integrationTestContext(
     const extensionHost = startExtensionHost(extensionHostEndpoints)
 
     const services = new Services(mocks)
-    const initData: InitData = {
+    const initData: Omit<InitData, 'initialSettings'> = {
         sourcegraphURL: 'https://example.com/',
         clientApplication: 'sourcegraph',
     }
-    const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
+
+    const { api } = await createExtensionHostClientConnection(
+        Promise.resolve({
+            endpoints: clientEndpoints,
+            subscription: new Subscription(),
+        }),
+        services,
+        initData,
+        mocks
+    )
 
     const extensionAPI = await extensionHost.extensionAPI
     if (initModel.models) {
@@ -99,22 +109,22 @@ export async function integrationTestContext(
             services.model.addModel(model)
         }
     }
-    for (const editor of initModel.editors) {
-        services.editor.addEditor(editor)
+    for (const editor of initModel.viewers) {
+        services.viewer.addViewer(editor)
     }
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
-    if (initModel.editors.length) {
+    if (initModel.viewers.length > 0) {
         await Promise.all([
-            from(extensionAPI.workspace.openedTextDocuments).pipe(take(initModel.editors.length)).toPromise(),
+            from(extensionAPI.workspace.openedTextDocuments).pipe(take(initModel.viewers.length)).toPromise(),
             from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     first(isDefined),
                     switchMap(activeWindow =>
                         from(activeWindow.activeViewComponentChanges).pipe(
                             filter(isDefined),
-                            take(initModel.editors.length)
+                            take(initModel.viewers.length)
                         )
                     )
                 )
@@ -123,9 +133,9 @@ export async function integrationTestContext(
     }
 
     return {
-        client,
         extensionAPI,
         services,
+        extensionHost: api,
     }
 }
 

@@ -5,8 +5,8 @@ import * as uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
-import { storage } from '../../browser/storage'
-import { isInPage } from '../../context'
+import { storage } from '../../browser-extension/web-extension-api/storage'
+import { isInPage } from '../context'
 import { logUserEvent, logEvent } from '../backend/userEvents'
 import { observeSourcegraphURL } from '../util/context'
 
@@ -68,8 +68,6 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
      * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
-     *
-     * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
     public async logCodeIntelligenceEvent(
         event: string,
@@ -103,5 +101,16 @@ export class EventLogger implements TelemetryService {
                 await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS, eventProperties)
                 break
         }
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param pageTitle The title of the page being viewed.
+     */
+    public async logViewEvent(pageTitle: string): Promise<void> {
+        const anonUserId = await this.getAnonUserID()
+        const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
+        logEvent({ name: `View${pageTitle}`, userCookieID: anonUserId, url: sourcegraphURL }, this.requestGraphQL)
     }
 }

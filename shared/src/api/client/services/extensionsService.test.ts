@@ -3,8 +3,8 @@ import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
-import { SettingsService } from './settings'
 import { ModelService } from './modelService'
+import { PlatformContext } from '../../../platform/context'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -12,7 +12,7 @@ class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
         modelService: Pick<ModelService, 'activeLanguages'>,
-        settingsService: Pick<SettingsService, 'data'>,
+        settings: PlatformContext['settings'],
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
             activeLanguages: ReadonlySet<string>
@@ -25,11 +25,11 @@ class TestExtensionsService extends ExtensionsService {
                 requestGraphQL: () => {
                     throw new Error('not implemented')
                 },
+                settings,
                 getScriptURLForExtension: scriptURL => scriptURL,
                 sideloadedExtensionURL,
             },
             modelService,
-            settingsService,
             extensionActivationFilter,
             fetchSideloadedExtension
         )
@@ -49,7 +49,7 @@ describe('activeExtensions', () => {
                                 a: new Set(),
                             }),
                         },
-                        { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
+                        cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }),
                         enabledExtensions => enabledExtensions,
                         cold('-a-|', { a: '' }),
                         () => of(null)
@@ -76,14 +76,13 @@ describe('activeExtensions', () => {
                                 b: new Set(['y']),
                             }),
                         },
-                        {
-                            data: cold<SettingsCascadeOrError>('-a-b-|', {
-                                a: { final: { extensions: { x: true } }, subjects: [] },
-                                b: { final: { extensions: { x: true, y: true } }, subjects: [] },
-                            }),
-                        },
+
+                        cold<SettingsCascadeOrError>('-a-b-|', {
+                            a: { final: { extensions: { x: true } }, subjects: [] },
+                            b: { final: { extensions: { x: true, y: true } }, subjects: [] },
+                        }),
                         (enabledExtensions, activeLanguages) =>
-                            enabledExtensions.filter(x => activeLanguages.has(x.id)),
+                            enabledExtensions.filter(extension => activeLanguages.has(extension.id)),
                         cold('-a--|', { a: '' }),
                         () => of(null)
                     ).activeExtensions
@@ -108,18 +107,17 @@ describe('activeExtensions', () => {
                                 a: new Set([]),
                             }),
                         },
-                        {
-                            data: cold<SettingsCascadeOrError>('a-|', {
-                                a: {
-                                    final: {
-                                        extensions: {
-                                            foo: true,
-                                        },
+                        cold<SettingsCascadeOrError>('a-|', {
+                            a: {
+                                final: {
+                                    extensions: {
+                                        foo: true,
                                     },
-                                    subjects: [],
                                 },
-                            }),
-                        },
+                                subjects: [],
+                            },
+                        }),
+
                         enabledExtensions => enabledExtensions,
                         cold('a-|', { a: 'bar' }),
                         baseUrl =>
@@ -153,18 +151,18 @@ describe('activeExtensions', () => {
                                 a: new Set([]),
                             }),
                         },
-                        {
-                            data: cold<SettingsCascadeOrError>('a-|', {
-                                a: {
-                                    final: {
-                                        extensions: {
-                                            foo: true,
-                                        },
+
+                        cold<SettingsCascadeOrError>('a-|', {
+                            a: {
+                                final: {
+                                    extensions: {
+                                        foo: true,
                                     },
-                                    subjects: [],
                                 },
-                            }),
-                        },
+                                subjects: [],
+                            },
+                        }),
+
                         enabledExtensions => enabledExtensions,
                         cold('a-|', { a: 'bar' }),
                         () => throwError(new Error('baz'))

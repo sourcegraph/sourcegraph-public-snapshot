@@ -7,13 +7,163 @@ func PreciseCodeIntelBundleManager() *Container {
 		Description: "Stores and manages precise code intelligence bundles.",
 		Groups: []Group{
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title: "General",
+				Rows: []Row{
+					{
+						{
+							Name:        "99th_percentile_bundle_database_duration",
+							Description: "99th percentile successful bundle database query duration over 5m",
+							// TODO(efritz) - ensure these exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_bundle_database_duration_seconds_bucket[5m])))`,
+							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("database operation").Unit(Seconds),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "bundle_database_errors",
+							Description:       "bundle database errors every 5m",
+							Query:             `increase(src_bundle_database_errors_total[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("database operation"),
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:        "99th_percentile_bundle_reader_duration",
+							Description: "99th percentile successful bundle reader query duration over 5m",
+							// TODO(efritz) - ensure these exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_bundle_reader_duration_seconds_bucket[5m])))`,
+							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("reader operation").Unit(Seconds),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "bundle_reader_errors",
+							Description:       "bundle reader errors every 5m",
+							Query:             `increase(src_bundle_reader_errors_total[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("reader operation"),
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:            "disk_space_remaining",
+							Description:     "disk space remaining by instance",
+							Query:           `(src_disk_space_available_bytes{job="precise-code-intel-bundle-manager"} / src_disk_space_total_bytes{job="precise-code-intel-bundle-manager"}) * 100`,
+							DataMayNotExist: true,
+							Warning:         Alert{LessOrEqual: 25},
+							Critical:        Alert{LessOrEqual: 15},
+							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
+							PossibleSolutions: `
+								- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
+							`,
+						},
+					},
+				},
+			},
+			{
+				Title:  "Janitor - synchronizes database and filesystem and keeps free space on disk",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:              "janitor_errors",
+							Description:       "janitor errors every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_errors_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_old_uploads_removed",
+							Description:       "upload files removed (due to age) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_upload_files_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_old_parts_removed",
+							Description:       "upload and database part files removed (due to age) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_part_files_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_old_dumps_removed",
+							Description:       "bundle files removed (due to low disk space) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_evicted_bundle_files_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "janitor_orphans",
+							Description:       "bundle and upload files removed (with no corresponding database entry) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_orphaned_files_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_uploads_removed",
+							Description:       "upload records removed every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_upload_records_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("records removed"),
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Internal service requests",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedFrontendInternalAPIErrorResponses("precise-code-intel-bundle-manager"),
+					},
+				},
+			},
+			{
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("precise-code-intel-bundle-manager"),
 						sharedContainerMemoryUsage("precise-code-intel-bundle-manager"),
 						sharedContainerCPUUsage("precise-code-intel-bundle-manager"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsage7d("precise-code-intel-bundle-manager"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-bundle-manager"),
 					},
 				},
 			},

@@ -1,12 +1,12 @@
+import { RepoSpec, RevisionSpec } from '../../../../shared/src/util/url'
+
 export interface DiffResolvedRevSpec {
     baseCommitID: string
     headCommitID: string
 }
 
-export interface OpenInSourcegraphProps {
+export interface OpenInSourcegraphProps extends RepoSpec, RevisionSpec {
     sourcegraphURL: string
-    repoName: string
-    rev: string
     filePath?: string
     commit?: {
         baseRev: string
@@ -20,7 +20,7 @@ export interface OpenInSourcegraphProps {
     query?: {
         search?: string
         diff?: {
-            rev: string
+            revision: string
         }
     }
     withModifierKey?: boolean

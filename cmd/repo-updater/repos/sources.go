@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"golang.org/x/time/rate"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -53,13 +52,32 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
-	return newSource(svc, cf, nil)
+	switch strings.ToUpper(svc.Kind) {
+	case extsvc.KindGitHub:
+		return NewGithubSource(svc, cf)
+	case extsvc.KindGitLab:
+		return NewGitLabSource(svc, cf)
+	case extsvc.KindBitbucketServer:
+		return NewBitbucketServerSource(svc, cf)
+	case extsvc.KindBitbucketCloud:
+		return NewBitbucketCloudSource(svc, cf)
+	case extsvc.KindGitolite:
+		return NewGitoliteSource(svc, cf)
+	case extsvc.KindPhabricator:
+		return NewPhabricatorSource(svc, cf)
+	case extsvc.KindAWSCodeCommit:
+		return NewAWSCodeCommitSource(svc, cf)
+	case extsvc.KindOther:
+		return NewOtherSource(svc, cf)
+	default:
+		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
+	}
 }
 
 // NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
 // rate limiter
-func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (ChangesetSource, error) {
-	source, err := newSource(svc, cf, rl)
+func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory) (ChangesetSource, error) {
+	source, err := NewSource(svc, cf)
 	if err != nil {
 		return nil, err
 	}
@@ -69,32 +87,6 @@ func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limi
 	}
 	return css, nil
 }
-
-func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
-	switch strings.ToLower(svc.Kind) {
-	case "github":
-		return NewGithubSource(svc, cf, rl)
-	case "gitlab":
-		return NewGitLabSource(svc, cf)
-	case "bitbucketserver":
-		return NewBitbucketServerSource(svc, cf, rl)
-	case "bitbucketcloud":
-		return NewBitbucketCloudSource(svc, cf)
-	case "gitolite":
-		return NewGitoliteSource(svc, cf)
-	case "phabricator":
-		return NewPhabricatorSource(svc, cf)
-	case "awscodecommit":
-		return NewAWSCodeCommitSource(svc, cf)
-	case "other":
-		return NewOtherSource(svc, cf)
-	default:
-		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
-	}
-}
-
-// sourceTimeout is the default timeout to use on Source.ListRepos
-const sourceTimeout = 30 * time.Minute
 
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.

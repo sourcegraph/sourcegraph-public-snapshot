@@ -11,7 +11,10 @@ import (
 func NormalizeRepo(input api.RepoName) api.RepoName {
 	repo := string(input)
 	repo = strings.TrimSuffix(repo, ".git")
-	repo = path.Clean(repo)
+
+	// Clean with a "/" so we get out an absolute path
+	repo = path.Clean("/" + repo)
+	repo = strings.TrimPrefix(repo, "/")
 
 	// Check if we need to do lowercasing. If we don't we can avoid the
 	// allocations we do later in the function.

@@ -7,21 +7,21 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/repos/oklog/ulid
+    url: https://api.github.com/repos/sourcegraph/sourcegraph
     method: GET
   response:
-    body: '{"id":75744278,"node_id":"MDEwOlJlcG9zaXRvcnk3NTc0NDI3OA==","name":"ulid","full_name":"oklog/ulid","private":false,"owner":{"login":"oklog","id":24411296,"node_id":"MDEyOk9yZ2FuaXphdGlvbjI0NDExMjk2","avatar_url":"https://avatars3.githubusercontent.com/u/24411296?v=4","gravatar_id":"","url":"https://api.github.com/users/oklog","html_url":"https://github.com/oklog","followers_url":"https://api.github.com/users/oklog/followers","following_url":"https://api.github.com/users/oklog/following{/other_user}","gists_url":"https://api.github.com/users/oklog/gists{/gist_id}","starred_url":"https://api.github.com/users/oklog/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/oklog/subscriptions","organizations_url":"https://api.github.com/users/oklog/orgs","repos_url":"https://api.github.com/users/oklog/repos","events_url":"https://api.github.com/users/oklog/events{/privacy}","received_events_url":"https://api.github.com/users/oklog/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/oklog/ulid","description":"Universally
-      Unique Lexicographically Sortable Identifier (ULID) in Go","fork":false,"url":"https://api.github.com/repos/oklog/ulid","forks_url":"https://api.github.com/repos/oklog/ulid/forks","keys_url":"https://api.github.com/repos/oklog/ulid/keys{/key_id}","collaborators_url":"https://api.github.com/repos/oklog/ulid/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/oklog/ulid/teams","hooks_url":"https://api.github.com/repos/oklog/ulid/hooks","issue_events_url":"https://api.github.com/repos/oklog/ulid/issues/events{/number}","events_url":"https://api.github.com/repos/oklog/ulid/events","assignees_url":"https://api.github.com/repos/oklog/ulid/assignees{/user}","branches_url":"https://api.github.com/repos/oklog/ulid/branches{/branch}","tags_url":"https://api.github.com/repos/oklog/ulid/tags","blobs_url":"https://api.github.com/repos/oklog/ulid/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/oklog/ulid/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/oklog/ulid/git/refs{/sha}","trees_url":"https://api.github.com/repos/oklog/ulid/git/trees{/sha}","statuses_url":"https://api.github.com/repos/oklog/ulid/statuses/{sha}","languages_url":"https://api.github.com/repos/oklog/ulid/languages","stargazers_url":"https://api.github.com/repos/oklog/ulid/stargazers","contributors_url":"https://api.github.com/repos/oklog/ulid/contributors","subscribers_url":"https://api.github.com/repos/oklog/ulid/subscribers","subscription_url":"https://api.github.com/repos/oklog/ulid/subscription","commits_url":"https://api.github.com/repos/oklog/ulid/commits{/sha}","git_commits_url":"https://api.github.com/repos/oklog/ulid/git/commits{/sha}","comments_url":"https://api.github.com/repos/oklog/ulid/comments{/number}","issue_comment_url":"https://api.github.com/repos/oklog/ulid/issues/comments{/number}","contents_url":"https://api.github.com/repos/oklog/ulid/contents/{+path}","compare_url":"https://api.github.com/repos/oklog/ulid/compare/{base}...{head}","merges_url":"https://api.github.com/repos/oklog/ulid/merges","archive_url":"https://api.github.com/repos/oklog/ulid/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/oklog/ulid/downloads","issues_url":"https://api.github.com/repos/oklog/ulid/issues{/number}","pulls_url":"https://api.github.com/repos/oklog/ulid/pulls{/number}","milestones_url":"https://api.github.com/repos/oklog/ulid/milestones{/number}","notifications_url":"https://api.github.com/repos/oklog/ulid/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/oklog/ulid/labels{/name}","releases_url":"https://api.github.com/repos/oklog/ulid/releases{/id}","deployments_url":"https://api.github.com/repos/oklog/ulid/deployments","created_at":"2016-12-06T15:26:52Z","updated_at":"2019-11-12T10:59:35Z","pushed_at":"2019-09-04T08:47:59Z","git_url":"git://github.com/oklog/ulid.git","ssh_url":"git@github.com:oklog/ulid.git","clone_url":"https://github.com/oklog/ulid.git","svn_url":"https://github.com/oklog/ulid","homepage":"http://godoc.org/github.com/oklog/ulid","size":185,"stargazers_count":1745,"watchers_count":1745,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":70,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":{"key":"apache-2.0","name":"Apache
-      License 2.0","spdx_id":"Apache-2.0","url":"https://api.github.com/licenses/apache-2.0","node_id":"MDc6TGljZW5zZTI="},"topics":[],"forks":70,"open_issues":0,"watchers":1745,"default_branch":"master","permissions":{"admin":false,"push":false,"pull":true},"organization":{"login":"oklog","id":24411296,"node_id":"MDEyOk9yZ2FuaXphdGlvbjI0NDExMjk2","avatar_url":"https://avatars3.githubusercontent.com/u/24411296?v=4","gravatar_id":"","url":"https://api.github.com/users/oklog","html_url":"https://github.com/oklog","followers_url":"https://api.github.com/users/oklog/followers","following_url":"https://api.github.com/users/oklog/following{/other_user}","gists_url":"https://api.github.com/users/oklog/gists{/gist_id}","starred_url":"https://api.github.com/users/oklog/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/oklog/subscriptions","organizations_url":"https://api.github.com/users/oklog/orgs","repos_url":"https://api.github.com/users/oklog/repos","events_url":"https://api.github.com/users/oklog/events{/privacy}","received_events_url":"https://api.github.com/users/oklog/received_events","type":"Organization","site_admin":false},"network_count":70,"subscribers_count":34}'
+    body: '{"id":41288708,"node_id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","full_name":"sourcegraph/sourcegraph","private":false,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/sourcegraph","description":"Universal
+      code search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2020-04-23T15:47:12Z","pushed_at":"2020-04-23T15:47:09Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":379765,"stargazers_count":3491,"watchers_count":3491,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":351,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1216,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"topics":["code-intelligence","code-search","lsif-enabled","open-source","repo-type-main","sourcegraph"],"forks":351,"open_issues":1216,"watchers":3491,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"temp_clone_token":"","allow_squash_merge":true,"allow_merge_commit":false,"allow_rebase_merge":true,"delete_branch_on_merge":true,"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":351,"subscribers_count":80}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type
+        X-GitHub-Media-Type, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -29,11 +29,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 13:41:21 GMT
+      - Thu, 23 Apr 2020 15:58:39 GMT
       Etag:
-      - W/"96d9bdd7866f609e7464dd773e5bccf8"
+      - W/"5015ce7f0c5b5612f05f8d855c199c73"
       Last-Modified:
-      - Tue, 12 Nov 2019 10:59:35 GMT
+      - Thu, 23 Apr 2020 15:47:12 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -44,7 +44,7 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding
+      - Accept-Encoding, Accept, X-Requested-With
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -52,71 +52,115 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json,
+        github.machine-man-preview; format=json
       X-Github-Request-Id:
-      - DA79:450D6:585730A:69115F2:5DCAB681
+      - D821:8902:5672E:6A605:5EA1BB2F
       X-Oauth-Scopes:
-      - public_repo
+      - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4998"
+      - "4996"
       X-Ratelimit-Reset:
-      - "1573569681"
+      - "1587659393"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\nfragment actor on Actor { avatarUrl, login, url }\nfragment
-      commit on Commit {\n\toid, message, messageHeadline, committedDate, pushedDate,
-      url\n\tcommitter {\n\tavatarUrl, email, name\n\tuser { ...actor }\n\t}\n}\nfragment
-      review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
-      { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
-      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
-      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
-      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
-      {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
-      }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
-      { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
-      { ...actor }\n\t\tauthorAssociation\n\t\tbody\n\t\tcreatedAt\n\t\teditor { ...actor
-      }\n\t\turl\n\t\tupdatedAt\n\t\tincludesCreatedEdit\n\t\tpublishedAt\n\t\t}\n\t\t...
-      on RenamedTitleEvent {\n\t\tactor { ...actor }\n\t\tpreviousTitle\n\t\tcurrentTitle\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on MergedEvent {\n\t\tactor { ...actor }\n\t\tmergeRefName\n\t\turl\n\t\tcommit
-      { ...commit }\n\t\tcreatedAt\n\t\t}\n\t\t... on PullRequestReview {\n\t\t...review\n\t\t}\n\t\t...
-      on PullRequestReviewThread {\n\t\tcomments(last: 100) {\n\t\t\tnodes {\n\t\t\tdatabaseId\n\t\t\tauthor
-      { ...actor }\n\t\t\tauthorAssociation\n\t\t\teditor { ...actor }\n\t\t\tcommit
-      { ...commit }\n\t\t\tbody\n\t\t\tstate\n\t\t\turl\n\t\t\tcreatedAt\n\t\t\tupdatedAt\n\t\t\tincludesCreatedEdit\n\t\t\t}\n\t\t}\n\t\t}\n\t\t...
-      on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
-      ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
-      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
-      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
-      on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nquery
-      {\nrepo_0: repository(owner: \"oklog\", name: \"ulid\") {\nrepo_0_16: pullRequest(number:
-      16) { ...pr }\n}\n}","variables":null}'
+    body: '{"query":"\nfragment actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment
+      label on Label {\n  name\n  color\n  description\n  id\n}\n\nfragment commit
+      on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
+      {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
+      commitWithChecks on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      20){\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
+      20){\n        nodes{\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
+      prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
+      review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
+      {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
+      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  author
+      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
+      {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
+      CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
+      PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT,
+      REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT])
+      {\n    nodes {\n      __typename\n      ... on AssignedEvent {\n        actor
+      {\n          ...actor\n        }\n        assignee {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ClosedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n        url\n      }\n      ...
+      on IssueComment {\n        databaseId\n        author {\n          ...actor\n        }\n        authorAssociation\n        body\n        createdAt\n        editor
+      {\n          ...actor\n        }\n        url\n        updatedAt\n        includesCreatedEdit\n        publishedAt\n      }\n      ...
+      on RenamedTitleEvent {\n        actor {\n          ...actor\n        }\n        previousTitle\n        currentTitle\n        createdAt\n      }\n      ...
+      on MergedEvent {\n        actor {\n          ...actor\n        }\n        mergeRefName\n        url\n        commit
+      {\n          ...commit\n        }\n        createdAt\n      }\n      ... on
+      PullRequestReview {\n        ...review\n      }\n      ... on PullRequestReviewThread
+      {\n        comments(last: 100) {\n          nodes {\n            databaseId\n            author
+      {\n              ...actor\n            }\n            authorAssociation\n            editor
+      {\n              ...actor\n            }\n            commit {\n              ...commit\n            }\n            body\n            state\n            url\n            createdAt\n            updatedAt\n            includesCreatedEdit\n          }\n        }\n      }\n      ...
+      on ReopenedEvent {\n        actor {\n          ...actor\n        }\n        createdAt\n      }\n      ...
+      on ReviewDismissedEvent {\n        actor {\n          ...actor\n        }\n        review
+      {\n          ...review\n        }\n        dismissalMessage\n        createdAt\n      }\n      ...
+      on ReviewRequestRemovedEvent {\n        actor {\n          ...actor\n        }\n        requestedReviewer
+      {\n          ...actor\n        }\n        requestedTeam: requestedReviewer {\n          ...
+      on Team {\n            name\n            url\n            avatarUrl\n          }\n        }\n        createdAt\n      }\n      ...
+      on ReviewRequestedEvent {\n        actor {\n          ...actor\n        }\n        requestedReviewer
+      {\n          ...actor\n        }\n        requestedTeam: requestedReviewer {\n          ...
+      on Team {\n            name\n            url\n            avatarUrl\n          }\n        }\n        createdAt\n      }\n      ...
+      on UnassignedEvent {\n        actor {\n          ...actor\n        }\n        assignee
+      {\n          ...actor\n        }\n        createdAt\n      }\n      ... on LabeledEvent
+      {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
+      on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
+      {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
+      {\n        commit {\n          ...commit\n        }\n      }\n    }\n  }\n}\nquery
+      {\nrepo_0: repository(owner: \"sourcegraph\", name: \"sourcegraph\") {\nrepo_0_10156:
+      pullRequest(number: 10156) { ...pr }\n}\n}","variables":null}'
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repo_0":{"repo_0_16":{"id":"MDExOlB1bGxSZXF1ZXN0MTUyMzUyMDcz","title":".travis.yml:
-      explicit COVERALLS_TOKEN","body":"Travis stopped setting env vars defined in
-      the repo settings for PR branches, claiming a security issue. It''s a real pain
-      in the ass for things like Coveralls. To the best of my knowledge, the only
-      way around it is to explicitly set the token in the .travis.yml.","state":"MERGED","url":"https://github.com/oklog/ulid/pull/16","number":16,"createdAt":"2017-11-13T21:28:04Z","updatedAt":"2019-10-10T12:20:35Z","headRefOid":"413e2f96e48724d2013b3dfc50ff0bd284b5f0aa","baseRefOid":"66bb6560562feca7045b23db1ae85b01260f87c5","headRefName":"coverage","baseRefName":"master","author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/114509?v=4","login":"peterbourgon","url":"https://github.com/peterbourgon"},"participants":{"nodes":[{"avatarUrl":"https://avatars2.githubusercontent.com/u/114509?v=4","login":"peterbourgon","url":"https://github.com/peterbourgon"}]},"timelineItems":{"nodes":[{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/114509?v=4","login":"peterbourgon","url":"https://github.com/peterbourgon"},"mergeRefName":"master","url":"https://github.com/oklog/ulid/pull/16#event-1339664194","commit":{"oid":"eb55c82d96c77e196b269cb2ae3afda150454de7","message":"Merge
-      pull request #16 from oklog/coverage\n\n.travis.yml: explicit COVERALLS_TOKEN","messageHeadline":"Merge
-      pull request #16 from oklog/coverage","committedDate":"2017-11-13T21:42:49Z","pushedDate":"2017-11-13T21:42:51Z","url":"https://github.com/oklog/ulid/commit/eb55c82d96c77e196b269cb2ae3afda150454de7","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2017-11-13T21:42:50Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars2.githubusercontent.com/u/114509?v=4","login":"peterbourgon","url":"https://github.com/peterbourgon"},"createdAt":"2017-11-13T21:42:50Z","url":"https://github.com/oklog/ulid/pull/16#event-1339664196"}]}}}}}'
+    body: '{"data":{"repo_0":{"repo_0_10156":{"id":"MDExOlB1bGxSZXF1ZXN0NDA4MDAyMjc0","title":"campaigns:
+      Add more webhook tests","body":"","state":"OPEN","url":"https://github.com/sourcegraph/sourcegraph/pull/10156","number":10156,"createdAt":"2020-04-23T15:33:47Z","updatedAt":"2020-04-23T15:50:26Z","headRefOid":"2c7c9eb2f9198450cb02aa02014fdbbcef89e09d","baseRefOid":"e26e9747eeeb5cb609c3925cf9eddf312a58ae04","headRefName":"webhook-tests","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56&v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56&v=4","login":"ryanslade","url":"https://github.com/ryanslade"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"2c7c9eb2f9198450cb02aa02014fdbbcef89e09d","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ5NDU4OTY5MzUy","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
+      #61801 passed (4 minutes, 55 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ5NDU4OTMwNjQy","context":"cla-bot","state":"SUCCESS","description":"Changes
+      do not require CLA submission"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ5NDU4OTcyODU5","context":"codecov/patch","state":"SUCCESS","description":"Coverage
+      not affected when comparing c302735...2c7c9eb"}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGU2MjI0ODI4MTk=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGU2MjI0ODI4MjA=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGU2MjI0ODI4MjE=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGU2MjI0ODI4NDU=","status":"COMPLETED","conclusion":"FAILURE","checkRuns":{"nodes":[]}}]},"committedDate":"2020-04-23T15:24:35Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"246bac6349ad74f109a65c1e9c04f27c690467a9","message":"campaigns:
+      Rename webhook event types and add Action field","messageHeadline":"campaigns:
+      Rename webhook event types and add Action field","committedDate":"2020-04-23T09:44:01Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/246bac6349ad74f109a65c1e9c04f27c690467a9","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","email":"ryanslade@gmail.com","name":"Ryan
+      Slade","user":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56&v=4","login":"ryanslade","url":"https://github.com/ryanslade"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"8c2d31232d6d15e6b9c290c8cc19e5532ca15cdc","message":"campaigns:
+      Refactor webhook tests\n\nAll test data is now located in the fixtures/testdata
+      directory where\nyou specify a list of web hook events and the expected content
+      of the\nchangeset events after all webhook events have been processed.\n\nThis
+      should make it easier to test how webhook events alter the DB.","messageHeadline":"campaigns:
+      Refactor webhook tests","committedDate":"2020-04-23T14:33:30Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/8c2d31232d6d15e6b9c290c8cc19e5532ca15cdc","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","email":"ryanslade@gmail.com","name":"Ryan
+      Slade","user":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56&v=4","login":"ryanslade","url":"https://github.com/ryanslade"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"6130514788a11d947d73bba242f96a0426c94dbc","message":"campaigns:
+      Undo rename","messageHeadline":"campaigns: Undo rename","committedDate":"2020-04-23T14:37:16Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/6130514788a11d947d73bba242f96a0426c94dbc","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","email":"ryanslade@gmail.com","name":"Ryan
+      Slade","user":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56&v=4","login":"ryanslade","url":"https://github.com/ryanslade"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"2c7c9eb2f9198450cb02aa02014fdbbcef89e09d","message":"campaigns:
+      Rename test variables","messageHeadline":"campaigns: Rename test variables","committedDate":"2020-04-23T15:24:35Z","pushedDate":"2020-04-23T15:33:19Z","url":"https://github.com/sourcegraph/sourcegraph/commit/2c7c9eb2f9198450cb02aa02014fdbbcef89e09d","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?v=4","email":"ryanslade@gmail.com","name":"Ryan
+      Slade","user":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56&v=4","login":"ryanslade","url":"https://github.com/ryanslade"}}}},{"__typename":"IssueComment","databaseId":618471205,"author":{"avatarUrl":"https://avatars2.githubusercontent.com/in/254?v=4","login":"codecov","url":"https://github.com/apps/codecov"},"authorAssociation":"NONE","body":"#
+      [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph/pull/10156?src=pr&el=h1)
+      Report\n> Merging [#10156](https://codecov.io/gh/sourcegraph/sourcegraph/pull/10156?src=pr&el=desc)
+      into [master](https://codecov.io/gh/sourcegraph/sourcegraph/commit/c302735e39a5246b042131452736e9262396fab4&el=desc)
+      will **decrease** coverage by `0.02%`.\n> The diff coverage is `n/a`.\n\n```diff\n@@            Coverage
+      Diff             @@\n##           master   #10156      +/-   ##\n==========================================\n-
+      Coverage   42.77%   42.74%   -0.03%     \n==========================================\n  Files        1348     1348              \n  Lines       74137    74137              \n  Branches     6651     6651              \n==========================================\n-
+      Hits        31711    31691      -20     \n- Misses      39570    39587      +17     \n-
+      Partials     2856     2859       +3     \n```\n\n| Flag | Coverage Δ | |\n|---|---|---|\n|
+      #unit | `42.74% <ø> (-0.03%)` | :arrow_down: |\n\n| [Impacted Files](https://codecov.io/gh/sourcegraph/sourcegraph/pull/10156?src=pr&el=tree)
+      | Coverage Δ | |\n|---|---|---|\n| [enterprise/internal/campaigns/webhooks.go](https://codecov.io/gh/sourcegraph/sourcegraph/pull/10156/diff?src=pr&el=tree#diff-ZW50ZXJwcmlzZS9pbnRlcm5hbC9jYW1wYWlnbnMvd2ViaG9va3MuZ28=)
+      | `22.79% <0.00%> (-3.54%)` | :arrow_down: |\n","createdAt":"2020-04-23T15:38:40Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/10156#issuecomment-618471205","updatedAt":"2020-04-23T15:38:40Z","includesCreatedEdit":false,"publishedAt":"2020-04-23T15:38:40Z"},{"__typename":"IssueComment","databaseId":618478455,"author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56&v=4","login":"ryanslade","url":"https://github.com/ryanslade"},"authorAssociation":"MEMBER","body":"Comment","createdAt":"2020-04-23T15:50:25Z","editor":null,"url":"https://github.com/sourcegraph/sourcegraph/pull/10156#issuecomment-618478455","updatedAt":"2020-04-23T15:50:25Z","includesCreatedEdit":false,"publishedAt":"2020-04-23T15:50:25Z"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type
+        X-GitHub-Media-Type, Deprecation, Sunset
       Cache-Control:
       - no-cache
       Content-Security-Policy:
@@ -124,7 +168,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 13:41:22 GMT
+      - Thu, 23 Apr 2020 15:58:41 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -134,7 +178,7 @@ interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
-      - Accept-Encoding
+      - Accept-Encoding, Accept, X-Requested-With
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -142,17 +186,17 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - DA7B:33B0A:72E1D5A:88EE79F:5DCAB681
+      - D823:0533:4F96D:61B29:5EA1BB30
       X-Oauth-Scopes:
-      - public_repo
+      - read:org, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4897"
+      - "4973"
       X-Ratelimit-Reset:
-      - "1573569682"
+      - "1587659394"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

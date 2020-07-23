@@ -1,7 +1,8 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H from 'history'
+import * as H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import React, { useCallback, useState } from 'react'
+import { fromFetch } from 'rxjs/fetch'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
 import { ConfiguredRegistryExtension } from '../../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../../shared/src/extensions/extensionManifest'
@@ -17,7 +18,6 @@ import { PageTitle } from '../../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { useLocalStorage } from '../../../util/useLocalStorage'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
-import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
 import { of, Observable, concat, from } from 'rxjs'
 import { ErrorAlert } from '../../../components/alerts'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -85,8 +85,8 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(({ e
                 concat(
                     isErrorLike(extension.manifest) || !extension.manifest?.url
                         ? of(DEFAULT_SOURCE)
-                        : fromFetch(extension.manifest.url, undefined, resp => resp.text()).pipe(
-                              catchError(err => [asError(err)])
+                        : fromFetch(extension.manifest.url, { selector: response => response.text() }).pipe(
+                              catchError(error => [asError(error)])
                           ),
                     bundleChanges
                 ),
@@ -106,7 +106,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(({ e
                         return concat(
                             [LOADING],
                             from(publishExtension({ extensionID: extension.id, manifest, bundle: bundleOrError })).pipe(
-                                catchError(err => [asError(err)])
+                                catchError(error => [asError(error)])
                             )
                         )
                     })

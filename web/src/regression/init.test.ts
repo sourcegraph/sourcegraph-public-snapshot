@@ -1,9 +1,9 @@
 import { describe, before, test } from 'mocha'
-import { Driver } from '../../../shared/src/e2e/driver'
+import { Driver } from '../../../shared/src/testing/driver'
 import { createAndInitializeDriver } from './util/init'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 import { Key } from 'ts-key-enum'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { retry } from '../../../shared/src/testing/utils'
 import delay from 'delay'
 
 describe('Initialize new instance', () => {
@@ -46,7 +46,7 @@ describe('Initialize new instance', () => {
         await retry(
             async () => {
                 await driver.page.reload()
-                await driver.findElementWithText('Configure external services', { wait: { timeout: 5 * 1000 } })
+                await driver.findElementWithText('Connect a code host', { wait: { timeout: 5 * 1000 } })
                 await delay(1000)
             },
             { retries: 10 }

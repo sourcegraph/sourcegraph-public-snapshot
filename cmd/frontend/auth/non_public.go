@@ -13,7 +13,7 @@ import (
 )
 
 // RequireAuthMiddleware is a middleware that requires authentication for all HTTP requests, except
-// those whitelisted by allowAnonymousRequest. It's used when auth.public == false.
+// those allowed by allowAnonymousRequest. It's used when auth.public == false.
 //
 // It is enabled for all auth providers, but an auth provider may reject or redirect the user to its
 // own auth flow before the request reaches here.

@@ -1,5 +1,0 @@
-BEGIN;
-
-ALTER TABLE campaign_plans DROP COLUMN IF EXISTS user_id;
-
-COMMIT;

@@ -8,10 +8,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -22,7 +22,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{}).Search(&SearchArgs{Query: query, Version: version})
+		r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -50,6 +50,9 @@ func TestSearchSuggestions(t *testing.T) {
 	}
 	defer func() { mockSearchSymbols = nil }()
 
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
 	searchVersions := []string{"V1", "V2"}
 
 	t.Run("empty", func(t *testing.T) {
@@ -70,23 +73,30 @@ func TestSearchSuggestions(t *testing.T) {
 
 		var calledReposListAll, calledReposListFoo bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true, NoForks: true} // when treating term as repo: field
-			wantAll := db.ReposListOptions{OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true, NoForks: true}                                   // when treating term as text query
-			if reflect.DeepEqual(op, wantAll) {
-				calledReposListAll = true
-				return []*types.Repo{{Name: "bar-repo"}}, nil
-			} else if reflect.DeepEqual(op, wantFoo) {
+
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+
+			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
+				// when treating term as repo: field
 				calledReposListFoo = true
 				return []*types.Repo{{Name: "foo-repo"}}, nil
 			} else {
-				t.Errorf("got %+v, want %+v or %+v", op, wantFoo, wantAll)
+				// when treating term as text query
+				calledReposListAll = true
+				return []*types.Repo{{Name: "bar-repo"}}, nil
 			}
 			return nil, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
+
 		defer func() { db.Mocks = db.MockStores{} }()
-		git.Mocks.ResolveRevision = func(rev string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 			return api.CommitID("deadbeef"), nil
 		}
 		defer git.ResetMocks()
@@ -98,7 +108,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://repo?rev#dir/file", JPath: "dir/file", Repo: &types.Repo{Name: "repo"}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/file", JPath: "dir/file", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo"}}, CommitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -118,7 +128,10 @@ func TestSearchSuggestions(t *testing.T) {
 
 	// This test is only valid for Regexp searches. Literal searches won't return suggestions for an invalid regexp.
 	t.Run("single term invalid regex", func(t *testing.T) {
-		sr, err := (&schemaResolver{}).Search(&SearchArgs{Query: "[foo", PatternType: nil, Version: "V1"})
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
+		sr, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -157,6 +170,7 @@ func TestSearchSuggestions(t *testing.T) {
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
@@ -170,9 +184,9 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", Repo: &types.Repo{Name: "repo3"}, CommitID: "rev"},
-				{uri: "git://repo?rev#dir/foo-repo1-file-name-match", JPath: "dir/foo-repo1-file-name-match", Repo: &types.Repo{Name: "repo1"}, CommitID: "rev"},
-				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", Repo: &types.Repo{Name: "repo"}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo3"}}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/foo-repo1-file-name-match", JPath: "dir/foo-repo1-file-name-match", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo1"}}, CommitID: "rev"},
+				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", Repo: &RepositoryResolver{repo: &types.Repo{Name: "repo"}}, CommitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -220,18 +234,16 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				IncludePatterns: []string{"foo"},
-				OnlyRepoIDs:     true,
-				LimitOffset:     limitOffset,
-				NoArchived:      true,
-				NoForks:         true,
-			}
-			if !reflect.DeepEqual(op, want) {
-				t.Errorf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"foo"})
+
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
 
 		// Mock to bypass language suggestions.
@@ -247,7 +259,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://foo-repo?rev#dir/file", JPath: "dir/file", Repo: &types.Repo{Name: "foo-repo"}, CommitID: ""},
+				{uri: "git://foo-repo?rev#dir/file", JPath: "dir/file", Repo: &RepositoryResolver{repo: &types.Repo{Name: "foo-repo"}}, CommitID: ""},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -280,6 +292,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
 
 		calledReposGetInventory := false
@@ -322,19 +335,17 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			want := db.ReposListOptions{
-				IncludePatterns: []string{"foo"},
-				OnlyRepoIDs:     true,
-				LimitOffset:     limitOffset,
-				NoArchived:      true,
-				NoForks:         true,
-			}
 
-			if !reflect.DeepEqual(op, want) {
-				t.Errorf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"foo"})
+
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
 
 		// Mock to bypass language suggestions.
@@ -350,7 +361,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []*FileMatchResolver{
-				{uri: "git://foo-repo?rev#dir/bar-file", JPath: "dir/bar-file", Repo: &types.Repo{Name: "foo-repo"}, CommitID: ""},
+				{uri: "git://foo-repo?rev#dir/bar-file", JPath: "dir/bar-file", Repo: &RepositoryResolver{repo: &types.Repo{Name: "foo-repo"}}, CommitID: ""},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()

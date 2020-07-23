@@ -3,23 +3,14 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
 import {
+    Changeset,
     ID,
     ICampaign,
-    IUpdateCampaignInput,
-    ICreateCampaignInput,
     IChangesetsOnCampaignArguments,
-    IEmptyResponse,
     IExternalChangeset,
-    IFileDiffConnection,
-    IPreviewFileDiffConnection,
-    IPatchSet,
-    IPatchesOnCampaignArguments,
-    IPatchConnection,
 } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { DiffStatFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
-
-export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -31,34 +22,13 @@ const campaignFragment = gql`
             username
             avatarURL
         }
-        status {
-            completedCount
-            pendingCount
-            state
-            errors
-        }
+        branch
         createdAt
         updatedAt
-        publishedAt
         closedAt
         viewerCanAdminister
-        changesets(first: 10000) {
+        changesets {
             totalCount
-            nodes {
-                __typename
-                id
-                state
-            }
-        }
-        patches(first: 10000) {
-            totalCount
-            nodes {
-                id
-                __typename
-            }
-        }
-        patchSet {
-            id
         }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {
@@ -77,104 +47,6 @@ const campaignFragment = gql`
 
     ${DiffStatFields}
 `
-
-const patchSetFragment = gql`
-    fragment PatchSetFields on PatchSet {
-        __typename
-        id
-        patches(first: 10000) {
-            totalCount
-            nodes {
-                id
-                __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    ${DiffStatFields}
-`
-
-export async function updateCampaign(update: IUpdateCampaignInput): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation UpdateCampaign($update: UpdateCampaignInput!) {
-                updateCampaign(input: $update) {
-                    ...CampaignFields
-                }
-            }
-            ${campaignFragment}
-        `,
-        { update }
-    ).toPromise()
-    return dataOrThrowErrors(result).updateCampaign
-}
-
-export async function createCampaign(input: ICreateCampaignInput): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CreateCampaign($input: CreateCampaignInput!) {
-                createCampaign(input: $input) {
-                    id
-                    url
-                }
-            }
-        `,
-        { input }
-    ).toPromise()
-    return dataOrThrowErrors(result).createCampaign
-}
-
-export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation RetryCampaign($campaign: ID!) {
-                retryCampaign(campaign: $campaign) {
-                    ...CampaignFields
-                }
-            }
-
-            ${campaignFragment}
-        `,
-        { campaign: campaignID }
-    ).toPromise()
-    return dataOrThrowErrors(result).retryCampaign
-}
-
-export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CloseCampaign($campaign: ID!, $closeChangesets: Boolean!) {
-                closeCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
-                    id
-                }
-            }
-        `,
-        { campaign, closeChangesets }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
-export async function deleteCampaign(campaign: ID, closeChangesets = false): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation DeleteCampaign($campaign: ID!, $closeChangesets: Boolean!) {
-                deleteCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
-                    alwaysNil
-                }
-            }
-        `,
-        { campaign, closeChangesets }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
 
 export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
     queryGraphQL(
@@ -203,37 +75,10 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
         })
     )
 
-export const fetchPatchSetById = (patchSet: ID): Observable<IPatchSet | null> =>
-    queryGraphQL(
-        gql`
-            query PatchSetByID($patchSet: ID!) {
-                node(id: $patchSet) {
-                    __typename
-                    ... on PatchSet {
-                        ...PatchSetFields
-                    }
-                }
-            }
-            ${patchSetFragment}
-        `,
-        { patchSet }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'PatchSet') {
-                throw new Error(`The given ID is a ${node.__typename}, not a PatchSet`)
-            }
-            return node
-        })
-    )
-
 export const queryChangesets = (
     campaign: ID,
     { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<IExternalChangeset>> =>
+): Observable<Connection<Changeset>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets(
@@ -250,46 +95,56 @@ export const queryChangesets = (
                             totalCount
                             nodes {
                                 __typename
-                                id
-                                title
-                                body
+
                                 state
-                                reviewState
-                                checkState
-                                labels {
-                                    text
-                                    description
-                                    color
-                                }
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                externalURL {
-                                    url
-                                }
-                                head {
-                                    abbrevName
-                                    target {
-                                        oid
-                                    }
-                                }
-                                base {
-                                    abbrevName
-                                    target {
-                                        oid
-                                    }
-                                }
-                                externalID
                                 createdAt
                                 updatedAt
                                 nextSyncAt
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
+
+                                ... on HiddenExternalChangeset {
+                                    id
+                                }
+                                ... on ExternalChangeset {
+                                    id
+                                    title
+                                    body
+                                    reviewState
+                                    checkState
+                                    labels {
+                                        text
+                                        description
+                                        color
+                                    }
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    externalURL {
+                                        url
+                                    }
+                                    externalID
+                                    diff {
+                                        __typename
+                                        ... on PreviewRepositoryComparison {
+                                            fileDiffs {
+                                                diffStat {
+                                                    ...DiffStatFields
+                                                }
+                                            }
                                         }
+                                        ... on RepositoryComparison {
+                                            fileDiffs {
+                                                diffStat {
+                                                    ...DiffStatFields
+                                                }
+                                            }
+                                        }
+                                    }
+                                    diffStat {
+                                        added
+                                        changed
+                                        deleted
                                     }
                                 }
                             }
@@ -313,134 +168,6 @@ export const queryChangesets = (
             return node.changesets
         })
     )
-export const queryPatchesFromCampaign = (
-    campaign: ID,
-    { first }: IPatchesOnCampaignArguments
-): Observable<IPatchConnection> =>
-    queryGraphQL(
-        gql`
-            query CampaignPatches($campaign: ID!, $first: Int) {
-                node(id: $campaign) {
-                    __typename
-                    ... on Campaign {
-                        patches(first: $first) {
-                            totalCount
-                            nodes {
-                                __typename
-                                id
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                publicationEnqueued
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${DiffStatFields}
-        `,
-        { campaign, first }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Campaign with ID ${campaign} does not exist`)
-            }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
-            }
-            return node.patches
-        })
-    )
-
-export const queryPatchesFromPatchSet = (
-    patchSet: ID,
-    { first }: IPatchesOnCampaignArguments
-): Observable<IPatchConnection> =>
-    queryGraphQL(
-        gql`
-            query PatchSetPatches($patchSet: ID!, $first: Int) {
-                node(id: $patchSet) {
-                    __typename
-                    ... on PatchSet {
-                        patches(first: $first) {
-                            totalCount
-                            nodes {
-                                __typename
-                                id
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                publicationEnqueued
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${DiffStatFields}
-        `,
-        { patchSet, first }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`PatchSet with ID ${patchSet} does not exist`)
-            }
-            if (node.__typename !== 'PatchSet') {
-                throw new Error(`The given ID is a ${node.__typename}, not a PatchSet`)
-            }
-            return node.patches
-        })
-    )
-
-export async function publishCampaign(campaign: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation PublishCampaign($campaign: ID!) {
-                publishCampaign(campaign: $campaign) {
-                    ...CampaignFields
-                }
-            }
-            ${campaignFragment}
-        `,
-        { campaign }
-    ).toPromise()
-    return dataOrThrowErrors(result).publishCampaign
-}
-
-export async function publishChangeset(patch: ID): Promise<IEmptyResponse> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation PublishChangeset($patch: ID!) {
-                publishChangeset(patch: $patch) {
-                    alwaysNil
-                }
-            }
-        `,
-        { patch }
-    ).toPromise()
-    return dataOrThrowErrors(result).publishChangeset
-}
 
 export async function syncChangeset(changeset: ID): Promise<void> {
     const result = await mutateGraphQL(
@@ -456,27 +183,59 @@ export async function syncChangeset(changeset: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
-export const queryExternalChangesetFileDiffs = (
+export const queryExternalChangesetWithFileDiffs = (
     externalChangeset: ID,
-    { first }: FilteredConnectionQueryArgs
-): Observable<IFileDiffConnection> =>
+    { first, after, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
+): Observable<IExternalChangeset> =>
     queryGraphQL(
         gql`
-            query ExternalChangesetFileDiffs($externalChangeset: ID!, $first: Int) {
+            query ExternalChangesetFileDiffs(
+                $externalChangeset: ID!
+                $first: Int
+                $after: String
+                $isLightTheme: Boolean!
+            ) {
                 node(id: $externalChangeset) {
                     __typename
                     ... on ExternalChangeset {
                         diff {
-                            fileDiffs(first: $first) {
-                                nodes {
-                                    ...FileDiffFields
+                            __typename
+                            ... on RepositoryComparison {
+                                range {
+                                    base {
+                                        ...GitRefSpecFields
+                                    }
+                                    head {
+                                        ...GitRefSpecFields
+                                    }
                                 }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
+                                fileDiffs(first: $first, after: $after) {
+                                    nodes {
+                                        ...FileDiffFields
+                                    }
+                                    totalCount
+                                    pageInfo {
+                                        hasNextPage
+                                        endCursor
+                                    }
+                                    diffStat {
+                                        ...DiffStatFields
+                                    }
                                 }
-                                diffStat {
-                                    ...DiffStatFields
+                            }
+                            ... on PreviewRepositoryComparison {
+                                fileDiffs(first: $first, after: $after) {
+                                    nodes {
+                                        ...FileDiffFields
+                                    }
+                                    totalCount
+                                    pageInfo {
+                                        hasNextPage
+                                        endCursor
+                                    }
+                                    diffStat {
+                                        ...DiffStatFields
+                                    }
                                 }
                             }
                         }
@@ -484,13 +243,28 @@ export const queryExternalChangesetFileDiffs = (
                 }
             }
 
-            ${FileDiffFields}
+            fragment GitRefSpecFields on GitRevSpec {
+                __typename
+                ... on GitObject {
+                    oid
+                }
+                ... on GitRef {
+                    target {
+                        oid
+                    }
+                }
+                ... on GitRevSpecExpr {
+                    object {
+                        oid
+                    }
+                }
+            }
 
-            ${FileDiffHunkRangeFields}
+            ${FileDiffFields}
 
             ${DiffStatFields}
         `,
-        { externalChangeset, first }
+        { externalChangeset, first, after, isLightTheme }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -500,60 +274,6 @@ export const queryExternalChangesetFileDiffs = (
             if (node.__typename !== 'ExternalChangeset') {
                 throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
             }
-            if (!node.diff) {
-                throw new Error('The given Changeset has no diff')
-            }
-            return node.diff.fileDiffs
-        })
-    )
-
-export const queryPatchFileDiffs = (
-    patch: ID,
-    { first }: FilteredConnectionQueryArgs
-): Observable<IPreviewFileDiffConnection> =>
-    queryGraphQL(
-        gql`
-            query PatchFileDiffs($patch: ID!, $first: Int) {
-                node(id: $patch) {
-                    __typename
-                    ... on Patch {
-                        diff {
-                            fileDiffs(first: $first) {
-                                nodes {
-                                    ...PreviewFileDiffFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                }
-                                diffStat {
-                                    ...DiffStatFields
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${PreviewFileDiffFields}
-
-            ${FileDiffHunkRangeFields}
-
-            ${DiffStatFields}
-        `,
-        { patch, first }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Patch with ID ${patch} does not exist`)
-            }
-            if (node.__typename !== 'Patch') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Patch`)
-            }
-            if (!node.diff) {
-                throw new Error('The given Patch has no diff')
-            }
-            return node.diff.fileDiffs
+            return node
         })
     )

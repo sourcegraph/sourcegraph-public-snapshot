@@ -82,13 +82,27 @@ func GitServer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("gitserver"),
 						sharedContainerMemoryUsage("gitserver"),
 						sharedContainerCPUUsage("gitserver"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("gitserver"),
+						sharedProvisioningMemoryUsage7d("gitserver"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("gitserver"),
+						sharedProvisioningMemoryUsage5m("gitserver"),
 					},
 				},
 			},

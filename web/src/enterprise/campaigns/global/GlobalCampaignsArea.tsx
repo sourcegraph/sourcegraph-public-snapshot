@@ -9,11 +9,11 @@ import { CreateCampaign } from './create/CreateCampaign'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
-import { CampaignCLIHelp } from './create/CampaignCLIHelp'
+import { CampaignCliHelp } from './create/CampaignCliHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
+import { CampaignsBetaFeedbackAlert } from './CampaignsBetaFeedbackAlert'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -21,23 +21,37 @@ interface Props
         ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps {
-    authenticatedUser: IUser
+    authenticatedUser: IUser | null
     isSourcegraphDotCom: boolean
 }
 
 /**
  * The global campaigns area.
  */
-export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...outerProps }) => {
+export const GlobalCampaignsArea: React.FunctionComponent<Props> = props => {
+    if (props.isSourcegraphDotCom) {
+        return (
+            <div className="container mt-4">
+                <CampaignsDotComPage />
+            </div>
+        )
+    }
+    return <AuthenticatedCampaignsArea {...props} />
+}
+
+interface AuthenticatedProps extends Props {
+    authenticatedUser: IUser
+}
+
+export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => {
     let content: React.ReactFragment
-    if (outerProps.isSourcegraphDotCom) {
-        content = <CampaignsDotComPage {...outerProps} />
-    } else if (window.context.experimentalFeatures?.automation === 'enabled') {
+    if (window.context.experimentalFeatures?.automation === 'enabled') {
         if (!outerProps.authenticatedUser.siteAdmin && window.context.site['campaigns.readAccess.enabled'] !== true) {
-            content = <CampaignsUserMarketingPage {...outerProps} enableReadAccess={true} />
+            content = <CampaignsUserMarketingPage enableReadAccess={true} />
         } else {
             content = (
                 <>
+                    <CampaignsBetaFeedbackAlert />
                     {/* eslint-disable react/jsx-no-bind */}
                     <Switch>
                         <Route
@@ -52,17 +66,7 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                         />
                         <Route
                             path={`${match.url}/cli`}
-                            render={props => <CampaignCLIHelp {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/new`}
-                            render={props => <CampaignDetails {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/update`}
-                            render={props => <CampaignUpdateSelection {...outerProps} {...props} />}
+                            render={props => <CampaignCliHelp {...outerProps} {...props} />}
                             exact={true}
                         />
                         <Route
@@ -73,24 +77,13 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                         />
                     </Switch>
                     {/* eslint-enable react/jsx-no-bind */}
-                    <p className="mt-4 font-italic">
-                        Campaigns are currently in <span className="badge badge-info">Beta</span>. During the beta
-                        period, campaigns are free to use. After the beta period, campaigns will be available as a paid
-                        add-on. Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an
-                        issue in our{' '}
-                        <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or email{' '}
-                        <a href="mailto:feedback@sourcegraph.com?subject=Feedback on Campaigns">
-                            feedback@sourcegraph.com
-                        </a>
-                        . We're looking forward to your feedback!
-                    </p>
                 </>
             )
         }
     } else if (outerProps.authenticatedUser.siteAdmin) {
-        content = <CampaignsSiteAdminMarketingPage {...outerProps} />
+        content = <CampaignsSiteAdminMarketingPage />
     } else {
-        content = <CampaignsUserMarketingPage {...outerProps} enableReadAccess={false} />
+        content = <CampaignsUserMarketingPage enableReadAccess={false} />
     }
     return <div className="container mt-4">{content}</div>
 })

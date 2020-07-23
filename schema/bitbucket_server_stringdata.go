@@ -112,6 +112,11 @@ const BitbucketServerSchemaJSON = `{
               "description": "Secret for authenticating incoming webhook payloads",
               "type": "string",
               "minLength": 1
+            },
+            "disableSync": {
+              "description": "Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks",
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -234,12 +239,12 @@ const BitbucketServerSchemaJSON = `{
           }
         },
         "ttl": {
-          "description": "Duration after which a user's cached permissions will be updated in the background (during which time the previously cached permissions will be used). This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/1000 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/1000 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
+          "description": "DEPRECATED: Duration after which a user's cached permissions will be updated in the background (during which time the previously cached permissions will be used). This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/1000 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/1000 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
           "type": "string",
           "default": "3h"
         },
         "hardTTL": {
-          "description": "Duration after which a user's cached permissions must be updated before authorizing any user actions. This is 3 days by default.",
+          "description": "DEPRECATED: Duration after which a user's cached permissions must be updated before authorizing any user actions. This is 3 days by default.",
           "type": "string",
           "default": "72h"
         }

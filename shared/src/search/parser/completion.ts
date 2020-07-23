@@ -4,7 +4,8 @@ import { FILTERS, resolveFilter } from './filters'
 import { Sequence, toMonacoRange } from './parser'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
-import { SearchSuggestion, IRepository, IFile, ISymbol, ILanguage, SymbolKind } from '../../graphql/schema'
+import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, SymbolKind } from '../../graphql/schema'
+import { SearchSuggestion } from '../suggestions'
 import { isDefined } from '../../util/types'
 import { FilterType, isNegatableFilter } from '../interactive/util'
 import { first } from 'rxjs/operators'
@@ -46,9 +47,9 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
     })
     // Set a sortText so that filter type suggestions
     // are shown before dynamic suggestions.
-    .map((completionItem, idx) => ({
+    .map((completionItem, index) => ({
         ...completionItem,
-        sortText: `0${idx}`,
+        sortText: `0${index}`,
     }))
 
 const repositoryToCompletion = ({ name }: IRepository, options: { isFilterValue: boolean }): PartialCompletionItem => ({
@@ -65,7 +66,7 @@ const fileToCompletion = (
 ): PartialCompletionItem => ({
     label: name,
     kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
-    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(name)}$ `,
+    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(path)}$ `,
     filterText: name,
     detail: `${path} - ${repository.name}`,
 })
@@ -121,6 +122,13 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
           }
         : undefined
 
+const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => ({
+    label: name,
+    kind: repositoryCompletionItemKind,
+    insertText: name,
+    filterText: name,
+})
+
 const suggestionToCompletionItem = (
     suggestion: SearchSuggestion,
     options: { isFilterValue: boolean }
@@ -134,6 +142,8 @@ const suggestionToCompletionItem = (
             return symbolToCompletion(suggestion)
         case 'Language':
             return languageToCompletion(suggestion)
+        case 'RepoGroup':
+            return repoGroupToCompletion(suggestion)
     }
 }
 
@@ -229,7 +239,7 @@ export async function getCompletionItems(
             return null
         }
         if (resolvedFilter.definition.suggestions) {
-            if (resolvedFilter.definition.suggestions instanceof Array) {
+            if (Array.isArray(resolvedFilter.definition.suggestions)) {
                 return {
                     suggestions: resolvedFilter.definition.suggestions.map(label => ({
                         label,
@@ -249,6 +259,14 @@ export async function getCompletionItems(
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,
+                        // Set the current value as filterText, so that all dynamic suggestions
+                        // returned by the server are displayed. otherwise, if the current filter value
+                        // is a regex pattern, Monaco's filtering might hide some suggestions.
+                        filterText:
+                            filterValue &&
+                            (filterValue?.token.type === 'literal'
+                                ? filterValue.token.value
+                                : filterValue.token.quotedValue),
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
                     })),
             }

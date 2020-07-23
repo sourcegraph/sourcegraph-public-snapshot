@@ -51,37 +51,37 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
-// indexedSymbols checks to see if Zoekt has indexed
-// symbols information for a repository at a specific
-// commit.
-func indexedSymbols(repository, commit string) bool {
+// indexedSymbols checks to see if Zoekt has indexed symbols information for a
+// repository at a specific commit. If it has it returns the branch name (for
+// use when querying zoekt). Otherwise an empty string is returned.
+func indexedSymbolsBranch(repository, commit string) string {
 	z := search.Indexed()
 	if !z.Enabled() {
-		return false
+		return ""
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	set, err := z.ListAll(ctx)
 	if err != nil {
-		return false
+		return ""
 	}
 
-	repo, ok := set[strings.ToLower(repository)]
+	repo, ok := set[repository]
 	if !ok || !repo.HasSymbols {
-		return false
+		return ""
 	}
 
 	for _, branch := range repo.Branches {
 		if branch.Version == commit {
-			return true
+			return branch.Name
 		}
 	}
 
-	return false
+	return ""
 }
 
-func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryString *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -105,11 +105,12 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 		}
 	}
 
-	sym := &zoektquery.Symbol{Expr: query}
-	repo := &zoektquery.RepoSet{Set: map[string]bool{
-		string(commit.repo.repo.Name): true,
-	}}
-	ands := []zoektquery.Q{repo, sym}
+	ands := []zoektquery.Q{
+		&zoektquery.RepoBranches{Set: map[string][]string{
+			string(commit.repoResolver.repo.Name): {branch},
+		}},
+		&zoektquery.Symbol{Expr: query},
+	}
 	for _, p := range *includePatterns {
 		q, err := fileRe(p, true)
 		if err != nil {
@@ -132,7 +133,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 		return nil, err
 	}
 
-	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
 	for _, file := range resp.Files {
 		for _, l := range file.LineMatches {
 			if l.FileName {
@@ -164,8 +165,8 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 }
 
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
-	if indexedSymbols(string(commit.repo.repo.Name), string(commit.oid)) {
-		return searchZoektSymbols(ctx, commit, query, first, includePatterns)
+	if branch := indexedSymbolsBranch(string(commit.repoResolver.repo.Name), string(commit.oid)); branch != "" {
+		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
 	}
 
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
@@ -183,13 +184,13 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:            commit.repo.repo.Name,
+		Repo:            commit.repoResolver.repo.Name,
 		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
 		searchArgs.Query = *query
 	}
-	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
 	if err != nil {
 		return nil, err
 	}

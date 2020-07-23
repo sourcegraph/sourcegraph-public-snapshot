@@ -35,11 +35,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
         if (manifest?.icon) {
             iconURL = new URL(manifest.icon)
         }
-    } catch (e) {
+    } catch {
         // noop
     }
 
-    const isWorkInProgress = props.extension.registryExtension && props.extension.registryExtension.isWorkInProgress
+    const isWorkInProgress = props.extension.registryExtension?.isWorkInProgress
 
     return (
         <div className={`extension-area-header ${props.className || ''}`}>

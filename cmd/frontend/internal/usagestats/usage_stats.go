@@ -3,17 +3,107 @@
 package usagestats
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"encoding/csv"
+	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 var (
 	timeNow = time.Now
 )
+
+// GetArchive generates and returns a usage statistics ZIP archive containing the CSV
+// files defined in RFC 145, or an error in case of failure.
+func GetArchive(ctx context.Context) ([]byte, error) {
+	counts, err := db.EventLogs.UsersUsageCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dates, err := db.Users.ListDates(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	countsFile, err := zw.Create("UsersUsageCounts.csv")
+	if err != nil {
+		return nil, err
+	}
+
+	countsWriter := csv.NewWriter(countsFile)
+
+	record := []string{
+		"date",
+		"user_id",
+		"search_count",
+		"code_intel_count",
+	}
+
+	if err := countsWriter.Write(record); err != nil {
+		return nil, err
+	}
+
+	for _, c := range counts {
+		record[0] = c.Date.UTC().Format(time.RFC3339)
+		record[1] = strconv.FormatUint(uint64(c.UserID), 10)
+		record[2] = strconv.FormatInt(int64(c.SearchCount), 10)
+		record[3] = strconv.FormatInt(int64(c.CodeIntelCount), 10)
+
+		if err := countsWriter.Write(record); err != nil {
+			return nil, err
+		}
+	}
+
+	countsWriter.Flush()
+
+	datesFile, err := zw.Create("UsersDates.csv")
+	if err != nil {
+		return nil, err
+	}
+
+	datesWriter := csv.NewWriter(datesFile)
+
+	record = record[:3]
+	record[0] = "user_id"
+	record[1] = "created_at"
+	record[2] = "deleted_at"
+
+	if err := datesWriter.Write(record); err != nil {
+		return nil, err
+	}
+
+	for _, d := range dates {
+		record[0] = strconv.FormatUint(uint64(d.UserID), 10)
+		record[1] = d.CreatedAt.UTC().Format(time.RFC3339)
+		if d.DeletedAt.IsZero() {
+			record[2] = "NULL"
+		} else {
+			record[2] = d.DeletedAt.UTC().Format(time.RFC3339)
+		}
+
+		if err := datesWriter.Write(record); err != nil {
+			return nil, err
+		}
+	}
+
+	datesWriter.Flush()
+
+	if err := zw.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
 
 var MockGetByUserID func(userID int32) (*types.UserUsageStatistics, error)
 

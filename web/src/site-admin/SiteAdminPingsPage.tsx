@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -24,7 +25,8 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const pingsEnabled = window.context.site['update.channel'] === 'release'
+        const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
+        const updatesDisabled = window.context.site['update.channel'] !== 'release'
 
         return (
             <div className="site-admin-pings-page">
@@ -35,54 +37,88 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                     sends only the high-level data below. It never sends code, repository names, usernames, or any other
                     specific data.
                 </p>
+                <h3>Critical telemetry</h3>
+                <p>
+                    Critical telemetry includes only the high-level data below required for billing, support, updates,
+                    and security notices. This cannot be disabled.
+                </p>
                 <ul>
-                    <li>Sourcegraph version string</li>
-                    <li>Deployment type (Docker, Kubernetes, or dev build)</li>
-                    <li>Whether the instance is deployed on localhost (true/false)</li>
                     <li>Randomly generated site identifier</li>
                     <li>
                         The email address of the initial site installer (or if deleted, the first active site admin), to
-                        know who to contact regarding sales, product updates, and policy updates
+                        know who to contact regarding sales, product updates, security updates, and policy updates
                     </li>
+                    <li>Sourcegraph version string (e.g. "vX.X.X")</li>
+                    <li>
+                        Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker
+                        cluster)
+                    </li>
+                    <li>License key associated with your Sourcegraph subscription</li>
+                    <li>Aggregate count of current monthly users</li>
+                    <li>Total count of existing user accounts</li>
+                </ul>
+                <h3>Other telemetry</h3>
+                <p>
+                    By default, Sourcegraph also aggregates usage and performance metrics for some product features. No
+                    personal or specific information is ever included. Starting in May 2020 (Sourcegraph version 3.16),
+                    Sourcegraph admins can disable the telemetry items below by setting the{' '}
+                    <code>DisableNonCriticalTelemetry</code> setting to <code>true</code> on the{' '}
+                    <Link to="/site-admin/configuration">Site configuration page</Link>.
+                </p>
+                <ul>
+                    <li>Whether the instance is deployed on localhost (true/false)</li>
                     <li>
                         Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy,
                         SAML, GitHub, GitLab)
                     </li>
                     <li>
-                        Which categories of external service are in use (GitHub, Bitbucket Server, GitLab, Phabricator,
-                        Gitolite, AWS CodeCommit, Other)
+                        Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS
+                        CodeCommit, Other)
                     </li>
                     <li>Whether new user signup is allowed (true/false)</li>
                     <li>Whether a repository has ever been added (true/false)</li>
                     <li>Whether a code search has ever been executed (true/false)</li>
                     <li>Whether code intelligence has ever been used (true/false)</li>
-                    <li>Total count of existing user accounts</li>
                     <li>Aggregate counts of current daily, weekly, and monthly users</li>
-                    <li>Aggregate counts of current users using code host integrations</li>
                     <li>
-                        Aggregate counts of current users by product feature (site management, code search and
-                        navigation, code review, saved searches, diff searches)
+                        Aggregate counts of current daily, weekly, and monthly users, by:
+                        <ul>
+                            <li>Whether they are using code host integrations</li>
+                            <li>
+                                Product area (site management, code search and navigation, code review, saved searches,
+                                diff searches)
+                            </li>
+                            <li>Search modes used (interactive search, plain-text search)</li>
+                            <li>Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
+                        </ul>
                     </li>
                     <li>
                         Aggregate daily, weekly, and monthly latencies (in ms) of code intelligence events (e.g., hover
                         tooltips) and search queries
                     </li>
                     <li>
-                        Aggregate daily, weekly, and monthly total counts of code intelligence events (e.g., hover
-                        tooltips)
+                        Aggregate daily, weekly, and monthly counts of:
+                        <ul>
+                            <li>Code intelligence events (e.g., hover tooltips)</li>
+                            <li>Searches using each search mode (interactive search, plain-text search)</li>
+                            <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
+                        </ul>
                     </li>
-                    <li>Total count of code campaigns created</li>
+                    <li>
+                        Campaign usage data
+                        <ul>
+                            <li>Total count of created campaigns</li>
+                            <li>Total count of changesets created by campaigns</li>
+                            <li>Total count of changesets created by campaigns that have been merged</li>
+                            <li>Total count of changesets manually added to a campaign</li>
+                            <li>Total count of changesets manually added to a campaign that have been merged</li>
+                        </ul>
+                    </li>
                 </ul>
-                {!pingsEnabled ? (
-                    <p>Pings are disabled.</p>
+                {updatesDisabled ? (
+                    <p>All telemetry is disabled.</p>
                 ) : (
-                    <p>
-                        To disable pings please {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                        <a href="https://about.sourcegraph.com/contact/" target="_blank" rel="noopener">
-                            contact support
-                        </a>
-                        .
-                    </p>
+                    nonCriticalTelemetryDisabled && <p>Non-critical telemetry is disabled.</p>
                 )}
             </div>
         )

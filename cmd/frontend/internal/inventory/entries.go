@@ -141,7 +141,17 @@ func Sum(invs []Inventory) Inventory {
 		sum.Languages = append(sum.Languages, *stats)
 	}
 	sort.Slice(sum.Languages, func(i, j int) bool {
-		return sum.Languages[i].TotalLines > sum.Languages[j].TotalLines || (sum.Languages[i].TotalLines == sum.Languages[j].TotalLines && sum.Languages[i].Name < sum.Languages[j].Name)
+		if sum.Languages[i].TotalLines != sum.Languages[j].TotalLines {
+			// Sort by lines descending
+			return sum.Languages[i].TotalLines > sum.Languages[j].TotalLines
+		}
+		// Lines are equal, fall back to bytes
+		if sum.Languages[i].TotalBytes != sum.Languages[j].TotalBytes {
+			// Sort by bytes descending
+			return sum.Languages[i].TotalBytes > sum.Languages[j].TotalBytes
+		}
+		// Lines and bytes are equal, fall back to name ascending
+		return sum.Languages[i].Name < sum.Languages[j].Name
 	})
 	return sum
 }

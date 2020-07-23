@@ -6,12 +6,12 @@ import { Router } from 'react-router'
 
 jest.mock('../../dotcom/billing/StripeWrapper', () => ({
     StripeWrapper: ({
-        component: C,
+        component: Component,
         ...props
     }: {
         component: React.ComponentType<{ stripe: unknown }>
         [name: string]: unknown
-    }) => <C {...props} stripe={{}} />,
+    }) => <Component {...props} stripe={{}} />,
 }))
 
 jest.mock('react-stripe-elements', () => ({ CardElement: 'CardElement' }))

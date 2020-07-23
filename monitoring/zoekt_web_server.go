@@ -23,13 +23,27 @@ func ZoektWebServer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("zoekt-webserver"),
 						sharedContainerMemoryUsage("zoekt-webserver"),
 						sharedContainerCPUUsage("zoekt-webserver"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("zoekt-webserver"),
+						sharedProvisioningMemoryUsage7d("zoekt-webserver"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("zoekt-webserver"),
+						sharedProvisioningMemoryUsage5m("zoekt-webserver"),
 					},
 				},
 			},

@@ -41,9 +41,9 @@ const config = {
           'marked',
           'rxjs/ajax',
           {
-            name: 'rxjs/fetch',
-            message:
-              'rxjs fromFetch is broken. Until https://github.com/ReactiveX/rxjs/pull/5306 is merged, please use shared/src/graphql/fromFetch.ts',
+            name: 'rxjs',
+            importNames: ['animationFrameScheduler'],
+            message: 'Code using animationFrameScheduler breaks in Firefox when using Sentry.',
           },
         ],
       },

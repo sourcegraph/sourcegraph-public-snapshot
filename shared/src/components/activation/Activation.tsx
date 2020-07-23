@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 
 type ActivationID = 'ConnectedCodeHost' | 'EnabledRepository' | 'DidSearch' | 'FoundReferences' | 'EnabledSharing'
 
@@ -72,6 +72,6 @@ export const percentageDone = (info?: ActivationCompletionStatus): number => {
     if (!info) {
         return 0
     }
-    const vals = Object.values(info)
-    return (100 * vals.filter(e => e).length) / vals.length
+    const values = Object.values(info)
+    return (100 * values.filter(done => done).length) / values.length
 }

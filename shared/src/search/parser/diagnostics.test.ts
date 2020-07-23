@@ -81,6 +81,15 @@ describe('getDiagnostics()', () => {
         ).toStrictEqual([])
     })
 
+    test('search query containing parenthesized parameterss', () => {
+        expect(
+            getDiagnostics(
+                (parseSearchQuery('repo:a (file:b and c)') as ParseSuccess<Sequence>).token,
+                SearchPatternType.regexp
+            )
+        ).toStrictEqual([])
+    })
+
     test('search query containing quoted token, literal pattern type', () => {
         expect(
             getDiagnostics(

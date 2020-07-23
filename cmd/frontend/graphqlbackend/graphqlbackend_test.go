@@ -13,7 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
@@ -77,6 +77,7 @@ func TestResolverTo(t *testing.T) {
 		&searchSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{},
+		&versionContextResolver{},
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)

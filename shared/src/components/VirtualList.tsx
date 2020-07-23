@@ -30,23 +30,23 @@ interface Props {
 interface State {}
 
 export class VirtualList extends React.PureComponent<Props, State> {
-    public onChangeVisibility = (isVisible: boolean, i: number): void => {
-        if (isVisible && i >= this.props.itemsToShow - 2) {
+    public onChangeVisibility = (isVisible: boolean, index: number): void => {
+        if (isVisible && index >= this.props.itemsToShow - 2) {
             this.props.onShowMoreItems()
         }
 
         if (this.props.onVisibilityChange) {
-            this.props.onVisibilityChange(isVisible, i)
+            this.props.onVisibilityChange(isVisible, index)
         }
     }
 
     public render(): JSX.Element | null {
         return (
             <div className={this.props.className} ref={this.props.onRef}>
-                {this.props.items.slice(0, this.props.itemsToShow).map((item, i) => (
+                {this.props.items.slice(0, this.props.itemsToShow).map((item, index) => (
                     <VisibilitySensor
                         // eslint-disable-next-line react/jsx-no-bind
-                        onChange={isVisible => this.onChangeVisibility(isVisible, i)}
+                        onChange={isVisible => this.onChangeVisibility(isVisible, index)}
                         key={item.key || '0'}
                         containment={this.props.containment}
                         partialVisibility={true}

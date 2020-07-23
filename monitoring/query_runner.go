@@ -15,13 +15,27 @@ func QueryRunner() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("query-runner"),
 						sharedContainerMemoryUsage("query-runner"),
 						sharedContainerCPUUsage("query-runner"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("query-runner"),
+						sharedProvisioningMemoryUsage7d("query-runner"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("query-runner"),
+						sharedProvisioningMemoryUsage5m("query-runner"),
 					},
 				},
 			},

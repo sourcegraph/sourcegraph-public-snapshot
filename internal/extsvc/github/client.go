@@ -17,6 +17,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/graphql-go/graphql/language/ast"
+	"github.com/graphql-go/graphql/language/parser"
+	"github.com/graphql-go/graphql/language/visitor"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -24,10 +27,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"golang.org/x/time/rate"
 )
 
 var (
-	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degredation"))
+	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
 	githubProxyURL   = func() *url.URL {
 		url, err := url.Parse(env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)"))
 		if err != nil {
@@ -66,8 +70,11 @@ type Client struct {
 	// repoCache is the repository cache associated with the token.
 	repoCache *rcache.Cache
 
-	// RateLimit is the API rate limit monitor.
-	RateLimit *ratelimit.Monitor
+	// rateLimitMonitor is the API rate limit monitor.
+	rateLimitMonitor *ratelimit.Monitor
+
+	// rateLimit is our self imposed rate limiter
+	rateLimit *rate.Limiter
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -138,13 +145,16 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 		return category
 	})
 
+	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
+
 	return &Client{
-		apiURL:       apiURL,
-		githubDotCom: urlIsGitHubDotCom(apiURL),
-		token:        token,
-		httpClient:   cli,
-		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:    newRepoCache(apiURL, token),
+		apiURL:           apiURL,
+		githubDotCom:     urlIsGitHubDotCom(apiURL),
+		token:            token,
+		httpClient:       cli,
+		rateLimitMonitor: &ratelimit.Monitor{HeaderPrefix: "X-"},
+		repoCache:        newRepoCache(apiURL, token),
+		rateLimit:        rl,
 	}
 }
 
@@ -181,7 +191,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	defer resp.Body.Close()
-	c.RateLimit.Update(resp.Header)
+	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
@@ -250,6 +260,11 @@ func (c *Client) requestGet(ctx context.Context, requestURI string, result inter
 	// https://developer.github.com/v3/apps/installations/#list-repositories
 	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
 
+	err = c.rateLimit.Wait(ctx)
+	if err != nil {
+		return errors.Wrap(err, "rate limit")
+	}
+
 	return c.do(ctx, req, result)
 }
 
@@ -283,6 +298,16 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`
 	}
+
+	cost, err := estimateGraphQLCost(query)
+	if err != nil {
+		return errors.Wrap(err, "estimating graphql cost")
+	}
+
+	if err := c.rateLimit.WaitN(ctx, cost); err != nil {
+		return errors.Wrap(err, "rate limit")
+	}
+
 	if err := c.do(ctx, req, &respBody); err != nil {
 		return err
 	}
@@ -299,6 +324,108 @@ func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[stri
 		}
 	}
 	return err
+}
+
+// RateLimitMonitor exposes the rate limit monitor
+func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
+	return c.rateLimitMonitor
+}
+
+// estimateGraphQLCost estimates the cost of the query as described here:
+// https://developer.github.com/v4/guides/resource-limitations/#calculating-a-rate-limit-score-before-running-the-call
+func estimateGraphQLCost(query string) (int, error) {
+	doc, err := parser.Parse(parser.ParseParams{
+		Source: query,
+	})
+	if err != nil {
+		return 0, errors.Wrap(err, "parsing query")
+	}
+
+	var totalCost int
+	for _, def := range doc.Definitions {
+		cost := calcDefinitionCost(def)
+		totalCost += cost
+	}
+
+	// As per the calculation spec, cost should be divided by 100
+	totalCost = totalCost / 100
+	if totalCost < 1 {
+		return 1, nil
+	}
+	return totalCost, nil
+}
+
+type limitDepth struct {
+	// The 'first' or 'last' limit
+	limit int
+	// The depth at which it was added
+	depth int
+}
+
+func calcDefinitionCost(def ast.Node) int {
+	var cost int
+	limitStack := make([]limitDepth, 0)
+
+	v := &visitor.VisitorOptions{
+		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+			switch node := p.Node.(type) {
+			case *ast.IntValue:
+				// We're looking for a 'first' or 'last' param indicating a limit
+				parent, ok := p.Parent.(*ast.Argument)
+				if !ok {
+					return visitor.ActionNoChange, nil
+				}
+				if parent.Name == nil {
+					return visitor.ActionNoChange, nil
+				}
+				if parent.Name.Value != "first" && parent.Name.Value != "last" {
+					return visitor.ActionNoChange, nil
+				}
+
+				// Prune anything above our current depth as we may have started walking
+				// back down the tree
+				currentDepth := len(p.Ancestors)
+				limitStack = filterInPlace(limitStack, currentDepth)
+
+				limit, err := strconv.Atoi(node.Value)
+				if err != nil {
+					return "", errors.Wrap(err, "parsing limit")
+				}
+				limitStack = append(limitStack, limitDepth{limit: limit, depth: currentDepth})
+				// The first item in the tree is always worth 1
+				if len(limitStack) == 1 {
+					cost++
+					return visitor.ActionNoChange, nil
+				}
+				// The cost of the current item is calculated using the limits of
+				// its children
+				children := limitStack[:len(limitStack)-1]
+				product := 1
+				// Multiply them all together
+				for _, n := range children {
+					product = n.limit * product
+				}
+				cost += product
+			}
+			return visitor.ActionNoChange, nil
+		},
+	}
+
+	_ = visitor.Visit(def, v, nil)
+
+	return cost
+}
+
+func filterInPlace(limitStack []limitDepth, depth int) []limitDepth {
+	n := 0
+	for _, x := range limitStack {
+		if depth > x.depth {
+			limitStack[n] = x
+			n++
+		}
+	}
+	limitStack = limitStack[:n]
+	return limitStack
 }
 
 // unmarshal wraps json.Unmarshal, but includes extra context in the case of

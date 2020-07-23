@@ -5,7 +5,7 @@ import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp'
 
 describe('KeyboardShortcutsHelp', () => {
     test('', () => {
-        const e = renderer.create(
+        const output = renderer.create(
             <KeyboardShortcutsHelp
                 keyboardShortcuts={[
                     {
@@ -23,6 +23,6 @@ describe('KeyboardShortcutsHelp', () => {
         )
         // Modal is hidden by default and uses portal, so we can't easily test its contents. Grab
         // its inner .modal-body and snapshot that instead.
-        expect(renderer.create(e.root.findByType(Modal).props.children[1]).toJSON()).toMatchSnapshot()
+        expect(renderer.create(output.root.findByType(Modal).props.children[1]).toJSON()).toMatchSnapshot()
     })
 })

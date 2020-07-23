@@ -6,12 +6,13 @@ import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
 import { Stats } from 'webpack'
-import extensionInfo from '../src/extension/manifest.spec.json'
-import schema from '../src/extension/schema.json'
+import extensionInfo from '../src/browser-extension/manifest.spec.json'
+import schema from '../src/browser-extension/schema.json'
 
 /**
  * If true, add <all_urls> to the permissions in the manifest.
- * This is needed for e2e tests because it is not possible to accept the permission prompt with puppeteer.
+ * This is needed for e2e and integration tests because it is not possible to accept the
+ * permission prompt with puppeteer.
  */
 const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
     process.env.EXTENSION_PERMISSIONS_ALL_URLS && JSON.parse(process.env.EXTENSION_PERMISSIONS_ALL_URLS)
@@ -40,25 +41,36 @@ function ensurePaths(): void {
 
 export function copyAssets(): void {
     signale.await('Copy assets')
-    const dir = 'build/dist'
-    shelljs.rm('-rf', dir)
-    shelljs.mkdir('-p', dir)
-    shelljs.cp('-R', 'src/extension/assets/*', dir)
-    shelljs.cp('-R', 'src/extension/views/*', dir)
+    const directory = 'build/dist'
+    shelljs.rm('-rf', directory)
+    shelljs.mkdir('-p', directory)
+    shelljs.cp('-R', 'assets/*', directory)
+    shelljs.cp('-R', 'src/browser-extension/pages/*', directory)
     signale.success('Assets copied')
 }
 
-function copyExtensionAssets(toDir: string): void {
-    shelljs.mkdir('-p', `${toDir}/js`, `${toDir}/css`, `${toDir}/img`)
-    shelljs.cp('build/dist/js/background.bundle.js', `${toDir}/js`)
-    shelljs.cp('build/dist/js/inject.bundle.js', `${toDir}/js`)
-    shelljs.cp('build/dist/js/options.bundle.js', `${toDir}/js`)
-    shelljs.cp('build/dist/css/style.bundle.css', `${toDir}/css`)
-    shelljs.cp('build/dist/css/options-style.bundle.css', `${toDir}/css`)
-    shelljs.cp('build/dist/css/options-style.bundle.css', `${toDir}/css`)
-    shelljs.cp('-R', 'build/dist/img/*', `${toDir}/img`)
-    shelljs.cp('build/dist/background.html', toDir)
-    shelljs.cp('build/dist/options.html', toDir)
+function copyExtensionAssets(toDirectory: string): void {
+    shelljs.mkdir('-p', `${toDirectory}/js`, `${toDirectory}/css`, `${toDirectory}/img`)
+    shelljs.cp('build/dist/js/background.bundle.js', `${toDirectory}/js`)
+    shelljs.cp('build/dist/js/inject.bundle.js', `${toDirectory}/js`)
+    shelljs.cp('build/dist/js/options.bundle.js', `${toDirectory}/js`)
+    shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', `${toDirectory}/js`)
+    shelljs.cp('build/dist/css/style.bundle.css', `${toDirectory}/css`)
+    shelljs.cp('build/dist/css/options-style.bundle.css', `${toDirectory}/css`)
+    shelljs.cp('build/dist/css/options-style.bundle.css', `${toDirectory}/css`)
+    shelljs.cp('-R', 'build/dist/img/*', `${toDirectory}/img`)
+    shelljs.cp('build/dist/background.html', toDirectory)
+    shelljs.cp('build/dist/options.html', toDirectory)
+}
+
+/**
+ * When building with inline (bundled) Sourcegraph extensions, copy the built Sourcegraph extensions into the output.
+ * They will be available as `web_accessible_resources`.
+ *
+ * The pre-requisite step is to first clone, build, and copy into `build/extensions`.
+ */
+function copyInlineExtensions(toDirectory: string): void {
+    shelljs.cp('-R', 'build/extensions', toDirectory)
 }
 
 export function copyIntegrationAssets(): void {
@@ -68,8 +80,9 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
-    shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/integration')
-    // Copy to the ui/assets directory so that these files can be served by the webapp.
+    shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
+    // Copy to the ui/assets directory so that these files can be served by
+    // the webapp.
     shelljs.mkdir('-p', '../ui/assets/extension')
     shelljs.cp('-r', 'build/integration/*', '../ui/assets/extension')
 }
@@ -84,21 +97,23 @@ const BROWSER_BUNDLE_ZIPS = {
     chrome: 'chrome-bundle.zip',
 }
 
-const BROWSER_BLACKLIST = {
+const BROWSER_BLOCKLIST = {
     chrome: ['applications'] as const,
     firefox: ['key'] as const,
 }
 
-function writeSchema(env: BuildEnv, browser: Browser, writeDir: string): void {
-    fs.writeFileSync(`${writeDir}/schema.json`, JSON.stringify(schema, null, 4))
+function writeSchema(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
+    fs.writeFileSync(`${writeDirectory}/schema.json`, JSON.stringify(schema, null, 4))
 }
 
 const version = utcVersion()
 
-function writeManifest(env: BuildEnv, browser: Browser, writeDir: string): void {
+const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
+
+function writeManifest(environment: BuildEnv, browser: Browser, writeDirectory: string): void {
     const manifest = {
-        ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLACKLIST[browser]]),
-        ...omit(extensionInfo[env], BROWSER_BLACKLIST[browser]),
+        ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLOCKLIST[browser]]),
+        ...omit(extensionInfo[environment], BROWSER_BLOCKLIST[browser]),
     }
 
     if (EXTENSION_PERMISSIONS_ALL_URLS) {
@@ -111,24 +126,33 @@ function writeManifest(env: BuildEnv, browser: Browser, writeDir: string): void 
         delete manifest.storage
     }
 
+    if (shouldBuildWithInlineExtensions(browser)) {
+        // Add the inline extensions to web accessible resources
+        manifest.web_accessible_resources = manifest.web_accessible_resources || []
+        manifest.web_accessible_resources.push('extensions/*')
+
+        // Revert the CSP to default, in order to remove the `blob` policy exception.
+        delete manifest.content_security_policy
+    }
+
     delete manifest.$schema
 
-    if (env === 'prod') {
+    if (environment === 'prod') {
         manifest.version = version
     }
 
-    fs.writeFileSync(`${writeDir}/manifest.json`, JSON.stringify(manifest, null, 4))
+    fs.writeFileSync(`${writeDirectory}/manifest.json`, JSON.stringify(manifest, null, 4))
 }
 
 function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
     ensurePaths()
-    return env => {
+    return environment => {
         const title = BROWSER_TITLES[browser]
 
-        const buildDir = path.resolve(process.cwd(), `${BUILDS_DIR}/${browser}`)
+        const buildDirectory = path.resolve(process.cwd(), `${BUILDS_DIR}/${browser}`)
 
-        writeManifest(env, browser, buildDir)
-        writeSchema(env, browser, buildDir)
+        writeManifest(environment, browser, buildDirectory)
+        writeSchema(environment, browser, buildDirectory)
 
         return () => {
             // Allow only building for specific browser targets.
@@ -137,17 +161,20 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
                 return
             }
 
-            signale.await(`Building the ${title} ${env} bundle`)
+            signale.await(`Building the ${title} ${environment} bundle`)
 
-            copyExtensionAssets(buildDir)
-
-            const zipDest = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${BROWSER_BUNDLE_ZIPS[browser]}`)
-            if (zipDest) {
-                shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
-                shelljs.exec(`cd ${buildDir} && zip -q -r ${zipDest} *`)
+            copyExtensionAssets(buildDirectory)
+            if (shouldBuildWithInlineExtensions(browser)) {
+                copyInlineExtensions(buildDirectory)
             }
 
-            signale.success(`Done building the ${title} ${env} bundle`)
+            const zipDestination = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${BROWSER_BUNDLE_ZIPS[browser]}`)
+            if (zipDestination) {
+                shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
+                shelljs.exec(`cd ${buildDirectory} && zip -q -r ${zipDestination} *`)
+            }
+
+            signale.success(`Done building the ${title} ${environment} bundle`)
         }
     }
 }

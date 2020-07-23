@@ -47,18 +47,18 @@ export function applyLinkPreview(
             if (linkPreviewContentClass) {
                 afterElement.classList.add(...linkPreviewContentClass.split(' '))
             }
-            link.insertAdjacentElement('afterend', afterElement)
+            link.after(afterElement)
         }
-        for (const c of renderMarkupContents(linkPreview.content)) {
-            if (typeof c === 'string') {
-                afterElement.append(c)
+        for (const content of renderMarkupContents(linkPreview.content)) {
+            if (typeof content === 'string') {
+                afterElement.append(content)
             } else {
                 const span = document.createElement('span')
-                span.innerHTML = c.html
+                span.innerHTML = content.html
                 // Use while-loop instead of iterating over span.childNodes because the loop body
                 // mutates span.childNodes, so nodes would be skipped.
                 while (span.hasChildNodes()) {
-                    afterElement.appendChild(span.childNodes[0])
+                    afterElement.append(span.childNodes[0])
                 }
             }
         }
@@ -79,6 +79,6 @@ function getHoverText(linkPreview: LinkPreviewMerged | null): string | null {
     if (!linkPreview) {
         return null
     }
-    const hoverValues = linkPreview.hover.map(({ value }) => value).filter(v => !!v)
+    const hoverValues = linkPreview.hover.map(({ value }) => value).filter(value => !!value)
     return hoverValues.length > 0 ? hoverValues.join(' ') : null
 }

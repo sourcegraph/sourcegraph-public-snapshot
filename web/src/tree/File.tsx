@@ -37,7 +37,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                                 <SourceRepositoryIcon className="icon-inline" />
                             </span>
                             <span className="tree__row-label">
-                                {props.entryInfo.name} @ {props.entryInfo.submodule.commit.substr(0, 7)}
+                                {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
                         </div>
                     </Link>
@@ -53,14 +53,14 @@ export const File: React.FunctionComponent<FileProps> = props => (
                                 <SourceRepositoryIcon className="icon-inline" />
                             </span>
                             <span className="tree__row-label">
-                                {props.entryInfo.name} @ {props.entryInfo.submodule.commit.substr(0, 7)}
+                                {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
                         </div>
                     </div>
                 )
             ) : (
                 <Link
-                    className="tree__row-contents"
+                    className="tree__row-contents test-tree-file-link"
                     to={props.entryInfo.url}
                     onClick={props.linkRowClick}
                     data-tree-path={props.entryInfo.path}

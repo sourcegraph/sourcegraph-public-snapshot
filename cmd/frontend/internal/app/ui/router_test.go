@@ -132,6 +132,11 @@ func TestRouter(t *testing.T) {
 			wantRoute: routeAboutSubdomain,
 			wantVars:  map[string]string{"Path": "privacy"},
 		},
+		{
+			path:      "/help/terms",
+			wantRoute: routeAboutSubdomain,
+			wantVars:  map[string]string{"Path": "help/terms"},
+		},
 
 		// sign-in
 		{

@@ -58,12 +58,12 @@ func TestDiff(t *testing.T) {
 		{
 			name: "experimental_features",
 			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				Discussions: "enabled",
+				AndOrQuery: "enabled",
 			}}},
 			after: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				Discussions: "disabled",
+				AndOrQuery: "disabled",
 			}}},
-			want: []string{"experimentalFeatures::discussions"},
+			want: []string{"experimentalFeatures::andOrQuery"},
 		},
 		{
 			name:   "experimental_features_noop",

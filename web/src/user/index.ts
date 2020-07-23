@@ -1,7 +1,7 @@
 /**
  * Regular expression to identify valid username.
  */
-export const VALID_USERNAME_REGEXP = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$/.source
+export const VALID_USERNAME_REGEXP = /^[\dA-Za-z](?:[\dA-Za-z]|[.-](?=[\dA-Za-z]))*-?$/.source
 
 /** Maximum allowed length for a username. */
 export const USERNAME_MAX_LENGTH = 255

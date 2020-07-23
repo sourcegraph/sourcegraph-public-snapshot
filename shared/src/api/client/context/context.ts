@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorWithPartialModel } from '../services/editorService'
+import { ViewerWithPartialModel } from '../services/viewerService'
 
 /**
  * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
@@ -16,7 +16,7 @@ export interface Context<T = never>
     > {}
 
 export type ContributionScope =
-    | CodeEditorWithPartialModel
+    | ViewerWithPartialModel
     | {
           type: 'panelView'
           id: string
@@ -31,15 +31,15 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    activeEditor: CodeEditorWithPartialModel | undefined,
+    activeEditor: ViewerWithPartialModel | undefined,
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,
     scope?: ContributionScope
 ): any {
     if (key.startsWith('config.')) {
-        const prop = key.slice('config.'.length)
-        const value = isSettingsValid(settings) ? settings.final[prop] : undefined
+        const property = key.slice('config.'.length)
+        const value = isSettingsValid(settings) ? settings.final[property] : undefined
         // Map undefined to null because an undefined value is treated as "does not exist in
         // context" and an error is thrown, which is undesirable for config values (for
         // which a falsey null default is useful).
@@ -56,8 +56,8 @@ export function getComputedContextProperty(
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
         // path relative to the repository's root? If it's a file on disk, then "path" could also mean the
         // (absolute) path on the file system. Clear up that ambiguity.
-        const prop = key.slice('resource.'.length)
-        switch (prop) {
+        const property = key.slice('resource.'.length)
+        switch (property) {
             case 'uri':
                 return component.resource
             case 'basename':
@@ -76,8 +76,8 @@ export function getComputedContextProperty(
         if (component?.type !== 'CodeEditor') {
             return null
         }
-        const prop = key.slice('component.'.length)
-        switch (prop) {
+        const property = key.slice('component.'.length)
+        switch (property) {
             case 'type':
                 return 'CodeEditor'
             case 'selections':
@@ -102,8 +102,8 @@ export function getComputedContextProperty(
         if (component?.type !== 'panelView') {
             return null
         }
-        const prop = key.slice('panel.activeView.'.length)
-        switch (prop) {
+        const property = key.slice('panel.activeView.'.length)
+        switch (property) {
             case 'id':
                 return component.id
             case 'hasLocations':

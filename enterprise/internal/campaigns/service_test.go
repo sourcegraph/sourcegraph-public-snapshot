@@ -3,26 +3,183 @@ package campaigns
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
 	dbtesting.DBNameSuffix = "campaignsenterpriserdb"
+}
+
+func TestServicePermissionLevels(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+	svc := NewService(store, nil)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatalf("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatalf("user cannot be site admin")
+	}
+
+	otherUser := createTestUser(ctx, t)
+	if otherUser.SiteAdmin {
+		t.Fatalf("user cannot be site admin")
+	}
+
+	var rs []*repos.Repo
+	for i := 0; i < 4; i++ {
+		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
+	}
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	err := reposStore.UpsertRepos(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
+		campaign := testCampaign(author)
+		if err = s.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, campaign.ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
+		if err = s.CreateChangesets(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
+		if err := s.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		cs := &campaigns.CampaignSpec{UserID: author, NamespaceUserID: author}
+		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+			t.Fatal(err)
+		}
+
+		return campaign, changeset, cs
+	}
+
+	assertAuthError := func(t *testing.T, err error) {
+		t.Helper()
+
+		if err == nil {
+			t.Fatalf("expected error. got none")
+		}
+		if err != nil {
+			if _, ok := err.(*backend.InsufficientAuthorizationError); !ok {
+				t.Fatalf("wrong error: %s (%T)", err, err)
+			}
+		}
+	}
+
+	assertNoAuthError := func(t *testing.T, err error) {
+		t.Helper()
+
+		// Ignore other errors, we only want to check whether it's an auth error
+		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+			t.Fatalf("got auth error")
+		}
+	}
+
+	tests := []struct {
+		name           string
+		campaignAuthor int32
+		currentUser    int32
+		assertFunc     func(t *testing.T, err error)
+	}{
+		{
+			name:           "unauthorized user",
+			campaignAuthor: user.ID,
+			currentUser:    otherUser.ID,
+			assertFunc:     assertAuthError,
+		},
+		{
+			name:           "campaign author",
+			campaignAuthor: user.ID,
+			currentUser:    user.ID,
+			assertFunc:     assertNoAuthError,
+		},
+
+		{
+			name:           "site-admin",
+			campaignAuthor: user.ID,
+			currentUser:    admin.ID,
+			assertFunc:     assertNoAuthError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			campaign, changeset, campaignSpec := createTestData(t, store, svc, tc.campaignAuthor)
+			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
+			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+
+			t.Run("EnqueueChangesetSync", func(t *testing.T) {
+				err = svc.EnqueueChangesetSync(currentUserCtx, changeset.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("CloseCampaign", func(t *testing.T) {
+				_, err = svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("DeleteCampaign", func(t *testing.T) {
+				err = svc.DeleteCampaign(currentUserCtx, campaign.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("MoveCampaign", func(t *testing.T) {
+				_, err = svc.MoveCampaign(currentUserCtx, MoveCampaignOpts{
+					CampaignID: campaign.ID,
+					NewName:    "foobar2",
+				})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("ApplyCampaign", func(t *testing.T) {
+				_, err = svc.ApplyCampaign(currentUserCtx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec.RandID,
+				})
+				tc.assertFunc(t, err)
+			})
+		})
+	}
 }
 
 func TestService(t *testing.T) {
@@ -37,100 +194,59 @@ func TestService(t *testing.T) {
 	clock := func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
 	}
-
 	cf := httpcli.NewExternalHTTPClientFactory()
 
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not a site-admin")
+	}
+
 	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user is admin, want non-admin")
+	}
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
-	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	ext := &repos.ExternalService{
+		Kind:        extsvc.TypeGitHub,
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: "SECRETTOKEN",
+		}),
+	}
+	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
+		t.Fatal(err)
 	}
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	var rs []*repos.Repo
+	for i := 0; i < 4; i++ {
+		r := testRepo(i, extsvc.TypeGitHub)
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+
+		rs = append(rs, r)
+	}
+
+	awsCodeCommitRepoID := 4
+	{
+		r := testRepo(awsCodeCommitRepoID, extsvc.TypeAWSCodeCommit)
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		rs = append(rs, r)
+	}
+
 	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	t.Run("CreatePatchSetFromPatches", func(t *testing.T) {
-		svc := NewServiceWithClock(store, nil, clock)
-
-		const patch = `diff f f
---- f
-+++ f
-@@ -1,1 +1,2 @@
-+x
- y
-`
-		patches := []*campaigns.Patch{
-			{RepoID: api.RepoID(rs[0].ID), Rev: "deadbeef", BaseRef: "refs/heads/master", Diff: patch},
-			{RepoID: api.RepoID(rs[1].ID), Rev: "f00b4r", BaseRef: "refs/heads/master", Diff: patch},
-		}
-
-		patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if _, err := store.GetPatchSet(ctx, GetPatchSetOpts{ID: patchSet.ID}); err != nil {
-			t.Fatal(err)
-		}
-
-		jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{PatchSetID: patchSet.ID})
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, job := range jobs {
-			job.ID = 0 // ignore database ID when checking for expected output
-		}
-		wantJobs := make([]*campaigns.Patch, len(patches))
-		for i, patch := range patches {
-			wantJobs[i] = &campaigns.Patch{
-				PatchSetID: patchSet.ID,
-				RepoID:     patch.RepoID,
-				Rev:        patch.Rev,
-				BaseRef:    patch.BaseRef,
-				Diff:       patch.Diff,
-				CreatedAt:  now,
-				UpdatedAt:  now,
-			}
-		}
-		if !cmp.Equal(jobs, wantJobs) {
-			t.Error("jobs != wantJobs", cmp.Diff(jobs, wantJobs))
-		}
-	})
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
-		err = store.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		campaign := testCampaign(user.ID, patchSet.ID)
+		campaign := testCampaign(admin.ID)
 		svc := NewServiceWithClock(store, cf, clock)
 
-		// Without Patches it should fail
-		err = svc.CreateCampaign(ctx, campaign, false)
-		if err != ErrNoPatches {
-			t.Fatal("CreateCampaign did not produce expected error")
-		}
-
-		patches := make([]*campaigns.Patch, 0, len(rs))
-		for _, repo := range rs {
-			patch := testPatch(patchSet.ID, repo.ID, now)
-			err := store.CreatePatch(ctx, patch)
-			if err != nil {
-				t.Fatal(err)
-			}
-			patches = append(patches, patch)
-		}
-
-		// With Patches it should succeed
-		err = svc.CreateCampaign(ctx, campaign, false)
+		err = svc.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -139,968 +255,596 @@ func TestService(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-			CampaignID: campaign.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(haveJobs) != len(patches) {
-			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), len(patches))
-		}
 	})
 
-	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
-		err = store.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		for _, repo := range rs {
-			patch := testPatch(patchSet.ID, repo.ID, now)
-			err := store.CreatePatch(ctx, patch)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		campaign := testCampaign(user.ID, patchSet.ID)
+	t.Run("DeleteCampaign", func(t *testing.T) {
+		campaign := testCampaign(admin.ID)
 
 		svc := NewServiceWithClock(store, cf, clock)
-		err = svc.CreateCampaign(ctx, campaign, true)
-		if err != nil {
+
+		if err = svc.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
-
-		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-			CampaignID: campaign.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(haveJobs) != 0 {
-			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), 0)
+		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
+			t.Fatalf("campaign not deleted: %s", err)
 		}
 	})
 
-	t.Run("CreateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
-		err = store.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Run("CloseCampaign", func(t *testing.T) {
+		campaign := testCampaign(admin.ID)
 
-		for _, repo := range rs {
-			err := store.CreatePatch(ctx, testPatch(patchSet.ID, repo.ID, now))
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		campaign := testCampaign(user.ID, patchSet.ID)
 		svc := NewServiceWithClock(store, cf, clock)
 
-		err = svc.CreateCampaign(ctx, campaign, false)
-		if err != nil {
+		if err = svc.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
-		otherCampaign := testCampaign(user.ID, patchSet.ID)
-		err = svc.CreateCampaign(ctx, otherCampaign, false)
-		if err != ErrPatchSetDuplicate {
-			t.Fatal("no error even though another campaign has same patch set")
+		campaign, err = svc.CloseCampaign(ctx, campaign.ID, true)
+		if err != nil {
+			t.Fatalf("campaign not closed: %s", err)
+		}
+		if campaign.ClosedAt.IsZero() {
+			t.Fatalf("campaign ClosedAt is zero")
 		}
 	})
 
-	t.Run("CreateChangesetJobForPatch", func(t *testing.T) {
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
-		err = store.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		patch := testPatch(patchSet.ID, rs[0].ID, now)
-		err := store.CreatePatch(ctx, patch)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		campaign := testCampaign(user.ID, patchSet.ID)
-		err = store.CreateCampaign(ctx, campaign)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		svc := NewServiceWithClock(store, cf, clock)
-		err = svc.CreateChangesetJobForPatch(ctx, patch.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		haveJob, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Try to create again, check that it's the same one
-		err = svc.CreateChangesetJobForPatch(ctx, patch.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		haveJob2, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if haveJob2.ID != haveJob.ID {
-			t.Errorf("wrong changesetJob: %d. want=%d", haveJob2.ID, haveJob.ID)
-		}
-	})
-
-	t.Run("UpdateCampaign", func(t *testing.T) {
-		strPointer := func(s string) *string { return &s }
-		subTests := []struct {
-			name    string
-			branch  *string
-			draft   bool
-			closed  bool
-			process bool
-			err     string
-		}{
-			{
-				name:  "published unprocessed campaign",
-				draft: false,
-				err:   ErrUpdateProcessingCampaign.Error(),
-			},
-			{
-				name:  "draft campaign",
-				draft: true,
-			},
-
-			{
-				name:   "closed campaign",
-				closed: true,
-				err:    ErrUpdateClosedCampaign.Error(),
-			},
-			{
-				name:    "change campaign branch",
-				branch:  strPointer("changed-branch"),
-				draft:   true,
-				process: true,
-			},
-			{
-				name:    "change published campaign branch",
-				branch:  strPointer("changed-branch"),
-				process: true,
-				err:     ErrPublishedCampaignBranchChange.Error(),
-			},
-			{
-				name:    "change campaign blank branch",
-				branch:  strPointer(""),
-				draft:   true,
-				process: true,
-				err:     ErrCampaignBranchBlank.Error(),
-			},
-		}
-		for _, tc := range subTests {
-			t.Run(tc.name, func(t *testing.T) {
-				if tc.err == "" {
-					tc.err = "<nil>"
-				}
-
-				patchSet := &campaigns.PatchSet{UserID: user.ID}
-				err = store.CreatePatchSet(ctx, patchSet)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				patch := testPatch(patchSet.ID, rs[0].ID, now)
-				err := store.CreatePatch(ctx, patch)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				svc := NewServiceWithClock(store, cf, clock)
-				campaign := testCampaign(user.ID, patchSet.ID)
-
-				if tc.closed {
-					campaign.ClosedAt = now
-				}
-
-				err = svc.CreateCampaign(ctx, campaign, tc.draft)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if !tc.draft {
-					haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-						CampaignID: campaign.ID,
-					})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					// sanity checks
-					if len(haveJobs) != 1 {
-						t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), 1)
-					}
-
-					if !haveJobs[0].StartedAt.IsZero() {
-						t.Errorf("ChangesetJobs is not unprocessed. StartedAt=%v", haveJobs[0].StartedAt)
-					}
-
-					if tc.process {
-						patchesByID := map[int64]*campaigns.Patch{
-							patch.ID: patch,
-						}
-						states := map[int64]campaigns.ChangesetState{
-							patch.ID: campaigns.ChangesetStateOpen,
-						}
-						fakeRunChangesetJobs(ctx, t, store, now, campaign, patchesByID, states)
-					}
-				}
-
-				newName := "this is a new campaign name"
-				args := UpdateCampaignArgs{Campaign: campaign.ID, Name: &newName, Branch: tc.branch}
-
-				updatedCampaign, _, err := svc.UpdateCampaign(ctx, args)
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-				}
-
-				if tc.err != "<nil>" {
-					return
-				}
-
-				if updatedCampaign.Name != newName {
-					t.Errorf("Name not updated. want=%q, have=%q", newName, updatedCampaign.Name)
-				}
-
-				if tc.branch != nil && updatedCampaign.Branch != *tc.branch {
-					t.Errorf("Branch not updated. want=%q, have %q", updatedCampaign.Branch, *tc.branch)
-				}
-			})
-		}
-	})
-
-	t.Run("UpdateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
+	t.Run("EnqueueChangesetSync", func(t *testing.T) {
 		svc := NewServiceWithClock(store, cf, clock)
 
-		patchSet := &campaigns.PatchSet{UserID: user.ID}
-		err = store.CreatePatchSet(ctx, patchSet)
-		if err != nil {
+		campaign := testCampaign(admin.ID)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
-		for _, repo := range rs {
-			err := store.CreatePatch(ctx, testPatch(patchSet.ID, repo.ID, now))
-			if err != nil {
-				t.Fatal(err)
+		changeset := testChangeset(rs[0].ID, campaign.ID, 0, campaigns.ChangesetExternalStateOpen)
+		if err = store.CreateChangesets(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign.ChangesetIDs = []int64{changeset.ID}
+		if err = store.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		called := false
+		repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+			if len(ids) != 1 && ids[0] != changeset.ID {
+				t.Fatalf("MockEnqueueChangesetSync received wrong ids: %+v", ids)
 			}
+			called = true
+			return nil
 		}
+		t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
 
-		campaign := testCampaign(user.ID, patchSet.ID)
-		err = svc.CreateCampaign(ctx, campaign, false)
-		if err != nil {
+		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); err != nil {
 			t.Fatal(err)
 		}
 
-		otherPatchSet := &campaigns.PatchSet{UserID: user.ID}
-		err = store.CreatePatchSet(ctx, otherPatchSet)
-		if err != nil {
-			t.Fatal(err)
+		if !called {
+			t.Fatal("MockEnqueueChangesetSync not called")
 		}
 
-		for _, repo := range rs {
-			err := store.CreatePatch(ctx, testPatch(otherPatchSet.ID, repo.ID, now))
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
-		otherCampaign := testCampaign(user.ID, otherPatchSet.ID)
-		err = svc.CreateCampaign(ctx, otherCampaign, false)
-		if err != nil {
-			t.Fatal(err)
-		}
+		// Repo filtered out by authzFilter
+		ct.AuthzFilterRepos(t, rs[0].ID)
 
-		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, PatchSet: &patchSet.ID}
-		_, _, err := svc.UpdateCampaign(ctx, args)
-		if err != ErrPatchSetDuplicate {
-			t.Fatal("no error even though another campaign has same patch set")
+		// should result in a not found error
+		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("expected not-found error but got %s", err)
 		}
 	})
 
-}
+	t.Run("CloseOpenChangesets", func(t *testing.T) {
+		changeset1 := testChangeset(rs[0].ID, 0, 121314, campaigns.ChangesetExternalStateOpen)
+		changeset2 := testChangeset(rs[1].ID, 0, 141516, campaigns.ChangesetExternalStateOpen)
+		if err = store.CreateChangesets(ctx, changeset1, changeset2); err != nil {
+			t.Fatal(err)
+		}
 
-type repoNames []string
+		// Repo of changeset2 filtered out by authzFilter
+		ct.AuthzFilterRepos(t, changeset2.RepoID)
 
-type newPatchSpec struct {
-	repo string
+		fakeSource := &ct.FakeChangesetSource{Err: nil}
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	modifiedDiff bool
-	modifiedRev  bool
-}
+		svc := NewServiceWithClock(store, cf, clock)
+		svc.sourcer = sourcer
 
-func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
-	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+		// Try to close open changesets
+		err := svc.CloseOpenChangesets(ctx, []*campaigns.Changeset{changeset1, changeset2})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
+		// Only changeset1 should be closed
+		if have, want := len(fakeSource.ClosedChangesets), 1; have != want {
+			t.Fatalf("ClosedChangesets has wrong length. want=%d, have=%d", want, have)
+		}
 
-	cf := httpcli.NewExternalHTTPClientFactory()
+		if have, want := fakeSource.ClosedChangesets[0].RepoID, changeset1.RepoID; have != want {
+			t.Fatalf("wrong changesets closed. want=%d, have=%d", want, have)
+		}
+	})
 
-	user := createTestUser(ctx, t)
+	t.Run("CreateCampaignSpec", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
 
-	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
-	}
+		changesetSpecs := make([]*campaigns.ChangesetSpec, 0, len(rs))
+		changesetSpecRandIDs := make([]string, 0, len(rs))
+		for _, r := range rs {
+			cs := &campaigns.ChangesetSpec{RepoID: r.ID, UserID: admin.ID}
+			if err := store.CreateChangesetSpec(ctx, cs); err != nil {
+				t.Fatal(err)
+			}
+			changesetSpecs = append(changesetSpecs, cs)
+			changesetSpecRandIDs = append(changesetSpecRandIDs, cs.RandID)
+		}
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	err := reposStore.UpsertRepos(ctx, rs...)
-	if err != nil {
-		t.Fatal(err)
-	}
+		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-	reposByID := make(map[api.RepoID]*repos.Repo, len(rs))
-	reposByName := make(map[string]*repos.Repo, len(rs))
-	for _, r := range rs {
-		reposByID[r.ID] = r
-		reposByName[r.Name] = r
-	}
-
-	tests := []struct {
-		name string
-
-		campaignIsDraft  bool
-		campaignIsManual bool
-		campaignIsClosed bool
-
-		// Repositories for which we had Patches attached to the old PatchSet
-		oldPatches repoNames
-
-		// Repositories for which the ChangesetJob/Changeset have been
-		// individually published while Campaign was in draft mode
-		individuallyPublished repoNames
-
-		// Mapping of repository names to state of changesets after creating the campaign.
-		// Default state is ChangesetStateOpen
-		changesetStates map[string]campaigns.ChangesetState
-
-		updatePatchSet, updateName, updateDescription bool
-		newPatches                                    []newPatchSpec
-
-		// Repositories for which we want no Changeset/ChangesetJob after update
-		wantDetached repoNames
-		// Repositories for which we want to keep Changeset/ChangesetJob unmodified
-		wantUnmodified repoNames
-		// Repositories for which we want to keep Changeset/ChangesetJob and update them
-		wantModified repoNames
-		// Repositories for which we want to create a new ChangesetJob (and thus a Changeset)
-		wantCreated repoNames
-		// An error to be thrown when attempting to do the update
-		wantErr error
-	}{
-		{
-			name:             "manual campaign, no new patch set, name update",
-			campaignIsManual: true,
-			updateName:       true,
-		},
-		{
-			name:           "1 unmodified",
-			updatePatchSet: true,
-			oldPatches:     repoNames{"repo-0"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-		},
-		{
-			name:         "no new patch set but name update",
-			updateName:   true,
-			oldPatches:   repoNames{"repo-0"},
-			wantModified: repoNames{"repo-0"},
-		},
-		{
-			name:              "no new patch set but description update",
-			updateDescription: true,
-			oldPatches:        repoNames{"repo-0"},
-			wantModified:      repoNames{"repo-0"},
-		},
-		{
-			name:           "1 modified diff",
-			updatePatchSet: true,
-			oldPatches:     repoNames{"repo-0"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedDiff: true},
-			},
-			wantModified: repoNames{"repo-0"},
-		},
-		{
-			name:           "1 modified rev",
-			updatePatchSet: true,
-			oldPatches:     repoNames{"repo-0"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedRev: true},
-			},
-			wantModified: repoNames{"repo-0"},
-		},
-		{
-			name:           "1 detached, 1 unmodified, 1 modified, 1 new changeset",
-			updatePatchSet: true,
-			oldPatches:     repoNames{"repo-0", "repo-1", "repo-2"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-				{repo: "repo-1", modifiedDiff: true},
-				{repo: "repo-3"},
-			},
-			wantDetached:   repoNames{"repo-2"},
-			wantUnmodified: repoNames{"repo-0"},
-			wantModified:   repoNames{"repo-1"},
-			wantCreated:    repoNames{"repo-3"},
-		},
-		{
-			name:            "draft campaign, 1 unmodified, 1 modified, 1 new changeset",
-			campaignIsDraft: true,
-			updatePatchSet:  true,
-			oldPatches:      repoNames{"repo-0", "repo-1", "repo-2"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-				{repo: "repo-1", modifiedDiff: true},
-				{repo: "repo-3"},
-			},
-		},
-		{
-			name:                  "draft campaign, 1 published unmodified, 1 modified, 1 detached, 1 new changeset",
-			campaignIsDraft:       true,
-			updatePatchSet:        true,
-			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
-			individuallyPublished: repoNames{"repo-0"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-				{repo: "repo-1", modifiedDiff: true},
-				{repo: "repo-3"},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-		},
-		{
-			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 detached, 1 new changeset",
-			campaignIsDraft:       true,
-			updatePatchSet:        true,
-			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
-			individuallyPublished: repoNames{"repo-0", "repo-1"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-				{repo: "repo-1", modifiedDiff: true},
-				{repo: "repo-3"},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-			wantModified:   repoNames{"repo-1"},
-		},
-		{
-			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 published detached, 1 new changeset",
-			campaignIsDraft:       true,
-			updatePatchSet:        true,
-			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
-			individuallyPublished: repoNames{"repo-0", "repo-1", "repo-2"},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0"},
-				{repo: "repo-1", modifiedDiff: true},
-				{repo: "repo-3"},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-			wantModified:   repoNames{"repo-1"},
-			wantDetached:   repoNames{"repo-2"},
-		},
-		{
-			name:            "1 modified diff for already merged changeset",
-			updatePatchSet:  true,
-			oldPatches:      repoNames{"repo-0"},
-			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedDiff: true},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-		},
-		{
-			name:            "1 modified rev for already merged changeset",
-			updatePatchSet:  true,
-			oldPatches:      repoNames{"repo-0"},
-			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedDiff: true},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-		},
-		{
-			name:            "1 modified diff for already closed changeset",
-			updatePatchSet:  true,
-			oldPatches:      repoNames{"repo-0"},
-			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedDiff: true},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-		},
-		{
-			name:            "1 modified rev for already closed changeset",
-			updatePatchSet:  true,
-			oldPatches:      repoNames{"repo-0"},
-			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedDiff: true},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-		},
-		{
-			name:             "update plan on manual campaign",
-			updatePatchSet:   true,
-			campaignIsManual: true,
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedDiff: true},
-			},
-			wantErr: ErrManualCampaignUpdatePatchIllegal,
-		},
-		{
-			name:             "update plan on closed campaign",
-			updatePatchSet:   true,
-			campaignIsClosed: true,
-			oldPatches:       repoNames{"repo-0"},
-			changesetStates:  map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateOpen},
-			newPatches: []newPatchSpec{
-				{repo: "repo-0", modifiedDiff: true},
-			},
-			wantErr: ErrUpdateClosedCampaign,
-		},
-		{
-			name:            "1 unmodified merged, 1 new changeset",
-			updatePatchSet:  true,
-			oldPatches:      repoNames{"repo-0"},
-			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
-			newPatches: []newPatchSpec{
-				{repo: "repo-1"},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-			wantCreated:    repoNames{"repo-1"},
-		},
-		{
-			name:            "1 unmodified closed, 1 new changeset",
-			updatePatchSet:  true,
-			oldPatches:      repoNames{"repo-0"},
-			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
-			newPatches: []newPatchSpec{
-				{repo: "repo-1"},
-			},
-			wantUnmodified: repoNames{"repo-0"},
-			wantCreated:    repoNames{"repo-1"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			store := NewStoreWithClock(dbconn.Global, clock)
-			svc := NewServiceWithClock(store, cf, clock)
-
-			var (
-				campaign    *campaigns.Campaign
-				oldPatches  []*campaigns.Patch
-				newPatches  []*campaigns.Patch
-				patchesByID map[int64]*campaigns.Patch
-
-				changesetStateByPatchID map[int64]campaigns.ChangesetState
-
-				oldChangesets []*campaigns.Changeset
-			)
-
-			patchesByID = make(map[int64]*campaigns.Patch)
-
-			if tt.campaignIsManual {
-				campaign = testCampaign(user.ID, 0)
-			} else {
-				patchSet := &campaigns.PatchSet{UserID: user.ID}
-				err = store.CreatePatchSet(ctx, patchSet)
-				if err != nil {
-					t.Fatal(err)
-				}
-				changesetStateByPatchID = make(map[int64]campaigns.ChangesetState)
-				for _, repoName := range tt.oldPatches {
-					repo, ok := reposByName[repoName]
-					if !ok {
-						t.Fatalf("unrecognized repo name: %s", repoName)
-					}
-
-					j := testPatch(patchSet.ID, repo.ID, now)
-					err := store.CreatePatch(ctx, j)
-					if err != nil {
-						t.Fatal(err)
-					}
-					patchesByID[j.ID] = j
-					oldPatches = append(oldPatches, j)
-
-					if s, ok := tt.changesetStates[repoName]; ok {
-						changesetStateByPatchID[j.ID] = s
-					} else {
-						changesetStateByPatchID[j.ID] = campaigns.ChangesetStateOpen
-					}
-				}
-				campaign = testCampaign(user.ID, patchSet.ID)
+		t.Run("success", func(t *testing.T) {
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID:      admin.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if tt.campaignIsClosed {
-				campaign.ClosedAt = now
-			}
-			err = svc.CreateCampaign(ctx, campaign, tt.campaignIsDraft)
+			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !tt.campaignIsDraft && !tt.campaignIsManual {
-				// Create Changesets and update ChangesetJobs to look like they ran
-				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, patchesByID, changesetStateByPatchID)
+			if spec.ID == 0 {
+				t.Fatalf("CampaignSpec ID is 0")
 			}
 
-			if tt.campaignIsDraft && len(tt.individuallyPublished) != 0 {
-				toPublish := make(map[int64]*campaigns.Patch)
-				for _, name := range tt.individuallyPublished {
-					repo, ok := reposByName[name]
-					if !ok {
-						t.Errorf("unrecognized repo name: %s", name)
-					}
-					for _, j := range oldPatches {
-						if j.RepoID == repo.ID {
-							toPublish[j.ID] = j
-
-							err = svc.CreateChangesetJobForPatch(ctx, j.ID)
-							if err != nil {
-								t.Fatalf("Failed to individually created ChangesetJob: %s", err)
-							}
-						}
-					}
-				}
-
-				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, toPublish, changesetStateByPatchID)
+			if have, want := spec.UserID, admin.ID; have != want {
+				t.Fatalf("UserID is %d, want %d", have, want)
 			}
 
-			oldTime := now
-			now = now.Add(5 * time.Second)
-
-			newPatchSet := &campaigns.PatchSet{UserID: user.ID}
-			err = store.CreatePatchSet(ctx, newPatchSet)
-			if err != nil {
+			var wantFields campaigns.CampaignSpecFields
+			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
 
-			for _, spec := range tt.newPatches {
-				r, ok := reposByName[spec.repo]
-				if !ok {
-					t.Fatalf("unrecognized repo name: %s", spec.repo)
-				}
+			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
 
-				j := testPatch(newPatchSet.ID, r.ID, now)
-
-				if spec.modifiedDiff {
-					j.Diff = j.Diff + "-modified"
-				}
-
-				if spec.modifiedRev {
-					j.Rev = j.Rev + "-modified"
-				}
-
-				err := store.CreatePatch(ctx, j)
+			for _, cs := range changesetSpecs {
+				cs2, err := store.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: cs.ID})
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				newPatches = append(newPatches, j)
-				patchesByID[j.ID] = j
-			}
-
-			// Update the Campaign
-			args := UpdateCampaignArgs{Campaign: campaign.ID}
-			if tt.updateName {
-				newName := "new campaign Name"
-				args.Name = &newName
-			}
-			if tt.updateDescription {
-				newDescription := "new campaign description"
-				args.Description = &newDescription
-			}
-			if tt.updatePatchSet {
-				args.PatchSet = &newPatchSet.ID
-			}
-
-			// We ignore the returned campaign here and load it from the
-			// database again to make sure the changes are persisted
-			_, detachedChangesets, err := svc.UpdateCampaign(ctx, args)
-
-			if tt.wantErr != nil {
-				if have, want := fmt.Sprint(err), tt.wantErr.Error(); have != want {
-					t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
+				if have, want := cs2.CampaignSpecID, spec.ID; have != want {
+					t.Fatalf("changesetSpec has wrong CampaignSpecID. want=%d, have=%d", want, have)
 				}
-				return
-			} else if err != nil {
-				t.Fatal(err)
+			}
+		})
+
+		t.Run("success with YAML raw spec", func(t *testing.T) {
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID: admin.ID,
+				RawSpec:         ct.TestRawCampaignSpecYAML,
 			}
 
-			updatedCampaign, err := store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
+			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if args.Name != nil && updatedCampaign.Name != *args.Name {
-				t.Fatalf("campaign name not updated. want=%q, have=%q", *args.Name, updatedCampaign.Name)
-			}
-			if args.Description != nil && updatedCampaign.Description != *args.Description {
-				t.Fatalf("campaign description not updated. want=%q, have=%q", *args.Description, updatedCampaign.Description)
+			if spec.ID == 0 {
+				t.Fatalf("CampaignSpec ID is 0")
 			}
 
-			if args.PatchSet != nil && updatedCampaign.PatchSetID != *args.PatchSet {
-				t.Fatalf("campaign PatchSetID not updated. want=%q, have=%q", newPatchSet.ID, updatedCampaign.PatchSetID)
+			var wantFields campaigns.CampaignSpecFields
+			if err := json.Unmarshal([]byte(ct.TestRawCampaignSpec), &wantFields); err != nil {
+				t.Fatal(err)
 			}
 
-			newChangesetJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-				CampaignID: campaign.ID,
-				Limit:      -1,
+			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			// Single repository filtered out by authzFilter
+			ct.AuthzFilterRepos(t, changesetSpecs[0].RepoID)
+
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID:      admin.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
+			}
+
+			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+		})
+
+		t.Run("invalid changesetspec id", func(t *testing.T) {
+			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID:      admin.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: containsInvalidID,
+			}
+
+			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+		})
+
+		t.Run("namespace user is not admin and not creator", func(t *testing.T) {
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+
+			opts := CreateCampaignSpecOpts{
+				NamespaceUserID: admin.ID,
+				RawSpec:         ct.TestRawCampaignSpecYAML,
+			}
+
+			_, err := svc.CreateCampaignSpec(userCtx, opts)
+			if !errcode.IsUnauthorized(err) {
+				t.Fatalf("expected unauthorized error but got %s", err)
+			}
+
+			// Try again as admin
+			adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+
+			opts.NamespaceUserID = user.ID
+
+			_, err = svc.CreateCampaignSpec(adminCtx, opts)
+			if err != nil {
+				t.Fatalf("expected no error but got %s", err)
+			}
+		})
+
+		t.Run("missing access to namespace org", func(t *testing.T) {
+			org, err := db.Orgs.Create(ctx, "test-org", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opts := CreateCampaignSpecOpts{
+				NamespaceOrgID:       org.ID,
+				RawSpec:              ct.TestRawCampaignSpec,
+				ChangesetSpecRandIDs: changesetSpecRandIDs,
+			}
+
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+
+			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+				t.Fatalf("expected %s error but got %s", want, have)
+			}
+
+			// Create org membership and try again
+			if _, err := db.OrgMembers.Create(ctx, org.ID, user.ID); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			if err != nil {
+				t.Fatalf("expected no error but got %s", err)
+			}
+		})
+	})
+
+	t.Run("CreateChangesetSpec", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		repo := rs[0]
+		rawSpec := ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
+
+		t.Run("success", func(t *testing.T) {
+			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if spec.ID == 0 {
+				t.Fatalf("ChangesetSpec ID is 0")
+			}
+
+			var wantFields campaigns.ChangesetSpecDescription
+			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(wantFields, spec.Spec); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			}
+
+			wantDiffStat := diff.Stat{
+				Added:   1,
+				Changed: 2,
+				Deleted: 1,
+			}
+			if diff := cmp.Diff(wantDiffStat, spec.DiffStat()); diff != "" {
+				t.Fatalf("wrong diff stat (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("invalid raw spec", func(t *testing.T) {
+			invalidRaw := `{"externalComputer": "beepboop"}`
+			_, err := svc.CreateChangesetSpec(ctx, invalidRaw, admin.ID)
+			if err == nil {
+				t.Fatal("expected error but got nil")
+			}
+
+			haveErr := fmt.Sprintf("%v", err)
+			wantErr := "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed\n\n"
+			if diff := cmp.Diff(wantErr, haveErr); diff != "" {
+				t.Fatalf("unexpected error (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("missing repository permissions", func(t *testing.T) {
+			// Single repository filtered out by authzFilter
+			ct.AuthzFilterRepos(t, repo.ID)
+
+			_, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
+			if !errcode.IsNotFound(err) {
+				t.Fatalf("expected not-found error but got %s", err)
+			}
+		})
+	})
+
+	t.Run("ApplyCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		createCampaignSpec := func(t *testing.T, name string, userID int32) *campaigns.CampaignSpec {
+			t.Helper()
+
+			s := &campaigns.CampaignSpec{
+				UserID:          userID,
+				NamespaceUserID: userID,
+				Spec: campaigns.CampaignSpecFields{
+					Name:        name,
+					Description: "the description",
+					ChangesetTemplate: campaigns.ChangesetTemplate{
+						Branch: "branch-name",
+					},
+				},
+			}
+
+			if err := store.CreateCampaignSpec(ctx, s); err != nil {
+				t.Fatal(err)
+			}
+
+			return s
+		}
+
+		t.Run("new campaign", func(t *testing.T) {
+			campaignSpec := createCampaignSpec(t, "campaign-name", admin.ID)
+			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			// When a campaign is created as a draft, we don't create
-			// ChangesetJobs, which means we can return here after checking
-			// that we haven't created ChangesetJobs
-			if tt.campaignIsDraft && len(tt.individuallyPublished) == 0 {
-				if have, want := len(newChangesetJobs), len(tt.individuallyPublished); have != want {
-					t.Fatalf("changesetJobs created even though campaign is draft. have=%d, want=%d", have, want)
-				}
-				return
+			if campaign.ID == 0 {
+				t.Fatalf("campaign ID is 0")
 			}
 
-			var wantChangesetJobLen int
-			if tt.updatePatchSet {
-				if len(tt.individuallyPublished) != 0 {
-					wantChangesetJobLen = len(tt.individuallyPublished)
-				} else {
-					wantChangesetJobLen = len(tt.wantCreated) + len(tt.wantUnmodified) + len(tt.wantModified)
-				}
-			} else {
-				wantChangesetJobLen = len(oldPatches)
-			}
-			if len(newChangesetJobs) != wantChangesetJobLen {
-				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", wantChangesetJobLen, len(newChangesetJobs))
+			want := &campaigns.Campaign{
+				Name:            campaignSpec.Spec.Name,
+				Description:     campaignSpec.Spec.Description,
+				Branch:          campaignSpec.Spec.ChangesetTemplate.Branch,
+				AuthorID:        campaignSpec.UserID,
+				ChangesetIDs:    []int64{},
+				NamespaceUserID: campaignSpec.NamespaceUserID,
+				CampaignSpecID:  campaignSpec.ID,
+
+				// Ignore these fields
+				ID:        campaign.ID,
+				UpdatedAt: campaign.UpdatedAt,
+				CreatedAt: campaign.CreatedAt,
 			}
 
-			newChangesetJobsByRepo := map[string]*campaigns.ChangesetJob{}
-			for _, c := range newChangesetJobs {
-				patch, ok := patchesByID[c.PatchID]
-				if !ok {
-					t.Fatalf("ChangesetJob has invalid PatchID: %+v", c)
-				}
-				r, ok := reposByID[patch.RepoID]
-				if !ok {
-					t.Fatalf("ChangesetJob has invalid RepoID: %v", c)
-				}
-				if c.ChangesetID != 0 && c.Branch == "" {
-					t.Fatalf("Finished ChangesetJob is missing branch")
-				}
-				newChangesetJobsByRepo[r.Name] = c
+			if diff := cmp.Diff(want, campaign); diff != "" {
+				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
 			}
+		})
 
-			wantUnmodifiedChangesetJobs := findChangesetJobsByRepoName(t, newChangesetJobsByRepo, tt.wantUnmodified)
-			for _, j := range wantUnmodifiedChangesetJobs {
-				if j.StartedAt != oldTime {
-					t.Fatalf("ChangesetJob StartedAt changed. want=%v, have=%v", oldTime, j.StartedAt)
-				}
-				if j.FinishedAt != oldTime {
-					t.Fatalf("ChangesetJob FinishedAt changed. want=%v, have=%v", oldTime, j.FinishedAt)
-				}
-				if j.ChangesetID == 0 {
-					t.Fatalf("ChangesetJob does not have ChangesetID")
-				}
-			}
-
-			wantModifiedChangesetJobs := findChangesetJobsByRepoName(t, newChangesetJobsByRepo, tt.wantModified)
-			for _, j := range wantModifiedChangesetJobs {
-				if !j.StartedAt.IsZero() {
-					t.Fatalf("ChangesetJob StartedAt not reset. have=%v", j.StartedAt)
-				}
-				if !j.FinishedAt.IsZero() {
-					t.Fatalf("ChangesetJob FinishedAt not reset. have=%v", j.FinishedAt)
-				}
-				if j.ChangesetID == 0 {
-					t.Fatalf("ChangesetJob does not have ChangesetID")
-				}
-			}
-
-			wantCreatedChangesetJobs := findChangesetJobsByRepoName(t, newChangesetJobsByRepo, tt.wantCreated)
-			for _, j := range wantCreatedChangesetJobs {
-				if !j.StartedAt.IsZero() {
-					t.Fatalf("ChangesetJob StartedAt is set. have=%v", j.StartedAt)
-				}
-				if !j.FinishedAt.IsZero() {
-					t.Fatalf("ChangesetJob FinishedAt is set. have=%v", j.FinishedAt)
-				}
-				if j.ChangesetID != 0 {
-					t.Fatalf("ChangesetJob.ChangesetID is not 0")
-				}
-			}
-
-			// Check that Changesets attached to the unmodified and modified
-			// ChangesetJobs are still attached to Campaign.
-			var wantAttachedChangesetIDs []int64
-			for _, j := range append(wantUnmodifiedChangesetJobs, wantModifiedChangesetJobs...) {
-				wantAttachedChangesetIDs = append(wantAttachedChangesetIDs, j.ChangesetID)
-			}
-			changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: wantAttachedChangesetIDs})
+		t.Run("existing campaign", func(t *testing.T) {
+			campaignSpec := createCampaignSpec(t, "campaign-name", admin.ID)
+			campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+				CampaignSpecRandID: campaignSpec.RandID,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := len(changesets), len(wantAttachedChangesetIDs); have != want {
-				t.Fatalf("wrong number of changesets. want=%d, have=%d", want, have)
-			}
-			for _, c := range changesets {
-				if len(c.CampaignIDs) != 1 || c.CampaignIDs[0] != campaign.ID {
-					t.Fatalf("changeset has wrong CampaignIDs. want=[%d], have=%v", campaign.ID, c.CampaignIDs)
-				}
+
+			if campaign.ID == 0 {
+				t.Fatalf("campaign ID is 0")
 			}
 
-			// Check that Changesets with RepoID == reposByName[wantDetached].ID
-			// are detached from Campaign.
-			wantIDs := make([]int64, 0, len(tt.wantDetached))
-			for _, repoName := range tt.wantDetached {
-				r, ok := reposByName[repoName]
-				if !ok {
-					t.Fatalf("unrecognized repo name: %s", repoName)
+			t.Run("apply same campaignSpec", func(t *testing.T) {
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec.RandID,
+				})
+				if err != nil {
+					t.Fatal(err)
 				}
 
-				for _, c := range oldChangesets {
-					if c.RepoID == r.ID {
-						wantIDs = append(wantIDs, c.ID)
-					}
+				if have, want := campaign2.ID, campaign.ID; have != want {
+					t.Fatalf("campaign ID is wrong. want=%d, have=%d", want, have)
 				}
-			}
-			if len(wantIDs) != len(tt.wantDetached) {
-				t.Fatalf("could not find old changeset to be detached")
+			})
+
+			t.Run("apply campaign spec with same name", func(t *testing.T) {
+				campaignSpec2 := createCampaignSpec(t, "campaign-name", admin.ID)
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec2.RandID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := campaign2.ID, campaign.ID; have != want {
+					t.Fatalf("campaign ID is wrong. want=%d, have=%d", want, have)
+				}
+			})
+
+			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
+				user2 := createTestUser(ctx, t)
+				campaignSpec2 := createCampaignSpec(t, "campaign-name", user2.ID)
+
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec2.RandID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if campaign2.ID == 0 {
+					t.Fatalf("campaign2 ID is 0")
+				}
+
+				if campaign2.ID == campaign.ID {
+					t.Fatalf("campaign IDs are the same, but want different")
+				}
+			})
+
+			t.Run("campaign spec with same name and same ensureCampaignID", func(t *testing.T) {
+				campaignSpec2 := createCampaignSpec(t, "campaign-name", admin.ID)
+
+				campaign2, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec2.RandID,
+					EnsureCampaignID:   campaign.ID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := campaign2.ID, campaign.ID; have != want {
+					t.Fatalf("campaign has wrong ID. want=%d, have=%d", want, have)
+				}
+			})
+
+			t.Run("campaign spec with same name but different ensureCampaignID", func(t *testing.T) {
+				campaignSpec2 := createCampaignSpec(t, "campaign-name", admin.ID)
+
+				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
+					CampaignSpecRandID: campaignSpec2.RandID,
+					EnsureCampaignID:   campaign.ID + 999,
+				})
+				if err != ErrEnsureCampaignFailed {
+					t.Fatalf("wrong error: %s", err)
+				}
+			})
+		})
+	})
+
+	t.Run("MoveCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *campaigns.Campaign {
+			t.Helper()
+
+			c := &campaigns.Campaign{
+				AuthorID:        authorID,
+				NamespaceUserID: userID,
+				NamespaceOrgID:  orgID,
+				Name:            name,
 			}
 
-			haveIDs := make([]int64, 0, len(detachedChangesets))
-			for _, c := range detachedChangesets {
-				if len(c.CampaignIDs) != 0 {
-					t.Fatalf("old changeset still attached to campaign")
-				}
-				for _, changesetID := range campaign.ChangesetIDs {
-					if changesetID == c.ID {
-						t.Fatalf("old changeset still attached to campaign")
-					}
-				}
-				haveIDs = append(haveIDs, c.ID)
+			if err := store.CreateCampaign(ctx, c); err != nil {
+				t.Fatal(err)
 			}
-			sort.Slice(wantIDs, func(i, j int) bool { return wantIDs[i] < wantIDs[j] })
-			sort.Slice(haveIDs, func(i, j int) bool { return haveIDs[i] < haveIDs[j] })
 
-			if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
-				t.Fatal(diff)
+			return c
+		}
+
+		t.Run("new name", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewName: "new-name"}
+			moved, err := svc.MoveCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := moved.Name, opts.NewName; have != want {
+				t.Fatalf("wrong name. want=%q, have=%q", want, have)
 			}
 		})
-	}
-}
 
-func findChangesetJobsByRepoName(
-	t *testing.T,
-	jobsByRepo map[string]*campaigns.ChangesetJob,
-	names repoNames,
-) []*campaigns.ChangesetJob {
-	t.Helper()
+		t.Run("new user namespace", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-	var cs []*campaigns.ChangesetJob
+			user2 := createTestUser(ctx, t)
 
-	for _, n := range names {
-		c, ok := jobsByRepo[n]
-		if !ok {
-			t.Fatalf("could not find ChangesetJob belonging to repo with name %s", n)
-		}
-		cs = append(cs, c)
-	}
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
+			moved, err := svc.MoveCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if want, have := len(names), len(cs); want != have {
-		t.Fatalf("could not find all ChangesetJobs. want=%d, have=%d", want, have)
-	}
-	return cs
-}
+			if have, want := moved.NamespaceUserID, opts.NewNamespaceUserID; have != want {
+				t.Fatalf("wrong NamespaceUserID. want=%d, have=%d", want, have)
+			}
 
-// fakeRunChangesetJobs does what (&Service).RunChangesetJobs does on a
-// database level, but doesn't talk to the codehost. It creates fake Changesets
-// for the ChangesetJobs associated with the given Campaign and updates the
-// ChangesetJobs so they appear to have run.
-func fakeRunChangesetJobs(
-	ctx context.Context,
-	t *testing.T,
-	store *Store,
-	now time.Time,
-	campaign *campaigns.Campaign,
-	patchesByID map[int64]*campaigns.Patch,
-	changesetStatesByPatchID map[int64]campaigns.ChangesetState,
-) []*campaigns.Changeset {
-	jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-		CampaignID: campaign.ID,
-		Limit:      -1,
+			if have, want := moved.NamespaceOrgID, opts.NewNamespaceOrgID; have != want {
+				t.Fatalf("wrong NamespaceOrgID. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+
+			user2 := createTestUser(ctx, t)
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
+
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+			_, err := svc.MoveCampaign(userCtx, opts)
+			if !errcode.IsUnauthorized(err) {
+				t.Fatalf("expected unauthorized error but got %s", err)
+			}
+		})
+
+		t.Run("new org namespace", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+
+			org, err := db.Orgs.Create(ctx, "org", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+			moved, err := svc.MoveCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := moved.NamespaceUserID, opts.NewNamespaceUserID; have != want {
+				t.Fatalf("wrong NamespaceUserID. want=%d, have=%d", want, have)
+			}
+
+			if have, want := moved.NamespaceOrgID, opts.NewNamespaceOrgID; have != want {
+				t.Fatalf("wrong NamespaceOrgID. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
+			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+
+			org, err := db.Orgs.Create(ctx, "org-no-access", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+
+			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+			_, err = svc.MoveCampaign(userCtx, opts)
+			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+				t.Fatalf("expected %s error but got %s", want, have)
+			}
+		})
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(jobs), len(patchesByID); have != want {
-		t.Fatalf("wrong number of changeset jobs. want=%d, have=%d", want, have)
-	}
-
-	cs := make([]*campaigns.Changeset, 0, len(patchesByID))
-	for _, changesetJob := range jobs {
-		patch, ok := patchesByID[changesetJob.PatchID]
-		if !ok {
-			t.Fatal("no Patch found for ChangesetJob")
-		}
-
-		state, ok := changesetStatesByPatchID[patch.ID]
-		if !ok {
-			t.Fatal("no desired state found for Changeset")
-		}
-		changeset := testChangeset(patch.RepoID, changesetJob.CampaignID, changesetJob.ID, state)
-		err = store.CreateChangesets(ctx, changeset)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		cs = append(cs, changeset)
-
-		changesetJob.ChangesetID = changeset.ID
-		changesetJob.Branch = campaign.Branch
-		changesetJob.StartedAt = now
-		changesetJob.FinishedAt = now
-
-		err := store.UpdateChangesetJob(ctx, changesetJob)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	return cs
 }
 
 var testUser = db.NewUser{
@@ -1131,40 +875,29 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 	}
 }()
 
-func testPatch(patchSet int64, repo api.RepoID, t time.Time) *campaigns.Patch {
-	return &campaigns.Patch{
-		PatchSetID: patchSet,
-		RepoID:     api.RepoID(repo),
-		Rev:        "deadbeef",
-		BaseRef:    "refs/heads/master",
-		Diff:       "cool diff",
-	}
-}
-
-func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
+func testCampaign(user int32) *campaigns.Campaign {
 	c := &campaigns.Campaign{
 		Name:            "Testing Campaign",
 		Description:     "Testing Campaign",
 		AuthorID:        user,
 		NamespaceUserID: user,
-		PatchSetID:      patchSet,
-	}
-
-	if patchSet != 0 {
-		c.Branch = "test-branch"
 	}
 
 	return c
 }
 
-func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetState) *campaigns.Changeset {
-	pr := &github.PullRequest{State: string(state)}
-	return &campaigns.Changeset{
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, extState campaigns.ChangesetExternalState) *campaigns.Changeset {
+	changeset := &campaigns.Changeset{
 		RepoID:              repoID,
-		CampaignIDs:         []int64{campaign},
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
-		Metadata:            pr,
-		ExternalState:       state,
+		Metadata:            &github.PullRequest{State: string(extState)},
+		ExternalState:       extState,
 	}
+
+	if campaign != 0 {
+		changeset.CampaignIDs = []int64{campaign}
+	}
+
+	return changeset
 }

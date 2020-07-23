@@ -13,7 +13,7 @@ func ZoektIndexServer() *Container {
 						{
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m]))`,
+							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 15},
 							Critical:          Alert{GreaterOrEqual: 30},
@@ -24,13 +24,27 @@ func ZoektIndexServer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("zoekt-indexserver"),
 						sharedContainerMemoryUsage("zoekt-indexserver"),
 						sharedContainerCPUUsage("zoekt-indexserver"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("zoekt-indexserver"),
+						sharedProvisioningMemoryUsage7d("zoekt-indexserver"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("zoekt-indexserver"),
+						sharedProvisioningMemoryUsage5m("zoekt-indexserver"),
 					},
 				},
 			},

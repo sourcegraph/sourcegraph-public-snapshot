@@ -51,7 +51,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
             useMemo(
                 () =>
                     _queryProductSubscription(subscriptionUUID).pipe(
-                        catchError(err => [asError(err)]),
+                        catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
                 [_queryProductSubscription, subscriptionUUID]
@@ -87,7 +87,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
                             startWith(LOADING)
                         )
                     }),
-                    catchError(err => [asError(err)])
+                    catchError(error => [asError(error)])
                 ),
             [history, productSubscription]
         )
@@ -123,7 +123,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
                         primaryButtonText="Upgrade subscription"
                         afterPrimaryButton={
                             <small className="form-text text-muted">
-                                An upgraded license key will be available immediately after payment.
+                                An upgraded license key will be available immediately.
                             </small>
                         }
                         history={history}
@@ -137,7 +137,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
 function queryProductSubscription(uuid: string): Observable<ProductSubscription> {
     return queryGraphQL(
         gql`
-            query ProductSubscription($uuid: String!) {
+            query ProductSubscriptionOnEditPage($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
                         ...ProductSubscriptionFields
@@ -177,7 +177,7 @@ function updatePaidProductSubscription(
             mutation UpdatePaidProductSubscription(
                 $subscriptionID: ID!
                 $update: ProductSubscriptionInput!
-                $paymentToken: String!
+                $paymentToken: String
             ) {
                 dotcom {
                     updatePaidProductSubscription(

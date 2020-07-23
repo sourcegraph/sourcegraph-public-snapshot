@@ -1,9 +1,9 @@
 import { describe, before, after, test } from 'mocha'
 import { Key } from 'ts-key-enum'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
+import { Driver } from '../../../shared/src/testing/driver'
+import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import { TestResourceManager } from './util/TestResourceManager'
 import { ensureLoggedInOrCreateTestUser, ensureNewUser, ensureNewOrganization, editSiteConfig } from './util/helpers'
 import { getUser, setUserSiteAdmin, fetchAllOrganizations, deleteOrganization, getViewerSettings } from './util/api'
@@ -12,9 +12,9 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { parseJSONCOrError } from '../../../shared/src/util/jsonc'
 import { Settings, QuickLink } from '../schema/settings.schema'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { retry } from '../../../shared/src/testing/utils'
 import delay from 'delay'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 import { isErrorLike } from '../../../shared/src/util/errors'
 
 async function deleteOrganizationByName(
@@ -79,7 +79,7 @@ describe('Organizations regression test suite', () => {
         })
 
         test('Create an organization and test settings cascade', async () => {
-            const quicklink = { name: 'Test Org 1 Quicklink', url: 'http://test-org-1-link.local' }
+            const expectedQuicklink = { name: 'Test Org 1 Quicklink', url: 'http://test-org-1-link.local' }
             const userGQLClient = createGraphQLClient({
                 baseUrl: config.sourcegraphBaseUrl,
                 token: config.sudoToken,
@@ -99,19 +99,19 @@ describe('Organizations regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/organizations')
             await driver.findElementWithText('Create organization', { action: 'click', wait: { timeout: 2000 } })
             await driver.replaceText({
-                selector: '.e2e-new-org-name-input',
+                selector: '.test-new-org-name-input',
                 newText: testOrg.name,
             })
             await driver.replaceText({
-                selector: '.e2e-new-org-display-name-input',
+                selector: '.test-new-org-display-name-input',
                 newText: testOrg.displayName,
             })
             await driver.findElementWithText('Create organization', { action: 'click' })
             resourceManager.add('Organization', testOrg.name, () => deleteOrganizationByName(gqlClient, testOrg.name))
-            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
             await driver.replaceText({
-                selector: '.e2e-settings-file .monaco-editor',
-                newText: `{"quicklinks": [${JSON.stringify(quicklink)}]}`,
+                selector: '.test-settings-file .monaco-editor',
+                newText: `{"quicklinks": [${JSON.stringify(expectedQuicklink)}]}`,
                 selectMethod: 'keyboard',
                 enterTextMethod: 'paste',
             })
@@ -130,11 +130,16 @@ describe('Organizations regression test suite', () => {
                 if (!quicklinks) {
                     throw new Error('No quicklinks found')
                 }
-                if (!quicklinks.some(l => l.name === quicklink.name && l.url === quicklink.url)) {
+                if (
+                    !quicklinks.some(
+                        quicklink =>
+                            quicklink.name === expectedQuicklink.name && quicklink.url === expectedQuicklink.url
+                    )
+                ) {
                     throw new Error(
-                        `Did not find quicklink found ${JSON.stringify(quicklink)} in quicklinks: ${JSON.stringify(
-                            quicklinks
-                        )}`
+                        `Did not find quicklink found ${JSON.stringify(
+                            expectedQuicklink
+                        )} in quicklinks: ${JSON.stringify(quicklinks)}`
                     )
                 }
             }
@@ -147,13 +152,22 @@ describe('Organizations regression test suite', () => {
             })
             await driver.findElementWithText('Leave organization', { action: 'click', wait: { timeout: 1000 } })
 
-            await driver.page.waitForFunction(() => !document.body.innerText.includes('Leave organization'))
+            await driver.page.waitForFunction(
+                () => document.body.textContent && !document.body.textContent.includes('Leave organization')
+            )
 
             {
                 const quicklinks = await getQuickLinks()
-                if (quicklinks?.some(l => l.name === quicklink.name && l.url === quicklink.url)) {
+                if (
+                    quicklinks?.some(
+                        quicklink =>
+                            quicklink.name === expectedQuicklink.name && quicklink.url === expectedQuicklink.url
+                    )
+                ) {
                     throw new Error(
-                        `Found quicklink ${JSON.stringify(quicklink)} in quicklinks: ${JSON.stringify(quicklinks)}`
+                        `Found quicklink ${JSON.stringify(expectedQuicklink)} in quicklinks: ${JSON.stringify(
+                            quicklinks
+                        )}`
                     )
                 }
             }

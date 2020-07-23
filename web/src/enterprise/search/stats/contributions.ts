@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { parseContributionExpressions } from '../../../../../shared/src/api/client/services/contribution'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'

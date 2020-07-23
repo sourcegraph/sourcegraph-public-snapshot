@@ -268,30 +268,22 @@ const megabyte = float64(1000 * 1000)
 
 var (
 	running = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "running",
-		Help:      "Number of running search requests.",
+		Name: "replacer_service_running",
+		Help: "Number of running search requests.",
 	})
 	archiveSize = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "archive_size_bytes",
-		Help:      "Observes the size when an archive is searched.",
-		Buckets:   []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
+		Name:    "replacer_service_archive_size_bytes",
+		Help:    "Observes the size when an archive is searched.",
+		Buckets: []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
 	})
 	archiveFiles = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "archive_files",
-		Help:      "Observes the number of files when an archive is searched.",
-		Buckets:   []float64{100, 1000, 10000, 50000, 100000},
+		Name:    "replacer_service_archive_files",
+		Help:    "Observes the number of files when an archive is searched.",
+		Buckets: []float64{100, 1000, 10000, 50000, 100000},
 	})
 	requestTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "request_total",
-		Help:      "Number of returned replace requests.",
+		Name: "replacer_service_request_total",
+		Help: "Number of returned replace requests.",
 	}, []string{"code"})
 )
 

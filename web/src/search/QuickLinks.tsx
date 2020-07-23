@@ -12,8 +12,8 @@ interface Props {
 export const QuickLinks: React.FunctionComponent<Props> = ({ quickLinks, className = '' }) =>
     quickLinks && quickLinks.length > 0 ? (
         <div className={className}>
-            {quickLinks.map((quickLink, i) => (
-                <small className="quicklink text-nowrap mr-2" key={i}>
+            {quickLinks.map((quickLink, index) => (
+                <small className="quicklink text-nowrap mr-2" key={index}>
                     <Link to={quickLink.url} data-tooltip={quickLink.description}>
                         <LinkIcon className="icon-inline pr-1" />
                         {quickLink.name}

@@ -10,10 +10,15 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -35,67 +40,13 @@ type Service struct {
 	store *Store
 	cf    *httpcli.Factory
 
+	sourcer repos.Sourcer
+
 	clock func() time.Time
 }
 
-// CreatePatchSetFromPatches creates a PatchSet and its associated Patches from patches
-// computed by the caller. There is no diff execution or computation performed during creation of
-// the Patches in this case (unlike when using Runner to create a PatchSet from a
-// specification).
-func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*campaigns.Patch, userID int32) (*campaigns.PatchSet, error) {
-	if userID == 0 {
-		return nil, backend.ErrNotAuthenticated
-	}
-	// Look up all repositories
-	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	repoIDs := make([]api.RepoID, len(patches))
-	for i, patch := range patches {
-		repoIDs[i] = api.RepoID(patch.RepoID)
-	}
-	allRepos, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
-	if err != nil {
-		return nil, err
-	}
-	reposByID := make(map[api.RepoID]*repos.Repo, len(patches))
-	for _, repo := range allRepos {
-		reposByID[repo.ID] = repo
-	}
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Done(&err)
-
-	patchSet := &campaigns.PatchSet{UserID: userID}
-	err = tx.CreatePatchSet(ctx, patchSet)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, patch := range patches {
-		repo := reposByID[patch.RepoID]
-		if repo == nil {
-			return nil, fmt.Errorf("repository ID %d not found", patch.RepoID)
-		}
-		if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
-			continue
-		}
-
-		patch.PatchSetID = patchSet.ID
-		if err := tx.CreatePatch(ctx, patch); err != nil {
-			return nil, err
-		}
-	}
-
-	return patchSet, nil
-}
-
-// CreateCampaign creates the Campaign. When a PatchSetID is set on the
-// Campaign and the Campaign is not created as a draft, it calls
-// CreateChangesetJobs inside the same transaction in which it creates the
-// Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, draft bool) error {
+// CreateCampaign creates the Campaign.
+func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
 	defer func() {
@@ -113,67 +64,16 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	}
 	defer tx.Done(&err)
 
-	if c.PatchSetID != 0 {
-		_, err := tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
-		if err != nil && err != ErrNoResults {
-			return err
-		}
-		if err != ErrNoResults {
-			err = ErrPatchSetDuplicate
-			return err
-		}
-	}
-
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
-	if err = tx.CreateCampaign(ctx, c); err != nil {
-		return err
-	}
-
-	if c.PatchSetID != 0 && c.Branch == "" {
-		err = ErrCampaignBranchBlank
-		return err
-	}
-
-	if c.PatchSetID == 0 || draft {
-		return nil
-	}
-
-	err = s.createChangesetJobsWithStore(ctx, tx, c)
-	return err
-}
-
-// ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
-// PatchSetID was specified but the PatchSet does not have any
-// (finished) Patches.
-var ErrNoPatches = errors.New("cannot create or update a Campaign without any changesets")
-
-func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *campaigns.Campaign) error {
-	if c.PatchSetID == 0 {
-		return errors.New("cannot create changesets for campaign with no patch set")
-	}
-
-	jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{
-		PatchSetID:                c.PatchSetID,
-		Limit:                     -1,
-		OnlyWithDiff:              true,
-		OnlyUnpublishedInCampaign: c.ID,
-	})
+	err = tx.CreateCampaign(ctx, c)
 	if err != nil {
 		return err
 	}
 
-	if len(jobs) == 0 {
-		return ErrNoPatches
-	}
-
-	for _, job := range jobs {
-		changesetJob := &campaigns.ChangesetJob{
-			CampaignID: c.ID,
-			PatchID:    job.ID,
-		}
-		err = store.CreateChangesetJob(ctx, changesetJob)
+	if c.Branch != "" {
+		err = validateCampaignBranch(c.Branch)
 		if err != nil {
 			return err
 		}
@@ -182,10 +82,293 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	return nil
 }
 
+type CreateCampaignSpecOpts struct {
+	RawSpec string
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	ChangesetSpecRandIDs []string
+}
+
+// CreateCampaignSpec creates the CampaignSpec.
+func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *campaigns.CampaignSpec, err error) {
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("Actor %s", actor))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	spec, err = campaigns.NewCampaignSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = checkNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	spec.UserID = actor.UID
+
+	listOpts := ListChangesetSpecsOpts{Limit: -1, RandIDs: opts.ChangesetSpecRandIDs}
+	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(cs))
+	for _, c := range cs {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	byRandID := make(map[string]*campaigns.ChangesetSpec, len(cs))
+	for _, changesetSpec := range cs {
+		// 🚨 SECURITY: We return an error if the user doesn't have access to one
+		// of the repositories associated with a ChangesetSpec.
+		if _, ok := accessibleReposByID[changesetSpec.RepoID]; !ok {
+			return nil, &db.RepoNotFoundErr{ID: changesetSpec.RepoID}
+		}
+		byRandID[changesetSpec.RandID] = changesetSpec
+	}
+
+	// Check if a changesetSpec was not found
+	for _, randID := range opts.ChangesetSpecRandIDs {
+		if _, ok := byRandID[randID]; !ok {
+			return nil, &changesetSpecNotFoundErr{RandID: randID}
+		}
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	if err := tx.CreateCampaignSpec(ctx, spec); err != nil {
+		return nil, err
+	}
+
+	for _, changesetSpec := range cs {
+		changesetSpec.CampaignSpecID = spec.ID
+
+		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
+			return nil, err
+		}
+	}
+
+	return spec, nil
+}
+
+// CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
+func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *campaigns.ChangesetSpec, err error) {
+	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	spec, err = campaigns.NewChangesetSpecFromRaw(rawSpec)
+	if err != nil {
+		return nil, err
+	}
+	spec.UserID = userID
+	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(spec.Spec.BaseRepository)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// the repository or not.
+	if _, err = db.Repos.Get(ctx, spec.RepoID); err != nil {
+		return nil, err
+	}
+
+	return spec, s.store.CreateChangesetSpec(ctx, spec)
+}
+
+// changesetSpecNotFoundErr is returned by CreateCampaignSpec if a
+// ChangesetSpec with the given RandID doesn't exist.
+// It fulfills the interface required by errcode.IsNotFound.
+type changesetSpecNotFoundErr struct {
+	RandID string
+}
+
+func (e *changesetSpecNotFoundErr) Error() string {
+	if e.RandID != "" {
+		return fmt.Sprintf("changesetSpec not found: id=%s", e.RandID)
+	}
+	return "changesetSpec not found"
+}
+
+func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
+
+type ApplyCampaignOpts struct {
+	CampaignSpecRandID string
+	EnsureCampaignID   int64
+}
+
+func (o ApplyCampaignOpts) String() string {
+	return fmt.Sprintf(
+		"CampaignSpec %s, EnsureCampaignID %d",
+		o.CampaignSpecRandID,
+		o.EnsureCampaignID,
+	)
+}
+
+// ApplyCampaign creates the CampaignSpec.
+func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *campaigns.Campaign, err error) {
+	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", opts.String())
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{
+		RandID: opts.CampaignSpecRandID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site-admins or the creator of campaignSpec can apply
+	// campaignSpec.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaignSpec.UserID); err != nil {
+		return nil, err
+	}
+
+	getOpts := GetCampaignOpts{
+		CampaignSpecName: campaignSpec.Spec.Name,
+		NamespaceUserID:  campaignSpec.NamespaceUserID,
+		NamespaceOrgID:   campaignSpec.NamespaceOrgID,
+	}
+
+	campaign, err = tx.GetCampaign(ctx, getOpts)
+	if err != nil {
+		if err != ErrNoResults {
+			return nil, err
+		}
+		err = nil
+	}
+	if campaign == nil {
+		campaign = &campaigns.Campaign{}
+	}
+
+	if opts.EnsureCampaignID != 0 && campaign.ID != opts.EnsureCampaignID {
+		return nil, ErrEnsureCampaignFailed
+	}
+
+	if campaign.CampaignSpecID == campaignSpec.ID {
+		return campaign, nil
+	}
+
+	campaign.CampaignSpecID = campaignSpec.ID
+	campaign.AuthorID = campaignSpec.UserID
+	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
+	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
+	campaign.Name = campaignSpec.Spec.Name
+	campaign.Description = campaignSpec.Spec.Description
+
+	// TODO(mrnugget): This doesn't need to be populated, since the branch is
+	// now ChangesetSpec.Spec.HeadRef.
+	campaign.Branch = campaignSpec.Spec.ChangesetTemplate.Branch
+
+	if campaign.ID == 0 {
+		return campaign, tx.CreateCampaign(ctx, campaign)
+	}
+
+	return campaign, tx.UpdateCampaign(ctx, campaign)
+}
+
+type MoveCampaignOpts struct {
+	CampaignID int64
+
+	NewName string
+
+	NewNamespaceUserID int32
+	NewNamespaceOrgID  int32
+}
+
+func (o MoveCampaignOpts) String() string {
+	return fmt.Sprintf(
+		"CampaignID %d, NewName %q, NewNamespaceUserID %d, NewNamespaceOrgID %d",
+		o.CampaignID,
+		o.NewName,
+		o.NewNamespaceUserID,
+		o.NewNamespaceOrgID,
+	)
+}
+
+// MoveCampaign moves the campaign from one namespace to another and/or renames
+// the campaign.
+func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (campaign *campaigns.Campaign, err error) {
+	tr, ctx := trace.New(ctx, "Service.MoveCampaign", opts.String())
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: opts.CampaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the Author of the campaign can move it.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+		return nil, err
+	}
+	// Check if current user has access to target namespace if set.
+	if opts.NewNamespaceOrgID != 0 || opts.NewNamespaceUserID != 0 {
+		err = checkNamespaceAccess(ctx, opts.NewNamespaceUserID, opts.NewNamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if opts.NewNamespaceOrgID != 0 {
+		campaign.NamespaceOrgID = opts.NewNamespaceOrgID
+		campaign.NamespaceUserID = 0
+	} else if opts.NewNamespaceUserID != 0 {
+		campaign.NamespaceUserID = opts.NewNamespaceUserID
+		campaign.NamespaceOrgID = 0
+	}
+
+	if opts.NewName != "" {
+		campaign.Name = opts.NewName
+	}
+
+	return campaign, tx.UpdateCampaign(ctx, campaign)
+}
+
+// ErrEnsureCampaignFailed is returned by ApplyCampaign when a ensureCampaignID
+// is provided but a campaign with the name specified the campaignSpec exists
+// in the given namespace but has a different ID.
+var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
+
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
 // been published at the time of closing but its ChangesetJobs have not
 // finished execution.
-var ErrCloseProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
+var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
@@ -203,18 +386,20 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		}
 		defer tx.Done(&err)
 
-		processing, err := campaignIsProcessing(ctx, tx, id)
-		if err != nil {
-			return err
-		}
-		if processing {
-			err = ErrDeleteProcessingCampaign
-			return err
-		}
-
 		campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
 		if err != nil {
 			return errors.Wrap(err, "getting campaign")
+		}
+
+		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+			return err
+		}
+
+		// TODO: Implement logic to find changesets in PUBLISHING state.
+		processing := false
+		if processing {
+			err = ErrCloseProcessingCampaign
+			return err
 		}
 
 		if !campaign.ClosedAt.IsZero() {
@@ -255,30 +440,6 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
-// PublishCampaign publishes the Campaign with the given ID
-// by turning the Patches attached to the PatchSet of
-// the Campaign into ChangesetJobs and enqueuing them
-func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *campaigns.Campaign, err error) {
-	traceTitle := fmt.Sprintf("campaign: %d", id)
-	tr, ctx := trace.New(ctx, "service.PublishCampaign", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Done(&err)
-
-	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
-	}
-	return campaign, s.createChangesetJobsWithStore(ctx, tx, campaign)
-}
-
 // ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
 // has been published at the time of deletion but its ChangesetJobs have not
 // finished execution.
@@ -287,92 +448,71 @@ var ErrDeleteProcessingCampaign = errors.New("cannot delete a Campaign while cha
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
 // deleted yet. If closeChangesets is true, the changesets associated with the
 // Campaign will be closed on the codehosts.
-func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets bool) (err error) {
-	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
+func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", id)
 	tr, ctx := trace.New(ctx, "service.DeleteCampaign", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	transaction := func() (cs []*campaigns.Changeset, err error) {
-		tx, err := s.store.Transact(ctx)
-		if err != nil {
-			return nil, err
-		}
-		defer tx.Done(&err)
-
-		processing, err := campaignIsProcessing(ctx, tx, id)
-		if err != nil {
-			return nil, err
-		}
-		if processing {
-			return nil, ErrDeleteProcessingCampaign
-		}
-
-		// If we don't have to close the changesets, we can simply delete the
-		// Campaign and return. The triggers in the database will remove the
-		// campaign's ID from the changesets' CampaignIDs.
-		if !closeChangesets {
-			return nil, tx.DeleteCampaign(ctx, id)
-		}
-
-		// First load the Changesets with the given campaignID, before deleting
-		// the campaign would remove the association.
-		cs, _, err = s.store.ListChangesets(ctx, ListChangesetsOpts{
-			CampaignID: id,
-			Limit:      -1,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		// Remove the association manually, since we'll update the Changesets in
-		// the database, after closing them and we can't update them with an
-		// invalid CampaignID.
-		for _, c := range cs {
-			c.RemoveCampaignID(id)
-		}
-
-		return cs, s.store.DeleteCampaign(ctx, id)
-	}
-
-	cs, err := transaction()
+	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{ID: id})
 	if err != nil {
 		return err
 	}
 
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := s.CloseOpenChangesets(ctx, cs)
-		if err != nil {
-			log15.Error("CloseCampaignChangesets", "err", err)
-		}
-	}()
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+		return err
+	}
 
-	return nil
+	transaction := func() (err error) {
+		tx, err := s.store.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer tx.Done(&err)
+
+		// TODO: Implement logic to find changesets in PUBLISHING state.
+		processing := false
+		if processing {
+			return ErrDeleteProcessingCampaign
+		}
+
+		return tx.DeleteCampaign(ctx, id)
+	}
+
+	return transaction()
 }
 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
-func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Changeset) (err error) {
-	cs = selectChangesets(cs, func(c *campaigns.Changeset) bool {
-		return c.ExternalState == campaigns.ChangesetStateOpen
+func (s *Service) CloseOpenChangesets(ctx context.Context, cs campaigns.Changesets) (err error) {
+	cs = cs.Filter(func(c *campaigns.Changeset) bool {
+		return c.ExternalState == campaigns.ChangesetExternalStateOpen
 	})
 
 	if len(cs) == 0 {
 		return nil
 	}
 
+	accessibleReposByID, err := accessibleRepos(ctx, cs.RepoIDs())
+	if err != nil {
+		return err
+	}
+
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	bySource, err := GroupChangesetsBySource(ctx, reposStore, s.cf, nil, cs...)
+	bySource, err := groupChangesetsBySource(ctx, reposStore, s.cf, s.sourcer, cs...)
 	if err != nil {
 		return err
 	}
 
 	errs := &multierror.Error{}
-	for _, s := range bySource {
-		for _, c := range s.Changesets {
-			if err := s.CloseChangeset(ctx, c); err != nil {
+	for _, group := range bySource {
+		for _, c := range group.Changesets {
+			if _, ok := accessibleReposByID[c.RepoID]; !ok {
+				continue
+			}
+
+			if err := group.CloseChangeset(ctx, c); err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		}
@@ -386,493 +526,124 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	// CloseChangesets updates the given Changesets too), because closing a
 	// Changeset often produces a ChangesetEvent on the codehost and if we were
 	// to close the Changesets and not update the events (which is what
-	// SyncChangesetsWithSources does) our burndown chart will be outdated
+	// syncChangesetsWithSources does) our burndown chart will be outdated
 	// until the next run of campaigns.Syncer.
-	return SyncChangesetsWithSources(ctx, s.store, bySource)
+	return syncChangesetsWithSources(ctx, s.store, bySource)
 }
 
-// CreateChangesetJobForPatch creates a ChangesetJob for the
-// Patch with the given ID. The Patch has to belong to a
-// PatchSet that was attached to a Campaign.
-func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
-	traceTitle := fmt.Sprintf("patch: %d", patchID)
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForPatch", traceTitle)
+// EnqueueChangesetSync loads the given changeset from the database, checks
+// whether the actor in the context has permission to enqueue a sync and then
+// enqueues a sync by calling the repoupdater client.
+func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error) {
+	traceTitle := fmt.Sprintf("changeset: %d", id)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	job, err := s.store.GetPatch(ctx, GetPatchOpts{ID: patchID})
+	// Check for existence of changeset so we don't swallow that error.
+	changeset, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id})
 	if err != nil {
 		return err
 	}
 
-	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{PatchSetID: job.PatchSetID})
+	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// the repository or not.
+	if _, err = db.Repos.Get(ctx, changeset.RepoID); err != nil {
+		return err
+	}
+
+	campaigns, _, err := s.store.ListCampaigns(ctx, ListCampaignsOpts{ChangesetID: id})
 	if err != nil {
 		return err
 	}
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Done(&err)
+	// Check whether the user has admin rights for one of the campaigns.
+	var (
+		authErr        error
+		hasAdminRights bool
+	)
 
-	existing, err := tx.GetChangesetJob(ctx, GetChangesetJobOpts{
-		CampaignID: campaign.ID,
-		PatchID:    job.ID,
-	})
-	if err != nil && err != ErrNoResults {
-		return err
-	}
-	if existing != nil {
-		// Already exists
-		return nil
+	for _, c := range campaigns {
+		err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID)
+		if err != nil {
+			authErr = err
+		} else {
+			hasAdminRights = true
+			break
+		}
 	}
 
-	changesetJob := &campaigns.ChangesetJob{
-		CampaignID: campaign.ID,
-		PatchID:    job.ID,
+	if !hasAdminRights {
+		return authErr
 	}
-	err = tx.CreateChangesetJob(ctx, changesetJob)
-	if err != nil {
+
+	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{id}); err != nil {
 		return err
 	}
+
 	return nil
-}
-
-// ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign
-// has been published at the time of update but its ChangesetJobs have not
-// finished execution.
-var ErrUpdateProcessingCampaign = errors.New("cannot update a Campaign while changesets are being created on codehosts")
-
-type UpdateCampaignArgs struct {
-	Campaign    int64
-	Name        *string
-	Description *string
-	Branch      *string
-	PatchSet    *int64
 }
 
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
-// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
-// branch is blank. This is only enforced when creating published campaigns with a patch set.
+// ErrCampaignBranchBlank is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
+// branch is blank.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 
-// ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
-// attempt to change the branch of a published campaign with a patch set (or a campaign with individually published changesets).
-var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
+// ErrCampaignBranchInvalid is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
+// branch is invalid.
+var ErrCampaignBranchInvalid = errors.New("Campaign branch is invalid")
 
-// ErrPatchSetDuplicate is return by CreateCampaign or UpdateCampaign if the
-// specified patch set is already attached to another campaign.
-var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same patch set as another campaign")
-
-// ErrUpdateClosedCampaign is returned by UpdateCampaign if the Campaign
-// has been closed.
-var ErrUpdateClosedCampaign = errors.New("cannot update a closed Campaign")
-
-// ErrManualCampaignUpdatePatchIllegal is returned by UpdateCampaign if a patch set
-// is to be attached to a manual campaign.
-var ErrManualCampaignUpdatePatchIllegal = errors.New("cannot update a manual campaign to have a patch set")
-
-// UpdateCampaign updates the Campaign with the given arguments.
-func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
-	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
-	tr, ctx := trace.New(ctx, "service.UpdateCampaign", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, nil, err
+func validateCampaignBranch(branch string) error {
+	if branch == "" {
+		return ErrCampaignBranchBlank
 	}
-
-	defer tx.Done(&err)
-
-	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: args.Campaign})
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "getting campaign")
+	if !git.ValidateBranchName(branch) {
+		return ErrCampaignBranchInvalid
 	}
-
-	if !campaign.ClosedAt.IsZero() {
-		return nil, nil, ErrUpdateClosedCampaign
-	}
-
-	var updateAttributes, updatePatchSetID, updateBranch bool
-
-	if args.Name != nil && campaign.Name != *args.Name {
-		if *args.Name == "" {
-			return nil, nil, ErrCampaignNameBlank
-		}
-
-		campaign.Name = *args.Name
-		updateAttributes = true
-	}
-
-	if args.Description != nil && campaign.Description != *args.Description {
-		campaign.Description = *args.Description
-		updateAttributes = true
-	}
-
-	oldPatchSetID := campaign.PatchSetID
-	if oldPatchSetID == 0 && args.PatchSet != nil {
-		return nil, nil, ErrManualCampaignUpdatePatchIllegal
-	}
-	if args.PatchSet != nil && oldPatchSetID != *args.PatchSet {
-		// Check there is no other campaign attached to the args.PatchSet.
-		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: *args.PatchSet})
-		if err != nil && err != ErrNoResults {
-			return nil, nil, err
-		}
-		if err != ErrNoResults {
-			return nil, nil, ErrPatchSetDuplicate
-		}
-
-		campaign.PatchSetID = *args.PatchSet
-		updatePatchSetID = true
-	}
-
-	if args.Branch != nil && campaign.Branch != *args.Branch {
-		if *args.Branch == "" {
-			return nil, nil, ErrCampaignBranchBlank
-		}
-
-		campaign.Branch = *args.Branch
-		updateBranch = true
-	}
-
-	if !updateAttributes && !updatePatchSetID && !updateBranch {
-		return campaign, nil, nil
-	}
-
-	status, err := tx.GetCampaignStatus(ctx, campaign.ID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if status.Processing() {
-		return nil, nil, ErrUpdateProcessingCampaign
-	}
-
-	published, err := campaignPublished(ctx, tx, campaign.ID)
-	if err != nil {
-		return nil, nil, err
-	}
-	partiallyPublished := !published && status.Total != 0
-
-	if campaign.PatchSetID != 0 && updateBranch {
-		if published || partiallyPublished {
-			return nil, nil, ErrPublishedCampaignBranchChange
-		}
-	}
-
-	if !published && !partiallyPublished {
-		// If the campaign hasn't been published yet and no Changesets have
-		// been individually published (through the `PublishChangeset`
-		// mutation), we can simply update the attributes on the Campaign
-		// because no ChangesetJobs have been created yet that need updating.
-		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
-	}
-
-	// If we do have to update ChangesetJobs/Changesets, here's a fast path: if
-	// we don't update the PatchSet, we don't need to rewire ChangesetJobs,
-	// but only update name/description if they changed.
-	if !updatePatchSetID && updateAttributes {
-		err := tx.UpdateCampaign(ctx, campaign)
-		if err != nil {
-			return campaign, nil, err
-		}
-		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
-	}
-
-	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPatchSetID, updateAttributes)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for _, c := range diff.Update {
-		err := tx.UpdateChangesetJob(ctx, c)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "updating changeset job")
-		}
-	}
-
-	// When we're doing a partial update and only update the Changesets that
-	// have already been published, we don't want to create new ChangesetJobs,
-	// since they would be processed and publish the other Changesets.
-	if !partiallyPublished {
-		for _, c := range diff.Create {
-			err := tx.CreateChangesetJob(ctx, c)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-	}
-
-	var changesetsToCloseAndDetach []int64
-	for _, j := range diff.Delete {
-		err := tx.DeleteChangesetJob(ctx, j.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		changesetsToCloseAndDetach = append(changesetsToCloseAndDetach, j.ChangesetID)
-	}
-
-	if len(changesetsToCloseAndDetach) == 0 {
-		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
-	}
-
-	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
-		IDs: changesetsToCloseAndDetach,
-	})
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "listing changesets to close and detach")
-	}
-
-	for _, c := range changesets {
-		c.RemoveCampaignID(campaign.ID)
-		campaign.RemoveChangesetID(c.ID)
-	}
-
-	if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
-		return nil, nil, errors.Wrap(err, "updating changesets")
-	}
-
-	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)
+	return nil
 }
 
-// campaignPublished returns true if all ChangesetJobs have been created yet
-// (they might still be processing).
-func campaignPublished(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	changesetCreation, err := store.GetLatestChangesetJobCreatedAt(ctx, campaign)
-	if err != nil {
-		return false, errors.Wrap(err, "getting latest changesetjob creation time")
-	}
-	// GetLatestChangesetJobCreatedAt returns a zero time.Time if not all
-	// ChangesetJobs have been created yet.
-	return !changesetCreation.IsZero(), nil
-}
-
-type campaignUpdateDiff struct {
-	Delete []*campaigns.ChangesetJob
-	Update []*campaigns.ChangesetJob
-	Create []*campaigns.ChangesetJob
-}
-
-// repoGroup is a group of entities involved in a Campaign that are associated
-// with the same repository.
-type repoGroup struct {
-	changesetJob *campaigns.ChangesetJob
-	patch        *campaigns.Patch
-	newPatch     *campaigns.Patch
-	changeset    *campaigns.Changeset
-}
-
-func computeCampaignUpdateDiff(
-	ctx context.Context,
-	tx *Store,
-	campaign *campaigns.Campaign,
-	oldPatchSetID int64,
-	updateAttributes bool,
-) (*campaignUpdateDiff, error) {
-	diff := &campaignUpdateDiff{}
-
-	changesetJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-		CampaignID: campaign.ID,
-		Limit:      -1,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing changesets jobs")
-	}
-
-	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
-		CampaignID: campaign.ID,
-		Limit:      -1,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing changesets")
-	}
-
-	// We need OnlyWithDiff because we don't create ChangesetJobs for others.
-	patches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
-		PatchSetID:   oldPatchSetID,
-		Limit:        -1,
-		OnlyWithDiff: true,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing patches")
-	}
-
-	newPatches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
-		PatchSetID:   campaign.PatchSetID,
-		Limit:        -1,
-		OnlyWithDiff: true,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing new patches")
-	}
-
-	if len(newPatches) == 0 {
-		return nil, ErrNoPatches
-	}
-
-	// We need to determine which current ChangesetJobs we want to keep and
-	// which ones we want to delete.
-	// We can find out which ones we want to keep by looking at the RepoID of
-	// their Patches.
-
-	byRepoID, err := mergeByRepoID(changesetJobs, patches, changesets)
+// accessibleRepos collects the RepoIDs of the changesets and returns a set of
+// the api.RepoID for which the subset of repositories for which the actor in
+// ctx has read permissions.
+func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]*types.Repo, error) {
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, ids...)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, j := range newPatches {
-		if group, ok := byRepoID[j.RepoID]; ok {
-			group.newPatch = j
-		} else {
-			// If we have new Patches that don't match an existing
-			// ChangesetJob we need to create new ChangesetJobs.
-			diff.Create = append(diff.Create, &campaigns.ChangesetJob{
-				CampaignID: campaign.ID,
-				PatchID:    j.ID,
-			})
-		}
+	accessibleRepoIDs := make(map[api.RepoID]*types.Repo, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = r
 	}
 
-	for _, group := range byRepoID {
-		// Either we _don't_ have a matching _new_ Patch, then we delete
-		// the ChangesetJob and detach & close Changeset.
-		if group.newPatch == nil {
-			// But if we have already created a changeset for this repo and its
-			// merged or closed, we keep it.
-			if group.changeset != nil {
-				s := group.changeset.ExternalState
-				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
-					continue
-				}
-			}
-			diff.Delete = append(diff.Delete, group.changesetJob)
-			continue
-		}
-
-		// Or we have a matching _new_ Patch, then we keep the
-		// ChangesetJob around, but need to rewire it.
-		group.changesetJob.PatchID = group.newPatch.ID
-
-		//  And, if the {Diff,Rev,BaseRef,Description} are different, we  need to
-		// update the Changeset on the codehost...
-		if updateAttributes || patchesDiffer(group.newPatch, group.patch) {
-			// .. but if we already have a Changeset and that is merged, we
-			// don't want to update it...
-			if group.changeset != nil {
-				s := group.changeset.ExternalState
-				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
-					// Note: in the future we want to create a new ChangesetJob here.
-					continue
-				}
-			}
-
-			// if we do want to update it, we _reset_ the ChangesetJob, so it
-			// gets run again when RunChangesetJobs is called after
-			// UpdateCampaign.
-			group.changesetJob.Reset()
-		}
-
-		diff.Update = append(diff.Update, group.changesetJob)
-	}
-
-	return diff, nil
+	return accessibleRepoIDs, nil
 }
 
-// patchesDiffer returns true if the Patches differ in a way that
-// requires updating the Changeset on the codehost.
-func patchesDiffer(a, b *campaigns.Patch) bool {
-	return a.Diff != b.Diff ||
-		a.Rev != b.Rev ||
-		a.BaseRef != b.BaseRef
+// checkNamespaceAccess checks whether the current user in the ctx has access
+// to either the user ID or the org ID as a namespace.
+// If the userID is non-zero that will be checked. Otherwise the org ID will be
+// checked.
+// If the current user is an admin, true will be returned.
+// Otherwise it checks whether the current user _is_ the namespace user or has
+// access to the namespace org.
+// If both values are zero, an error is returned.
+func checkNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) error {
+	if namespaceOrgID != 0 {
+		return backend.CheckOrgAccess(ctx, namespaceOrgID)
+	} else if namespaceUserID != 0 {
+		return backend.CheckSiteAdminOrSameUser(ctx, namespaceUserID)
+	} else {
+		return ErrNoNamespace
+	}
 }
 
-func selectChangesets(cs []*campaigns.Changeset, predicate func(*campaigns.Changeset) bool) []*campaigns.Changeset {
-	i := 0
-	for _, c := range cs {
-		if predicate(c) {
-			cs[i] = c
-			i++
-		}
-	}
-
-	return cs[:i]
-}
-
-func isOutdated(c *repos.Changeset) (bool, error) {
-	currentTitle, err := c.Changeset.Title()
-	if err != nil {
-		return false, err
-	}
-
-	if currentTitle != c.Title {
-		return true, nil
-	}
-
-	currentBody, err := c.Changeset.Body()
-	if err != nil {
-		return false, err
-	}
-
-	if currentBody != c.Body {
-		return true, nil
-	}
-
-	currentBaseRef, err := c.Changeset.BaseRef()
-	if err != nil {
-		return false, err
-	}
-
-	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func mergeByRepoID(
-	chs []*campaigns.ChangesetJob,
-	cas []*campaigns.Patch,
-	cs []*campaigns.Changeset,
-) (map[api.RepoID]*repoGroup, error) {
-	jobs := make(map[api.RepoID]*repoGroup, len(chs))
-
-	byID := make(map[int64]*campaigns.Patch, len(cas))
-	for _, j := range cas {
-		byID[j.ID] = j
-	}
-
-	for _, j := range chs {
-		caj, ok := byID[j.PatchID]
-		if !ok {
-			return nil, fmt.Errorf("Patch with ID %d cannot be found for ChangesetJob %d", j.PatchID, j.ID)
-		}
-		jobs[caj.RepoID] = &repoGroup{changesetJob: j, patch: caj}
-	}
-
-	for _, c := range cs {
-		if j, ok := jobs[c.RepoID]; ok {
-			j.changeset = c
-		}
-	}
-
-	return jobs, nil
-}
-
-func campaignIsProcessing(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	status, err := store.GetCampaignStatus(ctx, campaign)
-	if err != nil {
-		return false, err
-	}
-	return status.Processing(), nil
-}
+// ErrNoNamespace is returned by checkNamespaceAccess if no valid namespace ID is given.
+var ErrNoNamespace = errors.New("no namespace given")

@@ -16,22 +16,21 @@ export interface SingleChildGitTree extends TreeEntryInfo {
     children: SingleChildGitTree[]
 }
 
-export function scrollIntoView(el: Element, scrollRoot: Element): void {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+export function scrollIntoView(element: Element, scrollRoot: Element): void {
     if (!scrollRoot.getBoundingClientRect) {
-        return el.scrollIntoView()
+        return element.scrollIntoView()
     }
 
-    const rootRect = scrollRoot.getBoundingClientRect()
-    const elRect = el.getBoundingClientRect()
+    const rootRectangle = scrollRoot.getBoundingClientRect()
+    const elementRectangle = element.getBoundingClientRect()
 
-    const elAbove = elRect.top <= rootRect.top + 30
-    const elBelow = elRect.bottom >= rootRect.bottom
+    const elementAbove = elementRectangle.top <= rootRectangle.top + 30
+    const elementBelow = elementRectangle.bottom >= rootRectangle.bottom
 
-    if (elAbove) {
-        el.scrollIntoView(true)
-    } else if (elBelow) {
-        el.scrollIntoView(false)
+    if (elementAbove) {
+        element.scrollIntoView(true)
+    } else if (elementBelow) {
+        element.scrollIntoView(false)
     }
 }
 
@@ -47,24 +46,26 @@ export const maxEntries = 2500
 
 // Utility functions to handle single-child directories:
 
-/** This function converts nested entries into a proper tree-like object. When we have single-child directories,
+/**
+ * This function converts nested entries into a proper tree-like object. When we have single-child directories,
  * the backend responds with all entries that need to be rendered, not just the entry for that level. It is in
  * a flat list, so this function converts it to a structure like the following (assume we have a/b/c.txt):
  *
- *
+ * ```ts
  * { name: "a", ...TreeEntryInfo, children: [
  *     { name: "b", ...TreeEntryInfo, children: [
  *          {name: "c.txt", ...TreeEntryInfo, children: []}
  *     ]}
  * ]}
+ * ```
  *
  * It uses the number of '/' separators to determine depth, and recursively adds entries to the `children` field.
  */
 export function singleChildEntriesToGitTree(entries: TreeEntryInfo[]): SingleChildGitTree {
     const parentTree = gitTreeToTreeObject(entries[0])
-    for (const [i, entry] of entries.entries()) {
+    for (const [index, entry] of entries.entries()) {
         if (entry.path.split('/').length === parentTree.path.split('/').length + 1) {
-            parentTree.children.push({ ...entry, children: singleChildEntriesToGitTree(entries.slice(i)).children })
+            parentTree.children.push({ ...entry, children: singleChildEntriesToGitTree(entries.slice(index)).children })
         }
     }
 
@@ -81,5 +82,5 @@ function gitTreeToTreeObject(entry: TreeEntryInfo): SingleChildGitTree {
 
 /** Determines whether a Tree has single-child directories as children, in order to determine whether to render a SingleChildTreeLayer or TreeLayer */
 export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
-    return tree[0] && tree[0].isSingleChild
+    return tree[0]?.isSingleChild
 }

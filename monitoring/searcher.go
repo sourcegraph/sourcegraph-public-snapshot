@@ -24,13 +24,27 @@ func Searcher() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("searcher"),
 						sharedContainerMemoryUsage("searcher"),
 						sharedContainerCPUUsage("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("searcher"),
+						sharedProvisioningMemoryUsage7d("searcher"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("searcher"),
+						sharedProvisioningMemoryUsage5m("searcher"),
 					},
 				},
 			},

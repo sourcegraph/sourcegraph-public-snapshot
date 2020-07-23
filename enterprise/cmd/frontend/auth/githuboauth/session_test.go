@@ -12,8 +12,8 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
@@ -27,7 +27,7 @@ func init() {
 
 func TestGetOrCreateUser(t *testing.T) {
 	ghURL, _ := url.Parse("https://github.com")
-	codeHost := extsvc.NewCodeHost(ghURL, githubsvc.ServiceType)
+	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
 	clientID := "client-id"
 
 	// Top-level mock data
@@ -66,7 +66,7 @@ func TestGetOrCreateUser(t *testing.T) {
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
 				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 		{
@@ -90,7 +90,7 @@ func TestGetOrCreateUser(t *testing.T) {
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
 				UserProps:       u("alice", "alice@example3.com", true),
-				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 		{
@@ -183,7 +183,7 @@ func TestGetOrCreateUser(t *testing.T) {
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
 				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 	}

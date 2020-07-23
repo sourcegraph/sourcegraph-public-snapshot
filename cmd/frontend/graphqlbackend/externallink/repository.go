@@ -11,10 +11,11 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -30,7 +31,7 @@ func Repository(ctx context.Context, repo *types.Repo) (links []*Resolver, err e
 	if phabRepo != nil {
 		links = append(links, &Resolver{
 			url:         strings.TrimSuffix(phabRepo.URL, "/") + "/diffusion/" + phabRepo.Callsign,
-			serviceType: "phabricator",
+			serviceType: extsvc.TypePhabricator,
 		})
 	}
 	if link != nil && link.Root != "" {
@@ -55,7 +56,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 		if err == nil && string(branchName) != "" {
 			links = append(links, &Resolver{
 				url:         fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
-				serviceType: "phabricator",
+				serviceType: extsvc.TypePhabricator,
 			})
 		}
 	}
@@ -84,7 +85,7 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 	if phabRepo != nil {
 		links = append(links, &Resolver{
 			url:         fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitStr),
-			serviceType: "phabricator",
+			serviceType: extsvc.TypePhabricator,
 		})
 	}
 
@@ -135,10 +136,8 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 }
 
 var linksForRepositoryFailed = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "links_for_repository_failed_total",
-	Help:      "The total number of times the GraphQL field LinksForRepository failed.",
+	Name: "src_graphql_links_for_repository_failed_total",
+	Help: "The total number of times the GraphQL field LinksForRepository failed.",
 })
 
 func init() {

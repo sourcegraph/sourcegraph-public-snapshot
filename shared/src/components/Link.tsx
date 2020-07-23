@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 
 export type LinkProps = { to: string | H.LocationDescriptor<any> } & Pick<

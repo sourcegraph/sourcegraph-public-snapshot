@@ -50,14 +50,14 @@ export const Notices: React.FunctionComponent<Props> = ({
     ) {
         return null
     }
-    const notices = settingsCascade.final.notices.filter(n => n.location === location)
+    const notices = settingsCascade.final.notices.filter(notice => notice.location === location)
     if (notices.length === 0) {
         return null
     }
     return (
         <div className={`notices ${className}`}>
-            {notices.map((notice, i) => (
-                <NoticeAlert key={i} className={alertClassName} notice={notice} history={history} />
+            {notices.map((notice, index) => (
+                <NoticeAlert key={index} className={alertClassName} notice={notice} history={history} />
             ))}
         </div>
     )

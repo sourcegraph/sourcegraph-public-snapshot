@@ -61,7 +61,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
                         merge(
                             of('saving' as const),
                             createProductSubscription({ accountID: props.node.id }).pipe(
-                                catchError(err => [asError(err)])
+                                catchError(error => [asError(error)])
                             )
                         )
                     )

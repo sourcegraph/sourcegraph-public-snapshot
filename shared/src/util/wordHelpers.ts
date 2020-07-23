@@ -12,7 +12,7 @@
  *
  * Users of this value *must* reset it before using it as follows: `WORD_REGEXP.lastIndex = 0`.
  */
-const WORD_REGEXP = /(-?\d*\.\d\w*)|([^`()[{\]}\\;'",<>?\s]+)/g
+const WORD_REGEXP = /(-?\d*\.\d\w*)|([^\s"'(),;<>?[\\\]`{}]+)/g
 
 /**
  * A word that was found in a model surrounding a position.

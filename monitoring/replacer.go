@@ -15,13 +15,27 @@ func Replacer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("replacer"),
 						sharedContainerMemoryUsage("replacer"),
 						sharedContainerCPUUsage("replacer"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("replacer"),
+						sharedProvisioningMemoryUsage7d("replacer"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("replacer"),
+						sharedProvisioningMemoryUsage5m("replacer"),
 					},
 				},
 			},

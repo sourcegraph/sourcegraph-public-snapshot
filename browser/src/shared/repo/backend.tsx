@@ -3,7 +3,7 @@ import { delay, filter, map, retryWhen } from 'rxjs/operators'
 import {
     CloneInProgressError,
     RepoNotFoundError,
-    RevNotFoundError,
+    RevisionNotFoundError,
     isCloneInProgressErrorLike,
 } from '../../../../shared/src/backend/errors'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
@@ -11,12 +11,19 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import {
+    FileSpec,
+    makeRepoURI,
+    RawRepoSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+} from '../../../../shared/src/util/url'
 
 /**
  * @returns Observable that emits if the repo exists on the instance.
- *         Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
- *         Errors with a `RepoNotFoundError` if the repo is not found
+ * Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
+ * Errors with a `RepoNotFoundError` if the repo is not found.
  */
 export const resolveRepo = memoizeObservable(
     ({ rawRepoName, requestGraphQL }: RawRepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
@@ -46,39 +53,39 @@ export const resolveRepo = memoizeObservable(
 /**
  * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
-export const resolveRev = memoizeObservable(
+export const resolveRevision = memoizeObservable(
     ({
         requestGraphQL,
-        ...ctx
-    }: RepoSpec & Partial<RevSpec> & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
+        ...context
+    }: RepoSpec & Partial<RevisionSpec> & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         from(
             requestGraphQL<GQL.IQuery>({
                 request: gql`
-                    query ResolveRev($repoName: String!, $rev: String!) {
+                    query ResolveRev($repoName: String!, $revision: String!) {
                         repository(name: $repoName) {
                             mirrorInfo {
                                 cloned
                             }
-                            commit(rev: $rev) {
+                            commit(rev: $revision) {
                                 oid
                             }
                         }
                     }
                 `,
-                variables: { ...ctx, rev: ctx.rev || '' },
+                variables: { ...context, revision: context.revision || '' },
                 mightContainPrivateInfo: true,
             })
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
-                    throw new RepoNotFoundError(ctx.repoName)
+                    throw new RepoNotFoundError(context.repoName)
                 }
                 if (!repository.mirrorInfo.cloned) {
-                    throw new CloneInProgressError(ctx.repoName)
+                    throw new CloneInProgressError(context.repoName)
                 }
                 if (!repository.commit) {
-                    throw new RevNotFoundError(ctx.rev)
+                    throw new RevisionNotFoundError(context.revision)
                 }
                 return repository.commit.oid
             })
@@ -91,13 +98,13 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
         maybeErrors.pipe(
             retryWhen(errors =>
                 errors.pipe(
-                    filter(err => {
-                        if (isCloneInProgressErrorLike(err)) {
+                    filter(error => {
+                        if (isCloneInProgressErrorLike(error)) {
                             return true
                         }
 
                         // Don't swallow other errors.
-                        throw err
+                        throw error
                     }),
                     delay(1000)
                 )
@@ -114,8 +121,8 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
 export const fetchBlobContentLines = memoizeObservable(
     ({
         requestGraphQL,
-        ...ctx
-    }: RepoSpec & ResolvedRevSpec & FileSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string[]> =>
+        ...context
+    }: RepoSpec & ResolvedRevisionSpec & FileSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string[]> =>
         from(
             requestGraphQL<GQL.IQuery>({
                 request: gql`
@@ -129,7 +136,7 @@ export const fetchBlobContentLines = memoizeObservable(
                         }
                     }
                 `,
-                variables: ctx,
+                variables: context,
                 mightContainPrivateInfo: true,
             })
         ).pipe(
@@ -139,9 +146,14 @@ export const fetchBlobContentLines = memoizeObservable(
                 }
                 if (errors) {
                     if (errors.length === 1) {
-                        const err = errors[0]
-                        const isFileContent = err.path.join('.') === 'repository.commit.file.content'
-                        const isDNE = err.message.includes('does not exist')
+                        const error = errors[0]
+                        const errorPath = error.path.join('.')
+
+                        // Originally this checked only for 'repository.commit.file.content'.
+                        // But if a file doesn't exist, the error path is 'repository.commit.file'
+                        const isFileContent =
+                            errorPath === 'repository.commit.file.content' || errorPath === 'repository.commit.file'
+                        const isDNE = error.message.includes('does not exist')
 
                         // The error is the file DNE. Just ignore it and pass an empty array
                         // to represent this.

@@ -73,6 +73,6 @@ func slackNotify(ctx context.Context, recipient *recipient, text string, slackWe
 		UnfurlMedia: false,
 		Text:        text,
 	}
-	client := slack.New(*slackWebhookURL, true)
-	return slack.Post(payload, client.WebhookURL)
+	client := slack.New(*slackWebhookURL)
+	return client.Post(ctx, payload)
 }

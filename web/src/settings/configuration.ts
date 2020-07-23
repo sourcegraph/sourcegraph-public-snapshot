@@ -13,12 +13,11 @@ export function mergeSettingsSchemas(configuredExtensions: Pick<ConfiguredRegist
         allOf: [
             { $ref: settingsSchemaJSON.$id },
             ...(configuredExtensions || [])
-                .map(ce => {
+                .map(configuredExtension => {
                     if (
-                        ce.manifest &&
-                        !isErrorLike(ce.manifest) &&
-                        ce.manifest.contributes &&
-                        ce.manifest.contributes.configuration
+                        configuredExtension.manifest &&
+                        !isErrorLike(configuredExtension.manifest) &&
+                        configuredExtension.manifest.contributes?.configuration
                     ) {
                         // Adjust the schema to describe a valid instance of settings for a subject (instead of the
                         // final, merged settings).
@@ -32,7 +31,7 @@ export function mergeSettingsSchemas(configuredExtensions: Pick<ConfiguredRegist
                         // (e.g., for user settings in the above example). Therefore, we must allow additionalProperties
                         // and set required to [] to avoid erroneous validation errors.
                         return {
-                            ...ce.manifest.contributes.configuration,
+                            ...configuredExtension.manifest.contributes.configuration,
 
                             // Force allow additionalProperties to prevent any single extension's configuration schema
                             // from invalidating all other extensions' configuration properties.

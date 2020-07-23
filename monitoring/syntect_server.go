@@ -52,13 +52,27 @@ func SyntectServer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("syntect-server"),
 						sharedContainerMemoryUsage("syntect-server"),
 						sharedContainerCPUUsage("syntect-server"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("syntect-server"),
+						sharedProvisioningMemoryUsage7d("syntect-server"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("syntect-server"),
+						sharedProvisioningMemoryUsage5m("syntect-server"),
 					},
 				},
 			},

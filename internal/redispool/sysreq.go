@@ -49,7 +49,8 @@ func redisCheck(name, addr string, timeout time.Duration, pool *redis.Pool) sysr
 		deadline := time.Now().Add(timeout)
 
 		for time.Now().Before(deadline) {
-			if err := check(); err == nil {
+			err = check()
+			if err == nil {
 				// Success
 				return "", "", nil
 			}

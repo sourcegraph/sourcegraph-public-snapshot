@@ -7,15 +7,15 @@ import (
 	"strings"
 	"sync"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	db_ "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
-	stripe "github.com/stripe/stripe-go"
+	db_ "github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 	"github.com/stripe/stripe-go/event"
 	"github.com/stripe/stripe-go/invoice"
@@ -24,6 +24,7 @@ import (
 )
 
 func init() {
+	// TODO(efritz) - de-globalize assignments in this function
 	graphqlbackend.ProductSubscriptionByID = func(ctx context.Context, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
 		return productSubscriptionByID(ctx, id)
 	}
@@ -235,15 +236,18 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 		return nil, err
 	}
 
-	// Determine which license tags and min quantity to use for the purchased plan. Do this early on
-	// because it's the most likely place for a stupid mistake to cause a bug, and doing it early
-	// means the user hasn't been charged if there is an error.
-	licenseTags, minQuantity, err := billing.InfoForProductPlan(ctx, args.ProductSubscription.BillingPlanID)
+	// Determine which license tags and min/max quantities to use for the purchased plan. Do this
+	// early on because it's the most likely place for a stupid mistake to cause a bug, and doing it
+	// early means the user hasn't been charged if there is an error.
+	licenseTags, minQuantity, maxQuantity, err := billing.InfoForProductPlan(ctx, args.ProductSubscription.BillingPlanID)
 	if err != nil {
 		return nil, err
 	}
 	if minQuantity != nil && args.ProductSubscription.UserCount < *minQuantity {
 		args.ProductSubscription.UserCount = *minQuantity
+	}
+	if maxQuantity != nil && args.ProductSubscription.UserCount > *maxQuantity {
+		return nil, userCountExceedsPlanMaxError(args.ProductSubscription.UserCount, *maxQuantity)
 	}
 
 	// Create the subscription in our database first, before processing payment. If payment fails,
@@ -262,11 +266,13 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 	custUpdateParams := &stripe.CustomerParams{
 		Params: stripe.Params{Context: ctx},
 	}
-	if err := custUpdateParams.SetSource(args.PaymentToken); err != nil {
-		return nil, err
-	}
-	if _, err := customer.Update(custID, custUpdateParams); err != nil {
-		return nil, err
+	if args.PaymentToken != nil {
+		if err := custUpdateParams.SetSource(*args.PaymentToken); err != nil {
+			return nil, err
+		}
+		if _, err := customer.Update(custID, custUpdateParams); err != nil {
+			return nil, err
+		}
 	}
 
 	// Create the billing subscription.
@@ -317,15 +323,18 @@ func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx co
 		return nil, err
 	}
 
-	// Determine which license tags and min quantity to use for the purchased plan. Do this early on
-	// because it's the most likely place for a stupid mistake to cause a bug, and doing it early
-	// means the user hasn't been charged if there is an error.
-	licenseTags, minQuantity, err := billing.InfoForProductPlan(ctx, args.Update.BillingPlanID)
+	// Determine which license tags and min/max quantities to use for the purchased plan. Do this
+	// early on because it's the most likely place for a stupid mistake to cause a bug, and doing it
+	// early means the user hasn't been charged if there is an error.
+	licenseTags, minQuantity, maxQuantity, err := billing.InfoForProductPlan(ctx, args.Update.BillingPlanID)
 	if err != nil {
 		return nil, err
 	}
 	if minQuantity != nil && args.Update.UserCount < *minQuantity {
 		args.Update.UserCount = *minQuantity
+	}
+	if maxQuantity != nil && args.Update.UserCount > *maxQuantity {
+		return nil, userCountExceedsPlanMaxError(args.Update.UserCount, *maxQuantity)
 	}
 
 	params := &stripe.SubscriptionParams{
@@ -343,11 +352,13 @@ func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx co
 	custUpdateParams := &stripe.CustomerParams{
 		Params: stripe.Params{Context: ctx},
 	}
-	if err := custUpdateParams.SetSource(args.PaymentToken); err != nil {
-		return nil, err
-	}
-	if _, err := customer.Update(custID, custUpdateParams); err != nil {
-		return nil, err
+	if args.PaymentToken != nil {
+		if err := custUpdateParams.SetSource(*args.PaymentToken); err != nil {
+			return nil, err
+		}
+		if _, err := customer.Update(custID, custUpdateParams); err != nil {
+			return nil, err
+		}
 	}
 
 	if subToUpdate.v.BillingSubscriptionID == nil {
@@ -395,12 +406,15 @@ func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx co
 			Customer:     stripe.String(custID),
 			Subscription: stripe.String(*subToUpdate.v.BillingSubscriptionID),
 		})
-		if err != nil {
-			return nil, err
+		if err == nil {
+			_, err = invoice.Pay(inv.ID, &stripe.InvoicePayParams{
+				Params: stripe.Params{Context: ctx},
+			})
 		}
-		if _, err := invoice.Pay(inv.ID, &stripe.InvoicePayParams{
-			Params: stripe.Params{Context: ctx},
-		}); err != nil {
+		if e, ok := err.(*stripe.Error); ok && e.Code == stripe.ErrorCodeInvoiceNoSubscriptionLineItems {
+			// Proceed (with updating subscription and issuing new license key). There was no
+			// payment required and therefore no invoice required.
+		} else if err != nil {
 			return nil, err
 		}
 	}

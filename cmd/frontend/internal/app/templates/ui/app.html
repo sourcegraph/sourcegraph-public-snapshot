@@ -23,6 +23,15 @@
 	{{if not .WebpackDevServer}}<link rel="stylesheet" href="{{.AssetURL}}/styles/app.bundle.css?{{version "styles/app.bundle.css"}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Tag Manager -->
+	<script ignore-csp>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-TB4NLS7');</script>
+	<!-- End Google Tag Manager -->
+	{{ end }}
 	<script ignore-csp>
 		window.context = {{.Context }}
 		window.pageError = {{.Error }}
@@ -31,6 +40,11 @@
 </head>
 
 <body>
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
+	{{ end }}
 	{{.Injected.BodyTop}}
 	<div id="root"></div>
 	<noscript>

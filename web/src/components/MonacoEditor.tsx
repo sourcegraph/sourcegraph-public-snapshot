@@ -4,6 +4,8 @@ import * as React from 'react'
 import { ThemeProps } from '../../../shared/src/theme'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
+import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { Shortcut } from '@slimsag/react-shortcuts'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 
@@ -85,6 +87,9 @@ interface Props extends ThemeProps {
 
     /** Whether to add a border to the Monaco editor. Default: true. */
     border?: boolean
+
+    /** Keyboard shortcut to focus the Monaco editor. */
+    keyboardShortcutForFocus?: KeyboardShortcut
 }
 
 interface State {}
@@ -96,12 +101,12 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     private editor: monaco.editor.ICodeEditor | undefined
 
-    private setRef = (e: HTMLElement | null): void => {
-        if (!e) {
+    private setRef = (element: HTMLElement | null): void => {
+        if (!element) {
             return
         }
         this.props.editorWillMount(monaco)
-        const editor = monaco.editor.create(e, {
+        const editor = monaco.editor.create(element, {
             value: this.props.value,
             language: this.props.language,
             theme: this.props.isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK,
@@ -113,8 +118,8 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         this.editor = editor
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (this.props.value !== prevProps.value && this.editor && this.editor.getValue() !== this.props.value) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (this.props.value !== previousProps.value && this.editor && this.editor.getValue() !== this.props.value) {
             this.editor.setValue(this.props.value || '')
         }
         this.componentUpdates.next(this.props)
@@ -146,14 +151,29 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{ height: `${this.props.height}px`, position: 'relative' }}
-                ref={this.setRef}
-                id={this.props.id}
-                className={classNames(this.props.className, this.props.border !== false && 'border')}
-            />
+            <>
+                <div
+                    // eslint-disable-next-line react/forbid-dom-props
+                    style={{ height: `${this.props.height}px`, position: 'relative' }}
+                    ref={this.setRef}
+                    id={this.props.id}
+                    className={classNames(this.props.className, this.props.border !== false && 'border')}
+                />
+                {this.props.keyboardShortcutForFocus?.keybindings.map((keybinding, index) => (
+                    <Shortcut key={index} {...keybinding} onMatch={this.focusInput} />
+                ))}
+            </>
         )
+    }
+
+    private focusInput = (): void => {
+        if (
+            this.editor &&
+            !!document.activeElement &&
+            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+        ) {
+            this.editor.focus()
+        }
     }
 }
 

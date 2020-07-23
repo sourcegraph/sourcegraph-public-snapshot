@@ -19,7 +19,7 @@ interface Props extends AbsoluteRepo {
 
     /** Whether the active path is a directory (including the root directory). False if it is a file. */
     activePathIsDir: boolean
-    /** The localStorage key that stores the current size of the (resizable) RepoRevSidebar. */
+    /** The localStorage key that stores the current size of the (resizable) RepoRevisionSidebar. */
     sizeKey: string
 }
 
@@ -48,10 +48,10 @@ export interface TreeNode {
 }
 
 /**
- *  Gets the next child in the file tree given a node and index.
- *  index represents the number of children of node that we have already traversed.
- *  If node does not have any children or any more children or to traverse, we call
- *  nextChild recursively, passing in node's parent to get any siblings of the current node.
+ * Gets the next child in the file tree given a node and index.
+ * index represents the number of children of node that we have already traversed.
+ * If node does not have any children or any more children or to traverse, we call
+ * nextChild recursively, passing in node's parent to get any siblings of the current node.
  */
 const nextChild = (node: TreeNode, index: number): TreeNode => {
     const nextChildNode = node.childNodes[index]
@@ -66,10 +66,10 @@ const nextChild = (node: TreeNode, index: number): TreeNode => {
 }
 
 /**
- *  Helper for prevChild, this gets the deepest available descendant of a given node.
- *  For a given node, a sibling node can have an arbitrary number of expanded directories.
- *  In order to get the previous item in the tree, we need the absolute last
- *  available descendent of a the previous sibling node.
+ * Helper for prevChild, this gets the deepest available descendant of a given node.
+ * For a given node, a sibling node can have an arbitrary number of expanded directories.
+ * In order to get the previous item in the tree, we need the absolute last
+ * available descendent of a the previous sibling node.
  */
 const getDeepestDescendant = (node: TreeNode): TreeNode => {
     while (node && node.childNodes.length > 0) {
@@ -79,11 +79,11 @@ const getDeepestDescendant = (node: TreeNode): TreeNode => {
 }
 
 /**
- *  Gets the previous child in the file tree given a node and index.
- *  To get the previous child, we check node's parent's child nodes, and get the
- *  child node at index - 1. If we are at index 0, return the parent.
+ * Gets the previous child in the file tree given a node and index.
+ * To get the previous child, we check node's parent's child nodes, and get the
+ * child node at index - 1. If we are at index 0, return the parent.
  */
-const prevChild = (node: TreeNode, index: number): TreeNode => {
+const previousChild = (node: TreeNode, index: number): TreeNode => {
     // Only occurs on initial load of Tree, when there is no selected or active node.
     if (!node.parent) {
         return node
@@ -98,13 +98,13 @@ const prevChild = (node: TreeNode, index: number): TreeNode => {
         return node.parent
     }
 
-    const prev = validChildNodes[index - 1]
-    if (prev) {
-        if (prev.childNodes && prev.childNodes.length) {
-            return getDeepestDescendant(prev)
+    const previous = validChildNodes[index - 1]
+    if (previous) {
+        if (previous.childNodes && previous.childNodes.length > 0) {
+            return getDeepestDescendant(previous)
         }
 
-        return prev
+        return previous
     }
 
     // At top of tree, circle back down.
@@ -129,14 +129,14 @@ export class Tree extends React.PureComponent<Props, State> {
         },
         [Key.ArrowUp]: () => {
             if (this.state.selectedNode) {
-                this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
+                this.selectNode(previousChild(this.state.selectedNode, this.state.selectedNode.index))
             }
         },
         [Key.ArrowLeft]: () => {
             const selectedNodePath =
                 this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
-            const isOpenDir = this.isExpanded(selectedNodePath)
-            if (isOpenDir) {
+            const isOpenDirectory = this.isExpanded(selectedNodePath)
+            if (isOpenDirectory) {
                 this.expandDirectoryChanges.next({
                     path: selectedNodePath,
                     expanded: false,
@@ -150,7 +150,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 return
             }
 
-            this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
+            this.selectNode(previousChild(this.state.selectedNode, this.state.selectedNode.index))
         },
         [Key.ArrowRight]: () => {
             const selectedNodePath =
@@ -224,8 +224,10 @@ export class Tree extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.expandDirectoryChanges.subscribe(({ path, expanded, node }) => {
-                this.setState(prevState => ({
-                    resolveTo: expanded ? [...prevState.resolveTo, path] : prevState.resolveTo.filter(p => p !== path),
+                this.setState(previousState => ({
+                    resolveTo: expanded
+                        ? [...previousState.resolveTo, path]
+                        : previousState.resolveTo.filter(expandedPath => expandedPath !== path),
                 }))
                 if (!expanded) {
                     // For directory nodes that are collapsed, unset the childNodes so we don't traverse them.
@@ -242,13 +244,13 @@ export class Tree extends React.PureComponent<Props, State> {
                 .pipe(startWith(this.props), distinctUntilChanged(isEqual))
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
-                    const queryParams = new URLSearchParams(this.props.history.location.search)
-                    const queryParamsHasSubtree = queryParams.get('subtree') === 'true'
+                    const queryParameters = new URLSearchParams(this.props.history.location.search)
+                    const queryParametersHasSubtree = queryParameters.get('subtree') === 'true'
 
                     // If we're updating due to a file/directory suggestion or code intel action,
                     // load the relevant partial tree and jump to the file.
                     // This case is only used when going from an ancestor to a child file/directory, or equal.
-                    if (queryParamsHasSubtree && !queryParams.has('tab') && dotPathAsUndefined(newParentPath)) {
+                    if (queryParametersHasSubtree && !queryParameters.has('tab') && dotPathAsUndefined(newParentPath)) {
                         this.setState({
                             parentPath: dotPathAsUndefined(newParentPath),
                             resolveTo: [newParentPath],
@@ -269,10 +271,10 @@ export class Tree extends React.PureComponent<Props, State> {
                     }
 
                     // Strip the ?subtree query param. Handle both when going from ancestor -> child and child -> ancestor.
-                    queryParams.delete('subtree')
-                    if (queryParamsHasSubtree && !queryParams.has('tab')) {
+                    queryParameters.delete('subtree')
+                    if (queryParametersHasSubtree && !queryParameters.has('tab')) {
                         this.props.history.replace({
-                            search: queryParams.toString(),
+                            search: queryParameters.toString(),
                             hash: this.props.history.location.hash,
                         })
                     }
@@ -292,9 +294,9 @@ export class Tree extends React.PureComponent<Props, State> {
         return (
             <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
                 <TreeRoot
-                    ref={ref => {
-                        if (ref) {
-                            this.node = ref.node
+                    ref={reference => {
+                        if (reference) {
+                            this.node = reference.node
                         }
                     }}
                     activeNode={this.state.activeNode}
@@ -303,7 +305,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     history={this.props.history}
                     location={this.props.location}
                     repoName={this.props.repoName}
-                    rev={this.props.rev}
+                    revision={this.props.revision}
                     commitID={this.props.commitID}
                     index={0}
                     // The root is always expanded so it loads the top level
@@ -336,9 +338,9 @@ export class Tree extends React.PureComponent<Props, State> {
             const root = (this.props.scrollRootSelector
                 ? document.querySelector(this.props.scrollRootSelector)
                 : document.querySelector('.tree-container')) as HTMLElement
-            const el = getDomElement(node.path)
-            if (el) {
-                scrollIntoView(el, root)
+            const element = getDomElement(node.path)
+            if (element) {
+                scrollIntoView(element, root)
             }
             this.setState({ selectedNode: node })
         }
@@ -363,9 +365,9 @@ export class Tree extends React.PureComponent<Props, State> {
         }
     }
 
-    private setTreeElement = (el: HTMLElement | null): void => {
-        if (el) {
-            this.treeElement = el
+    private setTreeElement = (element: HTMLElement | null): void => {
+        if (element) {
+            this.treeElement = element
         }
     }
 }

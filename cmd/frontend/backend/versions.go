@@ -83,6 +83,11 @@ func IsValidUpgrade(previous, latest *semver.Version) bool {
 	switch {
 	case previous == nil || latest == nil:
 		return true
+	case previous.Major() == 0 && previous.Minor() == 0 && previous.Patch() == 0:
+		// https://github.com/sourcegraph/sourcegraph/issues/11666
+		//
+		// TODO(slimsag): Remove this switch case Oct, 1st 2020
+		return true
 	case previous.Major() > latest.Major():
 		return true
 	case previous.Major() == latest.Major():

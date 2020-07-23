@@ -24,7 +24,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
       <small
         className="form-text text-muted"
       >
-        An upgraded license key will be available immediately after payment.
+        An upgraded license key will be available immediately.
       </small>
     }
     history={

@@ -1,5 +1,7 @@
 # Migrating from Oracle OpenGrok to Sourcegraph for code search
 
+> NOTE: This guide helps Sourcegraph admins migrate from deploying Oracle OpenGrok to Sourcegraph. See our [Oracle OpenGrok end user migration guide](../../../user/search/opengrok.md) to learn how to switch from OpenGrok's search syntax to Sourcegraph's.
+
 You can migrate from Oracle's [OpenGrok](https://oracle.github.io/opengrok/) to [Sourcegraph](https://about.sourcegraph.com) for code search by following the steps in this document.
 
 - [Background](opengrok.md#background)
@@ -68,7 +70,7 @@ Sourcegraph's "active" model lets it:
 - synchronize the list of repositories on the code host (so that newly added repositories are searchable/browseable)
 - offer code host integrations and "View file on code host" links
 
-Sourcegraph also partially supports the "passive" model like OpenGrok, but it's not recommended because you lose these benefits. To use it anyway, see "[Add repositories already cloned to disk](../repo/add_from_local_disk.md)".
+Sourcegraph also partially supports the "passive" model like OpenGrok, but it's not recommended because you lose these benefits. To use it anyway, see "[Add repositories already cloned to disk](../repo/pre_load_from_local_disk.md)".
 
 To configure which repositories Sourcegraph will make available for searching and browsing:
 

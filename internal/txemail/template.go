@@ -1,11 +1,14 @@
 package txemail
 
 import (
+	"bytes"
 	"html"
 	htmltemplate "html/template"
+	"io"
 	"strings"
 	texttemplate "text/template"
 
+	"github.com/jordan-wright/email"
 	"github.com/microcosm-cc/bluemonday"
 	gfm "github.com/shurcooL/github_flavored_markdown"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -48,6 +51,32 @@ func ParseTemplate(input txtypes.Templates) (*txtypes.ParsedTemplates, error) {
 	}
 
 	return &txtypes.ParsedTemplates{Subj: st, Text: tt, Html: ht}, nil
+}
+
+func renderTemplate(t *txtypes.ParsedTemplates, data interface{}, m *email.Email) error {
+	render := func(tmpl interface {
+		Execute(io.Writer, interface{}) error
+	}) ([]byte, error) {
+		var buf bytes.Buffer
+		if err := tmpl.Execute(&buf, data); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	}
+
+	subject, err := render(t.Subj)
+	if err != nil {
+		return err
+	}
+	m.Subject = string(subject)
+
+	m.Text, err = render(t.Text)
+	if err != nil {
+		return err
+	}
+
+	m.HTML, err = render(t.Html)
+	return err
 }
 
 var (

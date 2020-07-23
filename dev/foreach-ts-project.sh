@@ -16,8 +16,8 @@ DIRS=(
   browser
   packages/sourcegraph-extension-api
   packages/@sourcegraph/extension-api-types
-  cmd/precise-code-intel
   dev/release
+  dev/ts-morph
 )
 
 run_command() {

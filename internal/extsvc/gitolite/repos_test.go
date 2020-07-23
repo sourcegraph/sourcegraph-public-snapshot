@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func Test_decodeRepos(t *testing.T) {
+func TestDecodeRepos(t *testing.T) {
 	tests := []struct {
 		name         string
 		host         string

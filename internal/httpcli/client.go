@@ -50,7 +50,7 @@ func NewMiddleware(mws ...Middleware) Middleware {
 type Opt func(*http.Client) error
 
 // A Factory constructs an http.Client with the given functional
-// options applied, returning an aggreagte error of the errors returned by
+// options applied, returning an aggregate error of the errors returned by
 // all those options.
 type Factory struct {
 	stack  Middleware
@@ -65,6 +65,7 @@ func NewExternalHTTPClientFactory() *Factory {
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
+		NewTimeoutOpt(60*time.Second),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
@@ -152,6 +153,18 @@ func ContextErrorMiddleware(cli Doer) Doer {
 			}
 		}
 		return resp, err
+	})
+}
+
+// GitHubProxyRedirectMiddleware rewrites requests to the "github-proxy" host
+// to "https://api.github.com".
+func GitHubProxyRedirectMiddleware(cli Doer) Doer {
+	return DoerFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Hostname() == "github-proxy" {
+			req.URL.Host = "api.github.com"
+			req.URL.Scheme = "https"
+		}
+		return cli.Do(req)
 	})
 }
 
@@ -256,6 +269,14 @@ func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 
 		tr.IdleConnTimeout = timeout
 
+		return nil
+	}
+}
+
+// NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
+func NewTimeoutOpt(timeout time.Duration) Opt {
+	return func(cli *http.Client) error {
+		cli.Timeout = timeout
 		return nil
 	}
 }

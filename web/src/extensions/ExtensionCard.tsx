@@ -27,8 +27,8 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
 }
 
-const stopPropagation: React.MouseEventHandler<HTMLElement> = e => {
-    e.stopPropagation()
+const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
+    event.stopPropagation()
 }
 
 /** Displays an extension as a card. */
@@ -42,7 +42,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
             if (manifest?.icon) {
                 iconURL = new URL(manifest.icon)
             }
-        } catch (e) {
+        } catch {
             // noop
         }
 
@@ -65,10 +65,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
                             <div className="text-truncate w-100">
                                 <div className="d-flex align-items-center">
                                     <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1">
-                                        <LinkOrSpan
-                                            to={node.registryExtension && node.registryExtension.url}
-                                            className="stretched-link"
-                                        >
+                                        <LinkOrSpan to={node.registryExtension?.url} className="stretched-link">
                                             <Path
                                                 path={
                                                     node.registryExtension
@@ -78,7 +75,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                             />
                                         </LinkOrSpan>
                                     </h4>
-                                    {node.registryExtension && node.registryExtension.isWorkInProgress && (
+                                    {node.registryExtension?.isWorkInProgress && (
                                         <WorkInProgressBadge
                                             viewerCanAdminister={node.registryExtension.viewerCanAdminister}
                                         />

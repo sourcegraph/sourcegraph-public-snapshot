@@ -38,31 +38,15 @@ type Parser interface {
 	Close()
 }
 
-func isCommandAvailable(name string) bool {
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
-	if err := cmd.Run(); err != nil {
-		return false
-	}
-	return true
-}
-
 var ctagsCommand = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
 
 // Increasing this value may increase the size of the symbols cache, but will also stop long lines containing symbols from
 // being highlighted improperly. See https://github.com/sourcegraph/sourcegraph/issues/7668.
 var rawPatternLengthLimit = env.Get("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags")
 
-// GetCommand returns the ctags command from the CTAGS_COMMAND environment
-// variable, falling back to `universal-ctags`. Panics if the command doesn't
-// exist.
-func GetCommand() string {
-	if !isCommandAvailable(ctagsCommand) {
-		panic(fmt.Errorf("ctags command %s not found", ctagsCommand))
-	}
-	return ctagsCommand
-}
-
-func NewParser(ctagsCommand string) (Parser, error) {
+// New runs the ctags command from the CTAGS_COMMAND environment
+// variable, falling back to `universal-ctags`.
+func New() (Parser, error) {
 	patternLengthLimit, err := strconv.Atoi(rawPatternLengthLimit)
 	if err != nil {
 		return nil, fmt.Errorf("invalid pattern length limit: %s", rawPatternLengthLimit)
@@ -95,7 +79,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	proc := ctagsProcess{
 		cmd:     cmd,
 		in:      in,
-		out:     bufio.NewScanner(out),
+		out:     &scanner{r: bufio.NewReaderSize(out, 4096)},
 		outPipe: out,
 	}
 
@@ -120,7 +104,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 type ctagsProcess struct {
 	cmd     *exec.Cmd
 	in      io.WriteCloser
-	out     *bufio.Scanner
+	out     *scanner
 	outPipe io.ReadCloser
 }
 
@@ -141,7 +125,7 @@ func (p *ctagsProcess) read(rep *reply) error {
 		return err
 	}
 	if debug {
-		log.Printf("read %s", p.out.Text())
+		log.Printf("read %q", p.out.Bytes())
 	}
 
 	// See https://github.com/universal-ctags/ctags/issues/1493
@@ -151,7 +135,7 @@ func (p *ctagsProcess) read(rep *reply) error {
 
 	err := json.Unmarshal(p.out.Bytes(), rep)
 	if err != nil {
-		return fmt.Errorf("unmarshal(%s): %v", p.out.Text(), err)
+		return fmt.Errorf("unmarshal(%s): %q", p.out.Bytes(), err)
 	}
 	return nil
 }
@@ -246,4 +230,50 @@ func (p *ctagsProcess) Parse(name string, content []byte) (entries []Entry, err 
 	}
 
 	return entries, nil
+}
+
+// scanner is like bufio.Scanner but skips long lines instead of returning
+// bufio.ErrTooLong.
+//
+// Additionally it will skip empty lines.
+type scanner struct {
+	r    *bufio.Reader
+	line []byte
+	err  error
+}
+
+func (s *scanner) Scan() bool {
+	if s.err != nil {
+		return false
+	}
+
+	var (
+		err  error
+		line []byte
+	)
+
+	for err == nil && len(line) == 0 {
+		line, err = s.r.ReadSlice('\n')
+		for err == bufio.ErrBufferFull {
+			// make line empty so we ignore it
+			line = nil
+			_, err = s.r.ReadSlice('\n')
+		}
+		line = bytes.TrimSuffix(line, []byte{'\n'})
+		line = bytes.TrimSuffix(line, []byte{'\r'})
+	}
+
+	s.line, s.err = line, err
+	return len(line) > 0
+}
+
+func (s *scanner) Bytes() []byte {
+	return s.line
+}
+
+func (s *scanner) Err() error {
+	if s.err == io.EOF {
+		return nil
+	}
+	return s.err
 }

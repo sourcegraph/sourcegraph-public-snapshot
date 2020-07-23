@@ -17,11 +17,11 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ classN
 }) => (
     <DismissibleAlert
         partialStorageKey="needsRepositoryConfiguration"
-        className={`alert alert-success alert-animated-bg d-flex align-items-center ${className}`}
+        className={`alert alert-success d-flex align-items-center ${className}`}
     >
         <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
             <CircleChevronRightIcon className="icon-inline site-alert__link-icon" />{' '}
-            <span className="underline">Configure external services</span>
+            <span className="underline">Connect a code host</span>
         </Link>
         &nbsp;to connect repositories to Sourcegraph.
     </DismissibleAlert>

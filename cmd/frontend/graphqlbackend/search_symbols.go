@@ -7,24 +7,21 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/google/zoekt"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	lsp "github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -68,25 +65,10 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	defer cancelAll()
 
 	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
-	var (
-		searcherRepos = args.Repos
-		zoektRepos    []*search.RepositoryRevisions
-	)
 
-	if args.Zoekt.Enabled() {
-		filter := func(repo *zoekt.Repository) bool {
-			return repo.HasSymbols
-		}
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
-		if err != nil {
-			// Don't hard fail if index is not available yet.
-			tr.LogFields(otlog.String("indexErr", err.Error()))
-			if ctx.Err() == nil {
-				log15.Warn("zoektIndexedRepos failed", "error", err)
-			}
-			common.indexUnavailable = true
-			err = nil
-		}
+	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	common.repos = make([]*types.Repo, len(args.Repos))
@@ -94,39 +76,21 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		common.repos[i] = repo.Repo
 	}
 
-	index, _ := args.Query.StringValues(query.FieldIndex)
-	if len(index) > 0 {
-		index := index[len(index)-1]
-		tr.LogFields(
-			otlog.String("index-field", index),
-			otlog.Int("before-indexed-repos", len(zoektRepos)),
-			otlog.Int("before-unindexed-repos", len(searcherRepos)),
-		)
-		switch parseYesNoOnly(index) {
-		case Yes, True:
-			// default
-			if args.Zoekt.Enabled() {
-				tr.LogFields(otlog.Int("indexed-repos", len(zoektRepos)), otlog.Int("unindexed-repos", len(searcherRepos)))
-			}
-		case Only:
-			if !args.Zoekt.Enabled() {
-				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
-			}
-			common.missing = make([]*types.Repo, len(searcherRepos))
-			for i, r := range searcherRepos {
-				common.missing[i] = r.Repo
-			}
-			searcherRepos = nil
-		case No, False:
-			searcherRepos = append(searcherRepos, zoektRepos...)
-			zoektRepos = nil
-		default:
-			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
+	var searcherRepos []*search.RepositoryRevisions
+	if indexed.DisableUnindexedSearch {
+		tr.LazyPrintf("disabling unindexed search")
+		common.missing = make([]*types.Repo, len(indexed.Unindexed))
+		for i, r := range indexed.Unindexed {
+			common.missing[i] = r.Repo
 		}
-		tr.LogFields(
-			otlog.Int("after-indexed-repos", len(zoektRepos)),
-			otlog.Int("after-unindexed-repos", len(searcherRepos)),
-		)
+	} else {
+		// Limit the number of unindexed repositories searched for a single
+		// query. Searching more than this will merely flood the system and
+		// network with requests that will timeout.
+		searcherRepos, common.missing = limitSearcherRepos(indexed.Unindexed, maxUnindexedRepoRevSearchesPerQuery)
+		if len(common.missing) > 0 {
+			tr.LazyPrintf("limiting unindexed repos searched to %d", maxUnindexedRepoRevSearchesPerQuery)
+		}
 	}
 
 	var (
@@ -160,11 +124,11 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args, zoektRepos, true, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := indexed.Search(ctx)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
-			for _, repo := range zoektRepos {
+			for _, repo := range indexed.Repos() {
 				common.searched = append(common.searched, repo.Repo)
 				common.indexed = append(common.indexed, repo.Repo)
 			}
@@ -194,7 +158,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, args.Query, limit)
+			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			if repoErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
@@ -251,7 +215,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query query.QueryInfo, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*FileMatchResolver, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -268,7 +232,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, inputRev, nil)
+	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, inputRev, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -276,6 +240,14 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
 	if err != nil {
 		return nil, err
+	}
+
+	repoResolver := NewRepositoryResolver(repoRevs.Repo)
+	commitResolver := &GitCommitResolver{
+		repoResolver: repoResolver,
+		oid:          GitObjectID(commitID),
+		inputRev:     &inputRev,
+		// NOTE: Not all fields are set, for performance.
 	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
@@ -291,18 +263,13 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 	fileMatchesByURI := make(map[string]*FileMatchResolver)
 	fileMatches := make([]*FileMatchResolver, 0)
+
 	for _, symbol := range symbols {
-		commit := &GitCommitResolver{
-			repo:     &RepositoryResolver{repo: repoRevs.Repo},
-			oid:      GitObjectID(commitID),
-			inputRev: &inputRev,
-			// NOTE: Not all fields are set, for performance.
-		}
 		symbolRes := &searchSymbolResult{
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
-			commit:  commit,
+			commit:  commitResolver,
 		}
 		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
@@ -312,7 +279,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
-				Repo:    symbolRes.commit.repo.repo,
+				Repo:    repoResolver,
 				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
 				CommitID: api.CommitID(symbolRes.commit.oid),
@@ -327,7 +294,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 // makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
 func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + string(symbolResult.commit.repo.URL())
+	uri := "git:/" + string(symbolResult.commit.repoResolver.URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}

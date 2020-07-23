@@ -15,7 +15,7 @@ import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { PersonLink } from '../../person/PersonLink'
-import { quoteIfNeeded, searchQueryForRepoRev, PatternTypeProps } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRevision, PatternTypeProps } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
@@ -42,7 +42,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
 
     const query: string = [
-        searchQueryForRepoRev(repoName),
+        searchQueryForRepoRevision(repoName),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
@@ -155,6 +155,8 @@ const queryRepositoryContributors = memoizeObservable(
         `${args.repo}:${String(args.first)}:${String(args.revisionRange)}:${String(args.after)}:${String(args.path)}`
 )
 
+const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
+
 interface Props
     extends RepositoryStatsAreaPageProps,
         RouteComponentProps<{}>,
@@ -181,10 +183,10 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         eventLogger.logViewEvent('RepositoryStatsContributors')
     }
 
-    public componentDidUpdate(prevProps: Props): void {
+    public componentDidUpdate(previousProps: Props): void {
         const spec = this.getDerivedProps(this.props.location)
-        const prevSpec = this.getDerivedProps(prevProps.location)
-        if (!isEqual(spec, prevSpec)) {
+        const previousSpec = this.getDerivedProps(previousProps.location)
+        if (!isEqual(spec, previousSpec)) {
             eventLogger.log('RepositoryStatsContributorsPropsUpdated')
             // eslint-disable-next-line react/no-did-update-set-state
             this.setState(spec)
@@ -205,7 +207,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
 
         // Whether the user has entered new option values that differ from what's in the URL query and has not yet
         // submitted the form.
-        const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
         const stateDiffers =
             !equalOrEmpty(this.state.revisionRange, revisionRange) ||
             !equalOrEmpty(this.state.after, after) ||
@@ -365,29 +366,29 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         )
     }
 
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
-        switch (e.currentTarget.id) {
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        switch (event.currentTarget.id) {
             case RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID:
-                this.setState({ revisionRange: e.currentTarget.value })
+                this.setState({ revisionRange: event.currentTarget.value })
                 return
 
             case RepositoryStatsContributorsPage.AFTER_INPUT_ID:
-                this.setState({ after: e.currentTarget.value })
+                this.setState({ after: event.currentTarget.value })
                 return
 
             case RepositoryStatsContributorsPage.PATH_INPUT_ID:
-                this.setState({ path: e.currentTarget.value })
+                this.setState({ path: event.currentTarget.value })
                 return
         }
     }
 
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
-        e.preventDefault()
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
+        event.preventDefault()
         this.props.history.push({ search: this.urlQuery(this.state) })
     }
 
-    private onCancel: React.MouseEventHandler<HTMLButtonElement> = e => {
-        e.preventDefault()
+    private onCancel: React.MouseEventHandler<HTMLButtonElement> = event => {
+        event.preventDefault()
         this.setState(this.getDerivedProps())
     }
 

@@ -5,7 +5,7 @@ Publishing a Sourcegraph extension is fast and easy. It involves building (compi
 When [setting up your development environment](development_environment.md), you'll already have:
 
 1. Installed the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli#installation)
-1. [Configured `src` with an access token](https://github.com/sourcegraph/src-cli#authentication)
+1. [Configured `src` with an access token](https://github.com/sourcegraph/src-cli#setup)
 
 Now publish your extension by running:
 

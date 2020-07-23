@@ -17,10 +17,10 @@ exports[`ProductSubscriptionUserCountFormControl renders 1`] = `
       className="form-control w-auto"
       id="product-subscription-user-count-control__userCount"
       max={50000}
-      min={1}
+      min={25}
       onChange={[Function]}
       required={true}
-      step={1}
+      step={25}
       type="number"
       value={123}
     />

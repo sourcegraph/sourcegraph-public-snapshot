@@ -1,12 +1,115 @@
 package graphqlbackend
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
 
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestStructuralPatToZoektQuery(t *testing.T) {
+// Tests that indexed repos are filtered in structural search
+func TestStructuralSearchRepoFilter(t *testing.T) {
+	repoName := "indexed/one"
+	indexedFileName := "indexed.go"
+
+	indexedRepo := &types.Repo{Name: api.RepoName(repoName)}
+
+	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+		return []*types.Repo{indexedRepo, unindexedRepo}, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	mockSearchFilesInRepo = func(
+		ctx context.Context,
+		repo *types.Repo,
+		gitserverRepo gitserver.Repo,
+		rev string,
+		info *search.TextPatternInfo,
+		fetchTimeout time.Duration,
+	) (
+		matches []*FileMatchResolver,
+		limitHit bool,
+		err error,
+	) {
+		repoName := repo.Name
+		switch repoName {
+		case "indexed/one":
+			return []*FileMatchResolver{{JPath: indexedFileName}}, false, nil
+		case "unindexed/one":
+			return []*FileMatchResolver{{JPath: "unindexed.go"}}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	db.Mocks.Repos.Count = mockCount
+	defer func() { mockSearchFilesInRepo = nil }()
+
+	zoektRepo := &zoekt.RepoListEntry{
+		Repository: zoekt.Repository{
+			Name:     string(indexedRepo.Name),
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+		},
+	}
+
+	zoektFileMatches := []zoekt.FileMatch{{
+		FileName:   indexedFileName,
+		Repository: string(indexedRepo.Name),
+		LineMatches: []zoekt.LineMatch{
+			{
+				Line: nil,
+			},
+		},
+	}}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos:  []*zoekt.RepoListEntry{zoektRepo},
+			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		},
+		DisableCache: true,
+	}
+
+	ctx := context.Background()
+
+	q, err := query.ParseAndCheck(`patterntype:structural index:only foo`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolver := &searchResolver{
+		query:        q,
+		patternType:  query.SearchTypeStructural,
+		zoekt:        z,
+		searcherURLs: endpoint.Static("test"),
+	}
+	results, err := resolver.Results(ctx)
+	if err != nil {
+		t.Fatal("Results:", err)
+	}
+
+	fm, _ := results.Results()[0].ToFileMatch()
+	if fm.JPath != indexedFileName {
+		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", indexedFileName, fm.JPath)
+	}
+}
+
+func TestStructuralPatToRegexpQuery(t *testing.T) {
 	cases := []struct {
 		Name     string
 		Pattern  string

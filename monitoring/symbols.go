@@ -35,13 +35,27 @@ func Symbols() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("symbols"),
 						sharedContainerMemoryUsage("symbols"),
 						sharedContainerCPUUsage("symbols"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("symbols"),
+						sharedProvisioningMemoryUsage7d("symbols"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("symbols"),
+						sharedProvisioningMemoryUsage5m("symbols"),
 					},
 				},
 			},

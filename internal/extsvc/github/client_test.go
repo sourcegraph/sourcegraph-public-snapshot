@@ -7,20 +7,16 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -71,7 +67,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func Test_newRepoCache(t *testing.T) {
+func TestNewRepoCache(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
 	t.Run("GitHub.com", func(t *testing.T) {
 		url, _ := url.Parse("https://www.github.com")
@@ -134,6 +130,105 @@ func TestClient_WithToken(t *testing.T) {
 
 	if new.token != newToken {
 		t.Fatalf("token: want %q but got %q", newToken, new.token)
+	}
+}
+
+// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
+// for GITHUB_TOKEN, which can be found in 1Password.
+func TestClient_ListAffiliatedRepositories(t *testing.T) {
+	tests := []struct {
+		name       string
+		visibility Visibility
+		wantRepos  []*Repository
+	}{
+		{
+			name:       "list all repositories",
+			visibility: VisibilityAll,
+			wantRepos: []*Repository{
+				{
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:       263034151,
+					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:       263033761,
+					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ViewerPermission: "ADMIN",
+				},
+			},
+		},
+		{
+			name:       "list public repositories",
+			visibility: VisibilityPublic,
+			wantRepos: []*Repository{
+				{
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:       263033761,
+					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ViewerPermission: "ADMIN",
+				},
+			},
+		},
+		{
+			name:       "list private repositories",
+			visibility: VisibilityPrivate,
+			wantRepos: []*Repository{
+				{
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:       263034151,
+					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			client, save := newClient(t, "ListAffiliatedRepositories_"+test.name)
+			defer save()
+
+			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantRepos, repos); diff != "" {
+				t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 
@@ -345,45 +440,163 @@ func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
 func newClient(t testing.TB, name string) (*Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-	rec, err := httptestutil.NewRecorder(cassete, update(name), func(i *cassette.Interaction) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
-
-	hc, err := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(
-		uri,
-		os.Getenv("GITHUB_TOKEN"),
-		hc,
-	)
-
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	cli := NewClient(uri, os.Getenv("GITHUB_TOKEN"), doer)
+
+	return cli, save
 }
 
-func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
+func TestEstimateGraphQLCost(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		query string
+		want  int
+	}{
+		{
+			name: "Canonical example",
+			query: `query {
+  viewer {
+    login
+    repositories(first: 100) {
+      edges {
+        node {
+          id
+
+          issues(first: 50) {
+            edges {
+              node {
+                id
+                labels(first: 60) {
+                  edges {
+                    node {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`,
+			want: 51,
+		},
+		{
+			name: "simple query",
+			query: `
+query {
+  viewer {
+    repositories(first: 50) {
+      edges {
+        repository:node {
+          name
+          issues(first: 10) {
+            totalCount
+            edges {
+              node {
+                title
+                bodyHTML
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`,
+			want: 1,
+		},
+		{
+			name: "complex query",
+			query: `query {
+  viewer {
+    repositories(first: 50) {
+      edges {
+        repository:node {
+          name
+
+          pullRequests(first: 20) {
+            edges {
+              pullRequest:node {
+                title
+
+                comments(first: 10) {
+                  edges {
+                    comment:node {
+                      bodyHTML
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          issues(first: 20) {
+            totalCount
+            edges {
+              issue:node {
+                title
+                bodyHTML
+
+                comments(first: 10) {
+                  edges {
+                    comment:node {
+                      bodyHTML
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    followers(first: 10) {
+      edges {
+        follower:node {
+          login
+        }
+      }
+    }
+  }
+}`,
+			want: 21,
+		},
+		{
+			name: "Multiple top level queries",
+			query: `query {
+  thing
+}
+query{
+  thing
+}
+`,
+			want: 1,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			have, err := estimateGraphQLCost(tc.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != tc.want {
+				t.Fatalf("have %d, want %d", have, tc.want)
+			}
+		})
+	}
 }

@@ -2,15 +2,12 @@ package search
 
 import (
 	"reflect"
-	"sync"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {
 	tests := map[string]struct {
-		repo api.RepoName
+		repo string
 		revs []RevisionSpecifier
 	}{
 		"repo":           {repo: "repo", revs: []RevisionSpecifier{}},
@@ -45,23 +42,4 @@ func TestParseRepositoryRevisions(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestRepositoryRevisions(t *testing.T) {
-
-	// This test has to be run with -race to be effective.
-	t.Run("concurrent access to indexedHEADCommit", func(t *testing.T) {
-		rr := &RepositoryRevisions{}
-		var wg sync.WaitGroup
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
-			rr.SetIndexedHEADCommit("")
-		}()
-		go func() {
-			defer wg.Done()
-			_ = rr.IndexedHEADCommit()
-		}()
-		wg.Wait()
-	})
 }

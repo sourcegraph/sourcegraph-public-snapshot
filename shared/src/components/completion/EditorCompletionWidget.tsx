@@ -1,6 +1,6 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { merge, of } from 'rxjs'
 import {
     catchError,
@@ -20,7 +20,7 @@ import { asError, ErrorLike } from '../../util/errors'
 import { throttleTimeWindow } from '../../util/rxjs/throttleTimeWindow'
 import { getWordAtText } from '../../util/wordHelpers'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
-import { observeEditorAndModel } from '../../api/client/services/editorService'
+import { observeEditorAndModel } from '../../api/client/services/viewerService'
 
 export interface EditorCompletionWidgetProps
     extends ExtensionsControllerProps,
@@ -28,7 +28,7 @@ export interface EditorCompletionWidgetProps
     /**
      * The ID of the editor to show a completion widget for.
      */
-    editorId: string
+    viewerId: string
 }
 
 const LOADING = 'loading' as const
@@ -38,9 +38,9 @@ const LOADING = 'loading' as const
  */
 export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWidgetProps> = ({
     extensionsController: {
-        services: { editor: editorService, model: modelService, completionItems: completionItemsService },
+        services: { viewer: viewerService, model: modelService, completionItems: completionItemsService },
     },
-    editorId,
+    viewerId,
     textArea,
     ...props
 }) => {
@@ -48,7 +48,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
         typeof LOADING | CompletionList | null | ErrorLike
     >(null)
     useEffect(() => {
-        const subscription = observeEditorAndModel({ editorId }, editorService, modelService)
+        const subscription = observeEditorAndModel({ viewerId }, viewerService, modelService)
             .pipe(
                 debounceTime(0), // Debounce multiple synchronous changes so we only handle them once.
                 // These throttles are tweaked for maximum perceived responsiveness. They can
@@ -73,56 +73,61 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
                         .pipe(share())
                     return merge(of(LOADING).pipe(delay(2000), takeUntil(result)), result)
                 }),
-                catchError(err => [asError(err)])
+                catchError(error => [asError(error)])
             )
             .subscribe(setCompletionListOrError)
         return () => subscription.unsubscribe()
-    }, [completionItemsService, editorId, editorService, editorService.editors, modelService])
+    }, [completionItemsService, viewerId, viewerService, viewerService.viewers, modelService])
 
-    const onSelectItem = async (item: CompletionItem): Promise<void> => {
-        const editor = await observeEditorAndModel({ editorId }, editorService, modelService).pipe(first()).toPromise()
-        const [sel, ...secondarySelections] = editor.selections
-        if (!sel) {
-            throw new Error('no selection')
-        }
-        if (!editor.model.text) {
-            throw new Error('model text not available')
-        }
-
-        let replaceRange: Range
-        const word = getWordAtText(positionToOffset(editor.model.text, sel.active), editor.model.text)
-        if (word) {
-            replaceRange = {
-                start: offsetToPosition(editor.model.text, word.startColumn),
-                end: offsetToPosition(editor.model.text, word.endColumn),
+    const onSelectItem = useCallback(
+        async (item: CompletionItem): Promise<void> => {
+            const editor = await observeEditorAndModel({ viewerId }, viewerService, modelService)
+                .pipe(first())
+                .toPromise()
+            const [sel, ...secondarySelections] = editor.selections
+            if (!sel) {
+                throw new Error('no selection')
             }
-        } else {
-            replaceRange = sel
-        }
+            if (!editor.model.text) {
+                throw new Error('model text not available')
+            }
 
-        const beforeText = editor.model.text.slice(0, positionToOffset(editor.model.text, replaceRange.start))
-        const afterText = editor.model.text.slice(positionToOffset(editor.model.text, replaceRange.end))
-        const itemText = item.insertText !== undefined ? item.insertText : item.label
-        modelService.updateModel(editor.resource, beforeText + itemText + afterText)
+            let replaceRange: Range
+            const word = getWordAtText(positionToOffset(editor.model.text, sel.active), editor.model.text)
+            if (word) {
+                replaceRange = {
+                    start: offsetToPosition(editor.model.text, word.startColumn),
+                    end: offsetToPosition(editor.model.text, word.endColumn),
+                }
+            } else {
+                replaceRange = sel
+            }
 
-        // TODO: Support multi-line completion insertions.
-        const pos: Position = {
-            line: replaceRange.start.line,
-            character: replaceRange.start.character + itemText.length,
-        }
-        editorService.setSelections(editor, [
-            {
-                active: pos,
-                anchor: pos,
-                start: pos,
-                end: pos,
-                isReversed: false,
-            },
-            ...secondarySelections,
-        ])
+            const beforeText = editor.model.text.slice(0, positionToOffset(editor.model.text, replaceRange.start))
+            const afterText = editor.model.text.slice(positionToOffset(editor.model.text, replaceRange.end))
+            const itemText = item.insertText !== undefined ? item.insertText : item.label
+            modelService.updateModel(editor.resource, beforeText + itemText + afterText)
 
-        setCompletionListOrError(null)
-    }
+            // TODO: Support multi-line completion insertions.
+            const position: Position = {
+                line: replaceRange.start.line,
+                character: replaceRange.start.character + itemText.length,
+            }
+            viewerService.setSelections(editor, [
+                {
+                    active: position,
+                    anchor: position,
+                    start: position,
+                    end: position,
+                    isReversed: false,
+                },
+                ...secondarySelections,
+            ])
+
+            setCompletionListOrError(null)
+        },
+        [modelService, viewerId, viewerService]
+    )
 
     return (
         <CompletionWidget

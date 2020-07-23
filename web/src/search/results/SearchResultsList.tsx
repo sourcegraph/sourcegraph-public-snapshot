@@ -30,9 +30,14 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
+import { VersionContextProps } from '../../../../shared/src/search/util'
+import { DeployType } from '../../jscontext'
 
-const isSearchResults = (val: unknown): val is GQL.ISearchResults =>
-    typeof val === 'object' && val !== null && hasProperty('__typename')(val) && val.__typename === 'SearchResults'
+const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
+    typeof value === 'object' &&
+    value !== null &&
+    hasProperty('__typename')(value) &&
+    value.__typename === 'SearchResults'
 
 export interface SearchResultsListProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -42,7 +47,8 @@ export interface SearchResultsListProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        VersionContextProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -89,14 +95,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     /** Reference to the current scrollable list element */
     private scrollableElementRef: HTMLElement | null = null
-    private setScrollableElementRef = (ref: HTMLElement | null): void => {
-        this.scrollableElementRef = ref
+    private setScrollableElementRef = (reference: HTMLElement | null): void => {
+        this.scrollableElementRef = reference
     }
 
     /** Emits with the <VirtualList> elements */
     private virtualListContainerElements = new Subject<HTMLElement | null>()
-    private nextVirtualListContainerElement = (ref: HTMLElement | null): void =>
-        this.virtualListContainerElements.next(ref)
+    private nextVirtualListContainerElement = (reference: HTMLElement | null): void =>
+        this.virtualListContainerElements.next(reference)
 
     private jumpToTopClicks = new Subject<void>()
     private nextJumpToTopClick = (): void => this.jumpToTopClicks.next()
@@ -251,7 +257,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     filter((resultsOrError): resultsOrError is GQL.ISearchResults => !isErrorLike(resultsOrError)),
                     map(({ results }) => results),
                     map((results): GQL.IFileMatch[] =>
-                        results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
+                        results.filter((result): result is GQL.IFileMatch => result.__typename === 'FileMatch')
                     )
                 )
                 .subscribe(fileMatches => {
@@ -294,7 +300,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     public componentDidUpdate(): void {
-        const lowestIndex = Array.from(this.state.visibleItems).reduce((low, index) => Math.min(index, low), Infinity)
+        const lowestIndex = [...this.state.visibleItems].reduce((low, index) => Math.min(index, low), Infinity)
 
         this.firstVisibleItems.next(lowestIndex)
 
@@ -425,6 +431,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                             proposedQuery.query,
                                                                             this.props.patternType,
                                                                             this.props.caseSensitive,
+                                                                            this.props.versionContext,
                                                                             this.props.filtersInQuery
                                                                         )
                                                                     }
@@ -474,7 +481,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <div className="pb-4" />
                     {this.props.resultsOrError !== undefined && (
                         <Link className="mb-4 p-3" to="/help/user/search">
-                            Not seeing expected results?
+                            Learn more about our search syntax.
                         </Link>
                     )}
                 </div>
@@ -493,8 +500,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             <>
                 <h4>Recommendations:</h4>
                 <ul>
-                    {recommendations.map((recommendation, i) => (
-                        <li key={i}>{recommendation}</li>
+                    {recommendations.map((recommendation, index) => (
+                        <li key={index}>{recommendation}</li>
                     ))}
                 </ul>
             </>
@@ -541,7 +548,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
      * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.
      */
     private getCheckpoint(): number {
-        const checkpoint = parseInt(this.props.location.hash.substr(1), 10) || 0
+        const checkpoint = parseInt(this.props.location.hash.slice(1), 10) || 0
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {
@@ -557,7 +564,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             return
         }
 
-        const { hash, ...loc } = this.props.location
+        const { hash, ...location } = this.props.location
 
         let newHash = ''
         if (checkpoint > 0) {
@@ -565,7 +572,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         }
 
         this.props.history.replace({
-            ...loc,
+            ...location,
             hash: newHash,
         })
     }

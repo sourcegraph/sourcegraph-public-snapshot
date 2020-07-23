@@ -18,7 +18,7 @@ export function getContributedActionItems(
     }
 
     const allItems: ActionItemAction[] = []
-    const menuItems = contributions.menus && contributions.menus[menu]
+    const menuItems = contributions.menus?.[menu]
     if (menuItems) {
         for (const { action: actionID, alt: altActionID } of sortBy(menuItems, MENU_ITEMS_PROP_SORT_ORDER)) {
             const action = contributions.actions.find(a => a.id === actionID)

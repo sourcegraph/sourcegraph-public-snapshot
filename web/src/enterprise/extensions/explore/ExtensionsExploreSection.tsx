@@ -48,7 +48,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                 first: ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST,
                 prioritizeExtensionIDs: ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_EXTENSION_IDS,
             })
-                .pipe(catchError(err => [asError(err)]))
+                .pipe(catchError(error => [asError(error)]))
                 .subscribe(extensionsOrError => this.setState({ extensionsOrError }))
         )
     }
@@ -60,7 +60,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
     public render(): JSX.Element | null {
         const extensionsOrError: (typeof LOADING | GQL.IRegistryExtension)[] | ErrorLike =
             this.state.extensionsOrError === LOADING
-                ? Array(ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).fill(LOADING)
+                ? new Array(ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).fill(LOADING)
                 : isErrorLike(this.state.extensionsOrError)
                 ? this.state.extensionsOrError
                 : this.state.extensionsOrError.nodes
@@ -76,12 +76,12 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                     <div className="list-group list-group-flush">
                         {extensionsOrError
                             .slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST)
-                            .filter((e): e is GQL.IRegistryExtension => e !== LOADING)
+                            .filter((extension): extension is GQL.IRegistryExtension => extension !== LOADING)
                             .map(extension => (
                                 <ExtensionsExploreSectionExtensionCard
                                     key={extension.id}
                                     extensionID={extension.extensionIDWithoutRegistry}
-                                    description={(extension.manifest && extension.manifest.description) || undefined}
+                                    description={extension.manifest?.description || undefined}
                                     url={extension.url}
                                     className="list-group-item list-group-item-action"
                                 />

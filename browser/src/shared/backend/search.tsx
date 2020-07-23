@@ -80,9 +80,9 @@ function createSuggestion(item: GQL.SearchSuggestion): Suggestion | null {
         }
         case 'File': {
             const descriptionParts: string[] = []
-            const dir = dirname(item.path)
-            if (dir !== undefined && dir !== '.') {
-                descriptionParts.push(`${dir}/`)
+            const directory = dirname(item.path)
+            if (directory !== undefined && directory !== '.') {
+                descriptionParts.push(`${directory}/`)
             }
             descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {

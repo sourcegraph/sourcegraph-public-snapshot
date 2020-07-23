@@ -79,9 +79,9 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         this.state = { expanded: this.props.allExpanded || this.props.defaultExpanded }
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.allExpanded !== this.props.allExpanded) {
-            if (this.state.expanded === prevProps.allExpanded) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (previousProps.allExpanded !== this.props.allExpanded) {
+            if (this.state.expanded === previousProps.allExpanded) {
                 // eslint-disable-next-line react/no-did-update-set-state
                 this.setState({ expanded: this.props.allExpanded })
             } else {
@@ -95,7 +95,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         const Icon = this.props.icon
         const stringIcon = this.props.stringIcon ? this.props.stringIcon : undefined
         return (
-            <div className="e2e-search-result result-container" data-testid="result-container">
+            <div className="test-search-result result-container" data-testid="result-container">
                 <div
                     className={
                         'result-container__header' +
@@ -144,6 +144,6 @@ export class ResultContainer extends React.PureComponent<Props, State> {
     }
 }
 
-function blockExpandAndCollapse(e: React.MouseEvent<HTMLElement>): void {
-    e.stopPropagation()
+function blockExpandAndCollapse(event: React.MouseEvent<HTMLElement>): void {
+    event.stopPropagation()
 }

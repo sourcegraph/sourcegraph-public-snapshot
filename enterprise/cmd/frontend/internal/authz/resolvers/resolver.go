@@ -11,23 +11,30 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 type Resolver struct {
-	store *edb.PermsStore
+	store             *edb.PermsStore
+	repoupdaterClient interface {
+		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
+	}
 }
 
 func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: edb.NewPermsStore(db, clock),
+		store:             edb.NewPermsStore(db, clock),
+		repoupdaterClient: repoupdater.DefaultClient,
 	}
 }
 
@@ -47,13 +54,13 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	}
 
 	// Filter out bind IDs that only contains whitespaces.
-	bindIDs := args.BindIDs[:0]
-	for i := range args.BindIDs {
-		args.BindIDs[i] = strings.TrimSpace(args.BindIDs[i])
-		if len(args.BindIDs[i]) == 0 {
+	bindIDs := make([]string, 0, len(args.UserPermissions))
+	for _, perms := range args.UserPermissions {
+		bindID := strings.TrimSpace(perms.BindID)
+		if bindID == "" {
 			continue
 		}
-		bindIDs = append(bindIDs, args.BindIDs[i])
+		bindIDs = append(bindIDs, bindID)
 	}
 
 	bindIDSet := make(map[string]struct{})
@@ -117,6 +124,46 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errors.Wrap(err, "set repository pending permissions")
 	}
 
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repoID},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{userID},
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -265,6 +312,42 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 	}
 	err = r.store.LoadRepoPermissions(ctx, p)
+	if err != nil && err != authz.ErrPermsNotFound {
+		return nil, err
+	}
+
+	if err == authz.ErrPermsNotFound {
+		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
+	}
+
+	return &permissionsInfoResolver{
+		perms:     p.Perm,
+		syncedAt:  p.SyncedAt,
+		updatedAt: p.UpdatedAt,
+	}, nil
+}
+
+func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
+	// 🚨 SECURITY: Only site admins can query user permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := graphqlbackend.UnmarshalUserID(id)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure the user ID is valid and not soft-deleted.
+	if _, err = db.Users.GetByID(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	p := &authz.UserPermissions{
+		UserID: userID,
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+		Type:   authz.PermRepos,
+	}
+	err = r.store.LoadUserPermissions(ctx, p)
 	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}

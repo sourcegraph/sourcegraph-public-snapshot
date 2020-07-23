@@ -4,13 +4,14 @@ import { PatternTypeProps } from '..'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { QueryBuilder } from './QueryBuilder'
 import { PageTitle } from '../../components/PageTitle'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
-interface Props extends Pick<PatternTypeProps, 'patternType'> {}
+interface Props extends Pick<PatternTypeProps, 'patternType'>, VersionContextProps {}
 
 /**
  * A page with a search query builder form to make it easy to construct search queries.
  */
-export const QueryBuilderPage: React.FunctionComponent<Props> = ({ patternType }) => {
+export const QueryBuilderPage: React.FunctionComponent<Props> = ({ versionContext, patternType }) => {
     const [query, setQuery] = useState('')
 
     const helpText = 'Use the fields below to build your query'
@@ -29,7 +30,7 @@ export const QueryBuilderPage: React.FunctionComponent<Props> = ({ patternType }
                 />
                 <Link
                     className={`btn btn-primary ${query === '' ? 'disabled' : ''}`}
-                    to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
+                    to={`/search?${buildSearchURLQuery(query, patternType, false, versionContext)}`}
                 >
                     Search
                 </Link>

@@ -1,10 +1,10 @@
 import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer from 'react-test-renderer'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
+import { mount } from 'enzyme'
 
 describe('UserNavItem', () => {
     const ORG_CONNECTION = {
@@ -21,21 +21,18 @@ describe('UserNavItem', () => {
 
     test('simple', () => {
         expect(
-            renderer
-                .create(
-                    <MemoryRouter>
-                        <UserNavItem
-                            isLightTheme={true}
-                            onThemePreferenceChange={() => undefined}
-                            themePreference={ThemePreference.Light}
-                            location={history.location}
-                            authenticatedUser={USER}
-                            showDotComMarketing={true}
-                            showDiscussions={true}
-                        />
-                    </MemoryRouter>
-                )
-                .toJSON()
+            mount(
+                <MemoryRouter>
+                    <UserNavItem
+                        isLightTheme={true}
+                        onThemePreferenceChange={() => undefined}
+                        themePreference={ThemePreference.Light}
+                        location={history.location}
+                        authenticatedUser={USER}
+                        showDotComMarketing={true}
+                    />
+                </MemoryRouter>
+            )
         ).toMatchSnapshot()
     })
 })

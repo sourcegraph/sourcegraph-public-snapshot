@@ -33,7 +33,7 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ c
                         setCustomerBilling({ user, billingCustomerID }).pipe(
                             mapTo(undefined),
                             tap(() => onDidUpdate()),
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )

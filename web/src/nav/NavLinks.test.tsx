@@ -35,10 +35,10 @@ const renderShallow = (element: React.ReactElement<NavLinks['props']>): any => {
         return (element.type as any).displayName || element.type.name || 'Unknown'
     }
 
-    return React.Children.map<string | string[], React.ReactChild>(renderer.getRenderOutput().props.children, e =>
-        getDisplayName(e)
+    return React.Children.map<string | string[], React.ReactChild>(renderer.getRenderOutput().props.children, element =>
+        getDisplayName(element)
     )
-        .filter(e => !!e)
+        .filter(element => !!element)
         .flat()
 }
 

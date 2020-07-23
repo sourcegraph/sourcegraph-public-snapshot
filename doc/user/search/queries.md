@@ -1,3 +1,4 @@
+
 # Search query syntax
 
 <!-- Search syntax styling overrides -->
@@ -20,7 +21,7 @@
 }
 </style>
 
-This page describes search pattern syntax and keywords available for code search. A typical search pattern describes content or filenames to find across all repositories. At the most basic level, a search pattern can simply be a word like `hello`. See our [search patterns](#search-patterns) documentation for detailed usage. Queries can also include keywords. For example, a typical search query will include a `repo:` keyword that filters search results for a specific repository. See our [keywords](#keywords-all-searches) documentation for more examples.
+This page describes search pattern syntax and keywords available for code search. A typical search pattern describes content or filenames to find across all repositories. At the most basic level, a search pattern can simply be a word like `hello`. See our [search patterns](#search-pattern-syntax) documentation for detailed usage. Queries can also include keywords. For example, a typical search query will include a `repo:` keyword that filters search results for a specific repository. See our [keywords](#keywords-all-searches) documentation for more examples.
 
 ## Search pattern syntax
 
@@ -31,13 +32,13 @@ This section documents the available search pattern syntax and interpretation in
 Literal search interprets search patterns literally to simplify searching for words or punctuation.
 
 | Search pattern syntax | Description |
-| --- | --- | 
+| --- | --- |
 | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png> button to change). | |
 | [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally. |
 
-As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`. 
+As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`.
 
-### Regexp search 
+### Regular expression search
 
 Click the <img src=../img/regex.png> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
 
@@ -50,14 +51,14 @@ Click the <img src=../img/regex.png> toggle to interpret search patterns as rege
 
 ### Structural search
 
-Click the <img src=../img/brackets.png> toggle to activate [structural search](structural.md). Structural search is a way to match more complex syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
+Click the <img src=../img/brackets.png> toggle to activate structural search. Structural search is a way to match richer syntactic structures in code, and thus only applies to matching file contents. See the dedicated [usage documentation](structural.md) for more details. Here is a  brief overview of valid syntax:
 
 | Search pattern syntax | Description |
 | --- | --- |
-| [`New(:[args])`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). | 
-| [`"New(:[args])"`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) or<br/> [`'New(:[args])'`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | Quoting the search pattern has the same meaning as `New(:[args])`, but avoids syntax errors that may conflict with [keyword syntax](#keywords-all-searches). Special characters like `"` and `\` may be escaped. |
+| [`New(:[args])`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). |
+| [`"New(:[args])"`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) or<br/> [`'New(:[args])'`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | Search for the pattern including quoted strings (version 3.17 onwards). Prior to version 3.17, quoting the search pattern is the same as `New(:[args])` and allowed to avoid syntax errors that may conflict with [keyword syntax](#keywords-all-searches). As of version 3.17, the `content:` field should be used to avoid syntax conflicts. |
 
-Note: It is not possible to perform case-insensitive matching with structural search. 
+Note: It is not possible to perform case-insensitive matching with structural search.
 
 ## Keywords (all searches)
 
@@ -65,7 +66,7 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 
 | Keyword | Description | Examples |
 | --- | --- | --- |
-| **repo:regexp-pattern** <br> **repo:regexp-pattern@rev** <br> _alias: r_  | Only include results from repositories whose path matches the regexp. A repository's path is a string such as _github.com/myteam/abc_ or _code.example.com/xyz_ that depends on your organization's repository host. If the regexp ends in **@rev**, that revision is searched instead of the default branch (usually `master`).  | [`repo:gorilla/mux testroute`](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute)<br/>`repo:alice/abc@mybranch`  |
+| **repo:regexp-pattern** <br> **repo:regexp-pattern@rev** <br> _alias: r_  | Only include results from repositories whose path matches the regexp. A repository's path is a string such as _github.com/myteam/abc_ or _code.example.com/xyz_ that depends on your organization's repository host. If the regexp ends in [**@rev** syntax](#repository-revisions), that revision is searched instead of the default branch (usually `master`).  | [`repo:gorilla/mux testroute`](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute)<br/>`repo:alice/abc@mybranch`  |
 | **-repo:regexp-pattern** <br> _alias: -r_ | Exclude results from repositories whose path matches the regexp. | `repo:alice/ -repo:old-repo` |
 | **repogroup:group-name** <br> _alias: g_ | Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group's repositories. Use repo: unless you know that the group exists. | |
 | **file:regexp-pattern** <br> _alias: f_ | Only include results in files whose full path matches the regexp. | [`file:\.js$ httptest`](https://sourcegraph.com/search?q=file:%5C.js%24+httptest) <br> [`file:internal/ httptest`](https://sourcegraph.com/search?q=file:internal/+httptest) |
@@ -93,23 +94,23 @@ Multiple or combined **repo:** and **file:** keywords are intersected. For examp
 
 Use operators to create more expressive searches.
 
-> NOTE: Operators are available as of 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in site settings. Built-in operator support is planned for the upcoming 3.16 release and onwards.
+> NOTE: As of 3.17, Operators are enabled by default for searching file contents. This feature may be disabled with `{"experimentalFeatures": {"andOrQuery": "disabled"}}` in the site configuration.
 
 | Operator | Example |
 | --- | --- |
 | `and`, `AND` | [`conf.Get( and log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28&patternType=regexp), [`conf.Get( and log15.Error( and after`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28+and+after&patternType=regexp) |
 
-Returns results for files containing matches on the left _and_ right side of the `and` (set intersection). The number of results reports the number of files containing both strings. 
+Returns results for files containing matches on the left _and_ right side of the `and` (set intersection).
 
 | Operator | Example |
 | --- | --- |
-| `or`, `OR` | [`conf.Get( or log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28&patternType=regexp), [<code>conf.Get( or log15.Error( or after   </code>](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28+or+after&patternType=regexp)| 
+| `or`, `OR` | [`conf.Get( or log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28&patternType=regexp), [<code>conf.Get( or log15.Error( or after   </code>](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28+or+after&patternType=regexp)|
 
-Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings. 
+Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings.
 
 ### Operator precedence and groups
 
-Operators may be combined. `and`-expressions have higher precedence (bind tighter) than `or`-expressions so that `a and b or c and d` means `(a and b) or (c and d)`. 
+Operators may be combined. `and`-expressions have higher precedence (bind tighter) than `or`-expressions so that `a and b or c and d` means `(a and b) or (c and d)`.
 
 Expressions may be grouped with parentheses to change the default precedence and meaning. For example: `a and (b or c) and d`.
 
@@ -122,7 +123,7 @@ Since we don't yet support search subexpressions with different scopes, the abov
 
 ### Operator support
 
-Operators are supported in regexp and structural search modes, but not literal search mode. How operators interpret search pattern syntax depends on kind of search (whether [regexp](#regexp-search) or [structural](#structural-search)). Operators currently only apply to searches for file content. Thus, expressions like `repo:npm/cli or repo:npm/npx` are not currently supported. 
+Operators are supported in regexp and structural search modes, but not literal search mode. How operators interpret search pattern syntax depends on kind of search (whether [regexp](#regexp-search) or [structural](#structural-search)). Operators currently only apply to searches for file content. Thus, expressions like `repo:npm/cli or repo:npm/npx` are not currently supported.
 
 ---
 
@@ -139,7 +140,18 @@ The following keywords are only used for **commit diff** and **commit message** 
 | **after:"string specifying time frame"**  | Only include results from diffs or commits which have a commit date after the specified time frame| [`after:"6 weeks ago"`](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%226+weeks+ago%22) <br> [`after:"november 1 2019"`](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%22november+1+2019%22) |
 | **message:"any string"** | Only include results from diffs or commits which have commit messages containing the string | [`type:commit message:"testing"`](https://sourcegraph.com/search?q=type:commit+repo:sourcegraph/sourcegraph$+message:%22testing%22) <br> [`type:diff message:"testing"`](https://sourcegraph.com/search?q=type:diff+repo:sourcegraph/sourcegraph$+message:%22testing%22) |
 
-## Repository name search
+## Repository search
+
+### Repository revisions
+
+The `repo:` filter accepts a repository pattern followed by `@revs`, like `github.com/myteam/abc@revs`. The `@revs` part refers to repository revisions (e.g., branches or commit hashes), and may take on the following example forms:
+
+- `@feature-branch` - a branch name
+- `@1735d48` - a commit hash
+- `@3.15` - a tag
+- `@feature-branch:1735d48:3.15` - multiple colon-separated revisions of the above forms
+
+### Repository names
 
 A query with only `repo:` filters returns a list of repositories with matching names.
 

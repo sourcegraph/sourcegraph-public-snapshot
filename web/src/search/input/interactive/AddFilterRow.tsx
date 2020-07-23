@@ -21,19 +21,19 @@ export const defaultFilterTypes = [FilterType.repo, FilterType.file]
  * The row containing the buttons to add new filters in interactive mode.
  * */
 export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, onAddNewFilter }) => {
-    const buildOnAddFilterHandler = (filterType: FilterType) => (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault()
+    const buildOnAddFilterHandler = (filterType: FilterType) => (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault()
 
         onAddNewFilter(filterType)
     }
 
     return (
-        <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} e2e-add-filter-row`}>
+        <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} test-add-filter-row`}>
             {defaultFilterTypes.map(filterType => (
                 <button
                     key={filterType}
                     type="button"
-                    className={`add-filter-row__button btn btn-outline-primary e2e-add-filter-button-${filterType}`}
+                    className={`add-filter-row__button btn btn-outline-primary test-add-filter-button-${filterType}`}
                     onClick={buildOnAddFilterHandler(filterType)}
                 >
                     + {startCase(filterType)} filter

@@ -11,8 +11,15 @@
     "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": "out",
+    "plugins": [
+      {
+        "name": "ts-graphql-plugin",
+        "schema": "../cmd/frontend/graphqlbackend/schema.graphql",
+        "tag": "gql",
+      },
+    ],
   },
-  "include": ["./**/*", "./src/**/*.json", "src/types/**/*.d.ts"],
+  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts"],
   "exclude": [
     "out",
     "node_modules",
@@ -20,6 +27,6 @@
     "./build/**/*",
     "coverage",
     "stories", // TODO fix type errors and include
-    "src/e2e",
+    "src/end-to-end",
   ],
 }

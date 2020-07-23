@@ -1,5 +1,5 @@
 import { RouteComponentProps } from 'react-router'
-import { fetchAllConfigAndSettings } from './backend'
+import { fetchAllConfigAndSettings, fetchMonitoringStats } from './backend'
 import React, { useMemo } from 'react'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import awsCodeCommitJSON from '../../../schema/aws_codecommit.schema.json'
@@ -16,6 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { mapValues, values } from 'lodash'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -71,6 +72,12 @@ const allConfigSchema = {
                 final: settingsSchemaJSON,
             },
         },
+        alerts: {
+            type: 'array',
+            items: {
+                type: 'object',
+            },
+        },
     },
     definitions: values(externalServices)
         .map(schema => schema.definitions)
@@ -83,22 +90,27 @@ interface Props extends RouteComponentProps {
 }
 
 export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
+    const monitoringDaysBack = 7
+    const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
             <PageTitle title="Report a bug - Admin" />
             <h2>Report a bug</h2>
             <p>
-                Create an issue on the{' '}
-                <a target="_blank" rel="noopener noreferrer" href="https://github.com/sourcegraph/sourcegraph/issues">
-                    public issue tracker
+                <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
+                >
+                    Create an issue on the public issue tracker
                 </a>
                 , and include a description of the bug along with the info below (with secrets redacted). If the report
                 contains sensitive information that should not be public, email the report to{' '}
                 <a target="_blank" rel="noopener noreferrer" href="mailto:support@sourcegraph.com">
                     support@sourcegraph.com
-                </a>
-                , instead.
+                </a>{' '}
+                instead.
             </p>
             <div className="card-header alert alert-warning">
                 <div>
@@ -106,15 +118,23 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                     support@sourcegraph.com.
                 </div>
             </div>
-            <DynamicallyImportedMonacoSettingsEditor
-                value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}
-                jsonSchema={allConfigSchema}
-                canEdit={false}
-                height={800}
-                isLightTheme={isLightTheme}
-                history={history}
-                readOnly={true}
-            />
+            {allConfig === undefined || monitoringStats === undefined ? (
+                <LoadingSpinner className="icon-inline mt-2" />
+            ) : (
+                <DynamicallyImportedMonacoSettingsEditor
+                    value={JSON.stringify(
+                        monitoringStats ? { ...allConfig, ...monitoringStats } : { ...allConfig, alerts: null },
+                        undefined,
+                        2
+                    )}
+                    jsonSchema={allConfigSchema}
+                    canEdit={false}
+                    height={800}
+                    isLightTheme={isLightTheme}
+                    history={history}
+                    readOnly={true}
+                />
+            )}
         </div>
     )
 }

@@ -1,17 +1,14 @@
-import { HoverAttachment } from '@sourcegraph/codeintellify/lib/types'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { registerLanguage } from 'highlight.js/lib/highlight'
 import * as H from 'history'
-import { castArray } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { createRenderer } from 'react-test-renderer/shallow'
-import { HoverMerged } from '../api/client/types/hover'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 import { NEVER } from 'rxjs'
+import { subtypeOf } from '../util/types'
 
-const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement => {
+const renderShallow = (element: React.ReactElement<HoverOverlayProps>): React.ReactElement => {
     const renderer = createRenderer()
     renderer.render(element)
     return renderer.getRenderOutput()
@@ -21,16 +18,16 @@ describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const commonProps = {
+    const commonProps = subtypeOf<HoverOverlayProps>()({
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
         showCloseButton: false,
-        hoveredToken: { repoName: 'r', commitID: 'c', rev: 'v', filePath: 'f', line: 1, character: 2 },
+        hoveredToken: { repoName: 'r', commitID: 'c', revision: 'v', filePath: 'f', line: 1, character: 2 },
         overlayPosition: { left: 0, top: 0 },
         isLightTheme: false,
-    }
+    })
 
     test('actions and hover undefined', () => {
         expect(renderer.create(<HoverOverlay {...commonProps} />).toJSON()).toMatchSnapshot()
@@ -129,12 +126,11 @@ describe('HoverOverlay', () => {
                         contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
                         alerts: [
                             {
-                                type: 'a' as const,
-                                content: (
-                                    <>
-                                        b <small>c</small> <code>d</code>
-                                    </>
-                                ),
+                                summary: {
+                                    kind: MarkupKind.Markdown,
+                                    value: 'Testing `markdown` rendering.',
+                                },
+                                type: 'test-alert-dismissalType',
                             },
                         ],
                     }}
@@ -213,70 +209,5 @@ describe('HoverOverlay', () => {
                 />
             )
         ).toMatchSnapshot()
-    })
-
-    describe('hover content rendering', () => {
-        const renderMarkdownHover = (hover: HoverAttachment & HoverMerged): string | null => {
-            // TODO this test depends on internals of the HoverOverlay.
-            // If we want to test this rendering, it would be better to
-            // extract the markdown rendering into another small component
-            // and unit test that in isolation
-            const r = renderShallow(<HoverOverlay {...commonProps} hoverOrError={hover} />)
-            const contents = castArray(r.props.children).find(element =>
-                element?.props?.className?.includes('hover-overlay__contents')
-            )
-            if (!contents) {
-                return null
-            }
-
-            const grabContent = (c: any) => {
-                if (c.props && c.props.className && c.props.className.includes('hover-overlay__content')) {
-                    if (typeof c.props.children === 'string') {
-                        return c.props.children
-                    }
-                    return c.props.dangerouslySetInnerHTML.__html
-                }
-                return ''
-            }
-
-            return castArray(contents.props.children)
-                .map(c => {
-                    // Grab un-badged content
-                    const content = grabContent(c)
-                    if (content !== '') {
-                        return content
-                    }
-                    // Grab badged content in the grand-child level
-                    if (c.props && c.props.className && c.props.className.includes('e2e-tooltip-badged-content')) {
-                        return castArray(c.props.children).map(grabContent).join('').trim()
-                    }
-                    return ''
-                })
-                .join('')
-                .trim()
-        }
-
-        const renderPlainTextHover = (hover: HoverAttachment & HoverMerged): React.ReactChild[] =>
-            renderer
-                .create(<HoverOverlay {...commonProps} hoverOrError={hover} />)
-                .root.find(c => c.props && c.props.className && c.props.className.includes('hover-overlay__content'))
-                .props.children.map((c: renderer.ReactTestInstance) => c.props.children)
-
-        test('MarkupKind.Markdown', () => {
-            expect(renderMarkdownHover({ contents: [{ kind: MarkupKind.Markdown, value: '*v*' }] })).toEqual(
-                '<p><em>v</em></p>'
-            )
-        })
-
-        test('MarkupKind.PlainText', () => {
-            expect(renderPlainTextHover({ contents: [{ kind: MarkupKind.PlainText, value: 'v<' }] })).toEqual(['v<'])
-        })
-
-        test('code', () => {
-            registerLanguage('testlang', x => ({}))
-            expect(
-                renderMarkdownHover({ contents: [{ kind: MarkupKind.Markdown, value: '```testlang\n<>\n```' }] })
-            ).toEqual('<pre><code class="language-testlang">&lt;&gt;</code></pre>')
-        })
     })
 })

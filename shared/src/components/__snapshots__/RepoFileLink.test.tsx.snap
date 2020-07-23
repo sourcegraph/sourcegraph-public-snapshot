@@ -10,7 +10,7 @@ Array [
   " ›",
   " ",
   <a
-    href="https://example.com/file?subtree=true"
+    href="/file?subtree=true"
   >
     my/
     <strong>

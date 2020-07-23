@@ -15,7 +15,7 @@ describe('Views (integration)', () => {
 
             const values = await services.panelViews
                 .getPanelViews(ContributableViewContainer.Panel)
-                .pipe(first(v => v.length > 0))
+                .pipe(first(views => views.length > 0))
                 .toPromise()
             assertToJSON(values, [
                 {
@@ -44,10 +44,10 @@ describe('Views (integration)', () => {
 
             const values = await services.panelViews
                 .getPanelViews(ContributableViewContainer.Panel)
-                .pipe(first(v => v.length > 0))
+                .pipe(first(views => views.length > 0))
                 .toPromise()
             assertToJSON(
-                values.map(v => ({ ...v, locationProvider: 'value not checked' })),
+                values.map(view => ({ ...view, locationProvider: 'value not checked' })),
                 [
                     {
                         id: 'p',
@@ -66,12 +66,13 @@ describe('Views (integration)', () => {
         const { extensionAPI, services } = await integrationTestContext()
 
         extensionAPI.app.registerViewProvider('v', {
-            provideView: params => of({ title: `t${params.x}`, content: [] }),
+            where: ContributableViewContainer.GlobalPage,
+            provideView: parameters => of({ title: `t${parameters.x}`, content: [] }),
         })
 
         const view = await services.view
             .get('v', { x: 'y' })
-            .pipe(first(v => v !== null))
+            .pipe(first(view => view !== null))
             .toPromise()
         expect(view).toEqual({ title: 'ty', content: [] })
     })

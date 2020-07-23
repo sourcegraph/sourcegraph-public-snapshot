@@ -9,16 +9,35 @@ const contentEntry = '../../src/config/content.entry.js'
 const backgroundEntry = '../../src/config/background.entry.js'
 const optionsEntry = '../../src/config/options.entry.js'
 const pageEntry = '../../src/config/page.entry.js'
-const extEntry = '../../src/config/extension.entry.js'
+const extensionEntry = '../../src/config/extension.entry.js'
+
+const babelLoader = {
+    loader: 'babel-loader',
+    options: {
+        cacheDirectory: true,
+        configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
+    },
+}
+
+const extensionHostWorker = /main\.worker\.ts$/
 
 const config: webpack.Configuration = {
     entry: {
-        background: buildEntry(extEntry, backgroundEntry, '../../src/extension/scripts/background.ts'),
-        options: buildEntry(extEntry, optionsEntry, '../../src/extension/scripts/options.tsx'),
-        inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.ts'),
-        phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.ts'),
-        integration: buildEntry(pageEntry, '../../src/integration/integration.ts'),
+        // Browser extension
+        background: buildEntry(
+            extensionEntry,
+            backgroundEntry,
+            '../../src/browser-extension/scripts/backgroundPage.main.ts'
+        ),
+        options: buildEntry(extensionEntry, optionsEntry, '../../src/browser-extension/scripts/optionsPage.main.tsx'),
+        inject: buildEntry(extensionEntry, contentEntry, '../../src/browser-extension/scripts/contentPage.main.ts'),
 
+        // Common native integration entry point (Gitlab, Bitbucket)
+        integration: buildEntry(pageEntry, '../../src/native-integration/integration.main.ts'),
+        // Phabricator-only native integration entry point
+        phabricator: buildEntry(pageEntry, '../../src/native-integration/phabricator/integration.main.ts'),
+
+        // Styles
         style: path.join(__dirname, '../../src/app.scss'),
         'options-style': path.join(__dirname, '../../src/options.scss'),
     },
@@ -42,15 +61,8 @@ const config: webpack.Configuration = {
         rules: [
             {
                 test: /\.[jt]sx?$/,
-                use: [
-                    {
-                        loader: 'babel-loader',
-                        options: {
-                            cacheDirectory: true,
-                            configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
-                        },
-                    },
-                ],
+                exclude: extensionHostWorker,
+                use: [babelLoader],
             },
             {
                 // SCSS rule for our own styles and Bootstrap
@@ -76,6 +88,16 @@ const config: webpack.Configuration = {
                             },
                         },
                     },
+                ],
+            },
+            {
+                test: extensionHostWorker,
+                use: [
+                    {
+                        loader: 'worker-loader',
+                        options: { name: 'extensionHostWorker.bundle.js' },
+                    },
+                    babelLoader,
                 ],
             },
         ],

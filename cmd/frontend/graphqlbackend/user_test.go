@@ -3,13 +3,18 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 	"testing"
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUser(t *testing.T) {
@@ -153,6 +158,120 @@ func TestNode_User(t *testing.T) {
 					}
 				}
 			`,
+		},
+	})
+}
+
+func TestUpdateUser(t *testing.T) {
+	t.Run("not site admin nor the same user", func(t *testing.T) {
+		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id, Username: strconv.Itoa(int(id))}, nil
+		}
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{ID: 2, Username: "2", SiteAdmin: false}, nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		result, err := (&schemaResolver{}).UpdateUser(context.Background(), &updateUserArgs{User: "VXNlcjox"})
+		wantErr := "must be authenticated as 1 or as an admin (must be site admin)"
+		gotErr := fmt.Sprintf("%v", err)
+		if wantErr != gotErr {
+			t.Fatalf("err: want %q but got %q", wantErr, gotErr)
+		}
+		if result != nil {
+			t.Fatalf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("disallow suspicious names", func(t *testing.T) {
+		oldSourcegraphDotComMode := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{SiteAdmin: true}, nil
+		}
+		t.Cleanup(func() {
+			envvar.MockSourcegraphDotComMode(oldSourcegraphDotComMode)
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		result, err := (&schemaResolver{}).UpdateUser(context.Background(), &updateUserArgs{
+			User:     "VXNlcjox",
+			Username: strptr("about"),
+		})
+		wantErr := `rejected suspicious name "about"`
+		gotErr := fmt.Sprintf("%v", err)
+		if wantErr != gotErr {
+			t.Fatalf("err: want %q but got %q", wantErr, gotErr)
+		}
+		if result != nil {
+			t.Fatalf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("non site admin cannot change username when not enabled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthEnableUsernameChanges: false,
+			},
+		})
+		db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{ID: id}, nil
+		}
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: false}, nil
+		}
+		t.Cleanup(func() {
+			conf.Mock(nil)
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&schemaResolver{}).UpdateUser(ctx, &updateUserArgs{
+			User:     "VXNlcjox",
+			Username: strptr("alice"),
+		})
+		wantErr := "unable to change username because auth.enableUsernameChanges is false in site configuration"
+		gotErr := fmt.Sprintf("%v", err)
+		if wantErr != gotErr {
+			t.Fatalf("err: want %q but got %q", wantErr, gotErr)
+		}
+		if result != nil {
+			t.Fatalf("result: want nil but got %v", result)
+		}
+	})
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	db.Mocks.Users.Update = func(userID int32, update db.UserUpdate) error {
+		return nil
+	}
+	t.Cleanup(func() {
+		db.Mocks.Users = db.MockUsers{}
+	})
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+			mutation {
+				updateUser(
+					user: "VXNlcjox",
+					username: "alice.bob-chris-"
+				) {
+					alwaysNil
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"updateUser": {
+					"alwaysNil": null
+				}
+			}
+		`,
 		},
 	})
 }

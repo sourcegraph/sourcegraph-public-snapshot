@@ -54,7 +54,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     public render(): JSX.Element | null {
         return (
             <Form
-                className={classNames('signin-signup-form', 'e2e-signup-form', this.props.className)}
+                className={classNames('signin-signup-form', 'test-signup-form', this.props.className)}
                 onSubmit={this.handleSubmit}
             >
                 {this.state.error && (
@@ -142,20 +142,20 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value })
+    private onEmailFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ email: event.target.value })
     }
 
-    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ username: e.target.value })
+    private onUsernameFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ username: event.target.value })
     }
 
-    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ password: e.target.value })
+    private onPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ password: event.target.value })
     }
 
-    private onRequestTrialFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ requestedTrial: e.target.checked })
+    private onRequestTrialFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ requestedTrial: event.target.checked })
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

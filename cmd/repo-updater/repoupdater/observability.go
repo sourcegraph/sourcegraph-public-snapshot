@@ -10,40 +10,42 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
 type HandlerMetrics struct {
-	ServeHTTP *repos.OperationMetrics
+	ServeHTTP *metrics.OperationMetrics
 }
 
 // NewHandlerMetrics returns HandlerMetrics that need to be registered
 // in a Prometheus registry.
 func NewHandlerMetrics() HandlerMetrics {
 	return HandlerMetrics{
-		ServeHTTP: &repos.OperationMetrics{
+		ServeHTTP: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_duration_seconds",
-				Help:      "Time spent handling an HTTP request",
+				Name: "src_repoupdater_http_handler_duration_seconds",
+				Help: "Time spent handling an HTTP request",
 			}, []string{"path", "code"}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_requests_total",
-				Help:      "Total number of HTTP requests",
+				Name: "src_repoupdater_http_handler_requests_total",
+				Help: "Total number of HTTP requests",
 			}, []string{"path", "code"}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_errors_total",
-				Help:      "Total number of HTTP error responses (code >= 400)",
+				Name: "src_repoupdater_http_handler_errors_total",
+				Help: "Total number of HTTP error responses (code >= 400)",
 			}, []string{"path", "code"}),
 		},
 	}
+}
+
+// MustRegister registers all metrics in HandlerMetrics in the given
+// prometheus.Registerer. It panics in case of failure.
+func (m HandlerMetrics) MustRegister(r prometheus.Registerer) {
+	r.MustRegister(m.ServeHTTP.Count)
+	r.MustRegister(m.ServeHTTP.Duration)
+	r.MustRegister(m.ServeHTTP.Errors)
 }
 
 // ObservedHandler returns a decorator that wraps an http.Handler

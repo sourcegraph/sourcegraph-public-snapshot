@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func Test_isSaturdayNight(t *testing.T) {
+func TestIsSaturdayNight(t *testing.T) {
 	cases := map[string]bool{
 		"2012-11-01T22:08:41+00:00": false,
 		"2012-11-03T22:08:41+00:00": true,

@@ -10,12 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 type changesetEventsConnectionResolver struct {
-	store     *ee.Store
-	changeset *campaigns.Changeset
-	opts      ee.ListChangesetEventsOpts
+	store       *ee.Store
+	httpFactory *httpcli.Factory
+	changeset   *campaigns.Changeset
+	opts        ee.ListChangesetEventsOpts
 
 	// cache results because they are used by multiple fields
 	once            sync.Once
@@ -31,7 +33,12 @@ func (r *changesetEventsConnectionResolver) Nodes(ctx context.Context) ([]graphq
 	}
 	resolvers := make([]graphqlbackend.ChangesetEventResolver, 0, len(changesetEvents))
 	for _, c := range changesetEvents {
-		resolvers = append(resolvers, &changesetEventResolver{store: r.store, changeset: r.changeset, ChangesetEvent: c})
+		resolvers = append(resolvers, &changesetEventResolver{
+			store:          r.store,
+			httpFactory:    r.httpFactory,
+			changeset:      r.changeset,
+			ChangesetEvent: c,
+		})
 	}
 	return resolvers, nil
 }
@@ -58,8 +65,9 @@ func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*cam
 }
 
 type changesetEventResolver struct {
-	store     *ee.Store
-	changeset *campaigns.Changeset
+	store       *ee.Store
+	httpFactory *httpcli.Factory
+	changeset   *campaigns.Changeset
 	*campaigns.ChangesetEvent
 }
 
@@ -78,7 +86,12 @@ func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
 }
 
 func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
-	return &changesetResolver{store: r.store, Changeset: r.changeset}, nil
+	return &changesetResolver{
+		store:       r.store,
+		httpFactory: r.httpFactory,
+		changeset:   r.changeset,
+		repoCtx:     ctx,
+	}, nil
 }
 
 type changesetCountsResolver struct {

@@ -43,9 +43,9 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         //
         // If the settings update is for some other subject that is unrelated to the viewer, then this is not
         // necessary.
-        const isSubjectInViewerSettingsCascade =
-            this.props.settingsCascade.subjects &&
-            this.props.settingsCascade.subjects.some(({ subject }) => subject.id === this.props.subject.id)
+        const isSubjectInViewerSettingsCascade = this.props.settingsCascade.subjects?.some(
+            ({ subject }) => subject.id === this.props.subject.id
+        )
 
         try {
             if (isSubjectInViewerSettingsCascade) {
@@ -55,9 +55,9 @@ export class SettingsPage extends React.PureComponent<Props, State> {
             }
             this.setState({ commitError: undefined })
             this.props.onUpdate()
-        } catch (err) {
-            this.setState({ commitError: err })
-            console.error(err)
+        } catch (commitError) {
+            this.setState({ commitError })
+            console.error(commitError)
         }
     }
 

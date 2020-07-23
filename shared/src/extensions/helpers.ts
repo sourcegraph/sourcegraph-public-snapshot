@@ -81,7 +81,7 @@ export function queryConfiguredRegistryExtensions(
         map(registryExtensions => {
             const configuredExtensions: ConfiguredRegistryExtension[] = []
             for (const extensionID of extensionIDs) {
-                const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
+                const registryExtension = registryExtensions.find(extension => extension.extensionID === extensionID)
                 configuredExtensions.push(
                     registryExtension
                         ? toConfiguredRegistryExtension(registryExtension)

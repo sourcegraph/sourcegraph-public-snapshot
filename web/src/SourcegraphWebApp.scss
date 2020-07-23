@@ -21,6 +21,8 @@ $border-radius-lg: 4px;
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
+$box-shadow: 0 0.25rem 0.5rem rgba($gray-19, 0.07);
+
 $grid-gutter-width: 1.5rem;
 
 // No max width except for xl.
@@ -62,6 +64,7 @@ $alert-padding-x: 0.75rem;
 
 // Forms
 
+$form-check-input-margin-y: 0.2em;
 $input-btn-focus-width: 2px;
 $input-focus-border-color: $primary;
 // The default focus ring for buttons is very hard to see, raise opacity.
@@ -81,6 +84,21 @@ $input-placeholder-color: var(--input-placeholder-color);
 $input-group-addon-color: var(--input-group-addon-color);
 $input-group-addon-bg: var(--input-group-addon-bg);
 $input-group-addon-border-color: var(--input-group-addon-border-color);
+
+// Dropdown
+$dropdown-bg: var(--dropdown-bg);
+$dropdown-border-color: var(--dropdown-border-color);
+$dropdown-divider-bg: var(--border-color);
+$dropdown-link-color: var(--body-color);
+$dropdown-link-hover-color: var(--body-color);
+$dropdown-link-hover-bg: var(--dropdown-link-hover-bg);
+$dropdown-link-active-color: #ffffff;
+$dropdown-link-active-bg: var(--primary);
+$dropdown-link-disabled-color: var(--text-muted);
+$dropdown-header-color: var(--dropdown-header-color);
+$dropdown-item-padding-y: 0.25rem;
+$dropdown-item-padding-x: 0.5rem;
+$dropdown-padding-y: $dropdown-item-padding-y;
 
 // Tables
 
@@ -110,6 +128,7 @@ $code-bg: var(--body-bg);
 @import 'bootstrap/scss/grid';
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
+@import 'bootstrap/scss/transitions';
 @import './global-styles/badge';
 @import './global-styles/breadcrumb';
 @import './global-styles/card';
@@ -142,23 +161,26 @@ body,
     height: 100%;
 }
 
+// Document highlight is the background color for tokens which are matched with
+// a result from a document highlight provider. e.g. for references of the token
+// currently being hovered over.
+//
+// Note that we define this before selection highlights so that it will override
+// the styles of symbol that has both classes applied.
+.sourcegraph-document-highlight {
+    background-color: var(--secondary);
+}
+
 // Selection highlight is the background color for matched/highlighted tokens,
 // e.g. for search results, for identifying the token currently being hovered over,
 // or identifying the token the references panel is toggled for
-.selection-highlight {
-    background-color: rgba(217, 72, 15, 0.5);
-}
-// Same as above, but indicates highlighting for a fixed hover (vs. e.g.
-// an ephemeral mouseover on some token).
+.selection-highlight,
 .selection-highlight-sticky {
     background-color: rgba(217, 72, 15, 0.5);
 }
 
 .theme-light {
-    .selection-highlight {
-        background-color: rgba(255, 192, 120, 0.5);
-    }
-
+    .selection-highlight,
     .selection-highlight-sticky {
         background-color: rgba(255, 192, 120, 0.5);
     }
@@ -180,16 +202,17 @@ body,
     }
 }
 
-.form-control::placeholder {
-    opacity: 0.5;
-}
-
 .spacer {
     flex: 1;
 }
 
 .flex-1 {
     flex: 1;
+}
+
+.flex-shrink-past-contents {
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .cursor-pointer {
@@ -214,10 +237,17 @@ body,
     box-shadow: $btn-focus-box-shadow;
 }
 
+// Hide the given element from Percy.
+.percy-hide {
+    @media only percy {
+        visibility: hidden;
+        display: none;
+    }
+}
+
 // Pages
 @import './Layout';
-@import './api/APIConsole';
-@import './discussions/DiscussionsPage';
+@import './api/ApiConsole';
 @import './extensions/ExtensionsArea';
 @import './extensions/extension/ExtensionArea';
 @import './global/GlobalAlerts';
@@ -225,6 +255,7 @@ body,
 @import './global/Notices';
 @import './savedSearches/index';
 @import './search/input/SearchPage';
+@import './repogroups/RepogroupPage';
 @import './search/queryBuilder/index';
 @import './search/results/SearchResults';
 @import './settings/SettingsFile';
@@ -236,7 +267,7 @@ body,
 @import './auth/ResetPasswordPage';
 @import './auth/SignInPage';
 @import './auth/SignUpPage';
-@import './repo/GitRefTag';
+@import './repo/GitReferenceTag';
 @import './repo/RepoContainer';
 @import './repo/settings/RepoSettingsArea';
 @import './components/completion/CompletionWidgetDropdown';
@@ -254,12 +285,10 @@ body,
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './components/AnimatedAlert';
 @import './components/Collapsible';
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';
-@import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
 @import './components/diff/FileDiffNode';

@@ -15,7 +15,7 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
 }> = ({ extension }) => (
     <div className="alert alert-info">
         This extension is not yet published.
-        {extension.registryExtension && extension.registryExtension.viewerCanAdminister && (
+        {extension.registryExtension?.viewerCanAdminister && (
             <>
                 <br />
                 <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
@@ -41,9 +41,9 @@ enum ViewMode {
 export class RegistryExtensionManifestPage extends React.PureComponent<Props, State> {
     private static STORAGE_KEY = 'RegistryExtensionManifestPage.viewMode'
     private static getViewMode(): ViewMode {
-        const v = localStorage.getItem(RegistryExtensionManifestPage.STORAGE_KEY)
-        if (v === ViewMode.Rich || v === ViewMode.Plain) {
-            return v
+        const storedViewMode = localStorage.getItem(RegistryExtensionManifestPage.STORAGE_KEY)
+        if (storedViewMode === ViewMode.Rich || storedViewMode === ViewMode.Plain) {
+            return storedViewMode
         }
         return ViewMode.Rich
     }
@@ -76,15 +76,14 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </button>
                         )}{' '}
-                        {this.props.extension.registryExtension &&
-                            this.props.extension.registryExtension.viewerCanAdminister && (
-                                <Link
-                                    className="btn btn-primary"
-                                    to={`${this.props.extension.registryExtension.url}/-/releases/new`}
-                                >
-                                    Publish new release
-                                </Link>
-                            )}
+                        {this.props.extension.registryExtension?.viewerCanAdminister && (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${this.props.extension.registryExtension.url}/-/releases/new`}
+                            >
+                                Publish new release
+                            </Link>
+                        )}
                     </div>
                 </div>
                 <div className="mt-2">
@@ -112,7 +111,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
 
     private onViewModeButtonClick = (): void => {
         this.setState(
-            prevState => ({ viewMode: prevState.viewMode === ViewMode.Rich ? ViewMode.Plain : ViewMode.Rich }),
+            previousState => ({ viewMode: previousState.viewMode === ViewMode.Rich ? ViewMode.Plain : ViewMode.Rich }),
             () => RegistryExtensionManifestPage.setViewMode(this.state.viewMode)
         )
     }

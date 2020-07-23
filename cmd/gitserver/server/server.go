@@ -238,6 +238,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
+		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
+	}))
+
 	return mux
 }
 
@@ -609,17 +614,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	}
 
 	dir := s.dir(req.Repo)
-	cloneProgress, cloneInProgress := s.locker.Status(dir)
-	if cloneInProgress {
-		status = "clone-in-progress"
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		})
-		return
-	}
 	if !repoCloned(dir) {
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			status = "clone-in-progress"
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
 		if req.URL == "" {
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
@@ -667,6 +673,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			return
 		}
 	}
+	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
+	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
+	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
+	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
+		if resolved, err := quickSymbolicRefHead(dir); err == nil {
+			_, _ = w.Write([]byte(resolved))
+			w.Header().Set("X-Exec-Error", "")
+			w.Header().Set("X-Exec-Exit-Status", "0")
+			w.Header().Set("X-Exec-Stderr", "")
+			return
+		}
+	}
 
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
@@ -674,7 +692,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
@@ -1006,35 +1024,25 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 
 var (
 	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_running",
-		Help:      "number of gitserver.Command running concurrently.",
+		Name: "src_gitserver_exec_running",
+		Help: "number of gitserver.Command running concurrently.",
 	}, []string{"cmd", "repo"})
 	execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_duration_seconds",
-		Help:      "gitserver.Command latencies in seconds.",
-		Buckets:   trace.UserLatencyBuckets,
+		Name:    "src_gitserver_exec_duration_seconds",
+		Help:    "gitserver.Command latencies in seconds.",
+		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
 	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "clone_queue",
-		Help:      "number of repos waiting to be cloned.",
+		Name: "src_gitserver_clone_queue",
+		Help: "number of repos waiting to be cloned.",
 	})
 	lsRemoteQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "lsremote_queue",
-		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
+		Name: "src_gitserver_lsremote_queue",
+		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
 	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "repo_cloned",
-		Help:      "number of successful git clones run",
+		Name: "src_gitserver_repo_cloned",
+		Help: "number of successful git clones run",
 	})
 )
 
@@ -1126,12 +1134,12 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 
 	args := append([]string{"branch", "-D"}, badRefs...)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	_ = cmd.Run()
 
 	args = append([]string{"tag", "-d"}, badRefs...)
 	cmd = exec.CommandContext(ctx, "git", args...)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	_ = cmd.Run()
 }
 
@@ -1198,7 +1206,7 @@ func setLastChanged(dir GitDir) error {
 func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
 	now := time.Now() // return current time if we don't find a more accurate time
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	output, err := cmd.Output()
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
@@ -1231,7 +1239,7 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	// Do not use CommandContext since this is a fast operation we do not want
 	// to interrupt.
 	cmd := exec.Command("git", "show-ref")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	output, err := cmd.Output()
 	if err != nil {
 		// Ignore the failure for an empty repository: show-ref fails with
@@ -1296,7 +1304,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 			cmd = exec.Command("git", "remote", "set-url", "origin", "--", url)
 		}
 		if cmd != nil {
-			cmd.Dir = string(dir)
+			dir.Set(cmd)
 			if _, err := runCommand(ctx, cmd); err != nil {
 				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "error", err)
 			}
@@ -1311,9 +1319,19 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, url)
 	} else {
-		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url,
+			// Normal git refs
+			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
+			// GitHub pull requests
+			"+refs/pull/*:refs/pull/*",
+			// GitLab merge requests
+			"+refs/merge-requests/*:refs/merge-requests/*",
+			// Bitbucket pull requests
+			"+refs/pull-requests/*:refs/pull-requests/*",
+			// Possibly deprecated refs for sourcegraph zap experiment?
+			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 
 	// drop temporary pack files after a fetch. this function won't
 	// return until this fetch has completed or definitely-failed,
@@ -1399,6 +1417,29 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 	return true
 }
 
+const headFileRefPrefix = "ref: "
+
+// quickSymbolicRefHead best-effort mimics the execution of `git symbolic-ref HEAD`, but doesn't exec a child process.
+// It just reads the .git/HEAD file from the bare git repository directory.
+func quickSymbolicRefHead(dir GitDir) (string, error) {
+	// See if HEAD contains a commit hash and fail if so.
+	head, err := ioutil.ReadFile(dir.Path("HEAD"))
+	if err != nil {
+		return "", err
+	}
+	head = bytes.TrimSpace(head)
+	if isAbsoluteRevision(string(head)) {
+		return "", errors.New("ref HEAD is not a symbolic ref")
+	}
+
+	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
+	if !bytes.HasPrefix(head, []byte(headFileRefPrefix)) {
+		return "", errors.New("unrecognized HEAD file format")
+	}
+	headRef := bytes.TrimPrefix(head, []byte(headFileRefPrefix))
+	return string(headRef), nil
+}
+
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
 // It just reads the relevant files from the bare git repository directory.
 func quickRevParseHead(dir GitDir) (string, error) {
@@ -1413,11 +1454,11 @@ func quickRevParseHead(dir GitDir) (string, error) {
 	}
 
 	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
-	if !bytes.HasPrefix(head, []byte("ref: ")) {
+	if !bytes.HasPrefix(head, []byte(headFileRefPrefix)) {
 		return "", errors.New("unrecognized HEAD file format")
 	}
 	// Look for the file in refs/heads. If it exists, it contains the commit hash.
-	headRef := bytes.TrimPrefix(head, []byte("ref: "))
+	headRef := bytes.TrimPrefix(head, []byte(headFileRefPrefix))
 	if bytes.HasPrefix(headRef, []byte("../")) || bytes.Contains(headRef, []byte("/../")) || bytes.HasSuffix(headRef, []byte("/..")) {
 		// 🚨 SECURITY: prevent leakage of file contents outside repo dir
 		return "", fmt.Errorf("invalid ref format: %s", headRef)

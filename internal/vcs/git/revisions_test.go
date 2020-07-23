@@ -41,7 +41,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, nil, test.branch, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.branch, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -72,7 +72,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, nil, test.branch, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.branch, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -104,7 +104,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, nil, test.tag, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.tag, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -135,7 +135,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, test.repo, nil, test.tag, nil)
+		commitID, err := ResolveRevision(ctx, test.repo, nil, test.tag, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "references": [{ "path": "../../shared" }],
+  "compilerOptions": {
+    "module": "commonjs",
+    "baseUrl": ".",
+    "rootDir": ".",
+    "outDir": "out",
+    "noEmit": false,
+  },
+  "include": ["./**/*"],
+}

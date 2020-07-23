@@ -2,7 +2,7 @@ import { Position, Range } from '@sourcegraph/extension-api-types'
 import { upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -11,10 +11,10 @@ import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
+import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 
-interface Props {
+interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: GQL.IRepository | null
-    rev: string
     filePath?: string
     commitRange?: string
     position?: Position
@@ -45,23 +45,25 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    distinctUntilChanged((a, b) => a.repo === b.repo && a.rev === b.rev && a.filePath === b.filePath),
-                    switchMap(({ repo, rev, filePath }) => {
+                    distinctUntilChanged(
+                        (a, b) => a.repo === b.repo && a.revision === b.revision && a.filePath === b.filePath
+                    ),
+                    switchMap(({ repo, revision, filePath }) => {
                         if (!repo || !filePath) {
                             return of<Pick<State, 'fileExternalLinksOrError'>>({ fileExternalLinksOrError: null })
                         }
                         return merge(
                             of({ fileExternalLinksOrError: undefined }),
-                            fetchFileExternalLinks({ repoName: repo.name, rev, filePath }).pipe(
-                                catchError(err => [asError(err)]),
-                                map(c => ({ fileExternalLinksOrError: c }))
+                            fetchFileExternalLinks({ repoName: repo.name, revision, filePath }).pipe(
+                                catchError(error => [asError(error)]),
+                                map(fileExternalLinksOrError => ({ fileExternalLinksOrError }))
                             )
                         )
                     })
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
     }
@@ -116,23 +118,28 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         let url = externalURL.url
         if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
             // If in a branch, add branch path to the code host URL.
-            if (this.props.rev && this.props.rev !== defaultBranch && !this.state.fileExternalLinksOrError) {
-                url += `/tree/${this.props.rev}`
+            if (this.props.revision && this.props.revision !== defaultBranch && !this.state.fileExternalLinksOrError) {
+                url += `/tree/${this.props.revision}`
             }
             // If showing a comparison, add comparison specifier to the code host URL.
             if (this.props.commitRange) {
-                url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
+                url += `/compare/${this.props.commitRange.replace(/^\.{3}/, 'HEAD...').replace(/\.{3}$/, '...HEAD')}`
             }
             // Add range or position path to the code host URL.
             if (this.props.range) {
                 url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
             } else if (this.props.position) {
-                url += '#L' + this.props.position.line
+                url += `#L${this.props.position.line}`
             }
         }
 
         return (
-            <LinkOrButton to={url} target="_self" data-tooltip={`View on ${displayName}`}>
+            <LinkOrButton
+                className="nav-link test-go-to-code-host"
+                to={url}
+                target="_self"
+                data-tooltip={`View on ${displayName}`}
+            >
                 <Icon className="icon-inline" />
             </LinkOrButton>
         )
@@ -144,7 +151,7 @@ function serviceTypeDisplayNameAndIcon(
 ): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
     switch (serviceType) {
         case 'github':
-            return { displayName: 'GitHub', icon: GithubCircleIcon }
+            return { displayName: 'GitHub', icon: GithubIcon }
         case 'gitlab':
             return { displayName: 'GitLab' }
         case 'bitbucketServer':

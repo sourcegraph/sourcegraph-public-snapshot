@@ -1,28 +1,28 @@
 FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
 
+RUN apk add --no-cache bash=5.0.11-r1 git=2.24.3-r0 openssh=8.1_p1-r0 build-base=0.5-r1
+
+# build the jsonnet dashboards
+WORKDIR /opt
+RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git
+WORKDIR /opt/jsonnet
+RUN make
+RUN mkdir /dashboards
+COPY jsonnet /dashboards
+WORKDIR /dashboards
+ENV PATH="/opt/jsonnet:${PATH}"
+RUN ./build.sh
+
+# build dashboards from monitoring declarations
 COPY monitoring /go/src/monitoring-generator
 WORKDIR /go/src/monitoring-generator
 RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/grafana
 RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/monitoring-generator
 
-RUN apk add --no-cache bash=5.0.11-r1 git=2.24.3-r0  openssh=8.1_p1-r0 build-base=0.5-r1
-
-WORKDIR /opt
-RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git
-
-WORKDIR /opt/jsonnet
-RUN make
-
-RUN mkdir /dashboards
-COPY jsonnet /dashboards
-WORKDIR /dashboards
-
-ENV PATH="/opt/jsonnet:${PATH}"
-
-RUN ./build.sh
-
-FROM grafana/grafana:6.7.1@sha256:1ff3999e0fc08a3909e9a3ecdf6e74b4789db9b67c8297c44fdee1e167b9375f as production
+# when upgrading the Grafana version, please refer to https://about.sourcegraph.com/handbook/engineering/distribution/observability/monitoring#upgrading-grafana
+FROM grafana/grafana:7.0.3@sha256:d72946c8e5d57a9a121bcc3ae8e4a8ccab96960d81031d18a4c31ad1f7aea03e as production
+LABEL com.sourcegraph.grafana.version=7.0.3
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -34,7 +34,6 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
-LABEL com.sourcegraph.grafana.version=6.7.1
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana config /sg_config_grafana
@@ -50,5 +49,6 @@ USER root
 # hadolint ignore=DL3018
 RUN apk add --no-cache curl
 
+EXPOSE 3370
 USER grafana
 ENTRYPOINT ["/entry.sh"]

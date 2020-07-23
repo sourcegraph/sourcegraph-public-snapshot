@@ -9,7 +9,7 @@ import { ResultContainer } from '../../../../shared/src/components/ResultContain
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { AbsoluteRepoFilePosition, RepoSpec, toPrettyBlobURL } from '../../../../shared/src/util/url'
 import { DecoratedTextLines } from '../../components/DecoratedTextLines'
-import { GitRefTag } from '../../repo/GitRefTag'
+import { GitReferenceTag } from '../../repo/GitReferenceTag'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
@@ -34,11 +34,11 @@ interface Props {
     allExpanded?: boolean
 }
 
-export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props) => {
-    const logClick = (): void => {
-        eventLogger.log('CommitSearchResultClicked')
-    }
+const logClick = (): void => {
+    eventLogger.log('CommitSearchResultClicked')
+}
 
+export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props) => {
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoLink
@@ -67,8 +67,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                 {commitMessageSubject(props.result.commit.message) || '(empty commit message)'}
             </Link>
             <span className="commit-search-result__title-signature">
-                {uniqueRefs([...props.result.refs, ...props.result.sourceRefs]).map((ref, i) => (
-                    <GitRefTag key={i} gitRef={ref} onMouseDown={logClick} />
+                {uniqueReferences([...props.result.refs, ...props.result.sourceRefs]).map((reference, index) => (
+                    <GitReferenceTag key={index} gitReference={reference} onMouseDown={logClick} />
                 ))}
                 <code>
                     <Link
@@ -104,7 +104,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
     }
 
     if (props.result.diffPreview) {
-        const commonCtx: RepoSpec = {
+        const commonContext: RepoSpec = {
             repoName: props.result.commit.repository.name,
         }
 
@@ -115,24 +115,24 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
 
         // lhsCtx and rhsCtx need the cast because their values at const init time lack
         // the filePath field, which is assigned as we iterate over the lines below.
-        const lhsCtx = {
-            ...commonCtx,
+        const lhsContext = {
+            ...commonContext,
             commitID: props.result.commit.oid + '~',
-            rev: props.result.commit.oid + '~',
+            revision: props.result.commit.oid + '~',
         } as AbsoluteRepoFilePositionNonReadonly
-        const rhsCtx = {
-            ...commonCtx,
+        const rhsContext = {
+            ...commonContext,
             commitID: props.result.commit.oid,
-            rev: props.result.commit.oid,
+            revision: props.result.commit.oid,
         } as AbsoluteRepoFilePositionNonReadonly
 
         // Omit "index ", "--- file", and "+++ file" lines.
         const lines = props.result.diffPreview.value.split('\n')
         const lineClasses: { line: number; className: string; url?: string }[] = []
         let ignoreUntilAtAt = false
-        for (const [i, line] of lines.entries()) {
+        for (const [index, line] of lines.entries()) {
             if (ignoreUntilAtAt && !line.startsWith('@@')) {
-                lineClasses.push({ line: i + 1, className: 'hidden' })
+                lineClasses.push({ line: index + 1, className: 'hidden' })
                 continue
             }
             ignoreUntilAtAt = false
@@ -147,48 +147,48 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                 } else {
                     simplerLine = `${origName} -> ${newName} (renamed)`
                 }
-                lines[i] = simplerLine
+                lines[index] = simplerLine
 
-                lhsCtx.filePath = origName
-                rhsCtx.filePath = newName
-                lineClasses.push({ line: i + 1, className: 'file-header', url: toPrettyBlobURL(rhsCtx) })
+                lhsContext.filePath = origName
+                rhsContext.filePath = newName
+                lineClasses.push({ line: index + 1, className: 'file-header', url: toPrettyBlobURL(rhsContext) })
             } else if (line.startsWith('@@')) {
                 // TODO(sqs): a bit hacky getting the position
                 try {
-                    const m = line.match(/^@@ -(\d+),.*\+(\d+)/)
-                    if (m) {
-                        if (m[1]) {
-                            const lhsLine = parseInt(m[1], 10)
-                            lhsCtx.position = { line: lhsLine - 1, character: 0 }
+                    const match = line.match(/^@@ -(\d+),.*\+(\d+)/)
+                    if (match) {
+                        if (match[1]) {
+                            const leftLine = parseInt(match[1], 10)
+                            lhsContext.position = { line: leftLine - 1, character: 0 }
                         }
-                        if (m[2]) {
-                            const rhsLine = parseInt(m[2], 10)
-                            rhsCtx.position = { line: rhsLine - 1, character: 0 }
+                        if (match[2]) {
+                            const rightLine = parseInt(match[2], 10)
+                            rhsContext.position = { line: rightLine - 1, character: 0 }
                         }
                     }
-                } catch (err) {
+                } catch (error) {
                     // TODO(sqs)
-                    console.error(err)
+                    console.error(error)
                 }
 
-                lineClasses.push({ line: i + 1, className: 'hunk-header', url: toPrettyBlobURL(rhsCtx) })
+                lineClasses.push({ line: index + 1, className: 'hunk-header', url: toPrettyBlobURL(rhsContext) })
             } else {
-                if (rhsCtx.position && rhsCtx.position.line) {
+                if (rhsContext.position?.line) {
                     if (!line.startsWith('+')) {
-                        lhsCtx.position.line++
+                        lhsContext.position.line++
                     }
                     if (!line.startsWith('-')) {
-                        rhsCtx.position.line++
+                        rhsContext.position.line++
                     }
                 }
 
                 if (line.startsWith('+')) {
-                    lineClasses.push({ line: i + 1, className: 'added', url: toPrettyBlobURL(rhsCtx) })
+                    lineClasses.push({ line: index + 1, className: 'added', url: toPrettyBlobURL(rhsContext) })
                 } else if (line.startsWith('-')) {
                     lineClasses.push({
-                        line: i + 1,
+                        line: index + 1,
                         className: 'deleted',
-                        url: toPrettyBlobURL(lhsCtx),
+                        url: toPrettyBlobURL(lhsContext),
                     })
                 }
             }
@@ -222,17 +222,17 @@ function commitMessageSubject(message: string): string {
     return eol === -1 ? message : message.slice(0, eol)
 }
 
-function stopPropagationToCollapseOrExpand(e: React.MouseEvent): void {
-    e.stopPropagation()
+function stopPropagationToCollapseOrExpand(event: React.MouseEvent): void {
+    event.stopPropagation()
 }
 
-function uniqueRefs(refs: GQL.IGitRef[]): GQL.IGitRef[] {
+function uniqueReferences(references: GQL.IGitRef[]): GQL.IGitRef[] {
     const seenName = new Set<string>()
     const uniq: GQL.IGitRef[] = []
-    for (const ref of refs) {
-        if (!seenName.has(ref.name)) {
-            uniq.push(ref)
-            seenName.add(ref.name)
+    for (const reference of references) {
+        if (!seenName.has(reference.name)) {
+            uniq.push(reference)
+            seenName.add(reference.name)
         }
     }
     return uniq

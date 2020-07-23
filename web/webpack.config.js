@@ -13,12 +13,22 @@ logger.info('Using mode', mode)
 
 const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
 
-const rootDir = path.resolve(__dirname, '..')
+const rootDirectory = path.resolve(__dirname, '..')
 const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
-const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
+const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
+
+const babelLoader = {
+  loader: 'babel-loader',
+  options: {
+    cacheDirectory: true,
+    configFile: path.join(__dirname, 'babel.config.js'),
+  },
+}
+
+const extensionHostWorker = /main\.worker\.ts$/
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -53,14 +63,14 @@ const config = {
     // strict superset of the OSS entrypoint.
     app: [
       'react-hot-loader/patch',
-      isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+      isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
     ],
 
     'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
     'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
   },
   output: {
-    path: path.join(rootDir, 'ui', 'assets'),
+    path: path.join(rootDirectory, 'ui', 'assets'),
     filename: 'scripts/[name].bundle.js',
     chunkFilename: 'scripts/[id]-[contenthash].chunk.js',
     publicPath: '/.assets/',
@@ -114,6 +124,7 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         include: path.join(__dirname, 'src'),
+        exclude: extensionHostWorker,
         use: [
           ...(mode === 'production' ? ['thread-loader'] : []),
           {
@@ -136,17 +147,8 @@ const config = {
       },
       {
         test: /\.[jt]sx?$/,
-        exclude: path.join(__dirname, 'src'),
-        use: [
-          ...(mode === 'production' ? ['thread-loader'] : []),
-          {
-            loader: 'babel-loader',
-            options: {
-              cacheDirectory: true,
-              configFile: path.join(__dirname, 'babel.config.js'),
-            },
-          },
-        ],
+        exclude: [path.join(__dirname, 'src'), extensionHostWorker],
+        use: [...(mode === 'production' ? ['thread-loader'] : []), babelLoader],
       },
       {
         test: /\.(sass|scss)$/,
@@ -176,6 +178,10 @@ const config = {
         test: /\.css$/,
         include: monacoEditorPaths,
         use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: extensionHostWorker,
+        use: [{ loader: 'worker-loader', options: { inline: true } }, babelLoader],
       },
     ],
   },

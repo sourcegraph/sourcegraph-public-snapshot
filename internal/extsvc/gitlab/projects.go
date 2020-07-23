@@ -123,10 +123,8 @@ func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bo
 }
 
 var projectsGitLabCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "projs",
-	Name:      "gitlab_cache_hit",
-	Help:      "Counts cache hits and misses for GitLab project metadata.",
+	Name: "src_projs_gitlab_cache_hit",
+	Help: "Counts cache hits and misses for GitLab project metadata.",
 }, []string{"type"})
 
 func init() {
@@ -180,7 +178,7 @@ func (c *Client) getProjectFromAPI(ctx context.Context, id int, pathWithNamespac
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.do(ctx, req, &proj)
+	_, _, err = c.do(ctx, req, &proj)
 	return proj, err
 }
 
@@ -194,7 +192,7 @@ func (c *Client) ListProjects(ctx context.Context, urlStr string) (projs []*Proj
 	if err != nil {
 		return nil, nil, err
 	}
-	respHeader, err := c.do(ctx, req, &projs)
+	respHeader, _, err := c.do(ctx, req, &projs)
 	if err != nil {
 		return nil, nil, err
 	}

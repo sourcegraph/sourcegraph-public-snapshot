@@ -14,7 +14,7 @@ export class GoToPermalinkAction extends React.PureComponent<{
     /**
      * The current (possibly undefined or non-full-SHA) Git revision.
      */
-    rev?: string
+    revision?: string
 
     /**
      * The commit SHA for the revision in the current location (URL).
@@ -53,7 +53,7 @@ export class GoToPermalinkAction extends React.PureComponent<{
     }
 
     public render(): JSX.Element | null {
-        if (this.props.rev === this.props.commitID) {
+        if (this.props.revision === this.props.commitID) {
             return null // already at the permalink destination
         }
 

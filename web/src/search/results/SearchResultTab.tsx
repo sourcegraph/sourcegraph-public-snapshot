@@ -7,11 +7,13 @@ import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/sr
 import { constant } from 'lodash'
 import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
 import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Pick<InteractiveSearchProps, 'filtersInQuery'> {
+        Pick<InteractiveSearchProps, 'filtersInQuery'>,
+        VersionContextProps {
     location: H.Location
     type: SearchType
     query: string
@@ -32,10 +34,11 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     filtersInQuery,
     patternType,
     caseSensitive,
+    versionContext,
 }) => {
     const fullQuery = [query, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
-    const q = toggleSearchType(fullQuery, type)
-    const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive)
+    const caseToggledQuery = toggleSearchType(fullQuery, type)
+    const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
 
     const currentQuery = parseSearchURLQuery(location.search) || ''
     const parsedQuery = parseSearchQuery(currentQuery)
@@ -60,11 +63,11 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
 
     const isActiveFunc = constant(typeInQuery === type)
     return (
-        <li className="nav-item e2e-search-result-tab">
+        <li className="nav-item test-search-result-tab">
             <NavLink
                 to={{ pathname: '/search', search: builtURLQuery }}
-                className={`nav-link e2e-search-result-tab-${String(type)}`}
-                activeClassName="active e2e-search-result-tab--active"
+                className={`nav-link test-search-result-tab-${String(type)}`}
+                activeClassName="active test-search-result-tab--active"
                 isActive={isActiveFunc}
             >
                 {type ? typeToProse[type] : 'Code'}

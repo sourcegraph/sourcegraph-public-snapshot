@@ -14,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -86,7 +86,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 {
-			repoRevs, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+			repoRevs, _, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
 			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
 			for _, rev := range repoRevs {
@@ -193,7 +193,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		repoRevs, _, _, err := r.resolveRepositories(ctx, nil)
+		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -340,7 +340,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		case *RepositoryResolver:
 			k.repoName = s.repo.Name
 		case *GitTreeEntryResolver:
-			k.repoName = s.commit.repo.repo.Name
+			k.repoName = s.commit.repoResolver.repo.Name
 			// We explicitly do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as
 			// it doesn't specify the commit the default branch is on. This result would in
@@ -352,7 +352,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// equal.
 			k.file = s.Path()
 		case *searchSymbolResult:
-			k.repoName = s.commit.repo.repo.Name
+			k.repoName = s.commit.repoResolver.repo.Name
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name

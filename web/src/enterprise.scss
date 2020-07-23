@@ -3,14 +3,12 @@
 @import './SourcegraphWebApp';
 
 // Enterprise styles
-@import './enterprise/campaigns/detail/CampaignDetails';
-@import './enterprise/campaigns/global/marketing/CampaignMarketing';
+@import './enterprise/campaigns/detail/CampaignActionsBar';
 @import './enterprise/campaigns/list/CampaignNode';
-@import './enterprise/campaigns/detail/changesets/ChangesetNode';
+@import './enterprise/campaigns/detail/changesets/ExternalChangesetNode';
 @import './enterprise/extensions/registry/RegistryArea';
 @import './enterprise/extensions/registry/RegistryNewExtensionPage';
 @import './enterprise/extensions/extension/RegistryExtensionManagePage';
 @import './enterprise/productSubscription/ProductCertificate';
 @import './enterprise/productSubscription/TrueUpStatusSummary';
 @import './enterprise/user/productSubscriptions/PaymentTokenFormControl';
-@import './enterprise/repo/Repo';

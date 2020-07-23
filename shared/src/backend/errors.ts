@@ -25,17 +25,17 @@ export class RepoNotFoundError extends Error {
 export const isRepoNotFoundErrorLike = (value: unknown): boolean =>
     isErrorLike(value) && (value.name === REPO_NOT_FOUND_ERROR_NAME || /repo.*not found/i.test(value.message))
 
-const REV_NOT_FOUND_ERROR_NAME = 'RevNotFoundError' as const
-export class RevNotFoundError extends Error {
-    public readonly name = REV_NOT_FOUND_ERROR_NAME
-    constructor(rev?: string) {
-        super(`rev ${String(rev)} not found`)
+const REVISION_NOT_FOUND_ERROR_NAME = 'RevisionNotFoundError' as const
+export class RevisionNotFoundError extends Error {
+    public readonly name = REVISION_NOT_FOUND_ERROR_NAME
+    constructor(revision?: string) {
+        super(`Revision ${String(revision)} not found`)
     }
 }
 // Will work even for errors that came from GraphQL, background pages, comlink webworkers, etc.
 // TODO remove error message assertion after https://github.com/sourcegraph/sourcegraph/issues/9697 and https://github.com/sourcegraph/sourcegraph/issues/9693 are fixed
-export const isRevNotFoundErrorLike = (value: unknown): boolean =>
-    isErrorLike(value) && (value.name === REV_NOT_FOUND_ERROR_NAME || /rev.*not found/i.test(value.message))
+export const isRevisionNotFoundErrorLike = (value: unknown): boolean =>
+    isErrorLike(value) && (value.name === REVISION_NOT_FOUND_ERROR_NAME || /revision.*not found/i.test(value.message))
 
 const REPO_SEE_OTHER_ERROR_NAME = 'RepoSeeOtherError' as const
 export class RepoSeeOtherError extends Error {
@@ -58,7 +58,7 @@ export const isRepoSeeOtherErrorLike = (value: unknown): string | false => {
     ) {
         return value.redirectURL
     }
-    const match = value.message.match(/Repository not found at this location, but might exist at (\S+)/i)
+    const match = value.message.match(/repository not found at this location, but might exist at (\S+)/i)
     if (match) {
         return match[1]
     }
@@ -86,6 +86,6 @@ export class PrivateRepoPublicSourcegraphComError extends Error {
 export const isPrivateRepoPublicSourcegraphComErrorLike = (value: unknown): boolean =>
     isErrorLike(value) &&
     (value.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME ||
-        /GraphQL request to the public Sourcegraph.com was blocked because the current repository is private/i.test(
+        /graphql request to the public sourcegraph.com was blocked because the current repository is private/i.test(
             value.message
         ))

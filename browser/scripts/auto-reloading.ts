@@ -1,5 +1,5 @@
 import signale from 'signale'
-import io from 'socket.io'
+import socketIo from 'socket.io'
 
 /**
  * Returns a trigger function that notifies the extension to reload itself.
@@ -9,7 +9,7 @@ export const initializeServer = (): (() => void) => {
     logger.config({ displayTimestamp: true })
 
     // Since this port is hard-coded, it must match background.ts
-    const socketIOServer = io.listen(8890)
+    const socketIOServer = socketIo.listen(8890)
     logger.await('Ready for a browser extension to connect')
     socketIOServer.on('connect', () => {
         logger.info('Browser extension connected')

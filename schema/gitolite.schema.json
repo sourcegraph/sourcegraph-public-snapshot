@@ -26,11 +26,6 @@
       "type": "string",
       "examples": ["git@gitolite.example.com", "ssh://git@gitolite.example.com:2222/"]
     },
-    "blacklist": {
-      "description": "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
-      "type": "string",
-      "format": "regex"
-    },
     "exclude": {
       "description": "A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({\"name\": \"foo\"}).",
       "type": "array",
@@ -39,16 +34,21 @@
         "type": "object",
         "title": "ExcludedGitoliteRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }],
+        "anyOf": [{ "required": ["name"] }, { "required": ["pattern"] }],
         "properties": {
           "name": {
             "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
             "type": "string",
             "minLength": 1
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of a Gitolite repo to exclude from mirroring.",
+            "type": "string",
+            "format": "regex"
           }
         }
       },
-      "examples": [[{ "name": "myrepo" }]]
+      "examples": [[{ "name": "myrepo" }, { "pattern": ".*secret.*" }]]
     },
     "phabricatorMetadataCommand": {
       "description": "This is DEPRECATED. Use the `phabricator` field instead.",

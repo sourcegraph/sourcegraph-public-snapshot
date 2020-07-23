@@ -10,9 +10,9 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -80,7 +80,7 @@ func TestDeleteUser(t *testing.T) {
 		return []*extsvc.Account{
 			{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: "gitlab",
+					ServiceType: extsvc.TypeGitLab,
 					ServiceID:   "https://gitlab.com/",
 					AccountID:   "alice_gitlab",
 				},
@@ -94,7 +94,7 @@ func TestDeleteUser(t *testing.T) {
 
 		expAccounts := []*extsvc.Accounts{
 			{
-				ServiceType: "gitlab",
+				ServiceType: extsvc.TypeGitLab,
 				ServiceID:   "https://gitlab.com/",
 				AccountIDs:  []string{"alice_gitlab"},
 			},

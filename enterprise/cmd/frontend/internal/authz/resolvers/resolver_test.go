@@ -15,14 +15,15 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -97,7 +98,10 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				mutation {
 					setRepositoryPermissionsForUsers(
 						repository: "UmVwb3NpdG9yeTox",
-						bindIDs: ["alice@example.com", "bob"]) {
+						userPermissions: [
+							{ bindID: "alice@example.com"},
+							{ bindID: "bob"}
+						]) {
 						alwaysNil
 					}
 				}
@@ -136,7 +140,10 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				mutation {
 					setRepositoryPermissionsForUsers(
 						repository: "UmVwb3NpdG9yeTox",
-						bindIDs: ["alice", "bob"]) {
+						userPermissions: [
+							{ bindID: "alice"},
+							{ bindID: "bob"}
+						]) {
 						alwaysNil
 					}
 				}
@@ -145,7 +152,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				{
 					"setRepositoryPermissionsForUsers": {
 						"alwaysNil": null
-    				}
+					}
 				}
 			`,
 				},
@@ -200,6 +207,102 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			gqltesting.RunTests(t, test.gqlTests)
 		})
 	}
+}
+
+func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{}, nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	t.Cleanup(func() {
+		db.Mocks.Users = db.MockUsers{}
+	})
+
+	r := &Resolver{
+		repoupdaterClient: &fakeRepoupdaterClient{
+			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
+				if len(args.RepoIDs) != 1 {
+					return fmt.Errorf("RepoIDs: want 1 id but got %d", len(args.RepoIDs))
+				}
+				return nil
+			},
+		},
+	}
+	_, err := r.ScheduleRepositoryPermissionsSync(context.Background(), &graphqlbackend.RepositoryIDArgs{
+		Repository: graphqlbackend.MarshalRepositoryID(1),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{}, nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserIDArgs{})
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	t.Cleanup(func() {
+		db.Mocks.Users = db.MockUsers{}
+	})
+
+	r := &Resolver{
+		repoupdaterClient: &fakeRepoupdaterClient{
+			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
+				if len(args.UserIDs) != 1 {
+					return fmt.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
+				}
+				return nil
+			},
+		},
+	}
+	_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserIDArgs{
+		User: graphqlbackend.MarshalUserID(1),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+type fakeRepoupdaterClient struct {
+	mockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
+}
+
+func (c *fakeRepoupdaterClient) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+	return c.mockSchedulePermsSync(ctx, args)
 }
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
@@ -594,6 +697,82 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 					ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
+						"permissionsInfo": {
+							"permissions": ["READ"],
+							"syncedAt": "%[1]s",
+							"updatedAt": "%[1]s"
+						}
+    				}
+				}
+			`, clock().Format(time.RFC3339)),
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gqltesting.RunTests(t, test.gqlTests)
+		})
+	}
+}
+
+func TestResolver_UserPermissionsInfo(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{}, nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users.GetByCurrentAuthUser = nil
+		})
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	edb.Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
+		p.UpdatedAt = clock()
+		p.SyncedAt = clock()
+		return nil
+	}
+	defer func() {
+		db.Mocks.Users = db.MockUsers{}
+		edb.Mocks.Perms = edb.MockPerms{}
+	}()
+	tests := []struct {
+		name     string
+		gqlTests []*gqltesting.Test
+	}{
+		{
+			name: "get permissions information",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, nil),
+					Query: `
+				{
+					currentUser {
+						permissionsInfo {
+							permissions
+							syncedAt
+							updatedAt
+						}
+					}
+				}
+			`,
+					ExpectedResult: fmt.Sprintf(`
+				{
+					"currentUser": {
 						"permissionsInfo": {
 							"permissions": ["READ"],
 							"syncedAt": "%[1]s",

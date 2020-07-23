@@ -17,14 +17,13 @@ import (
 
 func BenchmarkSearch(b *testing.B) {
 	sqliteutil.MustRegisterSqlite3WithPcre()
-	ctagsCommand := ctags.GetCommand()
 
 	log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 
 	service := Service{
 		FetchTar: testutil.FetchTarFromGithub,
 		NewParser: func() (ctags.Parser, error) {
-			return ctags.NewParser(ctagsCommand)
+			return ctags.New()
 		},
 		Path: "/tmp/symbols-cache",
 	}

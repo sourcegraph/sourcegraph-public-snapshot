@@ -2,7 +2,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-const updatesManifestPath = path.resolve(__dirname, '..', 'src/extension/updates.manifest.json')
+const updatesManifestPath = path.resolve(__dirname, '..', 'src/browser-extension/updates.manifest.json')
 
 interface Update {
     version: string
@@ -34,6 +34,6 @@ function addVersionsToManifest(links: string[]): void {
     fs.writeFileSync(updatesManifestPath, JSON.stringify(updatesManifest, null, 2), 'utf8')
 }
 
-const links = process.argv.slice(2).filter(l => !l.match(/latest.xpi$/) && !l.match(/updates.json$/))
+const links = process.argv.slice(2).filter(link => !link.match(/latest.xpi$/) && !link.match(/updates.json$/))
 
 addVersionsToManifest(links)

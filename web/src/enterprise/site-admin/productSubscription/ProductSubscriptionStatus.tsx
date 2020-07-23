@@ -58,7 +58,7 @@ interface Props {
 export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus, history }) => {
     /** The product subscription status, or an error, or undefined while loading. */
     const statusOrError = useObservable(
-        useMemo(() => queryProductLicenseInfo().pipe(catchError((err): [ErrorLike] => [asError(err)])), [])
+        useMemo(() => queryProductLicenseInfo().pipe(catchError((error): [ErrorLike] => [asError(error)])), [])
     )
     if (statusOrError === undefined) {
         return (
@@ -79,7 +79,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
         license,
     } = statusOrError
 
-    // No license means Sourcegraph Core. For that, show the user that they can use this for free
+    // No license means Sourcegraph Free. For that, show the user that they can use this for free
     // forever, and show them how to upgrade.
 
     return (

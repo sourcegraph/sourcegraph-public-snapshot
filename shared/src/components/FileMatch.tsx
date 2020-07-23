@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { pluralize } from '../util/strings'
@@ -86,14 +86,11 @@ export class FileMatch extends React.PureComponent<Props> {
 
     public render(): React.ReactNode {
         const result = this.props.result
-        const items: IMatchItem[] = this.props.result.lineMatches.map(m => ({
-            highlightRanges: m.offsetAndLengths.map(offsetAndLength => ({
-                start: offsetAndLength[0],
-                highlightLength: offsetAndLength[1],
-            })),
-            preview: m.preview,
-            line: m.lineNumber,
-            badge: m.badge,
+        const items: IMatchItem[] = this.props.result.lineMatches.map(match => ({
+            highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({ start, highlightLength })),
+            preview: match.preview,
+            line: match.lineNumber,
+            badge: match.badge,
         }))
 
         const { repoAtRevURL, revDisplayName } =
@@ -139,7 +136,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 allExpanded: this.props.allExpanded,
             }
         } else {
-            const len = items.length - this.subsetMatches
+            const length = items.length - this.subsetMatches
             containerProps = {
                 collapsible: items.length > this.subsetMatches,
                 defaultExpanded: this.props.expanded,
@@ -155,8 +152,8 @@ export class FileMatch extends React.PureComponent<Props> {
                     />
                 ),
                 expandedChildren,
-                collapseLabel: `Hide ${len} ${pluralize('match', len, 'matches')}`,
-                expandLabel: `Show ${len} more ${pluralize('match', len, 'matches')}`,
+                collapseLabel: `Hide ${length} ${pluralize('match', length, 'matches')}`,
+                expandLabel: `Show ${length} more ${pluralize('match', length, 'matches')}`,
                 allExpanded: this.props.allExpanded,
             }
         }

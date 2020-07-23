@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
@@ -11,8 +11,9 @@ import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike, tryCatch } from '../util/errors'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+import { isExternalLink } from '../util/url'
 
 export interface ActionItemAction {
     /**
@@ -94,11 +95,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         this.subscriptions.add(
             this.commandExecutions
                 .pipe(
-                    mergeMap(params =>
-                        from(this.props.extensionsController.executeCommand(params, this.props.showInlineError)).pipe(
+                    mergeMap(parameters =>
+                        from(
+                            this.props.extensionsController.executeCommand(parameters, this.props.showInlineError)
+                        ).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
-                            map(c => ({ actionOrError: c })),
+                            map(actionOrError => ({ actionOrError })),
                             tap(() => {
                                 if (this.props.onDidExecute) {
                                     this.props.onDidExecute(this.props.action.id)
@@ -115,18 +118,18 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         )
     }
 
-    public componentDidUpdate(prevProps: ActionItemProps, prevState: State): void {
+    public componentDidUpdate(previousProps: ActionItemProps, previousState: State): void {
         // If the tooltip changes while it's visible, we need to force-update it to show the new value.
-        const prevTooltip = prevProps.action.actionItem && prevProps.action.actionItem.description
-        const tooltip = this.props.action.actionItem && this.props.action.actionItem.description
-        const descriptionTooltipChanged = prevTooltip !== tooltip
+        const previousTooltip = previousProps.action.actionItem?.description
+        const tooltip = this.props.action.actionItem?.description
+        const descriptionTooltipChanged = previousTooltip !== tooltip
 
         const errorTooltipChanged =
             this.props.showInlineError &&
-            (isErrorLike(prevState.actionOrError) !== isErrorLike(this.state.actionOrError) ||
-                (isErrorLike(prevState.actionOrError) &&
+            (isErrorLike(previousState.actionOrError) !== isErrorLike(this.state.actionOrError) ||
+                (isErrorLike(previousState.actionOrError) &&
                     isErrorLike(this.state.actionOrError) &&
-                    prevState.actionOrError.message !== this.state.actionOrError.message))
+                    previousState.actionOrError.message !== this.state.actionOrError.message))
 
         if (descriptionTooltipChanged || errorTooltipChanged) {
             this.props.platformContext.forceUpdateTooltip()
@@ -190,8 +193,17 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 ? this.props.action.actionItem.pressed
                 : undefined
 
-        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
         const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location)
+        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
+        const to = primaryTo || altTo
+        // Open in new tab if an external link
+        const newTabProps =
+            to && isExternalLink(to)
+                ? {
+                      target: '_blank',
+                      rel: 'noopener noreferrer',
+                  }
+                : {}
 
         return (
             <LinkOrButton
@@ -212,16 +224,14 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     pressed && ['action-item--pressed', this.props.pressedClassName]
                 )}
                 pressed={pressed}
+                onSelect={this.runAction}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
-                to={primaryTo || altTo}
-                onSelect={this.runAction}
+                to={to}
+                {...newTabProps}
             >
                 {content}{' '}
-                {primaryTo &&
-                    tryCatch(() => new URL(primaryTo, window.location.href).origin !== window.location.origin) && (
-                        <OpenInNewIcon className={this.props.iconClassName} />
-                    )}
+                {primaryTo && isExternalLink(primaryTo) && <OpenInNewIcon className={this.props.iconClassName} />}
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
                         <LoadingSpinner className={this.props.iconClassName} />
@@ -231,8 +241,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         )
     }
 
-    public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
-        const action = (isAltEvent(e) && this.props.altAction) || this.props.action
+    public runAction = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
+        const action = (isAltEvent(event) && this.props.altAction) || this.props.action
 
         if (!action.command) {
             // Unexpectedly arrived here; noop actions should not have event handlers that trigger
@@ -244,7 +254,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         this.props.telemetryService.log(action.id)
 
         if (urlForClientCommandOpen(action, this.props.location)) {
-            if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {
+            if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
                 // commands; in that case, this only ever opens the (non-alt) action.
@@ -262,10 +272,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
 
         // If the action we're running is *not* opening a URL by using the event target's default handler, then
         // ensure the default event handler for the <LinkOrButton> doesn't run (which might open the URL).
-        e.preventDefault()
+        event.preventDefault()
 
         // Do not show focus ring on element after running action.
-        e.currentTarget.blur()
+        event.currentTarget.blur()
 
         this.commandExecutions.next({
             command: action.command,
@@ -294,6 +304,6 @@ function urlForClientCommandOpen(action: Evaluated<ActionContribution>, location
     return undefined
 }
 
-function isAltEvent(e: React.KeyboardEvent | React.MouseEvent): boolean {
-    return e.altKey || e.metaKey || e.ctrlKey || ('button' in e && e.button === 1)
+function isAltEvent(event: React.KeyboardEvent | React.MouseEvent): boolean {
+    return event.altKey || event.metaKey || event.ctrlKey || ('button' in event && event.button === 1)
 }

@@ -24,7 +24,7 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-// ExecSafe executes a Git subcommand iff it is allowed according to a whitelist.
+// ExecSafe executes a Git subcommand iff it is allowed according to a allowlist.
 //
 // An error is only returned when there is a failure unrelated to the actual command being
 // executed. If the executed command exits with a nonzero exit code, err == nil. This is similar to
@@ -41,8 +41,8 @@ func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout
 		return nil, nil, 0, errors.New("at least one argument required")
 	}
 
-	if !isWhitelistedGitCmd(params) {
-		return nil, nil, 0, fmt.Errorf("command failed: %q is not a whitelisted git command", params)
+	if !isAllowedGitCmd(params) {
+		return nil, nil, 0, fmt.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", params...)
@@ -66,8 +66,8 @@ func ExecReader(ctx context.Context, repo gitserver.Repo, args []string) (io.Rea
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !isWhitelistedGitCmd(args) {
-		return nil, fmt.Errorf("command failed: %v is not a whitelisted git command", args)
+	if !isAllowedGitCmd(args) {
+		return nil, fmt.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
@@ -105,12 +105,12 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 }
 
 var (
-	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling ExecSafe.
-	gitCmdWhitelist = map[string][]string{
-		"log":    append([]string{}, gitCommonWhitelist...),
-		"show":   append([]string{}, gitCommonWhitelist...),
+	// gitCmdAllowlist are commands and arguments that are allowed to execute when calling ExecSafe.
+	gitCmdAllowlist = map[string][]string{
+		"log":    append([]string{}, gitCommonAllowlist...),
+		"show":   append([]string{}, gitCommonAllowlist...),
 		"remote": {"-v"},
-		"diff":   append([]string{}, gitCommonWhitelist...),
+		"diff":   append([]string{}, gitCommonAllowlist...),
 		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
 		"branch": {"-r", "-a", "--contains"},
 
@@ -120,8 +120,8 @@ var (
 		"symbolic-ref": {"--short"},
 	}
 
-	// `git log`, `git show`, `git diff`, etc., share a large common set of whitelisted args.
-	gitCommonWhitelist = []string{
+	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
+	gitCommonAllowlist = []string{
 		"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
 		"--regexp-ignore-case", "--glob", "--cherry", "-z",
@@ -136,28 +136,28 @@ var (
 	}
 )
 
-// isWhitelistedGitArg checks if the arg is whitelisted.
-func isWhitelistedGitArg(whitelistedArgs []string, arg string) bool {
-	// Split the arg at the first equal sign and check the LHS against the whitelist args.
+// isAllowedGitArg checks if the arg is allowed.
+func isAllowedGitArg(allowedArgs []string, arg string) bool {
+	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
-	for _, whiteListedArg := range whitelistedArgs {
-		if splitArg == whiteListedArg {
+	for _, allowedArg := range allowedArgs {
+		if splitArg == allowedArg {
 			return true
 		}
 	}
 	return false
 }
 
-// isWhitelistedGitCmd checks if the cmd and arguments are whitelisted.
-func isWhitelistedGitCmd(args []string) bool {
-	// check if the supplied command is a whitelisted cmd
-	if len(gitCmdWhitelist) == 0 {
+// isAllowedGitCmd checks if the cmd and arguments are allowed.
+func isAllowedGitCmd(args []string) bool {
+	// check if the supplied command is a allowed cmd
+	if len(gitCmdAllowlist) == 0 {
 		return false
 	}
 	cmd := args[0]
-	whiteListedArgs, ok := gitCmdWhitelist[cmd]
+	allowedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
-		// Command not whitelisted
+		// Command not allowed
 		return false
 	}
 	for _, arg := range args[1:] {
@@ -171,7 +171,7 @@ func isWhitelistedGitCmd(args []string) bool {
 				continue // this arg is OK
 			}
 
-			if !isWhitelistedGitArg(whiteListedArgs, arg) {
+			if !isAllowedGitArg(allowedArgs, arg) {
 				return false
 			}
 		}
@@ -247,10 +247,11 @@ func (c *commandRetryer) run() error {
 	// First, we try executing the command but without any EnsureRevision or
 	// URL. The command most likely did not have either of these, but we zero
 	// them just to make the code flow here more straightforward.
-	cpy := *c.cmd
-	cpy.EnsureRevision = ""
-	cpy.Repo.URL = ""
+	oldEnsureRevision, oldRepoURL := c.cmd.EnsureRevision, c.cmd.Repo.URL
+	c.cmd.EnsureRevision, c.cmd.Repo.URL = "", ""
 	err := c.exec()
+	// Set them back to their original values
+	c.cmd.EnsureRevision, c.cmd.Repo.URL = oldEnsureRevision, oldRepoURL
 	if err == nil {
 		// We didn't encounter any error, so gitserver did not need to fetch
 		// the repository in order to fulfill the request.
@@ -279,6 +280,11 @@ func (c *commandRetryer) run() error {
 
 	// Determine the remote URL, if needed, then retry the command.
 	if c.cmd.Repo.URL == "" && c.remoteURLFunc != nil {
+		// We mutate the URL below, so ensure we set it back when done
+		defer func() {
+			c.cmd.Repo.URL = oldRepoURL
+		}()
+
 		// We do modify c.cmd here because the caller may want to reuse this
 		// information.
 		c.cmd.Repo.URL, err = c.remoteURLFunc()
@@ -286,7 +292,5 @@ func (c *commandRetryer) run() error {
 			return err
 		}
 	}
-	cpy.EnsureRevision = c.cmd.EnsureRevision
-	cpy.Repo.URL = c.cmd.Repo.URL
 	return c.exec()
 }

@@ -6,9 +6,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -65,7 +66,7 @@ func TestRepository(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/diffusion/MYREPO",
-				serviceType: "phabricator",
+				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
@@ -168,7 +169,7 @@ func TestFileOrDir(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/source/MYREPO/browse/mybranch/mydir/myfile;myrev",
-				serviceType: "phabricator",
+				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
@@ -246,7 +247,7 @@ func TestCommit(t *testing.T) {
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/rMYREPOmycommit",
-				serviceType: "phabricator",
+				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)

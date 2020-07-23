@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -65,9 +65,9 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
             <div className="explore-area container my-3">
                 <h1>Explore</h1>
                 {this.props.exploreSections.map(
-                    ({ condition = () => true, render }, i) =>
+                    ({ condition = () => true, render }, index) =>
                         condition(context) && (
-                            <div className="mb-5" key={i}>
+                            <div className="mb-5" key={index}>
                                 {render(context)}
                             </div>
                         )

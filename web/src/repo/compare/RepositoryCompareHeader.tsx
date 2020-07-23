@@ -27,16 +27,16 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
     private static HEAD_INPUT_ID = 'repository-compare-header__head-spec'
 
     public state: State = {
-        comparisonBaseSpec: this.props.base.rev || '',
-        comparisonHeadSpec: this.props.head.rev || '',
+        comparisonBaseSpec: this.props.base.revision || '',
+        comparisonHeadSpec: this.props.head.revision || '',
     }
 
     public render(): JSX.Element | null {
         // Whether the user has entered new base/head values that differ from what's in the props and has not yet
         // submitted the form.
         const stateDiffers =
-            this.state.comparisonBaseSpec !== (this.props.base.rev || '') ||
-            this.state.comparisonHeadSpec !== (this.props.head.rev || '')
+            this.state.comparisonBaseSpec !== (this.props.base.revision || '') ||
+            this.state.comparisonHeadSpec !== (this.props.head.revision || '')
 
         const specIsEmpty = this.props.base === null && this.props.head === null
 
@@ -93,29 +93,29 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
         )
     }
 
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.setState(
-            (e.currentTarget.id === RepositoryCompareHeader.BASE_INPUT_ID
-                ? { comparisonBaseSpec: e.currentTarget.value }
-                : { comparisonHeadSpec: e.currentTarget.value }) as Pick<
+            (event.currentTarget.id === RepositoryCompareHeader.BASE_INPUT_ID
+                ? { comparisonBaseSpec: event.currentTarget.value }
+                : { comparisonHeadSpec: event.currentTarget.value }) as Pick<
                 State,
                 'comparisonBaseSpec' & 'comparisonHeadSpec'
             >
         )
     }
 
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
-        e.preventDefault()
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
+        event.preventDefault()
         eventLogger.log('RepositoryComparisonSubmitted')
         this.props.onUpdateComparisonSpec(this.state.comparisonBaseSpec, this.state.comparisonHeadSpec)
     }
 
-    private onCancel: React.MouseEventHandler<HTMLButtonElement> = e => {
-        e.preventDefault()
+    private onCancel: React.MouseEventHandler<HTMLButtonElement> = event => {
+        event.preventDefault()
         eventLogger.log('RepositoryComparisonCanceled')
         this.setState({
-            comparisonBaseSpec: this.props.base.rev || '',
-            comparisonHeadSpec: this.props.head.rev || '',
+            comparisonBaseSpec: this.props.base.revision || '',
+            comparisonHeadSpec: this.props.head.revision || '',
         })
     }
 }

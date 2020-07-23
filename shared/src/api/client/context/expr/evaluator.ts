@@ -21,8 +21,8 @@ export class TemplateExpression<S extends string = string> extends Expression<S>
 /**
  * Evaluates an expression with the given context and returns the result.
  */
-export function parse<T>(expr: string): Expression<T> {
-    return new Expression<T>(new Parser().parse(expr))
+export function parse<T>(expression: string): Expression<T> {
+    return new Expression<T>(new Parser().parse(expression))
 }
 
 /**
@@ -46,8 +46,8 @@ export const EMPTY_COMPUTED_CONTEXT: ComputedContext = {
 }
 
 const FUNCS: { [name: string]: (...args: any[]) => any } = {
-    get: (obj: any, key: string): any => obj?.[key] ?? undefined,
-    json: (obj: any): string => JSON.stringify(obj),
+    get: (object: any, key: string): any => object?.[key] ?? undefined,
+    json: (object: any): string => JSON.stringify(object),
 }
 
 function exec(node: ExpressionNode, context: ComputedContext): any {
@@ -64,8 +64,8 @@ function exec(node: ExpressionNode, context: ComputedContext): any {
 
     if ('Template' in node) {
         const parts: any[] = []
-        for (const expr of node.Template.parts) {
-            parts.push(exec(expr, context))
+        for (const expression of node.Template.parts) {
+            parts.push(exec(expression, context))
         }
         return parts.join('')
     }
@@ -97,6 +97,7 @@ function exec(node: ExpressionNode, context: ComputedContext): any {
             case '>=':
                 return left >= right()
             case '+':
+                // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
                 return left + right()
             case '-':
                 return left - right()
@@ -114,14 +115,14 @@ function exec(node: ExpressionNode, context: ComputedContext): any {
     }
 
     if ('Unary' in node) {
-        const expr = exec(node.Unary.expression, context)
+        const expression = exec(node.Unary.expression, context)
         switch (node.Unary.operator) {
             case '!':
-                return !expr
+                return !expression
             case '+':
-                return expr
+                return expression
             case '-':
-                return -expr
+                return -expression
             default:
                 throw new SyntaxError(`Invalid operator: ${node.Unary.operator}`)
         }
@@ -142,13 +143,13 @@ function exec(node: ExpressionNode, context: ComputedContext): any {
     }
 
     if ('FunctionCall' in node) {
-        const expr = node.FunctionCall
-        const func = FUNCS[expr.name]
+        const expression = node.FunctionCall
+        const func = FUNCS[expression.name]
         if (typeof func === 'function') {
-            const args = expr.args.map(arg => exec(arg, context))
+            const args = expression.args.map(argument => exec(argument, context))
             return func(...args)
         }
-        throw new SyntaxError(`Undefined function: ${expr.name}`)
+        throw new SyntaxError(`Undefined function: ${expression.name}`)
     }
 
     throw new SyntaxError('Unrecognized syntax node')

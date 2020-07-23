@@ -1,7 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignsMarketing renders 1`] = `
-Array [
+<CampaignsMarketing
+  body={
+    <div>
+      MY CUSTOM CONTENT
+    </div>
+  }
+>
   <section
     className="mt-3 mb-5"
   >
@@ -15,58 +21,30 @@ Array [
         Beta
       </span>
     </h1>
-    <p
-      className="lead"
-    >
-      <em>
-        Campaigns are currently in beta. During the beta period, campaigns are free to use. After the beta period, campaigns will be available as a paid add-on. Please
-         
-        <a
-          href="mailto:sales@sourcegraph.com?subject=I'm interested in Campaigns!"
-        >
-          contact us
-        </a>
-         for more information.
-      </em>
-    </p>
     <h2
-      className="mb-6"
+      className="mb-5"
     >
       Make and track large-scale changes across all code
     </h2>
-    <p
-      className="mt-3"
-    >
-      <a
-        href="https://about.sourcegraph.com/product/code-change-management"
-        rel="noopener"
-      >
-        Learn how to run campaigns
-      </a>
-       
-      to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below performing 
-      <code>
-        gofmt
-      </code>
-       over all Go repositories:
-    </p>
     <div
-      className="position-relative campaign-marketing--video-wrapper"
+      className="text-center"
     >
       <iframe
-        allow="autoplay; fullscreen"
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen={true}
-        className="w-100 h-100 position-absolute campaign-marketing--video-frame"
+        className="percy-hide chromatic-ignore"
         frameBorder="0"
-        src="https://player.vimeo.com/video/398878670?autoplay=0&title=0&byline=0&portrait=0"
+        height="315"
+        src="https://www.youtube.com/embed/aqcCrqRB17w"
+        width="560"
       />
     </div>
-  </section>,
+  </section>
   <div>
     MY CUSTOM CONTENT
-  </div>,
+  </div>
   <section
-    className="py-5"
+    className="my-3"
   >
     <h2>
       Ask questions and share feedback
@@ -94,6 +72,6 @@ Array [
       </a>
       . We look forward to hearing from you!
     </p>
-  </section>,
-]
+  </section>
+</CampaignsMarketing>
 `;

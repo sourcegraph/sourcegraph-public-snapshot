@@ -13,6 +13,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
+import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -100,10 +101,8 @@ const fetchGitCommits = (args: {
         })
     )
 
-interface Props extends RepoHeaderContributionsLifecycleProps {
+interface Props extends RepoHeaderContributionsLifecycleProps, Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: GQL.IRepository
-    rev?: string
-    commitID: string
 
     history: H.History
     location: H.Location

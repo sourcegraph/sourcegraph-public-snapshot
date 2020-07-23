@@ -59,7 +59,14 @@ export interface Quoted {
     quotedValue: string
 }
 
-export type Token = { type: 'whitespace' } | Literal | Filter | Sequence | Quoted
+export type Token =
+    | { type: 'whitespace' }
+    | { type: 'openingParen' }
+    | { type: 'closingParen' }
+    | Literal
+    | Filter
+    | Sequence
+    | Quoted
 
 /**
  * Represents the failed result of running a {@link Parser} on a search query.
@@ -117,8 +124,8 @@ const zeroOrMore = (parseToken: Parser): Parser<Sequence> => (input, start) => {
             return result
         }
         if (result.token.type === 'sequence') {
-            for (const m of result.token.members) {
-                members.push(m)
+            for (const member of result.token.members) {
+                members.push(member)
             }
         } else {
             const { range, token } = result
@@ -171,7 +178,7 @@ const quoted: Parser<Quoted> = (input, start) => {
         type: 'success',
         // end + 1 as `end` is currently the index of the quote in the string.
         range: { start, end: end + 1 },
-        token: { type: 'quoted', quotedValue: input.substring(start + 1, end) },
+        token: { type: 'quoted', quotedValue: input.slice(start + 1, end) },
     }
 }
 
@@ -179,14 +186,14 @@ const quoted: Parser<Quoted> = (input, start) => {
  * Returns a {@link Parser} that will attempt to parse tokens matching
  * the given character in a search query.
  */
-const character = (c: string): Parser<Literal> => (input, start) => {
-    if (input[start] !== c) {
-        return { type: 'error', expected: c, at: start }
+const character = (character: string): Parser<Literal> => (input, start) => {
+    if (input[start] !== character) {
+        return { type: 'error', expected: character, at: start }
     }
     return {
         type: 'success',
         range: { start, end: start + 1 },
-        token: { type: 'literal', value: c },
+        token: { type: 'literal', value: character },
     }
 }
 
@@ -194,18 +201,18 @@ const character = (c: string): Parser<Literal> => (input, start) => {
  * Returns a {@link Parser} that will attempt to parse
  * tokens matching the given RegExp pattern in a search query.
  */
-const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<T> => {
-    if (!p.source.startsWith('^')) {
-        p = new RegExp(`^${p.source}`)
+const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Parser<T> => {
+    if (!regexp.source.startsWith('^')) {
+        regexp = new RegExp(`^${regexp.source}`)
     }
     return (input, start) => {
-        const matchTarget = input.substring(start)
+        const matchTarget = input.slice(Math.max(0, start))
         if (!matchTarget) {
-            return { type: 'error', expected: expected || `/${p.source}/`, at: start }
+            return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
-        const match = matchTarget.match(p)
+        const match = matchTarget.match(regexp)
         if (!match) {
-            return { type: 'error', expected: expected || `/${p.source}/`, at: start }
+            return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
         return {
             type: 'success',
@@ -217,19 +224,26 @@ const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<
 
 const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
-const literal = pattern(/[^\s]+/)
+const literal = pattern(/[^\s)]+/)
 
-const filterKeyword = pattern(/-?[a-zA-Z]+(?=:)/)
+const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
 
 const filterDelimiter = character(':')
 
 const filterValue = oneOf<Quoted | Literal>(quoted, literal)
 
+const openingParen = pattern(/\(/, { type: 'openingParen' as const })
+
+const closingParen = pattern(/\)/, { type: 'closingParen' as const })
+
 /**
  * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
  * followed by whitespace or EOF, is found in the search query.
  */
-const followedByWhitespace = (parseToken: Parser<Exclude<Token, Sequence>>): Parser<Sequence> => (input, start) => {
+const followedBy = (
+    parseToken: Parser<Exclude<Token, Sequence>>,
+    parseNext: Parser<Exclude<Token, Sequence>>
+): Parser<Sequence> => (input, start) => {
     const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
     const tokenResult = parseToken(input, start)
     if (tokenResult.type === 'error') {
@@ -238,7 +252,7 @@ const followedByWhitespace = (parseToken: Parser<Exclude<Token, Sequence>>): Par
     members.push({ token: tokenResult.token, range: tokenResult.range })
     let { end } = tokenResult.range
     if (input[end] !== undefined) {
-        const separatorResult = whitespace(input, end)
+        const separatorResult = parseNext(input, end)
         if (separatorResult.type === 'error') {
             return separatorResult
         }
@@ -285,7 +299,16 @@ const filter: Parser<Filter> = (input, start) => {
 /**
  * A {@link Parser} for a Sourcegraph search query.
  */
-const searchQuery = zeroOrMore(oneOf<Token>(whitespace, ...[filter, quoted, literal].map(followedByWhitespace)))
+const searchQuery = zeroOrMore(
+    oneOf<Token>(
+        whitespace,
+        openingParen,
+        closingParen,
+        ...[filter, quoted, literal].map(token =>
+            followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
+        )
+    )
+)
 
 /**
  * Parses a search query string.

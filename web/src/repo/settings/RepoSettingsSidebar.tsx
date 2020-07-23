@@ -4,17 +4,19 @@ import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import {
     SIDEBAR_BUTTON_CLASS,
-    SIDEBAR_CARD_CLASS,
     SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
+    SidebarGroupItems,
+    SidebarGroupHeader,
+    SidebarGroup,
 } from '../../components/Sidebar'
-import { NavItemDescriptor } from '../../util/contributions'
+import { NavGroupDescriptor } from '../../util/contributions'
 
-export interface RepoSettingsSideBarItem extends NavItemDescriptor {}
+export interface RepoSettingsSideBarGroup extends NavGroupDescriptor {}
 
-export type RepoSettingsSideBarItems = readonly RepoSettingsSideBarItem[]
+export type RepoSettingsSideBarGroups = readonly RepoSettingsSideBarGroup[]
 
 interface Props extends RouteComponentProps<{}> {
-    repoSettingsSidebarItems: RepoSettingsSideBarItems
+    repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     className?: string
     repo?: GQL.IRepository
 }
@@ -23,30 +25,36 @@ interface Props extends RouteComponentProps<{}> {
  * Sidebar for repository settings pages.
  */
 export const RepoSettingsSidebar: React.FunctionComponent<Props> = ({
-    repo,
+    repoSettingsSidebarGroups,
     className,
-    repoSettingsSidebarItems,
+    repo,
 }: Props) =>
     repo ? (
         <div className={`repo-settings-sidebar ${className || ''}`}>
-            <div className={SIDEBAR_CARD_CLASS}>
-                <div className="card-header">Settings</div>
-                <div className="list-group list-group-flush">
-                    {repoSettingsSidebarItems.map(
-                        ({ label, to, exact, condition = () => true }) =>
-                            condition({}) && (
-                                <NavLink
-                                    to={`/${repo?.name}/-/settings${to}`}
-                                    exact={exact}
-                                    key={label}
-                                    className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                                >
-                                    {label}
-                                </NavLink>
-                            )
-                    )}
-                </div>
-            </div>
+            {repoSettingsSidebarGroups.map(
+                ({ header, items, condition = () => true }, index) =>
+                    condition({}) && (
+                        <SidebarGroup key={index}>
+                            {header && <SidebarGroupHeader icon={header.icon} label={header.label} />}
+                            <SidebarGroupItems>
+                                {items.map(
+                                    ({ label, to, exact, condition = () => true }) =>
+                                        condition({}) && (
+                                            <NavLink
+                                                to={`/${repo?.name}/-/settings${to}`}
+                                                exact={exact}
+                                                key={label}
+                                                className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
+                                            >
+                                                {label}
+                                            </NavLink>
+                                        )
+                                )}
+                            </SidebarGroupItems>
+                        </SidebarGroup>
+                    )
+            )}
+
             <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
                 <ConsoleIcon className="icon-inline" />
                 API console

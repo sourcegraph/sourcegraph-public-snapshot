@@ -29,12 +29,19 @@ for i; do
     cmd/symbols/.ctags.d/*)
       generate_ctags_image=true
       ;;
-    cmd/precise-code-intel/*)
-      # noop (uses tsc-watch).
-      exit
-      ;;
     cmd/*)
       cmd=${i#cmd/}
+      cmd=${cmd%%/*}
+      case " ${cmdlist[*]} " in
+        " $cmd ") ;;
+
+        *)
+          cmdlist+=("$cmd")
+          ;;
+      esac
+      ;;
+    enterprise/cmd/*)
+      cmd=${i#enterprise/cmd/}
       cmd=${cmd%%/*}
       case " ${cmdlist[*]} " in
         " $cmd ") ;;

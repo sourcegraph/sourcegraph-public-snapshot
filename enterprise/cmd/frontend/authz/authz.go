@@ -9,23 +9,24 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func Init(d dbutil.DB, clock func() time.Time) {
+	// TODO(efritz) - de-globalize assignments in this function
 	db.ExternalServices = edb.NewExternalServicesStore()
 	db.Authz = edb.NewAuthzStore(d, clock)
 
@@ -99,20 +100,26 @@ func Init(d dbutil.DB, clock func() time.Time) {
 		if info != nil && info.IsExpiredWithGracePeriod() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Core features.",
+				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.",
 			}}
 		}
 		return nil
 	})
 
 	// Enforce the use of a valid license key by preventing all HTTP requests if the license is invalid
-	// (due to a error in parsing or verification, or because the license has expired).
+	// (due to an error in parsing or verification, or because the license has expired).
 	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
-				// Site admins are exempt from license enforcement screens such that they can
-				// easily update the license key.
+			// Site admins are exempt from license enforcement screens so that they can
+			// easily update the license key. Also ignore backend.ErrNotAuthenticated
+			// because we need to allow site admins to sign in.
+			err := backend.CheckCurrentUserIsSiteAdmin(r.Context())
+			if err == nil || err == backend.ErrNotAuthenticated {
 				next.ServeHTTP(w, r)
+				return
+			} else if err != backend.ErrMustBeSiteAdmin {
+				log15.Error("Error checking current user is site admin", "err", err)
+				http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 				return
 			}
 
@@ -123,7 +130,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the [**site configuration**](/site-admin/configuration).")
+				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
 				return
 			}
 
@@ -133,9 +140,9 @@ func Init(d dbutil.DB, clock func() time.Time) {
 }
 
 type ExternalServicesStore interface {
-	ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error)
-	ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error)
-	ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error)
+	ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error)
+	ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error)
+	ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error)
 }
 
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config.
@@ -146,7 +153,6 @@ func ProvidersFromConfig(
 	ctx context.Context,
 	cfg *conf.Unified,
 	s ExternalServicesStore,
-	db dbutil.DB, // Needed by Bitbucket Server authz provider
 ) (
 	allowAccessByDefault bool,
 	providers []authz.Provider,
@@ -182,7 +188,7 @@ func ProvidersFromConfig(
 	if bbsConns, err := s.ListBitbucketServerConnections(ctx); err != nil {
 		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
 	} else {
-		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bbsConns, db)
+		bbsProviders, bbsProblems, bbsWarnings := bitbucketserver.NewAuthzProviders(bbsConns)
 		providers = append(providers, bbsProviders...)
 		seriousProblems = append(seriousProblems, bbsProblems...)
 		warnings = append(warnings, bbsWarnings...)
@@ -208,7 +214,7 @@ func init() {
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
+			ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems

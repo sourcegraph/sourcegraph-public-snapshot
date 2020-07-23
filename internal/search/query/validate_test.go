@@ -34,10 +34,6 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			want:  `invalid boolean "???"`,
 		},
 		{
-			input: "mr:potato",
-			want:  `unrecognized field "mr"`,
-		},
-		{
 			input: "count:sedonuts",
 			want:  "field count has value sedonuts, sedonuts is not a number",
 		},
@@ -49,10 +45,18 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "count:-1",
 			want:  "field count requires a positive number",
 		},
+		{
+			input: "+",
+			want:  "error parsing regexp: missing argument to repetition operator: `+`",
+		},
+		{
+			input: `\\\`,
+			want:  "error parsing regexp: trailing backslash at end of expression: ``",
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
-			_, err := ProcessAndOr(c.input)
+			_, err := ProcessAndOr(c.input, ParserOptions{SearchTypeRegex, false})
 			if err == nil {
 				t.Fatal("expected test to fail")
 			}
@@ -89,7 +93,7 @@ func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			query, err := ProcessAndOr(c.input)
+			query, err := ProcessAndOr(c.input, ParserOptions{SearchTypeRegex, false})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -119,7 +123,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		},
 	}
 	t.Run("for regexp field", func(t *testing.T) {
-		query, err := ProcessAndOr(c.query)
+		query, err := ProcessAndOr(c.query, ParserOptions{SearchTypeRegex, false})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -134,7 +138,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 }
 
 func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
-	query, err := ProcessAndOr("repoHasFile:foo")
+	query, err := ProcessAndOr("repoHasFile:foo", ParserOptions{SearchTypeRegex, false})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +154,7 @@ func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
 	}
 }
 
-func Test_PartitionSearchPattern(t *testing.T) {
+func TestPartitionSearchPattern(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
@@ -181,7 +185,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 		},
 		{
 			input: "file:foo (x y)",
-			want:  `"file:foo" (concat "(x" "y)")`,
+			want:  `"file:foo" "(x y)"`,
 		},
 		{
 			input: "(file:foo x) y",
@@ -222,7 +226,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run("partition search pattern", func(t *testing.T) {
-			q, _ := ParseAndOr(tt.input)
+			q, _ := ParseAndOr(tt.input, SearchTypeRegex)
 			scopeParameters, pattern, err := PartitionSearchPattern(q)
 			if err != nil {
 				if diff := cmp.Diff(tt.want, err.Error()); diff != "" {
@@ -246,7 +250,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 	}
 }
 
-func Test_ContainsAndOrKeyword(t *testing.T) {
+func TestContainsAndOrKeyword(t *testing.T) {
 	if !ContainsAndOrKeyword("foo OR bar") {
 		t.Errorf("Expected query to contain keyword")
 	}
@@ -255,5 +259,19 @@ func Test_ContainsAndOrKeyword(t *testing.T) {
 	}
 	if ContainsAndOrKeyword("repo:foo bar") {
 		t.Errorf("Did not expect query to contain keyword")
+	}
+}
+
+func TestForAll(t *testing.T) {
+	nodes := []Node{
+		Parameter{Field: "repo", Value: "foo"},
+		Parameter{Field: "repo", Value: "bar"},
+	}
+	result := forAll(nodes, func(node Node) bool {
+		_, ok := node.(Parameter)
+		return ok
+	})
+	if !result {
+		t.Errorf("Expected all nodes to be parameters.")
 	}
 }

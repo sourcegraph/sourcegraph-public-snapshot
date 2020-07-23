@@ -3,7 +3,7 @@ module.exports = {
   extends: '../.eslintrc.js',
   parserOptions: {
     ...baseConfig.parserOptions,
-    project: [__dirname + '/tsconfig.json', __dirname + '/src/e2e/tsconfig.json'],
+    project: [__dirname + '/tsconfig.json', __dirname + '/src/testing/tsconfig.json'],
   },
   rules: {
     'no-restricted-imports': [

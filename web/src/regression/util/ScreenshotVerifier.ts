@@ -1,4 +1,4 @@
-import { Driver } from '../../../../shared/src/e2e/driver'
+import { Driver } from '../../../../shared/src/testing/driver'
 import { BoundingBox } from 'puppeteer'
 
 interface ExpectedScreenshot {
@@ -90,7 +90,9 @@ export class ScreenshotVerifier {
 
         Please verify the following screenshots match the corresponding descriptions:
 
-        ${this.screenshots.map(s => `${s.screenshotFile}:\t${JSON.stringify(s.description)}`).join('\n        ')}
+        ${this.screenshots
+            .map(screenshot => `${screenshot.screenshotFile}:\t${JSON.stringify(screenshot.description)}`)
+            .join('\n        ')}
 
         `
     }

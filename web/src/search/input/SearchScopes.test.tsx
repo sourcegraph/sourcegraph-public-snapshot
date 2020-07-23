@@ -11,6 +11,7 @@ const BASE_PROPS = {
     history: createMemoryHistory(),
     query: 'abc',
     patternType: GQL.SearchPatternType.literal,
+    versionContext: undefined,
 }
 
 describe('SearchScopes', () => {

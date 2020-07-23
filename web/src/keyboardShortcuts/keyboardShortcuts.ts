@@ -19,6 +19,12 @@ export const KEYBOARD_SHORTCUT_SHOW_HELP: KeyboardShortcut = {
     hideInHelp: true,
 }
 
+export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
+    id: 'focusSearch',
+    title: 'Focus search bar',
+    keybindings: [{ ordered: ['/'] }],
+}
+
 /**
  * Global keyboard shortcuts. React components should access these via {@link KeybindingsProps}, not
  * globally.
@@ -27,6 +33,7 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KEYBOARD_SHORTCUT_SHOW_HELP,
+    KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR,
 ]
 
 /** A partial React props type for components that use or propagate keyboard shortcuts. */

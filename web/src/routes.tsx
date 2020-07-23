@@ -3,6 +3,13 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
+import { isErrorLike } from '../../shared/src/util/errors'
+import { RepogroupPage } from './repogroups/RepogroupPage'
+import { python2To3Metadata } from './repogroups/Python2To3'
+import { kubernetes } from './repogroups/Kubernetes'
+import { golang } from './repogroups/Golang'
+import { reactHooks } from './repogroups/ReactHooks'
+import { android } from './repogroups/Android'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -24,6 +31,12 @@ export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string 
      * @default () => true
      */
     condition?: (props: LayoutRouteComponentProps<Params>) => boolean
+}
+
+// Force a hard reload so that we delegate to the serverside HTTP handler for a route.
+function passThroughToServer(): React.ReactNode {
+    window.location.reload()
+    return null
 }
 
 /**
@@ -112,18 +125,13 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/discussions',
-        render: lazyComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
-        exact: true,
-    },
-    {
         path: '/search/scope/:id',
         render: lazyComponent(() => import('./search/ScopePage'), 'ScopePage'),
         exact: true,
     },
     {
         path: '/api/console',
-        render: lazyComponent(() => import('./api/APIConsole'), 'APIConsole'),
+        render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
         exact: true,
     },
     {
@@ -140,21 +148,52 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/help',
-        render: () => {
-            // Force a hard reload so that we delegate to the HTTP handler for /help, which handles
-            // redirecting /help to https://docs.sourcegraph.com. That logic is not duplicated in
-            // the web app because that would add complexity with no user benefit.
-            window.location.reload()
-            return null
-        },
+        render: passThroughToServer,
+    },
+    {
+        path: '/-/debug/*',
+        render: passThroughToServer,
     },
     {
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
     {
+        path: '/insights',
+        exact: true,
+        render: lazyComponent(() => import('./insights/InsightsPage'), 'InsightsPage'),
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights,
+    },
+    {
         path: '/views',
         render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
+    },
+    {
+        path: '/refactor-python2-to-3',
+        render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
+        condition: props => window.context.sourcegraphDotComMode,
+    },
+    {
+        path: '/kubernetes',
+        render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+        condition: props => window.context.sourcegraphDotComMode,
+    },
+    {
+        path: '/golang',
+        render: props => <RepogroupPage {...props} repogroupMetadata={golang} />,
+        condition: props => window.context.sourcegraphDotComMode,
+    },
+    {
+        path: '/react-hooks',
+        render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
+        condition: props => window.context.sourcegraphDotComMode,
+    },
+    {
+        path: '/android',
+        render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
+        condition: props => window.context.sourcegraphDotComMode,
     },
     {
         path: '/:repoRevAndRest+',

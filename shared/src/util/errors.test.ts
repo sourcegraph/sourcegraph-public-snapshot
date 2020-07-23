@@ -8,19 +8,19 @@ describe('isErrorLike', () => {
 
 describe('asError', () => {
     test('preserves Error values', () => {
-        const err = new Error('m')
-        expect(asError(err)).toBe(err)
+        const error = new Error('m')
+        expect(asError(error)).toBe(error)
     })
 
     test('creates Error values from error-like values', () => {
-        const err = asError({ message: 'm' })
-        expect(isErrorLike(err)).toBeTruthy()
-        expect(err.message).toBe('m')
+        const error = asError({ message: 'm' })
+        expect(isErrorLike(error)).toBeTruthy()
+        expect(error.message).toBe('m')
     })
 
     test('creates Error values from strings', () => {
-        const err = asError('m')
-        expect(isErrorLike(err)).toBeTruthy()
-        expect(err.message).toBe('m')
+        const error = asError('m')
+        expect(isErrorLike(error)).toBeTruthy()
+        expect(error.message).toBe('m')
     })
 })

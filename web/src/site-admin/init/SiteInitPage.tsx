@@ -8,7 +8,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import * as H from 'history'
 
 const initSite = async (args: SignUpArgs): Promise<void> => {
-    const resp = await fetch('/-/site-init', {
+    const response = await fetch('/-/site-init', {
         credentials: 'same-origin',
         method: 'POST',
         headers: {
@@ -18,8 +18,8 @@ const initSite = async (args: SignUpArgs): Promise<void> => {
         },
         body: JSON.stringify(args),
     })
-    if (resp.status !== 200) {
-        const text = await resp.text()
+    if (response.status !== 200) {
+        const text = await response.text()
         throw new Error(text)
     }
     if (args.requestedTrial) {

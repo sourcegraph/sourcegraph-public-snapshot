@@ -26,7 +26,7 @@ async function webpack() {
   const compiler = createWebpackCompiler(webpackConfig)
   /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
-    compiler.run((err, stats) => (err ? reject(err) : resolve(stats)))
+    compiler.run((error, stats) => (error ? reject(error) : resolve(stats)))
   })
   logWebpackStats(stats)
   if (stats.hasErrors()) {
@@ -34,7 +34,7 @@ async function webpack() {
   }
 }
 
-async function webpackDevServer() {
+async function webpackDevelopmentServer() {
   const sockHost = process.env.SOURCEGRAPH_HTTPS_DOMAIN || 'sourcegraph.test'
   const sockPort = Number(process.env.SOURCEGRAPH_HTTPS_PORT || 3443)
 
@@ -54,9 +54,9 @@ async function webpackDevServer() {
       '/': {
         target: 'http://localhost:3081',
         // Avoid crashing on "read ECONNRESET".
-        onError: err => console.error(err),
-        onProxyReqWs: (_proxyReq, _req, socket) =>
-          socket.on('error', err => console.error('WebSocket proxy error:', err)),
+        onError: error => console.error(error),
+        onProxyReqWs: (_proxyRequest, _request, socket) =>
+          socket.on('error', error => console.error('WebSocket proxy error:', error)),
       },
     },
     sockHost,
@@ -65,7 +65,7 @@ async function webpackDevServer() {
   WebpackDevServer.addDevServerEntrypoints(webpackConfig, options)
   const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
   await new Promise((resolve, reject) => {
-    server.listen(3080, '0.0.0.0', err => (err ? reject(err) : resolve()))
+    server.listen(3080, '0.0.0.0', error => (error ? reject(error) : resolve()))
   })
 }
 
@@ -80,7 +80,7 @@ const build = gulp.parallel(gulp.series(gulp.parallel(schema, graphQLTypes), gul
 const watch = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
   gulp.parallel(schema, graphQLTypes),
-  gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevServer)
+  gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevelopmentServer)
 )
 
-module.exports = { build, watch, webpackDevServer, webpack }
+module.exports = { build, watch, webpackDevServer: webpackDevelopmentServer, webpack }

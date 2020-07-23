@@ -34,8 +34,8 @@ interface CompletionWidgetDropdownProps
     onDownshiftStateChange: (options: StateChangeOptions<CompletionItem>) => void
 }
 
-function completionItemToString(s: CompletionItem | null): string {
-    return s ? s.label : ''
+function completionItemToString(item: CompletionItem | null): string {
+    return item ? item.label : ''
 }
 
 export const CompletionWidgetDropdown: React.FunctionComponent<CompletionWidgetDropdownProps> = ({

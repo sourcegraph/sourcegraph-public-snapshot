@@ -15,13 +15,27 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						sharedContainerRestarts("repo-updater"),
 						sharedContainerMemoryUsage("repo-updater"),
 						sharedContainerCPUUsage("repo-updater"),
+					},
+				},
+			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage7d("repo-updater"),
+						sharedProvisioningMemoryUsage7d("repo-updater"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("repo-updater"),
+						sharedProvisioningMemoryUsage5m("repo-updater"),
 					},
 				},
 			},

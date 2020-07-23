@@ -6,14 +6,14 @@ import (
 	"time"
 )
 
-// Priority defines how urgent the permissions syncing request is.
+// priority defines how urgent the permissions syncing request is.
 // Generally, if the request is driven from a user action (e.g. sign up, log in)
-// then it should be PriorityHigh. All other cases should be PriorityLow.
-type Priority int
+// then it should be priorityHigh. All other cases should be priorityLow.
+type priority int
 
 const (
-	PriorityLow Priority = iota
-	PriorityHigh
+	priorityLow priority = iota
+	priorityHigh
 )
 
 // requestType is the type of the permissions syncing request. It defines the
@@ -36,7 +36,7 @@ func (t1 requestType) higherPriorityThan(t2 requestType) bool {
 
 // requestMeta contains metadata of a permissions syncing request.
 type requestMeta struct {
-	Priority   Priority
+	Priority   priority
 	Type       requestType
 	ID         int32
 	NextSyncAt time.Time

@@ -41,9 +41,9 @@ describe('Expression', () => {
         'a || isnotdefined': 1, // short-circuit (if not, the use of an undefined ident would cause an error)
     }
     /* eslint-enable no-template-curly-in-string */
-    for (const [expr, want] of Object.entries(TESTS)) {
-        test(expr, () => {
-            const value = parse<unknown>(expr).exec(FIXTURE_CONTEXT)
+    for (const [expression, want] of Object.entries(TESTS)) {
+        test(expression, () => {
+            const value = parse<unknown>(expression).exec(FIXTURE_CONTEXT)
             expect(value).toBe(want)
         })
     }

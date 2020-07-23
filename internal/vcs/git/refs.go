@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -179,7 +180,7 @@ func ListBranches(ctx context.Context, repo gitserver.Repo, opt BranchesOptions)
 
 		branch := &Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = getCommit(ctx, repo, nil, ref.CommitID)
+			branch.Commit, err = getCommit(ctx, repo, nil, ref.CommitID, ResolveRevisionOptions{})
 			if err != nil {
 				return nil, err
 			}
@@ -335,4 +336,13 @@ func showRef(ctx context.Context, repo gitserver.Repo, args ...string) ([]Ref, e
 		refs[i] = Ref{Name: string(name), CommitID: api.CommitID(id)}
 	}
 	return refs, nil
+}
+
+var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
+
+// ValidateBranchName returns false if the given string is not a valid branch name.
+// It follows the rules here: https://git-scm.com/docs/git-check-ref-format
+// NOTE: It does not require a slash as mentioned in point 2.
+func ValidateBranchName(branch string) bool {
+	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
 }

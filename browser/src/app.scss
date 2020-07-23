@@ -26,6 +26,12 @@ $theme-colors-light: (
     display: flex;
 }
 
+// Note that we define this before selection highlights so that it will override
+// the styles of symbol that has both classes applied.
+.sourcegraph-document-highlight {
+    background-color: var(--secondary);
+}
+
 .selection-highlight,
 .selection-highlight span,
 .selection-highlight-sticky,
@@ -41,11 +47,11 @@ $theme-colors-light: (
 @import '../../shared/src/global-styles/icons';
 @import './highlight';
 @import './shared/components/CodeViewToolbar.scss';
-@import './libs/bitbucket/style.scss';
-@import './libs/gitlab/style.scss';
-@import './libs/github/style.scss';
-@import './libs/phabricator/style.scss';
-@import './libs/code_intelligence/HoverOverlay.scss';
-@import './libs/code_intelligence/external_links';
-@import './libs/code_intelligence/native_tooltips';
+@import './shared/code-hosts/bitbucket/style.scss';
+@import './shared/code-hosts/gitlab/style.scss';
+@import './shared/code-hosts/github/style.scss';
+@import './shared/code-hosts/phabricator/style.scss';
+@import './shared/code-hosts/shared/HoverOverlay.scss';
+@import './shared/code-hosts/shared/ViewOnSourcegraphButton';
+@import './shared/code-hosts/shared/nativeTooltips';
 @import './shared';

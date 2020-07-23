@@ -1,8 +1,9 @@
 import * as React from 'react'
 import { Link } from './Link'
+import { appendSubtreeQueryParameter } from '../util/url'
 
 /**
- *  Returns the friendly display form of the repository name (e.g., removing "github.com/").
+ * Returns the friendly display form of the repository name (e.g., removing "github.com/").
  */
 export function displayRepoName(repoName: string): string {
     let parts = repoName.split('/')
@@ -43,7 +44,7 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     return (
         <>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
-            <Link to={`${fileURL}?subtree=true`}>
+            <Link to={appendSubtreeQueryParameter(fileURL)}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>
             </Link>

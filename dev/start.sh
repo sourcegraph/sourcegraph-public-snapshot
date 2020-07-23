@@ -2,6 +2,13 @@
 
 set -euf -o pipefail
 
+if [[ ${BASH_VERSION:0:1} -lt 5 ]]; then
+  echo "Please upgrade bash to version 5. Currently on ${BASH_VERSION}."
+  echo
+  echo "  brew install bash"
+  exit 1
+fi
+
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
@@ -39,7 +46,6 @@ export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
-export LSIF_STORAGE_ROOT=$HOME/.sourcegraph/lsif-storage
 export INSECURE_DEV=1
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
@@ -49,8 +55,6 @@ export REPO_UPDATER_URL=http://127.0.0.1:3182
 export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
-export PRECISE_CODE_INTEL_API_SERVER_URL=http://localhost:3186
-export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
@@ -61,9 +65,14 @@ export SRC_PROF_SERVICES
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
 export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
+export CTAGS_PROCESSES=2
 export ZOEKT_HOST=localhost:3070
 export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 export GRAFANA_SERVER_URL=http://localhost:3370
+export PROMETHEUS_URL="${PROMETHEUS_URL:-"http://localhost:9090"}"
+
+# Jaeger config to get UI to work with reverse proxy, see https://www.jaegertracing.io/docs/1.11/deployment/#ui-base-path
+export JAEGER_SERVER_URL=http://localhost:16686
 
 # Caddy / HTTPS configuration
 export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
@@ -117,11 +126,6 @@ if [[ -n "$yarn_pid" ]]; then
   wait "$yarn_pid"
 fi
 
-# Install precise code intel dependencies
-pushd ./cmd/precise-code-intel 1>/dev/null
-yarn --no-progress
-popd 1>/dev/null
-
 # Increase ulimit (not needed on Windows/WSL)
 # shellcheck disable=SC2015
 type ulimit >/dev/null && ulimit -n 10000 || true
@@ -136,10 +140,56 @@ trap 'kill $build_ts_pid; exit' EXIT
 (yarn run build-ts || true) &
 build_ts_pid="$!"
 
-printf >&2 "\nStarting all binaries...\n\n"
-export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
+export PROCFILE=${PROCFILE:-dev/Procfile}
 
-if ! [ "$(id -u)" = 0 ] && hash authbind; then
+only=""
+except=""
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    -e | --except)
+      except="$2"
+      shift
+      ;;
+    -o | --only)
+      only="$2"
+      shift
+      ;;
+    *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if [ -n "${only}" ] || [ -n "${except}" ]; then
+  services=${only:-$except}
+
+  # "frontend,grafana,gitserver" -> "^(frontend|grafana|gitserver):"
+  services_pattern="^(${services//,/|}):"
+
+  if [ -n "${except}" ]; then
+    grep_args="-vE"
+  else
+    grep_args="-E"
+  fi
+
+  tmp_procfile=$(mktemp -t procfile_XXXXXXX)
+  grep ${grep_args} "${services_pattern}" "${PROCFILE}" >"${tmp_procfile}"
+  export PROCFILE=${tmp_procfile}
+fi
+
+if [ -n "${only}" ]; then
+  printf >&2 "\nStarting binaries %s...\n\n" "${only}"
+elif [ -n "${except}" ]; then
+  printf >&2 "\nStarting all binaries, except %s...\n\n" "${except}"
+else
+  printf >&2 "\nStarting all binaries...\n\n"
+fi
+
+export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE}"
+
+if ! [ "$(id -u)" = 0 ] && command -v authbind; then
   # ignoring because $GOREMAN is used in other handle-change.sh
   # shellcheck disable=SC2086
   # Support using authbind to bind to port 443 as non-root

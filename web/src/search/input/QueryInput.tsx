@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, Subject, Subscription, merge, of } from 'rxjs'
+import { Subject, Subscription, merge, of } from 'rxjs'
 import {
     debounceTime,
     distinctUntilChanged,
@@ -10,7 +10,6 @@ import {
     takeUntil,
     switchMap,
     map,
-    toArray,
     catchError,
     delay,
     share,
@@ -18,7 +17,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
 import {
@@ -37,12 +36,17 @@ import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Toggles } from './toggles/Toggles'
+import { VersionContextProps } from '../../../../shared/src/search/util'
+import { Shortcut } from '@slimsag/react-shortcuts'
+import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 
 interface Props
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
+        CopyQueryButtonProps,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        VersionContextProps {
     location: H.Location
     history: H.History
 
@@ -59,7 +63,7 @@ interface Props
     prependQueryForSuggestions?: string
 
     /** Whether the input should be autofocused (and the behavior thereof) */
-    autoFocus?: true | 'cursor-at-end'
+    autoFocus?: boolean | 'cursor-at-end'
 
     /** The input placeholder, if different from the default is desired. */
     placeholder?: string
@@ -83,6 +87,9 @@ interface Props
      * Whether the search mode toggle is attached. Used for styling.
      */
     withSearchModeToggle?: boolean
+
+    /** Keyboard shortcut to focus the query input. */
+    keyboardShortcutForFocus?: KeyboardShortcut
 }
 
 /**
@@ -204,22 +211,27 @@ export class QueryInput extends React.Component<Props, State> {
                                 : queryForFuzzySearch
 
                             const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
-                                map(createSuggestion),
-                                filter(isDefined),
-                                map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
-                                filter(suggestion => {
-                                    // Only show fuzzy-suggestions that are relevant to the typed filter
-                                    if (filterAndValueBeforeCursor?.resolvedFilterType) {
-                                        switch (filterAndValueBeforeCursor.resolvedFilterType) {
-                                            case FilterType.repohasfile:
-                                                return suggestion.type === FilterType.file
-                                            default:
-                                                return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
-                                        }
-                                    }
-                                    return true
-                                }),
-                                toArray(),
+                                map((suggestions): Suggestion[] =>
+                                    suggestions
+                                        .map(createSuggestion)
+                                        .filter(isDefined)
+                                        .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
+                                        .filter(suggestion => {
+                                            // Only show fuzzy-suggestions that are relevant to the typed filter
+                                            if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                                switch (filterAndValueBeforeCursor.resolvedFilterType) {
+                                                    case FilterType.repohasfile:
+                                                        return suggestion.type === FilterType.file
+                                                    default:
+                                                        return (
+                                                            suggestion.type ===
+                                                            filterAndValueBeforeCursor.resolvedFilterType
+                                                        )
+                                                }
+                                            }
+                                            return suggestion.type !== FilterType.repogroup
+                                        })
+                                ),
                                 map(suggestions => ({
                                     suggestions: {
                                         cursorPosition: queryState.cursorPosition,
@@ -270,39 +282,14 @@ export class QueryInput extends React.Component<Props, State> {
                         state => {
                             this.setState(state)
                         },
-                        err => {
-                            console.error(err)
+                        error => {
+                            console.error(error)
                         }
                     )
             )
         }
 
         if (this.props.hasGlobalQueryBehavior) {
-            // Quick-Open hotkeys
-            this.subscriptions.add(
-                fromEvent<KeyboardEvent>(window, 'keydown')
-                    .pipe(
-                        filter(
-                            event =>
-                                // Cmd/Ctrl+Shift+F
-                                (event.metaKey || event.ctrlKey) &&
-                                event.shiftKey &&
-                                event.key.toLowerCase() === 'f' &&
-                                !!document.activeElement &&
-                                !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-                        )
-                    )
-                    .subscribe(() => {
-                        const selection = String(window.getSelection() || '')
-                        this.inputValues.next({ query: selection, cursorPosition: selection.length })
-                        if (this.inputElement.current) {
-                            this.inputElement.current.focus()
-                            // Select whole input text
-                            this.inputElement.current.setSelectionRange(0, this.inputElement.current.value.length)
-                        }
-                    })
-            )
-
             /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
             this.subscriptions.add(
                 this.componentUpdates
@@ -312,9 +299,9 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(props => {
                         this.focusInputAndPositionCursorAtEnd()
-                        const q = new URLSearchParams(props.location.search)
-                        q.delete('focus')
-                        this.props.history.replace({ search: q.toString() })
+                        const searchParameters = new URLSearchParams(props.location.search)
+                        searchParameters.delete('focus')
+                        this.props.history.replace({ search: searchParameters.toString() })
                     })
             )
         }
@@ -332,8 +319,8 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (this.props.value.cursorPosition && prevProps.value.cursorPosition !== this.props.value.cursorPosition) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (this.props.value.cursorPosition && previousProps.value.cursorPosition !== this.props.value.cursorPosition) {
             this.focusInputAndPositionCursor(this.props.value.cursorPosition)
         }
         this.componentUpdates.next(this.props)
@@ -358,81 +345,91 @@ export class QueryInput extends React.Component<Props, State> {
             cursorPosition: this.state.suggestions.cursorPosition,
         })
         return (
-            <Downshift
-                scrollIntoView={this.downshiftScrollIntoView}
-                onSelect={this.onSuggestionSelect}
-                itemToString={this.downshiftItemToString}
-            >
-                {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
-                    const { onChange: downshiftChange, onKeyDown } = getInputProps()
-                    return (
-                        <div className="query-input2">
-                            <div ref={this.containerElement}>
-                                <input
-                                    onFocus={this.onInputFocus}
-                                    onBlur={this.onInputBlur}
-                                    className={`form-control query-input2__input e2e-query-input ${
-                                        this.props.withSearchModeToggle
-                                            ? 'query-input2__input-with-mode--toggle'
-                                            : 'rounded-left'
-                                    }`}
-                                    value={this.props.value.query}
-                                    autoFocus={this.props.autoFocus === true}
-                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                                        downshiftChange(event)
-                                        this.onInputChange(event)
-                                    }}
-                                    onKeyDown={event => {
-                                        this.onInputKeyDown(event)
-                                        onKeyDown(event)
-                                    }}
-                                    spellCheck={false}
-                                    autoCapitalize="off"
-                                    placeholder={
-                                        this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder
-                                    }
-                                    ref={this.inputElement}
-                                    name="query"
-                                    autoComplete="off"
-                                />
-                                {showSuggestions && (
-                                    <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
-                                        {this.state.suggestions.values.map((suggestion, index) => {
-                                            const isSelected = highlightedIndex === index
-                                            const key = `${index}-${suggestion.value}`
-                                            return (
-                                                <SuggestionItem
-                                                    key={key}
-                                                    {...getItemProps({
-                                                        key,
-                                                        index,
-                                                        item: suggestion,
-                                                    })}
-                                                    suggestion={suggestion}
-                                                    isSelected={isSelected}
-                                                    showUrlLabel={showUrlLabel}
-                                                    defaultLabel="add to query"
-                                                />
-                                            )
-                                        })}
-                                        {this.state.loadingSuggestions && (
-                                            <li className="suggestion suggestion--selected">
-                                                <LoadingSpinner className="icon-inline" />
-                                                <div className="suggestion__description">Loading</div>
-                                            </li>
-                                        )}
-                                    </ul>
-                                )}
-                                <Toggles
-                                    {...this.props}
-                                    navbarSearchQuery={this.props.value.query}
-                                    className="query-input2__toggle-container"
-                                />
+            <>
+                <Downshift
+                    scrollIntoView={this.downshiftScrollIntoView}
+                    onSelect={this.onSuggestionSelect}
+                    itemToString={this.downshiftItemToString}
+                >
+                    {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
+                        const { onChange: downshiftChange, onKeyDown } = getInputProps()
+                        return (
+                            <div className="query-input2">
+                                <div ref={this.containerElement}>
+                                    <input
+                                        onFocus={this.onInputFocus}
+                                        onBlur={this.onInputBlur}
+                                        className={`form-control query-input2__input test-query-input ${
+                                            this.props.withSearchModeToggle
+                                                ? 'query-input2__input-with-mode--toggle'
+                                                : 'rounded-left'
+                                        }`}
+                                        value={this.props.value.query}
+                                        autoFocus={this.props.autoFocus === true}
+                                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                                            downshiftChange(event)
+                                            this.onInputChange(event)
+                                        }}
+                                        onKeyDown={event => {
+                                            this.onInputKeyDown(event)
+                                            onKeyDown(event)
+                                        }}
+                                        spellCheck={false}
+                                        autoCapitalize="off"
+                                        placeholder={
+                                            this.props.placeholder === undefined
+                                                ? 'Search code...'
+                                                : this.props.placeholder
+                                        }
+                                        ref={this.inputElement}
+                                        name="query"
+                                        autoComplete="off"
+                                    />
+                                    {showSuggestions && (
+                                        <ul
+                                            className="query-input2__suggestions test-query-suggestions"
+                                            {...getMenuProps()}
+                                        >
+                                            {this.state.suggestions.values.map((suggestion, index) => {
+                                                const isSelected = highlightedIndex === index
+                                                const key = `${index}-${suggestion.value}`
+                                                return (
+                                                    <SuggestionItem
+                                                        key={key}
+                                                        {...getItemProps({
+                                                            key,
+                                                            index,
+                                                            item: suggestion,
+                                                        })}
+                                                        suggestion={suggestion}
+                                                        isSelected={isSelected}
+                                                        showUrlLabel={showUrlLabel}
+                                                        defaultLabel="add to query"
+                                                    />
+                                                )
+                                            })}
+                                            {this.state.loadingSuggestions && (
+                                                <li className="suggestion suggestion--selected">
+                                                    <LoadingSpinner className="icon-inline" />
+                                                    <div className="suggestion__description">Loading</div>
+                                                </li>
+                                            )}
+                                        </ul>
+                                    )}
+                                    <Toggles
+                                        {...this.props}
+                                        navbarSearchQuery={this.props.value.query}
+                                        className="query-input2__toggle-container"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    )
-                }}
-            </Downshift>
+                        )
+                    }}
+                </Downshift>
+                {this.props.keyboardShortcutForFocus?.keybindings.map((keybinding, index) => (
+                    <Shortcut key={index} {...keybinding} onMatch={this.focusInputAndPositionCursorAtEnd} />
+                ))}
+            </>
         )
     }
 
@@ -511,8 +508,12 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
-    private focusInputAndPositionCursorAtEnd(): void {
-        if (this.inputElement.current) {
+    private focusInputAndPositionCursorAtEnd = (): void => {
+        if (
+            this.inputElement.current &&
+            !!document.activeElement &&
+            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+        ) {
             this.focusInputAndPositionCursor(this.inputElement.current.value.length)
         }
     }

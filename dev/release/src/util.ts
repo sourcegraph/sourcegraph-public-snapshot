@@ -10,7 +10,7 @@ export async function readLine(prompt: string, cacheFile?: string): Promise<stri
 
     try {
         return await readFile(cacheFile, { encoding: 'utf8' })
-    } catch (err) {
+    } catch {
         const userInput = await readLineNoCache(prompt)
         await mkdirp(path.dirname(cacheFile))
         await writeFile(cacheFile, userInput)
@@ -19,11 +19,11 @@ export async function readLine(prompt: string, cacheFile?: string): Promise<stri
 }
 
 async function readLineNoCache(prompt: string): Promise<string> {
-    const rl = readline.createInterface({
+    const readlineInterface = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
     })
-    const userInput = await new Promise<string>(resolve => rl.question(prompt, resolve))
-    rl.close()
+    const userInput = await new Promise<string>(resolve => readlineInterface.question(prompt, resolve))
+    readlineInterface.close()
     return userInput
 }

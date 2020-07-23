@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/plan"
 )
 
@@ -18,6 +18,7 @@ type productPlan struct {
 	name                string
 	pricePerUserPerYear int32
 	minQuantity         *int32
+	maxQuantity         *int32
 	tiersMode           string
 	planTiers           []graphqlbackend.PlanTier
 }
@@ -35,6 +36,7 @@ func (r *productPlan) Name() string               { return r.name }
 func (r *productPlan) NameWithBrand() string      { return "Sourcegraph " + r.name }
 func (r *productPlan) PricePerUserPerYear() int32 { return r.pricePerUserPerYear }
 func (r *productPlan) MinQuantity() *int32        { return r.minQuantity }
+func (r *productPlan) MaxQuantity() *int32        { return r.maxQuantity }
 func (r *productPlan) TiersMode() string          { return r.tiersMode }
 func (r *productPlan) PlanTiers() []graphqlbackend.PlanTier {
 	if r.planTiers == nil {
@@ -56,9 +58,6 @@ func ToProductPlan(plan *stripe.Plan) (graphqlbackend.ProductPlan, error) {
 	if plan.Currency != stripe.CurrencyUSD {
 		return nil, fmt.Errorf("unexpected currency %q for plan %q", plan.Currency, plan.ID)
 	}
-	if plan.Interval != stripe.PlanIntervalYear {
-		return nil, fmt.Errorf("unexpected plan interval %q for plan %q", plan.Interval, plan.ID)
-	}
 	if plan.IntervalCount != 1 {
 		return nil, fmt.Errorf("unexpected plan interval count %d for plan %q", plan.IntervalCount, plan.ID)
 	}
@@ -72,25 +71,31 @@ func ToProductPlan(plan *stripe.Plan) (graphqlbackend.ProductPlan, error) {
 		})
 	}
 
+	minQuantity, maxQuantity := ProductPlanMinMaxQuantity(plan)
+
 	return &productPlan{
 		productPlanID:       plan.Product.ID,
 		billingPlanID:       plan.ID,
 		name:                plan.Product.Name,
 		pricePerUserPerYear: int32(plan.Amount),
-		minQuantity:         ProductPlanMinQuantity(plan),
+		minQuantity:         minQuantity,
+		maxQuantity:         maxQuantity,
 		planTiers:           tiers,
 		tiersMode:           plan.TiersMode,
 	}, nil
 }
 
-// ProductPlanMinQuantity returns the plan's product's minQuantity metadata value, or nil if there
-// is none.
-func ProductPlanMinQuantity(plan *stripe.Plan) *int32 {
-	if v, err := strconv.Atoi(plan.Product.Metadata["minQuantity"]); err == nil {
-		tmp := int32(v)
-		return &tmp
+// ProductPlanMinMaxQuantity returns the plan's product's minQuantity and maxQuantity metadata
+// values, or nil if unset.
+func ProductPlanMinMaxQuantity(plan *stripe.Plan) (min, max *int32) {
+	get := func(key string) *int32 {
+		if v, err := strconv.Atoi(plan.Product.Metadata[key]); err == nil {
+			tmp := int32(v)
+			return &tmp
+		}
+		return nil
 	}
-	return nil
+	return get("minQuantity"), get("maxQuantity")
 }
 
 // ProductPlans implements the GraphQL field Query.dotcom.productPlans.
@@ -107,6 +112,9 @@ func (BillingResolver) ProductPlans(ctx context.Context) ([]graphqlbackend.Produ
 		if plan.Interval != stripe.PlanIntervalYear {
 			continue
 		}
+		if !plan.Product.Active || !plan.Active {
+			continue
+		}
 		gqlPlan, err := ToProductPlan(plan)
 		if err != nil {
 			return nil, err
@@ -117,9 +125,12 @@ func (BillingResolver) ProductPlans(ctx context.Context) ([]graphqlbackend.Produ
 		return nil, err
 	}
 
-	// Sort cheapest first (a reasonable assumption).
+	// Sort free first, cheapest first (a reasonable assumption).
 	sort.Slice(gqlPlans, func(i, j int) bool {
-		return gqlPlans[i].PricePerUserPerYear() < gqlPlans[j].PricePerUserPerYear()
+		fi := gqlPlans[i].PlanTiers() == nil && gqlPlans[i].PricePerUserPerYear() == 0
+		fj := gqlPlans[j].PlanTiers() == nil && gqlPlans[j].PricePerUserPerYear() == 0
+		return (fi && !fj) || (fi == fj &&
+			gqlPlans[i].PricePerUserPerYear() < gqlPlans[j].PricePerUserPerYear())
 	})
 
 	return gqlPlans, nil

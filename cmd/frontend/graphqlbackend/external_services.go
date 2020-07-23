@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
@@ -24,7 +24,7 @@ import (
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
-	Input *struct {
+	Input struct {
 		Kind        string
 		DisplayName string
 		Config      string
@@ -56,22 +56,25 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	return res, nil
 }
 
+type UpdateExternalServiceInput struct {
+	ID          graphql.ID
+	DisplayName *string
+	Config      *string
+}
+
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
-	Input *struct {
-		ID          graphql.ID
-		DisplayName *string
-		Config      *string
-	}
+	Input UpdateExternalServiceInput
 }) (*externalServiceResolver, error) {
+	// 🚨 SECURITY: Only site admins are allowed to update the user.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	externalServiceID, err := unmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins are allowed to update the user.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}

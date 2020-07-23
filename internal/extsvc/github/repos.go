@@ -159,10 +159,8 @@ func (c *Client) cachedGetRepository(ctx context.Context, key string, getReposit
 }
 
 var reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "repos",
-	Name:      "github_cache_hit",
-	Help:      "Counts cache hits and misses for GitHub repo metadata.",
+	Name: "src_repos_github_cache_hit",
+	Help: "Counts cache hits and misses for GitHub repo metadata.",
 }, []string{"type"})
 
 func init() {
@@ -447,11 +445,25 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
+// Visibility is the visibility filter for listing repositories.
+type Visibility string
+
+const (
+	VisibilityAll     Visibility = "all"
+	VisibilityPublic  Visibility = "public"
+	VisibilityPrivate Visibility = "private"
+)
+
 // ListAffiliatedRepositories lists GitHub repositories affiliated with the client
 // token. page is the page of results to return. Pages are 1-indexed (so the
 // first call should be for page 1).
-func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("user/repos?sort=created&page=%d&per_page=100", page)
+func (c *Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int) (
+	repos []*Repository,
+	hasNextPage bool,
+	rateLimitCost int,
+	err error,
+) {
+	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
 	repos, err = c.listRepositories(ctx, path)
 	if err == nil {
 		c.addRepositoriesToCache(repos)

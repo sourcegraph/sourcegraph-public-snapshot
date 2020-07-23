@@ -72,8 +72,8 @@ class CombineLatestSubscriber<T> extends OuterSubscriber<T, T[]> {
 
     protected _complete(): void {
         this.activeObservables = this.observables.length
-        for (let i = 0; i < this.observables.length; i++) {
-            this.add(subscribeToResult(this, this.observables[i], this.observables[i], i))
+        for (let index = 0; index < this.observables.length; index++) {
+            this.add(subscribeToResult(this, this.observables[index], this.observables[index], index))
         }
     }
 

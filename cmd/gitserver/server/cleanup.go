@@ -22,14 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/inconshreveable/log15"
 )
-
-func init() {
-	prometheus.MustRegister(reposRemoved)
-	prometheus.MustRegister(reposRecloned)
-}
 
 const (
 	// repoTTL is how often we should reclone a repository
@@ -39,19 +35,20 @@ const (
 	repoTTLGC = time.Hour * 24 * 2
 )
 
-var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "repos_removed",
-	Help:      "number of repos removed during cleanup",
-})
-
-var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "repos_recloned",
-	Help:      "number of repos removed and recloned due to age",
-})
+var (
+	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repos_removed",
+		Help: "number of repos removed during cleanup",
+	})
+	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repos_recloned",
+		Help: "number of repos removed and recloned due to age",
+	})
+	reposRemovedDiskPressure = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repos_removed_disk_pressure",
+		Help: "number of repos removed due to not enough disk space",
+	})
+)
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
@@ -287,6 +284,10 @@ func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 // freeUpSpace removes git directories under ReposDir, in order from least
 // recently to most recently used, until it has freed howManyBytesToFree.
 func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
+	if howManyBytesToFree <= 0 {
+		return nil
+	}
+
 	// Get the git directories and their mod times.
 	gitDirs, err := s.findGitDirs()
 	if err != nil {
@@ -324,6 +325,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
+		reposRemovedDiskPressure.Inc()
 
 		// Report the new disk usage situation after removing this repo.
 		actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(s.ReposDir)
@@ -607,7 +609,7 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 
 func gitConfigGet(dir GitDir, key string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", key)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		// Exit code 1 means the key is not set.
@@ -621,7 +623,7 @@ func gitConfigGet(dir GitDir, key string) (string, error) {
 
 func gitConfigSet(dir GitDir, key, value string) error {
 	cmd := exec.Command("git", "config", key, value)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
@@ -631,7 +633,7 @@ func gitConfigSet(dir GitDir, key, value string) error {
 
 func gitConfigUnset(dir GitDir, key string) error {
 	cmd := exec.Command("git", "config", "--unset-all", key)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	err := cmd.Run()
 	if err != nil {
 		// Exit code 5 means the key is not set.

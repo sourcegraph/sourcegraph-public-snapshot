@@ -27,19 +27,19 @@ export function memoizeObservable<P, T>(
 ): (params: P, force?: boolean) => Observable<T> {
     const cache = new Map<string, Observable<T>>()
     let cacheResetSeq = allCachesResetSeq
-    return (params: P, force = false) => {
+    return (parameters: P, force = false) => {
         // Reset cache if resetAllMemoizationCaches was called.
         if (cacheResetSeq < allCachesResetSeq) {
             cache.clear()
             cacheResetSeq = allCachesResetSeq
         }
 
-        const key = resolver(params)
+        const key = resolver(parameters)
         const hit = cache.get(key)
         if (!force && hit) {
             return hit
         }
-        const obs = func(params).pipe(
+        const observable = func(parameters).pipe(
             publishReplay(),
             refCount(),
             tap({
@@ -48,7 +48,7 @@ export function memoizeObservable<P, T>(
                 },
             })
         )
-        cache.set(key, obs)
-        return obs
+        cache.set(key, observable)
+        return observable
     }
 }

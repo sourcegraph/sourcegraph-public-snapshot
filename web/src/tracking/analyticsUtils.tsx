@@ -16,7 +16,7 @@ interface EventQueryParameters {
  * You should likely use browserExtensionInstalled, rather than _browserExtensionMessageReceived,
  * which may never emit or complete.
  */
-export const browserExtensionMessageReceived = (document.getElementById('sourcegraph-app-background')
+export const browserExtensionMessageReceived = (document.querySelector('#sourcegraph-app-background')
     ? // If the marker exists, the extension is installed
       of(true)
     : // If not, listen for a registration event
@@ -33,11 +33,11 @@ export const browserExtensionMessageReceived = (document.getElementById('sourceg
  */
 export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
     timeout(500),
-    catchError(err => {
-        if (asError(err).name === 'TimeoutError') {
+    catchError(error => {
+        if (asError(error).name === 'TimeoutError') {
             return [false]
         }
-        throw err
+        throw error
     }),
     catchError(() => [false]),
     // Replay the same latest value for every subscriber
@@ -83,9 +83,9 @@ export function handleQueryEvents(url: string): void {
 /**
  * Strip provided URL parameters and update window history
  */
-function stripURLParameters(url: string, paramsToRemove: string[] = []): void {
+function stripURLParameters(url: string, parametersToRemove: string[] = []): void {
     const parsedUrl = new URL(url)
-    for (const key of paramsToRemove) {
+    for (const key of parametersToRemove) {
         if (parsedUrl.searchParams.has(key)) {
             parsedUrl.searchParams.delete(key)
         }

@@ -25,18 +25,6 @@ exports[`KeyboardShortcutsHelp  1`] = `
     <li
       className="list-group-item d-flex align-items-center justify-content-between"
     >
-      Focus search bar
-      <span>
-        <span>
-          <kbd>
-            /
-          </kbd>
-        </span>
-      </span>
-    </li>
-    <li
-      className="list-group-item d-flex align-items-center justify-content-between"
-    >
       Expand URL to its canonical form (on file or tree page)
       <span>
         <span>

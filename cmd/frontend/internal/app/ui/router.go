@@ -16,7 +16,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
@@ -39,6 +39,7 @@ const (
 	routeRepoTags       = "repo-tags"
 	routeRepoCompare    = "repo-compare"
 	routeRepoStats      = "repo-stats"
+	routeInsights       = "insights"
 	routeCampaigns      = "campaigns"
 	routeThreads        = "threads"
 	routeTree           = "tree"
@@ -47,7 +48,6 @@ const (
 	routeOrganizations  = "org"
 	routeSettings       = "settings"
 	routeSiteAdmin      = "site-admin"
-	routeDiscussions    = "discussions"
 	routeAPIConsole     = "api-console"
 	routeSearchScope    = "scope"
 	routeUser           = "user"
@@ -62,6 +62,7 @@ const (
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
 	routeExplore        = "explore"
+	routeRepoGroups     = "repo-groups"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
@@ -81,14 +82,15 @@ const (
 // aboutRedirects contains map entries, each of which indicates that
 // sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
-	"about":    "about",
-	"plan":     "plan",
-	"contact":  "contact",
-	"pricing":  "pricing",
-	"privacy":  "privacy",
-	"security": "security",
-	"terms":    "terms",
-	"jobs":     "jobs",
+	"about":      "about",
+	"plan":       "plan",
+	"contact":    "contact",
+	"pricing":    "pricing",
+	"privacy":    "privacy",
+	"security":   "security",
+	"terms":      "terms",
+	"jobs":       "jobs",
+	"help/terms": "terms",
 }
 
 // Router returns the router that serves pages for our web app.
@@ -110,12 +112,12 @@ func newRouter() *mux.Router {
 	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
+	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
-	r.Path("/discussions").Methods("GET").Name(routeDiscussions)
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
@@ -132,6 +134,12 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+
+	// Repogroup pages. Must mirror web/src/Layout.tsx
+	if envvar.SourcegraphDotComMode() {
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android"}
+		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+	}
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -186,6 +194,7 @@ func initRouter() {
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads")))
+	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights")))
 	router.Get(routeCampaigns).Handler(handler(serveBrandedPageString("Campaigns")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up")))
@@ -193,7 +202,6 @@ func initRouter() {
 	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings")))
 	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin")))
 	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password")))
-	router.Get(routeDiscussions).Handler(handler(serveBrandedPageString("Discussions")))
 	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console")))
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings")))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit")))
@@ -253,6 +261,7 @@ func initRouter() {
 			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
+		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
 	}
 
 	// repo
@@ -275,7 +284,7 @@ func initRouter() {
 	}))
 
 	// tree
-	router.Get(routeTree).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+	router.Get(routeTree).Handler(handler(serveTree(func(c *Common, r *http.Request) string {
 		// e.g. "src - gorilla/mux - Sourcegraph"
 		dirName := path.Base(mux.Vars(r)["Path"])
 		return brandNameSubtitle(dirName, repoShortName(c.Repo.Name))

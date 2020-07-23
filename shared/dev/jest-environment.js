@@ -75,7 +75,7 @@ class JSDOMEnvironment {
     this.moduleMocker = new ModuleMocker(global)
     const timerConfig = {
       idToRef: id => id,
-      refToId: ref => ref,
+      refToId: reference => reference,
     }
     this.fakeTimers = new JestFakeTimers({
       config,

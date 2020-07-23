@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React, { useCallback, useState, useMemo } from 'react'
-import H from 'history'
+import * as H from 'history'
 import { Form } from '../../../components/Form'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { querySearchResultsStats } from './backend'
@@ -28,12 +28,12 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
 }) => {
     const query = new URLSearchParams(location.search).get('q') || ''
     const [uncommittedQuery, setUncommittedQuery] = useState(query)
-    const onUncommittedQueryChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
-        setUncommittedQuery(e.currentTarget.value)
+    const onUncommittedQueryChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setUncommittedQuery(event.currentTarget.value)
     }, [])
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
-        e => {
-            e.preventDefault()
+        event => {
+            event.preventDefault()
             history.push({ ...location, search: new URLSearchParams({ q: uncommittedQuery }).toString() })
         },
         [history, location, uncommittedQuery]
@@ -44,10 +44,10 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
 
     // TODO(sqs): reuse the user's current patternType
     const stats = useObservable(
-        useMemo(() => _querySearchResultsStats(queryWithCount).pipe(catchError(err => of<ErrorLike>(asError(err)))), [
-            queryWithCount,
-            _querySearchResultsStats,
-        ])
+        useMemo(
+            () => _querySearchResultsStats(queryWithCount).pipe(catchError(error => of<ErrorLike>(asError(error)))),
+            [queryWithCount, _querySearchResultsStats]
+        )
     )
 
     return (
@@ -62,7 +62,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
                 <div className="form-group d-flex align-items-stretch">
                     <input
                         id="stats-page__query"
-                        className="form-control flex-1 e2e-stats-query"
+                        className="form-control flex-1 test-stats-query"
                         type="search"
                         placeholder="Enter a Sourcegraph search query"
                         value={uncommittedQuery}
@@ -73,7 +73,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
                         autoComplete="off"
                     />
                     {uncommittedQuery !== query && (
-                        <button type="submit" className="btn btn-primary ml-2 e2e-stats-query-update">
+                        <button type="submit" className="btn btn-primary ml-2 test-stats-query-update">
                             Update
                         </button>
                     )}

@@ -21,7 +21,7 @@ export function fetchLsifUploads({
 }: { repository: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<GQL.ILSIFUploadConnection> {
     return queryGraphQL(
         gql`
-            query LsifUploads(
+            query LsifUploadsForRepo(
                 $repository: ID!
                 $state: LSIFUploadState
                 $isLatestForRepo: Boolean
@@ -91,7 +91,7 @@ export function fetchLsifUploads({
 export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
     return queryGraphQL(
         gql`
-            query LsifUpload($id: ID!) {
+            query LsifUploadForRepo($id: ID!) {
                 node(id: $id) {
                     __typename
                     ... on LSIFUpload {
@@ -113,9 +113,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         inputRoot
                         inputIndexer
                         state
-                        failure {
-                            summary
-                        }
+                        failure
                         uploadedAt
                         startedAt
                         finishedAt
@@ -147,7 +145,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
 export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation DeleteLsifUpload($id: ID!) {
+            mutation DeleteLsifUploadForRepo($id: ID!) {
                 deleteLSIFUpload(id: $id) {
                     alwaysNil
                 }
@@ -159,6 +157,147 @@ export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
         map(data => {
             if (!data.deleteLSIFUpload) {
                 throw createInvalidGraphQLMutationResponseError('DeleteLsifUpload')
+            }
+        })
+    )
+}
+
+/**
+ * Fetch LSIF indexes for a repository.
+ */
+export function fetchLsifIndexes({
+    repository,
+    query,
+    state,
+    first,
+    after,
+}: { repository: string } & GQL.ILsifIndexesOnRepositoryArguments): Observable<GQL.ILSIFIndexConnection> {
+    return queryGraphQL(
+        gql`
+            query LsifIndexesForRepo(
+                $repository: ID!
+                $state: LSIFIndexState
+                $first: Int
+                $after: String
+                $query: String
+            ) {
+                node(id: $repository) {
+                    __typename
+                    ... on Repository {
+                        lsifIndexes(query: $query, state: $state, first: $first, after: $after) {
+                            nodes {
+                                id
+                                state
+                                projectRoot {
+                                    commit {
+                                        abbreviatedOID
+                                        url
+                                    }
+                                    path
+                                    url
+                                }
+                                inputCommit
+                                queuedAt
+                                startedAt
+                                finishedAt
+                                placeInQueue
+                            }
+
+                            totalCount
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        { repository, query, state, first, after }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error('Invalid repository')
+            }
+            if (node.__typename !== 'Repository') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Repository`)
+            }
+
+            return node.lsifIndexes
+        })
+    )
+}
+
+/**
+ * Fetch a single LSIF index by id.
+ */
+export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFIndex | null> {
+    return queryGraphQL(
+        gql`
+            query LsifIndexForRepo($id: ID!) {
+                node(id: $id) {
+                    __typename
+                    ... on LSIFIndex {
+                        id
+                        projectRoot {
+                            commit {
+                                oid
+                                abbreviatedOID
+                                url
+                                repository {
+                                    name
+                                    url
+                                }
+                            }
+                            path
+                            url
+                        }
+                        inputCommit
+                        state
+                        failure
+                        queuedAt
+                        startedAt
+                        finishedAt
+                        placeInQueue
+                    }
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'LSIFIndex') {
+                throw new Error(`The given ID is a ${node.__typename}, not an LSIFIndex`)
+            }
+
+            return node
+        })
+    )
+}
+
+/**
+ * Delete an LSIF index by id.
+ */
+export function deleteLsifIndex({ id }: { id: string }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteLsifIndexForRepo($id: ID!) {
+                deleteLSIFIndex(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteLSIFIndex) {
+                throw createInvalidGraphQLMutationResponseError('DeleteLsifIndex')
             }
         })
     )

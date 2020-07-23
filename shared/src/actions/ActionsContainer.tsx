@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import * as React from 'react'
 import { Subject, Subscription, combineLatest } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
@@ -55,11 +55,11 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
         this.scopeChanges.next(this.props.scope)
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.scope !== this.props.scope) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (previousProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
         }
-        if (prevProps.extraContext !== this.props.extraContext) {
+        if (previousProps.extraContext !== this.props.extraContext) {
             this.extraContextChanges.next(this.props.extraContext)
         }
     }
@@ -84,8 +84,8 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
 
     private defaultRenderItems = (items: ActionItemAction[]): JSX.Element | null => (
         <>
-            {items.map((item, i) => (
-                <ActionItem {...this.props} key={i} {...item} />
+            {items.map((item, index) => (
+                <ActionItem {...this.props} key={index} {...item} />
             ))}
         </>
     )

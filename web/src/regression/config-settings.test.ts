@@ -1,17 +1,17 @@
 import expect from 'expect'
 import { describe, before, beforeEach, afterEach, test } from 'mocha'
 import { getTestTools } from './util/init'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 import { editSiteConfig } from './util/helpers'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as jsonc from '@sqs/jsonc-parser'
-import { Driver } from '../../../shared/src/e2e/driver'
+import { Driver } from '../../../shared/src/testing/driver'
 import { TestResourceManager } from './util/TestResourceManager'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { retry } from '../../../shared/src/testing/utils'
 import { BuiltinAuthProvider, SiteConfiguration } from '../schema/site.schema'
 import { fetchSiteConfiguration } from './util/api'
-import { GraphQLClient } from './util/GraphQLClient'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { GraphQLClient } from './util/GraphQlClient'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Site config test suite', () => {
     const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
@@ -71,10 +71,12 @@ describe('Site config test suite', () => {
         const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
         const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
         // console.log('# siteConfig', siteConfigParsed)
-        const setBuiltinAuthProvider = async (p: BuiltinAuthProvider) => {
+        const setBuiltinAuthProvider = async (provider: BuiltinAuthProvider) => {
             const authProviders = siteConfigParsed['auth.providers']
             const foundIndices =
-                authProviders?.map((p, i) => (p.type === 'builtin' ? i : -1)).filter(i => i !== -1) || []
+                authProviders
+                    ?.map((provider, index) => (provider.type === 'builtin' ? index : -1))
+                    .filter(index => index !== -1) || []
             const builtinAuthProviderIndex = foundIndices.length > 0 ? foundIndices[0] : -1
             const editFns = []
             if (builtinAuthProviderIndex !== -1) {
@@ -88,7 +90,7 @@ describe('Site config test suite', () => {
                 )
             }
             editFns.push((contents: string) =>
-                jsoncEdit.setProperty(contents, ['auth.providers', -1], p, formattingOptions)
+                jsoncEdit.setProperty(contents, ['auth.providers', -1], provider, formattingOptions)
             )
             return editSiteConfig(gqlClient, ...editFns)
         }
@@ -103,7 +105,7 @@ describe('Site config test suite', () => {
                 await driver.page.goto(config.sourcegraphBaseUrl)
                 await driver.page.reload()
                 await driver.findElementWithText('Sign in', { wait: { timeout: 2000 } })
-                expect(await driver.page.evaluate(() => document.body.innerText.includes('Sign up'))).toBeFalsy()
+                expect(await driver.page.evaluate(() => document.body.textContent?.includes('Sign up'))).toBeFalsy()
             },
             { retries: 5 } // configuration propagation is eventually consistent
         )
@@ -114,7 +116,7 @@ describe('Site config test suite', () => {
                 await driver.page.goto(config.sourcegraphBaseUrl)
                 await driver.page.reload()
                 await driver.findElementWithText('Sign in', { wait: { timeout: 2000 } })
-                expect(await driver.page.evaluate(() => document.body.innerText.includes('Sign up'))).toBeTruthy()
+                expect(await driver.page.evaluate(() => document.body.textContent?.includes('Sign up'))).toBeTruthy()
             },
             { retries: 5 } // configuration propagation is eventually consistent
         )

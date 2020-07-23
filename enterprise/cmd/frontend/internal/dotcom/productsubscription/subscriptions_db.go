@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -97,6 +97,10 @@ func (o dbSubscriptionsListOptions) sqlConditions() []*sqlf.Query {
 
 // List lists all product subscriptions that satisfy the options.
 func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOptions) ([]*dbSubscription, error) {
+	if mocks.subscriptions.List != nil {
+		return mocks.subscriptions.List(ctx, opt)
+	}
+
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
@@ -205,4 +209,5 @@ type mockSubscriptions struct {
 	Create  func(userID int32) (id string, err error)
 	GetByID func(id string) (*dbSubscription, error)
 	Archive func(id string) error
+	List    func(ctx context.Context, opt dbSubscriptionsListOptions) ([]*dbSubscription, error)
 }

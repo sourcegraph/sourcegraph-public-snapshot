@@ -1,16 +1,105 @@
 package usagestats
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
+
+func TestGetArchive(t *testing.T) {
+	setupForTest(t)
+
+	now := time.Now().UTC()
+	ctx := context.Background()
+
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Email:           "foo@bar.com",
+		Username:        "admin",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	event := &db.Event{
+		Name:      "SearchResultsQueried",
+		URL:       "test",
+		UserID:    uint32(user.ID),
+		Source:    "test",
+		Timestamp: now,
+	}
+
+	err = db.EventLogs.Insert(ctx, event)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dates, err := db.Users.ListDates(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	archive, err := GetArchive(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]string{
+		"UsersUsageCounts.csv": fmt.Sprintf("date,user_id,search_count,code_intel_count\n%s,%d,%d,%d\n",
+			time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+			event.UserID,
+			1,
+			0,
+		),
+		"UsersDates.csv": fmt.Sprintf("user_id,created_at,deleted_at\n%d,%s,%s\n",
+			dates[0].UserID,
+			dates[0].CreatedAt.Format(time.RFC3339),
+			"NULL",
+		),
+	}
+
+	for _, f := range zr.File {
+		content, ok := want[f.Name]
+		if !ok {
+			continue
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := ioutil.ReadAll(rc)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		delete(want, f.Name)
+
+		if content != string(have) {
+			t.Errorf("%q has wrong content:\nwant: %s\nhave: %s", f.Name, content, string(have))
+		}
+	}
+
+	for file := range want {
+		t.Errorf("Missing file from ZIP archive %q", file)
+	}
+}
 
 func TestUserUsageStatistics_None(t *testing.T) {
 	setupForTest(t)

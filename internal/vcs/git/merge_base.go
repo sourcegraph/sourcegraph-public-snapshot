@@ -13,6 +13,9 @@ import (
 
 // MergeBase returns the merge base commit for the specified commits.
 func MergeBase(ctx context.Context, repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+	if Mocks.MergeBase != nil {
+		return Mocks.MergeBase(repo, a, b)
+	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)

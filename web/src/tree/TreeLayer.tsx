@@ -29,6 +29,7 @@ import {
     treePadding,
 } from './util'
 import { ErrorAlert } from '../components/alerts'
+import classNames from 'classnames'
 
 export interface TreeLayerProps extends AbsoluteRepo {
     history: H.History
@@ -83,23 +84,23 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             this.componentUpdates
                 .pipe(
                     distinctUntilChanged(
-                        (x, y) =>
-                            x.repoName === y.repoName &&
-                            x.rev === y.rev &&
-                            x.commitID === y.commitID &&
-                            x.parentPath === y.parentPath &&
-                            x.isExpanded === y.isExpanded
+                        (a, b) =>
+                            a.repoName === b.repoName &&
+                            a.revision === b.revision &&
+                            a.commitID === b.commitID &&
+                            a.parentPath === b.parentPath &&
+                            a.isExpanded === b.isExpanded
                     ),
                     filter(props => props.isExpanded),
                     switchMap(props => {
                         const treeFetch = fetchTreeEntries({
                             repoName: props.repoName,
-                            rev: props.rev,
+                            revision: props.revision,
                             commitID: props.commitID,
                             filePath: props.parentPath || '',
                             first: maxEntries,
                         }).pipe(
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             share()
                         )
                         return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
@@ -107,7 +108,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 )
                 .subscribe(
                     treeOrError => this.setState({ treeOrError }),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -131,11 +132,11 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     mergeMap(path =>
                         fetchTreeEntries({
                             repoName: this.props.repoName,
-                            rev: this.props.rev,
+                            revision: this.props.revision,
                             commitID: this.props.commitID,
                             filePath: path,
                             first: maxEntries,
-                        }).pipe(catchError(err => [asError(err)]))
+                        }).pipe(catchError(error => [asError(error)]))
                     )
                 )
                 .subscribe()
@@ -199,22 +200,22 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         return true
     }
 
-    public componentDidUpdate(prevProps: TreeLayerProps): void {
+    public componentDidUpdate(previousProps: TreeLayerProps): void {
         // Reset the childNodes of TreeLayer to none if the parent path changes, so we don't have children of past visited layers in the childNodes.
-        if (prevProps.parentPath !== this.props.parentPath) {
+        if (previousProps.parentPath !== this.props.parentPath) {
             this.node.childNodes = []
         }
 
         // If the entry being viewed changes, set the new active node.
-        if (prevProps.activePath !== this.props.activePath && this.node.path === this.props.activePath) {
+        if (previousProps.activePath !== this.props.activePath && this.node.path === this.props.activePath) {
             this.props.setActiveNode(this.node)
         }
 
         this.componentUpdates.next(this.props)
 
-        const isDir = this.props.entryInfo && this.props.entryInfo.isDirectory
+        const isDirectory = this.props.entryInfo?.isDirectory
         // When scrolling through the tree with the keyboard, if we hover a child tree node, prefetch its children.
-        if (this.node === this.props.selectedNode && isDir && this.props.onHover) {
+        if (this.node === this.props.selectedNode && isDirectory && this.props.onHover) {
             this.props.onHover(this.node.path)
         }
 
@@ -227,14 +228,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
 
     public render(): JSX.Element | null {
         const entryInfo = this.props.entryInfo
-        const className = [
+        const className = classNames(
             'tree__row',
             this.props.isExpanded && 'tree__row--expanded',
             this.node === this.props.activeNode && 'tree__row--active',
-            this.node === this.props.selectedNode && 'tree__row--selected',
-        ]
-            .filter(c => !!c)
-            .join(' ')
+            this.node === this.props.selectedNode && 'tree__row--selected'
+        )
         const { treeOrError } = this.state
 
         // If this layer has a single child directory, we have to parse treeOrError.entries
@@ -314,9 +313,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     /**
      * Non-root tree layers call this to activate a prefetch request in the root tree layer
      */
-    private invokeOnHover = (e: React.MouseEvent<HTMLElement>): void => {
+    private invokeOnHover = (event: React.MouseEvent<HTMLElement>): void => {
         if (this.props.onHover) {
-            e.stopPropagation()
+            event.stopPropagation()
             this.props.onHover(this.node.path)
         }
     }
@@ -332,10 +331,10 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
      * that shouldn't update URL on click w/o modifier key (but should retain
      * anchor element properties, like right click "Copy link address").
      */
-    private noopRowClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
-        if (!e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey) {
-            e.preventDefault()
-            e.stopPropagation()
+    private noopRowClick = (event: React.MouseEvent<HTMLAnchorElement>): void => {
+        if (!event.altKey && !event.metaKey && !event.shiftKey && !event.ctrlKey) {
+            event.preventDefault()
+            event.stopPropagation()
         }
         this.handleTreeClick()
     }

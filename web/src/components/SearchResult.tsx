@@ -7,6 +7,7 @@ import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { SearchResultMatch } from './SearchResultMatch'
 import { ThemeProps } from '../../../shared/src/theme'
 import * as H from 'history'
+import { Markdown } from '../../../shared/src/components/Markdown'
 
 export interface HighlightRange {
     /**
@@ -31,22 +32,25 @@ interface Props extends ThemeProps {
 export class SearchResult extends React.Component<Props> {
     private renderTitle = (): JSX.Element => (
         <div className="search-result__title">
-            <span
-                dangerouslySetInnerHTML={{
-                    __html: this.props.result.label.html
+            <Markdown
+                className="test-search-result-label"
+                dangerousInnerHTML={
+                    this.props.result.label.html
                         ? decode(this.props.result.label.html)
-                        : renderMarkdown(this.props.result.label.text),
-                }}
+                        : renderMarkdown(this.props.result.label.text)
+                }
+                history={this.props.history}
             />
             {this.props.result.detail && (
                 <>
                     <span className="search-result__spacer" />
-                    <small
-                        dangerouslySetInnerHTML={{
-                            __html: this.props.result.detail.html
+                    <Markdown
+                        dangerousInnerHTML={
+                            this.props.result.detail.html
                                 ? decode(this.props.result.detail.html)
-                                : renderMarkdown(this.props.result.detail.text),
-                        }}
+                                : renderMarkdown(this.props.result.detail.text)
+                        }
+                        history={this.props.history}
                     />
                 </>
             )}

@@ -6,6 +6,7 @@ import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
+import { tryCatch } from './errors'
 
 export interface RepoSpec {
     /**
@@ -26,14 +27,14 @@ export interface RawRepoSpec {
     rawRepoName: string
 }
 
-export interface RevSpec {
+export interface RevisionSpec {
     /**
      * a revision string (like 'master' or 'my-branch' or '24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
      */
-    rev: string
+    revision: string
 }
 
-export interface ResolvedRevSpec {
+export interface ResolvedRevisionSpec {
     /**
      * a 40 character commit SHA
      */
@@ -100,7 +101,7 @@ export interface ModeSpec {
     mode: string
 }
 
-type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -128,8 +129,8 @@ export interface RenderModeSpec {
  */
 export interface ParsedRepoURI
     extends RepoSpec,
-        Partial<RevSpec>,
-        Partial<ResolvedRevSpec>,
+        Partial<RevisionSpec>,
+        Partial<ResolvedRevisionSpec>,
         Partial<FileSpec>,
         Partial<ComparisonSpec>,
         Partial<UIPositionSpec>,
@@ -137,24 +138,24 @@ export interface ParsedRepoURI
 
 /**
  * RepoURI is a URI identifing a repository resource, like
- *   - the repository itself: `git://github.com/gorilla/mux`
- *   - the repository at a particular revision: `git://github.com/gorilla/mux?rev`
- *   - a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go
- *   - a line in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3
- *   - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
- *   - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
+ * - the repository itself: `git://github.com/gorilla/mux`
+ * - the repository at a particular revision: `git://github.com/gorilla/mux?revision`
+ * - a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go
+ * - a line in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3
+ * - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
+ * - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
  */
 type RepoURI = string
 
-const parsePosition = (str: string): Position => {
-    const split = str.split(',')
+const parsePosition = (string: string): Position => {
+    const split = string.split(',')
     if (split.length === 1) {
-        return { line: parseInt(str, 10), character: 0 }
+        return { line: parseInt(string, 10), character: 0 }
     }
     if (split.length === 2) {
         return { line: parseInt(split[0], 10), character: parseInt(split[1], 10) }
     }
-    throw new Error('unexpected position: ' + str)
+    throw new Error('unexpected position: ' + string)
 }
 
 /**
@@ -169,12 +170,12 @@ const parsePosition = (str: string): Position => {
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
     const repoName = parsed.hostname + parsed.pathname
-    const rev = parsed.search.substr('?'.length) || undefined
+    const revision = parsed.search.slice('?'.length) || undefined
     let commitID: string | undefined
-    if (rev?.match(/[0-9a-fA-f]{40}/)) {
-        commitID = rev
+    if (revision?.match(/[\dA-f]{40}/)) {
+        commitID = revision
     }
-    const fragmentSplit = parsed.hash.substr('#'.length).split(':').map(decodeURIComponent)
+    const fragmentSplit = parsed.hash.slice('#'.length).split(':').map(decodeURIComponent)
     let filePath: string | undefined
     let position: UIPosition | undefined
     let range: UIRange | undefined
@@ -200,7 +201,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         throw new Error('unexpected fragment: ' + parsed.hash)
     }
 
-    return { repoName, rev, commitID, filePath: filePath || undefined, position, range }
+    return { repoName, revision, commitID, filePath: filePath || undefined, position, range }
 }
 
 /**
@@ -211,30 +212,30 @@ export interface Repo extends RepoSpec {}
 /**
  * A repo with a (possibly unresolved) revspec.
  */
-export interface RepoRev extends RepoSpec, RevSpec {}
+export interface RepoRev extends RepoSpec, RevisionSpec {}
 
 /**
  * A repo resolved to an exact commit
  */
-export interface AbsoluteRepo extends RepoSpec, RevSpec, ResolvedRevSpec {}
+export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSpec {}
 
 /**
  * A file in a repo
  */
-export interface RepoFile extends RepoSpec, RevSpec, Partial<ResolvedRevSpec>, FileSpec {}
+export interface RepoFile extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, FileSpec {}
 
 /**
  * A file at an exact commit
  */
-export interface AbsoluteRepoFile extends RepoSpec, RevSpec, ResolvedRevSpec, FileSpec {}
+export interface AbsoluteRepoFile extends RepoSpec, RevisionSpec, ResolvedRevisionSpec, FileSpec {}
 
 /**
  * A position in file at an exact commit
  */
 export interface AbsoluteRepoFilePosition
     extends RepoSpec,
-        RevSpec,
-        ResolvedRevSpec,
+        RevisionSpec,
+        ResolvedRevisionSpec,
         FileSpec,
         UIPositionSpec,
         Partial<ViewStateSpec>,
@@ -246,22 +247,23 @@ export interface AbsoluteRepoFilePosition
  * @param position either 1-indexed partial position
  * @param range or 1-indexed partial range spec
  */
-export function toPositionOrRangeHash(ctx: {
+export function toPositionOrRangeHash(context: {
     position?: { line: number; character?: number }
     range?: { start: { line: number; character?: number }; end: { line: number; character?: number } }
 }): string {
-    if (ctx.range) {
+    if (context.range) {
         const emptyRange =
-            ctx.range.start.line === ctx.range.end.line && ctx.range.start.character === ctx.range.end.character
+            context.range.start.line === context.range.end.line &&
+            context.range.start.character === context.range.end.character
         return (
             '#L' +
             (emptyRange
-                ? toPositionHashComponent(ctx.range.start)
-                : `${toPositionHashComponent(ctx.range.start)}-${toPositionHashComponent(ctx.range.end)}`)
+                ? toPositionHashComponent(context.range.start)
+                : `${toPositionHashComponent(context.range.start)}-${toPositionHashComponent(context.range.end)}`)
         )
     }
-    if (ctx.position) {
-        return '#L' + toPositionHashComponent(ctx.position)
+    if (context.position) {
+        return '#L' + toPositionHashComponent(context.position)
     }
     return ''
 }
@@ -270,7 +272,7 @@ export function toPositionOrRangeHash(ctx: {
  * @param ctx 1-indexed partial position
  */
 export function toPositionHashComponent(position: { line: number; character?: number }): string {
-    return position.line.toString() + (position.character ? ':' + position.character : '')
+    return position.line.toString() + (position.character ? `:${position.character}` : '')
 }
 
 /**
@@ -299,13 +301,14 @@ export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
     }
 }
 
+// `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
+const characterZeroIndexed = (character: number): number => (character === 0 ? character : character - 1)
+
 export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selection[] {
     const range = lprToRange(lpr)
     if (range === undefined) {
         return []
     }
-    // `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
-    const characterZeroIndexed = (character: number): number => (character === 0 ? character : character - 1)
     const start: Position = { line: range.start.line - 1, character: characterZeroIndexed(range.start.character) }
     const end: Position = { line: range.end.line - 1, character: characterZeroIndexed(range.end.character) }
     return [
@@ -326,7 +329,7 @@ export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selectio
  */
 export function isLegacyFragment(hash: string): boolean {
     if (hash.startsWith('#')) {
-        hash = hash.substr('#'.length)
+        hash = hash.slice('#'.length)
     }
     return (
         hash !== '' &&
@@ -345,28 +348,27 @@ export function isLegacyFragment(hash: string): boolean {
  *
  * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
  *
- * @template V The type that describes the view state (typically a union of string constants). There is no runtime
- *             check that the return value satisfies V.
+ * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
     if (hash.startsWith('#')) {
-        hash = hash.substr('#'.length)
+        hash = hash.slice('#'.length)
     }
 
     if (!isLegacyFragment(hash)) {
         // Modern hash parsing logic (e.g. for hashes like `"#L17:19-21:23&tab=foo:bar"`:
-        const searchParams = new URLSearchParams(hash)
-        const lpr = (findLineInSearchParams(searchParams) || {}) as LineOrPositionOrRange & {
+        const searchParameters = new URLSearchParams(hash)
+        const lpr = (findLineInSearchParameters(searchParameters) || {}) as LineOrPositionOrRange & {
             viewState?: V
         }
-        if (searchParams.get('tab')) {
-            lpr.viewState = searchParams.get('tab') as V
+        if (searchParameters.get('tab')) {
+            lpr.viewState = searchParameters.get('tab') as V
         }
         return lpr
     }
 
     // Legacy hash parsing logic (e.g. for hashes like "#L17:19-21:23$foo:bar" where the "viewState" is "foo:bar"):
-    if (!/^(L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?)?(\$.*)?$/.test(hash)) {
+    if (!/^(L\d+(:\d+)?(-\d+(:\d+)?)?)?(\$.*)?$/.test(hash)) {
         // invalid or empty hash
         return {}
     }
@@ -382,7 +384,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
  * Parses a string like "L1-2:3", a range from a line to a position.
  */
 function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
-    if (!/^(L[0-9]+(:[0-9]+)?(-L?[0-9]+(:[0-9]+)?)?)?$/.test(lineChar)) {
+    if (!/^(L\d+(:\d+)?(-L?\d+(:\d+)?)?)?$/.test(lineChar)) {
         return {} // invalid
     }
 
@@ -393,8 +395,8 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
     let endLine: number | undefined // 21
     let endCharacter: number | undefined // 23
     if (lineChar.startsWith('L')) {
-        const posOrRangeString = lineChar.slice(1)
-        const [startString, endString] = posOrRangeString.split('-', 2)
+        const positionOrRangeString = lineChar.slice(1)
+        const [startString, endString] = positionOrRangeString.split('-', 2)
         if (startString) {
             const parsed = parseLineOrPosition(startString)
             line = parsed.line
@@ -419,8 +421,8 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
     return lpr
 }
 
-function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
-    if (ctx.renderMode === 'code') {
+function toRenderModeQuery(context: Partial<RenderModeSpec>): string {
+    if (context.renderMode === 'code') {
         return '?view=code'
     }
     return ''
@@ -432,8 +434,8 @@ function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
  *
  * @param searchParams The URLSearchParams to look for the line in.
  */
-function findLineInSearchParams(searchParams: URLSearchParams): LineOrPositionOrRange | undefined {
-    for (const key of searchParams.keys()) {
+function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPositionOrRange | undefined {
+    for (const key of searchParameters.keys()) {
         if (key.startsWith('L')) {
             return parseLineOrPositionOrRange(key)
         }
@@ -443,12 +445,12 @@ function findLineInSearchParams(searchParams: URLSearchParams): LineOrPositionOr
 }
 
 function parseLineOrPosition(
-    str: string
+    string: string
 ): { line: undefined; character: undefined } | { line: number; character?: number } {
-    if (str.startsWith('L')) {
-        str = str.slice(1)
+    if (string.startsWith('L')) {
+        string = string.slice(1)
     }
-    const parts = str.split(':', 2)
+    const parts = string.split(':', 2)
     let line: number | undefined
     let character: number | undefined
     if (parts.length >= 1) {
@@ -466,50 +468,73 @@ function parseLineOrPosition(
 }
 
 /** Encodes a repository at a revspec for use in a URL. */
-export function encodeRepoRev(repo: string, rev?: string): string {
-    return rev ? `${repo}@${escapeRevspecForURL(rev)}` : repo
+export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): string {
+    return revision ? `${repoName}@${escapeRevspecForURL(revision)}` : repoName
 }
 
 export function toPrettyBlobURL(
     target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(target.repoName, target.rev)}/-/blob/${target.filePath}${toRenderModeQuery(
-        target
-    )}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
+    return `/${encodeRepoRevision({ repoName: target.repoName, revision: target.revision })}/-/blob/${
+        target.filePath
+    }${toRenderModeQuery(target)}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
 }
 
 /**
- * Encodes rev with encodeURIComponent, except that slashes ('/') are preserved,
+ * Returns an absolute URL to the blob (file) on the Sourcegraph instance.
+ */
+export function toAbsoluteBlobURL(
+    sourcegraphURL: string,
+    context: RepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+): string {
+    // toPrettyBlobURL() always returns an URL starting with a forward slash,
+    // no need to add one here
+    return `${sourcegraphURL.replace(/\/$/, '')}${toPrettyBlobURL(context)}`
+}
+
+/**
+ * Returns the URL path for the given repository name.
+ *
+ * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ */
+export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
+    return '/' + encodeRepoRevision(target)
+}
+
+/**
+ * Encodes revision with encodeURIComponent, except that slashes ('/') are preserved,
  * because they are not ambiguous in any of the current places where used, and URLs
  * for (e.g.) branches with slashes look a lot nicer with '/' than '%2F'.
  */
-export function escapeRevspecForURL(rev: string): string {
-    return encodeURIComponent(rev).replace(/%2F/g, '/')
+export function escapeRevspecForURL(revision: string): string {
+    return encodeURIComponent(revision).replace(/%2F/g, '/')
 }
 
 export function toViewStateHashComponent(viewState: string | undefined): string {
     return viewState ? `&tab=${viewState}` : ''
 }
 
-const positionStr = (pos: Position): string => pos.line + '' + (pos.character ? ',' + pos.character : '')
+const positionString = (position: Position): string =>
+    position.line.toString() + (position.character ? `,${position.character}` : '')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
-    const rev = parsed.commitID || parsed.rev
+    const revision = parsed.commitID || parsed.revision
     let uri = `git://${parsed.repoName}`
-    uri += rev ? '?' + rev : ''
+    uri += revision ? '?' + revision : ''
     uri += parsed.filePath ? '#' + parsed.filePath : ''
     uri += parsed.position || parsed.range ? ':' : ''
-    uri += parsed.position ? positionStr(parsed.position) : ''
-    uri += parsed.range ? positionStr(parsed.range.start) + '-' + positionStr(parsed.range.end) : ''
+    uri += parsed.position ? positionString(parsed.position) : ''
+    uri += parsed.range ? positionString(parsed.range.start) + '-' + positionString(parsed.range.end) : ''
     return uri
 }
 
-export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec): string => `git://${ctx.repoName}?${ctx.commitID}`
-export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): string {
-    return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
+export const toRootURI = (context: RepoSpec & ResolvedRevisionSpec): string =>
+    `git://${context.repoName}?${context.commitID}`
+export function toURIWithPath(context: RepoSpec & ResolvedRevisionSpec & FileSpec): string {
+    return `git://${context.repoName}?${context.commitID}#${context.filePath}`
 }
 
 /**
@@ -526,10 +551,10 @@ export function withWorkspaceRootInputRevision(
 ): ParsedRepoURI {
     const inWorkspaceRoot = workspaceRoots.find(root => {
         const rootURI = parseRepoURI(root.uri)
-        return rootURI.repoName === uri.repoName && rootURI.rev === uri.rev
+        return rootURI.repoName === uri.repoName && rootURI.revision === uri.revision
     })
     if (inWorkspaceRoot?.inputRevision !== undefined) {
-        return { ...uri, commitID: undefined, rev: inWorkspaceRoot.inputRevision }
+        return { ...uri, commitID: undefined, revision: inWorkspaceRoot.inputRevision }
     }
     return uri // unchanged
 }
@@ -539,6 +564,8 @@ export function withWorkspaceRootInputRevision(
  *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
+ * @param versionContext (optional): the version context to search in. If undefined, we interpret
+ * it as the instance not having version contexts, and won't append the `c` query param.
  * Having a `patternType:` filter in the query overrides this argument.
  * @param filtersInQuery filters in an interactive mode query. For callers of
  * this function requiring correct behavior in interactive mode, this param
@@ -549,54 +576,67 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
-    filtersInQuery?: FiltersToTypeAndValue
+    versionContext?: string,
+    filtersInQuery?: FiltersToTypeAndValue,
+    searchParametersList?: { key: string; value: string }[]
 ): string {
-    const searchParams = new URLSearchParams()
+    const searchParameters = new URLSearchParams()
     let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
+        fullQuery = [generateFiltersQuery(filtersInQuery), fullQuery].filter(query => query.length > 0).join(' ')
     }
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        fullQuery = replaceRange(fullQuery, patternTypeInQuery.range)
-        searchParams.set('q', fullQuery)
-        searchParams.set('patternType', patternTypeInQuery.value)
+        const { start, end } = patternTypeInQuery.range
+        fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
+        searchParameters.set('q', fullQuery)
+        searchParameters.set('patternType', patternTypeInQuery.value)
     } else {
-        searchParams.set('q', fullQuery)
-        searchParams.set('patternType', patternType)
+        searchParameters.set('q', fullQuery)
+        searchParameters.set('patternType', patternType)
     }
 
     const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
         fullQuery = replaceRange(fullQuery, caseInQuery.range)
-        searchParams.set('q', fullQuery)
+        searchParameters.set('q', fullQuery)
 
         if (discreteValueAliases.yes.includes(caseInQuery.value)) {
             fullQuery = replaceRange(fullQuery, caseInQuery.range)
-            searchParams.set('case', caseInQuery.value)
+            searchParameters.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
             //
             // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParams.delete('case')
+            searchParameters.delete('case')
         }
     } else {
-        searchParams.set('q', fullQuery)
+        searchParameters.set('q', fullQuery)
         if (caseSensitive) {
-            searchParams.set('case', 'yes')
+            searchParameters.set('case', 'yes')
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
             // queries breaking when only `repo:` filters are specified.
             //
             // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParams.delete('case')
+            searchParameters.delete('case')
         }
     }
 
-    return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
+    if (versionContext) {
+        searchParameters.set('c', versionContext)
+    }
+
+    if (searchParametersList) {
+        for (const queryParameter of searchParametersList) {
+            searchParameters.set(queryParameter.key, queryParameter.value)
+        }
+    }
+
+    return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
 /**
@@ -605,10 +645,9 @@ export function buildSearchURLQuery(
  * @param filtersInQuery the map representing the filters currently in an interactive mode query.
  */
 export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
-    const fieldKeys = Object.keys(filtersInQuery)
-    return fieldKeys
-        .filter(key => filtersInQuery[key].value.trim().length > 0)
-        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+    return Object.values(filtersInQuery)
+        .filter(filter => filter.value.trim().length > 0)
+        .map(filter => `${filter.negated ? '-' : ''}${filter.type}:${filter.value}`)
         .join(' ')
 }
 
@@ -624,7 +663,7 @@ export function parsePatternTypeFromQuery(query: string): { range: CharacterRang
             ) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
                 }
             }
         }
@@ -641,10 +680,25 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
             if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
                 }
             }
         }
     }
     return undefined
+}
+
+/**
+ * Returns true if the given URL points outside the current site.
+ */
+export const isExternalLink = (url: string): boolean =>
+    !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
+
+/**
+ * Appends the query parameter subtree=true to URLs.
+ */
+export const appendSubtreeQueryParameter = (url: string): string => {
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.set('subtree', 'true')
+    return newUrl.pathname + newUrl.search + newUrl.hash
 }

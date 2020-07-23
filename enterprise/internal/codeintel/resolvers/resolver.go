@@ -2,117 +2,108 @@ package resolvers
 
 import (
 	"context"
-	"encoding/base64"
 
-	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
+	"github.com/pkg/errors"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 )
 
-type Resolver struct{}
-
-var _ graphqlbackend.CodeIntelResolver = &Resolver{}
-
-func NewResolver() graphqlbackend.CodeIntelResolver {
-	return &Resolver{}
+// Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
+// This resolver consolidates the logic for code intel operations and is not itself concerned
+// with GraphQL/API specifics (auth, validation, marshaling, etc.). This resolver is wrapped
+// by a symmetrics resolver in this package's graphql subpackage, which is exposed directly
+// by the API.
+type Resolver interface {
+	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
+	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
+	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
+	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
+	DeleteUploadByID(ctx context.Context, uploadID int) error
+	DeleteIndexByID(ctx context.Context, id int) error
+	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
 
-func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFUploadResolver, error) {
-	uploadID, err := unmarshalLSIFUploadGQLID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	lsifUpload, err := client.DefaultClient.GetUpload(ctx, &struct {
-		UploadID int64
-	}{
-		UploadID: uploadID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &lsifUploadResolver{lsifUpload: lsifUpload}, nil
+type resolver struct {
+	store               store.Store
+	bundleManagerClient bundles.BundleManagerClient
+	codeIntelAPI        codeintelapi.CodeIntelAPI
+	hunkCache           HunkCache
 }
 
-func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may delete LSIF data for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+// NewResolver creates a new resolver with the given services.
+func NewResolver(store store.Store, bundleManagerClient bundles.BundleManagerClient, codeIntelAPI codeintelapi.CodeIntelAPI, hunkCache HunkCache) Resolver {
+	return &resolver{
+		store:               store,
+		bundleManagerClient: bundleManagerClient,
+		codeIntelAPI:        codeIntelAPI,
+		hunkCache:           hunkCache,
 	}
-
-	uploadID, err := unmarshalLSIFUploadGQLID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = client.DefaultClient.DeleteUpload(ctx, &struct {
-		UploadID int64
-	}{
-		UploadID: uploadID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-// LSIFUploads resolves the LSIF uploads in a given state.
-//
-// This method implements cursor-based forward pagination. The `after` parameter
-// should be an `endCursor` value from a previous request. This value is the rel="next"
-// URL in the Link header of the LSIF API server response. This URL includes all of the
-// query variables required to fetch the subsequent page of results. This state is not
-// dependent on the limit, so we can overwrite this value if the user has changed its
-// value since making the last request.
-func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRepositoryUploadsQueryArgs) (graphqlbackend.LSIFUploadConnectionResolver, error) {
-	opt := LSIFUploadsListOptions{
-		RepositoryID:    args.RepositoryID,
-		Query:           args.Query,
-		State:           args.State,
-		IsLatestForRepo: args.IsLatestForRepo,
-	}
-	if args.First != nil {
-		opt.Limit = args.First
-	}
-	if args.After != nil {
-		decoded, err := base64.StdEncoding.DecodeString(*args.After)
-		if err != nil {
-			return nil, err
-		}
-		nextURL := string(decoded)
-		opt.NextURL = &nextURL
-	}
-
-	return &lsifUploadConnectionResolver{opt: opt}, nil
+func (r *resolver) GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error) {
+	return r.store.GetUploadByID(ctx, id)
 }
 
-func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	uploads, err := client.DefaultClient.Exists(ctx, &struct {
-		RepoID api.RepoID
-		Commit api.CommitID
-		Path   string
-	}{
-		RepoID: args.Repository.Type().ID,
-		Commit: args.Commit,
-		Path:   args.Path,
-	})
+func (r *resolver) GetIndexByID(ctx context.Context, id int) (store.Index, bool, error) {
+	return r.store.GetIndexByID(ctx, id)
+}
 
-	if err != nil {
+func (r *resolver) UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver {
+	return NewUploadsResolver(r.store, opts)
+}
+
+func (r *resolver) IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver {
+	return NewIndexesResolver(r.store, opts)
+}
+
+func (r *resolver) DeleteUploadByID(ctx context.Context, uploadID int) error {
+	_, err := r.store.DeleteUploadByID(ctx, uploadID, r.getTipCommit)
+	return err
+}
+
+func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
+	_, err := r.store.DeleteIndexByID(ctx, id)
+	return err
+}
+
+// QueryResolver determines the set of dumps that can answer code intel queries for the
+// given repository, commit, and path, then constructs a new query resolver instance which
+// can be used to answer subsequent queries.
+func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error) {
+	dumps, err := r.codeIntelAPI.FindClosestDumps(
+		ctx,
+		int(args.Repo.ID),
+		string(args.Commit),
+		args.Path,
+		args.ExactPath,
+		args.ToolName,
+	)
+	if err != nil || len(dumps) == 0 {
 		return nil, err
 	}
 
-	if len(uploads) == 0 {
-		return nil, nil
+	return NewQueryResolver(
+		r.store,
+		r.bundleManagerClient,
+		r.codeIntelAPI,
+		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
+		int(args.Repo.ID),
+		string(args.Commit),
+		args.Path,
+		dumps,
+	), nil
+}
+
+// getTipCommit returns the head of the default branch for the given repository. This
+// is used to recalculate the set of visible dumps for a repository on dump deletion.
+func (r *resolver) getTipCommit(ctx context.Context, repositoryID int) (string, error) {
+	tipCommit, err := gitserver.Head(ctx, r.store, repositoryID)
+	if err != nil {
+		return "", errors.Wrap(err, "gitserver.Head")
 	}
 
-	return &lsifQueryResolver{
-		repositoryResolver: args.Repository,
-		commit:             args.Commit,
-		path:               args.Path,
-		uploads:            uploads,
-	}, nil
+	return tipCommit, nil
 }

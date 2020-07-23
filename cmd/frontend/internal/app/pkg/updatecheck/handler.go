@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -32,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.15.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.18.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.15.1")
+	latestReleaseKubernetesBuild = newBuild("3.18.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.14.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.18.0")
 )
 
 func getLatestRelease(deployType string) build {
@@ -86,15 +88,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	latestReleaseBuild := getLatestRelease(pr.DeployType)
 	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild)
-	if err != nil {
-		// Still log pings on malformed version strings.
-		logPing(r, pr, false)
 
+	// Always log, even on malformed version strings
+	logPing(r, pr, hasUpdate)
+
+	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	logPing(r, pr, hasUpdate)
 
 	if !hasUpdate {
 		// No newer version.
@@ -278,6 +279,13 @@ type pingPayload struct {
 }
 
 func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			log15.Warn("logPing: panic", "recover", r)
+			errorCounter.Inc()
+		}
+	}()
+
 	var clientAddr string
 	if v := r.Header.Get("x-forwarded-for"); v != "" {
 		clientAddr = v
@@ -287,11 +295,13 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
+		errorCounter.Inc()
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
 	} else {
 		if pubsubutil.Enabled() {
 			err := pubsubutil.Publish(pubSubPingsTopicID, string(message))
 			if err != nil {
+				errorCounter.Inc()
 				log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
 			}
 		}
@@ -356,6 +366,9 @@ func reserializeCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error)
 	if err := json.Unmarshal(payload, &codeIntelUsage); err != nil {
 		return nil, err
 	}
+	if codeIntelUsage == nil {
+		return nil, nil
+	}
 
 	singlePeriodUsage := struct {
 		Daily   *types.CodeIntelUsagePeriod
@@ -389,6 +402,9 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	if err := json.Unmarshal(payload, &searchUsage); err != nil {
 		return nil, err
 	}
+	if searchUsage == nil {
+		return nil, nil
+	}
 
 	singlePeriodUsage := struct {
 		Daily   *types.SearchUsagePeriod
@@ -410,21 +426,16 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 }
 
 var (
-	requestCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests",
-		Help:      "Number of requests to the update check handler.",
+	requestCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_server_requests",
+		Help: "Number of requests to the update check handler.",
 	})
-	requestHasUpdateCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests_has_update",
-		Help:      "Number of requests to the update check handler where an update is available.",
+	requestHasUpdateCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_server_requests_has_update",
+		Help: "Number of requests to the update check handler where an update is available.",
+	})
+	errorCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_server_errors",
+		Help: "Number of errors that occur while publishing server pings.",
 	})
 )
-
-func init() {
-	prometheus.MustRegister(requestCounter)
-	prometheus.MustRegister(requestHasUpdateCounter)
-}

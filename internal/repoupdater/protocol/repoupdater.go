@@ -115,9 +115,6 @@ type RepoInfo struct {
 
 	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
 	// service itself).
-	//
-	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
-	// optional during the transition period.
 	ExternalRepo api.ExternalRepoSpec
 }
 
@@ -167,6 +164,17 @@ type ChangesetSyncRequest struct {
 
 // ChangesetSyncResponse is a response to sync a number of changesets
 type ChangesetSyncResponse struct {
+	Error string
+}
+
+// PermsSyncRequest is a request to sync permissions.
+type PermsSyncRequest struct {
+	UserIDs []int32      `json:"user_ids"`
+	RepoIDs []api.RepoID `json:"repo_ids"`
+}
+
+// PermsSyncResponse is a response to sync permissions.
+type PermsSyncResponse struct {
 	Error string
 }
 

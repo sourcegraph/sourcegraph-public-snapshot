@@ -21,10 +21,6 @@ type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
 
-	// DisableStreaming if true will prevent the syncer from streaming in new
-	// sourced repositories into the store.
-	DisableStreaming bool
-
 	// FailFullSync prevents Sync from running. This should only be true for
 	// Sourcegraph.com
 	FailFullSync bool
@@ -51,7 +47,9 @@ type Syncer struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
+func (s *Syncer) Run(pctx context.Context, interval func() time.Duration) error {
+	s.initialUnmodifiedDiffFromStore(pctx)
+
 	for pctx.Err() == nil {
 		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
 
@@ -59,7 +57,7 @@ func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
-		sleep(ctx, interval)
+		sleep(ctx, interval())
 
 		cancel()
 	}
@@ -110,7 +108,7 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	var streamingInserter func(*Repo)
-	if s.DisableStreaming {
+	if s.SubsetSynced == nil {
 		streamingInserter = func(*Repo) {} //noop
 	} else {
 		streamingInserter, err = s.makeNewRepoInserter(ctx)
@@ -147,7 +145,10 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	if s.Synced != nil {
-		s.Synced <- diff
+		select {
+		case s.Synced <- diff:
+		case <-ctx.Done():
+		}
 	}
 
 	return nil
@@ -219,7 +220,10 @@ func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset 
 	}
 
 	if s.SubsetSynced != nil {
-		s.SubsetSynced <- diff
+		select {
+		case s.SubsetSynced <- diff:
+		case <-ctx.Done():
+		}
 	}
 
 	return diff, nil
@@ -248,7 +252,33 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	return upserts
 }
 
-// A Diff of two sets of Diffables.
+// initialUnmodifiedDiffFromStore creates a diff of all repos present in the
+// store and sends it to s.Synced. This is used so that on startup the reader
+// of s.Synced will receive a list of repos. In particular this is so that the
+// git update scheduler can start working straight away on existing
+// repositories.
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context) {
+	if s.Synced == nil {
+		return
+	}
+
+	stored, err := s.Store.ListRepos(ctx, StoreListReposArgs{})
+	if err != nil {
+		s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
+		return
+	}
+
+	// Assuming sources returns no differences from the last sync, the Diff
+	// would be just a list of all stored repos Unmodified. This is the steady
+	// state, so is the initial diff we choose.
+	select {
+	case s.Synced <- Diff{Unmodified: stored}:
+	case <-ctx.Done():
+	}
+}
+
+// Diff is the difference found by a sync between what is in the store and
+// what is returned from sources.
 type Diff struct {
 	Added      Repos
 	Deleted    Repos
@@ -362,9 +392,6 @@ func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, 
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
-	defer cancel()
-
 	return listAll(ctx, srcs, observe...)
 }
 
@@ -446,7 +473,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 					otlog.Object(state+".repos", repos.Names()))
 
 				if len(repos) > 0 && s.Logger != nil {
-					s.Logger.Debug(family, "diff."+state, repos.Names())
+					s.Logger.Debug(family, "diff."+state, repos.NamesSummary())
 				}
 			}
 			syncedTotal.WithLabelValues(state).Add(float64(len(repos)))

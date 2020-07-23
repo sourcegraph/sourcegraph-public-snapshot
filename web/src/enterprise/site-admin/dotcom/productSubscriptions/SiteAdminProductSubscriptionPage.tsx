@@ -70,7 +70,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
             useMemo(
                 () =>
                     _queryProductSubscription(subscriptionUUID).pipe(
-                        catchError(err => [asError(err)]),
+                        catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
                 [_queryProductSubscription, subscriptionUUID]
@@ -94,7 +94,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         archiveProductSubscription({ id: productSubscription.id }).pipe(
                             mapTo(undefined),
                             tap(() => history.push('/site-admin/dotcom/product/subscriptions')),
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
@@ -109,7 +109,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
         [_queryProductLicenses, subscriptionUUID]
     )
 
-    const toggleShowGenerate = useCallback((): void => setShowGenerate(prevValue => !prevValue), [])
+    const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
     /** Updates to the subscription. */
     const updates = useMemo(() => new Subject<void>(), [])
@@ -250,7 +250,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
 function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
     return queryGraphQL(
         gql`
-            query ProductSubscription($uuid: String!) {
+            query DotComProductSubscription($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
                         id

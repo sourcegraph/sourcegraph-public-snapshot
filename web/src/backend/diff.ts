@@ -19,45 +19,44 @@ export const FileDiffFields = gql`
     fragment FileDiffFields on FileDiff {
         __typename
         oldPath
+        oldFile {
+            __typename
+            binary
+            byteSize
+        }
+        newFile {
+            __typename
+            binary
+            byteSize
+        }
         newPath
         mostRelevantFile {
+            __typename
             url
         }
         hunks {
             oldRange {
-                ...FileDiffHunkRangeFields
+                startLine
+                lines
             }
             oldNoNewlineAt
             newRange {
-                ...FileDiffHunkRangeFields
+                startLine
+                lines
             }
             section
-            body
+            highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
+                aborted
+                lines {
+                    kind
+                    html
+                }
+            }
         }
         stat {
-            ...DiffStatFields
-        }
-        internalID
-    }
-`
-export const PreviewFileDiffFields = gql`
-    fragment PreviewFileDiffFields on PreviewFileDiff {
-        __typename
-        oldPath
-        newPath
-        hunks {
-            oldRange {
-                ...FileDiffHunkRangeFields
-            }
-            oldNoNewlineAt
-            newRange {
-                ...FileDiffHunkRangeFields
-            }
-            section
-            body
-        }
-        stat {
-            ...DiffStatFields
+            added
+            changed
+            deleted
         }
         internalID
     }

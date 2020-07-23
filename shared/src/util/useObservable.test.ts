@@ -40,12 +40,12 @@ describe('useObservable()', () => {
     })
 
     it('should throw if the Observable errored', () => {
-        const err = new Error('fail')
+        const error = new Error('fail')
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
-            subscriber.error(err)
+            subscriber.error(error)
         })
         const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
-        expect(result.error).toBe(err)
+        expect(result.error).toBe(error)
         sinon.assert.calledOnce(subscribe)
     })
 
@@ -112,7 +112,7 @@ describe('useObservable()', () => {
 
 describe('useEventObservable()', () => {
     it('should emit on the transform function whenever an event was triggered', () => {
-        const spy = sinon.spy((n: number) => n + 10)
+        const spy = sinon.spy((number: number) => number + 10)
         const { result } = renderHook(() =>
             useEventObservable(useCallback((events: Observable<number>) => events.pipe(map(spy)), []))
         )

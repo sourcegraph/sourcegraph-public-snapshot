@@ -128,12 +128,12 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ displayName: e.target.value })
+    private onDisplayNameFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ displayName: event.target.value })
     }
 
-    private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
+    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
         this.submits.next()
     }
 }

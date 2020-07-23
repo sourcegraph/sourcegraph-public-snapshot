@@ -1,19 +1,21 @@
-import H from 'history'
+import * as H from 'history'
 import React from 'react'
 import {
     Area,
     ComposedChart,
     LabelFormatter,
+    Legend,
     ResponsiveContainer,
     Tooltip,
     XAxis,
     YAxis,
     TooltipPayload,
 } from 'recharts'
-import { ICampaign } from '../../../../../shared/src/graphql/schema'
+import { ICampaign, IChangesetCounts } from '../../../../../shared/src/graphql/schema'
 
 interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
     history: H.History
+    width?: string | number
 }
 
 const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
@@ -38,20 +40,32 @@ const commonAreaProps = {
     type: 'stepBefore',
 } as const
 
-const tooltipItemOrder: Record<string, number> = {
-    'Open & awaiting review': 4,
-    'Open & changes requested': 3,
-    'Open & approved': 2,
-    Closed: 1,
-    Merged: 0,
+interface StateDefinition {
+    fill: string
+    label: string
+    sortOrder: number
 }
 
-const tooltipItemSorter = (item: TooltipPayload): number => tooltipItemOrder[item.name]
+type DisplayableChangesetCounts = Pick<
+    IChangesetCounts,
+    'openPending' | 'openChangesRequested' | 'openApproved' | 'closed' | 'merged'
+>
+
+const states: Record<keyof DisplayableChangesetCounts, StateDefinition> = {
+    openPending: { fill: 'var(--warning)', label: 'Open & awaiting review', sortOrder: 4 },
+    openChangesRequested: { fill: 'var(--danger)', label: 'Open & changes requested', sortOrder: 3 },
+    openApproved: { fill: 'var(--success)', label: 'Open & approved', sortOrder: 2 },
+    closed: { fill: 'var(--secondary)', label: 'Closed', sortOrder: 1 },
+    merged: { fill: 'var(--merged)', label: 'Merged', sortOrder: 0 },
+}
+
+const tooltipItemSorter = ({ dataKey }: TooltipPayload): number =>
+    states[dataKey as keyof DisplayableChangesetCounts].sortOrder
 
 /**
  * A burndown chart showing progress of the campaigns changesets.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime }) => {
+export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime, width = '100%' }) => {
     if (changesetCountsOverTime.length <= 1) {
         return (
             <p>
@@ -68,10 +82,11 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
         )
     }
     return (
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width={width} height={300}>
             <ComposedChart
                 data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
             >
+                <Legend verticalAlign="bottom" iconType="square" />
                 <XAxis
                     dataKey="date"
                     domain={[
@@ -101,16 +116,20 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                     itemSorter={tooltipItemSorter}
                 />
 
-                <Area dataKey="openPending" name="Open & awaiting review" fill="var(--warning)" {...commonAreaProps} />
-                <Area
-                    dataKey="openChangesRequested"
-                    name="Open & changes requested"
-                    fill="var(--danger)"
-                    {...commonAreaProps}
-                />
-                <Area dataKey="openApproved" name="Open & approved" fill="var(--success)" {...commonAreaProps} />
-                <Area dataKey="closed" name="Closed" fill="var(--secondary)" {...commonAreaProps} />
-                <Area dataKey="merged" name="Merged" fill="var(--merged)" {...commonAreaProps} />
+                {Object.entries(states)
+                    .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
+                    .map(([dataKey, state]) => (
+                        <Area
+                            key={state.sortOrder}
+                            dataKey={dataKey}
+                            name={state.label}
+                            fill={state.fill}
+                            // The stroke is used to color the legend, which we
+                            // want to match the fill color for each area.
+                            stroke={state.fill}
+                            {...commonAreaProps}
+                        />
+                    ))}
             </ComposedChart>
         </ResponsiveContainer>
     )

@@ -133,7 +133,6 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
       >
         <ProductSubscriptionUserCountFormControl
           onChange={[Function]}
-          value={1}
         />
         <h4
           className="mt-2 mb-0"
@@ -268,7 +267,6 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
       >
         <ProductSubscriptionUserCountFormControl
           onChange={[Function]}
-          value={1}
         />
         <h4
           className="mt-2 mb-0"

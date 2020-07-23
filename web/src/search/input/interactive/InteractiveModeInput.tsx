@@ -11,7 +11,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { NavLinks } from '../../../nav/NavLinks'
 import { showDotComMarketing } from '../../../util/features'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { KeyboardShortcutsProps } from '../../../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ThemePreferenceProps } from '../../../theme'
@@ -19,11 +19,20 @@ import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
+import {
+    parseSearchURLQuery,
+    InteractiveSearchProps,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    CopyQueryButtonProps,
+} from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
 import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
+import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { VersionContext } from '../../../schema/site.schema'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -36,7 +45,9 @@ interface InteractiveModeProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
+        CopyQueryButtonProps,
+        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'>,
+        VersionContextProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
@@ -49,6 +60,12 @@ interface InteractiveModeProps
     authenticatedUser: GQL.IUser | null
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
+
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
+
+    /** Whether to display the interactive mode input centered on the page, as on the search homepage. */
+    homepageMode?: boolean
 }
 
 interface InteractiveModeState {
@@ -60,10 +77,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     constructor(props: InteractiveModeProps) {
         super(props)
 
-        const searchParams = new URLSearchParams(props.location.search)
+        const searchParameters = new URLSearchParams(props.location.search)
         let filtersInQuery: FiltersToTypeAndValue = {}
 
-        const query = searchParams.get('q')
+        const query = searchParameters.get('q')
         if (query !== null && query.length > 0) {
             const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
             filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
@@ -169,8 +186,8 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         })
     }
 
-    private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
+    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
         submitSearch({
             ...this.props,
             source: 'nav',
@@ -179,32 +196,33 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     }
 
     public render(): JSX.Element | null {
-        const isSearchHomepage =
-            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search)
+        const homepageMode =
+            this.props.homepageMode ||
+            (this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search))
 
-        let logoSrc = '/.assets/img/sourcegraph-mark.svg'
+        let logoSource = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
 
         const { branding } = window.context
         if (branding) {
             if (this.props.isLightTheme) {
-                if (branding.light && branding.light.symbol) {
-                    logoSrc = branding.light.symbol
+                if (branding.light?.symbol) {
+                    logoSource = branding.light.symbol
                 }
-            } else if (branding.dark && branding.dark.symbol) {
-                logoSrc = branding.dark.symbol
+            } else if (branding.dark?.symbol) {
+                logoSource = branding.dark.symbol
             }
             if (branding.disableSymbolSpin) {
                 logoLinkClassName = 'global-navbar__logo-link'
             }
         }
 
-        const logo = <img className="global-navbar__logo" src={logoSrc} />
+        const logo = <img className="global-navbar__logo" src={logoSource} />
 
         return (
-            <div className="interactive-mode-input e2e-interactive-mode-input">
-                <div className={!isSearchHomepage ? 'interactive-mode-input__top-nav' : ''}>
-                    {!isSearchHomepage &&
+            <div className="interactive-mode-input test-interactive-mode-input">
+                <div className={!homepageMode ? 'interactive-mode-input__top-nav' : ''}>
+                    {!homepageMode &&
                         (this.props.authRequired ? (
                             <div className={logoLinkClassName}>{logo}</div>
                         ) : (
@@ -214,12 +232,21 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         ))}
                     <div
                         className={`d-none d-sm-flex flex-row ${
-                            !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
+                            !homepageMode ? 'interactive-mode-input__search-box-container' : ''
                         }`}
                     >
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />
+                                <VersionContextDropdown
+                                    history={this.props.history}
+                                    navbarSearchQuery={this.props.navbarSearchState.query}
+                                    caseSensitive={this.props.caseSensitive}
+                                    patternType={this.props.patternType}
+                                    versionContext={this.props.versionContext}
+                                    setVersionContext={this.props.setVersionContext}
+                                    availableVersionContexts={this.props.availableVersionContexts}
+                                />
                                 <QueryInput
                                     {...this.props}
                                     location={this.props.location}
@@ -235,12 +262,13 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     filtersInQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
                                     withSearchModeToggle={true}
+                                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
                                 />
                                 <SearchButton noHelp={true} />
                             </div>
                         </Form>
                     </div>
-                    {!this.props.authRequired && !isSearchHomepage && (
+                    {!this.props.authRequired && !homepageMode && (
                         <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                     )}
                 </div>
@@ -254,9 +282,9 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             onFilterDeleted={this.onFilterDeleted}
                             toggleFilterEditable={this.toggleFilterEditable}
                             toggleFilterNegated={this.toggleFilterNegated}
-                            isHomepage={isSearchHomepage}
+                            isHomepage={homepageMode}
                         />
-                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
+                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={homepageMode} />
                     </div>
                 )}
             </div>

@@ -54,12 +54,6 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "discussions": {
-          "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
@@ -94,7 +88,7 @@ const SiteSchemaJSON = `{
           "description": "Interpret a search input query as an and/or query.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "bitbucketServerFastPerm": {
           "description": "DEPRECATED: Configure in Bitbucket Server config.",
@@ -103,7 +97,7 @@ const SiteSchemaJSON = `{
           "default": "disabled"
         },
         "searchMultipleRevisionsPerRepository": {
-          "description": "Enables searching multiple revisions of the same repository (using ` + "`" + `repo:myrepo@branch1:branch2` + "`" + `).",
+          "description": "DEPRECATED. Always on. Will be removed in 3.19.",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -161,6 +155,84 @@ const SiteSchemaJSON = `{
                 "fetch": "customgitbinary someflag anotherflag"
               }
             ]
+          ]
+        },
+        "search.index.branches": {
+          "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" },
+            "maxItems": 64
+          },
+          "examples": [
+            {
+              "github.com/sourcegraph/sourcegraph": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"],
+              "name/of/repo": ["develop"]
+            }
+          ]
+        },
+        "versionContexts": {
+          "description": "JSON array of version context configuration",
+          "type": "array",
+          "items": {
+            "title": "VersionContext",
+            "description": "Configuration of the version context",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "revisions"],
+            "properties": {
+              "name": {
+                "description": "Name of the version context, it must be unique.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "revisions": {
+                "description": "List of repositories of the version context",
+                "type": "array",
+                "items": {
+                  "title": "VersionContextRevision",
+                  "description": "Description of the chosen repository and revision",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repo", "rev"],
+                  "properties": {
+                    "repo": {
+                      "description": "Repository name",
+                      "type": "string"
+                    },
+                    "rev": {
+                      "description": "Branch, tag, or commit hash. \"HEAD\" or \"\" can be used for the default branch.",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "description": {
+                "description": "Description of the version context",
+                "type": "string"
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Release foo",
+              "revisions": [
+                {
+                  "repo": "github.com/sourcegraph/sourcegraph",
+                  "rev": "3.15"
+                },
+                {
+                  "repo": "github.com/sourcegraph/lib1",
+                  "rev": "23edr233r"
+                },
+                {
+                  "repo": "github.com/sourcegraph/lib2",
+                  "rev": "2.4"
+                }
+              ]
+            }
           ]
         }
       },
@@ -257,7 +329,7 @@ const SiteSchemaJSON = `{
       "hide": true
     },
     "gitMaxConcurrentClones": {
-      "description": "Maximum number of git clone processes that will be run concurrently to update repositories.",
+      "description": "Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.",
       "type": "integer",
       "default": 5,
       "group": "External services"
@@ -334,14 +406,14 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "permissions.backgroundSync": {
-      "description": "Sync code host repository and user permissions in the background.",
+      "description": "DEPRECATED: Sync code host repository and user permissions in the background.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "enabled": {
           "description": "Whether syncing permissions in the background is enabled.",
           "type": "boolean",
-          "default": false
+          "default": true
         }
       },
       "default": {
@@ -412,7 +484,7 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "password": {
-          "description": "The username to use when communicating with the SMTP server.",
+          "description": "The password to use when communicating with the SMTP server.",
           "type": "string"
         },
         "authentication": {
@@ -423,6 +495,10 @@ const SiteSchemaJSON = `{
         "domain": {
           "description": "The HELO domain to provide to the SMTP server (if needed).",
           "type": "string"
+        },
+        "disableTLS": {
+          "description": "Disable TLS verification",
+          "type": "boolean"
         }
       },
       "default": null,
@@ -436,42 +512,6 @@ const SiteSchemaJSON = `{
         }
       ],
       "group": "Email"
-    },
-    "email.imap": {
-      "title": "IMAPServerConfig",
-      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "port"],
-      "properties": {
-        "host": {
-          "description": "The IMAP server host.",
-          "type": "string"
-        },
-        "port": {
-          "description": "The IMAP server port.",
-          "type": "integer"
-        },
-        "username": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        },
-        "password": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        }
-      },
-      "default": null,
-      "examples": [
-        {
-          "host": "imap.example.com",
-          "port": 993,
-          "username": "alice",
-          "password": "mypassword"
-        }
-      ],
-      "group": "Email",
-      "hide": true
     },
     "email.address": {
       "description": "The \"from\" address for emails sent by this server.",
@@ -515,25 +555,6 @@ const SiteSchemaJSON = `{
         }
       ],
       "group": "Extensions"
-    },
-    "discussions": {
-      "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.",
-      "type": "object",
-      "properties": {
-        "abuseProtection": {
-          "description": "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
-          "type": "boolean",
-          "default": false
-        },
-        "abuseEmails": {
-          "description": "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
-          "type": "array",
-          "items": { "type": "string" },
-          "default": []
-        }
-      },
-      "group": "Experimental",
-      "hide": true
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form ` + "`" + `{\"*\": [\"org1\", \"org2\"]}` + "`" + `, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is ` + "`" + `\"*\"` + "`" + `.",
@@ -606,6 +627,58 @@ const SiteSchemaJSON = `{
         }
       }
     },
+    "observability.alerts": {
+      "description": "Configure notifications for Sourcegraph's built-in alerts.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["level", "notifier"],
+        "properties": {
+          "level": {
+            "description": "Sourcegraph alert level to subscribe to notifications for.",
+            "type": "string",
+            "enum": ["warning", "critical"]
+          },
+          "notifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["slack", "pagerduty", "webhook", "email", "opsgenie"]
+              }
+            },
+            "oneOf": [
+              { "$ref": "#/definitions/NotifierSlack" },
+              { "$ref": "#/definitions/NotifierPagerduty" },
+              { "$ref": "#/definitions/NotifierWebhook" },
+              { "$ref": "#/definitions/NotifierEmail" },
+              { "$ref": "#/definitions/NotifierOpsGenie" }
+            ],
+            "!go": {
+              "taggedUnionType": true
+            }
+          },
+          "disableSendResolved": {
+            "description": "Disable notifications when alerts resolve themselves.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "default": {
+          "level": "critical",
+          "notifier": {
+            "type": ""
+          }
+        }
+      }
+    },
+    "observability.silenceAlerts": {
+      "description": "Silence individual Sourcegraph alerts by identifier.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
@@ -642,6 +715,18 @@ const SiteSchemaJSON = `{
       "description": "The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
       "type": "string",
       "group": "Sourcegraph Enterprise license"
+    },
+    "dotcom": {
+      "description": "Configuration options for Sourcegraph.com only.",
+      "type": "object",
+      "properties": {
+        "slackLicenseExpirationWebhook": {
+          "description": "Slack webhook for upcoming license expiration notifications.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        }
+      },
+      "group": "Sourcegraph.com"
     },
     "auth.providers": {
       "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
@@ -945,6 +1030,125 @@ const SiteSchemaJSON = `{
         "displayName": {
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
+        }
+      }
+    },
+    "NotifierSlack": {
+      "description": "Slack notifier",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "slack"
+        },
+        "url": {
+          "description": "Slack incoming webhook URL.",
+          "type": "string"
+        },
+        "username": {
+          "description": "Set the username for the bot’s message.",
+          "type": "string"
+        },
+        "recipient": {
+          "description": "Allows you to override the Slack recipient. You must either provide a channel Slack ID, a user Slack ID, a username reference (@<user>, all lowercase, no whitespace), or a channel reference (#<channel>, all lowercase, no whitespace).",
+          "type": "string"
+        },
+        "icon_emoji": {
+          "description": "Provide an emoji to use as the icon for the bot’s message. Ex :smile:",
+          "type": "string"
+        },
+        "icon_url": {
+          "description": "Provide a URL to an image to use as the icon for the bot’s message.",
+          "type": "string"
+        }
+      }
+    },
+    "NotifierPagerduty": {
+      "description": "PagerDuty notifier",
+      "type": "object",
+      "required": ["type", "routingKey"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "pagerduty"
+        },
+        "integrationKey": {
+          "description": "Integration key for the PagerDuty Events API v2 - see https://developer.pagerduty.com/docs/events-api-v2/overview",
+          "type": "string"
+        },
+        "severity": {
+          "description": "Severity level for PagerDuty alert",
+          "type": "string"
+        },
+        "apiUrl": { "type": "string" }
+      }
+    },
+    "NotifierWebhook": {
+      "description": "Webhook notifier",
+      "type": "object",
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "webhook"
+        },
+        "url": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "bearerToken": { "type": "string" }
+      }
+    },
+    "NotifierEmail": {
+      "description": "Email notifier",
+      "type": "object",
+      "required": ["type", "address"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "email"
+        },
+        "address": {
+          "description": "Address to send email to",
+          "type": "string"
+        }
+      }
+    },
+    "NotifierOpsGenie": {
+      "description": "OpsGenie notifier",
+      "type": "object",
+      "required": ["type", "apiKey", "apiUrl"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "opsgenie"
+        },
+        "apiKey": { "type": "string" },
+        "apiUrl": { "type": "string" },
+        "priority": {
+          "type": "string",
+          "enum": ["P1", "P2", "P3", "P4", "P5"]
+        },
+        "responders": {
+          "type": "array",
+          "description": "List of responders responsible for notifications.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["team", "user", "escalation", "schedule"]
+              },
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "username": { "type": "string" }
+            },
+            "oneOf": [
+              { "required": ["type", "id"] },
+              { "required": ["type", "name"] },
+              { "required": ["type", "username"] }
+            ]
+          }
         }
       }
     }
