@@ -29,6 +29,10 @@ type Store interface {
 	// original error value is returned unchanged.
 	Done(err error) error
 
+	// Lock attempts to take an advisory lock on the given key. If successful, this method will
+	// return a true-valued flag along with a function that must be called to release the lock.
+	Lock(ctx context.Context, key int, blocking bool) (bool, UnlockFunc, error)
+
 	// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 	GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 
@@ -254,6 +258,11 @@ func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 // scanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
 func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
 	return basestore.ScanFirstInt(rows, err)
+}
+
+// scanFirstBool scans a slice of bools from the return value of `*store.query` and returns the first.
+func scanFirstBool(rows *sql.Rows, err error) (bool, bool, error) {
+	return basestore.ScanFirstBool(rows, err)
 }
 
 // closeRows closes the rows object and checks its error value.
