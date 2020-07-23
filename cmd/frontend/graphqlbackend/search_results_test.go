@@ -338,6 +338,55 @@ func TestProcessSearchPattern(t *testing.T) {
 	}
 }
 
+func TestIsPatternNegated(t *testing.T) {
+	cases := []struct {
+		name    string
+		pattern string
+		want    bool
+	}{
+		{
+			name:    "simple negated pattern",
+			pattern: "-content:foo",
+			want:    true,
+		},
+		{
+			name:    "compound query with negated content as first term",
+			pattern: "-content:foo and bar",
+			want:    false,
+		},
+		{
+			name:    "compound query with negated content as last term",
+			pattern: "bar and -content:foo",
+			want:    false,
+		},
+		{
+			name:    "simple query with content field but without negation",
+			pattern: "content:foo",
+			want:    false,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.pattern,
+				query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			if andOrQuery, ok := q.(*query.AndOrQuery); ok {
+				got := isPatternNegated(andOrQuery.Query)
+
+				if got != tt.want {
+					t.Fatalf("got %t\nwant %t", got, tt.want)
+				}
+			} else {
+				t.Fatalf("the query should have been an AndOrQuery")
+			}
+		})
+	}
+}
+
 func TestProcessSearchPatternAndOr(t *testing.T) {
 	cases := []struct {
 		name                string
