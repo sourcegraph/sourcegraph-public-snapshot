@@ -16,12 +16,13 @@ func (err *EncryptionError) Error() string {
 	return err.Message
 }
 
-type EncryptionStore struct {
+// Encrypter contains the encryption key used in encryption and decryption
+type Encrypter struct {
 	EncryptionKey []byte
 }
 
 // Returns an enrypted string
-func (e *EncryptionStore) encrypt(key []byte, value string) (string, error) {
+func (e *Encrypter) encrypt(key []byte, value string) (string, error) {
 	// create a one time nonce of standard length, without repetitions
 
 	byteVal := []byte(value)
@@ -45,12 +46,12 @@ func (e *EncryptionStore) encrypt(key []byte, value string) (string, error) {
 }
 
 // Encrypts the string, returning the encrypted value
-func (e *EncryptionStore) Encrypt(value string) (string, error) {
+func (e *Encrypter) Encrypt(value string) (string, error) {
 	return e.encrypt(e.EncryptionKey, value)
 }
 
 // Decrypts the string, returning the decrypted value
-func (e *EncryptionStore) Decrypt(encodedValue string) (string, error) {
+func (e *Encrypter) Decrypt(encodedValue string) (string, error) {
 	encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
 	if err != nil {
 		return "", nil
@@ -72,8 +73,9 @@ func (e *EncryptionStore) Decrypt(encodedValue string) (string, error) {
 	return string(value), nil
 }
 
-// This function rotates the encryption used on an item by decryping and then recencrypting
-func (e *EncryptionStore) RotateKey(newKey []byte, encryptedValue string) (string, error) {
+// This function rotates the encryption used on an item by decryping and then recencrypting.
+// Rotating keys updates the EncryptionKey within the Encrypter object
+func (e *Encrypter) RotateKey(newKey []byte, encryptedValue string) (string, error) {
 	decrypted, err := e.Decrypt(encryptedValue)
 	if err != nil {
 		return "", err
