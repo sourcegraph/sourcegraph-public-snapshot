@@ -1,9 +1,12 @@
 package secrets
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 var CryptObject Encrypter
@@ -26,13 +29,28 @@ func init() {
 	}
 
 	_, err := os.Stat(secretFile)
-
-	// a lack of encryption keys means we cannot run the application, hence panic.
+	// generate a secret for non-k8s deployments
 	if err != nil && !cryptOK {
-		panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
-			sourcegraphCryptEnvvar,
-			sourcegraphSecretfileEnvvar))
+		d := conf.DeployType()
+		if conf.IsDeployTypeKubernetes(d) { // Expect a k8s secret
+			panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
+				sourcegraphCryptEnvvar,
+				sourcegraphSecretfileEnvvar))
+		}
+		c := 32
+		b := make([]byte, c)
+		_, err := rand.Read(b)
+		if err != nil {
+			panic(fmt.Sprintf("Unable to read from random source: %v", err))
+		}
+		err = ioutil.WriteFile(secretFile, b, 0600)
+		if err != nil {
+			panic(err)
+		}
+		CryptObject.EncryptionKey = b
+		return
 	}
+
 	if err == nil {
 		contents, readErr := ioutil.ReadFile(secretFile)
 		if readErr != nil {
