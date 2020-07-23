@@ -61,8 +61,9 @@ interface Props
     showCampaigns: boolean
 }
 
-const SearchExampleClicked = (): void => eventLogger.log('ExampleSearchClicked')
-const LanguageExampleClicked = (): void => eventLogger.log('ExampleLanguageSearchClicked')
+const SearchExampleClicked = (url: string) => (): void => eventLogger.log('ExampleSearchClicked', { url })
+const LanguageExampleClicked = (language: string) => (): void =>
+    eventLogger.log('ExampleLanguageSearchClicked', { language })
 
 /**
  * The search page
@@ -138,7 +139,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <Link
                                             to="/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural"
                                             className="text-monospace mb-2"
-                                            onClick={SearchExampleClicked}
+                                            onClick={SearchExampleClicked(
+                                                '/search?q=lang:javascript+alert%28:%5Bvariable%5D%29&patternType=structural'
+                                            )}
                                         >
                                             <span className="search-page__keyword-text">lang:</span>javascript
                                             alert(:[variable])
@@ -151,7 +154,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <Link
                                             to="/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp"
                                             className="text-monospace mb-2"
-                                            onClick={SearchExampleClicked}
+                                            onClick={SearchExampleClicked(
+                                                '/search?q=repogroup:python+from+%5CB%5C.%5Cw%2B+import+%5Cw%2B&patternType=regexp'
+                                            )}
                                         >
                                             <span className="search-page__keyword-text">repogroup:</span>python from
                                             \B\.\w+ import \w+
@@ -165,7 +170,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <Link
                                             to='/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
                                             className="text-monospace mb-2"
-                                            onClick={SearchExampleClicked}
+                                            onClick={SearchExampleClicked(
+                                                '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
+                                            )}
                                         >
                                             <span className="search-page__keyword-text">repo:</span>
                                             ^github\.com/golang/go${' '}
@@ -180,7 +187,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         <Link
                                             to='/search?q=file:pod.yaml+content:"kind:+ReplicationController"&patternType=literal'
                                             className="text-monospace mb-2"
-                                            onClick={SearchExampleClicked}
+                                            onClick={SearchExampleClicked(
+                                                '/search?q=repo:%5Egithub%5C.com/golang/go%24+type:diff+after:"1+week+ago"&patternType=literal"'
+                                            )}
                                         >
                                             <span className="search-page__keyword-text">file:</span>pod.yaml{' '}
                                             <span className="search-page__keyword-text">content:</span>"kind:
@@ -228,7 +237,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                                     className="search-page__web-link search-page__lang-link text-monospace mb-3"
                                                     to={`/search?q=lang:${language.filterName}`}
                                                     key={language.name}
-                                                    onClick={LanguageExampleClicked}
+                                                    onClick={LanguageExampleClicked(language.filterName)}
                                                 >
                                                     {language.name}
                                                 </Link>

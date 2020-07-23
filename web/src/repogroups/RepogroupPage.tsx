@@ -182,13 +182,14 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     )
 }
 
-const RepoLinkClicked = (): void => eventLogger.log('RepogroupPageRepoLinkClicked')
+const RepoLinkClicked = (repoName: string) => (): void =>
+    eventLogger.log('RepogroupPageRepoLinkClicked', { repo_name: repoName })
 
 const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
     <li className="repogroup-page__repo-item list-unstyled mb-3" key={repo}>
         {repo.startsWith('github.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked}>
+                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
@@ -198,7 +199,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('gitlab.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked}>
+                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
@@ -208,7 +209,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('bitbucket.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked}>
+                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace repogroup-page__web-link">
