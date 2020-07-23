@@ -361,30 +361,30 @@ add(
                 <code>em</code> units for padding.
             </p>
             <p>
-                Use a superscript <code>{'<sup></sup>'}</code> if the badge should be positioned top-right of another
-                word.
+                Use a superscript <code>{'<sup></sup>'}</code> to position the badge top-right of a word in{' '}
+                <code>h1</code> headings. Do not use a superscript for smaller text, because the font size would become
+                too small.
             </p>
             <table className="table">
-                <thead>
-                    <tr>
-                        <th>Level</th>
-                        <th>Superscript</th>
-                        <th>Baseline</th>
-                    </tr>
-                </thead>
                 <tbody>
-                    {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
+                    <tr>
+                        <td>
+                            <code>{'<h1>'}</code> + <code>{'<sup>'}</code>
+                        </td>
+                        <td>
+                            <h1>
+                                Lorem{' '}
+                                <sup>
+                                    <span className="badge badge-secondary">ipsum</span>
+                                </sup>
+                            </h1>
+                            <small>Use a superscript to align the badge top-right of the heading text.</small>
+                        </td>
+                    </tr>
+                    {(['h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
                         <tr key={Heading}>
                             <td>
                                 <code>{`<${Heading}>`}</code>
-                            </td>
-                            <td>
-                                <Heading>
-                                    Lorem{' '}
-                                    <sup>
-                                        <span className="badge badge-secondary">ipsum</span>
-                                    </sup>
-                                </Heading>
                             </td>
                             <td>
                                 <Heading>
@@ -396,26 +396,12 @@ add(
                     <tr>
                         <td>Regular text</td>
                         <td>
-                            Lorem{' '}
-                            <sup>
-                                <span className="badge badge-secondary">ipsum</span>
-                            </sup>
-                        </td>
-                        <td>
                             Lorem <span className="badge badge-secondary">ipsum</span>
                         </td>
                     </tr>
                     <tr>
                         <td>
                             <code>{'<small>'}</code>
-                        </td>
-                        <td>
-                            <small>
-                                Lorem{' '}
-                                <sup>
-                                    <span className="badge badge-secondary">ipsum</span>
-                                </sup>
-                            </small>
                         </td>
                         <td>
                             <small>
@@ -476,7 +462,7 @@ add(
             <p>
                 <span className="badge badge-warning text-uppercase">moved</span> <code>path/to/file.ts</code>
             </p>
-            <p>Do not use it for user-supplied text like badges or usernames.</p>
+            <p>Do not use it for user-supplied text like labels (tags) or usernames.</p>
 
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>

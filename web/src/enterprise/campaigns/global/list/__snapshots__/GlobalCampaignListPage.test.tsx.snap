@@ -39,15 +39,12 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns
-         
-        <sup>
-          <span
-            className="badge badge-info text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
+        Welcome to campaigns 
+        <span
+          className="badge badge-info text-uppercase"
+        >
+          Beta
+        </span>
         !
       </h3>
       <p
@@ -166,15 +163,12 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns
-         
-        <sup>
-          <span
-            className="badge badge-info text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
+        Welcome to campaigns 
+        <span
+          className="badge badge-info text-uppercase"
+        >
+          Beta
+        </span>
         !
       </h3>
       <p
@@ -293,15 +287,12 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns
-         
-        <sup>
-          <span
-            className="badge badge-info text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
+        Welcome to campaigns 
+        <span
+          className="badge badge-info text-uppercase"
+        >
+          Beta
+        </span>
         !
       </h3>
       <p
@@ -420,15 +411,12 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns
-         
-        <sup>
-          <span
-            className="badge badge-info text-uppercase"
-          >
-            Beta
-          </span>
-        </sup>
+        Welcome to campaigns 
+        <span
+          className="badge badge-info text-uppercase"
+        >
+          Beta
+        </span>
         !
       </h3>
       <p
