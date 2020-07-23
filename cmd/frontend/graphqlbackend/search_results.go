@@ -227,8 +227,11 @@ var commonFileFilters = []struct {
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
 
-	globbing := false
-	if settings, err := decodedViewerFinalSettings(ctx); err == nil {
+	var globbing bool
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		globbing = false
+	} else {
 		globbing = getBoolPtr(settings.SearchGlobbing, false)
 	}
 
@@ -252,7 +255,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		sf.score = score
 	}
 
-	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
+	addRepoFilter := func(uri string, rev string, lineMatchCount int, globbing bool) {
 		var filter string
 		if globbing {
 			filter = fmt.Sprintf(`repo:%s`, uri)
@@ -273,14 +276,22 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
-			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
-			// since we have no native library call to match `**` for globs.
+
+			// We match against the regex pattern regardless of whether globbing is enabled or not.
+			// Why?
+			// To match glob patterns, the most obvious choice would be golang's path.Match. However Match does
+			// not support **, which means we would have to map between golang's standard patterns and the patterns we support.
+			// Since we anyway have to map, we might as well map to regex.
+			//
+			// In the future we might want to evaluate external matchers or roll our own, in which case we can
+			// update the code here.
 			if ff.regexp.MatchString(fileMatchPath) {
 				if globbing {
 					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file", scoreDefault)
 				} else {
 					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file", scoreDefault)
 				}
+
 			}
 		}
 	}
@@ -314,7 +325,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			if fm.InputRev != nil {
 				rev = *fm.InputRev
 			}
-			addRepoFilter(fm.Repo.Name(), rev, len(fm.LineMatches()))
+			addRepoFilter(fm.Repo.Name(), rev, len(fm.LineMatches()), globbing)
 			addLangFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
@@ -325,7 +336,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(r.Name(), "", 1)
+			addRepoFilter(r.Name(), "", 1, globbing)
 		}
 	}
 
@@ -980,6 +991,14 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
+		// Get settings to check if `search.uppercase` is active. If so, run transformer.
+		settings, err := decodedViewerFinalSettings(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if v := settings.SearchUppercase; v != nil && *v {
+			q.Query = query.SearchUppercase(q.Query)
+		}
 		return r.evaluate(ctx, q.Query)
 	}
 	// Unreachable.
