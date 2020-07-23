@@ -47,7 +47,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                     <h1 className="mb-2">
                         Campaigns{' '}
                         <sup>
-                            <span className="badge badge-info">Beta</span>
+                            <span className="badge badge-info text-uppercase">Beta</span>
                         </sup>
                     </h1>
                     <p className="mb-0">
@@ -62,7 +62,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                     <h3>
                         Welcome to campaigns{' '}
                         <sup>
-                            <span className="badge badge-info">Beta</span>
+                            <span className="badge badge-info text-uppercase">Beta</span>
                         </sup>
                         !
                     </h3>

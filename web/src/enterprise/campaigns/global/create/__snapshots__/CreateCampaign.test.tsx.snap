@@ -8,7 +8,7 @@ exports[`CreateCampaign renders 1`] = `
        
       <sup>
         <span
-          className="badge badge-info"
+          className="badge badge-info text-uppercase"
         >
           Beta
         </span>

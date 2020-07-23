@@ -13,7 +13,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -43,7 +43,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -140,7 +140,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -170,7 +170,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -267,7 +267,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -297,7 +297,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -394,7 +394,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -424,7 +424,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>

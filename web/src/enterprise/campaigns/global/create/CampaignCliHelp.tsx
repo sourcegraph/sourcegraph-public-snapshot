@@ -42,7 +42,7 @@ export const CampaignCliHelp: React.FunctionComponent<Props> = ({ className }) =
         <h1>
             Create a campaign{' '}
             <sup>
-                <span className="badge badge-info">Beta</span>
+                <span className="badge badge-info text-uppercase">Beta</span>
             </sup>
         </h1>
         <div className="card">

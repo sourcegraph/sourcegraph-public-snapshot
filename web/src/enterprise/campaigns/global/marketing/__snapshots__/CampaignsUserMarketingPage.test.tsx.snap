@@ -54,7 +54,7 @@ exports[`CampaignsUserMarketingPage renders for disabled 1`] = `
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>
@@ -223,7 +223,7 @@ exports[`CampaignsUserMarketingPage renders for enabled 1`] = `
          
         <sup>
           <span
-            className="badge badge-info"
+            className="badge badge-info text-uppercase"
           >
             Beta
           </span>

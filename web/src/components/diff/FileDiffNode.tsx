@@ -98,10 +98,10 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             )}
                         </button>
                         <div className="file-diff-node__header-path-stat align-items-baseline">
-                            {!node.oldPath && <span className="badge badge-success mr-2">Added</span>}
-                            {!node.newPath && <span className="badge badge-danger mr-2">Deleted</span>}
+                            {!node.oldPath && <span className="badge badge-success text-uppercase mr-2">Added</span>}
+                            {!node.newPath && <span className="badge badge-danger text-uppercase mr-2">Deleted</span>}
                             {node.newPath && node.oldPath && node.newPath !== node.oldPath && (
-                                <span className="badge badge-warning mr-2">
+                                <span className="badge badge-warning text-uppercase mr-2">
                                     {dirname(node.newPath) !== dirname(node.oldPath) ? 'Moved' : 'Renamed'}
                                 </span>
                             )}
