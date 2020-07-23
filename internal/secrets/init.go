@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var CryptObject EncryptionStore
+var CryptObject Encrypter
 
 const (
 	// #nosec G101
