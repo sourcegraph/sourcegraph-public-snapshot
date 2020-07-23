@@ -1,21 +1,21 @@
 .web-content {
-    &__link {
-        color: #329af0;
-    }
+    --link-color: #329af0;
 
     h2 {
         font-weight: normal;
     }
 
-    &__small-text {
-        font-size: 12px;
+    &__search-keyword {
+        color: var(--link-color);
     }
 }
 
 .theme-light {
     .web-content {
-        &__link {
-            color: #1c7cd6;
+        --link-color: #329af0;
+
+        &__search-keyword {
+            color: var(--link-color);
         }
     }
 }

@@ -13,8 +13,8 @@ export const kubernetes: RepogroupMetadata = {
                 'Use a ReplicationController configuration to ensure specified number of pod replicas are running at any one time',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">file:</span>pod.yaml{' '}
-                    <span className="web-content__link">content:</span>"kind: ReplicationController"
+                    <span className="web-content__search-keyword">file:</span>pod.yaml{' '}
+                    <span className="web-content__search-keyword">content:</span>"kind: ReplicationController"
                 </>
             ),
             rawQuery: 'file:pod.yaml content:"kind: ReplicationController"',
@@ -24,7 +24,7 @@ export const kubernetes: RepogroupMetadata = {
             title: 'Look for outdated `apiVersions` of admission webhooks',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">content:</span>"apiVersion:
+                    <span className="web-content__search-keyword">content:</span>"apiVersion:
                     admissionregistration.k8s.io/v1beta1"
                 </>
             ),
@@ -37,7 +37,7 @@ export const kubernetes: RepogroupMetadata = {
             title: 'Find Prometheus usage in YAML files',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">lang:</span>yaml prom/prometheus
+                    <span className="web-content__search-keyword">lang:</span>yaml prom/prometheus
                 </>
             ),
             rawQuery: 'lang:yaml prom/prometheus',
@@ -47,7 +47,7 @@ export const kubernetes: RepogroupMetadata = {
             title: 'Search for examples of the sidecar pattern in Go',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">lang:</span>go sidecar
+                    <span className="web-content__search-keyword">lang:</span>go sidecar
                 </>
             ),
             rawQuery: 'lang:go sidecar',
@@ -57,8 +57,8 @@ export const kubernetes: RepogroupMetadata = {
             title: 'Browse diffs for recent code changes',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">type:</span>diff{' '}
-                    <span className="web-content__link">after:</span>"1 week ago"
+                    <span className="web-content__search-keyword">type:</span>diff{' '}
+                    <span className="web-content__search-keyword">after:</span>"1 week ago"
                 </>
             ),
             rawQuery: 'type:diff after:"1 week ago"',

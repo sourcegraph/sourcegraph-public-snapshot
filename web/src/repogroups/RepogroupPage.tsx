@@ -97,7 +97,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
             />
             <div className="repogroup-page__subheading">
                 <span className="text-monospace">
-                    <span className="web-content__link">repogroup:</span>
+                    <span className="web-content__search-keyword">repogroup:</span>
                     {props.repogroupMetadata.name}
                 </span>
             </div>
@@ -122,7 +122,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                             <p>{example.description}</p>
                             <div className="d-flex mb-4">
                                 <div className="repogroup-page__example-bar form-control text-monospace ">
-                                    <span className="web-content__link">repogroup:</span>
+                                    <span className="web-content__search-keyword">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
                                 </div>
                                 <div className="d-flex">
@@ -154,10 +154,10 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                             </h2>
                             <p>
                                 Using the syntax{' '}
-                                <span className="text-monospace">
-                                    <span className="web-content__link web-content__small-text">repogroup:</span>
+                                <code>
+                                    <span className="web-content__search-keyword ">repogroup:</span>
                                     {props.repogroupMetadata.name}
-                                </span>{' '}
+                                </code>{' '}
                                 in a query will search these repositories:
                             </p>
                             <div className="repogroup-page__repo-list row">
@@ -189,7 +189,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer">
                     <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace web-content__link">
+                <Link to={`/${repo}`} className="text-monospace web-content__search-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -199,7 +199,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer">
                     <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace web-content__link">
+                <Link to={`/${repo}`} className="text-monospace web-content__search-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -209,7 +209,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer">
                     <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace web-content__link">
+                <Link to={`/${repo}`} className="text-monospace web-content__search-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>

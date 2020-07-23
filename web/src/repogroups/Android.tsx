@@ -12,7 +12,7 @@ export const android: RepogroupMetadata = {
             title: 'Find intent filter examples in Android Manifest XML files',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">lang:</span>
+                    <span className="web-content__search-keyword">lang:</span>
                     {'xml <intent-filter> :[string] </intent-filter>'}
                 </>
             ),
@@ -40,7 +40,7 @@ export const android: RepogroupMetadata = {
             title: 'Find usage examples of the OnClickListener function in Kotlin’s syntax',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">file:</span>
+                    <span className="web-content__search-keyword">file:</span>
                     {'.kt .setOnClickListener {:[function]}'}
                 </>
             ),

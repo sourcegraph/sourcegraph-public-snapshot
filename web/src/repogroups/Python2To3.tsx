@@ -31,7 +31,7 @@ export const python2To3Metadata: RepogroupMetadata = {
             description: 'Find print statements with double quotes like print "Hello, World!".',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">lang:</span>python print ":[string]"
+                    <span className="web-content__search-keyword">lang:</span>python print ":[string]"
                 </>
             ),
             rawQuery: 'lang:python print ":[string]"',
@@ -43,7 +43,7 @@ export const python2To3Metadata: RepogroupMetadata = {
                 'Convert print statements to the print( ) function like print("Hello, World!"). These will work with both Python 2 and Python 3.',
             exampleQuery: (
                 <>
-                    <span className="web-content__link">lang:</span>python print(":[string]")
+                    <span className="web-content__search-keyword">lang:</span>python print(":[string]")
                 </>
             ),
             rawQuery: 'lang:python print(":[string]")',
@@ -64,7 +64,7 @@ export const python2To3Metadata: RepogroupMetadata = {
             int(100.8) will be converted to 100.`,
             exampleQuery: (
                 <>
-                    <span className="web-content__link">lang:</span>python \\sint\\(-*\\d+\\)
+                    <span className="web-content__search-keyword">lang:</span>python \\sint\\(-*\\d+\\)
                 </>
             ),
             rawQuery: 'lang:python \\sint\\(-*\\d+\\)',
