@@ -44,7 +44,7 @@ func init() {
 	}
 
 	// environment is second order
-	if err != nil && cryptOK {
+	if cryptOK {
 		encryptionKey = []byte(cryptKey)
 		CryptObject.EncryptionKey = encryptionKey
 		return
