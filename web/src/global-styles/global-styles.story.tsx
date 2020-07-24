@@ -407,6 +407,11 @@ add(
                             <small>
                                 Lorem <span className="badge badge-secondary">ipsum</span>
                             </small>
+                            <p>
+                                <small className="text-danger">
+                                    Discouraged because the text becomes too small to read.
+                                </small>
+                            </p>
                         </td>
                     </tr>
                 </tbody>
