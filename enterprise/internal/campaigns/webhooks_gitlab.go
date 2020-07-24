@@ -83,6 +83,12 @@ var (
 	errPipelineMissingMergeRequest = errors.New("pipeline event does not include a merge request")
 )
 
+// getExternalServiceFromRawID retrieves the external service matching the
+// given raw ID, which is usually going to be the string in the
+// externalServiceID URL parameter.
+//
+// On failure, errExternalServiceNotFound is returned if the ID doesn't match
+// any GitLab service.
 func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw string) (*repos.ExternalService, error) {
 	id, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
@@ -109,6 +115,8 @@ type stateMergeRequestEvent interface {
 	webhooks.MergeRequestEventContainer
 }
 
+// handleEvent is essentially a router: it dispatches based on the event type
+// to perform whatever changeset action is appropriate for that event.
 func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalService, event interface{}) *httpError {
 	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
 
