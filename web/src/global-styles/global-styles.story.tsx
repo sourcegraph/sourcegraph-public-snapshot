@@ -442,6 +442,22 @@ add(
                 ))}
             </p>
 
+            <h3>Extra Small</h3>
+            <p>
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', 'btn-xs', `btn-${semantic}`)}
+                            onClick={flow(preventDefault, action('button clicked'))}
+                        >
+                            {startCase(semantic)}
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </p>
+
             <h3>Small</h3>
             <p>
                 {semanticColors.map(semantic => (
@@ -499,7 +515,7 @@ add(
                     I am disabled
                 </button>
             </p>
-            
+
             <h2>Links</h2>
             <p>Links can be made to look like buttons too.</p>
             <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
