@@ -88,7 +88,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
     }
 
     return (
-        <div className="repogroup-page web-content">
+        <div className="web-content repogroup-page">
             <PageTitle title={props.repogroupMetadata.title} />
             <RepogroupPageLogo
                 className="repogroup-page__logo"
@@ -121,13 +121,13 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                             <h3 className="mb-3">{example.title}</h3>
                             <p>{example.description}</p>
                             <div className="d-flex mb-4">
-                                <div className="repogroup-page__example-bar form-control text-monospace ">
+                                <div className="repogroup-page__example-bar web-content__small form-control text-monospace ">
                                     <span className="web-content__search-keyword">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
                                 </div>
                                 <div className="d-flex">
                                     <button
-                                        className="repogroup-page__example-search-button btn btn-primary search-button__btn test-search-button btn-secondary"
+                                        className="btn btn-primary btn-sm search-button__btn test-search-button btn-secondary"
                                         type="button"
                                         aria-label="Search"
                                         onClick={onSubmitExample(

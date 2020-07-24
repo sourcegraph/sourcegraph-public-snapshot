@@ -1,8 +1,41 @@
 .web-content {
     --link-color: #329af0;
 
-    h2 {
+    h1,
+    h2,
+    h3 {
+        color: $gray-08;
         font-weight: normal;
+    }
+
+    h4 {
+        color: $gray-06;
+        font-weight: normal;
+    }
+
+    h5,
+    h6 {
+        color: $gray-04;
+        font-weight: normal;
+    }
+
+    p {
+        font-weight: normal;
+        font-size: 14px;
+        line-height: 20px;
+        color: $gray-06;
+    }
+
+    i {
+        color: $gray-06;
+    }
+
+    strong {
+        color: $gray-11;
+    }
+
+    &__small {
+        font-size: 12px;
     }
 
     &__search-keyword {
@@ -12,7 +45,31 @@
 
 .theme-light {
     .web-content {
-        --link-color: #329af0;
+        --link-color: #1c7cd6;
+
+        h1,
+        h2 {
+            color: $gray-17;
+        }
+
+        h3,
+        h4,
+        h6 {
+            color: $gray-15;
+        }
+
+        h5 {
+            color: $gray-13;
+        }
+
+        strong {
+            color: $gray-11;
+        }
+
+        p,
+        i {
+            color: #2b3750;
+        }
 
         &__search-keyword {
             color: var(--link-color);

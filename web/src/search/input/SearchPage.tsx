@@ -100,7 +100,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                     <div className="search-page__repogroup-content container-fluid mt-5">
                         <div className="d-flex align-items-baseline mb-3">
                             <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
-                            <span className="text-monospace font-weight-normal search-page__lang-ref">
+                            <span className="text-monospace font-weight-normal web-content__small">
                                 <span className="web-content__search-keyword">repogroup:</span>
                                 <i>name</i>
                             </span>
@@ -119,9 +119,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         >
                                             {repogroup.title}
                                         </Link>
-                                        <p className="search-page__repogroup-listing-description">
-                                            {repogroup.homepageDescription}
-                                        </p>
+                                        <p>{repogroup.homepageDescription}</p>
                                     </div>
                                 </div>
                             ))}
@@ -189,9 +187,9 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 <div className="align-items-baseline mb-4">
                                     <h3 className="search-page__help-content-header">
                                         Search a language{' '}
-                                        <span className="text-monospace font-weight-normal search-page__lang-ref">
+                                        <span className="text-monospace font-weight-normal web-content__small">
                                             <span className="web-content__search-keyword ml-1">lang:</span>
-                                            <i className="search-page__keyword-value-text">name</i>
+                                            <i className="search-page__keyword-value-text web-content__small">name</i>
                                         </span>
                                     </h3>
                                 </div>
