@@ -224,7 +224,7 @@ exports[`CampaignsDotComPage renders 1`] = `
       >
         <PrivateCodeCta>
           <div
-            className="private-code-cta shadow d-flex flex-row card"
+            className="web-content private-code-cta shadow d-flex flex-row card"
           >
             <div
               className="private-code-cta__icon-column d-flex flex-column align-items-center"
