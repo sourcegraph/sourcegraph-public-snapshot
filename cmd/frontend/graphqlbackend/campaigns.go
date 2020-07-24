@@ -181,9 +181,8 @@ type ListChangesetsArgs struct {
 type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
-	Description() *string
-	Branch() *string
 	Author(ctx context.Context) (*UserResolver, error)
+	Spec(ctx context.Context) (CampaignSpecResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)

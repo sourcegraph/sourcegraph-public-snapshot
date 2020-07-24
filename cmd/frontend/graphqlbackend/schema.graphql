@@ -682,14 +682,11 @@ type Campaign implements Node {
     # The name of the campaign.
     name: String!
 
-    # The description (as Markdown).
-    description: String
-
-    # The branch of the changesets.
-    branch: String
-
     # The user who authored the campaign.
     author: User!
+
+    # The campaign's spec.
+    spec: CampaignSpec!
 
     # Whether the current user can edit or delete this campaign.
     viewerCanAdminister: Boolean!

@@ -77,22 +77,12 @@ func (r *campaignResolver) Name() string {
 	return r.Campaign.Name
 }
 
-func (r *campaignResolver) Description() *string {
-	if r.Campaign.Description == "" {
-		return nil
-	}
-	return &r.Campaign.Description
-}
-
-func (r *campaignResolver) Branch() *string {
-	if r.Campaign.Branch == "" {
-		return nil
-	}
-	return &r.Campaign.Branch
-}
-
 func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
+}
+
+func (r *campaignResolver) Spec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
