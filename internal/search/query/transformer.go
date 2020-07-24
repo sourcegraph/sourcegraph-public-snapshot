@@ -160,9 +160,15 @@ func globToRegex(value string) (string, error) {
 		case '?':
 			sb.WriteRune('.')
 		case '\\':
-			// Handle escaped special characters.
+			// trailing backslashes are not allowed
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
+
 			sb.WriteRune('\\')
 			i++
+
+			// we only support escaping of special characters
 			if _, ok := globSpecialSymbols[r[i]]; !ok {
 				return "", ErrBadGlobPattern
 			}
