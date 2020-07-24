@@ -10,7 +10,11 @@ const { readFile, writeFile } = require('mz/fs')
 const path = require('path')
 const { format, resolveConfig } = require('prettier')
 
-const { generateGraphQlOperations } = require('./dev/generateGraphQlOperations')
+const {
+  generateGraphQlOperations,
+  SHARED_DOCUMENTS_GLOB,
+  WEB_DOCUMENTS_GLOB,
+} = require('./dev/generateGraphQlOperations')
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend/schema.graphql')
 
@@ -115,7 +119,65 @@ function watchSchema() {
   return gulp.watch(path.join(__dirname, '../schema/*.schema.json'), schema)
 }
 
-const watchGraphQlOperations = () => generateGraphQlOperations(true)
+/**
+ * reads file content and checks if it contains "gql`"" string
+ *
+ * @param {string} filePath
+ * @returns {Promise<boolean>} promise of the result of the check
+ */
+function checkFogGqlTag(filePath) {
+  return readFile(filePath, 'utf-8').then(content => content.includes('gql`'))
+}
+
+function watchGraphQlOperations() {
+  const watcher = gulp.watch([...WEB_DOCUMENTS_GLOB, ...SHARED_DOCUMENTS_GLOB, GRAPHQL_SCHEMA_PATH], { delay: 2000 })
+
+  watcher.on('change', path => {
+    console.log(`File ${path} was changed`)
+
+    if (path === GRAPHQL_SCHEMA_PATH) {
+      generateGraphQlOperations().catch(console.error)
+    } else {
+      checkFogGqlTag(path)
+        .then(contains => {
+          if (contains) {
+            generateGraphQlOperations().catch(console.error)
+          }
+        })
+        .catch(console.error)
+    }
+  })
+
+  watcher.on('add', path => {
+    console.log(`File ${path} was added`)
+    checkFogGqlTag(path)
+      .then(contains => {
+        if (contains) {
+          generateGraphQlOperations().catch(console.error)
+        }
+      })
+      .catch(console.error)
+  })
+
+  watcher.on('addDir', path => {
+    console.log(`Dir ${path} was added`)
+    generateGraphQlOperations().catch(console.error)
+  })
+
+  watcher.on('unlink', path => {
+    console.log(`File ${path} was removed`)
+    generateGraphQlOperations().catch(console.error)
+  })
+
+  watcher.on('unlinkDir', path => {
+    console.log(`Dir ${path} was removed`)
+    generateGraphQlOperations().catch(console.error)
+  })
+
+  return watcher
+}
+
+// const watchGraphQlOperations = () => generateGraphQlOperations(true)
 
 module.exports = {
   watchSchema,
