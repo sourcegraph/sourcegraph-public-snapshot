@@ -1,0 +1,64 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignDescription  1`] = `
+<div
+  className="card mt-2"
+>
+  <div
+    className="card-header"
+  >
+    <strong>
+      <UserAvatar
+        className="icon-inline"
+        user={Object {}}
+      />
+       
+    </strong>
+     
+    started 
+    <Timestamp
+      date="2020-01-01"
+    />
+  </div>
+  <div
+    className="card-body"
+  >
+    <Markdown
+      dangerousInnerHTML="<p><strong>a</strong> b</p>
+"
+      history={
+        Object {
+          "action": "POP",
+          "block": [Function],
+          "canGo": [Function],
+          "createHref": [Function],
+          "entries": Array [
+            Object {
+              "hash": "",
+              "key": undefined,
+              "pathname": "/",
+              "search": "",
+              "state": undefined,
+            },
+          ],
+          "go": [Function],
+          "goBack": [Function],
+          "goForward": [Function],
+          "index": 0,
+          "length": 1,
+          "listen": [Function],
+          "location": Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+          "push": [Function],
+          "replace": [Function],
+        }
+      }
+    />
+  </div>
+</div>
+`;

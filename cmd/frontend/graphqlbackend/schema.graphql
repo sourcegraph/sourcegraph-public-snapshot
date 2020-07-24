@@ -682,6 +682,15 @@ type Campaign implements Node {
     # The name of the campaign.
     name: String!
 
+<<<<<<< Updated upstream
+=======
+    # The description (as Markdown).
+    description: String
+
+    # The branch of the changesets. TODO(sqs): remove
+    branch: String
+
+>>>>>>> Stashed changes
     # The user who authored the campaign.
     author: User!
 
@@ -699,6 +708,15 @@ type Campaign implements Node {
 
     # The date and time when the campaign was updated.
     updatedAt: DateTime!
+
+    # The campaign's spec.
+    spec: CampaignSpec!
+
+    # The date and time when the campaign spec was applied to this campaign.
+    specAppliedAt: DateTime!
+
+    # The user who applied the campaign spec to this campaign.
+    specAppliedByUser: User
 
     # The changesets in this campaign that already exist on the code host.
     changesets(
@@ -973,6 +991,52 @@ type ChangesetConnection {
 
     # Stats on all the changesets that are in this connection. Pagination has no effect on the stats.
     stats: ChangesetConnectionStats!
+
+    # Information about filters that can be applied to the list.
+    filters: ChangesetConnectionFilters!
+}
+
+# Filters that can be applied to a list of changesets.
+type ChangesetConnectionFilters {
+    # Repository filters.
+    repository: [RepositoryFilter!]!
+
+    # Label filters.
+    label: [LabelFilter!]!
+
+    # The number of changesets in the connection (ignoring pagination) that are open.
+    openCount: Int!
+
+    # The number of changesets in the connection (ignoring pagination) that are closed or merged.
+    closedCount: Int!
+}
+
+# A repository filter that can be applied to a list.
+type RepositoryFilter {
+    # The repository.
+    repository: Repository!
+
+    # The item count for this filter.
+    count: Int
+
+    # Whether this filter is currently applied to the list.
+    isApplied: Boolean!
+}
+
+# A label filter that can be applied to a list.
+type LabelFilter {
+    # The label. If the list contains items labeled with labels of the same name from different
+    # repositories, this field is null.
+    label: ChangesetLabel
+
+    # The label name.
+    labelName: String!
+
+    # The item count for this filter.
+    count: Int
+
+    # Whether this filter is currently applied to the list.
+    isApplied: Boolean!
 }
 
 # A changeset event in a code host (e.g., a comment on a pull request on GitHub).

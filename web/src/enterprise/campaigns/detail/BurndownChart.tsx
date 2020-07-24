@@ -16,6 +16,7 @@ import { ICampaign } from '../../../../../shared/src/graphql/schema'
 interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
     history: H.History
     width?: string | number
+    className?: string
 }
 
 const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
@@ -59,7 +60,11 @@ const tooltipItemSorter = ({ dataKey }: TooltipPayload): number => states[dataKe
 /**
  * A burndown chart showing progress of the campaigns changesets.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime, width = '100%' }) => {
+export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
+    changesetCountsOverTime,
+    width = '100%',
+    className = '',
+}) => {
     if (changesetCountsOverTime.length <= 1) {
         return (
             <p>
@@ -76,7 +81,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
         )
     }
     return (
-        <ResponsiveContainer width={width} height={300}>
+        <ResponsiveContainer width={width} height={300} className={className}>
             <ComposedChart
                 data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
             >

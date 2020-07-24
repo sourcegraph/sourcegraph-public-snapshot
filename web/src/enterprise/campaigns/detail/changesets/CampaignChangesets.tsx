@@ -37,6 +37,8 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
 
+    after?: React.ReactFragment
+
     queryChangesets: typeof queryChangesets
 }
 
@@ -66,6 +68,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     extensionsController,
     platformContext,
     telemetryService,
+    after,
     queryChangesets,
 }) => {
     const [state, setState] = useState<GQL.ChangesetState | undefined>()
@@ -139,22 +142,27 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     }, [componentRerenders, hoverState])
 
     const changesetFiltersRow = (
-        <div className="form-inline mb-0 mt-2">
-            <label htmlFor="changeset-state-filter">State</label>
+        <div className="form-inline">
+            Filter UI is WIP
+            <label htmlFor="changeset-state-filter" className="sr-only">
+                State
+            </label>
             <select
                 className="form-control mx-2"
                 value={state}
                 onChange={event => setState((event.target.value || undefined) as GQL.ChangesetState | undefined)}
                 id="changeset-state-filter"
             >
-                <option value="">All</option>
+                <option value="">State</option>
                 {Object.values(GQL.ChangesetState).map(state => (
                     <option value={state} key={state}>
                         {upperFirst(lowerCase(state))}
                     </option>
                 ))}
             </select>
-            <label htmlFor="changeset-review-state-filter">Review state</label>
+            <label htmlFor="changeset-review-state-filter" className="sr-only">
+                Review state
+            </label>
             <select
                 className="form-control mx-2"
                 value={reviewState}
@@ -163,14 +171,16 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 }
                 id="changeset-review-state-filter"
             >
-                <option value="">All</option>
+                <option value="">Reviews</option>
                 {Object.values(GQL.ChangesetReviewState).map(state => (
                     <option value={state} key={state}>
                         {upperFirst(lowerCase(state))}
                     </option>
                 ))}
             </select>
-            <label htmlFor="changeset-check-state-filter">Check state</label>
+            <label htmlFor="changeset-check-state-filter" className="sr-only">
+                Check state
+            </label>
             <select
                 className="form-control mx-2"
                 value={checkState}
@@ -179,22 +189,24 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 }
                 id="changeset-check-state-filter"
             >
-                <option value="">All</option>
+                <option value="">Checks</option>
                 {Object.values(GQL.ChangesetCheckState).map(state => (
                     <option value={state} key={state}>
                         {upperFirst(lowerCase(state))}
                     </option>
                 ))}
             </select>
+            <div className="flex-1" />
+            {after}
         </div>
     )
 
     return (
-        <>
-            {changesetFiltersRow}
-            <div className="list-group position-relative" ref={nextContainerElement}>
+        <div className="card">
+            <div className="card-header">{changesetFiltersRow}</div>
+            <div className="list-group list-group-flush position-relative" ref={nextContainerElement}>
                 <FilteredConnection<GQL.Changeset, Omit<ChangesetNodeProps, 'node'>>
-                    className="mt-2"
+                    className=""
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,
@@ -207,6 +219,8 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
                     defaultFirst={DEFAULT_CHANGESET_PATCH_LIST_COUNT}
+                    noSummaryIfAllNodesVisible={true}
+                    listClassName="mb-0"
                     noun="changeset"
                     pluralNoun="changesets"
                     history={history}
@@ -226,6 +240,6 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     />
                 )}
             </div>
-        </>
+        </div>
     )
 }

@@ -137,6 +137,95 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
+func (r *changesetsConnectionResolver) Filters(ctx context.Context) (graphqlbackend.ChangesetConnectionFilters, error) {
+	changesets, _, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return newChangesetConnectionFiltersFromConst(changesets), nil
+}
+
+func newChangesetConnectionFiltersFromConst(allChangesets []*campaigns.Changeset) graphqlbackend.ChangesetConnectionFilters {
+	return &changesetConnectionFilters{allChangesets: allChangesets}
+}
+
+type changesetConnectionFilters struct {
+	allChangesets []*campaigns.Changeset
+}
+
+func (f *changesetConnectionFilters) Repository(ctx context.Context) ([]graphqlbackend.RepositoryFilter, error) {
+	// TODO(sqs) security respect repo perms
+	repos := map[api.RepoID]int32{}
+	for _, c := range f.allChangesets {
+		repos[c.RepoID]++
+	}
+
+	filters := make([]graphqlbackend.RepositoryFilter, 0, len(repos))
+	for repoID, count := range repos {
+		repo, err := graphqlbackend.RepositoryByIDInt32(ctx, repoID)
+		if err != nil {
+			return nil, err
+		}
+		filters = append(filters, graphqlbackend.RepositoryFilter{Repository_: repo, Count_: count})
+	}
+	sort.Slice(filters, func(i, j int) bool { return filters[i].Count_ > filters[j].Count_ })
+	return filters, nil
+}
+
+func (f *changesetConnectionFilters) Label(ctx context.Context) ([]graphqlbackend.LabelFilter, error) {
+	// TODO!(sqs) security respect label perms
+	var (
+		labelForName       = map[string]campaigns.ChangesetLabel{}
+		labelNameConflicts = map[string]struct{}{}
+		labelCounts        = map[string]int32{}
+	)
+	for _, c := range f.allChangesets {
+		labels := c.Labels()
+		for _, label := range labels {
+			name := label.Name
+			if _, conflict := labelForName[name]; conflict {
+				labelNameConflicts[name] = struct{}{}
+			} else if _, conflict := labelNameConflicts[name]; !conflict {
+				labelForName[name] = label
+			}
+			labelCounts[name]++
+		}
+	}
+
+	filters := make([]graphqlbackend.LabelFilter, 0, len(labelCounts))
+	for labelName, count := range labelCounts {
+		filters = append(filters, graphqlbackend.LabelFilter{
+			Label_:     &changesetLabelResolver{labelForName[labelName]},
+			LabelName_: labelName,
+			Count_:     count,
+		})
+	}
+	sort.Slice(filters, func(i, j int) bool { return filters[i].Count_ > filters[j].Count_ })
+	return filters, nil
+}
+
+func (f *changesetConnectionFilters) count(filter func(*campaigns.Changeset) bool) int32 {
+	var count int32
+	for _, changeset := range f.allChangesets {
+		if filter(changeset) {
+			count++
+		}
+	}
+	return count
+}
+
+func (f *changesetConnectionFilters) OpenCount(ctx context.Context) (int32, error) {
+	return f.count(func(changeset *campaigns.Changeset) bool {
+		return changeset.ExternalState == campaigns.ChangesetExternalStateOpen
+	}), nil
+}
+
+func (f *changesetConnectionFilters) ClosedCount(ctx context.Context) (int32, error) {
+	return f.count(func(changeset *campaigns.Changeset) bool {
+		return changeset.ExternalState == campaigns.ChangesetExternalStateClosed
+	}), nil
+}
+
 func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Changeset, map[api.RepoID]*types.Repo, int64, error) {
 	r.once.Do(func() {
 		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)

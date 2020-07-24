@@ -3,14 +3,14 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
 import {
-    Changeset,
     ID,
     ICampaign,
     IChangesetsOnCampaignArguments,
     IExternalChangeset,
+    IChangesetConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffFields } from '../../../backend/diff'
-import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -26,6 +26,7 @@ const campaignFragment = gql`
         createdAt
         updatedAt
         closedAt
+        url
         viewerCanAdminister
         changesets {
             totalCount
@@ -121,7 +122,7 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
 export const queryChangesets = (
     campaign: ID,
     { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<Changeset>> =>
+): Observable<IChangesetConnection> =>
     queryGraphQL(
         gql`
             query CampaignChangesets(
@@ -134,8 +135,32 @@ export const queryChangesets = (
                 node(id: $campaign) {
                     __typename
                     ... on Campaign {
+                        updatedAt
+                        name
                         changesets(first: $first, state: $state, reviewState: $reviewState, checkState: $checkState) {
                             totalCount
+                            filters {
+                                openCount
+                                closedCount
+                                label {
+                                    label {
+                                        text
+                                        description
+                                        color
+                                    }
+                                    labelName
+                                    count
+                                    isApplied
+                                }
+                                repository {
+                                    repository {
+                                        id
+                                        name
+                                    }
+                                    count
+                                    isApplied
+                                }
+                            }
                             nodes {
                                 __typename
 
