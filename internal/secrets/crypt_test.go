@@ -3,14 +3,22 @@ package secrets
 import (
 	"bytes"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/randstring"
 )
+
+func TestRandomAESKey(t *testing.T) {
+	key, err := GenerateRandomAESKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(key) != validKeyLength {
+		t.Fatalf("Exepected key length of %d received %d", validKeyLength, len(key))
+	}
+}
 
 // Test that encrypting and decryption the message yields the same value
 func TestEncryptingAndDecrypting(t *testing.T) {
 	// 32 bytes means an AES-256 cipher
-	key := []byte(randstring.NewLen(32))
+	key, _ := GenerateRandomAESKey()
 	e := Encrypter{EncryptionKey: key}
 	toEncrypt := "i am the super secret string, shhhhh"
 
@@ -37,14 +45,14 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 
 // Test the negative result - we should fail to decrypt with bad keys
 func TestBadKeysFailToDecrypt(t *testing.T) {
-	key := []byte(randstring.NewLen(32))
+	key, _ := GenerateRandomAESKey()
 	e := Encrypter{EncryptionKey: key}
 
 	message := "The secret is to bang the rocks together guys."
 	encrypted, _ := e.Encrypt(message)
 	decrypted, _ := e.Decrypt(encrypted)
 
-	notTheSameKey := []byte(randstring.NewLen(32))
+	notTheSameKey, _ := GenerateRandomAESKey()
 	e.EncryptionKey = notTheSameKey
 	decryptAgain, err := e.Decrypt(encrypted)
 	if err != nil {
@@ -59,7 +67,7 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 
 // Test that different strings encrypt to different outputs
 func TestDifferentOutputs(t *testing.T) {
-	key := []byte(randstring.NewLen(32))
+	key, _ := GenerateRandomAESKey()
 	e := Encrypter{EncryptionKey: key}
 	messages := []string{
 		"This may or may",
@@ -94,7 +102,7 @@ func isInSliceOnce(item string, slice []string) bool {
 }
 
 func TestSampleNoRepeats(t *testing.T) {
-	key := []byte(randstring.NewLen(32))
+	key, _ := GenerateRandomAESKey()
 	toEncrypt := "All in, fall in, call in, wall in"
 	e := Encrypter{EncryptionKey: key}
 
@@ -113,8 +121,8 @@ func TestSampleNoRepeats(t *testing.T) {
 
 // Test that rotating keys returns different encrypted strings
 func TestKeyRotation(t *testing.T) {
-	initialKey := []byte(randstring.NewLen(32))
-	secondKey := []byte(randstring.NewLen(32))
+	initialKey, _ := GenerateRandomAESKey()
+	secondKey, _ := GenerateRandomAESKey()
 	toEncrypt := "Chickens, pigs, giraffes, llammas, monkeys, birds, spiders"
 
 	e := Encrypter{EncryptionKey: initialKey}

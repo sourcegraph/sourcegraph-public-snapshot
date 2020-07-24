@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"crypto/rand"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,11 +14,12 @@ const (
 	// #nosec G101
 	sourcegraphSecretfileEnvvar = "SOURCEGRAPH_SECRET_FILE"
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
-	validKeyLength              = 32
+	// validKeyLength              = 32
 )
 
 func init() {
 	cryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
+	var encryptionKey []byte
 
 	// set the default location if none exists
 	secretFile := os.Getenv(sourcegraphSecretfileEnvvar)
@@ -29,28 +29,8 @@ func init() {
 	}
 
 	_, err := os.Stat(secretFile)
-	// generate a secret for non-k8s deployments
-	if err != nil && !cryptOK {
-		d := conf.DeployType()
-		if conf.IsDeployTypeKubernetes(d) { // Expect a k8s secret
-			panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
-				sourcegraphCryptEnvvar,
-				sourcegraphSecretfileEnvvar))
-		}
-		c := 32
-		b := make([]byte, c)
-		_, err := rand.Read(b)
-		if err != nil {
-			panic(fmt.Sprintf("Unable to read from random source: %v", err))
-		}
-		err = ioutil.WriteFile(secretFile, b, 0600)
-		if err != nil {
-			panic(err)
-		}
-		CryptObject.EncryptionKey = b
-		return
-	}
 
+	// reading from a file is first order
 	if err == nil {
 		contents, readErr := ioutil.ReadFile(secretFile)
 		if readErr != nil {
@@ -59,11 +39,39 @@ func init() {
 		if len(contents) < validKeyLength {
 			panic(fmt.Sprintf("Key length of %d characters is required.", validKeyLength))
 		}
-		CryptObject.EncryptionKey = contents
-	} else {
-		if len(cryptKey) != validKeyLength {
-			panic(fmt.Sprintf("Key length of %d characters is required.", validKeyLength))
-		}
-		CryptObject.EncryptionKey = []byte(cryptKey)
+		encryptionKey = []byte(contents)
+		CryptObject.EncryptionKey = encryptionKey
+		return
 	}
+
+	// environment is second order
+	if err != nil && cryptOK {
+		encryptionKey = []byte(cryptKey)
+		CryptObject.EncryptionKey = encryptionKey
+		return
+	}
+
+	// for the single docker case, we generate the secret
+	deployType := conf.DeployType()
+	if conf.IsDeployTypeSingleDockerContainer(deployType) {
+		b, err := GenerateRandomAESKey()
+		if err != nil {
+			panic(fmt.Sprintf("Unable to read from random source: %v", err))
+		}
+		err = ioutil.WriteFile(secretFile, b, 0600)
+		if err != nil {
+			panic(err)
+		}
+
+		err = os.Chmod(secretFile, 0400)
+		if err != nil {
+			panic("Failed to secure secrets file.")
+		}
+		encryptionKey = b
+	}
+	// for k8s & docker compose, expect a secret to be provided
+	panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
+		sourcegraphCryptEnvvar,
+		sourcegraphSecretfileEnvvar))
+
 }

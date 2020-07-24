@@ -8,8 +8,22 @@ import (
 	"io"
 )
 
+const (
+	validKeyLength = 32
+)
+
 type EncryptionError struct {
 	Message string
+}
+
+// Generate a valid key for AES-256 encryption
+func GenerateRandomAESKey() ([]byte, error) {
+	b := make([]byte, validKeyLength)
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 func (err *EncryptionError) Error() string {
