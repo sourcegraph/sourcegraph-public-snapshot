@@ -442,6 +442,40 @@ add(
                 ))}
             </p>
 
+            <h1>Small and large buttons</h1>
+            <p>
+                Alternate button sizes:
+            </p>
+            <p>
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', 'btn-sm', `btn-${semantic}`)}
+                            onClick={flow(preventDefault, action('button clicked'))}
+                        >
+                            {startCase(semantic)}
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </p>
+
+            <p>
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', 'btn-lg', `btn-${semantic}`)}
+                            onClick={flow(preventDefault, action('button clicked'))}
+                        >
+                            {startCase(semantic)}
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </p>
+
             <h2>Disabled</h2>
             <p>
                 <button type="button" className="btn btn-primary" disabled={true}>
@@ -451,6 +485,18 @@ add(
                     I am disabled
                 </button>
             </p>
+
+            <h2>Outline</h2>
+            <p>
+                <button type="button" className="btn btn-outline" disabled={true}>
+                    Outline button
+                </button>{' '}
+                <button type="button" className="btn btn-outline-primary" disabled={true}>
+                    I am disabled
+                </button>
+            </p>
+
+
 
             <h2>Links</h2>
             <p>Links can be made to look like buttons too.</p>
