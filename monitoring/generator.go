@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/grafana-tools/sdk"
@@ -104,6 +105,25 @@ func (r Row) validate() error {
 	return nil
 }
 
+// ObservableOwner denotes a team that owns an Observable. The current teams are described in
+// the handbook: https://about.sourcegraph.com/handbook/engineering/2021_org
+type ObservableOwner string
+
+const (
+	// Core products teams
+	ObservableOwnerSearch               ObservableOwner = "search"
+	ObservableOwnerCampaigns            ObservableOwner = "campaigns"
+	ObservableOwnerCodeIntel            ObservableOwner = "code-intel"
+	ObservableOwnerExtensibility        ObservableOwner = "extensibility"
+	ObservableOwnerCodeHostIntegrations ObservableOwner = "code-host-integrations"
+
+	// Core services teams
+	ObservableOwnerBackendInfrastructure ObservableOwner = "backend-infrastructure"
+	ObservableOwnerDistribution          ObservableOwner = "distribution"
+	ObservableOwnerSecurity              ObservableOwner = "security"
+	ObservableOwnerWebInfrastructure     ObservableOwner = "web-infrastructure"
+)
+
 // Observable describes a metric about a container that can be observed. For example, memory usage.
 type Observable struct {
 	// Name is a short and human-readable lower_snake_case name describing what is being observed.
@@ -137,6 +157,9 @@ type Observable struct {
 	// 	"P90 search latency"
 	//
 	Description string
+
+	// Owner indicates the team that owns any alerts associated with this Observable.
+	Owner ObservableOwner
 
 	// Query is the actual Prometheus query that should be observed.
 	Query string
@@ -220,6 +243,9 @@ func (o Observable) validate() error {
 			return fmt.Errorf("PossibleSolutions: %v", err)
 		}
 	}
+	if o.Owner == "" {
+		return errors.New("Observable.Owner must be defined")
+	}
 	return nil
 }
 
@@ -232,6 +258,10 @@ type Alert struct {
 	// LessOrEqual, when non-zero, indicates the alert should fire when less
 	// than or equal to this value.
 	LessOrEqual float64
+
+	// For indicates how long the given thresholds must be exceeded for this
+	// alert to be considered firing. Defaults to 0s.
+	For time.Duration
 }
 
 func (a Alert) isEmpty() bool {
@@ -388,7 +418,7 @@ func (c *Container) dashboard() *sdk.Board {
 	description.TextPanel.Mode = "html"
 	description.TextPanel.Content = fmt.Sprintf(`
 	<div style="text-align: left;">
-	  <img src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
+	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
 	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/architecture">(⧉ architecture diagram)</a></span>
 	</div>
 	`, c.Name, c.Description)
@@ -650,6 +680,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							"level":        level,
 							"service_name": c.Name,
 							"description":  description,
+							"owner":        string(o.Owner),
 						}
 					}
 
@@ -682,7 +713,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"))
+						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"), alert.For)
 					}
 					if alert.LessOrEqual != 0 {
 						//
@@ -709,7 +740,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"))
+						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"), alert.For)
 					}
 				}
 			}
@@ -830,6 +861,8 @@ func goMarkdown(m string) (string, error) {
 
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
 
+const alertSuffix = "_alert_rules.yml"
+
 func main() {
 	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")
 	if !ok {
@@ -866,6 +899,7 @@ func main() {
 		ZoektIndexServer(),
 		ZoektWebServer(),
 	}
+	var filelist []string
 	for _, container := range containers {
 		if err := container.validate(); err != nil {
 			log.Fatal(err)
@@ -881,6 +915,8 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+			filelist = append(filelist, container.Name+".json")
+
 			if reload {
 				ctx := context.Background()
 				client := sdk.NewClient("http://127.0.0.1:3370", "admin:admin", sdk.DefaultHTTPClient)
@@ -897,7 +933,8 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fileName := strings.Replace(container.Name, "-", "_", -1) + "_alert_rules.yml"
+			fileName := strings.Replace(container.Name, "-", "_", -1) + alertSuffix
+			filelist = append(filelist, fileName)
 			// #nosec G306  grafana runs as UID 472
 			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
 			if err != nil {
@@ -905,6 +942,7 @@ func main() {
 			}
 		}
 	}
+	deleteRemnants(filelist, grafanaDir, prometheusDir)
 
 	if prometheusDir != "" && reload {
 		resp, err := http.Post("http://127.0.0.1:9090/-/reload", "", nil)
@@ -929,6 +967,56 @@ func main() {
 		}
 	}
 }
+func deleteRemnants(filelist []string, grafanaDir, promDir string) {
+	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
+		if filepath.Ext(path) != ".json" || info.IsDir() {
+			return nil
+		}
+		for _, f := range filelist {
+			if filepath.Ext(f) != ".json" || filepath.Ext(path) != ".json" || info.IsDir() {
+				continue
+			}
+			if filepath.Base(path) == f {
+				return nil
+			}
+		}
+		err = os.Remove(path)
+		log.Println("Removed orphan grafana file: ", path)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
+		if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
+			return nil
+		}
+
+		for _, f := range filelist {
+			if filepath.Ext(f) != ".yml" {
+				continue
+			}
+			if filepath.Base(path) == f {
+				return nil
+			}
+		}
+		err = os.Remove(path)
+		log.Println("Removed orphan prometheus alert file: ", path)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 // promRulesFile represents a Prometheus recording rules file (which we use for defining our alerts)
 // see:
@@ -944,31 +1032,31 @@ type promGroup struct {
 	Rules []promRule
 }
 
-func (g *promGroup) AppendRow(alertQuery string, labels map[string]string) {
-	// This wrapper clamp/floor/default vector should be present on ALL alert_count rule
-	// definitions because:
-	//
-	// 1. Clamping and flooring ensures that a single alert definition can only ever
-	//    contribute a single 0 OR 1 value, and as such cannot artificially inflate
-	//    alert_count or cause it to become a non-whole number.
-	//
-	// 3. "OR on() vector(1)" ensures that the alert is always firing if the inner
-	//    alertQuery does not return values for any reason (e.g. the query is for a
-	//    metric that does not exist.)
-	//
-	expr := "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)"
+func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, duration time.Duration) {
+	labels["alert_type"] = "builtin" // indicate alert is generated
+	var forDuration *time.Duration
+	if duration > 0 {
+		forDuration = &duration
+	}
+
+	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
 	g.Rules = append(g.Rules,
+		// Native prometheus alert, based on alertQuery which returns 0 if not firing or 1 if firing.
+		promRule{
+			Alert:  alertName,
+			Labels: labels,
+			Expr:   fmt.Sprintf(`%s > 0`, alertQuery),
+			For:    forDuration,
+		},
+		// Record for generated alert, useful for indicating in Grafana dashboards if this alert
+		// is defined at all. Prometheus's ALERTS metric does not track alerts with state="inactive".
+		//
+		// Since ALERTS{alertname="value"} does not exist if the alert has never fired, we add set
+		// the series to vector(0) instead.
 		promRule{
 			Record: "alert_count",
 			Labels: labels,
-			Expr:   expr,
-		},
-		// a "real" prometheus alert to attach onto alert_count
-		promRule{
-			Alert:  prometheusAlertName(labels["level"], labels["service_name"], labels["name"]),
-			Labels: labels,
-			Expr: fmt.Sprintf(`alert_count{service_name=%q,level=%q,name=%q} >= 1`,
-				labels["service_name"], labels["level"], labels["name"]),
+			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q} OR on() vector(0))`, alertName),
 		})
 }
 
@@ -979,6 +1067,9 @@ type promRule struct {
 
 	Labels map[string]string
 	Expr   string
+
+	// for Alert only
+	For *time.Duration `yaml:",omitempty"`
 }
 
 // setPanelSize is a helper to set a panel's size.
@@ -997,6 +1088,7 @@ func stringPtr(s string) *string {
 	return &s
 }
 
+// prometheusAlertName creates an alertname that is unique given the combination of parameters
 func prometheusAlertName(level, service, name string) string {
 	return fmt.Sprintf("%s_%s_%s", level, service, name)
 }

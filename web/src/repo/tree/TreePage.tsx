@@ -163,6 +163,7 @@ interface Props
     revision: string
     location: H.Location
     history: H.History
+    globbing: boolean
 }
 
 export const TreePage: React.FunctionComponent<Props> = ({
