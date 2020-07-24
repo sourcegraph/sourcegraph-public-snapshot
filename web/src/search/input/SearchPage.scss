@@ -28,9 +28,14 @@
             max-width: 90%;
         }
 
+        &__cloud-tag-line {
+            margin-top: 1rem;
+            color: $gray-07;
+        }
+
         &__search-container {
             flex: 1 1 auto;
-            margin-top: 4rem;
+            margin-top: 1.5rem;
             width: 49rem;
             max-width: 90%;
             position: relative;
@@ -105,6 +110,10 @@
 .theme-light {
     .web-content {
         .search-page {
+            &__cloud-tag-line {
+                color: $gray-11;
+            }
+
             &__example-searches {
                 a {
                     color: $gray-19;

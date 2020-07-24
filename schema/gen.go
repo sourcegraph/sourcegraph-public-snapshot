@@ -13,4 +13,6 @@ package schema
 //go:generate env GO111MODULE=on go run stringdata.go -i gitolite.schema.json -name GitoliteSchemaJSON -pkg schema -o gitolite_stringdata.go
 //go:generate env GO111MODULE=on go run stringdata.go -i other_external_service.schema.json -name OtherExternalServiceSchemaJSON -pkg schema -o other_external_service_stringdata.go
 //go:generate env GO111MODULE=on go run stringdata.go -i phabricator.schema.json -name PhabricatorSchemaJSON -pkg schema -o phabricator_stringdata.go
+//go:generate env GO111MODULE=on go run stringdata.go -i campaign_spec.schema.json -name CampaignSpecSchemaJSON -pkg schema -o campaign_spec_stringdata.go
+//go:generate env GO111MODULE=on go run stringdata.go -i changeset_spec.schema.json -name ChangesetSpecSchemaJSON -pkg schema -o changeset_spec_stringdata.go
 //go:generate gofmt -s -w site_stringdata.go settings_stringdata.go

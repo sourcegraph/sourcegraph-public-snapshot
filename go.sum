@@ -233,6 +233,8 @@ github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13/go.mod h1:SqUrOPUn
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/dhui/dktest v0.3.2 h1:nZSDcnkpbotzT/nEHNsO+JCKY8i1Qoki1AYOpeLRb6M=
 github.com/dhui/dktest v0.3.2/go.mod h1:l1/ib23a/CmxAe7yixtrYPc8Iy90Zy2udyaHINM5p58=
+github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663 h1:fctNkSsavbXpt8geFWZb8n+noCqS8MrOXRJ/YfdZ2dQ=
+github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663/go.mod h1:Kad2hux31v/IyD4Rf4wAwIyK48995rs3qAl9IUAhc2k=
 github.com/dnaeon/go-vcr v1.0.1 h1:r8L/HqC0Hje5AXMu1ooW8oyQyOFv4GxqpL0nRP7SLLY=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
 github.com/docker/distribution v2.7.0+incompatible h1:neUDAlf3wX6Ml4HdqTrbcOHXtfRN0TFIwt6YFL7N9RU=
@@ -1205,6 +1207,8 @@ github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7 h1:G58fa9uWw59V5
 github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
+github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
+github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/sourcegraph/zoekt v0.0.0-20200714221025-dea986a54d01 h1:Qp+BmPgBkC4e0J5hAXS+UpdoPhQTkCrxYxkoyrxQ1nI=
 github.com/sourcegraph/zoekt v0.0.0-20200714221025-dea986a54d01/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/sourcegraph/zoekt v0.0.0-20200720095407-6597aebe357e h1:qbLJk6WfgKtPsgPau7sU+Lw2rzJikjUaelk3BCPK4n0=

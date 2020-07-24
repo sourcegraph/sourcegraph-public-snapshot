@@ -405,7 +405,7 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "permissions.backgroundSync": {
-      "description": "Sync code host repository and user permissions in the background.",
+      "description": "DEPRECATED: Sync code host repository and user permissions in the background.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

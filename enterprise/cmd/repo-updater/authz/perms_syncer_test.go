@@ -59,10 +59,6 @@ type mockProvider struct {
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
-func (*mockProvider) RepoPerms(context.Context, *extsvc.Account, []*types.Repo) ([]authz.RepoPerms, error) {
-	return nil, nil
-}
-
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account) (*extsvc.Account, error) {
 	return nil, nil
 }

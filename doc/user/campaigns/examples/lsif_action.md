@@ -1,10 +1,12 @@
 # Example: Adding a GitHub action to upload LSIF data to Sourcegraph
 
+> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
+
+<!-- TODO(sqs): update for new campaigns flow -->
+
 Our goal for this campaign is to add a GitHub Action that generates and uploads LSIF data to Sourcegraph by adding a `.github/workflows/lsif.yml` file to each repository that doesn't have it yet.
 
 The first thing we need is an action definition that we can execute with the [`src` CLI tool](https://github.com/sourcegraph/src-cli) and its `src actions exec` subcommand.
-
->NOTE: See "[Actions](../actions.md)" for more details on how to define and execute actions.
 
 Here is an `action.json` file that runs a Docker container based on the Docker image called `add-lsif-to-build-pipeline-action` in each repository that has a `go.mod` file, `github` in its name and no `.github/workflows/lsif.yml` file:
 

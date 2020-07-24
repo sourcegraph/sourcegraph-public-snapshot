@@ -14,7 +14,6 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
         path: '/permissions',
         exact: true,
         render: props => <RepoSettingsPermissionsPage {...props} />,
-        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
     },
     {
         path: '/code-intelligence/uploads',

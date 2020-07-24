@@ -75,6 +75,7 @@ func main() {
 	// connections after 60s. In order to avoid running into EOF errors, we use
 	// a IdleConnTimeout of 30s, so connections are only kept around for <30s
 	client := &http.Client{Transport: &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
 		IdleConnTimeout: 30 * time.Second,
 	}}
 

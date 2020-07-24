@@ -155,13 +155,13 @@ type BitbucketCloudRateLimit struct {
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
-	// HardTTL description: Duration after which a user's cached permissions must be updated before authorizing any user actions. This is 3 days by default.
+	// HardTTL description: DEPRECATED: Duration after which a user's cached permissions must be updated before authorizing any user actions. This is 3 days by default.
 	HardTTL string `json:"hardTTL,omitempty"`
 	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
 	// Oauth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
 	Oauth BitbucketServerOAuth `json:"oauth"`
-	// Ttl description: Duration after which a user's cached permissions will be updated in the background (during which time the previously cached permissions will be used). This is 3 hours by default.
+	// Ttl description: DEPRECATED: Duration after which a user's cached permissions will be updated in the background (during which time the previously cached permissions will be used). This is 3 hours by default.
 	//
 	// Decreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/1000 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/1000 API requests per cache refresh period.
 	//
@@ -450,7 +450,7 @@ type GitHubAuthProvider struct {
 
 // GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
-	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
+	// Ttl description: DEPRECATED: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
 	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
@@ -547,7 +547,7 @@ type GitLabAuthProvider struct {
 type GitLabAuthorization struct {
 	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 	IdentityProvider IdentityProvider `json:"identityProvider"`
-	// Ttl description: The TTL of how long to cache permissions data. This is 3 hours by default.
+	// Ttl description: DEPRECATED: The TTL of how long to cache permissions data. This is 3 hours by default.
 	//
 	// Decreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).
 	//
@@ -617,8 +617,6 @@ type GitLabRateLimit struct {
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
-	// Blacklist description: DEPRECATED. Will be removed in 3.19. Use 'exclude' patterns instead. Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.
-	Blacklist string `json:"blacklist,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({"name": "foo"}).
 	Exclude []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
 	// Host description: Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).
@@ -791,9 +789,9 @@ type NotifierWebhook struct {
 	Username    string `json:"username,omitempty"`
 }
 type OAuthIdentity struct {
-	// MaxBatchRequests description: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
+	// MaxBatchRequests description: DEPRECATED: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
-	// MinBatchingThreshold description: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
+	// MinBatchingThreshold description: DEPRECATED: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
 	Type                 string `json:"type"`
 }
@@ -852,7 +850,7 @@ type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
 }
 
-// PermissionsBackgroundSync description: Sync code host repository and user permissions in the background.
+// PermissionsBackgroundSync description: DEPRECATED: Sync code host repository and user permissions in the background.
 type PermissionsBackgroundSync struct {
 	// Enabled description: Whether syncing permissions in the background is enabled.
 	Enabled bool `json:"enabled,omitempty"`
@@ -1150,7 +1148,7 @@ type SiteConfiguration struct {
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
-	// PermissionsBackgroundSync description: Sync code host repository and user permissions in the background.
+	// PermissionsBackgroundSync description: DEPRECATED: Sync code host repository and user permissions in the background.
 	PermissionsBackgroundSync *PermissionsBackgroundSync `json:"permissions.backgroundSync,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`

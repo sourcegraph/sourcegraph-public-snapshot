@@ -5,7 +5,7 @@ import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..
 import { SearchButton } from '../search/input/SearchButton'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { QueryState, submitSearch } from '../search/helpers'
-import H from 'history'
+import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 
 interface Props

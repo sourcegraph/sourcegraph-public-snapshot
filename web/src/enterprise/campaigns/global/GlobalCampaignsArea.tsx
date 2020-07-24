@@ -9,12 +9,11 @@ import { CreateCampaign } from './create/CreateCampaign'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
 import { CampaignCliHelp } from './create/CampaignCliHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
-import { DismissibleAlert } from '../../../components/DismissibleAlert'
+import { CampaignsBetaFeedbackAlert } from './CampaignsBetaFeedbackAlert'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -52,19 +51,7 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
         } else {
             content = (
                 <>
-                    <DismissibleAlert partialStorageKey="campaigns-beta" className="alert-info">
-                        <p className="mb-0">
-                            Campaigns are currently in beta. During the beta period, campaigns are free to use. After
-                            the beta period, campaigns will be available as a paid add-on. Get in touch on Twitter{' '}
-                            <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an issue in our{' '}
-                            <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or
-                            email{' '}
-                            <a href="mailto:feedback@sourcegraph.com?subject=Feedback on Campaigns">
-                                feedback@sourcegraph.com
-                            </a>
-                            . We're looking forward to your feedback!
-                        </p>
-                    </DismissibleAlert>
+                    <CampaignsBetaFeedbackAlert />
                     {/* eslint-disable react/jsx-no-bind */}
                     <Switch>
                         <Route
@@ -80,16 +67,6 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
                         <Route
                             path={`${match.url}/cli`}
                             render={props => <CampaignCliHelp {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/new`}
-                            render={props => <CampaignDetails {...outerProps} {...props} />}
-                            exact={true}
-                        />
-                        <Route
-                            path={`${match.url}/update`}
-                            render={props => <CampaignUpdateSelection {...outerProps} {...props} />}
                             exact={true}
                         />
                         <Route

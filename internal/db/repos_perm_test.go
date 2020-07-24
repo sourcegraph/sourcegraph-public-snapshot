@@ -121,39 +121,24 @@ type fakeProvider struct {
 	extAcct  *extsvc.Account
 }
 
-func (f fakeProvider) RepoPerms(
-	ctx context.Context,
-	userAccount *extsvc.Account,
-	repos []*types.Repo,
-) ([]authz.RepoPerms, error) {
-	authorized := make([]authz.RepoPerms, 0, len(repos))
-	for _, repo := range repos {
-		authorized = append(authorized, authz.RepoPerms{
-			Repo:  repo,
-			Perms: authz.Read,
-		})
-	}
-	return authorized, nil
-}
-
-func (f fakeProvider) FetchAccount(
+func (p *fakeProvider) FetchAccount(
 	ctx context.Context,
 	user *types.User,
 	current []*extsvc.Account,
 ) (mine *extsvc.Account, err error) {
-	return f.extAcct, nil
+	return p.extAcct, nil
 }
 
-func (f fakeProvider) ServiceType() string           { return f.codeHost.ServiceType }
-func (f fakeProvider) ServiceID() string             { return f.codeHost.ServiceID }
-func (m *fakeProvider) URN() string                  { return extsvc.URN(m.codeHost.ServiceType, 0) }
-func (f fakeProvider) Validate() (problems []string) { return nil }
+func (p *fakeProvider) ServiceType() string           { return p.codeHost.ServiceType }
+func (p *fakeProvider) ServiceID() string             { return p.codeHost.ServiceID }
+func (p *fakeProvider) URN() string                   { return extsvc.URN(p.codeHost.ServiceType, 0) }
+func (p *fakeProvider) Validate() (problems []string) { return nil }
 
-func (f fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
 	return nil, nil
 }
 
-func (f fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return nil, nil
 }
 
