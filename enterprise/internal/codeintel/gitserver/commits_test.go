@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestParseCommitsNear(t *testing.T) {
+func TestParseParents(t *testing.T) {
 	commits := []string{
 		"9ad62c7ec68e377b41a8b8dd846e573b76634172 1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3 683cafd122632142bda6e36563f5719e5b0fa37d",
 		"683cafd122632142bda6e36563f5719e5b0fa37d 1afa9c06d8bb8b2c5746e539ed4eb80c23b21db3",
@@ -53,7 +53,7 @@ func TestParseCommitsNear(t *testing.T) {
 		"8c25906a7dbc904acc96b5435ec42fa5da8b232c": {},
 	}
 
-	if diff := cmp.Diff(expected, parseCommitsNear(commits)); diff != "" {
+	if diff := cmp.Diff(expected, parseParents(commits)); diff != "" {
 		t.Errorf("unexpected commit mapping (-want +got):\n%s", diff)
 	}
 }

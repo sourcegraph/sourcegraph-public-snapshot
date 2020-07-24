@@ -7,7 +7,7 @@ import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.js
 import settingsSchema from '../../../schema/settings.schema.json'
 import { MonacoEditor } from '../components/MonacoEditor'
 import { ThemeProps } from '../../../shared/src/theme'
-import { eventLogger } from '../tracking/eventLogger'
+import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -204,13 +204,14 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         model: monaco.editor.IModel,
         label: string,
         id: string,
-        run: ConfigInsertionFunction
+        run: ConfigInsertionFunction,
+        telemetryService: TelemetryService
     ): void {
         inputEditor.addAction({
             label,
             id,
             run: editor => {
-                eventLogger.log('SiteConfigurationActionExecuted')
+                telemetryService.log('SiteConfigurationActionExecuted')
                 editor.focus()
                 editor.pushUndoStop()
                 const { edits, selectText, cursorOffset } = run(editor.getValue())
