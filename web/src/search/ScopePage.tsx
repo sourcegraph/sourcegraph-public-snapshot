@@ -50,6 +50,9 @@ interface Props
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History
+
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
 }
 
 /**
