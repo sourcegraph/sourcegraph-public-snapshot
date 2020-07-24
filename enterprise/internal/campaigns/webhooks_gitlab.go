@@ -49,6 +49,10 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the event proper.
+	if r.Body == nil {
+		respond(w, http.StatusBadRequest, "missing request body")
+		return
+	}
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, errors.Wrap(err, "reading payload"))
