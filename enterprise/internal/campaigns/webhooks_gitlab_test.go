@@ -206,6 +206,24 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	}
 }
 
+// nestedTx wraps an existing transaction and overrides its transaction methods
+// to be no-ops. This allows us to have a master transaction used in tests that
+// test functions that attempt to create and commit transactions: since
+// PostgreSQL doesn't support nested transactions, we can still use the master
+// transaction to manage the test database state without rollback/commit
+// already performed errors.
+//
+// It would be theoretically possible to use savepoints to implement something
+// resembling the semantics of a true nested transaction, but that's
+// unnecessary for these tests.
+type nestedTx struct {
+	*sql.Tx
+}
+
+func (ntx *nestedTx) Rollback() error                                        { return nil }
+func (ntx *nestedTx) Commit() error                                          { return nil }
+func (ntx *nestedTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error { return nil }
+
 // gitLabTestSetup instantiates the stores and a clock for use within tests.
 // Any changes made to the stores will be rolled back after the test is
 // complete.
@@ -213,10 +231,9 @@ func gitLabTestSetup(t *testing.T, db *sql.DB) (*Store, repos.Store, clock) {
 	c := &testClock{t: time.Now().UTC().Truncate(time.Microsecond)}
 	tx := dbtest.NewTx(t, db)
 
-	// This should be safe, and may give us a speed up. Worth a shot.
-	t.Parallel()
-
-	return NewStoreWithClock(tx, c.now), repos.NewDBStore(tx, sql.TxOptions{}), c
+	// Note that tx is wrapped in nestedTx to effectively neuter further use of
+	// transactions within the test.
+	return NewStoreWithClock(&nestedTx{tx}, c.now), repos.NewDBStore(tx, sql.TxOptions{}), c
 }
 
 func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
