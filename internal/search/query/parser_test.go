@@ -700,6 +700,16 @@ func TestParse(t *testing.T) {
 			WantGrammar:   `(and "repo:foo\\ bar" "\\:\\\\")`,
 			WantHeuristic: Same,
 		},
+		{
+			Input:         `a file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`,
+			WantGrammar:   `(and "file:\\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)" "a")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `(file:(a) file:(b))`,
+			WantGrammar:   `(and "file:(a)" "file:(b)")`,
+			WantHeuristic: Same,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
