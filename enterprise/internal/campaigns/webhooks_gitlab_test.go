@@ -8,14 +8,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -201,7 +206,102 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				assertBodyIncludes(t, resp.Body, "unknown object kind")
 			})
 
-			// TODO: valid event types.
+			// The valid tests below are pretty "happy path": specific unit
+			// tests for the utility methods on GitLabWebhook are below. We're
+			// mostly just testing the routing here, since these are ServeHTTP
+			// tests; however, these also act as integration tests. (Which,
+			// considering they're ultimately invoked from TestIntegration,
+			// seems fair.)
+
+			t.Run("valid merge request approval events", func(t *testing.T) {
+				for _, action := range []string{"approved", "unapproved"} {
+					t.Run(action, func(t *testing.T) {
+						store, rstore, clock := gitLabTestSetup(t, db)
+						h := NewGitLabWebhook(store, rstore, clock.now)
+						es := createGitLabExternalService(t, ctx, rstore)
+						repo := createGitLabRepo(t, ctx, rstore, es)
+						changeset := createGitLabChangeset(t, ctx, store, repo)
+						body := createMergeRequestPayload(t, repo, changeset, "approved")
+
+						u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
+						if err != nil {
+							t.Fatal(err)
+						}
+						req.Header.Add(webhooks.TokenHeaderName, "secret")
+
+						repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+							if diff := cmp.Diff(ids, []int64{changeset.ID}); diff != "" {
+								t.Errorf("unexpected changeset ID: %s", diff)
+							}
+							return nil
+						}
+						defer func() { repoupdater.MockEnqueueChangesetSync = nil }()
+
+						rec := httptest.NewRecorder()
+						h.ServeHTTP(rec, req)
+
+						resp := rec.Result()
+						if have, want := resp.StatusCode, http.StatusNoContent; have != want {
+							t.Errorf("unexpected status code: have %d; want %d", have, want)
+						}
+					})
+				}
+			})
+
+			t.Run("valid merge request state change events", func(t *testing.T) {
+				for action, want := range map[string]campaigns.ChangesetEventKind{
+					"close":  campaigns.ChangesetEventKindGitLabClosed,
+					"merge":  campaigns.ChangesetEventKindGitLabMerged,
+					"reopen": campaigns.ChangesetEventKindGitLabReopened,
+				} {
+					t.Run(action, func(t *testing.T) {
+						store, rstore, clock := gitLabTestSetup(t, db)
+						h := NewGitLabWebhook(store, rstore, clock.now)
+						es := createGitLabExternalService(t, ctx, rstore)
+						repo := createGitLabRepo(t, ctx, rstore, es)
+						changeset := createGitLabChangeset(t, ctx, store, repo)
+						body := createMergeRequestPayload(t, repo, changeset, action)
+
+						u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
+						if err != nil {
+							t.Fatal(err)
+						}
+						req.Header.Add(webhooks.TokenHeaderName, "secret")
+
+						rec := httptest.NewRecorder()
+						h.ServeHTTP(rec, req)
+
+						resp := rec.Result()
+						if have, want := resp.StatusCode, http.StatusNoContent; have != want {
+							t.Errorf("unexpected status code: have %d; want %d", have, want)
+						}
+
+						// Verify that the changeset event was upserted.
+						ces, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+							ChangesetIDs: []int64{changeset.ID},
+							Limit:        100,
+						})
+						if err != nil {
+							t.Fatal(err)
+						}
+						if len(ces) == 1 {
+							ce := ces[0]
+
+							if ce.ChangesetID != changeset.ID {
+								t.Errorf("unexpected changeset ID: have %d; want %d", ce.ChangesetID, changeset.ID)
+							}
+							if ce.Kind != want {
+								t.Errorf(
+									"unexpected changeset event kind: have %v; want %v", ce.Kind, want)
+							}
+						} else {
+							t.Errorf("unexpected number of changeset events; got %+v", ces)
+						}
+					})
+				}
+			})
 		})
 	}
 }
@@ -253,6 +353,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab",
 		Config: marshalJSON(t, &schema.GitLabConnection{
+			Url: "https://gitlab.com/",
 			Webhooks: []*schema.GitLabWebhook{
 				{Secret: "super"},
 				{Secret: "secret"},
@@ -264,4 +365,57 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos
 	}
 
 	return es
+}
+
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *repos.ExternalService) *repos.Repo {
+	repo := (&repos.Repo{
+		Name: "gitlab.com/sourcegraph/test",
+		URI:  "gitlab.com/sourcegraph/test",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "123",
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.com/",
+		},
+	}).With(repos.Opt.RepoSources(es.URN()))
+	if err := rstore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	return repo
+}
+
+func createGitLabChangeset(t *testing.T, ctx context.Context, store *Store, repo *repos.Repo) *campaigns.Changeset {
+	c := &campaigns.Changeset{
+		RepoID:              repo.ID,
+		ExternalID:          "1",
+		ExternalServiceType: extsvc.TypeGitLab,
+	}
+	if err := store.CreateChangesets(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+
+	return c
+}
+
+func createMergeRequestPayload(t *testing.T, repo *repos.Repo, changeset *campaigns.Changeset, action string) string {
+	cid, err := strconv.Atoi(changeset.ExternalID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pid, err := strconv.Atoi(repo.ExternalRepo.ID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	return marshalJSON(t, map[string]interface{}{
+		"object_kind": "merge_request",
+		"project": map[string]interface{}{
+			"id": pid,
+		},
+		"object_attributes": map[string]interface{}{
+			"iid":    cid,
+			"action": action,
+		},
+	})
 }
