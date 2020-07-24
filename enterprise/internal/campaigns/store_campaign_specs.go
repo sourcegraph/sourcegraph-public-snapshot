@@ -35,7 +35,7 @@ func (s *Store) CreateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 	if err != nil {
 		return err
 	}
-	err = s.exec(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return scanCampaignSpec(c, sc)
 	})
 
@@ -92,7 +92,7 @@ func (s *Store) UpdateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) error {
+	return s.query(ctx, q, func(sc scanner) error {
 		return scanCampaignSpec(c, sc)
 	})
 }
@@ -158,7 +158,7 @@ func (s *Store) GetCampaignSpec(ctx context.Context, opts GetCampaignSpecOpts) (
 	q := getCampaignSpecQuery(&opts)
 
 	var c campaigns.CampaignSpec
-	err := s.exec(ctx, q, func(sc scanner) (err error) {
+	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanCampaignSpec(&c, sc)
 	})
 	if err != nil {

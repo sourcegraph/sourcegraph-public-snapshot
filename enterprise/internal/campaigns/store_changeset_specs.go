@@ -51,7 +51,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) error { return scanChangesetSpec(c, sc) })
+	return s.query(ctx, q, func(sc scanner) error { return scanChangesetSpec(c, sc) })
 }
 
 var createChangesetSpecQueryFmtstr = `
@@ -103,7 +103,7 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) error {
+	return s.query(ctx, q, func(sc scanner) error {
 		return scanChangesetSpec(c, sc)
 	})
 }
@@ -197,7 +197,7 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 	q := getChangesetSpecQuery(&opts)
 
 	var c campaigns.ChangesetSpec
-	err := s.exec(ctx, q, func(sc scanner) error {
+	err := s.query(ctx, q, func(sc scanner) error {
 		return scanChangesetSpec(&c, sc)
 	})
 	if err != nil {

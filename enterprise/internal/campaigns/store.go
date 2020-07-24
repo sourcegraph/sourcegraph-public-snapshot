@@ -144,7 +144,7 @@ func (s *Store) CreateChangesets(ctx context.Context, cs ...*campaigns.Changeset
 
 	exist := []int64{}
 	i := -1
-	err = s.exec(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		i++
 
 		createdAt := cs[i].CreatedAt
@@ -452,7 +452,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campa
 	q := getChangesetQuery(&opts)
 
 	var c campaigns.Changeset
-	err := s.exec(ctx, q, func(sc scanner) error { return scanChangeset(&c, sc) })
+	err := s.query(ctx, q, func(sc scanner) error { return scanChangeset(&c, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -711,7 +711,7 @@ func (s *Store) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset
 	}
 
 	i := -1
-	return s.exec(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc scanner) (err error) {
 		i++
 		return scanChangeset(cs[i], sc)
 	})
@@ -796,7 +796,7 @@ func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpt
 	q := getChangesetEventQuery(&opts)
 
 	var c campaigns.ChangesetEvent
-	err := s.exec(ctx, q, func(sc scanner) error {
+	err := s.query(ctx, q, func(sc scanner) error {
 		return scanChangesetEvent(&c, sc)
 	})
 	if err != nil {
@@ -962,7 +962,7 @@ func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.Chan
 	}
 
 	i := -1
-	return s.exec(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc scanner) (err error) {
 		i++
 		return scanChangesetEvent(cs[i], sc)
 	})
@@ -1091,7 +1091,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc scanner) (err error) {
 		return scanCampaign(c, sc)
 	})
 }
@@ -1192,7 +1192,7 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) (err error) { return scanCampaign(c, sc) })
+	return s.query(ctx, q, func(sc scanner) (err error) { return scanCampaign(c, sc) })
 }
 
 var updateCampaignQueryFmtstr = `
@@ -1321,7 +1321,7 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 	q := getCampaignQuery(&opts)
 
 	var c campaigns.Campaign
-	err := s.exec(ctx, q, func(sc scanner) error {
+	err := s.query(ctx, q, func(sc scanner) error {
 		return scanCampaign(&c, sc)
 	})
 	if err != nil {
@@ -1505,10 +1505,6 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 
 	q := sqlf.Sprintf(queryFmtString, spec.ServiceType, sqlf.Join(inClause, ","), spec.ID, spec.ServiceType, spec.ServiceID)
 	return basestore.ScanStrings(s.Store.Query(ctx, q))
-}
-
-func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
-	return s.query(ctx, q, sc)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
