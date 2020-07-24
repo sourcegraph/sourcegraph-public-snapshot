@@ -78,8 +78,9 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	errExternalServiceNotFound  = errors.New("external service not found")
-	errExternalServiceWrongKind = errors.New("external service is not of the expected kind")
+	errExternalServiceNotFound     = errors.New("external service not found")
+	errExternalServiceWrongKind    = errors.New("external service is not of the expected kind")
+	errPipelineMissingMergeRequest = errors.New("pipeline event does not include a merge request")
 )
 
 func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw string) (*repos.ExternalService, error) {
@@ -142,7 +143,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 		return nil
 
 	case *webhooks.PipelineEvent:
-		if err := h.handlePipelineEvent(ctx, esID, e); err != nil {
+		if err := h.handlePipelineEvent(ctx, esID, e); err != nil && err != errPipelineMissingMergeRequest {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  err,
@@ -218,7 +219,7 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	// just have to wait for the next scheduled sync.
 	if event.MergeRequest == nil {
 		log15.Debug("ignoring pipeline event without a merge request", "payload", event)
-		return nil
+		return errPipelineMissingMergeRequest
 	}
 
 	pr := gitlabToPR(&event.Project, event.MergeRequest)
