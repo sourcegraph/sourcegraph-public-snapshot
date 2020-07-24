@@ -17,6 +17,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("panic"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -37,6 +39,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("timeout"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -46,6 +49,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 1},
 							PanelOptions:      PanelOptions().LegendFormat("worker death"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},

@@ -17,6 +17,7 @@ func Searcher() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{code}}"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						sharedFrontendInternalAPIErrorResponses("searcher"),
