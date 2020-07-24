@@ -1191,7 +1191,7 @@ func isPatternNegated(q []query.Node) bool {
 		isNegated = negated
 	})
 
-	// we only support negation for queries with atomic patterns
+	// we only support negation for queries that contain exactly 1 pattern.
 	if patternsFound > 1 {
 		return false
 	}
