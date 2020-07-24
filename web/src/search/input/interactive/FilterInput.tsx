@@ -75,6 +75,11 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     isHomepage: boolean
 
     /**
+     * Whether globbing is enabled for filters.
+     */
+    globbing: boolean
+
+    /**
      * Callback that handles a filter input being submitted. Triggers a search
      * with the new query value.
      */
@@ -190,7 +195,7 @@ export class FilterInput extends React.Component<Props, State> {
                         const suggestions = fetchSuggestions(fullQuery).pipe(
                             map((suggestions): Suggestion[] =>
                                 suggestions
-                                    .map(createSuggestion)
+                                    .map(item => createSuggestion(item, props.globbing))
                                     .filter(isDefined)
                                     .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
                                     .filter(suggestion => {

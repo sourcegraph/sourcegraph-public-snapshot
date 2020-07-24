@@ -67,6 +67,8 @@ export interface RepoContainerContext
 
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
+
+    globbing: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -97,6 +99,7 @@ interface RepoContainerProps
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
+    globbing: boolean
 }
 
 interface RepoRevContainerState extends ParsedRepoRevision {
@@ -183,7 +186,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         this.subscriptions.add(
             parsedRouteChanges.subscribe(({ repoName, revision, rawRevision }) => {
                 this.setState({ repoName, revision, rawRevision })
-                const query = searchQueryForRepoRevision(repoName, revision)
+                const query = searchQueryForRepoRevision(repoName, this.props.globbing, revision)
                 this.props.onNavbarQueryChange({
                     query,
                     cursorPosition: query.length,
@@ -237,14 +240,14 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                         const filters: FiltersToTypeAndValue = {
                             [uniqueId('repo')]: {
                                 type: FilterType.repo,
-                                value: repoFilterForRepoRevision(repoName, revision),
+                                value: repoFilterForRepoRevision(repoName, this.props.globbing, revision),
                                 editable: false,
                             },
                         }
                         if (filePath) {
                             filters[uniqueId('file')] = {
                                 type: FilterType.file,
-                                value: `^${escapeRegExp(filePath)}`,
+                                value: this.props.globbing ? filePath : `^${escapeRegExp(filePath)}`,
                                 editable: false,
                             }
                         }
@@ -254,9 +257,11 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             cursorPosition: 0,
                         })
                     } else {
-                        let query = searchQueryForRepoRevision(repoName, revision)
+                        let query = searchQueryForRepoRevision(repoName, this.props.globbing, revision)
                         if (filePath) {
-                            query = `${query.trimEnd()} file:^${escapeRegExp(filePath)}`
+                            query = `${query.trimEnd()} file:${
+                                this.props.globbing ? filePath : '^' + escapeRegExp(filePath)
+                            }`
                         }
                         this.props.onNavbarQueryChange({
                             query,
@@ -324,6 +329,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repoSettingsSidebarGroups: this.props.repoSettingsSidebarGroups,
             copyQueryButton: this.props.copyQueryButton,
             versionContext: this.props.versionContext,
+            globbing: this.props.globbing,
         }
 
         return (
