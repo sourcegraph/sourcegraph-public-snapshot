@@ -59,9 +59,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
 
             <div className="card mt-4 mb-4">
                 <div className="card-body p-3">
-                    <h3>
-                        Welcome to campaigns <span className="badge badge-info text-uppercase">Beta</span>!
-                    </h3>
+                    <h3>Welcome to campaigns!</h3>
                     <p className="mb-1">
                         We're excited for you to use campaigns to remove legacy code, fix critical security issues, pay
                         down tech debt, and more. We look forward to hearing about campaigns you run inside your

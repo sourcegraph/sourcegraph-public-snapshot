@@ -39,13 +39,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 0 1`] 
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns 
-        <span
-          className="badge badge-info text-uppercase"
-        >
-          Beta
-        </span>
-        !
+        Welcome to campaigns!
       </h3>
       <p
         className="mb-1"
@@ -163,13 +157,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin and totalCount: 1 1`] 
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns 
-        <span
-          className="badge badge-info text-uppercase"
-        >
-          Beta
-        </span>
-        !
+        Welcome to campaigns!
       </h3>
       <p
         className="mb-1"
@@ -287,13 +275,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 0 1`] = `
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns 
-        <span
-          className="badge badge-info text-uppercase"
-        >
-          Beta
-        </span>
-        !
+        Welcome to campaigns!
       </h3>
       <p
         className="mb-1"
@@ -411,13 +393,7 @@ exports[`GlobalCampaignListPage renders for siteadmin and totalCount: 1 1`] = `
       className="card-body p-3"
     >
       <h3>
-        Welcome to campaigns 
-        <span
-          className="badge badge-info text-uppercase"
-        >
-          Beta
-        </span>
-        !
+        Welcome to campaigns!
       </h3>
       <p
         className="mb-1"
