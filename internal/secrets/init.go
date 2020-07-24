@@ -14,7 +14,6 @@ const (
 	// #nosec G101
 	sourcegraphSecretfileEnvvar = "SOURCEGRAPH_SECRET_FILE"
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
-	// validKeyLength              = 32
 )
 
 func init() {
@@ -69,9 +68,13 @@ func init() {
 		}
 		encryptionKey = b
 	}
-	// for k8s & docker compose, expect a secret to be provided
-	panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
-		sourcegraphCryptEnvvar,
-		sourcegraphSecretfileEnvvar))
+
+	// wrapping in deploytype check so that we can still compile and test locally
+	if !conf.IsDev(deployType) {
+		// for k8s & docker compose, expect a secret to be provided
+		panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
+			sourcegraphCryptEnvvar,
+			sourcegraphSecretfileEnvvar))
+	}
 
 }
