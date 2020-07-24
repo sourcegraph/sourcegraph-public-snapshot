@@ -358,6 +358,17 @@ func TestParseAndOrLiteral(t *testing.T) {
 			WantError:  "unterminated literal: expected '",
 			WantLabels: "None",
 		},
+		// Fringe tests cases at the boundary of heuristics and invalid syntax.
+		{
+			Input:      `)(0 )0`,
+			Want:       `(concat ")(0" ")0")`,
+			WantLabels: "HeuristicDanglingParens,Literal",
+		},
+		{
+			Input:      `((R:)0))0`,
+			WantError:  `invalid query syntax`,
+			WantLabels: "None",
+		},
 	}
 	for _, tt := range cases {
 		t.Run("literal search parse", func(t *testing.T) {

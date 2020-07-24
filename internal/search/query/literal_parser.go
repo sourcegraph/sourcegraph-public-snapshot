@@ -201,13 +201,17 @@ loop:
 
 				// Heuristic: This right paren may be one we should associate with a previous pattern, and not
 				// just a dangling one. Check if a pattern occurred before it and append it if so.
-				if p.pos > 0 {
+				if pattern.Annotation.Range.Start.Column > 0 {
 					// Heuristic is imprecise and that's OK: It will only look for a 1-byte whitespace
 					// character (not any unicode whitespace) before this paren.
-					if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
+					if r, _ := utf8.DecodeRune([]byte{p.buf[pattern.Annotation.Range.Start.Column-1]}); !unicode.IsSpace(r) {
 						if len(nodes) > 0 {
 							if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-								nodes[len(nodes)-1] = concatPatterns(previous, pattern)
+								result, err := concatPatterns(previous, pattern)
+								if err != nil {
+									return nil, err
+								}
+								nodes[len(nodes)-1] = result
 								continue
 							}
 						}

@@ -710,6 +710,18 @@ func TestParse(t *testing.T) {
 			WantGrammar:   `(and "file:(a)" "file:(b)")`,
 			WantHeuristic: Same,
 		},
+		// Fringe tests cases at the boundary of heuristics and invalid syntax.
+		{
+			Input:         `(0(F)(:())(:())(<0)0()`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: `invalid query syntax`,
+		},
+		// The space-looking character below is U+00A0.
+		{
+			Input:         `00 (000)`,
+			WantGrammar:   `(concat "00" "000")`,
+			WantHeuristic: `invalid query syntax`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
