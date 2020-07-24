@@ -40,7 +40,7 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: Verify the shared secret against the GitLab external service
 	// configuration. If there isn't a webhook defined in the service with this
 	// secret, or the header is empty, then we return a 401 to the client.
-	if ok, err := h.validateSecret(extSvc, r.Header.Get(webhooks.TokenHeaderName)); err != nil {
+	if ok, err := validateGitLabSecret(extSvc, r.Header.Get(webhooks.TokenHeaderName)); err != nil {
 		respond(w, http.StatusInternalServerError, errors.Wrap(err, "validating the shared secret"))
 		return
 	} else if !ok {
@@ -237,7 +237,18 @@ func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR
 	})
 }
 
-func (h *GitLabWebhook) validateSecret(extSvc *repos.ExternalService, secret string) (bool, error) {
+// gitlabToPR instantiates a new PR instance given fields that are commonly
+// available in GitLab webhook payloads.
+func gitlabToPR(project *gitlab.ProjectCommon, mr *gitlab.MergeRequest) PR {
+	return PR{
+		ID:             int64(mr.IID),
+		RepoExternalID: strconv.Itoa(project.ID),
+	}
+}
+
+// validateGitLabSecret validates that the given secret matches one of the
+// webhooks in the external service.
+func validateGitLabSecret(extSvc *repos.ExternalService, secret string) (bool, error) {
 	// An empty secret never succeeds.
 	if secret == "" {
 		return false, nil
@@ -263,13 +274,4 @@ func (h *GitLabWebhook) validateSecret(extSvc *repos.ExternalService, secret str
 		}
 	}
 	return false, nil
-}
-
-// gitlabToPR instantiates a new PR instance given fields that are commonly
-// available in GitLab webhook payloads.
-func gitlabToPR(project *gitlab.ProjectCommon, mr *gitlab.MergeRequest) PR {
-	return PR{
-		ID:             int64(mr.IID),
-		RepoExternalID: strconv.Itoa(project.ID),
-	}
 }
