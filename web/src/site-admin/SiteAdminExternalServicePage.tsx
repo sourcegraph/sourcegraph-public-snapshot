@@ -3,7 +3,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useEffect, useState, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable } from 'rxjs'
-import { catchError, startWith, switchMap, map } from 'rxjs/operators'
+import { catchError, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { PageTitle } from '../components/PageTitle'
@@ -15,15 +15,19 @@ import { hasProperty } from '../../../shared/src/util/types'
 import * as H from 'history'
 import { CopyableText } from '../components/CopyableText'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
+import {
+    fetchExternalService as _fetchExternalService,
+    updateExternalService as _updateExternalService,
+} from './backend'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 
 type ExternalService = Pick<GQL.IExternalService, 'id' | 'kind' | 'displayName' | 'config' | 'warning' | 'webhookURL'>
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }>, TelemetryProps {
     isLightTheme: boolean
     history: H.History
+    fetchExternalService?: typeof _fetchExternalService
+    updateExternalService?: typeof _updateExternalService
 }
 
 const LOADING = 'loading' as const
@@ -33,6 +37,8 @@ export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = ({
     history,
     isLightTheme,
     telemetryService,
+    fetchExternalService = _fetchExternalService,
+    updateExternalService = _updateExternalService,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
@@ -52,7 +58,7 @@ export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = ({
                 setExternalServiceOrError(result)
             })
         return () => subscription.unsubscribe()
-    }, [match.params.id])
+    }, [match.params.id, fetchExternalService])
 
     const onChange = useCallback(
         (input: GQL.IAddExternalServiceInput) => {
@@ -74,7 +80,7 @@ export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = ({
                         )
                     )
                 ),
-            []
+            [updateExternalService]
         )
     )
 
@@ -235,58 +241,4 @@ function isExternalService(
     externalServiceOrError: typeof LOADING | ExternalService | ErrorLike
 ): externalServiceOrError is GQL.IExternalService {
     return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
-}
-
-const externalServiceFragment = gql`
-    fragment externalServiceFields on ExternalService {
-        id
-        kind
-        displayName
-        config
-        warning
-        webhookURL
-    }
-`
-
-function updateExternalService(input: GQL.IUpdateExternalServiceInput): Observable<ExternalService> {
-    return mutateGraphQL(
-        gql`
-            mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
-                updateExternalService(input: $input) {
-                    ...externalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
-        { input }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.updateExternalService)
-    )
-}
-
-function fetchExternalService(id: GQL.ID): Observable<ExternalService> {
-    return queryGraphQL(
-        gql`
-            query ExternalService($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ...externalServiceFields
-                }
-            }
-            ${externalServiceFragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error('External service not found')
-            }
-            if (node.__typename !== 'ExternalService') {
-                throw new Error(`Node is a ${node.__typename}, not a ExternalService`)
-            }
-            return node
-        })
-    )
 }

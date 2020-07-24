@@ -1,17 +1,23 @@
 import { storiesOf } from '@storybook/react'
-import { radios, boolean } from '@storybook/addon-knobs'
+import { radios } from '@storybook/addon-knobs'
 import React from 'react'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { SiteAdminExternalServicePage } from './SiteAdminExternalServicePage'
 import { createMemoryHistory } from 'history'
 import webStyles from '../SourcegraphWebApp.scss'
 import { MemoryRouter } from 'react-router'
-import fetchMock from 'fetch-mock'
+import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryService'
+import { action } from '@storybook/addon-actions'
+import { of } from 'rxjs'
+import { IExternalService, ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { map, tap } from 'rxjs/operators'
+
+let isLightTheme = true
 
 const { add } = storiesOf('web/site-admin/SiteAdminExternalServicePage', module).addDecorator(story => {
     const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
     document.body.classList.toggle('theme-light', theme === 'light')
     document.body.classList.toggle('theme-dark', theme === 'dark')
+    isLightTheme = theme === 'light'
     return (
         <MemoryRouter>
             <style>{webStyles}</style>
@@ -20,67 +26,55 @@ const { add } = storiesOf('web/site-admin/SiteAdminExternalServicePage', module)
     )
 })
 
-const hosts: { [key: string]: object } = {
+const hosts: Record<string, IExternalService> = {
     GitHub: {
-        data: {
-            node: {
-                __typename: 'ExternalService',
-                id: 'RXh0ZXJuYWxTZXJ2aWNlOjQ=',
-                kind: 'GITHUB',
-                displayName: 'GitHub Public',
-                config:
-                    '{\n  "url": "https://github.com",\n  // This token is from sourcegraph-dotcom-bot. It only has the public repo scope.\n  // IMPORTANT: If you change the token, you need to restart repo-updater\n  "token": "XXX",\n  // Sync no repositories. We only want the token to raise rate limits.\n  "repositoryQuery": [\n    "none"\n  ],\n  "exclude": [\n    {\n      "id": "MDEwOlJlcG9zaXRvcnkxOTI2MDUxODY=",\n      "name": "creachadair/jrpc2"\n    }\n  ]\n}',
-                warning: null,
-                webhookURL: null,
-            },
-        },
+        __typename: 'ExternalService',
+        id: 'RXh0ZXJuYWxTZXJ2aWNlOjQ=',
+        kind: ExternalServiceKind.GITHUB,
+        displayName: 'GitHub Public',
+        config:
+            '{\n  "url": "https://github.com",\n  "token": "XXX",\n  // Sync no repositories. We only want the token to raise rate limits.\n  "repositoryQuery": [\n    "none"\n  ],\n  "exclude": [\n    {\n      "id": "MDEwOlJlcG9zaXRvcnkxOTI2MDUxODY=",\n      "name": "creachadair/jrpc2"\n    }\n  ]\n}',
+        warning: null,
+        webhookURL: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     },
     GitLab: {
-        data: {
-            node: {
-                __typename: 'ExternalService',
-                id: 'RXh0ZXJuYWxTZXJ2aWNlOjg=',
-                kind: 'GITLAB',
-                displayName: 'GitLab.com',
-                config:
-                    '{\n  "url": "https://gitlab.com",\n  // This token is from sourcegraph-dotcom-bot.\n  // IMPORTANT: If you change the token, you need to restart repo-updater\n  "token": "XXX",\n  // Sync no repositories. We only want the token to raise rate limits.\n  "projectQuery": [\n    "none",\n    "groups/sourcegraph/projects"\n  ]\n}',
-                warning: null,
-                webhookURL: null,
-            },
-        },
+        __typename: 'ExternalService',
+        id: 'RXh0ZXJuYWxTZXJ2aWNlOjg=',
+        kind: ExternalServiceKind.GITLAB,
+        displayName: 'GitLab.com',
+        config:
+            '{\n  "url": "https://gitlab.com",\n  "token": "XXX",\n  // Sync no repositories. We only want the token to raise rate limits.\n  "projectQuery": [\n    "none",\n    "groups/sourcegraph/projects"\n  ]\n}',
+        warning: null,
+        webhookURL: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     },
 }
 
 for (const name of Object.keys(hosts).sort()) {
     add(name, () => {
-        fetchMock
-            .restore()
-            .post('/.api/graphql?ExternalService', {
-                body: hosts[name],
-                status: 200,
-            })
-            .post('begin:/.api/graphql', {
-                body: { data: { logUserEvent: null } },
-                status: 200,
-            })
-
+        const history = createMemoryHistory()
         return (
             <SiteAdminExternalServicePage
-                history={createMemoryHistory()}
-                location={createMemoryHistory().location}
-                isLightTheme={true}
+                history={history}
+                location={history.location}
+                isLightTheme={isLightTheme}
                 match={{
                     isExact: true,
                     path: '/site-admin/external/FOO',
                     url: 'http://test.test/site-admin/external/FOO',
                     params: { id: 'FOO' },
                 }}
-                mode="edit"
-                input={{
-                    kind: GQL.ExternalServiceKind.GITLAB,
-                    displayName: 'GitLab',
-                    config: '{}',
-                }}
+                fetchExternalService={() => of(hosts[name])}
+                updateExternalService={() =>
+                    of(undefined).pipe(
+                        tap(() => action('Update external service')),
+                        map(() => hosts[name])
+                    )
+                }
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
     })

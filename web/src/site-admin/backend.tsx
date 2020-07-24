@@ -656,3 +656,59 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
         })
     )
 }
+
+const externalServiceFragment = gql`
+    fragment externalServiceFields on ExternalService {
+        id
+        kind
+        displayName
+        config
+        warning
+        webhookURL
+    }
+`
+
+export function updateExternalService(input: GQL.IUpdateExternalServiceInput): Observable<GQL.IExternalService> {
+    return mutateGraphQL(
+        gql`
+            mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
+                updateExternalService(input: $input) {
+                    ...externalServiceFields
+                }
+            }
+
+            ${externalServiceFragment}
+        `,
+        { input }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.updateExternalService)
+    )
+}
+
+export function fetchExternalService(id: GQL.ID): Observable<GQL.IExternalService> {
+    return queryGraphQL(
+        gql`
+            query ExternalService($id: ID!) {
+                node(id: $id) {
+                    __typename
+                    ...externalServiceFields
+                }
+            }
+
+            ${externalServiceFragment}
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error('External service not found')
+            }
+            if (node.__typename !== 'ExternalService') {
+                throw new Error(`Node is a ${node.__typename}, not a ExternalService`)
+            }
+            return node
+        })
+    )
+}
