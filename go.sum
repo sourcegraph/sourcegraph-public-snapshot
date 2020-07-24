@@ -1207,6 +1207,8 @@ github.com/sourcegraph/graphql-go v0.0.0-20200626080007-7fa8b67cbb1d h1:a3EEtOsV
 github.com/sourcegraph/graphql-go v0.0.0-20200626080007-7fa8b67cbb1d/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/sourcegraph/graphql-go v0.0.0-20200723081120-8462b0b708c4 h1:w3lLhAnBWmcImnrcANpgylh29D6Pc5TvX/C8gh6NwL0=
 github.com/sourcegraph/graphql-go v0.0.0-20200723081120-8462b0b708c4/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
+github.com/sourcegraph/graphql-go v0.0.0-20200724075322-e542e8956484 h1:oMnbwXPJDRDfUjEuFHlO6u1MY6O64G2TrDBOXTgVX58=
+github.com/sourcegraph/graphql-go v0.0.0-20200724075322-e542e8956484/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7 h1:G58fa9uWw59V5l92ijZKpT49lbAdv0JdruZUUZmjdeI=
 github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=

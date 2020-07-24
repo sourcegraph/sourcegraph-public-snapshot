@@ -190,7 +190,7 @@ replace (
 
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200723081120-8462b0b708c4
+	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200724075322-e542e8956484
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 
 	// prom-wrapper needs to be able to write alertmanager configuration with secrets - https://github.com/prometheus/alertmanager/pull/2316
