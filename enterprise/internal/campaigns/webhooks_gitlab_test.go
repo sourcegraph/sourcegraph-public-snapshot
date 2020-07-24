@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -279,28 +280,38 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						}
 
 						// Verify that the changeset event was upserted.
-						ces, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{
-							ChangesetIDs: []int64{changeset.ID},
-							Limit:        100,
-						})
-						if err != nil {
-							t.Fatal(err)
-						}
-						if len(ces) == 1 {
-							ce := ces[0]
-
-							if ce.ChangesetID != changeset.ID {
-								t.Errorf("unexpected changeset ID: have %d; want %d", ce.ChangesetID, changeset.ID)
-							}
-							if ce.Kind != want {
-								t.Errorf(
-									"unexpected changeset event kind: have %v; want %v", ce.Kind, want)
-							}
-						} else {
-							t.Errorf("unexpected number of changeset events; got %+v", ces)
-						}
+						assertChangesetEventForChangeset(t, ctx, store, changeset, want)
 					})
 				}
+			})
+
+			t.Run("valid pipeline events", func(t *testing.T) {
+				store, rstore, clock := gitLabTestSetup(t, db)
+				h := NewGitLabWebhook(store, rstore, clock.now)
+				es := createGitLabExternalService(t, ctx, rstore)
+				repo := createGitLabRepo(t, ctx, rstore, es)
+				changeset := createGitLabChangeset(t, ctx, store, repo)
+				body := createPipelinePayload(t, repo, changeset, gitlab.Pipeline{
+					ID:     123,
+					Status: gitlab.PipelineStatusSuccess,
+				})
+
+				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Add(webhooks.TokenHeaderName, "secret")
+
+				rec := httptest.NewRecorder()
+				h.ServeHTTP(rec, req)
+
+				resp := rec.Result()
+				if have, want := resp.StatusCode, http.StatusNoContent; have != want {
+					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				}
+
+				assertChangesetEventForChangeset(t, ctx, store, changeset, campaigns.ChangesetEventKindGitLabPipeline)
 			})
 		})
 	}
@@ -343,6 +354,29 @@ func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
 	}
 	if !bytes.Contains(body, []byte(want)) {
 		t.Errorf("cannot find expected string in output: want: %s; have:\n%s", want, string(body))
+	}
+}
+
+func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, store *Store, changeset *campaigns.Changeset, want campaigns.ChangesetEventKind) {
+	ces, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+		ChangesetIDs: []int64{changeset.ID},
+		Limit:        100,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ces) == 1 {
+		ce := ces[0]
+
+		if ce.ChangesetID != changeset.ID {
+			t.Errorf("unexpected changeset ID: have %d; want %d", ce.ChangesetID, changeset.ID)
+		}
+		if ce.Kind != want {
+			t.Errorf(
+				"unexpected changeset event kind: have %v; want %v", ce.Kind, want)
+		}
+	} else {
+		t.Errorf("unexpected number of changeset events; got %+v", ces)
 	}
 }
 
@@ -405,9 +439,12 @@ func createMergeRequestPayload(t *testing.T, repo *repos.Repo, changeset *campai
 
 	pid, err := strconv.Atoi(repo.ExternalRepo.ID)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
+	// We use an untyped set of maps here because the webhooks package doesn't
+	// export its internal mergeRequestEvent type that is used for
+	// unmarshalling. (Which is fine; it's an implementation detail.)
 	return marshalJSON(t, map[string]interface{}{
 		"object_kind": "merge_request",
 		"project": map[string]interface{}{
@@ -418,4 +455,34 @@ func createMergeRequestPayload(t *testing.T, repo *repos.Repo, changeset *campai
 			"action": action,
 		},
 	})
+}
+
+func createPipelinePayload(t *testing.T, repo *repos.Repo, changeset *campaigns.Changeset, pipeline gitlab.Pipeline) string {
+	pid, err := strconv.Atoi(repo.ExternalRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	payload := &webhooks.PipelineEvent{
+		EventCommon: webhooks.EventCommon{
+			ObjectKind: "pipeline",
+			Project: gitlab.ProjectCommon{
+				ID: pid,
+			},
+		},
+		Pipeline: pipeline,
+	}
+
+	if changeset != nil {
+		cid, err := strconv.Atoi(changeset.ExternalID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		payload.MergeRequest = &gitlab.MergeRequest{
+			IID: gitlab.ID(cid),
+		}
+	}
+
+	return marshalJSON(t, payload)
 }
