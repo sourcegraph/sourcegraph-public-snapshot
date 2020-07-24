@@ -198,7 +198,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				if have, want := resp.StatusCode, http.StatusNotImplemented; have != want {
 					t.Errorf("unexpected status code: have %d; want %d", have, want)
 				}
-				assertBodyIncludes(t, resp.Body, "unknown event type")
+				assertBodyIncludes(t, resp.Body, "unknown object kind")
 			})
 
 			// TODO: valid event types.
