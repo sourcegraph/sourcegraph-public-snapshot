@@ -35,9 +35,8 @@ func (s *Store) CreateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 	if err != nil {
 		return err
 	}
-	err = s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaignSpec(c, sc)
-		return c.ID, 1, err
+	err = s.exec(ctx, q, func(sc scanner) error {
+		return scanCampaignSpec(c, sc)
 	})
 
 	if err, ok := err.(*pq.Error); ok {
@@ -93,9 +92,8 @@ func (s *Store) UpdateCampaignSpec(ctx context.Context, c *campaigns.CampaignSpe
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaignSpec(c, sc)
-		return c.ID, 1, err
+	return s.exec(ctx, q, func(sc scanner) error {
+		return scanCampaignSpec(c, sc)
 	})
 }
 
@@ -130,13 +128,7 @@ func (s *Store) updateCampaignSpecQuery(c *campaigns.CampaignSpec) (*sqlf.Query,
 
 // DeleteCampaignSpec deletes the CampaignSpec with the given ID.
 func (s *Store) DeleteCampaignSpec(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteCampaignSpecQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteCampaignSpecQueryFmtstr, id))
 }
 
 var deleteCampaignSpecQueryFmtstr = `
@@ -145,12 +137,8 @@ DELETE FROM campaign_specs WHERE id = %s
 `
 
 // CountCampaignSpecs returns the number of code mods in the database.
-func (s *Store) CountCampaignSpecs(ctx context.Context) (count int64, _ error) {
-	q := sqlf.Sprintf(countCampaignSpecsQueryFmtstr)
-	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&count)
-		return 0, count, err
-	})
+func (s *Store) CountCampaignSpecs(ctx context.Context) (int, error) {
+	return s.queryCount(ctx, sqlf.Sprintf(countCampaignSpecsQueryFmtstr))
 }
 
 var countCampaignSpecsQueryFmtstr = `
@@ -170,8 +158,8 @@ func (s *Store) GetCampaignSpec(ctx context.Context, opts GetCampaignSpecOpts) (
 	q := getCampaignSpecQuery(&opts)
 
 	var c campaigns.CampaignSpec
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanCampaignSpec(&c, sc)
+	err := s.exec(ctx, q, func(sc scanner) (err error) {
+		return scanCampaignSpec(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -221,13 +209,13 @@ func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpt
 	q := listCampaignSpecsQuery(&opts)
 
 	cs = make([]*campaigns.CampaignSpec, 0, opts.Limit)
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.CampaignSpec
-		if err = scanCampaignSpec(&c, sc); err != nil {
-			return 0, 0, err
+		if err := scanCampaignSpec(&c, sc); err != nil {
+			return err
 		}
 		cs = append(cs, &c)
-		return c.ID, 1, err
+		return nil
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -272,11 +260,7 @@ func (s *Store) DeleteExpiredCampaignSpecs(ctx context.Context) error {
 	expirationTime := s.now().Add(-campaigns.CampaignSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredCampaignSpecsQueryFmtstr, expirationTime)
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.Store.Exec(ctx, q)
 }
 
 var deleteExpiredCampaignSpecsQueryFmtstr = `

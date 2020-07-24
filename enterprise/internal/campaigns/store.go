@@ -14,6 +14,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -28,7 +29,7 @@ var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 // Store exposes methods to read and write campaigns domain models
 // from persistent storage.
 type Store struct {
-	db  dbutil.DB
+	*basestore.Store
 	now func() time.Time
 }
 
@@ -42,51 +43,41 @@ func NewStore(db dbutil.DB) *Store {
 // NewStoreWithClock returns a new Store backed by the given db and
 // clock for timestamps.
 func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{db: db, now: clock}
+	handle := basestore.NewHandleWithDB(db)
+	return &Store{Store: basestore.NewWithHandle(handle), now: clock}
 }
 
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
 
-// Transact returns a Store whose methods operate within the context of a transaction.
-// This method will return an error if the underlying DB cannot be interface upgraded
-// to a TxBeginner.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	if _, ok := s.db.(dbutil.Tx); ok { // Already in a Tx.
-		return s, nil
-	}
+// DB returns the underlying dbutil.DB that this Store was
+// instantiated with.
+// It's here for legacy reason to pass the dbutil.DB to a repos.Store while
+// repos.Store doesn't accept a basestore.TransactableHandle yet.
+func (s *Store) DB() dbutil.DB { return s.Handle().DB() }
 
-	tb, ok := s.db.(dbutil.TxBeginner)
-	if !ok { // Not a Tx nor a TxBeginner, error.
-		return nil, errors.New("store: not transactable")
-	}
+var _ basestore.ShareableStore = &Store{}
 
-	tx, err := tb.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "store: BeginTx")
-	}
+// Handle returns the underlying transactable database handle.
+// Needed to implement the ShareableStore interface.
+func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
-	return &Store{db: tx, now: s.now}, nil
+// With creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+// Needed to implement the basestore.Store interface
+func (s *Store) With(other basestore.ShareableStore) *Store {
+	return &Store{Store: s.Store.With(other), now: s.now}
 }
 
-// Done terminates the underlying Tx in a Store either by committing or rolling
-// back based on the value pointed to by the first given error pointer.
-// It's a no-op if the `Store` is not operating within a transaction,
-// which can only be done via `Transact`.
-//
-// When the error value pointed to by the first given `err` is nil, or when no error
-// pointer is given, the transaction is committed. Otherwise, it's rolled-back.
-func (s *Store) Done(errs ...*error) {
-	switch tx, ok := s.db.(dbutil.Tx); {
-	case !ok:
-		return
-	case len(errs) == 0:
-		_ = tx.Commit()
-	case errs[0] != nil && *errs[0] != nil:
-		_ = tx.Rollback()
-	default:
-		_ = tx.Commit()
+// Transact creates a new transaction.
+// It's required to implement this method and wrap the Transact method of the
+// underlying basestore.Store.
+func (s *Store) Transact(ctx context.Context) (*Store, error) {
+	txBase, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
 	}
+	return &Store{Store: txBase, now: s.now}, nil
 }
 
 var NoTransactionError = errors.New("Not in a transaction")
@@ -97,30 +88,16 @@ var lockNamespace = int32(fnv1.HashString32("campaigns"))
 // and is non blocking. If a lock is acquired, "true, nil" will be returned.
 // It must be called from within a transaction or "false, NoTransactionError" is returned
 func (s *Store) TryAcquireAdvisoryLock(ctx context.Context, key string) (bool, error) {
-	_, ok := s.db.(dbutil.Tx)
-	if !ok {
+	if ok := s.Store.InTransaction(); !ok {
 		return false, NoTransactionError
 	}
+
 	q := lockQuery(key)
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
+	ok, _, err := basestore.ScanFirstBool(s.Store.Query(ctx, q))
+	if err != nil || !ok {
 		return false, err
 	}
-
-	if !rows.Next() {
-		return false, rows.Err()
-	}
-
-	locked := false
-	if err = rows.Scan(&locked); err != nil {
-		return false, err
-	}
-
-	if err = rows.Close(); err != nil {
-		return false, err
-	}
-
-	return locked, nil
+	return true, nil
 }
 
 func lockQuery(key string) *sqlf.Query {
@@ -143,10 +120,6 @@ const lockQueryFmtStr = `
 -- source: enterprise/internal/campaigns/store/store.go:TryAcquireAdvisoryLock
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
-
-// DB returns the underlying dbutil.DB that this Store was
-// instantiated with.
-func (s *Store) DB() dbutil.DB { return s.db }
 
 // AlreadyExistError is returned by CreateChangesets in case a subset of the
 // given changesets already existed in the database and were not inserted but
@@ -171,14 +144,14 @@ func (s *Store) CreateChangesets(ctx context.Context, cs ...*campaigns.Changeset
 
 	exist := []int64{}
 	i := -1
-	err = s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err = s.exec(ctx, q, func(sc scanner) (err error) {
 		i++
 
 		createdAt := cs[i].CreatedAt
 
 		err = scanChangeset(cs[i], sc)
 		if err != nil {
-			return 0, 0, err
+			return err
 		}
 
 		// Check whether the Changeset already existed in the database or not.
@@ -189,7 +162,7 @@ func (s *Store) CreateChangesets(ctx context.Context, cs ...*campaigns.Changeset
 			exist = append(exist, cs[i].ID)
 		}
 
-		return cs[i].ID, 1, err
+		return err
 	})
 	if err != nil {
 		return err
@@ -413,13 +386,7 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 
 // DeleteChangeset deletes the Changeset with the given ID.
 func (s *Store) DeleteChangeset(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteChangesetQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteChangesetQueryFmtstr, id))
 }
 
 var deleteChangesetQueryFmtstr = `
@@ -436,12 +403,8 @@ type CountChangesetsOpts struct {
 }
 
 // CountChangesets returns the number of changesets in the database.
-func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (count int64, _ error) {
-	q := countChangesetsQuery(&opts)
-	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&count)
-		return 0, count, err
-	})
+func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (int, error) {
+	return s.queryCount(ctx, countChangesetsQuery(&opts))
 }
 
 var countChangesetsQueryFmtstr = `
@@ -489,9 +452,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campa
 	q := getChangesetQuery(&opts)
 
 	var c campaigns.Changeset
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanChangeset(&c, sc)
-	})
+	err := s.exec(ctx, q, func(sc scanner) error { return scanChangeset(&c, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -564,13 +525,13 @@ type ListChangesetSyncDataOpts struct {
 func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 	q := listChangesetSyncData(opts)
 	results := make([]campaigns.ChangesetSyncData, 0)
-	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err := s.query(ctx, q, func(sc scanner) (err error) {
 		var h campaigns.ChangesetSyncData
 		if err = scanChangesetSyncData(&h, sc); err != nil {
-			return 0, 0, err
+			return err
 		}
 		results = append(results, h)
-		return h.ChangesetID, 1, err
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -640,13 +601,13 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	q := listChangesetsQuery(&opts)
 
 	cs = make([]*campaigns.Changeset, 0, opts.Limit)
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var c campaigns.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
-			return 0, 0, err
+			return err
 		}
 		cs = append(cs, &c)
-		return c.ID, 1, err
+		return nil
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -750,10 +711,9 @@ func (s *Store) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset
 	}
 
 	i := -1
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+	return s.exec(ctx, q, func(sc scanner) (err error) {
 		i++
-		err = scanChangeset(cs[i], sc)
-		return cs[i].ID, 1, err
+		return scanChangeset(cs[i], sc)
 	})
 }
 
@@ -836,8 +796,8 @@ func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpt
 	q := getChangesetEventQuery(&opts)
 
 	var c campaigns.ChangesetEvent
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanChangesetEvent(&c, sc)
+	err := s.exec(ctx, q, func(sc scanner) error {
+		return scanChangesetEvent(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -899,13 +859,13 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 	q := listChangesetEventsQuery(&opts)
 
 	cs = make([]*campaigns.ChangesetEvent, 0, opts.Limit)
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var c campaigns.ChangesetEvent
 		if err = scanChangesetEvent(&c, sc); err != nil {
-			return 0, 0, err
+			return err
 		}
 		cs = append(cs, &c)
-		return c.ID, 1, err
+		return nil
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -970,12 +930,8 @@ type CountChangesetEventsOpts struct {
 }
 
 // CountChangesetEvents returns the number of changeset events in the database.
-func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (count int64, _ error) {
-	q := countChangesetEventsQuery(&opts)
-	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&count)
-		return 0, count, err
-	})
+func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (int, error) {
+	return s.queryCount(ctx, countChangesetEventsQuery(&opts))
 }
 
 var countChangesetEventsQueryFmtstr = `
@@ -1006,10 +962,9 @@ func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.Chan
 	}
 
 	i := -1
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+	return s.exec(ctx, q, func(sc scanner) (err error) {
 		i++
-		err = scanChangesetEvent(cs[i], sc)
-		return cs[i].ID, 1, err
+		return scanChangesetEvent(cs[i], sc)
 	})
 }
 
@@ -1136,9 +1091,8 @@ func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaign(c, sc)
-		return c.ID, 1, err
+	return s.exec(ctx, q, func(sc scanner) (err error) {
+		return scanCampaign(c, sc)
 	})
 }
 
@@ -1238,10 +1192,7 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaign(c, sc)
-		return c.ID, 1, err
-	})
+	return s.exec(ctx, q, func(sc scanner) (err error) { return scanCampaign(c, sc) })
 }
 
 var updateCampaignQueryFmtstr = `
@@ -1301,13 +1252,7 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 
 // DeleteCampaign deletes the Campaign with the given ID.
 func (s *Store) DeleteCampaign(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteCampaignQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteCampaignQueryFmtstr, id))
 }
 
 var deleteCampaignQueryFmtstr = `
@@ -1325,12 +1270,8 @@ type CountCampaignsOpts struct {
 }
 
 // CountCampaigns returns the number of campaigns in the database.
-func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (count int64, _ error) {
-	q := countCampaignsQuery(&opts)
-	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&count)
-		return 0, count, err
-	})
+func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (int, error) {
+	return s.queryCount(ctx, countCampaignsQuery(&opts))
 }
 
 var countCampaignsQueryFmtstr = `
@@ -1380,8 +1321,8 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 	q := getCampaignQuery(&opts)
 
 	var c campaigns.Campaign
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanCampaign(&c, sc)
+	err := s.exec(ctx, q, func(sc scanner) error {
+		return scanCampaign(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -1468,13 +1409,13 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 	q := listCampaignsQuery(&opts)
 
 	cs = make([]*campaigns.Campaign, 0, opts.Limit)
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.Campaign
-		if err = scanCampaign(&c, sc); err != nil {
-			return 0, 0, err
+		if err := scanCampaign(&c, sc); err != nil {
+			return err
 		}
 		cs = append(cs, &c)
-		return c.ID, 1, err
+		return nil
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -1561,34 +1502,29 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 		}
 		inClause = append(inClause, sqlf.Sprintf("%s", ref))
 	}
+
 	q := sqlf.Sprintf(queryFmtString, spec.ServiceType, sqlf.Join(inClause, ","), spec.ID, spec.ServiceType, spec.ServiceID)
-	ids := make([]string, 0, len(refs))
-	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var s string
-		err = sc.Scan(&s)
-		if err != nil {
-			return 0, 0, err
-		}
-		ids = append(ids, s)
-		return 0, 1, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
+	return basestore.ScanStrings(s.Store.Query(ctx, q))
 }
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
-	_, _, err := s.query(ctx, q, sc)
-	return err
+	return s.query(ctx, q, sc)
 }
 
-func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) (last, count int64, err error) {
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
+	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
-		return 0, 0, err
+		return err
 	}
 	return scanAll(rows, sc)
+}
+
+func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
+	count, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	if err != nil || !ok {
+		return count, err
+	}
+	return count, nil
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
@@ -1598,21 +1534,18 @@ type scanner interface {
 
 // a scanFunc scans one or more rows from a scanner, returning
 // the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (last, count int64, err error)
+type scanFunc func(scanner) (err error)
 
-func scanAll(rows *sql.Rows, scan scanFunc) (last, count int64, err error) {
+func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer closeErr(rows, &err)
 
-	last = -1
 	for rows.Next() {
-		var n int64
-		if last, n, err = scan(rows); err != nil {
-			return last, count, err
+		if err = scan(rows); err != nil {
+			return err
 		}
-		count += n
 	}
 
-	return last, count, rows.Err()
+	return rows.Err()
 }
 
 func closeErr(c io.Closer, err *error) {
