@@ -442,22 +442,6 @@ add(
                 ))}
             </p>
 
-            <h3>Extra Small</h3>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', 'btn-xs', `btn-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
             <h3>Small</h3>
             <p>
                 {semanticColors.map(semantic => (
