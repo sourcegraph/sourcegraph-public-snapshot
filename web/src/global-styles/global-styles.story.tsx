@@ -427,6 +427,7 @@ add(
                 sizes, states, and more.{' '}
                 <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
             </p>
+
             <p>
                 {semanticColors.map(semantic => (
                     <React.Fragment key={semantic}>
@@ -434,7 +435,6 @@ add(
                             type="button"
                             key={semantic}
                             className={classNames('btn', `btn-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
                         >
                             {startCase(semantic)}
                         </button>{' '}
@@ -442,10 +442,7 @@ add(
                 ))}
             </p>
 
-            <h1>Small and large buttons</h1>
-            <p>
-                Alternate button sizes:
-            </p>
+            <h3>Small</h3>
             <p>
                 {semanticColors.map(semantic => (
                     <React.Fragment key={semantic}>
@@ -461,6 +458,7 @@ add(
                 ))}
             </p>
 
+            <h3>Large</h3>
             <p>
                 {semanticColors.map(semantic => (
                     <React.Fragment key={semantic}>
@@ -468,6 +466,22 @@ add(
                             type="button"
                             key={semantic}
                             className={classNames('btn', 'btn-lg', `btn-${semantic}`)}
+                            onClick={flow(preventDefault, action('button clicked'))}
+                        >
+                            {startCase(semantic)}
+                        </button>{' '}
+                    </React.Fragment>
+                ))}
+            </p>
+
+            <h3>Outline</h3>
+            <p>
+                {semanticColors.map(semantic => (
+                    <React.Fragment key={semantic}>
+                        <button
+                            type="button"
+                            key={semantic}
+                            className={classNames('btn', `btn-outline-${semantic}`)}
                             onClick={flow(preventDefault, action('button clicked'))}
                         >
                             {startCase(semantic)}
@@ -485,19 +499,7 @@ add(
                     I am disabled
                 </button>
             </p>
-
-            <h2>Outline</h2>
-            <p>
-                <button type="button" className="btn btn-outline" disabled={true}>
-                    Outline button
-                </button>{' '}
-                <button type="button" className="btn btn-outline-primary" disabled={true}>
-                    I am disabled
-                </button>
-            </p>
-
-
-
+            
             <h2>Links</h2>
             <p>Links can be made to look like buttons too.</p>
             <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
