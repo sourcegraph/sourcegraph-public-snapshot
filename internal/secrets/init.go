@@ -70,7 +70,7 @@ func init() {
 	}
 
 	// wrapping in deploytype check so that we can still compile and test locally
-	if !conf.IsDev(deployType) {
+	if !(conf.IsDev(deployType) || os.Getenv("CI") == "") {
 		// for k8s & docker compose, expect a secret to be provided
 		panic(fmt.Sprintf("Either specify environment variable %s or provide the secrets file %s.",
 			sourcegraphCryptEnvvar,
