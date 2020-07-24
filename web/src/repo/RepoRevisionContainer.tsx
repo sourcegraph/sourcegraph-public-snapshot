@@ -64,6 +64,8 @@ export interface RepoRevisionContainerContext
 
     /** The URL route match for {@link RepoRevisionContainer}. */
     routePrefix: string
+
+    globbing: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -99,6 +101,8 @@ interface RepoRevisionContainerProps
     /** Called when the resolvedRevOrError state in this component's parent should be updated. */
     onResolvedRevisionOrError: (v: ResolvedRevision | ErrorLike | undefined) => void
     history: H.History
+
+    globbing: boolean
 }
 
 interface RepoRevisionContainerState {}
@@ -240,6 +244,7 @@ export class RepoRevisionContainer extends React.PureComponent<RepoRevisionConta
             repoSettingsSidebarGroups: this.props.repoSettingsSidebarGroups,
             copyQueryButton: this.props.copyQueryButton,
             versionContext: this.props.versionContext,
+            globbing: this.props.globbing,
         }
 
         return (

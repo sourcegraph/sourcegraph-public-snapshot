@@ -59,6 +59,9 @@ interface Props
     // For NavLinks
     authRequired?: boolean
     showCampaigns: boolean
+
+    // Whether globbing is enabled for filters.
+    globbing: boolean
 }
 
 const SearchExampleClicked = (url: string) => (): void => eventLogger.log('ExampleSearchClicked', { url })

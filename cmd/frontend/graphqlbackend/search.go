@@ -101,6 +101,10 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
+		if getBoolPtr(settings.SearchUppercase, false) {
+			q := queryInfo.(*query.AndOrQuery)
+			q.Query = query.SearchUppercase(q.Query)
+		}
 	} else {
 		var queryString string
 		if searchType == query.SearchTypeLiteral {

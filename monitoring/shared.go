@@ -37,6 +37,7 @@ var sharedFrontendInternalAPIErrorResponses sharedObservable = func(containerNam
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 5},
 		PanelOptions:    PanelOptions().LegendFormat("{{category}}"),
+		Owner:           ObservableOwnerBackendInfrastructure,
 		PossibleSolutions: strings.Replace(`
 			- **Single-container deployments:** Check 'docker logs $CONTAINER_ID' for logs starting with 'repo-updater' that indicate requests to the frontend service are failing.
 			- **Kubernetes:**
@@ -66,6 +67,7 @@ var sharedContainerRestarts sharedObservable = func(containerName string) Observ
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 1},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}"),
+		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:**
 				- Determine if the pod was OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
@@ -85,6 +87,7 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -100,6 +103,7 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 99},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -117,6 +121,7 @@ var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) O
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -132,6 +137,7 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Interval(100),
+		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
@@ -149,6 +155,7 @@ var sharedProvisioningCPUUsage7d sharedObservable = func(containerName string) O
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- If usage is high:
 				- **Kubernetes:** Consider decreasing CPU limits in the the relevant 'Deployment.yaml'.
@@ -166,6 +173,7 @@ var sharedProvisioningMemoryUsage7d sharedObservable = func(containerName string
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+		Owner:           ObservableOwnerDistribution,
 		PossibleSolutions: strings.Replace(`
 			- If usage is high:
 				- **Kubernetes:** Consider decreasing memory limit in relevant 'Deployment.yaml'.

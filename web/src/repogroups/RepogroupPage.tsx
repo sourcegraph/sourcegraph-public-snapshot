@@ -61,6 +61,9 @@ export interface RepogroupPageProps
 
     // Repogroup page metadata
     repogroupMetadata: RepogroupMetadata
+
+    /** Whether globbing is enabled for filters. */
+    globbing: boolean
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {

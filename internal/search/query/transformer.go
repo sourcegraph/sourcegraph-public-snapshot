@@ -324,6 +324,67 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 	return left, right
 }
 
+// product appends the list of n elements in right to each of the m rows in
+// left. If left is empty, it is initialized with right.
+func product(left [][]Node, right []Node) [][]Node {
+	result := [][]Node{}
+	if len(left) == 0 {
+		return append(result, right)
+	}
+
+	for _, row := range left {
+		newRow := make([]Node, len(row))
+		copy(newRow, row)
+		result = append(result, append(newRow, right...))
+	}
+	return result
+}
+
+// distribute applies the distributed property to nodes. See the dnf function
+// for context. Its first argument takes the current set of prefixes to prepend
+// to each term in an or-expression.
+func distribute(prefixes [][]Node, nodes []Node) [][]Node {
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Operator:
+			switch v.Kind {
+			case Or:
+				result := [][]Node{}
+				for _, o := range v.Operands {
+					var newPrefixes [][]Node
+					newPrefixes = distribute(newPrefixes, []Node{o})
+					for _, newPrefix := range newPrefixes {
+						result = append(result, product(prefixes, newPrefix)...)
+					}
+				}
+				prefixes = result
+			case And, Concat:
+				prefixes = distribute(prefixes, v.Operands)
+			}
+		case Parameter, Pattern:
+			prefixes = product(prefixes, []Node{v})
+		}
+	}
+	return prefixes
+}
+
+// dnf returns the Disjunctive Normal Form of a query (a flat sequence of
+// or-expressions) by applying the distributive property on (possibly nested)
+// or-expressions. For example, the query:
+//
+// (repo:a (file:b OR file:c))
+// in DNF becomes:
+// (repo:a file:b) OR (repo:a file:c)
+//
+// Using the DNF expression makes it easy to support general nested queries that
+// imply scope, like the one above: We simply evaluate all disjuncts and union
+// the results. Note that various optimizations are possible
+// during evaluation, but those are separate query pre- or postprocessing steps
+// separate from this general transformation.
+func dnf(query []Node) [][]Node {
+	return distribute([][]Node{}, query)
+}
+
 func substituteOrForRegexp(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {

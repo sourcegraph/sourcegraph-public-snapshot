@@ -980,14 +980,6 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		// Get settings to check if `search.uppercase` is active. If so, run transformer.
-		settings, err := decodedViewerFinalSettings(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if v := settings.SearchUppercase; v != nil && *v {
-			q.Query = query.SearchUppercase(q.Query)
-		}
 		return r.evaluate(ctx, q.Query)
 	}
 	// Unreachable.
@@ -1631,10 +1623,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 						multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 						multiErrMu.Unlock()
 					}
-					if len(fileResults) == 0 && fileCommon.limitHit {
+					if len(fileResults) == 0 {
 						// Still no results? Give up.
 						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-						fileCommon.limitHit = false // Ensure we don't display "Show more".
+						if fileCommon != nil {
+							fileCommon.limitHit = false // Ensure we don't display "Show more".
+						}
 					}
 				}
 				for _, r := range fileResults {
