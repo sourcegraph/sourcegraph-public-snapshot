@@ -3,19 +3,21 @@ package shared
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
+	"html/template"
 	"log"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -220,14 +222,13 @@ func Main(enterpriseInit EnterpriseInit) {
 			for _, dumper := range debugDumpers {
 				dumps = append(dumps, dumper.DebugDump())
 			}
-
-			p, err := json.MarshalIndent(dumps, "", "  ")
+			tmpl := template.New("state.html").Funcs(sprig.FuncMap())
+			template.Must(tmpl.Parse(assets.MustAssetString("state.html.tmpl")))
+			err := tmpl.Execute(w, dumps)
 			if err != nil {
-				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "failed to render template: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(p)
 		}),
 	})
 

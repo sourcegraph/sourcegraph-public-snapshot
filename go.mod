@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.3.1
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/Masterminds/semver v1.5.0
+	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/RoaringBitmap/roaring v0.4.23
