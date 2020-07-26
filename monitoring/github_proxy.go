@@ -45,7 +45,7 @@ func GitHubProxy() *Container {
 				},
 			},
 			{
-				Title:  "Kubernetes monitoring (only available on k8s)",
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
 				Hidden: true,
 				Rows: []Row{
 					{
