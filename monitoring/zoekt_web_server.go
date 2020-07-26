@@ -51,15 +51,8 @@ func ZoektWebServer() *Container {
 					},
 				},
 			},
-			{
-				Title:  "Kubernetes monitoring (only available on k8s)",
-				Hidden: true,
-				Rows: []Row{
-					{
-						sharedKubernetesPodsAvailable("zoekt-webserver"),
-					},
-				},
-			},
+			// kubernetes monitoring for zoekt-web-server is provided by zoekt-index-server,
+			// since both services are deployed together
 		},
 	}
 }

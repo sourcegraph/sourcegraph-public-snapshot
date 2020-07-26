@@ -57,7 +57,10 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("zoekt-indexserver"),
+						// zoekt_index_server, zoekt_web_server are deployed together
+						// as part of the indexed-search service, so only show pod
+						// availability here.
+						sharedKubernetesPodsAvailable("indexed-search"),
 					},
 				},
 			},
