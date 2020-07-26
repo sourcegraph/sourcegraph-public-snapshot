@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand"
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
@@ -88,6 +89,13 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		// Instrumentation to log 1 in 10 search inputs for differential testing, see #12477.
+		if rand.Intn(10) == 0 {
+			log15.Info("search input", "type", searchType, "magic-887c6d4c", args.Query)
+		}
 	}
 
 	var queryInfo query.QueryInfo
