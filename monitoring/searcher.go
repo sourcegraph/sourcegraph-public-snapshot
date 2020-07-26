@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func Searcher() *Container {
 	return &Container{
 		Name:        "searcher",
@@ -23,8 +25,8 @@ func Searcher() *Container {
 						{
 							Name:              "error_ratio",
 							Description:       "error ratio over 10m",
-							Query:             `searcher_errors:ratio10m`, // TODO: 20m
-							Warning:           Alert{GreaterOrEqual: 0.1},
+							Query:             `searcher_errors:ratio10m`,
+							Warning:           Alert{GreaterOrEqual: 0.1, For: 20 * time.Minute},
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
