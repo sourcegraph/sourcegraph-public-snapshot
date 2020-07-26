@@ -41,9 +41,12 @@ func Symbols() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("symbols"),
 						sharedContainerMemoryUsage("symbols"),
 						sharedContainerCPUUsage("symbols"),
+					},
+					{
+						sharedContainerRestarts("symbols"),
+						sharedContainerFsInodes("symbols"),
 					},
 				},
 			},

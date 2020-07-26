@@ -431,21 +431,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
 
-# github-proxy: container_restarts
-
-**Descriptions:**
-
-- _github-proxy: 1+ container restarts every 5m by instance_ (`warning_github-proxy_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
-
 # github-proxy: container_memory_usage
 
 **Descriptions:**
@@ -467,6 +452,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+
+# github-proxy: container_restarts
+
+**Descriptions:**
+
+- _github-proxy: 1+ container restarts every 5m by instance_ (`warning_github-proxy_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
+
+# github-proxy: fs_inodes_used
+
+**Descriptions:**
+
+- _github-proxy: 3e+06+ fs inodes in use by instance_ (`warning_github-proxy_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # github-proxy: provisioning_container_cpu_usage_7d
 
@@ -545,21 +556,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# precise-code-intel-bundle-manager: container_restarts
-
-**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-bundle-manager_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-bundle-manager` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-bundle-manager`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-bundle-manager` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-bundle-manager` (note this will include logs from the previous and currently running container).
-
 # precise-code-intel-bundle-manager: container_memory_usage
 
 **Descriptions:**
@@ -581,6 +577,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+
+# precise-code-intel-bundle-manager: container_restarts
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-bundle-manager_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-bundle-manager` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-bundle-manager`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-bundle-manager` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-bundle-manager` (note this will include logs from the previous and currently running container).
+
+# precise-code-intel-bundle-manager: fs_inodes_used
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-bundle-manager_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
 
@@ -646,21 +668,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# precise-code-intel-worker: container_restarts
-
-**Descriptions:**
-
-- _precise-code-intel-worker: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-worker_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
-
 # precise-code-intel-worker: container_memory_usage
 
 **Descriptions:**
@@ -682,6 +689,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+
+# precise-code-intel-worker: container_restarts
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-worker_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
+
+# precise-code-intel-worker: fs_inodes_used
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-worker_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # precise-code-intel-worker: provisioning_container_cpu_usage_7d
 
@@ -747,21 +780,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# precise-code-intel-indexer: container_restarts
-
-**Descriptions:**
-
-- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-indexer_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-indexer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-indexer`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
-
 # precise-code-intel-indexer: container_memory_usage
 
 **Descriptions:**
@@ -783,6 +801,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+
+# precise-code-intel-indexer: container_restarts
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-indexer_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-indexer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-indexer`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
+
+# precise-code-intel-indexer: fs_inodes_used
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-indexer_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # precise-code-intel-indexer: provisioning_container_cpu_usage_7d
 
@@ -848,21 +892,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs query-runner` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# query-runner: container_restarts
-
-**Descriptions:**
-
-- _query-runner: 1+ container restarts every 5m by instance_ (`warning_query-runner_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod query-runner` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p query-runner`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
-
 # query-runner: container_memory_usage
 
 **Descriptions:**
@@ -884,6 +913,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
+
+# query-runner: container_restarts
+
+**Descriptions:**
+
+- _query-runner: 1+ container restarts every 5m by instance_ (`warning_query-runner_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod query-runner` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p query-runner`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
+
+# query-runner: fs_inodes_used
+
+**Descriptions:**
+
+- _query-runner: 3e+06+ fs inodes in use by instance_ (`warning_query-runner_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # query-runner: provisioning_container_cpu_usage_7d
 
@@ -949,21 +1004,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs replacer` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# replacer: container_restarts
-
-**Descriptions:**
-
-- _replacer: 1+ container restarts every 5m by instance_ (`warning_replacer_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod replacer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p replacer`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' replacer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the replacer container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs replacer` (note this will include logs from the previous and currently running container).
-
 # replacer: container_memory_usage
 
 **Descriptions:**
@@ -985,6 +1025,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
+
+# replacer: container_restarts
+
+**Descriptions:**
+
+- _replacer: 1+ container restarts every 5m by instance_ (`warning_replacer_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod replacer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p replacer`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' replacer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the replacer container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs replacer` (note this will include logs from the previous and currently running container).
+
+# replacer: fs_inodes_used
+
+**Descriptions:**
+
+- _replacer: 3e+06+ fs inodes in use by instance_ (`warning_replacer_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # replacer: provisioning_container_cpu_usage_7d
 
@@ -1050,21 +1116,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs repo-updater` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# repo-updater: container_restarts
-
-**Descriptions:**
-
-- _repo-updater: 1+ container restarts every 5m by instance_ (`warning_repo-updater_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod repo-updater` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p repo-updater`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
-
 # repo-updater: container_memory_usage
 
 **Descriptions:**
@@ -1086,6 +1137,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+
+# repo-updater: container_restarts
+
+**Descriptions:**
+
+- _repo-updater: 1+ container restarts every 5m by instance_ (`warning_repo-updater_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod repo-updater` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p repo-updater`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
+
+# repo-updater: fs_inodes_used
+
+**Descriptions:**
+
+- _repo-updater: 3e+06+ fs inodes in use by instance_ (`warning_repo-updater_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # repo-updater: provisioning_container_cpu_usage_7d
 
@@ -1252,21 +1329,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs symbols` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# symbols: container_restarts
-
-**Descriptions:**
-
-- _symbols: 1+ container restarts every 5m by instance_ (`warning_symbols_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod symbols` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p symbols`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
-
 # symbols: container_memory_usage
 
 **Descriptions:**
@@ -1288,6 +1350,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+
+# symbols: container_restarts
+
+**Descriptions:**
+
+- _symbols: 1+ container restarts every 5m by instance_ (`warning_symbols_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod symbols` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p symbols`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
+
+# symbols: fs_inodes_used
+
+**Descriptions:**
+
+- _symbols: 3e+06+ fs inodes in use by instance_ (`warning_symbols_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # symbols: provisioning_container_cpu_usage_7d
 
@@ -1337,21 +1425,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
 
-# syntect-server: container_restarts
-
-**Descriptions:**
-
-- _syntect-server: 1+ container restarts every 5m by instance_ (`warning_syntect-server_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod syntect-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p syntect-server`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
-
 # syntect-server: container_memory_usage
 
 **Descriptions:**
@@ -1373,6 +1446,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+
+# syntect-server: container_restarts
+
+**Descriptions:**
+
+- _syntect-server: 1+ container restarts every 5m by instance_ (`warning_syntect-server_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod syntect-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p syntect-server`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
+
+# syntect-server: fs_inodes_used
+
+**Descriptions:**
+
+- _syntect-server: 3e+06+ fs inodes in use by instance_ (`warning_syntect-server_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # syntect-server: provisioning_container_cpu_usage_7d
 
@@ -1422,21 +1521,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
 
-# zoekt-indexserver: container_restarts
-
-**Descriptions:**
-
-- _zoekt-indexserver: 1+ container restarts every 5m by instance_ (`warning_zoekt-indexserver_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-indexserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-indexserver`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
-
 # zoekt-indexserver: container_memory_usage
 
 **Descriptions:**
@@ -1458,6 +1542,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+
+# zoekt-indexserver: container_restarts
+
+**Descriptions:**
+
+- _zoekt-indexserver: 1+ container restarts every 5m by instance_ (`warning_zoekt-indexserver_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-indexserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-indexserver`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
+
+# zoekt-indexserver: fs_inodes_used
+
+**Descriptions:**
+
+- _zoekt-indexserver: 3e+06+ fs inodes in use by instance_ (`warning_zoekt-indexserver_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # zoekt-indexserver: provisioning_container_cpu_usage_7d
 
@@ -1507,21 +1617,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 
-# zoekt-webserver: container_restarts
-
-**Descriptions:**
-
-- _zoekt-webserver: 1+ container restarts every 5m by instance_ (`warning_zoekt-webserver_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-webserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-webserver`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
-
 # zoekt-webserver: container_memory_usage
 
 **Descriptions:**
@@ -1543,6 +1638,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+
+# zoekt-webserver: container_restarts
+
+**Descriptions:**
+
+- _zoekt-webserver: 1+ container restarts every 5m by instance_ (`warning_zoekt-webserver_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod zoekt-webserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p zoekt-webserver`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
+
+# zoekt-webserver: fs_inodes_used
+
+**Descriptions:**
+
+- _zoekt-webserver: 3e+06+ fs inodes in use by instance_ (`warning_zoekt-webserver_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # zoekt-webserver: provisioning_container_cpu_usage_7d
 

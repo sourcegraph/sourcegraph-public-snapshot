@@ -29,9 +29,12 @@ func ZoektIndexServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("zoekt-indexserver"),
 						sharedContainerMemoryUsage("zoekt-indexserver"),
 						sharedContainerCPUUsage("zoekt-indexserver"),
+					},
+					{
+						sharedContainerRestarts("zoekt-indexserver"),
+						sharedContainerFsInodes("zoekt-indexserver"),
 					},
 				},
 			},

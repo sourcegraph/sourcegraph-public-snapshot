@@ -199,9 +199,12 @@ func PreciseCodeIntelIndexer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("precise-code-intel-indexer"),
 						sharedContainerMemoryUsage("precise-code-intel-indexer"),
 						sharedContainerCPUUsage("precise-code-intel-indexer"),
+					},
+					{
+						sharedContainerRestarts("precise-code-intel-indexer"),
+						sharedContainerFsInodes("precise-code-intel-indexer"),
 					},
 				},
 			},

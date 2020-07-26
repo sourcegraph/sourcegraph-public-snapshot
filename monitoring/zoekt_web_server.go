@@ -28,9 +28,12 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("zoekt-webserver"),
 						sharedContainerMemoryUsage("zoekt-webserver"),
 						sharedContainerCPUUsage("zoekt-webserver"),
+					},
+					{
+						sharedContainerRestarts("zoekt-webserver"),
+						sharedContainerFsInodes("zoekt-webserver"),
 					},
 				},
 			},

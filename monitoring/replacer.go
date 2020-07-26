@@ -19,9 +19,12 @@ func Replacer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("replacer"),
 						sharedContainerMemoryUsage("replacer"),
 						sharedContainerCPUUsage("replacer"),
+					},
+					{
+						sharedContainerRestarts("replacer"),
+						sharedContainerFsInodes("replacer"),
 					},
 				},
 			},

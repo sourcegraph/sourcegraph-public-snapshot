@@ -19,9 +19,12 @@ func QueryRunner() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("query-runner"),
 						sharedContainerMemoryUsage("query-runner"),
 						sharedContainerCPUUsage("query-runner"),
+					},
+					{
+						sharedContainerRestarts("query-runner"),
+						sharedContainerFsInodes("query-runner"),
 					},
 				},
 			},
