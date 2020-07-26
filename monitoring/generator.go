@@ -1056,7 +1056,7 @@ func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, durat
 		promRule{
 			Record: "alert_count",
 			Labels: labels,
-			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q} OR on() vector(0))`, alertName),
+			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,state="firing"} OR on() vector(0))`, alertName),
 		})
 }
 
