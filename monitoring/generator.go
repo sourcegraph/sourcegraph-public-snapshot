@@ -903,7 +903,7 @@ func main() {
 	var filelist []string
 	for _, container := range containers {
 		if err := container.validate(); err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Sprintf("container %q: %+v", container.Name, err))
 		}
 		if grafanaDir != "" {
 			board := container.dashboard()
