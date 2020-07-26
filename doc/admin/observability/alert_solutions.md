@@ -183,6 +183,17 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' frontend` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the frontend container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs frontend` (note this will include logs from the previous and currently running container).
 
+# frontend: fs_inodes_used
+
+**Descriptions:**
+
+- _frontend: 3e+06+ fs inodes in use by instance_ (`warning_frontend_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
+
 # frontend: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
@@ -349,6 +360,17 @@ for assistance.
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
+
+# gitserver: fs_inodes_used
+
+**Descriptions:**
+
+- _gitserver: 3e+06+ fs inodes in use by instance_ (`warning_gitserver_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # gitserver: provisioning_container_cpu_usage_7d
 
@@ -1605,6 +1627,17 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 - **Docker Compose:**
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
+
+# prometheus: fs_inodes_used
+
+**Descriptions:**
+
+- _prometheus: 3e+06+ fs inodes in use by instance_ (`warning_prometheus_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # prometheus: provisioning_container_cpu_usage_7d
 

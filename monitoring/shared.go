@@ -117,13 +117,16 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 
 var sharedContainerFsInodes sharedObservable = func(containerName string) Observable {
 	return Observable{
-		Name:              "fs_inodes_used",
-		Description:       "fs inodes in use by instance",
-		Query:             fmt.Sprintf(`sum by (instance)(container_fs_inodes_total{%s})`, promCadvisorContainerMatchers(containerName)),
-		DataMayNotExist:   true,
-		Warning:           Alert{GreaterOrEqual: 3e+06},
-		Owner:             ObservableOwnerDistribution,
-		PossibleSolutions: "none", // TODO I think we do have some recommendations for this
+		Name:            "fs_inodes_used",
+		Description:     "fs inodes in use by instance",
+		Query:           fmt.Sprintf(`sum by (instance)(container_fs_inodes_total{%s})`, promCadvisorContainerMatchers(containerName)),
+		DataMayNotExist: true,
+		Warning:         Alert{GreaterOrEqual: 3e+06},
+		Owner:           ObservableOwnerDistribution,
+		PossibleSolutions: `
+			- Refer to your OS or cloud provider's documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+`,
 	}
 }
 
