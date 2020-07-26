@@ -17,6 +17,7 @@ func Symbols() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("failures"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func Symbols() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 25},
 							PanelOptions:      PanelOptions().LegendFormat("size"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},

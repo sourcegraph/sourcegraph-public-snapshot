@@ -1,0 +1,99 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignsNavItem renders 1`] = `
+<MemoryRouter>
+  <Router
+    history="[History]"
+  >
+    <CampaignsNavItem
+      className="123"
+    >
+      <LinkWithIconOnlyTooltip
+        activeClassName="active"
+        className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123"
+        icon={
+          Object {
+            "$$typeof": Symbol(react.memo),
+            "compare": null,
+            "type": [Function],
+          }
+        }
+        text="Campaigns"
+        to="/campaigns"
+      >
+        <NavLink
+          activeClassName="active"
+          className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+          to="/campaigns"
+        >
+          <Link
+            aria-current={null}
+            className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+            to={
+              Object {
+                "hash": "",
+                "key": null,
+                "pathname": "/campaigns",
+                "search": "",
+                "state": null,
+              }
+            }
+          >
+            <LinkAnchor
+              aria-current={null}
+              className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+              href="/campaigns"
+              navigate={[Function]}
+            >
+              <a
+                aria-current={null}
+                className="nav-link btn btn-link px-1 text-decoration-none test-campaign-nav-entry 123 d-flex align-items-center"
+                href="/campaigns"
+                onClick={[Function]}
+              >
+                <Memo(ImageAutoAdjustIcon)
+                  className="icon-inline d-lg-none"
+                  data-tooltip="Campaigns"
+                >
+                  <svg
+                    className="mdi-icon icon-inline d-lg-none"
+                    data-tooltip="Campaigns"
+                    fill="currentColor"
+                    height={24}
+                    viewBox="0 0 24 24"
+                    width={24}
+                  >
+                    <path
+                      d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+                    />
+                  </svg>
+                </Memo(ImageAutoAdjustIcon)>
+                <Memo(ImageAutoAdjustIcon)
+                  className="icon-inline d-none d-lg-inline-block"
+                >
+                  <svg
+                    className="mdi-icon icon-inline d-none d-lg-inline-block"
+                    fill="currentColor"
+                    height={24}
+                    viewBox="0 0 24 24"
+                    width={24}
+                  >
+                    <path
+                      d="M19 10V19H5V5H14V3H5C3.92 3 3 3.9 3 5V19C3 20.1 3.92 21 5 21H19C20.12 21 21 20.1 21 19V10H19M17 10L17.94 7.94L20 7L17.94 6.06L17 4L16.06 6.06L14 7L16.06 7.94L17 10M13.25 10.75L12 8L10.75 10.75L8 12L10.75 13.25L12 16L13.25 13.25L16 12L13.25 10.75Z"
+                    />
+                  </svg>
+                </Memo(ImageAutoAdjustIcon)>
+                <span
+                  className="d-none d-lg-inline-block ml-1"
+                >
+                  Campaigns
+                </span>
+              </a>
+            </LinkAnchor>
+          </Link>
+        </NavLink>
+      </LinkWithIconOnlyTooltip>
+    </CampaignsNavItem>
+  </Router>
+</MemoryRouter>
+`;

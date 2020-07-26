@@ -2,9 +2,9 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import {
     IExternalChangeset,
     ChangesetCheckState,
-    ChangesetState,
     IRepositoryComparison,
     GitRevSpec,
+    ChangesetExternalState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
@@ -18,7 +18,7 @@ import {
     changesetCheckStateColors,
     changesetCheckStateTooltips,
     changesetReviewStateColors,
-    changesetStageLabels,
+    changesetStateLabels,
 } from './presentation'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
@@ -57,11 +57,11 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     location,
     extensionInfo,
 }) => {
-    const ReviewStateIcon = changesetReviewStateIcons[node.reviewState]
+    const ReviewStateIcon = node.reviewState && changesetReviewStateIcons[node.reviewState]
     const ChangesetCheckStateIcon = node.checkState
         ? changesetCheckStateIcons[node.checkState]
         : changesetCheckStateIcons[ChangesetCheckState.PENDING]
-    const changesetState = node.state
+    const changesetState = node.externalState
 
     const changesetNodeRow = (
         <div className="d-flex align-items-start m-1 ml-2">
@@ -69,11 +69,11 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 <div className="d-flex flex-column">
                     <div className="m-0 mb-2">
                         <h3 className="m-0 d-inline">
-                            <ChangesetStateIcon state={changesetState} />
+                            <ChangesetStateIcon externalState={changesetState || ChangesetExternalState.OPEN} />
                             <LinkOrSpan
                                 /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
                                 to={
-                                    node.externalURL && node.state !== ChangesetState.DELETED
+                                    node.externalURL && node.externalState !== ChangesetExternalState.DELETED
                                         ? node.externalURL.url
                                         : undefined
                                 }
@@ -81,7 +81,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                                 rel="noopener noreferrer"
                             >
                                 {node.title} (#{node.externalID}){' '}
-                                {node.externalURL && node.state !== ChangesetState.DELETED && (
+                                {node.externalURL && node.externalState !== ChangesetExternalState.DELETED && (
                                     <ExternalLinkIcon size="1rem" />
                                 )}
                             </LinkOrSpan>
@@ -122,16 +122,18 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
-            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
-                <ReviewStateIcon
-                    className={
-                        node.state === ChangesetState.DELETED
-                            ? 'text-muted'
-                            : `text-${changesetReviewStateColors[node.reviewState]}`
-                    }
-                    data-tooltip={changesetStageLabels[node.reviewState]}
-                />
-            </div>
+            {ReviewStateIcon && (
+                <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
+                    <ReviewStateIcon
+                        className={
+                            node.externalState === ChangesetExternalState.DELETED
+                                ? 'text-muted'
+                                : `text-${changesetReviewStateColors[node.reviewState!]}`
+                        }
+                        data-tooltip={changesetStateLabels[node.reviewState!]}
+                    />
+                </div>
+            )}
         </div>
     )
 
@@ -148,7 +150,9 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     return changeset.diff
                 }),
                 tap(diff => {
-                    setRange(diff.range)
+                    if (diff.__typename === 'RepositoryComparison') {
+                        setRange(diff.range)
+                    }
                 }),
                 map(diff => diff.fileDiffs)
             ),

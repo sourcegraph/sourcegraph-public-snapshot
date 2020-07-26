@@ -3,13 +3,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useEffect, useState, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable } from 'rxjs'
-import { catchError, map, startWith, switchMap } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { catchError, startWith, switchMap, map } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { ErrorAlert } from '../components/alerts'
@@ -18,27 +15,35 @@ import { hasProperty } from '../../../shared/src/util/types'
 import * as H from 'history'
 import { CopyableText } from '../components/CopyableText'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 
 type ExternalService = Pick<GQL.IExternalService, 'id' | 'kind' | 'displayName' | 'config' | 'warning' | 'webhookURL'>
 
-interface Props extends RouteComponentProps<{ id: GQL.ID }> {
+interface Props extends RouteComponentProps<{ id: GQL.ID }>, TelemetryProps {
     isLightTheme: boolean
     history: H.History
 }
 
 const LOADING = 'loading' as const
 
-export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = props => {
+export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = ({
+    match,
+    history,
+    isLightTheme,
+    telemetryService,
+}) => {
     useEffect(() => {
-        eventLogger.logViewEvent('SiteAdminExternalService')
-    })
+        telemetryService.logViewEvent('SiteAdminExternalService')
+    }, [telemetryService])
 
     const [externalServiceOrError, setExternalServiceOrError] = useState<typeof LOADING | ExternalService | ErrorLike>(
         LOADING
     )
 
     useEffect(() => {
-        const subscription = fetchExternalService(props.match.params.id)
+        const subscription = fetchExternalService(match.params.id)
             .pipe(
                 startWith(LOADING),
                 catchError(error => [asError(error)])
@@ -47,7 +52,7 @@ export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = prop
                 setExternalServiceOrError(result)
             })
         return () => subscription.unsubscribe()
-    }, [props.match.params.id])
+    }, [match.params.id])
 
     const onChange = useCallback(
         (input: GQL.IAddExternalServiceInput) => {
@@ -81,10 +86,10 @@ export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = prop
             if (updatedServiceOrError.warning) {
                 setExternalServiceOrError(updatedServiceOrError)
             } else {
-                props.history.push('/site-admin/repositories?repositoriesUpdated')
+                history.push('/site-admin/repositories?repositoriesUpdated')
             }
         }
-    }, [updatedServiceOrError, props.history])
+    }, [updatedServiceOrError, history])
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
@@ -139,7 +144,7 @@ export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = prop
             <h2>Update synced repositories</h2>
             {externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
             {isErrorLike(externalServiceOrError) && (
-                <ErrorAlert className="mb-3" error={externalServiceOrError} history={props.history} />
+                <ErrorAlert className="mb-3" error={externalServiceOrError} history={history} />
             )}
             {externalServiceCategory && (
                 <div className="mb-3">
@@ -157,8 +162,9 @@ export const SiteAdminExternalServicePage: React.FunctionComponent<Props> = prop
                     loading={updatedServiceOrError === LOADING}
                     onSubmit={onSubmit}
                     onChange={onChange}
-                    history={props.history}
-                    isLightTheme={props.isLightTheme}
+                    history={history}
+                    isLightTheme={isLightTheme}
+                    telemetryService={telemetryService}
                 />
             )}
             {externalService?.webhookURL && (
@@ -250,7 +256,6 @@ function updateExternalService(input: GQL.IUpdateExternalServiceInput): Observab
                     ...externalServiceFields
                 }
             }
-
             ${externalServiceFragment}
         `,
         { input }
@@ -269,7 +274,6 @@ function fetchExternalService(id: GQL.ID): Observable<ExternalService> {
                     ...externalServiceFields
                 }
             }
-
             ${externalServiceFragment}
         `,
         { id }

@@ -13,7 +13,7 @@ For site admins: [Monitoring a self-hosted Sourcegraph instance](#instrumenting-
 
 Any user can [enable the LightStep extension for Sourcegraph](https://sourcegraph.com/extensions/sourcegraph/lightstep) to view live traces for OpenTracing spans in their own code.
 
-![Screenshot](https://storage.googleapis.com/sourcegraph-assets/LightStep_Sourcegraph.png)
+![Screenshot](https://sourcegraphstatic.com/LightStep_Sourcegraph.png)
 
 ## Monitoring a self-hosted Sourcegraph instance
 

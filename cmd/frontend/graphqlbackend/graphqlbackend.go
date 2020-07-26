@@ -335,7 +335,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 
 func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
-		CampaignsResolver: defaultCampaignsResolver{},
+		// CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
 	}
@@ -386,11 +386,6 @@ func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToPatchSet() (PatchSetResolver, bool) {
-	n, ok := r.Node.(PatchSetResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	n, ok := r.Node.(ChangesetResolver)
 	if !ok {
@@ -407,25 +402,30 @@ func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResol
 	return n.ToHiddenExternalChangeset()
 }
 
-func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
-	n, ok := r.Node.(PatchInterfaceResolver)
-	if !ok {
-		return nil, false
-	}
-	return n.ToPatch()
-}
-
-func (r *NodeResolver) ToHiddenPatch() (HiddenPatchResolver, bool) {
-	n, ok := r.Node.(PatchInterfaceResolver)
-	if !ok {
-		return nil, false
-	}
-	return n.ToHiddenPatch()
-}
-
 func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	n, ok := r.Node.(ChangesetEventResolver)
 	return n, ok
+}
+
+func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
+	n, ok := r.Node.(CampaignSpecResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool) {
+	n, ok := r.Node.(ChangesetSpecResolver)
+	if !ok {
+		return nil, ok
+	}
+	return n.ToHiddenChangesetSpec()
+}
+
+func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool) {
+	n, ok := r.Node.(ChangesetSpecResolver)
+	if !ok {
+		return nil, ok
+	}
+	return n.ToVisibleChangesetSpec()
 }
 
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
@@ -551,16 +551,12 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
-	case "PatchSet":
-		return r.PatchSetByID(ctx, id)
-	case "ExternalChangeset":
+	case "CampaignSpec":
+		return r.CampaignSpecByID(ctx, id)
+	case "ChangesetSpec":
+		return r.ChangesetSpecByID(ctx, id)
+	case "Changeset":
 		return r.ChangesetByID(ctx, id)
-	case "HiddenExternalChangeset":
-		return r.ChangesetByID(ctx, id)
-	case "Patch":
-		return r.PatchByID(ctx, id)
-	case "HiddenPatch":
-		return r.PatchByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

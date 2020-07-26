@@ -3,6 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -28,12 +29,14 @@ func TestGetIndexOptions(t *testing.T) {
 		return c
 	}
 
-	cases := []struct {
+	type caseT struct {
 		name string
 		conf schema.SiteConfiguration
 		repo string
 		want zoektIndexOptions
-	}{{
+	}
+
+	cases := []caseT{{
 		name: "default",
 		conf: schema.SiteConfiguration{},
 		repo: "repo",
@@ -140,6 +143,30 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		},
 	}}
+
+	{
+		// Generate case for no more than than 64 branches
+		var branches []string
+		for i := 0; i < 100; i++ {
+			branches = append(branches, fmt.Sprintf("%.2d", i))
+		}
+		want := []zoekt.RepositoryBranch{{Name: "HEAD", Version: "!HEAD"}}
+		for i := 0; i < 63; i++ {
+			want = append(want, zoekt.RepositoryBranch{
+				Name:    fmt.Sprintf("%.2d", i),
+				Version: fmt.Sprintf("!%.2d", i),
+			})
+		}
+		cases = append(cases, caseT{
+			name: "limit branches",
+			conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": branches}),
+			repo: "repo",
+			want: zoektIndexOptions{
+				Symbols:  true,
+				Branches: want,
+			},
+		})
+	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -18,6 +18,7 @@ func ZoektIndexServer() *Container {
 							Warning:           Alert{GreaterOrEqual: 15},
 							Critical:          Alert{GreaterOrEqual: 30},
 							PanelOptions:      PanelOptions().LegendFormat("{{duration}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},

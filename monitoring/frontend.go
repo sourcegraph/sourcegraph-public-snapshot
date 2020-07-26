@@ -18,6 +18,7 @@ func Frontend() *Container {
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 20},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -33,6 +34,7 @@ func Frontend() *Container {
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 15},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -50,6 +52,7 @@ func Frontend() *Container {
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -60,6 +63,7 @@ func Frontend() *Container {
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -69,6 +73,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -78,6 +83,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- This indicates your user's are making syntax errors or similar user errors.
 							`,
@@ -102,6 +108,7 @@ func Frontend() *Container {
 						{
 							Name:            "99th_percentile_search_codeintel_request_duration",
 							Description:     "99th percentile code-intel successful search request duration over 5m",
+							Owner:           ObservableOwnerCodeIntel,
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
@@ -122,6 +129,7 @@ func Frontend() *Container {
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 15},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							Owner:           ObservableOwnerCodeIntel,
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -139,6 +147,7 @@ func Frontend() *Container {
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -149,6 +158,7 @@ func Frontend() *Container {
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -158,6 +168,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -167,6 +178,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							Owner:           ObservableOwnerCodeIntel,
 							PossibleSolutions: `
 								- This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
 							`,
@@ -187,6 +199,7 @@ func Frontend() *Container {
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **If your users are requesting many results** with a large 'count:' parameter, consider using our [search pagination API](../../api/graphql/search.md).
@@ -203,6 +216,7 @@ func Frontend() *Container {
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 40},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **If your users are requesting many results** with a large 'count:' parameter, consider using our [search pagination API](../../api/graphql/search.md).
@@ -221,6 +235,7 @@ func Frontend() *Container {
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -231,6 +246,7 @@ func Frontend() *Container {
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -240,6 +256,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -249,6 +266,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- This indicates your user's search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
 							`,
@@ -270,6 +288,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("api operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -279,6 +298,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("api operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -292,6 +312,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -301,6 +322,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -318,6 +340,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("{{code}}"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Check the Zoekt Web Server dashboard for indications it might be unhealthy.
 							`,
@@ -329,6 +352,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("{{code}}"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- Check the Searcher dashboard for indications it might be unhealthy.
 							`,
@@ -340,6 +364,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
 							PanelOptions:    PanelOptions().LegendFormat("{{category}}"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
 							`,
@@ -354,6 +379,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -364,6 +390,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 300},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -373,6 +400,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -385,6 +413,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -394,6 +423,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -404,6 +434,7 @@ func Frontend() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 0.10},
 							PanelOptions:      PanelOptions().LegendFormat("{{method}}").Max(0.10).Unit(Seconds),
+							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "none",
 						},
 					},

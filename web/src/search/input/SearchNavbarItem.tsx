@@ -25,6 +25,7 @@ interface Props
     history: H.History
     navbarSearchState: QueryState
     onChange: (newValue: QueryState) => void
+    globbing: boolean
 }
 
 /**

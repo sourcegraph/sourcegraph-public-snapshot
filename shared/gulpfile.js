@@ -109,10 +109,8 @@ async function schema() {
   )
 }
 
-async function watchSchema() {
-  await new Promise((_resolve, reject) => {
-    gulp.watch(__dirname + '/../schema/*.schema.json', schema).on('error', reject)
-  })
+function watchSchema() {
+  return gulp.watch(path.join(__dirname, '../schema/*.schema.json'), schema)
 }
 
 module.exports = { watchSchema, schema, graphQLTypes, watchGraphQLTypes }

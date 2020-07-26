@@ -1,8 +1,18 @@
 <style type="text/css">
-@media only percy {
-    .percy-hide {
-        display: none;
-        visibility: hidden;
+    @media only percy {
+        .percy-hide {
+            display: none;
+            visibility: hidden;
+        }
     }
-}
 </style>
+<script>
+    window.MonacoEnvironment = {
+        getWorkerUrl(_, label) {
+            if (label === 'json') {
+                return '/json.worker.bundle.js'
+            }
+            return '/editor.worker.bundle.js'
+        },
+    }
+</script>

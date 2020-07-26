@@ -30,6 +30,7 @@ exports[`ScopePage renders 1`] = `
         autoFocus={true}
         caseSensitive={false}
         copyQueryButton={false}
+        globbing={false}
         history={
           Object {
             "action": "POP",
