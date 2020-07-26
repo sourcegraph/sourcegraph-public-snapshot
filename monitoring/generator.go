@@ -865,7 +865,7 @@ func main() {
 		SyntectServer(),
 		ZoektIndexServer(),
 		ZoektWebServer(),
-		SourcegraphPrometheus(),
+		Prometheus(),
 	}
 	for _, container := range containers {
 		if err := container.validate(); err != nil {
