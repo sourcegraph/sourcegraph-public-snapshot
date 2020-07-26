@@ -25,6 +25,7 @@ func Searcher() *Container {
 							Description:       "error ratio over 10m",
 							Query:             `searcher_errors:ratio10m`, // TODO: 20m
 							Warning:           Alert{GreaterOrEqual: 0.1},
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						sharedFrontendInternalAPIErrorResponses("searcher"),

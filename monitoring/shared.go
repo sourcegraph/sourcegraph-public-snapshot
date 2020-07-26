@@ -122,6 +122,7 @@ var sharedContainerFsInodes sharedObservable = func(containerName string) Observ
 		Query:             fmt.Sprintf(`sum by (instance) (container_fs_inodes_total{%s})`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist:   true,
 		Critical:          Alert{GreaterOrEqual: 3e+06},
+		Owner:             ObservableOwnerDistribution,
 		PossibleSolutions: "none", // TODO I think we do have some recommendations for this
 	}
 }
@@ -207,6 +208,7 @@ var sharedGoGoroutines sharedObservable = func(containerName string) Observable 
 		Query:             fmt.Sprintf(`max by (instance) (go_goroutines{job=~".*%s"})`, containerName), // TODO over 10m
 		DataMayNotExist:   true,
 		Warning:           Alert{GreaterOrEqual: 10000},
+		Owner:             ObservableOwnerDistribution,
 		PossibleSolutions: "none",
 	}
 }
@@ -218,6 +220,7 @@ var sharedGoGcDuration sharedObservable = func(containerName string) Observable 
 		Query:             fmt.Sprintf(`max by (instance) (go_gc_duration_seconds{job=~".*%s"})`, containerName),
 		DataMayNotExist:   true,
 		Warning:           Alert{GreaterOrEqual: 2},
+		Owner:             ObservableOwnerDistribution,
 		PossibleSolutions: "none",
 	}
 }
@@ -231,6 +234,7 @@ var sharedKubernetesPodsAvailable sharedObservable = func(containerName string) 
 		Query:             fmt.Sprintf(`sum by (app) (up{app="%[1]s"}) / count by (app) (up{app="%[1]s"})`, containerName), // TODO over 10m
 		Critical:          Alert{LessOrEqual: 0.9},
 		DataMayNotExist:   true,
+		Owner:             ObservableOwnerDistribution,
 		PossibleSolutions: "none",
 	}
 }

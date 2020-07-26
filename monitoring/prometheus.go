@@ -1,6 +1,6 @@
 package main
 
-func SourcegraphPrometheus() *Container {
+func Prometheus() *Container {
 	return &Container{
 		Name:        "prometheus",
 		Title:       "Prometheus",
@@ -16,6 +16,7 @@ func SourcegraphPrometheus() *Container {
 							Query:             `http_response_size_bytes{handler="prometheus",job!="kubernetes-apiservers",job!="kubernetes-nodes",quantile="0.5"}`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20000},
+							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "none",
 						},
 					},
@@ -31,6 +32,7 @@ func SourcegraphPrometheus() *Container {
 							Query:             `rate(alertmanager_notifications_failed_total[1m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 1},
+							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "Ensure that your `observability.alerts` configuration (in site configuration) is valid.",
 						},
 					},

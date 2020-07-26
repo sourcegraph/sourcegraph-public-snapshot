@@ -95,6 +95,7 @@ func Frontend() *Container {
 							Description:       "90th percentile page load latency over all routes over 10m",
 							Query:             `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{job="sourcegraph-frontend",route!="raw"}[10m])))`,
 							Critical:          Alert{GreaterOrEqual: 20},
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
