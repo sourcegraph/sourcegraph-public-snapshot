@@ -42,6 +42,17 @@ for assistance.
 
 - This indicates your user`s are making syntax errors or similar user errors.
 
+# frontend: page_load_latency
+
+**Descriptions:**
+
+- _frontend: 20+ 90th percentile page load latency over all routes over 10m_ (`critical_frontend_page_load_latency`)
+
+**Possible solutions:**
+
+- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+
 # frontend: 99th_percentile_search_codeintel_request_duration
 
 **Descriptions:**
