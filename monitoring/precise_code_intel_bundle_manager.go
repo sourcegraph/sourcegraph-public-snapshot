@@ -154,16 +154,6 @@ func PreciseCodeIntelBundleManager() *Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []Row{
-					{
-						sharedGoGoroutines("precise-code-intel-bundle-manager"),
-						sharedGoGcDuration("precise-code-intel-bundle-manager"),
-					},
-				},
-			},
-			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -185,6 +175,16 @@ func PreciseCodeIntelBundleManager() *Container {
 					{
 						sharedProvisioningCPUUsage5m("precise-code-intel-bundle-manager"),
 						sharedProvisioningMemoryUsage5m("precise-code-intel-bundle-manager"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("precise-code-intel-bundle-manager"),
+						sharedGoGcDuration("precise-code-intel-bundle-manager"),
 					},
 				},
 			},

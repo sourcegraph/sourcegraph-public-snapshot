@@ -442,16 +442,6 @@ func Frontend() *Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []Row{
-					{
-						sharedGoGoroutines("frontend"),
-						sharedGoGcDuration("frontend"),
-					},
-				},
-			},
-			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -476,6 +466,16 @@ func Frontend() *Container {
 					{
 						sharedProvisioningCPUUsage5m("frontend"),
 						sharedProvisioningMemoryUsage5m("frontend"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("frontend"),
+						sharedGoGcDuration("frontend"),
 					},
 				},
 			},

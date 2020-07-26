@@ -15,16 +15,6 @@ func RepoUpdater() *Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []Row{
-					{
-						sharedGoGoroutines("repo-updater"),
-						sharedGoGcDuration("repo-updater"),
-					},
-				},
-			},
-			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -46,6 +36,16 @@ func RepoUpdater() *Container {
 					{
 						sharedProvisioningCPUUsage5m("repo-updater"),
 						sharedProvisioningMemoryUsage5m("repo-updater"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("repo-updater"),
+						sharedGoGcDuration("repo-updater"),
 					},
 				},
 			},

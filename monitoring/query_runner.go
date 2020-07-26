@@ -15,16 +15,6 @@ func QueryRunner() *Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []Row{
-					{
-						sharedGoGoroutines("query-runner"),
-						sharedGoGcDuration("query-runner"),
-					},
-				},
-			},
-			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -46,6 +36,16 @@ func QueryRunner() *Container {
 					{
 						sharedProvisioningCPUUsage5m("query-runner"),
 						sharedProvisioningMemoryUsage5m("query-runner"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("query-runner"),
+						sharedGoGcDuration("query-runner"),
 					},
 				},
 			},

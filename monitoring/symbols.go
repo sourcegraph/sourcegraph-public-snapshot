@@ -37,16 +37,6 @@ func Symbols() *Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []Row{
-					{
-						sharedGoGoroutines("symbols"),
-						sharedGoGcDuration("symbols"),
-					},
-				},
-			},
-			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -68,6 +58,16 @@ func Symbols() *Container {
 					{
 						sharedProvisioningCPUUsage5m("symbols"),
 						sharedProvisioningMemoryUsage5m("symbols"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("symbols"),
+						sharedGoGcDuration("symbols"),
 					},
 				},
 			},

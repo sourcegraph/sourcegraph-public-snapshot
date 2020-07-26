@@ -33,16 +33,6 @@ func Searcher() *Container {
 				},
 			},
 			{
-				Title:  "Golang runtime monitoring",
-				Hidden: true,
-				Rows: []Row{
-					{
-						sharedGoGoroutines("searcher"),
-						sharedGoGcDuration("searcher"),
-					},
-				},
-			},
-			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
@@ -64,6 +54,16 @@ func Searcher() *Container {
 					{
 						sharedProvisioningCPUUsage5m("searcher"),
 						sharedProvisioningMemoryUsage5m("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("searcher"),
+						sharedGoGcDuration("searcher"),
 					},
 				},
 			},
