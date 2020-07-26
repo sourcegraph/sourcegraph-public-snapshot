@@ -28,8 +28,8 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("zoekt-webserver"),
 						sharedContainerCPUUsage("zoekt-webserver"),
+						sharedContainerMemoryUsage("zoekt-webserver"),
 					},
 					{
 						sharedContainerRestarts("zoekt-webserver"),

@@ -19,8 +19,8 @@ func RepoUpdater() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("repo-updater"),
 						sharedContainerCPUUsage("repo-updater"),
+						sharedContainerMemoryUsage("repo-updater"),
 					},
 					{
 						sharedContainerRestarts("repo-updater"),

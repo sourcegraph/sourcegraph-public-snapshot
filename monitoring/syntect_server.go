@@ -60,8 +60,8 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("syntect-server"),
 						sharedContainerCPUUsage("syntect-server"),
+						sharedContainerMemoryUsage("syntect-server"),
 					},
 					{
 						sharedContainerRestarts("syntect-server"),

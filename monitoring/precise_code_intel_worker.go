@@ -166,8 +166,8 @@ func PreciseCodeIntelWorker() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("precise-code-intel-worker"),
 						sharedContainerCPUUsage("precise-code-intel-worker"),
+						sharedContainerMemoryUsage("precise-code-intel-worker"),
 					},
 					{
 						sharedContainerRestarts("precise-code-intel-worker"),

@@ -11,8 +11,8 @@ func GitHubProxy() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("github-proxy"),
 						sharedContainerCPUUsage("github-proxy"),
+						sharedContainerMemoryUsage("github-proxy"),
 					},
 					{
 						sharedContainerRestarts("github-proxy"),

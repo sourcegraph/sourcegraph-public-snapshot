@@ -157,17 +157,6 @@ for assistance.
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
 
-# frontend: container_memory_usage
-
-**Descriptions:**
-
-- _frontend: 99%+ container memory usage by instance_ (`warning_frontend_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-
 # frontend: container_cpu_usage
 
 **Descriptions:**
@@ -178,6 +167,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
+
+# frontend: container_memory_usage
+
+**Descriptions:**
+
+- _frontend: 99%+ container memory usage by instance_ (`warning_frontend_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
 
 # frontend: container_restarts
 
@@ -335,17 +335,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs gitserver` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# gitserver: container_memory_usage
-
-**Descriptions:**
-
-- _gitserver: 99%+ container memory usage by instance_ (`warning_gitserver_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-
 # gitserver: container_cpu_usage
 
 **Descriptions:**
@@ -356,6 +345,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+
+# gitserver: container_memory_usage
+
+**Descriptions:**
+
+- _gitserver: 99%+ container memory usage by instance_ (`warning_gitserver_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
 
 # gitserver: container_restarts
 
@@ -431,17 +431,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
 
-# github-proxy: container_memory_usage
-
-**Descriptions:**
-
-- _github-proxy: 99%+ container memory usage by instance_ (`warning_github-proxy_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-
 # github-proxy: container_cpu_usage
 
 **Descriptions:**
@@ -452,6 +441,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+
+# github-proxy: container_memory_usage
+
+**Descriptions:**
+
+- _github-proxy: 99%+ container memory usage by instance_ (`warning_github-proxy_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
 
 # github-proxy: container_restarts
 
@@ -556,17 +556,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# precise-code-intel-bundle-manager: container_memory_usage
-
-**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_ (`warning_precise-code-intel-bundle-manager_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-
 # precise-code-intel-bundle-manager: container_cpu_usage
 
 **Descriptions:**
@@ -577,6 +566,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+
+# precise-code-intel-bundle-manager: container_memory_usage
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_ (`warning_precise-code-intel-bundle-manager_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
 
 # precise-code-intel-bundle-manager: container_restarts
 
@@ -668,17 +668,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# precise-code-intel-worker: container_memory_usage
-
-**Descriptions:**
-
-- _precise-code-intel-worker: 99%+ container memory usage by instance_ (`warning_precise-code-intel-worker_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-
 # precise-code-intel-worker: container_cpu_usage
 
 **Descriptions:**
@@ -689,6 +678,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+
+# precise-code-intel-worker: container_memory_usage
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 99%+ container memory usage by instance_ (`warning_precise-code-intel-worker_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
 
 # precise-code-intel-worker: container_restarts
 
@@ -780,17 +780,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# precise-code-intel-indexer: container_memory_usage
-
-**Descriptions:**
-
-- _precise-code-intel-indexer: 99%+ container memory usage by instance_ (`warning_precise-code-intel-indexer_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-
 # precise-code-intel-indexer: container_cpu_usage
 
 **Descriptions:**
@@ -801,6 +790,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+
+# precise-code-intel-indexer: container_memory_usage
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 99%+ container memory usage by instance_ (`warning_precise-code-intel-indexer_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
 
 # precise-code-intel-indexer: container_restarts
 
@@ -1004,17 +1004,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs replacer` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# replacer: container_memory_usage
-
-**Descriptions:**
-
-- _replacer: 99%+ container memory usage by instance_ (`warning_replacer_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-
 # replacer: container_cpu_usage
 
 **Descriptions:**
@@ -1025,6 +1014,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
+
+# replacer: container_memory_usage
+
+**Descriptions:**
+
+- _replacer: 99%+ container memory usage by instance_ (`warning_replacer_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
 
 # replacer: container_restarts
 
@@ -1116,17 +1116,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs repo-updater` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# repo-updater: container_memory_usage
-
-**Descriptions:**
-
-- _repo-updater: 99%+ container memory usage by instance_ (`warning_repo-updater_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-
 # repo-updater: container_cpu_usage
 
 **Descriptions:**
@@ -1137,6 +1126,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+
+# repo-updater: container_memory_usage
+
+**Descriptions:**
+
+- _repo-updater: 99%+ container memory usage by instance_ (`warning_repo-updater_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
 
 # repo-updater: container_restarts
 
@@ -1228,6 +1228,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs searcher` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# searcher: container_cpu_usage
+
+**Descriptions:**
+
+- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_searcher_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+
+# searcher: container_memory_usage
+
+**Descriptions:**
+
+- _searcher: 99%+ container memory usage by instance_ (`warning_searcher_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+
 # searcher: container_restarts
 
 **Descriptions:**
@@ -1243,27 +1265,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' searcher` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the searcher container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs searcher` (note this will include logs from the previous and currently running container).
 
-# searcher: container_memory_usage
+# searcher: fs_inodes_used
 
 **Descriptions:**
 
-- _searcher: 99%+ container memory usage by instance_ (`warning_searcher_container_memory_usage`)
+- _searcher: 3e+06+ fs inodes in use by instance_ (`warning_searcher_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-
-# searcher: container_cpu_usage
-
-**Descriptions:**
-
-- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_searcher_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # searcher: provisioning_container_cpu_usage_7d
 
@@ -1329,17 +1340,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs symbols` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# symbols: container_memory_usage
-
-**Descriptions:**
-
-- _symbols: 99%+ container memory usage by instance_ (`warning_symbols_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-
 # symbols: container_cpu_usage
 
 **Descriptions:**
@@ -1350,6 +1350,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+
+# symbols: container_memory_usage
+
+**Descriptions:**
+
+- _symbols: 99%+ container memory usage by instance_ (`warning_symbols_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
 
 # symbols: container_restarts
 
@@ -1425,17 +1436,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
 
-# syntect-server: container_memory_usage
-
-**Descriptions:**
-
-- _syntect-server: 99%+ container memory usage by instance_ (`warning_syntect-server_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-
 # syntect-server: container_cpu_usage
 
 **Descriptions:**
@@ -1446,6 +1446,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+
+# syntect-server: container_memory_usage
+
+**Descriptions:**
+
+- _syntect-server: 99%+ container memory usage by instance_ (`warning_syntect-server_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
 
 # syntect-server: container_restarts
 
@@ -1521,17 +1532,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
 
-# zoekt-indexserver: container_memory_usage
-
-**Descriptions:**
-
-- _zoekt-indexserver: 99%+ container memory usage by instance_ (`warning_zoekt-indexserver_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-
 # zoekt-indexserver: container_cpu_usage
 
 **Descriptions:**
@@ -1542,6 +1542,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+
+# zoekt-indexserver: container_memory_usage
+
+**Descriptions:**
+
+- _zoekt-indexserver: 99%+ container memory usage by instance_ (`warning_zoekt-indexserver_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 
 # zoekt-indexserver: container_restarts
 
@@ -1617,17 +1628,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 
-# zoekt-webserver: container_memory_usage
-
-**Descriptions:**
-
-- _zoekt-webserver: 99%+ container memory usage by instance_ (`warning_zoekt-webserver_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-
 # zoekt-webserver: container_cpu_usage
 
 **Descriptions:**
@@ -1638,6 +1638,17 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+
+# zoekt-webserver: container_memory_usage
+
+**Descriptions:**
+
+- _zoekt-webserver: 99%+ container memory usage by instance_ (`warning_zoekt-webserver_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
 
 # zoekt-webserver: container_restarts
 
@@ -1723,17 +1734,6 @@ for assistance.
 
 Ensure that your `observability.alerts` configuration (in site configuration) is valid.
 
-# prometheus: container_memory_usage
-
-**Descriptions:**
-
-- _prometheus: 99%+ container memory usage by instance_ (`warning_prometheus_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
-
 # prometheus: container_cpu_usage
 
 **Descriptions:**
@@ -1744,6 +1744,17 @@ Ensure that your `observability.alerts` configuration (in site configuration) is
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+
+# prometheus: container_memory_usage
+
+**Descriptions:**
+
+- _prometheus: 99%+ container memory usage by instance_ (`warning_prometheus_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
 
 # prometheus: container_restarts
 

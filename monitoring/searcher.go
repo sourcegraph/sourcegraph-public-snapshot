@@ -39,9 +39,12 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("searcher"),
-						sharedContainerMemoryUsage("searcher"),
 						sharedContainerCPUUsage("searcher"),
+						sharedContainerMemoryUsage("searcher"),
+					},
+					{
+						sharedContainerRestarts("searcher"),
+						sharedContainerFsInodes("searcher"),
 					},
 				},
 			},

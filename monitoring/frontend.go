@@ -450,8 +450,8 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("frontend"),
 						sharedContainerCPUUsage("frontend"),
+						sharedContainerMemoryUsage("frontend"),
 					},
 					{
 						sharedContainerRestarts("frontend"),

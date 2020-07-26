@@ -91,8 +91,8 @@ func GitServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("gitserver"),
 						sharedContainerCPUUsage("gitserver"),
+						sharedContainerMemoryUsage("gitserver"),
 					},
 					{
 						sharedContainerRestarts("gitserver"),

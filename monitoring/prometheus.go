@@ -43,8 +43,8 @@ func Prometheus() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerMemoryUsage("prometheus"),
 						sharedContainerCPUUsage("prometheus"),
+						sharedContainerMemoryUsage("prometheus"),
 					},
 					{
 						sharedContainerRestarts("prometheus"),
