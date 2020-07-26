@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // This file contains shared declarations between dashboards. In general, you should NOT be making
@@ -208,9 +209,9 @@ var sharedGoGoroutines sharedObservable = func(containerName string) Observable 
 	return Observable{
 		Name:              "go_goroutines",
 		Description:       "maximum active goroutines for 10m",
-		Query:             fmt.Sprintf(`max by (instance) (go_goroutines{job=~".*%s"})`, containerName), // TODO over 10m
+		Query:             fmt.Sprintf(`max by (instance) (go_goroutines{job=~".*%s"})`, containerName),
 		DataMayNotExist:   true,
-		Warning:           Alert{GreaterOrEqual: 10000},
+		Warning:           Alert{GreaterOrEqual: 10000, For: 10 * time.Minute},
 		Owner:             ObservableOwnerDistribution,
 		PossibleSolutions: "none",
 	}
@@ -234,8 +235,8 @@ var sharedKubernetesPodsAvailable sharedObservable = func(containerName string) 
 	return Observable{
 		Name:              "pods_missing",
 		Description:       "maximum missing pods for a service for 10m",
-		Query:             fmt.Sprintf(`sum by (app) (up{app="%[1]s"}) / count by (app) (up{app="%[1]s"})`, containerName), // TODO over 10m
-		Critical:          Alert{LessOrEqual: 0.9},
+		Query:             fmt.Sprintf(`sum by (app) (up{app="%[1]s"}) / count by (app) (up{app="%[1]s"})`, containerName),
+		Critical:          Alert{LessOrEqual: 0.9, For: 10 * time.Minute},
 		DataMayNotExist:   true,
 		Owner:             ObservableOwnerDistribution,
 		PossibleSolutions: "none",
