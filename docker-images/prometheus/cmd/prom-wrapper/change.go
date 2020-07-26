@@ -57,7 +57,7 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		// How long to wait before sending a notification about new alerts that are added to a group of alerts - in this case,
 		// equivalent to how long to wait until notifying about an alert re-firing
 		GroupInterval:  duration(1 * time.Minute),
-		RepeatInterval: duration(48 * time.Hour),
+		RepeatInterval: duration(7 * 24 * time.Hour),
 
 		// Route alerts to notifications
 		Routes: []*amconfig.Route{
