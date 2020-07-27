@@ -492,7 +492,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// that will generate a real error that we can use to exercise the
 			// error path.
 			store, rstore, clock := gitLabTestSetup(t, db)
-			store.db = &noNestingTx{store.db}
+			store = NewStoreWithClock(&noNestingTx{store.DB()}, clock.now)
 			h := NewGitLabWebhook(store, rstore, clock.now)
 
 			event := &webhooks.MergeRequestCloseEvent{
@@ -518,7 +518,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			store, rstore, clock := gitLabTestSetup(t, db)
-			store.db = &noNestingTx{store.db}
+			store = NewStoreWithClock(&noNestingTx{store.DB()}, clock.now)
 			h := NewGitLabWebhook(store, rstore, clock.now)
 
 			t.Run("missing merge request", func(t *testing.T) {
