@@ -108,10 +108,10 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                     <div className="search-page__repogroup-content container-fluid mt-5">
                         <div className="d-flex align-items-baseline mb-3">
                             <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
-                            <span className="text-monospace font-weight-normal web-content__small">
+                            <small className="text-monospace font-weight-normal small">
                                 <span className="web-content__search-keyword">repogroup:</span>
                                 <i>name</i>
-                            </span>
+                            </small>
                         </div>
                         <div className="search-page__repogroup-list-cards">
                             {repogroupList.map(repogroup => (
@@ -207,10 +207,10 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                 <div className="align-items-baseline mb-4">
                                     <h3 className="search-page__help-content-header">
                                         Search a language{' '}
-                                        <span className="text-monospace font-weight-normal web-content__small">
+                                        <small className="text-monospace font-weight-normal">
                                             <span className="web-content__search-keyword ml-1">lang:</span>
-                                            <i className="search-page__keyword-value-text web-content__small">name</i>
-                                        </span>
+                                            <i className="search-page__keyword-value-text">name</i>
+                                        </small>
                                     </h3>
                                 </div>
                                 <div className="d-flex row-cols-2 mt-2">

@@ -1,5 +1,9 @@
 .web-content {
     --link-color: #329af0;
+    font-weight: normal;
+    font-size: 14px;
+    line-height: 20px;
+    color: $gray-06;
 
     h1,
     h2,
@@ -19,13 +23,6 @@
         font-weight: normal;
     }
 
-    p {
-        font-weight: normal;
-        font-size: 14px;
-        line-height: 20px;
-        color: $gray-06;
-    }
-
     i {
         color: $gray-06;
     }
@@ -34,18 +31,19 @@
         color: $gray-11;
     }
 
-    &__small {
+    small {
         font-size: 12px;
     }
 
     &__search-keyword {
-        color: var(--link-color);
+        color: #329af0;
     }
 }
 
 .theme-light {
     .web-content {
         --link-color: #1c7cd6;
+        color: #2b3750;
 
         h1,
         h2 {
@@ -66,13 +64,8 @@
             color: $gray-11;
         }
 
-        p,
-        i {
-            color: #2b3750;
-        }
-
         &__search-keyword {
-            color: var(--link-color);
+            color: #1c7cd6;
         }
     }
 }

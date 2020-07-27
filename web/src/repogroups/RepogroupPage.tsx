@@ -124,10 +124,10 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                             <h3 className="mb-3">{example.title}</h3>
                             <p>{example.description}</p>
                             <div className="d-flex mb-4">
-                                <div className="repogroup-page__example-bar web-content__small form-control text-monospace ">
+                                <small className="repogroup-page__example-bar form-control text-monospace ">
                                     <span className="web-content__search-keyword">repogroup:</span>
                                     {props.repogroupMetadata.name} {example.exampleQuery}
-                                </div>
+                                </small>
                                 <div className="d-flex">
                                     <button
                                         className="btn btn-primary btn-sm search-button__btn test-search-button btn-secondary"
