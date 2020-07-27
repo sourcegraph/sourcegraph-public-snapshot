@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -208,6 +209,9 @@ func (a *apiRequest) do() error {
 	if cfg.AccessToken != "" {
 		req.Header.Set("Authorization", "token "+cfg.AccessToken)
 	}
+	if *a.flags.trace {
+		req.Header.Set("X-Sourcegraph-Should-Trace", "true")
+	}
 	for k, v := range cfg.AdditionalHeaders {
 		req.Header.Set(k, v)
 	}
@@ -219,6 +223,11 @@ func (a *apiRequest) do() error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	// Check trace header before we potentially early exit
+	if *a.flags.trace {
+		log.Printf("x-trace: %s", resp.Header.Get("x-trace"))
+	}
 
 	// Our request may have failed before the reaching GraphQL endpoint, so
 	// confirm the status code. You can test this easily with e.g. an invalid
@@ -276,6 +285,7 @@ func (a *apiRequest) do() error {
 // API requests. e.g. the ability to turn any CLI command into a curl command.
 type apiFlags struct {
 	getCurl *bool
+	trace   *bool
 }
 
 // newAPIFlags creates the API flags. It should be invoked once at flag setup
@@ -283,6 +293,7 @@ type apiFlags struct {
 func newAPIFlags(flagSet *flag.FlagSet) *apiFlags {
 	return &apiFlags{
 		getCurl: flagSet.Bool("get-curl", false, "Print the curl command for executing this query and exit (WARNING: includes printing your access token!)"),
+		trace:   flagSet.Bool("trace", false, "Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing"),
 	}
 }
 
