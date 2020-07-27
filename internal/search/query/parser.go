@@ -8,6 +8,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/inconshreveable/log15"
 )
 
 /*
@@ -464,7 +466,13 @@ func (p *parser) ParseFieldValue() (string, error) {
 	if p.match(DQUOTE) {
 		return delimited('"')
 	}
-	value, advance, _ := ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
+	// First try scan a field value for cases like (a b repo:foo), where a
+	// trailing ) may be closing a group, and not part of the value.
+	value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:])
+	if !ok {
+		// The above failed, so attempt a best effort.
+		value, advance, _ = ScanValue(p.buf[p.pos:], false)
+	}
 	p.pos += advance
 	return value, nil
 }
@@ -578,16 +586,18 @@ func partitionParameters(nodes []Node) []Node {
 
 // concatPatterns extends the left pattern with the right pattern, appropriately
 // updating the ranges and annotations.
-func concatPatterns(left, right Pattern) Pattern {
+func concatPatterns(left, right Pattern) (Pattern, error) {
 	if left.Annotation.Range.End.Column != right.Annotation.Range.Start.Column {
-		panic(fmt.Sprintf("Expected contiguous patterns to concatenate, but %s ends at %d and %s starts at %d",
-			left, left.Annotation.Range.End.Column,
-			right, right.Annotation.Range.Start.Column))
+		log15.Warn("parser can't process concatPatterns",
+			"left", left, "right", right,
+			"leftEnd", left.Annotation.Range.End.Column,
+			"rightBegin", right.Annotation.Range.Start.Column)
+		return Pattern{}, &UnsupportedError{Msg: "invalid query syntax"}
 	}
 	left.Value += right.Value
 	left.Annotation.Labels |= right.Annotation.Labels
 	left.Annotation.Range.End.Column += len(right.Value)
-	return left
+	return left, nil
 }
 
 // parseLeavesRegexp scans for consecutive leaf nodes when interpreting the
@@ -623,7 +633,11 @@ loop:
 							if len(nodes) > 0 {
 								if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
 									previous.Annotation.Labels = Regexp | HeuristicParensAsPatterns
-									nodes[len(nodes)-1] = concatPatterns(previous, pattern)
+									result, err := concatPatterns(previous, pattern)
+									if err != nil {
+										return nil, err
+									}
+									nodes[len(nodes)-1] = result
 									p.pos += advance
 									continue
 								}
