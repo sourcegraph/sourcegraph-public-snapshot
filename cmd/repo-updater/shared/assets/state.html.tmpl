@@ -14,7 +14,13 @@
 
 <body>
     <div class="container">
-        {{$schedulerDump := index . 0}} {{/* data object is a list of debug dumps */}}
+        {{$schedulerDump := index . 0}}
+        {{if gt (len .) 1}}
+            <div class="alert alert-info mt-5 mx-auto text-center" onclick="loadJSON()" role="button">
+                To view additional debug dumps, please request a JSON response
+                <i class="fas fa-link ml-2"></i>
+            </div>
+        {{end}}
         <div class="mt-5 w-9/12">
             <h4 class="mb-3">Schedule</h4>
             <p>
@@ -28,8 +34,8 @@
                     <th>
                         <span>Update Interval</span>
                         <i class="fas fa-info-circle my-auto ml-3" data-toggle="tooltip"
-                           title="Calculated based on the time that has elapsed since the last commit, divided by a constant factor of 2."
-                        />
+                           title="Calculated based on the time that has elapsed since the last commit, divided by a constant factor of 2.">
+                        </i>
                     </th>
                     <th>Next Update</th>
                 </tr>
@@ -103,6 +109,9 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
     <script>
         $('[data-toggle="tooltip"]').tooltip()
+        function loadJSON() {
+            window.location.search += '&format=json'
+        }
     </script>
 </body>
 </html>

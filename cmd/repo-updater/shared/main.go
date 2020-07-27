@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/gddo/httputil"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -221,16 +223,50 @@ func Main(enterpriseInit EnterpriseInit) {
 			for _, dumper := range debugDumpers {
 				dumps = append(dumps, dumper.DebugDump())
 			}
-			tmpl := template.New("state.html").Funcs(template.FuncMap{
-				"truncateDuration": func(d time.Duration) time.Duration {
-					return d.Truncate(time.Second)
-				},
-			})
-			template.Must(tmpl.Parse(assets.MustAssetString("state.html.tmpl")))
-			err := tmpl.Execute(w, dumps)
-			if err != nil {
-				http.Error(w, "failed to render template: "+err.Error(), http.StatusInternalServerError)
-				return
+
+			const (
+				textPlain       = "text/plain"
+				applicationJson = "application/json"
+			)
+
+			// Negotiate the content type.
+			contentTypeOffers := []string{textPlain, applicationJson}
+			defaultOffer := textPlain
+			contentType := httputil.NegotiateContentType(r, contentTypeOffers, defaultOffer)
+
+			// Allow users to override the negotiated content type so that e.g. browser
+			// users can easily request json by adding ?format=json to
+			// the URL.
+			switch r.URL.Query().Get("format") {
+			case "json":
+				contentType = applicationJson
+			}
+
+			switch contentType {
+			case applicationJson:
+				p, err := json.MarshalIndent(dumps, "", "  ")
+				if err != nil {
+					http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write(p)
+
+			default:
+				// This case also applies for defaultOffer. Note that this is preferred
+				// over e.g. a 406 status code, according to the MDN:
+				// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
+				tmpl := template.New("state.html").Funcs(template.FuncMap{
+					"truncateDuration": func(d time.Duration) time.Duration {
+						return d.Truncate(time.Second)
+					},
+				})
+				template.Must(tmpl.Parse(assets.MustAssetString("state.html.tmpl")))
+				err := tmpl.Execute(w, dumps)
+				if err != nil {
+					http.Error(w, "failed to render template: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
 		}),
 	})
