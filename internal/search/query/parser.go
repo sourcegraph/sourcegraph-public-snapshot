@@ -67,6 +67,8 @@ type Operator struct {
 	Annotation Annotation
 }
 
+var errNegationNotSupported = fmt.Errorf("You NOT can only negate fields.Check the documentation to see which fields support negation.")
+
 func (node Pattern) String() string {
 	var v string
 	if node.Negated {
@@ -119,6 +121,7 @@ const (
 	SQUOTE keyword = "'"
 	DQUOTE keyword = "\""
 	SLASH  keyword = "/"
+	NOT    keyword = "not"
 )
 
 func isSpace(buf []byte) bool {
@@ -236,6 +239,22 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 	return strings.EqualFold(v, string(keyword))
 }
 
+// matchUnaryKeyword is like match but expects the keyword to be FOLLOWED by whitespace.
+func (p *parser) matchUnaryKeyword(keyword keyword) bool {
+	if p.pos != 0 && !isSpace(p.buf[p.pos-1:p.pos]) {
+		return false
+	}
+	v, err := p.peek(len(string(keyword)))
+	if err != nil {
+		return false
+	}
+	after := p.pos + len(string(keyword))
+	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
+		return false
+	}
+	return strings.EqualFold(v, string(keyword))
+}
+
 // skipSpaces advances the input and places the parser position at the next
 // non-space value.
 func (p *parser) skipSpaces() error {
@@ -248,6 +267,50 @@ func (p *parser) skipSpaces() error {
 		return io.ErrShortBuffer
 	}
 	return nil
+}
+
+func (p *parser) parseNegatedParameter() (Parameter, error) {
+	start := p.pos
+	p.pos += 3 // this works because NOT is ASCII-only
+
+	err := p.skipSpaces()
+	if err != nil {
+		return Parameter{}, err
+	}
+
+	// we only support NOT in front of fields
+	field, advance := ScanField(p.buf[p.pos:])
+	if field == "" {
+		return Parameter{}, errNegationNotSupported
+	}
+
+	// simple variant where we just replace NOT with a - in front of the next string
+	// foo NOT content:bar -> foo -content:bar
+	// foo NOT bar -> foo -bar ?? Do we want this?
+	//p.pos--
+	//p.buf[p.pos] = '-' // this works because ' ' and '-' are both ASCII.
+	//return nil
+
+	// alternatively. If field =="", wrap whatever comes after NOT in a content field
+
+	if _, exists := allFields[strings.ToLower(field)]; !exists {
+		// Not a recognized parameter field.
+		return Parameter{}, errNegationNotSupported
+	}
+
+	// alternatively. If field is not recognized, treat it as a negated content field
+
+	p.pos += advance
+	value, err := p.ParseFieldValue()
+	if err != nil {
+		return Parameter{}, err
+	}
+	return Parameter{
+		Field:      field,
+		Value:      value,
+		Negated:    true,
+		Annotation: Annotation{Range: newRange(start, p.pos)},
+	}, nil
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -685,6 +748,12 @@ loop:
 		case p.matchKeyword(AND), p.matchKeyword(OR):
 			// Caller advances.
 			break loop
+		case p.matchUnaryKeyword(NOT):
+			parameter, err := p.parseNegatedParameter()
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, parameter)
 		default:
 			parameter, ok, err := p.ParseParameter()
 			if err != nil {

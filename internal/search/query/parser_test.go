@@ -61,6 +61,13 @@ func TestParseParameterList(t *testing.T) {
 			WantLabels: Regexp,
 		},
 		{
+			Name:       "NOT prefix on field",
+			Input:      `NOT file:README.md`,
+			Want:       `{"field":"file","value":"README.md","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+			WantLabels: Regexp,
+		},
+		{
 			Name:       "Double minus prefix on field",
 			Input:      `--foo:bar`,
 			Want:       `{"value":"--foo:bar","negated":false}`,
