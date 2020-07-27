@@ -373,15 +373,9 @@ func TestIsPatternNegated(t *testing.T) {
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
-
-			if andOrQuery, ok := q.(*query.AndOrQuery); ok {
-				got := isPatternNegated(andOrQuery.Query)
-
-				if got != tt.want {
-					t.Fatalf("got %t\nwant %t", got, tt.want)
-				}
-			} else {
-				t.Fatalf("the query should have been an AndOrQuery")
+			got := isPatternNegated(q.(*query.AndOrQuery).Query)
+			if got != tt.want {
+				t.Fatalf("got %t\nwant %t", got, tt.want)
 			}
 		})
 	}
