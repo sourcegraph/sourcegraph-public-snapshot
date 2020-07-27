@@ -37,6 +37,7 @@ describe('ScopePage', () => {
                             location={location}
                             copyQueryButton={false}
                             versionContext={undefined}
+                            globbing={false}
                         />
                     </MemoryRouter>
                 )

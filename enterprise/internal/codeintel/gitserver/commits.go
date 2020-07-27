@@ -24,13 +24,24 @@ func CommitsNear(ctx context.Context, store store.Store, repositoryID int, commi
 		return nil, err
 	}
 
-	return parseCommitsNear(strings.Split(out, "\n")), nil
+	return parseParents(strings.Split(out, "\n")), nil
 }
 
-// parseCommitsNear converts the output of git log into a map from commits to parent commits.
+// CommitGraph returns the commit graph for the given repository as a mapping from a commit
+// to its parents.
+func CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error) {
+	out, err := execGitCommand(ctx, store, repositoryID, "log", "--all", "--pretty=%H %P")
+	if err != nil {
+		return nil, err
+	}
+
+	return parseParents(strings.Split(out, "\n")), nil
+}
+
+// parseParents converts the output of git log into a map from commits to parent commits.
 // If a commit is listed but has no ancestors then its parent slice is empty but is still
 // present in the map.
-func parseCommitsNear(pair []string) map[string][]string {
+func parseParents(pair []string) map[string][]string {
 	commits := map[string][]string{}
 
 	for _, pair := range pair {

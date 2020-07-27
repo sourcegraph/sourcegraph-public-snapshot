@@ -187,7 +187,7 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 		return nil, err
 	}
 
-	return &store{Store: txBase, options: s.options}, nil
+	return &store{Store: txBase, options: s.options, columnReplacer: s.columnReplacer}, nil
 }
 
 // Dequeue selects the first unlocked record matching the given conditions and locks it in a new transaction that

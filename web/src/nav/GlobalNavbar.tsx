@@ -56,6 +56,9 @@ interface Props
     isSearchRelatedPage: boolean
     showCampaigns: boolean
 
+    // Whether globbing is enabled for filters.
+    globbing: boolean
+
     /**
      * Which variation of the global navbar to render.
      *

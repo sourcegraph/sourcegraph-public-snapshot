@@ -167,6 +167,7 @@ const config = {
             loader: 'sass-loader',
             options: {
               sassOptions: {
+                implementation: require('sass'),
                 includePaths: [nodeModulesPath],
               },
             },

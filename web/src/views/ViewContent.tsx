@@ -24,6 +24,7 @@ export interface ViewContentProps
     viewContent: View['content']
     location: H.Location
     history: H.History
+    globbing: boolean
 }
 
 /**

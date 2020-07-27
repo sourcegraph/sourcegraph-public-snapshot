@@ -21,6 +21,7 @@ const defaultProps = {
     editable: true,
     negated: false,
     isHomepage: false,
+    globbing: true,
     onSubmit: sinon.spy(),
     onFilterEdited: sinon.spy(),
     onFilterDeleted: sinon.spy(),

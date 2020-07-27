@@ -119,7 +119,6 @@
                     color: $gray-19;
                 }
             }
-        }
     }
 }
 
@@ -130,6 +129,10 @@
                 a {
                     color: $white;
                 }
+            }
+
+            &__web-link {
+                color: #1c7cd6;
             }
         }
     }

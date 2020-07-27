@@ -17,6 +17,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 100},
 							PanelOptions:      PanelOptions().LegendFormat("uploads queued for processing"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("upload queue growth rate"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -36,6 +38,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -49,6 +52,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -58,6 +62,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("store operation"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -75,6 +80,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -84,6 +90,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("uploads"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -93,6 +100,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -111,6 +119,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 300},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -120,6 +129,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -132,6 +142,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -141,6 +152,7 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},

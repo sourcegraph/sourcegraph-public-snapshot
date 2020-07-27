@@ -252,6 +252,8 @@ github.com/docker/go-units v0.4.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDD
 github.com/dustin/go-humanize v0.0.0-20171111073723-bb3d318650d4/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
+github.com/dvyukov/go-fuzz v0.0.0-20200318091601-be3528f3a813 h1:NgO45/5mBLRVfiXerEFzH6ikcZ7DNRPS639xFg3ENzU=
+github.com/dvyukov/go-fuzz v0.0.0-20200318091601-be3528f3a813/go.mod h1:11Gm+ccJnvAhCNLlf5+cS9KjtbaD5I5zaZpFMsTHWTw=
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
@@ -1203,6 +1205,8 @@ github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0 h1:AEImdu3+4
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
 github.com/sourcegraph/graphql-go v0.0.0-20200626080007-7fa8b67cbb1d h1:a3EEtOsViGJhCaNCSn3mdTx3oz0XVCbbQcom7awXXQs=
 github.com/sourcegraph/graphql-go v0.0.0-20200626080007-7fa8b67cbb1d/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
+github.com/sourcegraph/graphql-go v0.0.0-20200723081120-8462b0b708c4 h1:w3lLhAnBWmcImnrcANpgylh29D6Pc5TvX/C8gh6NwL0=
+github.com/sourcegraph/graphql-go v0.0.0-20200723081120-8462b0b708c4/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7 h1:G58fa9uWw59V5l92ijZKpT49lbAdv0JdruZUUZmjdeI=
 github.com/sourcegraph/jsonx v0.0.0-20200625022044-c22a595bbad7/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
@@ -1213,6 +1217,10 @@ github.com/sourcegraph/zoekt v0.0.0-20200714221025-dea986a54d01 h1:Qp+BmPgBkC4e0
 github.com/sourcegraph/zoekt v0.0.0-20200714221025-dea986a54d01/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/sourcegraph/zoekt v0.0.0-20200720095407-6597aebe357e h1:qbLJk6WfgKtPsgPau7sU+Lw2rzJikjUaelk3BCPK4n0=
 github.com/sourcegraph/zoekt v0.0.0-20200720095407-6597aebe357e/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
+github.com/sourcegraph/zoekt v0.0.0-20200724160933-3e5f0f39e0d9 h1:lFwtlZslppl4cIb0ZKbCqosOOHxiMZqtgEUs4r77/VM=
+github.com/sourcegraph/zoekt v0.0.0-20200724160933-3e5f0f39e0d9/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
+github.com/sourcegraph/zoekt v0.0.0-20200724162241-6ed80895db7e h1:BrYWJw2LeDDCgf99FpfMRdnzzbAjqKsEgaqhlIuxd7c=
+github.com/sourcegraph/zoekt v0.0.0-20200724162241-6ed80895db7e/go.mod h1:WleTVLMEfvGF6uZ/mSWXVUH1H4NPxAcu6YbJ0TORdWc=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72 h1:qLC7fQah7D6K1B0ujays3HV9gkFtllcxhzImRR7ArPQ=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=

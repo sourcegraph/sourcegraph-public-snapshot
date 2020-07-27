@@ -30,6 +30,9 @@ func NewHandleWithDB(db dbutil.DB) *TransactableHandle {
 	return &TransactableHandle{db: db}
 }
 
+// DB returns the underlying database handle.
+func (h *TransactableHandle) DB() dbutil.DB { return h.db }
+
 // InTransaction returns true if the underlying database handle is in a transaction.
 func (h *TransactableHandle) InTransaction() bool {
 	_, ok := h.db.(dbutil.Tx)
