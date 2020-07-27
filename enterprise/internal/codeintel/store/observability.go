@@ -41,6 +41,9 @@ type ObservedStore struct {
 	packageReferencePagerOperation          *observation.Operation
 	hasCommitOperation                      *observation.Operation
 	updateCommitsOperation                  *observation.Operation
+	markRepositoryAsDirtyOperation          *observation.Operation
+	dirtyRepositoriesOperation              *observation.Operation
+	fixCommitsOperation                     *observation.Operation
 	indexableRepositoriesOperation          *observation.Operation
 	updateIndexableRepositoryOperation      *observation.Operation
 	resetIndexableRepositoriesOperation     *observation.Operation
@@ -213,6 +216,21 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"update_commits"},
 			Metrics:      metrics,
 		}),
+		markRepositoryAsDirtyOperation: observationContext.Operation(observation.Op{
+			Name:         "store.MarkRepositoryAsDirty",
+			MetricLabels: []string{"mark_repository_as_dirty"},
+			Metrics:      metrics,
+		}),
+		dirtyRepositoriesOperation: observationContext.Operation(observation.Op{
+			Name:         "store.DirtyRepositories",
+			MetricLabels: []string{"dirty_repositories"},
+			Metrics:      metrics,
+		}),
+		fixCommitsOperation: observationContext.Operation(observation.Op{
+			Name:         "store.FixCommits",
+			MetricLabels: []string{"fix_commits"},
+			Metrics:      metrics,
+		}),
 		indexableRepositoriesOperation: observationContext.Operation(observation.Op{
 			Name:         "store.IndexableRepositories",
 			MetricLabels: []string{"indexable_repositories"},
@@ -337,6 +355,9 @@ func (s *ObservedStore) wrap(other Store) Store {
 		packageReferencePagerOperation:          s.packageReferencePagerOperation,
 		hasCommitOperation:                      s.hasCommitOperation,
 		updateCommitsOperation:                  s.updateCommitsOperation,
+		markRepositoryAsDirtyOperation:          s.markRepositoryAsDirtyOperation,
+		dirtyRepositoriesOperation:              s.dirtyRepositoriesOperation,
+		fixCommitsOperation:                     s.fixCommitsOperation,
 		indexableRepositoriesOperation:          s.indexableRepositoriesOperation,
 		updateIndexableRepositoryOperation:      s.updateIndexableRepositoryOperation,
 		resetIndexableRepositoriesOperation:     s.resetIndexableRepositoriesOperation,
@@ -587,6 +608,27 @@ func (s *ObservedStore) UpdateCommits(ctx context.Context, repositoryID int, com
 	ctx, endObservation := s.updateCommitsOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return s.store.UpdateCommits(ctx, repositoryID, commits)
+}
+
+// MarkRepositoryAsDirty calls into the inner store and registers the observed results.
+func (s *ObservedStore) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
+	ctx, endObservation := s.markRepositoryAsDirtyOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.MarkRepositoryAsDirty(ctx, repositoryID)
+}
+
+// DirtyRepositories calls into the inner store and registers the observed results.
+func (s *ObservedStore) DirtyRepositories(ctx context.Context) (repositoryIDs map[int]int, err error) {
+	ctx, endObservation := s.dirtyRepositoriesOperation.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(repositoryIDs)), observation.Args{}) }()
+	return s.store.DirtyRepositories(ctx)
+}
+
+// CalculateVisibleUploads calls into the inner store and registers the observed results.
+func (s *ObservedStore) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
+	ctx, endObservation := s.fixCommitsOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return s.store.CalculateVisibleUploads(ctx, repositoryID, graph, tipCommit, dirtyToken)
 }
 
 // IndexableRepositories calls into the inner store and registers the observed results.
