@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -222,7 +221,11 @@ func Main(enterpriseInit EnterpriseInit) {
 			for _, dumper := range debugDumpers {
 				dumps = append(dumps, dumper.DebugDump())
 			}
-			tmpl := template.New("state.html").Funcs(sprig.FuncMap())
+			tmpl := template.New("state.html").Funcs(template.FuncMap{
+				"truncateDuration": func(d time.Duration) time.Duration {
+					return d.Truncate(time.Second)
+				},
+			})
 			template.Must(tmpl.Parse(assets.MustAssetString("state.html.tmpl")))
 			err := tmpl.Execute(w, dumps)
 			if err != nil {

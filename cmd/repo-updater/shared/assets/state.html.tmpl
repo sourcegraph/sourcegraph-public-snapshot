@@ -14,7 +14,7 @@
 
 <body>
     <div class="container">
-        {{$schedulerDump := first .}} {{/* data object is a list of debug dumps */}}
+        {{$schedulerDump := index . 0}} {{/* data object is a list of debug dumps */}}
         <div class="mt-5 w-9/12">
             <h4 class="mb-3">Schedule</h4>
             <p>
@@ -44,8 +44,7 @@
                                 {{.Repo.Name}}
                             </a>
                         </td>
-                        {{/* truncate miliseconds using regex */}}
-                        <td>{{regexReplaceAll "\\..*s" (toString .Interval) "s"}}</td>
+                        <td>{{truncateDuration .Interval}}</td>
                         <td>{{.Due.Format "Mon, 02 Jan 2006 15:04:05 MST"}}</td>
                     </tr>
                 {{else}}
