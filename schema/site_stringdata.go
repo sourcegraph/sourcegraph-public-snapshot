@@ -663,8 +663,8 @@ const SiteSchemaJSON = `{
             "type": "boolean",
             "default": false
           },
-          "onOwners": {
-            "description": "Receive alerts owned by the specific teams - for most use cases, we recommend against using this.",
+          "owners": {
+            "description": "Only receive alerts owned by the specific teams - for most use cases, we recommend against using this.",
             "type": "array",
             "items": {
               "type": "string"

@@ -63,9 +63,9 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem f
 		}
 		colorTemplate := fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, activeColor, colorGood)
 
-		// generate a new receiver and route for alerts with 'onOwners'
-		if len(alert.OnOwners) > 0 {
-			owners := strings.Join(alert.OnOwners, "|")
+		// generate a new receiver and route for alerts with 'Owners'
+		if len(alert.Owners) > 0 {
+			owners := strings.Join(alert.Owners, "|")
 			ownerRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
 			if err != nil {
 				newProblem(fmt.Errorf("failed to apply alert %d: %w", i, err))

@@ -843,8 +843,8 @@ type ObservabilityAlerts struct {
 	// Level description: Sourcegraph alert level to subscribe to notifications for.
 	Level    string   `json:"level"`
 	Notifier Notifier `json:"notifier"`
-	// OnOwners description: Receive alerts owned by the specific teams - for most use cases, we recommend against using this.
-	OnOwners []string `json:"onOwners,omitempty"`
+	// Owners description: Only receive alerts owned by the specific teams - for most use cases, we recommend against using this.
+	Owners []string `json:"owners,omitempty"`
 }
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.
