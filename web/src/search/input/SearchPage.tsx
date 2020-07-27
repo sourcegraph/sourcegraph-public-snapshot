@@ -209,7 +209,7 @@ export const SearchPage: React.FunctionComponent<Props> = props => {
                                         Search a language{' '}
                                         <small className="text-monospace font-weight-normal">
                                             <span className="web-content__search-keyword ml-1">lang:</span>
-                                            <i className="search-page__keyword-value-text">name</i>
+                                            <i>name</i>
                                         </small>
                                     </h3>
                                 </div>
