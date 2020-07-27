@@ -26,6 +26,31 @@ const plugins = [
   'typescript-operations',
 ];
 
+const codeToInsertIntoTypes = `
+export type ID = string
+export type GitObjectID = string
+export type DateTime = string
+export type JSONCString = string
+
+export interface IGraphQLResponseRoot {
+    data?: IQuery | IMutation
+    errors?: IGraphQLResponseError[]
+}
+
+export interface IGraphQLResponseError {
+    /** Required for all errors */
+    message: string
+    locations?: IGraphQLResponseErrorLocation[]
+    /** 7.2.2 says 'GraphQL servers may provide additional entries to error' */
+    [propName: string]: any
+}
+
+export interface IGraphQLResponseErrorLocation {
+    line: number
+    column: number
+}
+`;
+
 async function generateGraphQlOperations() {
    await generate(
     {
@@ -52,7 +77,7 @@ async function generateGraphQlOperations() {
           documents: WEB_DOCUMENTS_GLOB,
           config: {
             onlyOperationTypes: true,
-            noExport: true,
+            noExport: false,
             enumValues: '../../shared/src/graphql/schema',
             interfaceNameForOperations: 'WebGraphQlOperations',
           },
@@ -63,7 +88,7 @@ async function generateGraphQlOperations() {
           documents: SHARED_DOCUMENTS_GLOB,
           config: {
             onlyOperationTypes: true,
-            noExport: true,
+            noExport: false,
             enumValues: './graphql/schema',
             interfaceNameForOperations: 'SharedGraphQlOperations'
           },
@@ -72,14 +97,22 @@ async function generateGraphQlOperations() {
 
         [path.join(ROOT_FOLDER, './shared/src/graphql/schema.ts')]: {
           config: {
-            namingConvention: 'pascalCase',
+            namingConvention: {
+              typeNames:'pascalCase',
+              enumValues: 'keep',
+            },
             skipTypename: false,
             nonOptionalTypename: true,
-            avoidOptionals: false,
+            avoidOptionals: {
+              field: true,
+              inputValue: false,
+              object: true,
+            },
             typesPrefix: 'I',
-            enumPrefix: false
+            enumPrefix: false,
+            insertCodeSnippet: codeToInsertIntoTypes,
           },
-          plugins: ['typescript']
+          plugins: [`${SHARED_FOLDER}/dev/insertCodeQlCodegenPlugin.js`, 'typescript']
         },
       },
     },
