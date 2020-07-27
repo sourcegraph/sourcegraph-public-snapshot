@@ -1,7 +1,7 @@
 BEGIN;
 
 CREATE TABLE lsif_commits (
-    id integer NOT NULL,
+    id SERIAL PRIMARY KEY,
     commit text NOT NULL,
     parent_commit text,
     repository_id integer NOT NULL,
@@ -28,7 +28,5 @@ CREATE VIEW lsif_uploads_with_repository_name AS
     SELECT u.*, r.name as repository_name FROM lsif_uploads u
     JOIN repo r ON r.id = u.repository_id
     WHERE r.deleted_at IS NULL;
-
-
 
 COMMIT;
