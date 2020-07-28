@@ -662,6 +662,13 @@ const SiteSchemaJSON = `{
             "description": "Disable notifications when alerts resolve themselves.",
             "type": "boolean",
             "default": false
+          },
+          "owners": {
+            "description": "Do not use. When set, only receive alerts owned by the specified teams. Used by Sourcegraph internally.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "default": {
