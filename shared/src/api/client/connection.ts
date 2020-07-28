@@ -69,7 +69,6 @@ export async function createExtensionHostClientConnection(
 
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
-    // TJ NOTE: Why is this an observable? it seems to be a single-emission observable converted to a promise?
     const initialSettings = await from(platformContext.settings).pipe(first()).toPromise()
     const proxy = await initializeExtensionHost({
         ...initData,

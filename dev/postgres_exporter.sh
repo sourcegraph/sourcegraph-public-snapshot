@@ -15,8 +15,6 @@ PGHOST=${PGHOST-$(get_pg_env HOST)}
 PGUSER=${PGUSER-$(get_pg_env USER)}
 PGPORT=${PGPORT-$(get_pg_env PORT)}
 
-export PGPASSWORD=
-
 ADJUSTED_HOST=${PGHOST:-127.0.0.1}
 if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1" || -f "$ADJUSTED_HOST") && "$OSTYPE" != "linux-gnu" ]]; then
   ADJUSTED_HOST="host.docker.internal"
