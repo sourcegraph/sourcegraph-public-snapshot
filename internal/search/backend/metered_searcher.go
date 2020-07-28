@@ -42,7 +42,7 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		cat = "Search"
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, q.String())
+	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q))
 	tr.LogFields(
 		log.String("hostname", m.hostname),
 		log.Object("options", opts),
@@ -77,7 +77,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 		cat = "List"
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, q.String())
+	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q))
 	tr.LogFields(log.String("hostname", m.hostname))
 
 	zsl, err := m.Searcher.List(ctx, q)
@@ -96,4 +96,11 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 	tr.Finish()
 
 	return zsl, err
+}
+
+func queryString(q query.Q) string {
+	if q == nil {
+		return "<nil>"
+	}
+	return q.String()
 }
