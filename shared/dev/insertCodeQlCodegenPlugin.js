@@ -7,8 +7,8 @@
  * @param {{insertCodeSnippet?: string}} config
  */
 const plugin = (schema, documents, config) => {
-  const { insertCodeSnippet = '' } = config;
-  return insertCodeSnippet;
-};
+  const { insertCodeSnippet = '' } = config
+  return insertCodeSnippet
+}
 
-module.exports = { plugin };
+module.exports = { plugin }

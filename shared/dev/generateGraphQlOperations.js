@@ -1,18 +1,15 @@
 // @ts-check
 
-const { generate } = require('@graphql-codegen/cli');
-const path = require('path');
+const { generate } = require('@graphql-codegen/cli')
+const path = require('path')
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../')
 
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './web')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './shared')
-const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/schema.graphql');
+const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/schema.graphql')
 
-const SHARED_DOCUMENTS_GLOB = [
-  `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
-  `!${SHARED_FOLDER}/src/testing/**/*.*`,
-]
+const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`, `!${SHARED_FOLDER}/src/testing/**/*.*`]
 
 const WEB_DOCUMENTS_GLOB = [
   `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
@@ -20,11 +17,7 @@ const WEB_DOCUMENTS_GLOB = [
   `!${WEB_FOLDER}/src/end-to-end/**/*.*`,
 ]
 
-const plugins = [
-  `${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`,
-  'typescript',
-  'typescript-operations',
-];
+const plugins = [`${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`, 'typescript', 'typescript-operations']
 
 const codeToInsertIntoTypes = `
 export type ID = string
@@ -49,7 +42,7 @@ export interface IGraphQLResponseErrorLocation {
     line: number
     column: number
 }
-`;
+`
 
 /**
  * Generates TypeScript files with types for all GraphQL operations.
@@ -57,12 +50,12 @@ export interface IGraphQLResponseErrorLocation {
  * @param {{ watch?: boolean }} [options]
  */
 async function generateGraphQlOperations({ watch }) {
-   await generate(
+  await generate(
     {
       watch,
       schema: SCHEMA_PATH,
       hooks: {
-        afterOneFileWrite: 'prettier --write'
+        afterOneFileWrite: 'prettier --write',
       },
       config: {
         preResolveTypes: true,
@@ -98,7 +91,7 @@ async function generateGraphQlOperations({ watch }) {
             onlyOperationTypes: true,
             noExport: false,
             enumValues: './graphql/schema',
-            interfaceNameForOperations: 'SharedGraphQlOperations'
+            interfaceNameForOperations: 'SharedGraphQlOperations',
           },
           plugins,
         },
@@ -106,7 +99,7 @@ async function generateGraphQlOperations({ watch }) {
         [path.join(ROOT_FOLDER, './shared/src/graphql/schema.ts')]: {
           config: {
             namingConvention: {
-              typeNames:'pascalCase',
+              typeNames: 'pascalCase',
               enumValues: 'keep',
             },
             skipTypename: false,
@@ -120,12 +113,12 @@ async function generateGraphQlOperations({ watch }) {
             enumPrefix: false,
             insertCodeSnippet: codeToInsertIntoTypes,
           },
-          plugins: [`${SHARED_FOLDER}/dev/insertCodeQlCodegenPlugin.js`, 'typescript']
+          plugins: [`${SHARED_FOLDER}/dev/insertCodeQlCodegenPlugin.js`, 'typescript'],
         },
       },
     },
     true
-  );
+  )
 }
 
 module.exports = { generateGraphQlOperations, SHARED_DOCUMENTS_GLOB, WEB_DOCUMENTS_GLOB }
