@@ -237,7 +237,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 	return strings.EqualFold(v, string(keyword))
 }
 
-// matchUnaryKeyword is like match but expects the keyword to be FOLLOWED by whitespace.
+// matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
 func (p *parser) matchUnaryKeyword(keyword keyword) bool {
 	if p.pos != 0 && !isSpace(p.buf[p.pos-1:p.pos]) {
 		return false

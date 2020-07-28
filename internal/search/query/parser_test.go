@@ -909,3 +909,54 @@ func TestMergePatterns(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchUnaryKeyword(t *testing.T) {
+	tests := []struct {
+		name string
+		buf  []byte
+		pos  int
+		want bool
+	}{
+		{
+			name: "simple NOT",
+			buf:  []byte("NOT bar"),
+			pos:  0,
+			want: true,
+		},
+		{
+			name: "NOT in the middle",
+			buf:  []byte("foo NOT bar"),
+			pos:  4,
+			want: true,
+		},
+		{
+			name: "NOT at the end",
+			buf:  []byte("foo NOT"),
+			pos:  4,
+			want: false,
+		},
+		{
+			name: "NOT without space before",
+			buf:  []byte("fooNOT bar"),
+			pos:  3,
+			want: false,
+		},
+		{
+			name: "NOT without space after",
+			buf:  []byte("NOTbar"),
+			pos:  0,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &parser{
+				buf: tt.buf,
+				pos: tt.pos,
+			}
+			if got := p.matchUnaryKeyword("NOT"); got != tt.want {
+				t.Errorf("matchUnaryKeyword() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
