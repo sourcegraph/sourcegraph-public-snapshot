@@ -61,7 +61,6 @@ PACKAGES=(
   github.com/sourcegraph/sourcegraph/cmd/github-proxy
   github.com/sourcegraph/sourcegraph/cmd/gitserver
   github.com/sourcegraph/sourcegraph/cmd/query-runner
-  github.com/sourcegraph/sourcegraph/cmd/replacer
   github.com/sourcegraph/sourcegraph/cmd/searcher
   github.com/sourcegraph/sourcegraph/cmd/symbols
   github.com/google/zoekt/cmd/zoekt-archive-index

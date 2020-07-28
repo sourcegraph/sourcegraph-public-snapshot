@@ -5,7 +5,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
@@ -51,7 +50,7 @@ export function search(
         switchMap(query =>
             queryGraphQL(
                 gql`
-                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $useCodemod: Boolean!, $versionContext: String) {
+                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $versionContext: String) {
                         search(query: $query, version: $version, patternType: $patternType, versionContext: $versionContext) {
                             results {
                                 __typename
@@ -128,9 +127,6 @@ export function search(
                                     ... on CommitSearchResult {
                                         ${genericSearchResultInterfaceFields}
                                     }
-                                    ...on CodemodResult @include(if: $useCodemod) {
-                                        ${genericSearchResultInterfaceFields}
-                                    }
                                 }
                                 alert {
                                     title
@@ -145,7 +141,7 @@ export function search(
                         }
                     }
                 `,
-                { query, version, patternType, versionContext, useCodemod: USE_CODEMOD }
+                { query, version, patternType, versionContext }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {

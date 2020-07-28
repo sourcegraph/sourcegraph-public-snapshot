@@ -892,7 +892,6 @@ func main() {
 		PreciseCodeIntelWorker(),
 		PreciseCodeIntelIndexer(),
 		QueryRunner(),
-		Replacer(),
 		RepoUpdater(),
 		Searcher(),
 		Symbols(),
