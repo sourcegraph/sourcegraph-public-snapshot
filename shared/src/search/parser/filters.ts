@@ -73,8 +73,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.content]: {
-        description:
-            'Explicitly overrides the search pattern. Used for explicitly delineating the search pattern to search for in case of clashes.',
+        description: (negated: boolean): string =>
+            `${negated ? 'Exclude' : 'Include only'} results from files if their content matches the search pattern.`,
+        negatable: true,
         singular: true,
     },
     [FilterType.count]: {
