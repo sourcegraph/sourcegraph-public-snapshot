@@ -4,18 +4,14 @@
     border-radius: 3px;
     background: $gray-21;
     border: 1px solid $gray-18;
-}
 
-.web-content {
-    .private-code-cta {
-        &__icon-column {
-            margin-right: 1.5rem;
-        }
+    &__icon-column {
+        margin-right: 1.5rem;
     }
 }
 
 .theme-light {
-    .web-content.private-code-cta {
+    .private-code-cta {
         background: $white;
         border: 1px solid $color-light-bg-2;
     }
