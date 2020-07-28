@@ -162,6 +162,29 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				assertBodyIncludes(t, resp.Body, "missing request body")
 			})
 
+			t.Run("unreadable body", func(t *testing.T) {
+				store, rstore, clock := gitLabTestSetup(t, db)
+				h := NewGitLabWebhook(store, rstore, clock.now)
+				es := createGitLabExternalService(t, ctx, rstore)
+
+				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				req, err := http.NewRequest("POST", u, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Add(webhooks.TokenHeaderName, "secret")
+				req.Body = &brokenReader{errors.New("foo")}
+
+				rec := httptest.NewRecorder()
+				h.ServeHTTP(rec, req)
+
+				resp := rec.Result()
+				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
+					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				}
+				assertBodyIncludes(t, resp.Body, "reading payload")
+			})
+
 			t.Run("malformed body", func(t *testing.T) {
 				store, rstore, clock := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store, rstore, clock.now)
@@ -207,6 +230,43 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					t.Errorf("unexpected status code: have %d; want %d", have, want)
 				}
 				assertBodyIncludes(t, resp.Body, "unknown object kind")
+			})
+
+			t.Run("error from handleEvent", func(t *testing.T) {
+				store, rstore, clock := gitLabTestSetup(t, db)
+				h := NewGitLabWebhook(store, rstore, clock.now)
+				es := createGitLabExternalService(t, ctx, rstore)
+				repo := createGitLabRepo(t, ctx, rstore, es)
+				changeset := createGitLabChangeset(t, ctx, store, repo)
+				body := createMergeRequestPayload(t, repo, changeset, "close")
+
+				// Remove the URL from the GitLab configuration.
+				cfg, err := es.Configuration()
+				if err != nil {
+					t.Fatal(err)
+				}
+				conn := cfg.(*schema.GitLabConnection)
+				conn.Url = ""
+				es.Config = marshalJSON(t, conn)
+				if err := rstore.UpsertExternalServices(ctx, es); err != nil {
+					t.Fatal(err)
+				}
+
+				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Add(webhooks.TokenHeaderName, "secret")
+
+				rec := httptest.NewRecorder()
+				h.ServeHTTP(rec, req)
+
+				resp := rec.Result()
+				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
+					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				}
+				assertBodyIncludes(t, resp.Body, "could not determine service id")
 			})
 
 			// The valid tests below are pretty "happy path": specific unit
@@ -380,6 +440,117 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 							t.Errorf("unexpected external service: %s", diff)
 						}
 					})
+				}
+			})
+		})
+
+		t.Run("getExternalServiceFromRawID database error", func(t *testing.T) {
+			// This test is separate from the other unit tests for this
+			// function above because it needs to set up a bad database
+			// connection on the repo store.
+			store, _, clock := gitLabTestSetup(t, db)
+			rstore := repos.NewDBStore(&brokenDB{errors.New("foo")}, sql.TxOptions{})
+			h := NewGitLabWebhook(store, rstore, clock.now)
+
+			_, err := h.getExternalServiceFromRawID(ctx, "12345")
+			if err == nil {
+				t.Error("unexpected nil error")
+			}
+		})
+
+		t.Run("database error", func(t *testing.T) {
+			// We can induce an error with a broken database connection.
+			store, rstore, clock := gitLabTestSetup(t, db)
+			h := NewGitLabWebhook(store, rstore, clock.now)
+			h.Store = NewStoreWithClock(&brokenDB{errors.New("foo")}, clock.now)
+
+			es, err := h.getExternalServiceFromRawID(ctx, "12345")
+			if es != nil {
+				t.Errorf("unexpected non-nil external service: %+v", es)
+			}
+			if err == nil {
+				t.Error("unexpected nil error")
+			}
+		})
+
+		t.Run("handleEvent", func(t *testing.T) {
+			// There aren't a lot of these tests, as most of the viable error
+			// paths are covered by the ServeHTTP tests above, but these fill
+			// in the gaps as best we can.
+
+			t.Run("unknown event type", func(t *testing.T) {
+				store, rstore, clock := gitLabTestSetup(t, db)
+				h := NewGitLabWebhook(store, rstore, clock.now)
+				es := createGitLabExternalService(t, ctx, rstore)
+
+				err := h.handleEvent(ctx, es, nil)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if want := http.StatusNotImplemented; err.code != want {
+					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
+				}
+			})
+
+			t.Run("error from handleMergeRequestApprovalEvent", func(t *testing.T) {
+				store, rstore, clock := gitLabTestSetup(t, db)
+				h := NewGitLabWebhook(store, rstore, clock.now)
+				es := createGitLabExternalService(t, ctx, rstore)
+
+				// We can induce an error with an incomplete merge request
+				// event that's missing a project.
+				event := &webhooks.MergeRequestApprovedEvent{
+					MergeRequestEvent: webhooks.MergeRequestEvent{
+						MergeRequest: &gitlab.MergeRequest{IID: 42},
+					},
+				}
+
+				err := h.handleEvent(ctx, es, event)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if want := http.StatusInternalServerError; err.code != want {
+					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
+				}
+			})
+
+			t.Run("error from handleMergeRequestStateEvent", func(t *testing.T) {
+				store, rstore, clock := gitLabTestSetup(t, db)
+				h := NewGitLabWebhook(store, rstore, clock.now)
+				es := createGitLabExternalService(t, ctx, rstore)
+
+				event := &webhooks.MergeRequestCloseEvent{
+					MergeRequestEvent: webhooks.MergeRequestEvent{
+						MergeRequest: &gitlab.MergeRequest{IID: 42},
+					},
+				}
+
+				// We can induce an error with a broken database connection.
+				h.Store = NewStoreWithClock(&brokenDB{errors.New("foo")}, clock.now)
+
+				err := h.handleEvent(ctx, es, event)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if want := http.StatusInternalServerError; err.code != want {
+					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
+				}
+			})
+
+			t.Run("error from handlePipelineEvent", func(t *testing.T) {
+				store, rstore, clock := gitLabTestSetup(t, db)
+				h := NewGitLabWebhook(store, rstore, clock.now)
+				es := createGitLabExternalService(t, ctx, rstore)
+
+				event := &webhooks.PipelineEvent{
+					MergeRequest: &gitlab.MergeRequest{IID: 42},
+				}
+
+				// We can induce an error with a broken database connection.
+				h.Store = NewStoreWithClock(&brokenDB{errors.New("foo")}, clock.now)
+
+				err := h.handleEvent(ctx, es, event)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if want := http.StatusInternalServerError; err.code != want {
+					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
 				}
 			})
 		})
@@ -619,6 +790,32 @@ func TestValidateGitLabSecret(t *testing.T) {
 			})
 		}
 	})
+}
+
+// brokenDB provides a dbutil.DB that always fails: for methods that return an
+// error, the err field will be returned; otherwise nil will be returned.
+type brokenDB struct{ err error }
+
+func (db *brokenDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+	return nil, db.err
+}
+
+func (db *brokenDB) ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error) {
+	return nil, db.err
+}
+
+func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row {
+	return nil
+}
+
+// brokenReader implements an io.ReadCloser that always returns an error when
+// read.
+type brokenReader struct{ err error }
+
+func (br *brokenReader) Close() error { return nil }
+
+func (br *brokenReader) Read(p []byte) (int, error) {
+	return 0, br.err
 }
 
 // nestedTx wraps an existing transaction and overrides its transaction methods
