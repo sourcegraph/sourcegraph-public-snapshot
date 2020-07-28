@@ -44,7 +44,7 @@ export const resolveFileInfo = (): BlobInfo => {
 
     // Don't prepend empty filePath with slash; it's the root directory of the repo
     const filePathWithLeadingSlash = filePath && !filePath.startsWith('/') ? `/${filePath}` : filePath
-    // If filePath is empty, revisionAndFilePath is just the revision
+    // If filePath is empty, revisionAndFilePath == just the revision
     const revision = filePathWithLeadingSlash
         ? revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length)
         : revisionAndFilePath
