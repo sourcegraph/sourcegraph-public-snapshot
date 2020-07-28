@@ -84,3 +84,32 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 | [`GET /projects/:id`](https://docs.gitlab.com/ee/api/projects.html#get-single-project) | `api` | (1) If using GitLab OAuth and repository permissions, used to determine if a user has access to a given _project_; (2) Used to query repository metadata (e.g. description) for display on Sourcegraph. |
 | [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
 | (future) write access | `api` | graph site-admins (only) to perform large-scale code refactors, with Sourcegraph issuing and managing the merge requests on GitLab repositories, company-wide. |
+
+## Webhooks
+
+The `webhooks` setting allows specifying the webhook secrets necessary to authenticate incoming webhook requests to `/.api/gitlab-webhooks`.
+
+```json
+"webhooks": [
+  {"secret": "verylongrandomsecret"}
+]
+```
+
+Using webhooks is optional, but if configured on GitLab, they allow faster campaign updates than the normal background syncing (i.e. polling) which `repo-updater` provides.
+
+The following [webhook events](https://docs.gitlab.com/ee/user/project/integrations/webhooks.html) are currently used:
+
+- Merge request events
+- Pipeline events
+
+Webhooks must be configured on each project that you wish to monitor on GitLab. To set up a project webhook on GitLab, go to the Webhook settings page of the project.
+
+Fill in the **URL** displayed after saving the `webhooks` Sourcegraph setting mentioned above and make sure it is publicly available.
+
+Add the **Secret Token** that was configured within Sourcegraph: in the example above, that's `verylongrandomsecret`.
+
+Select the event types you want to monitor. At a minimum, these should include **merge request events** and **pipeline events**.
+
+Click on **Enable SSL verification** if you have configured SSL with a valid certificate in your Sourcegraph instance.
+
+Finally, select **Add webhook** to create the webhook.
