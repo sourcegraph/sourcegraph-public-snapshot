@@ -271,35 +271,27 @@ func (p *parser) skipSpaces() error {
 
 func (p *parser) parseNegatedParameter() (Parameter, error) {
 	start := p.pos
-	p.pos += 3 // this works because NOT is ASCII-only
+	p.pos += 3
 
 	err := p.skipSpaces()
 	if err != nil {
 		return Parameter{}, err
 	}
 
-	// we only support NOT in front of fields
+	// if the next token is NOT a known field, we parse it as -content:"   "
 	field, advance := ScanField(p.buf[p.pos:])
-	if field == "" {
-		return Parameter{}, errNegationNotSupported
+	_, exists := allFields[strings.ToLower(field)]
+	if !exists {
+		pattern := p.ParsePattern()
+		return Parameter{
+			Field:      FieldContent,
+			Value:      pattern.Value,
+			Negated:    true,
+			Annotation: Annotation{Range: newRange(start, p.pos)},
+		}, nil
 	}
 
-	// simple variant where we just replace NOT with a - in front of the next string
-	// foo NOT content:bar -> foo -content:bar
-	// foo NOT bar -> foo -bar ?? Do we want this?
-	//p.pos--
-	//p.buf[p.pos] = '-' // this works because ' ' and '-' are both ASCII.
-	//return nil
-
-	// alternatively. If field =="", wrap whatever comes after NOT in a content field
-
-	if _, exists := allFields[strings.ToLower(field)]; !exists {
-		// Not a recognized parameter field.
-		return Parameter{}, errNegationNotSupported
-	}
-
-	// alternatively. If field is not recognized, treat it as a negated content field
-
+	// we parse as negated field
 	p.pos += advance
 	value, err := p.ParseFieldValue()
 	if err != nil {
