@@ -436,25 +436,25 @@ add(
                 <h1>
                     Blockchain support{' '}
                     <sup>
-                        <span className="badge badge-primary text-uppercase">Beta</span>
+                        <span className="badge badge-warning text-uppercase">Beta</span>
                     </sup>
                 </h1>
                 <h1>
                     Blockchain support{' '}
                     <sup>
-                        <span className="badge badge-primary text-uppercase">Preview</span>
+                        <span className="badge badge-info text-uppercase">Preview</span>
                     </sup>
                 </h1>
                 <h1>
                     Blockchain support{' '}
                     <sup>
-                        <span className="badge badge-primary text-uppercase">Experimental</span>
+                        <span className="badge badge-info text-uppercase">Experimental</span>
                     </sup>
                 </h1>
                 <h1>
                     Blockchain support{' '}
                     <sup>
-                        <span className="badge badge-primary text-uppercase">Prototype</span>
+                        <span className="badge badge-info text-uppercase">Prototype</span>
                     </sup>
                 </h1>
             </div>
