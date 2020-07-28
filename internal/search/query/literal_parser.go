@@ -91,6 +91,18 @@ loop:
 			// We see a space and the pattern is unbalanced, so assume this
 			// this space is still part of the pattern.
 			result = append(result, r)
+		case r == '\\':
+			// Handle escape sequence.
+			if len(buf) > advance {
+				r = next()
+				// Accept anything anything escaped. The point
+				// is to consume escaped spaces like "\ " so
+				// that we don't recognize it as terminating a
+				// pattern.
+				result = append(result, '\\', r)
+				continue
+			}
+			result = append(result, r)
 		default:
 			token = append(token, []byte(string(r))...)
 			result = append(result, r)
@@ -189,13 +201,17 @@ loop:
 
 				// Heuristic: This right paren may be one we should associate with a previous pattern, and not
 				// just a dangling one. Check if a pattern occurred before it and append it if so.
-				if p.pos > 0 {
+				if pattern.Annotation.Range.Start.Column > 0 {
 					// Heuristic is imprecise and that's OK: It will only look for a 1-byte whitespace
 					// character (not any unicode whitespace) before this paren.
-					if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos-1]}); !unicode.IsSpace(r) {
+					if r, _ := utf8.DecodeRune([]byte{p.buf[pattern.Annotation.Range.Start.Column-1]}); !unicode.IsSpace(r) {
 						if len(nodes) > 0 {
 							if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-								nodes[len(nodes)-1] = concatPatterns(previous, pattern)
+								result, err := concatPatterns(previous, pattern)
+								if err != nil {
+									return nil, err
+								}
+								nodes[len(nodes)-1] = result
 								continue
 							}
 						}

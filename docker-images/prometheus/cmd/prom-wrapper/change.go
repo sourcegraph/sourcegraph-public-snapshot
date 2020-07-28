@@ -37,15 +37,13 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		result.Problems = append(result.Problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: %v", err)))
 	}
 
-	// generate new notifiers configuration
-	change.AMConfig.Receivers = append(newReceivers(newConfig.Alerts, newProblem), &amconfig.Receiver{
+	// reset and generate new notifiers configuration
+	receivers, routes := newRoutesAndReceivers(newConfig.Alerts, newProblem)
+	change.AMConfig.Receivers = append(receivers, &amconfig.Receiver{
 		// stub receiver
 		Name: alertmanagerNoopReceiver,
 	})
-
-	// make sure alerts are routed appropriately
 	change.AMConfig.Route = &amconfig.Route{
-		Receiver: alertmanagerNoopReceiver,
 		// include `alertname` for now to accommodate non-generator alerts - in the long run, we want to remove grouping on `alertname`
 		// because all alerts should have some predefined labels
 		// https://github.com/sourcegraph/sourcegraph/issues/5370
@@ -60,20 +58,10 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 		RepeatInterval: duration(48 * time.Hour),
 
 		// Route alerts to notifications
-		Routes: []*amconfig.Route{
-			{
-				Receiver: alertmanagerWarningReceiver,
-				Match: map[string]string{
-					"level": "warning",
-				},
-			},
-			{
-				Receiver: alertmanagerCriticalReceiver,
-				Match: map[string]string{
-					"level": "critical",
-				},
-			},
-		},
+		Routes: routes,
+
+		// Fallback to do nothing for alerts not compatible with our receivers
+		Receiver: alertmanagerNoopReceiver,
 	}
 
 	return result
