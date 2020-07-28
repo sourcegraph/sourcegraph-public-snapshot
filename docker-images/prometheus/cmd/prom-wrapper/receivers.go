@@ -83,7 +83,13 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem f
 				MatchRE: amconfig.MatchRegexps{
 					"owner": *ownerRegexp,
 				},
-				Continue: true, // match siblings, so that general-case level receivers still get the alert
+				// Generated routes are set up as siblings. Generally, Alertmanager
+				// matches on exactly one route, but for additionalRoutes we don't
+				// want to prevent other routes from getting this alert, so we configure
+				// this route with 'continue: true'
+				//
+				// Also see https://prometheus.io/docs/alerting/latest/configuration/#route
+				Continue: true,
 			})
 		}
 
