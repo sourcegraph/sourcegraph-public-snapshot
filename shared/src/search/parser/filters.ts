@@ -86,7 +86,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         alias: 'f',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from files matching the given regex pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from files matching the given search pattern.`,
         suggestions: 'File',
     },
     [FilterType.fork]: {
@@ -116,7 +116,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         alias: 'r',
         negatable: true,
         description: negated =>
-            `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given regex pattern.`,
+            `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
         suggestions: 'Repository',
     },
     [FilterType.repogroup]: {
