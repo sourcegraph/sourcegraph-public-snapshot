@@ -267,16 +267,18 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
+// parseNegatedParameter parses `NOT field:value` or `NOT pattern` and
+// translates it to `-field:value` or `-content:pattern` respectively.
 func (p *parser) parseNegatedParameter() (Parameter, error) {
 	start := p.pos
-	p.pos += 3
+	p.pos += 3 // jump NOT
 
 	err := p.skipSpaces()
 	if err != nil {
 		return Parameter{}, err
 	}
 
-	// if the next token is NOT a known field, we parse it as -content:"   "
+	// if the next token is not a supported field, we parse it as -content:"..."
 	field, advance := ScanField(p.buf[p.pos:])
 	_, exists := allFields[strings.ToLower(field)]
 	if !exists {
@@ -289,7 +291,7 @@ func (p *parser) parseNegatedParameter() (Parameter, error) {
 		}, nil
 	}
 
-	// we parse as negated field
+	// the token is a valid field, hence we parse it as such
 	p.pos += advance
 	value, err := p.ParseFieldValue()
 	if err != nil {
