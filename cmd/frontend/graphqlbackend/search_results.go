@@ -980,14 +980,6 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		// Get settings to check if `search.uppercase` is active. If so, run transformer.
-		settings, err := decodedViewerFinalSettings(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if v := settings.SearchUppercase; v != nil && *v {
-			q.Query = query.SearchUppercase(q.Query)
-		}
 		return r.evaluate(ctx, q.Query)
 	}
 	// Unreachable.
@@ -1188,9 +1180,27 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 	return getPatternInfo(r.query, opts)
 }
 
+func isPatternNegated(q []query.Node) bool {
+	isNegated := false
+	patternsFound := 0
+	query.VisitPattern(q, func(_ string, negated bool, _ query.Annotation) {
+		patternsFound++
+		if patternsFound > 1 {
+			return
+		}
+		isNegated = negated
+	})
+
+	// we only support negation for queries that contain exactly 1 pattern.
+	if patternsFound > 1 {
+		return false
+	}
+	return isNegated
+}
+
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool) {
+func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -1198,6 +1208,12 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 	isStructuralPat := false
 
 	patternValues := q.Values(query.FieldDefault)
+
+	isNegated := false
+	if andOrQuery, ok := q.(*query.AndOrQuery); ok {
+		isNegated = isPatternNegated(andOrQuery.Query)
+	}
+
 	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
 		patternValues = overridePattern
 		contentFieldSet = true
@@ -1243,12 +1259,12 @@ func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (strin
 		pattern = "."
 	}
 
-	return pattern, isRegExp, isStructuralPat
+	return pattern, isRegExp, isStructuralPat, isNegated
 }
 
 // getPatternInfo gets the search pattern info for q
 func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
-	pattern, isRegExp, isStructuralPat := processSearchPattern(q, opts)
+	pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := q.RegexpPatterns(query.FieldFile)
@@ -1281,6 +1297,7 @@ func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.Tex
 		IsCaseSensitive:              q.IsCaseSensitive(),
 		FileMatchLimit:               opts.fileMatchLimit,
 		Pattern:                      pattern,
+		IsNegated:                    isNegated,
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
@@ -1631,10 +1648,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 						multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 						multiErrMu.Unlock()
 					}
-					if len(fileResults) == 0 && fileCommon.limitHit {
+					if len(fileResults) == 0 {
 						// Still no results? Give up.
 						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-						fileCommon.limitHit = false // Ensure we don't display "Show more".
+						if fileCommon != nil {
+							fileCommon.limitHit = false // Ensure we don't display "Show more".
+						}
 					}
 				}
 				for _, r := range fileResults {

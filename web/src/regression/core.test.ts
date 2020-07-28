@@ -73,10 +73,11 @@ describe('Core functionality regression test suite', () => {
 
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
-            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
+            await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {
-                const editor = document.querySelector('.test-settings-file .monaco-editor') as HTMLElement
-                return editor ? editor.textContent : null
+                const editor = document.querySelector('.test-settings-file .monaco-editor .view-lines') as HTMLElement
+                // eslint-disable-next-line unicorn/prefer-text-content
+                return editor ? editor.innerText : null
             })
         }
 

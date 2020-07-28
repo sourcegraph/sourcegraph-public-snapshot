@@ -40,6 +40,7 @@ const PROPS: GlobalNavbar['props'] = {
     setVersionContext: () => undefined,
     availableVersionContexts: [],
     variant: 'default',
+    globbing: false,
 }
 
 describe('GlobalNavbar', () => {

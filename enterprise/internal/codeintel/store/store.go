@@ -29,6 +29,10 @@ type Store interface {
 	// original error value is returned unchanged.
 	Done(err error) error
 
+	// Lock attempts to take an advisory lock on the given key. If successful, this method will
+	// return a true-valued flag along with a function that must be called to release the lock.
+	Lock(ctx context.Context, key int, blocking bool) (bool, UnlockFunc, error)
+
 	// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 	GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 
@@ -125,6 +129,22 @@ type Store interface {
 
 	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
 	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error
+
+	// MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
+	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
+
+	// DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
+	// graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
+	DirtyRepositories(ctx context.Context) (map[int]int, error)
+
+	// CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the set
+	// of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip. The decorated
+	// commit graph is serialized to Postgres for use by find closest dumps queries.
+	//
+	// If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
+	// token stored in the database, the flag will not be cleared as another request for update has come in since this
+	// token has been read.
+	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) error
 
 	// IndexableRepositories returns the identifiers of all indexable repositories.
 	IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error)
@@ -254,6 +274,11 @@ func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 // scanFirstInt scans a slice of ints from the return value of `*store.query` and returns the first.
 func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
 	return basestore.ScanFirstInt(rows, err)
+}
+
+// scanFirstBool scans a slice of bools from the return value of `*store.query` and returns the first.
+func scanFirstBool(rows *sql.Rows, err error) (bool, bool, error) {
+	return basestore.ScanFirstBool(rows, err)
 }
 
 // closeRows closes the rows object and checks its error value.

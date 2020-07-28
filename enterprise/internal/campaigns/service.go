@@ -46,8 +46,7 @@ type Service struct {
 }
 
 // CreateCampaign creates the Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
-	var err error
+func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) (err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
 	defer func() {
 		tr.SetError(err)
@@ -62,7 +61,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) err
 	if err != nil {
 		return err
 	}
-	defer tx.Done(&err)
+	defer func() { err = tx.Done(err) }()
 
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
@@ -151,7 +150,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Done(&err)
+	defer func() { err = tx.Done(err) }()
 
 	if err := tx.CreateCampaignSpec(ctx, spec); err != nil {
 		return nil, err
@@ -236,7 +235,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Done(&err)
+	defer func() { err = tx.Done(err) }()
 
 	campaignSpec, err := tx.GetCampaignSpec(ctx, GetCampaignSpecOpts{
 		RandID: opts.CampaignSpecRandID,
@@ -326,7 +325,7 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Done(&err)
+	defer func() { err = tx.Done(err) }()
 
 	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: opts.CampaignID})
 	if err != nil {
@@ -384,7 +383,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		if err != nil {
 			return err
 		}
-		defer tx.Done(&err)
+		defer func() { err = tx.Done(err) }()
 
 		campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
 		if err != nil {
@@ -470,7 +469,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 		if err != nil {
 			return err
 		}
-		defer tx.Done(&err)
+		defer func() { err = tx.Done(err) }()
 
 		// TODO: Implement logic to find changesets in PUBLISHING state.
 		processing := false

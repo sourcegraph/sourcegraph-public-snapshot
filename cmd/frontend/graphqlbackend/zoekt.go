@@ -502,6 +502,10 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (z
 		}
 	}
 
+	if query.IsNegated {
+		q = &zoektquery.Not{Child: q}
+	}
+
 	if typ == symbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoektquery.Symbol{

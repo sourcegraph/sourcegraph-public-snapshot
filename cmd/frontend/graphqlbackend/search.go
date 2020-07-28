@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand"
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
@@ -90,6 +91,13 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
+	if envvar.SourcegraphDotComMode() {
+		// Instrumentation to log 1 in 10 search inputs for differential testing, see #12477.
+		if rand.Intn(10) == 0 {
+			log15.Info("search input", "type", searchType, "magic-887c6d4c", args.Query)
+		}
+	}
+
 	var queryInfo query.QueryInfo
 	if (conf.AndOrQueryEnabled() && query.ContainsAndOrKeyword(args.Query)) || useNewParser || searchType == query.SearchTypeStructural {
 		// To process the input as an and/or query, the flag must be
@@ -100,6 +108,10 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (SearchImplemen
 		queryInfo, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
+		}
+		if getBoolPtr(settings.SearchUppercase, false) {
+			q := queryInfo.(*query.AndOrQuery)
+			q.Query = query.SearchUppercase(q.Query)
 		}
 	} else {
 		var queryString string

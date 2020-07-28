@@ -18,6 +18,7 @@ func GitServer() *Container {
 							Warning:         Alert{LessOrEqual: 25},
 							Critical:        Alert{LessOrEqual: 15},
 							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
 							`,
@@ -30,6 +31,7 @@ func GitServer() *Container {
 							Warning:         Alert{GreaterOrEqual: 50},
 							Critical:        Alert{GreaterOrEqual: 100},
 							PanelOptions:    PanelOptions().LegendFormat("running commands"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
@@ -44,6 +46,7 @@ func GitServer() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
 							PanelOptions:    PanelOptions().LegendFormat("queue size"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **If you just added several repositories**, the warning may be expected.
 								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
@@ -56,6 +59,7 @@ func GitServer() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
 							PanelOptions:    PanelOptions().LegendFormat("queue size"),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
@@ -71,6 +75,7 @@ func GitServer() *Container {
 							Warning:         Alert{GreaterOrEqual: 1.0},
 							Critical:        Alert{GreaterOrEqual: 2.0},
 							PanelOptions:    PanelOptions().LegendFormat("running commands").Unit(Seconds),
+							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
@@ -86,9 +91,12 @@ func GitServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("gitserver"),
-						sharedContainerMemoryUsage("gitserver"),
 						sharedContainerCPUUsage("gitserver"),
+						sharedContainerMemoryUsage("gitserver"),
+					},
+					{
+						sharedContainerRestarts("gitserver"),
+						sharedContainerFsInodes("gitserver"),
 					},
 				},
 			},
@@ -103,6 +111,25 @@ func GitServer() *Container {
 					{
 						sharedProvisioningCPUUsage5m("gitserver"),
 						sharedProvisioningMemoryUsage5m("gitserver"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("gitserver"),
+						sharedGoGcDuration("gitserver"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("gitserver"),
 					},
 				},
 			},

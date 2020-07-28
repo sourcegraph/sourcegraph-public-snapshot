@@ -17,6 +17,7 @@ func ZoektWebServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 50},
 							PanelOptions:      PanelOptions().LegendFormat("{{code}}").Unit(Seconds),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
@@ -27,9 +28,12 @@ func ZoektWebServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("zoekt-webserver"),
-						sharedContainerMemoryUsage("zoekt-webserver"),
 						sharedContainerCPUUsage("zoekt-webserver"),
+						sharedContainerMemoryUsage("zoekt-webserver"),
+					},
+					{
+						sharedContainerRestarts("zoekt-webserver"),
+						sharedContainerFsInodes("zoekt-webserver"),
 					},
 				},
 			},
@@ -47,6 +51,8 @@ func ZoektWebServer() *Container {
 					},
 				},
 			},
+			// kubernetes monitoring for zoekt-web-server is provided by zoekt-index-server,
+			// since both services are deployed together
 		},
 	}
 }

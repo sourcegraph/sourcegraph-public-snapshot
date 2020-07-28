@@ -495,6 +495,14 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return nil, nil, errors.New("no indexed repositories for structural search")
 	}
 
+	// unindexed search does not yet support negated patterns. If there are no indexed repos
+	// and the pattern is negated, raise a friendly alert.
+	if args.PatternInfo.IsNegated && len(indexed.Repos()) == 0 {
+		return nil, nil, errors.New("Your search query contained a negated search pattern for file content " +
+			fmt.Sprintf("\"%s\" ", args.PatternInfo.Pattern) + "but there are no indexed repositories to search over. " +
+			"Negated file contents are not supported for unindexed repositories yet.")
+	}
+
 	common.repos = make([]*types.Repo, len(args.Repos))
 	for i, repo := range args.Repos {
 		common.repos[i] = repo.Repo
@@ -741,8 +749,10 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		}
 	}()
 
-	// This guard disables unindexed structural search for now.
-	if !args.PatternInfo.IsStructuralPat {
+	// This guard disables
+	// - unindexed structural search
+	// - unindexed search of negated content
+	if !(args.PatternInfo.IsStructuralPat || args.PatternInfo.IsNegated) {
 		if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
 			mu.Lock()
 			searchErr = err

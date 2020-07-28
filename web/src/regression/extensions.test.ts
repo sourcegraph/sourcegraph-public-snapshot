@@ -115,29 +115,51 @@ describe('Sourcegraph extensions regression test suite', () => {
         expect(await driver.page.$$('tr[style]')).toHaveLength(0)
         expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
 
+        console.log('------------------------ one -------------------------------')
+
         // Wait for the "Coverage: X%" button to appear and click it
-        await driver.findElementWithText('Coverage: 80%', { action: 'click', wait: true })
+
+        console.log('------------------------ two -------------------------------')
 
         // Lines should get decorated, but without line/hit branch counts
         await retry(async () => expect(await driver.page.$$('tr[style]')).toHaveLength(264))
+
+        console.log('------------------------ three -------------------------------')
+
         expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
+
+        console.log('------------------------ four -------------------------------')
 
         // Open the command palette and click "Show line/hit branch counts"
         await driver.page.click('.command-list-popover-button')
+
+        console.log('------------------------ five -------------------------------')
+
         await driver.findElementWithText('Codecov: Show line hit/branch counts', { action: 'click' })
+
+        console.log('------------------------ six -------------------------------')
 
         // Line/hit branch counts should now show up
         await retry(async () => expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(264))
 
+        console.log('------------------------ seven -------------------------------')
+
         // Check that the the "View commit report" button links to the correct location
         await driver.page.click('.command-list-popover-button')
+
+        console.log('------------------------ eight -------------------------------')
+
         await Promise.all([
             driver.page.waitForNavigation(),
             driver.findElementWithText('Codecov: View commit report', { action: 'click' }),
         ])
+
+        console.log('------------------------ nine -------------------------------')
         expect(driver.page.url()).toEqual(
             'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
         )
+
+        console.log('------------------------ ten -------------------------------')
     })
 
     test('Datadog extension', async function () {

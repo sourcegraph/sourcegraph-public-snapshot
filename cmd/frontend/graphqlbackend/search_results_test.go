@@ -330,9 +330,113 @@ func TestProcessSearchPattern(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			q, _ := query.ParseAndCheck(tt.Pattern)
-			got, _, _ := processSearchPattern(q, tt.Opts)
+			got, _, _, _ := processSearchPattern(q, tt.Opts)
 			if got != tt.Want {
 				t.Fatalf("got %s\nwant %s", got, tt.Want)
+			}
+		})
+	}
+}
+
+func TestIsPatternNegated(t *testing.T) {
+	cases := []struct {
+		name    string
+		pattern string
+		want    bool
+	}{
+		{
+			name:    "simple negated pattern",
+			pattern: "-content:foo",
+			want:    true,
+		},
+		{
+			name:    "compound query with negated content as first term",
+			pattern: "-content:foo and bar",
+			want:    false,
+		},
+		{
+			name:    "compound query with negated content as last term",
+			pattern: "bar and -content:foo",
+			want:    false,
+		},
+		{
+			name:    "simple query with content field but without negation",
+			pattern: "content:foo",
+			want:    false,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.pattern,
+				query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			got := isPatternNegated(q.(*query.AndOrQuery).Query)
+			if got != tt.want {
+				t.Fatalf("got %t\nwant %t", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProcessSearchPatternAndOr(t *testing.T) {
+	cases := []struct {
+		name                string
+		pattern             string
+		searchType          query.SearchType
+		opts                *getPatternInfoOptions
+		wantPattern         string
+		wantIsRegExp        bool
+		wantIsStructuralPat bool
+		wantIsNegated       bool
+	}{
+		{
+			name:                "Simple content",
+			pattern:             `content:foo`,
+			searchType:          query.SearchTypeLiteral,
+			opts:                &getPatternInfoOptions{},
+			wantPattern:         "foo",
+			wantIsRegExp:        true,
+			wantIsStructuralPat: false,
+			wantIsNegated:       false,
+		},
+		{
+			name:                "Negated content",
+			pattern:             `-content:foo`,
+			searchType:          query.SearchTypeLiteral,
+			opts:                &getPatternInfoOptions{},
+			wantPattern:         "foo",
+			wantIsRegExp:        true,
+			wantIsStructuralPat: false,
+			wantIsNegated:       true,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.pattern,
+				query.ParserOptions{SearchType: tt.searchType, Globbing: false})
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, tt.opts)
+
+			if want := tt.wantPattern; pattern != want {
+				t.Fatalf("got %s\nwant %s", pattern, want)
+			}
+
+			if want := tt.wantIsRegExp; isRegExp != want {
+				t.Fatalf("got %t\nwant %t", isRegExp, want)
+			}
+
+			if want := tt.wantIsStructuralPat; isStructuralPat != want {
+				t.Fatalf("got %t\nwant %t", isStructuralPat, want)
+			}
+
+			if want := tt.wantIsNegated; isNegated != want {
+				t.Fatalf("got %t\nwant %t", isNegated, want)
 			}
 		})
 	}

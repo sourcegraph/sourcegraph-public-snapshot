@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
@@ -181,6 +182,61 @@ func insertPackageReferences(t *testing.T, store Store, packageReferences []type
 	if err := store.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
 		t.Fatalf("unexpected error updating package references: %s", err)
 	}
+}
+
+var UploadMetaComparer = cmp.Comparer(func(x, y UploadMeta) bool {
+	return x.UploadID == y.UploadID && x.Distance == y.Distance
+})
+
+func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	uploadMeta := map[string][]UploadMeta{}
+	for rows.Next() {
+		var commit string
+		var uploadID int
+		var distance int
+		if err := rows.Scan(&commit, &uploadID, &distance); err != nil {
+			return nil, err
+		}
+
+		uploadMeta[commit] = append(uploadMeta[commit], UploadMeta{
+			UploadID: uploadID,
+			Distance: distance,
+		})
+	}
+
+	return uploadMeta, nil
+}
+
+func getVisibleUploads(t *testing.T, db *sql.DB, repositoryID int) map[string][]UploadMeta {
+	query := sqlf.Sprintf(
+		`SELECT commit, upload_id, distance FROM lsif_nearest_uploads WHERE repository_id = %s ORDER BY upload_id`,
+		repositoryID,
+	)
+	uploads, err := scanVisibleUploads(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	if err != nil {
+		t.Fatalf("unexpected error getting visible uploads: %s", err)
+	}
+
+	return uploads
+}
+
+func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
+	query := sqlf.Sprintf(
+		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
+		repositoryID,
+	)
+
+	ids, err := scanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	if err != nil {
+		t.Fatalf("unexpected error getting uploads visible at tip: %s", err)
+	}
+
+	return ids
 }
 
 // unwrapStore gets the underlying store from a store interface value.
