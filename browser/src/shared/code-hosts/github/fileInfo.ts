@@ -42,7 +42,7 @@ export const resolveFileInfo = (): BlobInfo => {
 
     const filePath = getFilePath()
     // Don't prepend empty filePath with slash; it's the root directory of the repo
-    const filePathWithLeadingSlash = !filePath ? '' : filePath.startsWith('/') ? filePath : `/${filePath}`
+    const filePathWithLeadingSlash = filePath && !filePath.startsWith('/') ? `/${filePath}` : filePath
     if (!revisionAndFilePath.endsWith(filePathWithLeadingSlash)) {
         throw new Error(
             `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revisionAndFilePath}, but isn't in this case.`
