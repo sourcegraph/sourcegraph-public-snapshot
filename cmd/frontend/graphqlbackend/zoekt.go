@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type indexedRequestType string
@@ -239,15 +238,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		return nil, false, nil, err
 	}
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
-
-	tr, ctx := trace.New(ctx, "zoekt.Search", finalQuery.String())
-	defer func() {
-		tr.SetError(err)
-		if len(fm) > 0 {
-			tr.LazyPrintf("%d file matches", len(fm))
-		}
-		tr.Finish()
-	}()
 
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
 	searchOpts := zoektSearchOpts(k, args.PatternInfo)
