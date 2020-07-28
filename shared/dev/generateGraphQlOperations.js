@@ -51,11 +51,19 @@ export interface IGraphQLResponseErrorLocation {
 }
 `;
 
-async function generateGraphQlOperations() {
+/**
+ * Generates TypeScript files with types for all GraphQL operations.
+ *
+ * @param {{ watch?: boolean }} [options]
+ */
+async function generateGraphQlOperations({ watch }) {
    await generate(
     {
+      watch,
       schema: SCHEMA_PATH,
-      hooks: { afterOneFileWrite: 'prettier --write' },
+      hooks: {
+        afterOneFileWrite: 'prettier --write'
+      },
       config: {
         preResolveTypes: true,
         operationResultSuffix: 'Result',
@@ -119,7 +127,5 @@ async function generateGraphQlOperations() {
     true
   );
 }
-// union no I
-// capital cases for types
-// no optionals?
+
 module.exports = { generateGraphQlOperations, SHARED_DOCUMENTS_GLOB, WEB_DOCUMENTS_GLOB }
