@@ -61,12 +61,6 @@ digraph architecture {
             shape="box3d"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher"
         ]
-        replacer [
-            label="replacer"
-            fillcolor="5"
-            shape="box3d"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/replacer"
-        ]
         query_runner [
             label="query\nrunner"
             fillcolor="6"
@@ -152,7 +146,6 @@ digraph architecture {
         gitserver
         query_runner
         searcher
-        replacer
         repo_updater
         github_proxy
         zoekt_webserver
@@ -171,13 +164,6 @@ digraph architecture {
         gitserver
     } [
         fillcolor="4"
-    ]
-
-    replacer -> {
-        frontend
-        gitserver
-    } [
-        fillcolor="5"
     ]
 
     query_runner -> frontend [fillcolor="6"]

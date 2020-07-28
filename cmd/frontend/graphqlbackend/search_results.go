@@ -504,8 +504,6 @@ loop:
 				}
 				addPoint(t)
 			})
-		case *codemodResultResolver:
-			continue
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
@@ -1388,8 +1386,6 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	// Determine which types of results to return.
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
-	} else if len(r.query.Values(query.FieldReplace)) > 0 {
-		resultTypes = []string{"codemod"}
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
@@ -1767,30 +1763,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
-		case "codemod":
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-
-				codemodResults, codemodCommon, err := performCodemod(ctx, &args)
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "codemod search failed"))
-					multiErrMu.Unlock()
-				}
-				if codemodResults != nil {
-					resultsMu.Lock()
-					results = append(results, codemodResults...)
-					resultsMu.Unlock()
-				}
-				if codemodCommon != nil {
-					commonMu.Lock()
-					common.update(*codemodCommon)
-					commonMu.Unlock()
-				}
-			})
 		}
 	}
 
@@ -1866,7 +1838,6 @@ func isContextError(ctx context.Context, err error) bool {
 //   - *RepositoryResolver         // repo name match
 //   - *fileMatchResolver          // text match
 //   - *commitSearchResultResolver // diff or commit match
-//   - *codemodResultResolver      // code modification
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type SearchResultResolver interface {
@@ -1875,7 +1846,6 @@ type SearchResultResolver interface {
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
-	ToCodemodResult() (*codemodResultResolver, bool)
 
 	resultCount() int32
 }

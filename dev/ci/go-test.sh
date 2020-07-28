@@ -6,7 +6,7 @@ set -e
 echo "--- build libsqlite"
 ./dev/libsqlite3-pcre/build.sh
 
-# For searcher and replacer tests
+# For searcher
 echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
