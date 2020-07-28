@@ -47,7 +47,7 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem f
 	var (
 		warningReceiver     = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
 		criticalReceiver    = &amconfig.Receiver{Name: alertmanagerCriticalReceiver}
-		additionalReceviers []*amconfig.Receiver
+		additionalReceivers []*amconfig.Receiver
 		additionalRoutes    []*amconfig.Route
 	)
 
@@ -74,7 +74,7 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem f
 
 			receiverName := fmt.Sprintf("src-%s-on-%s", alert.Level, owners)
 			receiver = &amconfig.Receiver{Name: receiverName}
-			additionalReceviers = append(additionalReceviers, receiver)
+			additionalReceivers = append(additionalReceivers, receiver)
 			additionalRoutes = append(additionalRoutes, &amconfig.Route{
 				Receiver: receiverName,
 				Match: map[string]string{
@@ -215,7 +215,7 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem f
 		}
 	}
 
-	return append(additionalReceviers, warningReceiver, criticalReceiver),
+	return append(additionalReceivers, warningReceiver, criticalReceiver),
 		append(additionalRoutes, &amconfig.Route{
 			Receiver: alertmanagerWarningReceiver,
 			Match: map[string]string{
