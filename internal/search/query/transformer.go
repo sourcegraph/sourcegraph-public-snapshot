@@ -209,17 +209,36 @@ func (g globError) Error() string {
 	return g.err.Error()
 }
 
+// reporevToRegex is a wrapper around globToRegex that takes care of
+// treating repo and rev (as in repo@rev) separately during translation
+// from glob to regex.
+func reporevToRegex(value string) (string, error) {
+	reporev := strings.SplitN(value, "@", 2)
+	repo, err := globToRegex(reporev[0])
+	if err != nil {
+		return "", err
+	}
+	value = repo
+	if len(reporev) > 1 {
+		value = value + "@" + reporev[1]
+	}
+	return value, nil
+}
+
 // mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
 func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	var globErrors []globError
-	var err error
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+		var err error
+		switch field {
+		case FieldRepo:
+			value, err = reporevToRegex(value)
+		case FieldFile, FieldRepoHasFile:
 			value, err = globToRegex(value)
-			if err != nil {
-				globErrors = append(globErrors, globError{field: field, err: err})
-			}
+		}
+		if err != nil {
+			globErrors = append(globErrors, globError{field: field, err: err})
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
