@@ -49,7 +49,7 @@ export interface IGraphQLResponseErrorLocation {
  *
  * @param {{ watch?: boolean }} [options]
  */
-async function generateGraphQlOperations({ watch }) {
+async function generateGraphQlOperations({ watch } = {}) {
   await generate(
     {
       watch,
