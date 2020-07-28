@@ -507,49 +507,45 @@ func TestTranslateBadGlobPattern(t *testing.T) {
 }
 
 func TestReporevToRegex(t *testing.T) {
-	type args struct {
-		value string
-	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name string
+		arg  string
+		want string
 	}{
 		{
-			name:    "no revision",
-			args:    args{value: "github.com/foo"},
-			want:    "^github\\.com/foo$",
-			wantErr: false,
+			name: "no revision",
+			arg:  "github.com/foo",
+			want: "^github\\.com/foo$",
 		},
 		{
-			name:    "with revision",
-			args:    args{value: "github.com/foo@bar"},
-			want:    "^github\\.com/foo$@bar",
-			wantErr: false,
+			name: "with revision",
+			arg:  "github.com/foo@bar",
+			want: "^github\\.com/foo$@bar",
 		},
 		{
-			name:    "empty string",
-			args:    args{value: ""},
-			want:    "",
-			wantErr: false,
+			name: "empty string",
+			arg:  "",
+			want: "",
 		},
 		{
-			name:    "many @",
-			args:    args{value: "foo@bar@bas"},
-			want:    "^foo$@bar@bas",
-			wantErr: false,
+			name: "many @",
+			arg:  "foo@bar@bas",
+			want: "^foo$@bar@bas",
+		},
+		{
+			name: "just @",
+			arg:  "@",
+			want: "@",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := reporevToRegex(tt.args.value)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("reporevToRegex() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			got, err := reporevToRegex(tt.arg)
+			if err != nil {
+				t.Fatal(err)
 			}
 			if got != tt.want {
-				t.Errorf("reporevToRegex() got = %v, want %v", got, tt.want)
+				t.Fatalf("reporevToRegex() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
