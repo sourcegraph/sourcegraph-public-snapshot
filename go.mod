@@ -200,7 +200,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200727220907-a99799fdc041
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200728073129-dae6fc7ecc8f
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
