@@ -154,20 +154,26 @@ func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
 	// Note that in the event that e.g. the Sourcegraph frontend is entirely down or never becomes
 	// accessible, we simply use the existing configuration persisted on disk.
 	c.log.Info("waiting for frontend", "url", api.InternalClient.URL)
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		c.log.Error("unable to connect to frontend, proceeding with existing configuration",
-			"error", err)
-	} else {
-		c.log.Debug("detected frontend ready, loading initial configuration")
-
-		// Load initial alerts configuration
-		siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
-		diffs := siteConfig.Diff(c.config)
-		if len(diffs) > 0 {
-			c.execDiffs(ctx, siteConfig, diffs)
+	var frontendConnected bool
+	for !frontendConnected {
+		waitCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		if err := api.InternalClient.WaitForFrontend(waitCtx); err != nil {
+			c.log.Warn("unable to connect to frontend, trying again - disable config sync with DISABLE_SOURCEGRAPH_CONFIG=true",
+				"error", err)
 		} else {
-			c.log.Debug("no relevant configuration to init")
+			frontendConnected = true
 		}
+		cancel()
+	}
+	c.log.Info("detected frontend ready, loading initial configuration")
+
+	// Load initial alerts configuration
+	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
+	diffs := siteConfig.Diff(c.config)
+	if len(diffs) > 0 {
+		c.execDiffs(ctx, siteConfig, diffs)
+	} else {
+		c.log.Debug("no relevant configuration to init")
 	}
 
 	// Watch for future changes

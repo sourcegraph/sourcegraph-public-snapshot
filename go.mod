@@ -189,7 +189,7 @@ replace (
 
 	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
 	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200723081120-8462b0b708c4
+	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20200724075322-e542e8956484
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 
 	// prom-wrapper needs to be able to write alertmanager configuration with secrets, etc, which
@@ -200,7 +200,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200724162241-6ed80895db7e
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200727220907-a99799fdc041
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 

@@ -130,6 +130,22 @@ type Store interface {
 	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
 	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error
 
+	// MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
+	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
+
+	// DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
+	// graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
+	DirtyRepositories(ctx context.Context) (map[int]int, error)
+
+	// CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the set
+	// of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip. The decorated
+	// commit graph is serialized to Postgres for use by find closest dumps queries.
+	//
+	// If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
+	// token stored in the database, the flag will not be cleared as another request for update has come in since this
+	// token has been read.
+	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) error
+
 	// IndexableRepositories returns the identifiers of all indexable repositories.
 	IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error)
 
