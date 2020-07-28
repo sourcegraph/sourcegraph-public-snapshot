@@ -67,8 +67,6 @@ type Operator struct {
 	Annotation Annotation
 }
 
-var errNegationNotSupported = fmt.Errorf("You NOT can only negate fields.Check the documentation to see which fields support negation.")
-
 func (node Pattern) String() string {
 	var v string
 	if node.Negated {
