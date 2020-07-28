@@ -29,7 +29,6 @@ We use the term "search backend" to describe a function which performs a search 
 - `searchFilesInRepos` for finding `type:file` (text) and `type:path` (filepath) results.
 - `searchCommitDiffsInRepos` for finding `type:diff` results.
 - `searchCommitLogInRepos` for finding `type:commit` results.
-- `performCodemod` for code modification find/replace (read-only) results.
 
 ### "cursor"
 
