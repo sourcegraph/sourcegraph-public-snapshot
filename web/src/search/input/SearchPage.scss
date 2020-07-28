@@ -103,23 +103,11 @@
         &__cloud-tag-line {
             color: $gray-11;
         }
-
-        &__example-searches {
-            a {
-                color: $gray-19;
-            }
-        }
     }
 }
 
 .theme-dark {
     .search-page {
-        &__example-searches {
-            a {
-                color: $white;
-            }
-        }
-
         &__web-link {
             color: #1c7cd6;
         }
