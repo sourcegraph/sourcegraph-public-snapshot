@@ -664,7 +664,7 @@ const SiteSchemaJSON = `{
             "default": false
           },
           "owners": {
-            "description": "Only receive alerts owned by the specific teams - for most use cases, we recommend against using this.",
+            "description": "Do not use. When set, only receive alerts owned by the specified teams. Used by Sourcegraph internally.",
             "type": "array",
             "items": {
               "type": "string"

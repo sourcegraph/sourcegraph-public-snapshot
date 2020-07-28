@@ -843,7 +843,7 @@ type ObservabilityAlerts struct {
 	// Level description: Sourcegraph alert level to subscribe to notifications for.
 	Level    string   `json:"level"`
 	Notifier Notifier `json:"notifier"`
-	// Owners description: Only receive alerts owned by the specific teams - for most use cases, we recommend against using this.
+	// Owners description: Do not use. When set, only receive alerts owned by the specified teams. Used by Sourcegraph internally.
 	Owners []string `json:"owners,omitempty"`
 }
 
