@@ -501,7 +501,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				// We can induce an error with an incomplete merge request
 				// event that's missing a project.
 				event := &webhooks.MergeRequestApprovedEvent{
-					MergeRequestEvent: webhooks.MergeRequestEvent{
+					MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
 						MergeRequest: &gitlab.MergeRequest{IID: 42},
 					},
 				}
@@ -520,7 +520,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				es := createGitLabExternalService(t, ctx, rstore)
 
 				event := &webhooks.MergeRequestCloseEvent{
-					MergeRequestEvent: webhooks.MergeRequestEvent{
+					MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
 						MergeRequest: &gitlab.MergeRequest{IID: 42},
 					},
 				}
@@ -583,7 +583,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}
 
 			t.Run("missing repo", func(t *testing.T) {
-				event := &webhooks.MergeRequestEvent{
+				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
 						Project: gitlab.ProjectCommon{ID: 12345},
 					},
@@ -596,7 +596,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 
 			t.Run("missing changeset", func(t *testing.T) {
-				event := &webhooks.MergeRequestEvent{
+				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
 						Project: gitlab.ProjectCommon{ID: pid},
 					},
@@ -609,7 +609,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 
 			t.Run("repo updater error", func(t *testing.T) {
-				event := &webhooks.MergeRequestEvent{
+				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
 						Project: gitlab.ProjectCommon{ID: pid},
 					},
@@ -635,7 +635,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 
 			t.Run("success", func(t *testing.T) {
-				event := &webhooks.MergeRequestEvent{
+				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
 						Project: gitlab.ProjectCommon{ID: pid},
 					},
@@ -669,7 +669,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			h := NewGitLabWebhook(store, rstore, clock.now)
 
 			event := &webhooks.MergeRequestCloseEvent{
-				MergeRequestEvent: webhooks.MergeRequestEvent{
+				MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
 						Project: gitlab.ProjectCommon{ID: 12345},
 					},

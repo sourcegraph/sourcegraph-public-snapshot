@@ -8,9 +8,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-// MergeRequestEvent is the common type that underpins the types defined for
-// specific merge request actions.
-type MergeRequestEvent struct {
+// There's a bit going on in this file in terms of types, so here's a high
+// level overview of what happens.
+//
+// When we get a webhook event of kind "merge_request" from GitLab, we want to
+// eventually unmarshal it into one of the specific, exported types below, such
+// as MergeRequestApprovedEvent or MergeRequestCloseEvent. To do so, we need to
+// look at the "action" field embedded within the merge request in the event.
+//
+// We don't really want to have to unmarshal the JSON an extra time or copy the
+// fairly sizable MergeRequest and User structs again, so what we do instead is
+// unmarshal it initially into mergeRequestEvent. This unmarshals all of the
+// fields that we need to construct the eventual typed event, but only exists
+// for as long as it takes to go from the initial unmarshal into
+// mergeRequestEvent until its downcast() method is called. That method looks
+// at the "action" and then constructs the final struct, moving the pointer
+// fields across from mergeRequestEvent into the MergeRequestEventCommon struct
+// they all embed.
+
+// MergeRequestEventCommon is the common type that underpins the types defined
+// for specific merge request actions.
+type MergeRequestEventCommon struct {
 	EventCommon
 
 	MergeRequest *gitlab.MergeRequest `json:"merge_request"`
@@ -18,21 +36,34 @@ type MergeRequestEvent struct {
 	Labels       *[]gitlab.Label      `json:"labels"`
 }
 
+// MergeRequestEventContainer is a common interface for types that embed
+// MergeRequestEvent to provide a method that can return the embedded
+// MergeRequestEvent.
 type MergeRequestEventContainer interface {
-	ToEvent() *MergeRequestEvent
+	ToEvent() *MergeRequestEventCommon
 }
 
-type MergeRequestApprovedEvent struct{ MergeRequestEvent }
-type MergeRequestCloseEvent struct{ MergeRequestEvent }
-type MergeRequestMergeEvent struct{ MergeRequestEvent }
-type MergeRequestReopenEvent struct{ MergeRequestEvent }
-type MergeRequestUnapprovedEvent struct{ MergeRequestEvent }
+type MergeRequestApprovedEvent struct{ MergeRequestEventCommon }
+type MergeRequestCloseEvent struct{ MergeRequestEventCommon }
+type MergeRequestMergeEvent struct{ MergeRequestEventCommon }
+type MergeRequestReopenEvent struct{ MergeRequestEventCommon }
+type MergeRequestUnapprovedEvent struct{ MergeRequestEventCommon }
 
-func (e *MergeRequestApprovedEvent) ToEvent() *MergeRequestEvent   { return &e.MergeRequestEvent }
-func (e *MergeRequestCloseEvent) ToEvent() *MergeRequestEvent      { return &e.MergeRequestEvent }
-func (e *MergeRequestMergeEvent) ToEvent() *MergeRequestEvent      { return &e.MergeRequestEvent }
-func (e *MergeRequestReopenEvent) ToEvent() *MergeRequestEvent     { return &e.MergeRequestEvent }
-func (e *MergeRequestUnapprovedEvent) ToEvent() *MergeRequestEvent { return &e.MergeRequestEvent }
+func (e *MergeRequestApprovedEvent) ToEvent() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+func (e *MergeRequestCloseEvent) ToEvent() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+func (e *MergeRequestMergeEvent) ToEvent() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+func (e *MergeRequestReopenEvent) ToEvent() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+func (e *MergeRequestUnapprovedEvent) ToEvent() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
 
 // We don't define Key() methods on MergeRequestApprovedEvent and
 // MergeRequestUnapprovedEvent because we don't need them when handling
@@ -44,12 +75,15 @@ func (e *MergeRequestCloseEvent) Key() string  { return e.key("Close") }
 func (e *MergeRequestMergeEvent) Key() string  { return e.key("Merge") }
 func (e *MergeRequestReopenEvent) Key() string { return e.key("Reopen") }
 
-func (e *MergeRequestEvent) key(prefix string) string {
+func (e *MergeRequestEventCommon) key(prefix string) string {
 	// We can't key solely off the merge request ID because it may be reopened
 	// and closed multiple times. Instead, we'll use the UpdatedAt field.
 	return fmt.Sprintf("MergeRequest:%s:%d:%s", prefix, e.MergeRequest.IID, e.MergeRequest.UpdatedAt.Format(time.RFC3339))
 }
 
+// mergeRequestEvent is an internal type used for initially unmarshalling the
+// typed event before it is downcast into a more specific type later based on
+// the "action" field in the JSON.
 type mergeRequestEvent struct {
 	EventCommon
 
@@ -65,7 +99,7 @@ type mergeRequestEventObjectAttributes struct {
 }
 
 func (mre *mergeRequestEvent) downcast() (interface{}, error) {
-	e := MergeRequestEvent{
+	e := MergeRequestEventCommon{
 		EventCommon:  mre.EventCommon,
 		MergeRequest: mre.ObjectAttributes.MergeRequest,
 		User:         mre.User,

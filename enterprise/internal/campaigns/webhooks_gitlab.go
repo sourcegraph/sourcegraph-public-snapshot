@@ -173,7 +173,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 	return nil
 }
 
-func (h *GitLabWebhook) handleMergeRequestApprovalEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEvent) error {
+func (h *GitLabWebhook) handleMergeRequestApprovalEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEventCommon) error {
 	// So this is fun: although approvals and unapprovals manifest in normal
 	// syncs as system notes, we _don't_ get them as note events in webhooks.
 	// Instead, we get a merge request webhook with an "approved" or
