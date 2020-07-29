@@ -431,43 +431,7 @@ add(
             <p>
                 {semanticColors.map(semantic => (
                     <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-${semantic}`)}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h3>Small</h3>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', 'btn-sm', `btn-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h3>Large</h3>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', 'btn-lg', `btn-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
+                        <button type="button" key={semantic} className={classNames('btn', `btn-${semantic}`)}>
                             {startCase(semantic)}
                         </button>{' '}
                     </React.Fragment>
@@ -490,9 +454,32 @@ add(
                 ))}
             </p>
 
+            <h3>Sizes</h3>
+            <p>
+                Large
+                <br />
+                <button type="button" className={classNames('btn', 'btn-lg', 'btn-primary', 'mr-2')}>
+                    Large button
+                </button>
+                <button type="button" className={classNames('btn', 'btn-lg', 'btn-secondary')}>
+                    Large button
+                </button>
+            </p>
+
+            <p>
+                Small
+                <br />
+                <button type="button" className={classNames('btn', 'btn-sm', 'btn-primary', 'mr-2')}>
+                    Large button
+                </button>
+                <button type="button" className={classNames('btn', 'btn-sm', 'btn-secondary')}>
+                    Large button
+                </button>
+            </p>
+
             <h2>Disabled</h2>
             <p>
-                <button type="button" className="btn btn-primary" disabled={true}>
+                <button type="button" className="btn btn-primary mr-2" disabled={true}>
                     I am disabled
                 </button>{' '}
                 <button type="button" className="btn btn-secondary" disabled={true}>
