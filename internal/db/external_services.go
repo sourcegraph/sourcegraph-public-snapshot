@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -280,10 +281,15 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 	externalService.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	externalService.UpdatedAt = externalService.CreatedAt
 
+	svcConfig, err := intSecrets.CryptObject.DecryptIfPossible(externalService.Config)
+	if err != nil {
+		return err
+	}
+
 	return dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING id",
-		externalService.Kind, externalService.DisplayName, externalService.Config, externalService.CreatedAt, externalService.UpdatedAt,
+		externalService.Kind, externalService.DisplayName, svcConfig, externalService.CreatedAt, externalService.UpdatedAt,
 	).Scan(&externalService.ID)
 }
 
@@ -311,6 +317,12 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 		if err := e.ValidateConfig(ctx, id, externalService.Kind, *update.Config, ps); err != nil {
 			return err
 		}
+
+		cfg, err := intSecrets.CryptObject.EncryptIfPossible(*update.Config)
+		if err != nil {
+			return err
+		}
+		update.Config = &cfg
 	}
 
 	execUpdate := func(ctx context.Context, tx *sql.Tx, update *sqlf.Query) error {
@@ -568,6 +580,11 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt); err != nil {
 			return nil, err
 		}
+		h.Config, err = intSecrets.CryptObject.DecryptIfPossible(h.Config)
+		if err != nil {
+			return nil, err
+		}
+
 		results = append(results, &h)
 	}
 	if err = rows.Err(); err != nil {

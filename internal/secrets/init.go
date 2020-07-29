@@ -9,6 +9,7 @@ import (
 )
 
 var CryptObject Encrypter
+var isEncrypted bool
 
 const (
 	// #nosec G101
@@ -16,8 +17,14 @@ const (
 	sourcegraphCryptEnvvar      = "SOURCEGRAPH_CRYPT_KEY"
 )
 
+func ConfiguredToEncrypt() bool {
+	return isEncrypted
+}
+
 func init() {
-	cryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
+	isEncrypted = false
+
+	envCryptKey, cryptOK := os.LookupEnv(sourcegraphCryptEnvvar)
 	var encryptionKey []byte
 
 	// set the default location if none exists
@@ -33,20 +40,23 @@ func init() {
 	if err == nil {
 		contents, readErr := ioutil.ReadFile(secretFile)
 		if readErr != nil {
-			panic(fmt.Sprintf("Couldn't read file %s", sourcegraphSecretfileEnvvar))
+			panic(fmt.Sprintf("couldn't read file %s", sourcegraphSecretfileEnvvar))
 		}
 		if len(contents) < validKeyLength {
-			panic(fmt.Sprintf("Key length of %d characters is required.", validKeyLength))
+			panic(fmt.Sprintf("key length of %d characters is required.", validKeyLength))
 		}
-		encryptionKey = []byte(contents)
+		encryptionKey = contents
+		err = os.Chmod(secretFile, 0400)
+		if err != nil {
+			panic("failed to make secrets file read only.")
+		}
 		CryptObject.EncryptionKey = encryptionKey
 		return
 	}
 
 	// environment is second order
 	if cryptOK {
-		encryptionKey = []byte(cryptKey)
-		CryptObject.EncryptionKey = encryptionKey
+		CryptObject.EncryptionKey = []byte(envCryptKey)
 		return
 	}
 
@@ -55,7 +65,7 @@ func init() {
 	if conf.IsDeployTypeSingleDockerContainer(deployType) {
 		b, err := GenerateRandomAESKey()
 		if err != nil {
-			panic(fmt.Sprintf("Unable to read from random source: %v", err))
+			panic(fmt.Sprintf("unable to read from random source: %v", err))
 		}
 		err = ioutil.WriteFile(secretFile, b, 0600)
 		if err != nil {
@@ -64,9 +74,9 @@ func init() {
 
 		err = os.Chmod(secretFile, 0400)
 		if err != nil {
-			panic("Failed to secure secrets file.")
+			panic("failed to make secrets file read only.")
 		}
-		encryptionKey = b
+		CryptObject.EncryptionKey = b
 	}
 
 	// wrapping in deploytype check so that we can still compile and test locally
@@ -77,4 +87,5 @@ func init() {
 			sourcegraphSecretfileEnvvar))
 	}
 
+	isEncrypted = true
 }
