@@ -241,7 +241,7 @@ loop:
 			// Caller advances.
 			break loop
 		case p.matchUnaryKeyword(NOT):
-			parameter, err := p.parseNegatedParameter()
+			parameter, err := p.parseNegatedLeafNode()
 			if err != nil {
 				return nil, err
 			}

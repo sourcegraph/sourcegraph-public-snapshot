@@ -267,42 +267,37 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
-// parseNegatedParameter parses `NOT field:value` or `NOT pattern` and
-// translates it to `-field:value` or `-content:pattern` respectively.
-func (p *parser) parseNegatedParameter() (Parameter, error) {
+// parseNegatedLeafNode parses `NOT field:value` or `NOT pattern` and
+// translates it to `-field:value` or as negated pattern respectively.
+func (p *parser) parseNegatedLeafNode() (Node, error) {
 	start := p.pos
-	p.pos += 3 // jump NOT
+	_ = p.expect(NOT)
 
 	err := p.skipSpaces()
 	if err != nil {
 		return Parameter{}, err
 	}
 
-	// if the next token is not a supported field, we parse it as -content:"..."
-	field, advance := ScanField(p.buf[p.pos:])
-	_, exists := allFields[strings.ToLower(field)]
-	if !exists {
-		pattern := p.ParsePattern()
-		return Parameter{
-			Field:      FieldContent,
-			Value:      pattern.Value,
-			Negated:    true,
-			Annotation: Annotation{Range: newRange(start, p.pos)},
-		}, nil
-	}
-
-	// the token is a valid field, hence we parse it as such
-	p.pos += advance
-	value, err := p.ParseFieldValue()
+	// try parsing as parameter. If it doesn't work we treat NOT's operand
+	// as pattern.
+	parameter, ok, err := p.ParseParameter()
 	if err != nil {
-		return Parameter{}, err
+		return nil, err
 	}
-	return Parameter{
-		Field:      field,
-		Value:      value,
-		Negated:    true,
-		Annotation: Annotation{Range: newRange(start, p.pos)},
-	}, nil
+	if !ok {
+		pattern := p.ParsePattern()
+		pattern.Negated = true
+		pattern.Annotation.Range = newRange(start, p.pos)
+		return pattern, nil
+	}
+	// we don't support NOT -field:value
+	if parameter.Negated {
+		return nil, fmt.Errorf("Unexpected NOT before \"-%s:%s\". Remove NOT and try again.",
+			parameter.Field, parameter.Value)
+	}
+	parameter.Negated = true
+	parameter.Annotation.Range = newRange(start, p.pos)
+	return parameter, nil
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -741,7 +736,7 @@ loop:
 			// Caller advances.
 			break loop
 		case p.matchUnaryKeyword(NOT):
-			parameter, err := p.parseNegatedParameter()
+			parameter, err := p.parseNegatedLeafNode()
 			if err != nil {
 				return nil, err
 			}

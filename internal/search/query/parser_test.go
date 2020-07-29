@@ -70,7 +70,7 @@ func TestParseParameterList(t *testing.T) {
 		{
 			Name:       "NOT prefix on unsupported key-value pair",
 			Input:      `NOT foo:bar`,
-			Want:       `{"field":"content","value":"foo:bar","negated":true}`,
+			Want:       `{"value":"foo:bar","negated":true}`,
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
 			WantLabels: Regexp,
 		},
@@ -82,16 +82,9 @@ func TestParseParameterList(t *testing.T) {
 			WantLabels: Regexp,
 		},
 		{
-			Name:       "NOT prefix on negated file",
-			Input:      `NOT -file:bar`,
-			Want:       `{"field":"content","value":"-file:bar","negated":true}`,
-			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":13}}`,
-			WantLabels: Regexp,
-		},
-		{
 			Name:       "Double NOT",
 			Input:      `NOT NOT`,
-			Want:       `{"field":"content","value":"NOT","negated":true}`,
+			Want:       `{"value":"NOT","negated":true}`,
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
 			WantLabels: Regexp,
 		},
@@ -912,45 +905,39 @@ func TestMergePatterns(t *testing.T) {
 
 func TestMatchUnaryKeyword(t *testing.T) {
 	tests := []struct {
-		name string
-		buf  []byte
+		in   string
 		pos  int
 		want bool
 	}{
 		{
-			name: "simple NOT",
-			buf:  []byte("NOT bar"),
+			in:   "NOT bar",
 			pos:  0,
 			want: true,
 		},
 		{
-			name: "NOT in the middle",
-			buf:  []byte("foo NOT bar"),
+			in:   "foo NOT bar",
 			pos:  4,
 			want: true,
 		},
 		{
-			name: "NOT at the end",
-			buf:  []byte("foo NOT"),
+			in:   "foo NOT",
 			pos:  4,
 			want: false,
 		},
 		{
-			name: "NOT without space before",
-			buf:  []byte("fooNOT bar"),
+			in:   "fooNOT bar",
 			pos:  3,
 			want: false,
 		},
 		{
-			name: "NOT without space after",
-			buf:  []byte("NOTbar"),
+			in:   "NOTbar",
 			pos:  0,
 			want: false,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &parser{buf: tt.buf, pos: tt.pos}
+		t.Run(tt.in, func(t *testing.T) {
+			p := &parser{buf: []byte(tt.in), pos: tt.pos}
 			if got := p.matchUnaryKeyword("NOT"); got != tt.want {
 				t.Errorf("matchUnaryKeyword() = %v, want %v", got, tt.want)
 			}
