@@ -14,6 +14,7 @@ var allDockerImages = []string{
 	"github-proxy",
 	"gitserver",
 	"query-runner",
+	"replacer",
 	"repo-updater",
 	"searcher",
 	"server",
