@@ -448,7 +448,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 		})
 
-		t.Run("getExternalServiceFromRawID database error", func(t *testing.T) {
+		t.Run("broken repo store", func(t *testing.T) {
 			// This test is separate from the other unit tests for this
 			// function above because it needs to set up a bad database
 			// connection on the repo store.
@@ -462,7 +462,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}
 		})
 
-		t.Run("database error", func(t *testing.T) {
+		t.Run("broken campaign store", func(t *testing.T) {
 			// We can induce an error with a broken database connection.
 			store, rstore, clock := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(store, rstore, clock.now)
