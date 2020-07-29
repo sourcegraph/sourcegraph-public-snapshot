@@ -30,12 +30,12 @@ func (err *EncryptionError) Error() string {
 	return err.Message
 }
 
-// Encrypter contains the encryption key used in encryption and decryption
+// Encrypter contains the encryption key used in encryption and decryption.
 type Encrypter struct {
 	EncryptionKey []byte
 }
 
-// Returns an enrypted string
+// Returns an enrypted string.
 func (e *Encrypter) encrypt(key []byte, value string) (string, error) {
 	// create a one time nonce of standard length, without repetitions
 
@@ -59,12 +59,21 @@ func (e *Encrypter) encrypt(key []byte, value string) (string, error) {
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
 
-// Encrypts the string, returning the encrypted value
+// Encrypts the string, returning the encrypted value.
 func (e *Encrypter) Encrypt(value string) (string, error) {
 	return e.encrypt(e.EncryptionKey, value)
 }
 
-// Decrypts the string, returning the decrypted value
+// EncryptIfPossible encrypts  the string if encryption is configured.
+// Returns an error only when encryption is enabled, and encryption fails.
+func (e *Encrypter) EncryptIfPossible(value string) (string, error) {
+	if isEncrypted {
+		return e.Encrypt(value)
+	}
+	return value, nil
+}
+
+// Decrypts the string, returning the decrypted value.
 func (e *Encrypter) Decrypt(encodedValue string) (string, error) {
 	encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
 	if err != nil {
@@ -85,6 +94,15 @@ func (e *Encrypter) Decrypt(encodedValue string) (string, error) {
 	stream := cipher.NewCFBDecrypter(block, nonce)
 	stream.XORKeyStream(value, value)
 	return string(value), nil
+}
+
+// DecryptIfPossible decrypts the string if encryption is configured.
+// It returns an error only if encryption is enabled and it cannot decrypt the string
+func (e *Encrypter) DecryptIfPossible(value string) (string, error) {
+	if isEncrypted {
+		return e.Decrypt(value)
+	}
+	return value, nil
 }
 
 // This function rotates the encryption used on an item by decryping and then recencrypting.

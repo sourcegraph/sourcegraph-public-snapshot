@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+const (
+	toEncrypt = "I Madam. I made radio, So I dard. Am I mad? Am I?"
+)
+
 func TestRandomAESKey(t *testing.T) {
 	key, err := GenerateRandomAESKey()
 	if err != nil {
@@ -20,7 +24,6 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 	// 32 bytes means an AES-256 cipher
 	key, _ := GenerateRandomAESKey()
 	e := Encrypter{EncryptionKey: key}
-	toEncrypt := "i am the super secret string, shhhhh"
 
 	encrypted, err := e.Encrypt(toEncrypt)
 	if err != nil {
@@ -40,7 +43,6 @@ func TestEncryptingAndDecrypting(t *testing.T) {
 	if decrypted != toEncrypt {
 		t.Fatalf("failed to decrypt")
 	}
-
 }
 
 // Test the negative result - we should fail to decrypt with bad keys
@@ -62,7 +64,6 @@ func TestBadKeysFailToDecrypt(t *testing.T) {
 	if decrypted == decryptAgain {
 		t.Fatal("Should not have been able to decrypt string with a second set of secrets.")
 	}
-
 }
 
 // Test that different strings encrypt to different outputs
@@ -103,7 +104,6 @@ func isInSliceOnce(item string, slice []string) bool {
 
 func TestSampleNoRepeats(t *testing.T) {
 	key, _ := GenerateRandomAESKey()
-	toEncrypt := "All in, fall in, call in, wall in"
 	e := Encrypter{EncryptionKey: key}
 
 	var crypts []string
@@ -123,7 +123,6 @@ func TestSampleNoRepeats(t *testing.T) {
 func TestKeyRotation(t *testing.T) {
 	initialKey, _ := GenerateRandomAESKey()
 	secondKey, _ := GenerateRandomAESKey()
-	toEncrypt := "Chickens, pigs, giraffes, llammas, monkeys, birds, spiders"
 
 	e := Encrypter{EncryptionKey: initialKey}
 	encrypted, _ := e.Encrypt(toEncrypt) // another test validates
@@ -148,5 +147,61 @@ func TestKeyRotation(t *testing.T) {
 	if !bytes.Equal(e.EncryptionKey, secondKey) {
 		// if !reflect.DeepEqual(e.EncryptionKey, secondKey) {
 		t.Fatalf("Expected key to be %s, got %s.", secondKey, e.EncryptionKey)
+	}
+}
+
+func TestEncryptIfPossible(t *testing.T) {
+	initialKey, _ := GenerateRandomAESKey()
+	isEncrypted = true
+	e := Encrypter{EncryptionKey: initialKey}
+
+	encString, err := e.EncryptIfPossible(toEncrypt)
+	if err != nil {
+		t.Fatalf("Failed to encrypt")
+	}
+	if encString == toEncrypt {
+		t.Fatalf("Encryption failed.")
+	}
+
+	// now test when we cannot encrypt
+
+	e = Encrypter{}
+	isEncrypted = false // setting this false means that EncryptIfPossible will not return an err
+	encString, err = e.EncryptIfPossible(toEncrypt)
+	if err != nil {
+		t.Fatalf("Received error when code path should be nil. %v", err)
+	}
+	if encString != toEncrypt {
+		t.Fatalf("Received encrypted string, expected unencrypted.")
+	}
+}
+
+func TestDecryptIfPossible(t *testing.T) {
+	initialKey, _ := GenerateRandomAESKey()
+	isEncrypted = true
+	e := Encrypter{EncryptionKey: initialKey}
+	encrypted, err := e.Encrypt(toEncrypt)
+	if err != nil {
+		t.Fatal("Failed to encrypt.")
+	}
+	e = Encrypter{EncryptionKey: initialKey}
+
+	decString, err := e.DecryptIfPossible(encrypted)
+	if err != nil {
+		t.Fatalf("Failed to decrypt")
+	}
+	if decString != toEncrypt {
+		t.Fatalf("Decryption failed.")
+	}
+
+	// now test when we cannot decrypt
+	e = Encrypter{}
+	isEncrypted = false
+	decString, err = e.DecryptIfPossible(encrypted)
+	if err != nil {
+		t.Fatalf("Received error when code path should be nil. %v", err)
+	}
+	if decString == toEncrypt {
+		t.Fatalf("Received encrypted string, expected unencrypted.")
 	}
 }
