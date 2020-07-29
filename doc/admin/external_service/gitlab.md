@@ -95,21 +95,21 @@ The `webhooks` setting allows specifying the webhook secrets necessary to authen
 ]
 ```
 
-Using webhooks is optional, but if configured on GitLab, they allow faster campaign updates than the normal background syncing (i.e. polling) which `repo-updater` provides.
+Using webhooks is highly recommended when using [campaigns](../../user/campaigns/index.md), since they speed up the syncing of pull request data between GitLab and Sourcegraph and make it more efficient.
 
-The following [webhook events](https://docs.gitlab.com/ee/user/project/integrations/webhooks.html) are currently used:
+To set up webhooks:
 
-- Merge request events
-- Pipeline events
+1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the GitLab configuration.
+1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"secret": "verylongrandomsecret"}]`
+1. Click **Update repositories**.
+1. Copy the webhook URL displayed below the **Update repositories** button.
+1. On GitLab, go to your project, and then **Settings > Webhooks** (or **Settings > Integration** on older GitLab versions that don't have the **Webhooks** option).
+1. Fill in the webhook form:
+   * **URL**: the URL you copied above from Sourcegraph.
+   * **Secret token**: the secret token you configured Sourcegraph to use above.
+   * **Trigger**: select **Merge request events** and **Pipeline events**.
+   * **Enable SSL verification**: ensure this is enabled if you have configured SSL with a valid certificate in your Sourcegraph instance.
+1. Click **Add webhook**.
+1. Confirm that the new webhook is listed below **Project Hooks**.
 
-Webhooks must be configured on each project that you wish to monitor on GitLab. To set up a project webhook on GitLab, go to the **Webhook** settings page of the project. (On older versions of GitLab, this may be the **Integration** settings page instead.)
-
-Fill in the **URL** displayed after saving the `webhooks` Sourcegraph setting mentioned above and make sure it is publicly available.
-
-Add the **Secret Token** that was configured within Sourcegraph: in the example above, that's `verylongrandomsecret`.
-
-Select the event types you want to monitor. At a minimum, these should include **merge request events** and **pipeline events**.
-
-Click on **Enable SSL verification** if you have configured SSL with a valid certificate in your Sourcegraph instance.
-
-Finally, select **Add webhook** to create the webhook.
+Done! Sourcegraph will now receive webhook events from GitLab and use them to sync merge request events, used by [campaigns](../../user/campaigns/index.md), faster and more efficiently.
