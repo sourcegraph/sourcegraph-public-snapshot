@@ -342,7 +342,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     resolvedRev={this.state.resolvedRevisionOrError}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     contributions={[
-                        { position: 'right', priority: 1, element: <span>Hello world</span> },
                         {
                             position: 'right',
                             priority: 2,
