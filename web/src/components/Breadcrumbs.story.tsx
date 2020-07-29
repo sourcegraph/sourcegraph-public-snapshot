@@ -6,12 +6,16 @@ import webStyles from '../SourcegraphWebApp.scss'
 const { add } = storiesOf('web/Breadcrumbs', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div>{story()}</div>
+        <div className="layout__app-router-container">
+            <div className="container mt-3">{story()}</div>
+        </div>
     </>
 ))
 
+add('Empty breadcrumbs', () => <Breadcrumbs breadcrumbs={[]} />)
+
 add(
-    'Breadcrumbs',
+    'Three levels deep',
     () => (
         <Breadcrumbs
             breadcrumbs={[
