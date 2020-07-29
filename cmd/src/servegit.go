@@ -17,13 +17,17 @@ func init() {
 		fmt.Fprintf(flag.CommandLine.Output(), `'src serve-git' serves your local git repositories over HTTP for Sourcegraph to pull.
 
 USAGE
-  src [-v] serve-git [-addr :3434] [path/to/dir]
+  src [-v] serve-git [-list] [-addr :3434] [path/to/dir]
 
 By default 'src serve-git' will recursively serve your current directory on the address ':3434'.
+
+'src serve-git -list' will not start up the server. Instead it will write to stdout a list of
+repository names it would serve.
 `)
 	}
 	var (
 		addrFlag = flagSet.String("addr", ":3434", "Address on which to serve (end with : for unused port)")
+		listFlag = flagSet.Bool("list", false, "list found repository names")
 	)
 
 	handler := func(args []string) error {
@@ -58,11 +62,24 @@ By default 'src serve-git' will recursively serve your current directory on the 
 			Info:  log.New(os.Stderr, "serve-git: ", log.LstdFlags),
 			Debug: dbug,
 		}
+
+		if *listFlag {
+			repos, err := s.Repos()
+			if err != nil {
+				return err
+			}
+			for _, r := range repos {
+				fmt.Println(r.Name)
+			}
+			return nil
+		}
+
 		return s.Start()
 	}
 
 	// Register the command.
 	commands = append(commands, &command{
+		aliases:   []string{"servegit"},
 		flagSet:   flagSet,
 		handler:   handler,
 		usageFunc: usageFunc,

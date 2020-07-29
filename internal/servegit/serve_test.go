@@ -175,11 +175,14 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos := (&Serve{
+	repos, err := (&Serve{
 		Info:  testLogger(t),
 		Debug: discardLogger,
 		Root:  root,
-	}).repos()
+	}).Repos()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(repos) != 0 {
 		t.Fatalf("expected no repos, got %v", repos)
 	}

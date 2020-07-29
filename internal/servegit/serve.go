@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path"
+	pathpkg "path"
 	"path/filepath"
 	"strings"
 
@@ -79,32 +79,10 @@ func (s *Serve) handler() http.Handler {
 	})
 
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
-		var repos []Repo
-		var reposRootIsRepo bool
-		for _, name := range s.repos() {
-			if name == "." {
-				reposRootIsRepo = true
-			}
-
-			repos = append(repos, Repo{
-				Name: name,
-				URI:  path.Join("/repos", name),
-			})
-		}
-
-		if reposRootIsRepo {
-			// Update all names to be relative to the parent of
-			// reposRoot. This is to give a better name than "." for repos
-			// root
-			abs, err := filepath.Abs(s.Root)
-			if err != nil {
-				http.Error(w, "failed to get the absolute path of reposRoot: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-			rootName := filepath.Base(abs)
-			for i := range repos {
-				repos[i].Name = path.Join(rootName, repos[i].Name)
-			}
+		repos, err := s.Repos()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		resp := struct {
@@ -142,10 +120,10 @@ func (s *Serve) handler() http.Handler {
 	})
 }
 
-// repos returns a slice of all the git directories it finds. The paths are
-// relative to root.
-func (s *Serve) repos() []string {
-	var gitDirs []string
+// Repos returns a slice of all the git repositories it finds.
+func (s *Serve) Repos() ([]Repo, error) {
+	var repos []Repo
+	var reposRootIsRepo bool
 
 	err := filepath.Walk(s.Root, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
@@ -178,7 +156,13 @@ func (s *Serve) repos() []string {
 			// subpath). So Rel should always work.
 			s.Info.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, s.Root, err)
 		}
-		gitDirs = append(gitDirs, filepath.ToSlash(subpath))
+
+		name := filepath.ToSlash(subpath)
+		reposRootIsRepo = reposRootIsRepo || name == "."
+		repos = append(repos, Repo{
+			Name: name,
+			URI:  pathpkg.Join("/repos", name),
+		})
 
 		// Check whether a repository is a bare repository or not.
 		//
@@ -197,11 +181,25 @@ func (s *Serve) repos() []string {
 	})
 
 	if err != nil {
-		// Our WalkFunc doesn't return any errors, so neither should filepath.Walk
-		panic(err)
+		return nil, err
 	}
 
-	return gitDirs
+	if !reposRootIsRepo {
+		return repos, nil
+	}
+
+	// Update all names to be relative to the parent of reposRoot. This is to
+	// give a better name than "." for repos root
+	abs, err := filepath.Abs(s.Root)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the absolute path of reposRoot: %w", err)
+	}
+	rootName := filepath.Base(abs)
+	for i := range repos {
+		repos[i].Name = pathpkg.Join(rootName, repos[i].Name)
+	}
+
+	return repos, nil
 }
 
 func explainAddr(addr string) string {
