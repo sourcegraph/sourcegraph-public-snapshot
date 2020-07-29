@@ -15,18 +15,22 @@ const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
     </>
 ))
 
-add('Basic', () => <PageHeader title="Basic" breadcrumbs={['Page name']} icon={<PuzzleOutlineIcon />} />)
+add('Basic header', () => {
+    const title = text('Title', 'Page name')
+    return <PageHeader title={title} breadcrumbs={[title]} icon={<PuzzleOutlineIcon />} />
+})
 
 add(
-    'Complex',
+    'Complex header',
     () => {
         const title = text('Title', 'Page name')
+        const badge = text('Badge', 'prototype')
         return (
             <PageHeader
                 title={title}
                 breadcrumbs={['Level 2', 'Level 3', title]}
                 icon={<ClockOutlineIcon className="inline-icon" />}
-                badge="prototype"
+                badge={badge}
             />
         )
     },
