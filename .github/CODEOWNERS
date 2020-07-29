@@ -143,6 +143,7 @@
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
 /doc/user/campaigns @sourcegraph/campaigns
 /enterprise/internal/campaigns @sourcegraph/campaigns
+/enterprise/cmd/frontend/internal/campaigns @sourcegraph/campaigns
 /internal/campaigns @sourcegraph/campaigns
 /web/**/campaigns/** @sourcegraph/campaigns
 
@@ -230,6 +231,7 @@ Dockerfile @sourcegraph/distribution
 /enterprise/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
 /enterprise/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
+/enterprise/cmd/frontend/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 /internal/cmd/precise-code-intel-tester @sourcegraph/code-intel
 
