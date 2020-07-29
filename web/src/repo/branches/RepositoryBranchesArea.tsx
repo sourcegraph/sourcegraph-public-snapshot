@@ -1,14 +1,13 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
+import React, { useEffect } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
-import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
+import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -18,7 +17,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
+interface Props extends RouteComponentProps<{}>, UpdateBreadcrumbsProps {
     repo: GQL.IRepository
 }
 
@@ -40,13 +39,12 @@ export const RepositoryBranchesArea: React.FunctionComponent<Props> = props => {
         repo: props.repo,
     }
 
+    useEffect(() =>
+        props.pushBreadcrumb(<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>, [])
+    )
+
     return (
         <div className="repository-branches-area container">
-            <RepoHeaderContributionPortal
-                position="nav"
-                element={<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>}
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
             <RepositoryBranchesNavbar className="my-3" repo={props.repo.name} />
             <Switch>
                 {/* eslint-disable react/jsx-no-bind */}

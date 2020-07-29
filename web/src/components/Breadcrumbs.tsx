@@ -5,7 +5,7 @@ interface BreadcrumbsProps {
     breadcrumbs: React.ReactNode[]
 }
 
-interface UpdateBreadcrumbsProps {
+export interface UpdateBreadcrumbsProps {
     pushBreadcrumb: (element: React.ReactNode) => () => void
 }
 
