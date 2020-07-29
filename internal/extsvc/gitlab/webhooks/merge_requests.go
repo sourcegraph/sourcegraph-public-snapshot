@@ -40,8 +40,8 @@ func (e *MergeRequestReopenEvent) Key() string { return e.key("Reopen") }
 
 func (e *MergeRequestEvent) key(prefix string) string {
 	// We can't key solely off the merge request ID because it may be reopened
-	// and closed multiple times. Instead, we'll use the CreatedAt field.
-	return fmt.Sprintf("MergeRequest:%s:%d:%s", prefix, e.MergeRequest.IID, e.MergeRequest.CreatedAt.Format(time.RFC3339))
+	// and closed multiple times. Instead, we'll use the UpdatedAt field.
+	return fmt.Sprintf("MergeRequest:%s:%d:%s", prefix, e.MergeRequest.IID, e.MergeRequest.UpdatedAt.Format(time.RFC3339))
 }
 
 type mergeRequestEvent struct {
