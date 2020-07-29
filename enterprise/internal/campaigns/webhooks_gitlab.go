@@ -62,7 +62,11 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	event, err := webhooks.UnmarshalEvent(payload)
 	if err != nil {
 		if errors.Is(err, webhooks.ErrObjectKindUnknown) {
-			respond(w, http.StatusNotImplemented, err)
+			// We don't want to return a non-2XX status code and have GitLab
+			// retry the webhook, so we'll log that we don't know what to do
+			// and return 204.
+			log15.Info("cannot handle GitLab webhook event of unknown type", "error", err)
+			respond(w, http.StatusNoContent, err)
 		} else {
 			respond(w, http.StatusInternalServerError, errors.Wrap(err, "unmarshalling payload"))
 		}
@@ -160,10 +164,10 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 		return nil
 	}
 
-	return &httpError{
-		code: http.StatusNotImplemented,
-		err:  errors.Errorf("unknown event type: %T", event),
-	}
+	// We don't want to return a non-2XX status code and have GitLab retry the
+	// webhook, so we'll log that we don't know what to do and return 204.
+	log15.Info("cannot handle GitLab webhook event of unknown type", "event", event, "type", fmt.Sprintf("%T", event))
+	return nil
 }
 
 func (h *GitLabWebhook) handleMergeRequestApprovalEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEvent) error {

@@ -226,10 +226,9 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusNotImplemented; have != want {
+				if have, want := resp.StatusCode, http.StatusNoContent; have != want {
 					t.Errorf("unexpected status code: have %d; want %d", have, want)
 				}
-				assertBodyIncludes(t, resp.Body, "unknown object kind")
 			})
 
 			t.Run("error from handleEvent", func(t *testing.T) {
@@ -484,10 +483,8 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				es := createGitLabExternalService(t, ctx, rstore)
 
 				err := h.handleEvent(ctx, es, nil)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if want := http.StatusNotImplemented; err.code != want {
-					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
+				if err != nil {
+					t.Errorf("unexpected non-nil error: %+v", err)
 				}
 			})
 
