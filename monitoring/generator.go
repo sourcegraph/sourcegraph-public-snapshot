@@ -23,6 +23,7 @@ import (
 	"unicode"
 
 	"github.com/grafana-tools/sdk"
+	"github.com/prometheus/common/model"
 	"gopkg.in/yaml.v2"
 )
 
@@ -891,18 +892,18 @@ func main() {
 		PreciseCodeIntelWorker(),
 		PreciseCodeIntelIndexer(),
 		QueryRunner(),
-		Replacer(),
 		RepoUpdater(),
 		Searcher(),
 		Symbols(),
 		SyntectServer(),
 		ZoektIndexServer(),
 		ZoektWebServer(),
+		Prometheus(),
 	}
 	var filelist []string
 	for _, container := range containers {
 		if err := container.validate(); err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Sprintf("container %q: %+v", container.Name, err))
 		}
 		if grafanaDir != "" {
 			board := container.dashboard()
@@ -1034,9 +1035,10 @@ type promGroup struct {
 
 func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, duration time.Duration) {
 	labels["alert_type"] = "builtin" // indicate alert is generated
-	var forDuration *time.Duration
+	var forDuration *model.Duration
 	if duration > 0 {
-		forDuration = &duration
+		d := model.Duration(duration)
+		forDuration = &d
 	}
 
 	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
@@ -1069,7 +1071,7 @@ type promRule struct {
 	Expr   string
 
 	// for Alert only
-	For *time.Duration `yaml:",omitempty"`
+	For *model.Duration `yaml:",omitempty"`
 }
 
 // setPanelSize is a helper to set a panel's size.

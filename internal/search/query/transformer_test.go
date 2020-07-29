@@ -505,3 +505,48 @@ func TestTranslateBadGlobPattern(t *testing.T) {
 		})
 	}
 }
+
+func TestReporevToRegex(t *testing.T) {
+	tests := []struct {
+		name string
+		arg  string
+		want string
+	}{
+		{
+			name: "no revision",
+			arg:  "github.com/foo",
+			want: "^github\\.com/foo$",
+		},
+		{
+			name: "with revision",
+			arg:  "github.com/foo@bar",
+			want: "^github\\.com/foo$@bar",
+		},
+		{
+			name: "empty string",
+			arg:  "",
+			want: "",
+		},
+		{
+			name: "many @",
+			arg:  "foo@bar@bas",
+			want: "^foo$@bar@bas",
+		},
+		{
+			name: "just @",
+			arg:  "@",
+			want: "@",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := reporevToRegex(tt.arg)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tt.want {
+				t.Fatalf("reporevToRegex() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

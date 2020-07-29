@@ -42,6 +42,17 @@ for assistance.
 
 - This indicates your user`s are making syntax errors or similar user errors.
 
+# frontend: page_load_latency
+
+**Descriptions:**
+
+- _frontend: 20+ 90th percentile page load latency over all routes over 10m_ (`critical_frontend_page_load_latency`)
+
+**Possible solutions:**
+
+- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+
 # frontend: 99th_percentile_search_codeintel_request_duration
 
 **Descriptions:**
@@ -146,6 +157,28 @@ for assistance.
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
 
+# frontend: container_cpu_usage
+
+**Descriptions:**
+
+- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_frontend_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
+
+# frontend: container_memory_usage
+
+**Descriptions:**
+
+- _frontend: 99%+ container memory usage by instance_ (`warning_frontend_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
+
 # frontend: container_restarts
 
 **Descriptions:**
@@ -161,27 +194,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' frontend` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the frontend container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs frontend` (note this will include logs from the previous and currently running container).
 
-# frontend: container_memory_usage
+# frontend: fs_inodes_used
 
 **Descriptions:**
 
-- _frontend: 99%+ container memory usage by instance_ (`warning_frontend_container_memory_usage`)
+- _frontend: 3e+06+ fs inodes in use by instance_ (`warning_frontend_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
-
-# frontend: container_cpu_usage
-
-**Descriptions:**
-
-- _frontend: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_frontend_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # frontend: provisioning_container_cpu_usage_7d
 
@@ -313,6 +335,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs gitserver` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# gitserver: container_cpu_usage
+
+**Descriptions:**
+
+- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_gitserver_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+
+# gitserver: container_memory_usage
+
+**Descriptions:**
+
+- _gitserver: 99%+ container memory usage by instance_ (`warning_gitserver_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
+
 # gitserver: container_restarts
 
 **Descriptions:**
@@ -328,27 +372,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' gitserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the gitserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs gitserver` (note this will include logs from the previous and currently running container).
 
-# gitserver: container_memory_usage
+# gitserver: fs_inodes_used
 
 **Descriptions:**
 
-- _gitserver: 99%+ container memory usage by instance_ (`warning_gitserver_container_memory_usage`)
+- _gitserver: 3e+06+ fs inodes in use by instance_ (`warning_gitserver_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-
-# gitserver: container_cpu_usage
-
-**Descriptions:**
-
-- _gitserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_gitserver_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # gitserver: provisioning_container_cpu_usage_7d
 
@@ -398,6 +431,28 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
 
+# github-proxy: container_cpu_usage
+
+**Descriptions:**
+
+- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_github-proxy_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+
+# github-proxy: container_memory_usage
+
+**Descriptions:**
+
+- _github-proxy: 99%+ container memory usage by instance_ (`warning_github-proxy_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+
 # github-proxy: container_restarts
 
 **Descriptions:**
@@ -413,27 +468,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
 
-# github-proxy: container_memory_usage
+# github-proxy: fs_inodes_used
 
 **Descriptions:**
 
-- _github-proxy: 99%+ container memory usage by instance_ (`warning_github-proxy_container_memory_usage`)
+- _github-proxy: 3e+06+ fs inodes in use by instance_ (`warning_github-proxy_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-
-# github-proxy: container_cpu_usage
-
-**Descriptions:**
-
-- _github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_github-proxy_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # github-proxy: provisioning_container_cpu_usage_7d
 
@@ -512,6 +556,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# precise-code-intel-bundle-manager: container_cpu_usage
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+
+# precise-code-intel-bundle-manager: container_memory_usage
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_ (`warning_precise-code-intel-bundle-manager_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
+
 # precise-code-intel-bundle-manager: container_restarts
 
 **Descriptions:**
@@ -527,27 +593,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-bundle-manager` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-bundle-manager` (note this will include logs from the previous and currently running container).
 
-# precise-code-intel-bundle-manager: container_memory_usage
+# precise-code-intel-bundle-manager: fs_inodes_used
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_ (`warning_precise-code-intel-bundle-manager_container_memory_usage`)
+- _precise-code-intel-bundle-manager: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-bundle-manager_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-
-# precise-code-intel-bundle-manager: container_cpu_usage
-
-**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-bundle-manager_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # precise-code-intel-bundle-manager: provisioning_container_cpu_usage_7d
 
@@ -613,6 +668,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# precise-code-intel-worker: container_cpu_usage
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-worker_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+
+# precise-code-intel-worker: container_memory_usage
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 99%+ container memory usage by instance_ (`warning_precise-code-intel-worker_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+
 # precise-code-intel-worker: container_restarts
 
 **Descriptions:**
@@ -628,27 +705,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
 
-# precise-code-intel-worker: container_memory_usage
+# precise-code-intel-worker: fs_inodes_used
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 99%+ container memory usage by instance_ (`warning_precise-code-intel-worker_container_memory_usage`)
+- _precise-code-intel-worker: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-worker_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
-
-# precise-code-intel-worker: container_cpu_usage
-
-**Descriptions:**
-
-- _precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-worker_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # precise-code-intel-worker: provisioning_container_cpu_usage_7d
 
@@ -714,6 +780,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# precise-code-intel-indexer: container_cpu_usage
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-indexer_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+
+# precise-code-intel-indexer: container_memory_usage
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 99%+ container memory usage by instance_ (`warning_precise-code-intel-indexer_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+
 # precise-code-intel-indexer: container_restarts
 
 **Descriptions:**
@@ -729,27 +817,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
 
-# precise-code-intel-indexer: container_memory_usage
+# precise-code-intel-indexer: fs_inodes_used
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container memory usage by instance_ (`warning_precise-code-intel-indexer_container_memory_usage`)
+- _precise-code-intel-indexer: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-indexer_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-
-# precise-code-intel-indexer: container_cpu_usage
-
-**Descriptions:**
-
-- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-indexer_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # precise-code-intel-indexer: provisioning_container_cpu_usage_7d
 
@@ -815,21 +892,6 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs query-runner` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# query-runner: container_restarts
-
-**Descriptions:**
-
-- _query-runner: 1+ container restarts every 5m by instance_ (`warning_query-runner_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod query-runner` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p query-runner`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
-
 # query-runner: container_memory_usage
 
 **Descriptions:**
@@ -851,6 +913,32 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
+
+# query-runner: container_restarts
+
+**Descriptions:**
+
+- _query-runner: 1+ container restarts every 5m by instance_ (`warning_query-runner_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod query-runner` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p query-runner`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' query-runner` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the query-runner container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs query-runner` (note this will include logs from the previous and currently running container).
+
+# query-runner: fs_inodes_used
+
+**Descriptions:**
+
+- _query-runner: 3e+06+ fs inodes in use by instance_ (`warning_query-runner_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # query-runner: provisioning_container_cpu_usage_7d
 
@@ -900,107 +988,6 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
 
-# replacer: frontend_internal_api_error_responses
-
-**Descriptions:**
-
-- _replacer: 5+ frontend-internal API error responses every 5m by route_ (`warning_replacer_frontend_internal_api_error_responses`)
-
-**Possible solutions:**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs replacer` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs replacer` for logs indicating request failures to `frontend` or `frontend-internal`.
-
-# replacer: container_restarts
-
-**Descriptions:**
-
-- _replacer: 1+ container restarts every 5m by instance_ (`warning_replacer_container_restarts`)
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod replacer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p replacer`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' replacer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the replacer container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs replacer` (note this will include logs from the previous and currently running container).
-
-# replacer: container_memory_usage
-
-**Descriptions:**
-
-- _replacer: 99%+ container memory usage by instance_ (`warning_replacer_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-
-# replacer: container_cpu_usage
-
-**Descriptions:**
-
-- _replacer: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_replacer_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-
-# replacer: provisioning_container_cpu_usage_7d
-
-**Descriptions:**
-
-- _replacer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_7d`)
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the replacer container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-
-# replacer: provisioning_container_memory_usage_7d
-
-**Descriptions:**
-
-- _replacer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_7d`)
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of replacer container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-
-# replacer: provisioning_container_cpu_usage_5m
-
-**Descriptions:**
-
-- _replacer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_replacer_provisioning_container_cpu_usage_5m`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
-
-# replacer: provisioning_container_memory_usage_5m
-
-**Descriptions:**
-
-- _replacer: 90%+ container memory usage (5m maximum) by instance_ (`warning_replacer_provisioning_container_memory_usage_5m`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
-
 # repo-updater: frontend_internal_api_error_responses
 
 **Descriptions:**
@@ -1017,6 +1004,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs repo-updater` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# repo-updater: container_cpu_usage
+
+**Descriptions:**
+
+- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_repo-updater_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+
+# repo-updater: container_memory_usage
+
+**Descriptions:**
+
+- _repo-updater: 99%+ container memory usage by instance_ (`warning_repo-updater_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+
 # repo-updater: container_restarts
 
 **Descriptions:**
@@ -1032,27 +1041,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' repo-updater` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the repo-updater container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs repo-updater` (note this will include logs from the previous and currently running container).
 
-# repo-updater: container_memory_usage
+# repo-updater: fs_inodes_used
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container memory usage by instance_ (`warning_repo-updater_container_memory_usage`)
+- _repo-updater: 3e+06+ fs inodes in use by instance_ (`warning_repo-updater_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
-
-# repo-updater: container_cpu_usage
-
-**Descriptions:**
-
-- _repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_repo-updater_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # repo-updater: provisioning_container_cpu_usage_7d
 
@@ -1118,6 +1116,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs searcher` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# searcher: container_cpu_usage
+
+**Descriptions:**
+
+- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_searcher_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+
+# searcher: container_memory_usage
+
+**Descriptions:**
+
+- _searcher: 99%+ container memory usage by instance_ (`warning_searcher_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+
 # searcher: container_restarts
 
 **Descriptions:**
@@ -1133,27 +1153,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' searcher` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the searcher container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs searcher` (note this will include logs from the previous and currently running container).
 
-# searcher: container_memory_usage
+# searcher: fs_inodes_used
 
 **Descriptions:**
 
-- _searcher: 99%+ container memory usage by instance_ (`warning_searcher_container_memory_usage`)
+- _searcher: 3e+06+ fs inodes in use by instance_ (`warning_searcher_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
-
-# searcher: container_cpu_usage
-
-**Descriptions:**
-
-- _searcher: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_searcher_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # searcher: provisioning_container_cpu_usage_7d
 
@@ -1219,6 +1228,28 @@ for assistance.
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs symbols` for logs indicating request failures to `frontend` or `frontend-internal`.
 
+# symbols: container_cpu_usage
+
+**Descriptions:**
+
+- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_symbols_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+
+# symbols: container_memory_usage
+
+**Descriptions:**
+
+- _symbols: 99%+ container memory usage by instance_ (`warning_symbols_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+
 # symbols: container_restarts
 
 **Descriptions:**
@@ -1234,27 +1265,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' symbols` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the symbols container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs symbols` (note this will include logs from the previous and currently running container).
 
-# symbols: container_memory_usage
+# symbols: fs_inodes_used
 
 **Descriptions:**
 
-- _symbols: 99%+ container memory usage by instance_ (`warning_symbols_container_memory_usage`)
+- _symbols: 3e+06+ fs inodes in use by instance_ (`warning_symbols_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
-
-# symbols: container_cpu_usage
-
-**Descriptions:**
-
-- _symbols: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_symbols_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # symbols: provisioning_container_cpu_usage_7d
 
@@ -1304,6 +1324,28 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
 
+# syntect-server: container_cpu_usage
+
+**Descriptions:**
+
+- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_syntect-server_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+
+# syntect-server: container_memory_usage
+
+**Descriptions:**
+
+- _syntect-server: 99%+ container memory usage by instance_ (`warning_syntect-server_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+
 # syntect-server: container_restarts
 
 **Descriptions:**
@@ -1319,27 +1361,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' syntect-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the syntect-server container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs syntect-server` (note this will include logs from the previous and currently running container).
 
-# syntect-server: container_memory_usage
+# syntect-server: fs_inodes_used
 
 **Descriptions:**
 
-- _syntect-server: 99%+ container memory usage by instance_ (`warning_syntect-server_container_memory_usage`)
+- _syntect-server: 3e+06+ fs inodes in use by instance_ (`warning_syntect-server_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
-
-# syntect-server: container_cpu_usage
-
-**Descriptions:**
-
-- _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_syntect-server_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # syntect-server: provisioning_container_cpu_usage_7d
 
@@ -1389,6 +1420,28 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
 
+# zoekt-indexserver: container_cpu_usage
+
+**Descriptions:**
+
+- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_zoekt-indexserver_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+
+# zoekt-indexserver: container_memory_usage
+
+**Descriptions:**
+
+- _zoekt-indexserver: 99%+ container memory usage by instance_ (`warning_zoekt-indexserver_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+
 # zoekt-indexserver: container_restarts
 
 **Descriptions:**
@@ -1404,27 +1457,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-indexserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-indexserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-indexserver` (note this will include logs from the previous and currently running container).
 
-# zoekt-indexserver: container_memory_usage
+# zoekt-indexserver: fs_inodes_used
 
 **Descriptions:**
 
-- _zoekt-indexserver: 99%+ container memory usage by instance_ (`warning_zoekt-indexserver_container_memory_usage`)
+- _zoekt-indexserver: 3e+06+ fs inodes in use by instance_ (`warning_zoekt-indexserver_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-
-# zoekt-indexserver: container_cpu_usage
-
-**Descriptions:**
-
-- _zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_zoekt-indexserver_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # zoekt-indexserver: provisioning_container_cpu_usage_7d
 
@@ -1474,6 +1516,28 @@ for assistance.
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
 
+# zoekt-webserver: container_cpu_usage
+
+**Descriptions:**
+
+- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_zoekt-webserver_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+
+# zoekt-webserver: container_memory_usage
+
+**Descriptions:**
+
+- _zoekt-webserver: 99%+ container memory usage by instance_ (`warning_zoekt-webserver_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+
 # zoekt-webserver: container_restarts
 
 **Descriptions:**
@@ -1489,27 +1553,16 @@ for assistance.
 	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' zoekt-webserver` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the zoekt-webserver container in `docker-compose.yml`.
 	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs zoekt-webserver` (note this will include logs from the previous and currently running container).
 
-# zoekt-webserver: container_memory_usage
+# zoekt-webserver: fs_inodes_used
 
 **Descriptions:**
 
-- _zoekt-webserver: 99%+ container memory usage by instance_ (`warning_zoekt-webserver_container_memory_usage`)
+- _zoekt-webserver: 3e+06+ fs inodes in use by instance_ (`warning_zoekt-webserver_fs_inodes_used`)
 
 **Possible solutions:**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-
-# zoekt-webserver: container_cpu_usage
-
-**Descriptions:**
-
-- _zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_zoekt-webserver_container_cpu_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
 
 # zoekt-webserver: provisioning_container_cpu_usage_7d
 
@@ -1558,4 +1611,110 @@ for assistance.
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+
+# prometheus: alertmanager_notifications_failed_total
+
+**Descriptions:**
+
+- _prometheus: 1+ failed alertmanager notifications rate over 1m_ (`warning_prometheus_alertmanager_notifications_failed_total`)
+
+**Possible solutions:**
+
+Ensure that your `observability.alerts` configuration (in site configuration) is valid.
+
+# prometheus: container_cpu_usage
+
+**Descriptions:**
+
+- _prometheus: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_prometheus_container_cpu_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+
+# prometheus: container_memory_usage
+
+**Descriptions:**
+
+- _prometheus: 99%+ container memory usage by instance_ (`warning_prometheus_container_memory_usage`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+
+# prometheus: container_restarts
+
+**Descriptions:**
+
+- _prometheus: 1+ container restarts every 5m by instance_ (`warning_prometheus_container_restarts`)
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod prometheus` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p prometheus`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' prometheus` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the prometheus container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs prometheus` (note this will include logs from the previous and currently running container).
+
+# prometheus: fs_inodes_used
+
+**Descriptions:**
+
+- _prometheus: 3e+06+ fs inodes in use by instance_ (`warning_prometheus_fs_inodes_used`)
+
+**Possible solutions:**
+
+		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+		- **Kubernetes:** consider provisioning more machines with less resources.
+
+# prometheus: provisioning_container_cpu_usage_7d
+
+**Descriptions:**
+
+- _prometheus: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_prometheus_provisioning_container_cpu_usage_7d`)
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the prometheus container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+
+# prometheus: provisioning_container_memory_usage_7d
+
+**Descriptions:**
+
+- _prometheus: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_prometheus_provisioning_container_memory_usage_7d`)
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
+	- **Docker Compose:** Consider decreasing `memory:` of prometheus container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+
+# prometheus: provisioning_container_cpu_usage_5m
+
+**Descriptions:**
+
+- _prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_prometheus_provisioning_container_cpu_usage_5m`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+
+# prometheus: provisioning_container_memory_usage_5m
+
+**Descriptions:**
+
+- _prometheus: 90%+ container memory usage (5m maximum) by instance_ (`warning_prometheus_provisioning_container_memory_usage_5m`)
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
 

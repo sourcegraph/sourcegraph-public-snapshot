@@ -145,13 +145,12 @@
 /internal/campaigns @sourcegraph/campaigns
 /web/**/campaigns/** @sourcegraph/campaigns
 
-# Search and code mod
+# Search
 */search/**/* @sourcegraph/search
 /cmd/frontend/internal/pkg/search @sourcegraph/search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/search
 /cmd/frontend/graphqlbackend/*zoekt* @sourcegraph/search
 /cmd/query-runner/ @sourcegraph/search
-/cmd/replacer/ @sourcegraph/search @rvantonder
 /cmd/searcher/ @sourcegraph/search
 /cmd/symbols/ @sourcegraph/search
 /internal/search/ @sourcegraph/search
