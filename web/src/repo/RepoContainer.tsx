@@ -341,31 +341,32 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevisionOrError}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
-                />
-                <RepoHeaderContributionPortal
-                    position="right"
-                    key="go-to-code-host"
-                    priority={2}
-                    element={
-                        <GoToCodeHostAction
-                            key="go-to-code-host"
-                            repo={this.state.repoOrError}
-                            // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                            revision={
-                                this.state.revision ||
-                                (!isErrorLike(this.state.repoOrError) &&
-                                    this.state.repoOrError.defaultBranch &&
-                                    this.state.repoOrError.defaultBranch.displayName) ||
-                                'HEAD'
-                            }
-                            filePath={filePath}
-                            commitRange={commitRange}
-                            position={position}
-                            range={range}
-                            externalLinks={this.state.externalLinks}
-                        />
-                    }
-                    {...this.state.repoHeaderContributionsLifecycleProps}
+                    contributions={[
+                        { position: 'right', priority: 1, element: <span>Hello world</span> },
+                        {
+                            position: 'right',
+                            priority: 2,
+                            element: (
+                                <GoToCodeHostAction
+                                    key="go-to-code-host"
+                                    repo={this.state.repoOrError}
+                                    // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                                    revision={
+                                        this.state.revision ||
+                                        (!isErrorLike(this.state.repoOrError) &&
+                                            this.state.repoOrError.defaultBranch &&
+                                            this.state.repoOrError.defaultBranch.displayName) ||
+                                        'HEAD'
+                                    }
+                                    filePath={filePath}
+                                    commitRange={commitRange}
+                                    position={position}
+                                    range={range}
+                                    externalLinks={this.state.externalLinks}
+                                />
+                            ),
+                        },
+                    ]}
                 />
                 <ErrorBoundary location={this.props.location}>
                     <Switch>

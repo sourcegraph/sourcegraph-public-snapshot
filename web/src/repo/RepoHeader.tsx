@@ -155,6 +155,11 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
     revision?: string
 
     /**
+     * Initial list of repo header contributions
+     */
+    contributions?: RepoHeaderContribution[]
+
+    /**
      * Called in the constructor when the store is constructed. The parent component propagates these lifecycle
      * callbacks to its children for them to add and remove contributions.
      */
@@ -172,13 +177,15 @@ interface State extends RepoHeaderContributionsProps {}
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
 export class RepoHeader extends React.PureComponent<Props, State> {
-    public state: State = {
-        repoHeaderContributions: [],
-    }
+    public state: State
 
     constructor(props: Props) {
         super(props)
         props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
+
+        this.state = {
+            repoHeaderContributions: [...(props.contributions || [])],
+        }
     }
 
     public render(): JSX.Element | null {
