@@ -441,6 +441,19 @@ type Mutation {
 
     # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
+
+    #
+    # OBSERVABILITY
+    #
+
+    # Set the status of a test alert of the specified parameters - useful for validating
+    # `observability.alerts` configuration.
+    setObservabilityTestAlertState(
+        # Level of alert to test - either warning or critical.
+        level: String!
+        # Set firing state.
+        firing: Boolean!
+    ): EmptyResponse!
 }
 
 # The type of the changeset spec.
@@ -3900,6 +3913,8 @@ type MonitoringAlert {
     name: String!
     # Name of the service that fired the alert.
     serviceName: String!
+    # Owner of the fired alert.
+    owner: String!
     # Average percentage of time (between [0, 1]) that the event was firing over the 12h of recorded data. e.g.
     # 1.0 if it was firing 100% of the time on average during that 12h window, 0.5 if it was firing 50% of the
     # time on average, etc.
