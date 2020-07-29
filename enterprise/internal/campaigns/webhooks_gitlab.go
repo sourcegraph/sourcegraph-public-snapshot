@@ -100,18 +100,21 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 	}
 
 	es, err := h.Repos.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		IDs:   []int64{id},
 		Kinds: []string{extsvc.KindGitLab},
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing external services")
 	}
 
-	for _, e := range es {
-		if e.ID == id {
-			return e, nil
-		}
+	if len(es) == 0 {
+		return nil, errExternalServiceNotFound
+	} else if len(es) > 1 {
+		// This _really_ shouldn't happen, since we provided only one ID above.
+		return nil, errors.New("too many external services found")
 	}
-	return nil, errExternalServiceNotFound
+
+	return es[0], nil
 }
 
 type stateMergeRequestEvent interface {
