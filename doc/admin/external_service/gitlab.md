@@ -102,7 +102,7 @@ The following [webhook events](https://docs.gitlab.com/ee/user/project/integrati
 - Merge request events
 - Pipeline events
 
-Webhooks must be configured on each project that you wish to monitor on GitLab. To set up a project webhook on GitLab, go to the Webhook settings page of the project.
+Webhooks must be configured on each project that you wish to monitor on GitLab. To set up a project webhook on GitLab, go to the **Webhook** settings page of the project. (On older versions of GitLab, this may be the **Integration** settings page instead.)
 
 Fill in the **URL** displayed after saving the `webhooks` Sourcegraph setting mentioned above and make sure it is publicly available.
 
