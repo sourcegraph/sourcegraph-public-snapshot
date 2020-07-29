@@ -184,7 +184,7 @@ func (h *GitLabWebhook) handleMergeRequestApprovalEvent(ctx context.Context, esI
 	// documentation is quite clear that webhooks should run as fast as possible
 	// to avoid unexpected retries.
 	//
-	// To meet this goal, rather than synchronously synchronising here, we'll
+	// To meet this goal, rather than synchronously synchronizing here, we'll
 	// instead ask repo-updater to prioritise the sync of this changeset and let
 	// the normal sync process take care of pulling the notes and pipelines and
 	// putting things in the right places. The downside is that the updated
