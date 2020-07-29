@@ -119,7 +119,7 @@ const fetchReferencesLink = (): Observable<string | null> =>
 /**
  * Gets the activation steps that need to be completed for a given user.
  */
-const getActivationSteps = (authenticatedUser: GQL.User): ActivationStep[] => {
+const getActivationSteps = (authenticatedUser: AuthenticatedUser): ActivationStep[] => {
     const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
         {
             id: 'ConnectedCodeHost',
@@ -258,7 +258,7 @@ export const withActivation = <P extends ActivationProps>(
         }
 
         private steps(): ActivationStep[] | undefined {
-            const user: GQL.User | null = this.props.authenticatedUser
+            const user: AuthenticatedUser | null = this.props.authenticatedUser
             if (user) {
                 return getActivationSteps(user)
             }
