@@ -41,6 +41,7 @@ import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { OptionalAuthProps } from '../auth'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -56,9 +57,9 @@ export interface RepoContainerContext
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
+        OptionalAuthProps,
         VersionContextProps {
     repo: GQL.Repository
-    authenticatedUser: GQL.User | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
 
@@ -90,13 +91,13 @@ interface RepoContainerProps
         CaseSensitivityProps,
         InteractiveSearchProps,
         CopyQueryButtonProps,
+        OptionalAuthProps,
         VersionContextProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    authenticatedUser: GQL.User | null
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean

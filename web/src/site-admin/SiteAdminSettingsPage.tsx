@@ -7,14 +7,15 @@ import { PageTitle } from '../components/PageTitle'
 import { SettingsArea } from '../settings/SettingsArea'
 import { ThemeProps } from '../../../shared/src/theme'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { RequiredAuthProps } from '../auth'
 
 interface Props
     extends RouteComponentProps<{}>,
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        TelemetryProps {
-    authenticatedUser: GQL.User
+        TelemetryProps,
+        RequiredAuthProps {
     site: Pick<GQL.Site, '__typename' | 'id'>
 }
 

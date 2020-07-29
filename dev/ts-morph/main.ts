@@ -11,7 +11,7 @@
 
 import { Project, QuoteKind } from 'ts-morph'
 import { formatSourceFile } from './prettier-ts-morph'
-import { addMissingHistoryProp } from './add-history-prop'
+// import { addMissingHistoryProp } from './add-history-prop'
 import * as path from 'path'
 
 async function main(): Promise<void> {
@@ -50,7 +50,9 @@ async function main(): Promise<void> {
             if (!sourceFile) {
                 continue
             }
+            console.log(sourceFile.getFilePath())
             sourceFile = sourceFile.fixMissingImports()
+            sourceFile = sourceFile.fixUnusedIdentifiers()
             // addMissingHistoryProp(diagnostic, sourceFile)
             sourceFile = await formatSourceFile(sourceFile)
             await sourceFile.save()

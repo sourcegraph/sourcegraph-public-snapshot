@@ -16,6 +16,10 @@ import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm } from './ProductSubscriptionForm'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import {
+    CreatePaidProductSubscriptionVariables,
+    CreatePaidProductSubscriptionResult,
+} from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
@@ -49,7 +53,7 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
      */
     const [nextCreation, creation] = useEventObservable(
         useCallback(
-            (creations: Observable<GQL.CreatePaidProductSubscriptionOnDotcomMutationArguments>) =>
+            (creations: Observable<CreatePaidProductSubscriptionVariables>) =>
                 creations.pipe(
                     switchMap(args =>
                         createPaidProductSubscription(args).pipe(
@@ -138,9 +142,9 @@ export function productSubscriptionInputForLocationHash(value: GQL.ProductSubscr
 }
 
 function createPaidProductSubscription(
-    args: GQL.CreatePaidProductSubscriptionOnDotcomMutationArguments
-): Observable<GQL.CreatePaidProductSubscriptionResult> {
-    return mutateGraphQL(
+    args: CreatePaidProductSubscriptionVariables
+): Observable<CreatePaidProductSubscriptionResult['dotcom']['createPaidProductSubscription']> {
+    return mutateGraphQL<CreatePaidProductSubscriptionResult>(
         gql`
             mutation CreatePaidProductSubscription(
                 $accountID: ID!

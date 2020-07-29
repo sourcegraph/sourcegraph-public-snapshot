@@ -6,7 +6,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { numberWithCommas } from '../../../../../shared/src/util/strings'
@@ -15,6 +15,10 @@ import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { ProductSubscriptionBeforeAfterInvoiceItem } from './ProductSubscriptionBeforeAfterInvoiceItem'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PaymentValidity } from './ProductSubscriptionForm'
+import {
+    PreviewProductSubscriptionInvoiceResult,
+    PreviewProductSubscriptionInvoiceVariables,
+} from '../../../graphql-operations'
 
 interface Props {
     /**
@@ -146,8 +150,8 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
 }
 
 function queryPreviewProductSubscriptionInvoice(
-    args: GQL.PreviewProductSubscriptionInvoiceOnDotcomQueryArguments
-): Observable<GQL.ProductSubscriptionPreviewInvoice> {
+    args: PreviewProductSubscriptionInvoiceVariables
+): Observable<PreviewProductSubscriptionInvoiceResult['dotcom']['previewProductSubscriptionInvoice']> {
     return queryGraphQL<PreviewProductSubscriptionInvoiceResult>(
         gql`
             query PreviewProductSubscriptionInvoice(
@@ -188,16 +192,7 @@ function queryPreviewProductSubscriptionInvoice(
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.dotcom ||
-                !data.dotcom.previewProductSubscriptionInvoice ||
-                (errors && errors.length > 0)
-            ) {
-                throw createAggregateError(errors)
-            }
-            return data.dotcom.previewProductSubscriptionInvoice
-        })
+        map(dataOrThrowErrors),
+        map(data => data.dotcom.previewProductSubscriptionInvoice)
     )
 }

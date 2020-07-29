@@ -6,7 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
-import { gql } from '../../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -29,6 +29,12 @@ import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubsc
 import { ErrorAlert } from '../../../../components/alerts'
 import { useEventObservable, useObservable } from '../../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import {
+    DotComProductSubscriptionResult,
+    ProductLicensesResult,
+    ArchiveProductSubscriptionResult,
+    ArchiveProductSubscriptionVariables,
+} from '../../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     /** For mocking in tests only. */
@@ -319,7 +325,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.ProductSubscript
 function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
-): Observable<GQL.ProductLicenseConnection> {
+): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
     return queryGraphQL<ProductLicensesResult>(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {
@@ -344,23 +350,13 @@ function queryProductLicenses(
             subscriptionUUID,
         }
     ).pipe(
-        map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.dotcom ||
-                !data.dotcom.productSubscription ||
-                !data.dotcom.productSubscription.productLicenses ||
-                (errors && errors.length > 0)
-            ) {
-                throw createAggregateError(errors)
-            }
-            return data.dotcom.productSubscription.productLicenses
-        })
+        map(dataOrThrowErrors),
+        map(data => data.dotcom.productSubscription.productLicenses)
     )
 }
 
-function archiveProductSubscription(args: GQL.ArchiveProductSubscriptionOnDotcomMutationArguments): Observable<void> {
-    return mutateGraphQL(
+function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): Observable<void> {
+    return mutateGraphQL<ArchiveProductSubscriptionResult>(
         gql`
             mutation ArchiveProductSubscription($id: ID!) {
                 dotcom {

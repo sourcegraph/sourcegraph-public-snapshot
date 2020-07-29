@@ -10,6 +10,7 @@ import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { externalAccountFragment, ExternalAccountNode, ExternalAccountNodeProps } from './ExternalAccountNode'
+import { UserExternalAccountsResult } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.User

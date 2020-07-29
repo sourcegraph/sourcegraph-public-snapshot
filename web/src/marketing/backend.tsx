@@ -4,12 +4,19 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { SurveyResponse } from './SurveyPage'
+import {
+    FetchSurveyResponsesResult,
+    FetchAllUsersWithSurveyResponsesResult,
+    FetchSurveyResponseAggregatesResult,
+    SubmitSurveyResult,
+    RequestTrialResult,
+} from '../graphql-operations'
 
 /**
  * Submits a user satisfaction survey.
  */
 export function submitSurvey(input: SurveyResponse): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<SubmitSurveyResult>(
         gql`
             mutation SubmitSurvey($input: SurveySubmissionInput!) {
                 submitSurvey(input: $input) {
@@ -123,7 +130,7 @@ export function fetchSurveyResponseAggregates(): Observable<SurveyResponseConnec
  * Submits a request for a Sourcegraph Enterprise trial license.
  */
 export const submitTrialRequest = (email: string): void => {
-    mutateGraphQL(
+    mutateGraphQL<RequestTrialResult>(
         gql`
             mutation RequestTrial($email: String!) {
                 requestTrial(email: $email) {

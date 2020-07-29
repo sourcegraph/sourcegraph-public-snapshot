@@ -5,14 +5,16 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
+import { RepositoriesForPopoverResult, RepositoriesForPopoverVariables } from '../graphql-operations'
 
-function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.RepositoryConnection> {
+function fetchRepositories(
+    args: RepositoriesForPopoverVariables
+): Observable<RepositoriesForPopoverResult['repositories']> {
     return queryGraphQL<RepositoriesForPopoverResult>(
         gql`
             query RepositoriesForPopover($first: Int, $query: String) {
@@ -30,12 +32,8 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.repositories) {
-                throw createAggregateError(errors)
-            }
-            return data.repositories
-        })
+        map(dataOrThrowErrors),
+        map(data => data.repositories)
     )
 }
 
@@ -91,7 +89,7 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
                     compact={true}
                     noun="repository"
                     pluralNoun="repositories"
-                    queryConnection={this.queryRepositories}
+                    queryConnection={fetchRepositories}
                     nodeComponent={RepositoryNode}
                     nodeComponentProps={nodeProps}
                     defaultFirst={10}
@@ -104,7 +102,4 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
             </div>
         )
     }
-
-    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.RepositoryConnection> =>
-        fetchRepositories({ ...args })
 }

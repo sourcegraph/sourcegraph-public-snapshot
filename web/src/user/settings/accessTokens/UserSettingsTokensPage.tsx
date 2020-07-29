@@ -14,6 +14,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaRouteContext } from '../../area/UserArea'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import * as H from 'history'
+import { AccessTokensResult, AccessTokensVariables } from '../../../graphql-operations'
 
 interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     /**
@@ -90,7 +91,7 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private queryAccessTokens = (args: { first?: number }): Observable<GQL.AccessTokenConnection> =>
+    private queryAccessTokens = (args: Omit<AccessTokensVariables, 'user'>): Observable<GQL.AccessTokenConnection> =>
         queryGraphQL<AccessTokensResult>(
             gql`
                 query AccessTokens($user: ID!, $first: Int) {

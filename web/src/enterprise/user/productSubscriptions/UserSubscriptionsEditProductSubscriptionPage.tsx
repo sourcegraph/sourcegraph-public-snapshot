@@ -16,6 +16,11 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { ErrorAlert } from '../../../components/alerts'
 import { useEventObservable, useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import {
+    ProductSubscriptionOnEditPageResult,
+    UpdatePaidProductSubscriptionVariables,
+    UpdatePaidProductSubscriptionResult,
+} from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
     user: Pick<GQL.User, 'id'>
@@ -170,9 +175,9 @@ function queryProductSubscription(uuid: string): Observable<ProductSubscription>
 }
 
 function updatePaidProductSubscription(
-    args: GQL.UpdatePaidProductSubscriptionOnDotcomMutationArguments
-): Observable<GQL.UpdatePaidProductSubscriptionResult> {
-    return mutateGraphQL(
+    args: UpdatePaidProductSubscriptionVariables
+): Observable<UpdatePaidProductSubscriptionResult['dotcom']['updatePaidProductSubscription']> {
+    return mutateGraphQL<UpdatePaidProductSubscriptionResult>(
         gql`
             mutation UpdatePaidProductSubscription(
                 $subscriptionID: ID!

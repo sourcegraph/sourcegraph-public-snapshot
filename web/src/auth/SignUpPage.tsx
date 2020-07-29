@@ -8,11 +8,11 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArgs, SignUpForm } from './SignUpForm'
+import { OptionalAuthProps } from '../auth'
 
-interface SignUpPageProps {
+interface SignUpPageProps extends OptionalAuthProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.User | null
 }
 
 export class SignUpPage extends React.Component<SignUpPageProps> {

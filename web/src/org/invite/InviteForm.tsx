@@ -17,6 +17,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
 import { InviteUserToOrganizationResult, AddUserToOrganizationResult } from '../../graphql-operations'
+import { OptionalAuthProps } from '../../auth'
 
 function inviteUserToOrganization(
     username: string,
@@ -97,10 +98,8 @@ const InvitedNotification: React.FunctionComponent<{
     </div>
 )
 
-interface Props {
+interface Props extends OptionalAuthProps {
     orgID: string
-    authenticatedUser: GQL.User | null
-
     /** Called when the organization members list changes. */
     onDidUpdateOrganizationMembers: () => void
 

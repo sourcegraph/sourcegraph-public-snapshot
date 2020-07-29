@@ -19,6 +19,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { ErrorLike, asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { Link } from '../../../../shared/src/components/Link'
+import { OverviewResult, WAUsResult } from '../../graphql-operations'
 
 interface Props extends ActivationProps, ThemeProps {
     history: H.History

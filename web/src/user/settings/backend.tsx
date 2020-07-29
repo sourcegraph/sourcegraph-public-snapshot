@@ -5,7 +5,13 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../backend/graphql'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UpdateUserResult, UpdatePasswordResult } from '../../graphql-operations'
+import {
+    UpdateUserResult,
+    UpdatePasswordResult,
+    SetUserEmailVerifiedResult,
+    logUserEventResult,
+    logEventResult,
+} from '../../graphql-operations'
 
 interface UpdateUserOptions {
     username: string | null
@@ -68,7 +74,7 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
  * @param verified the new verification state for the user email
  */
 export function setUserEmailVerified(user: GQL.Scalars['ID'], email: string, verified: boolean): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<SetUserEmailVerifiedResult>(
         gql`
             mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
                 setUserEmailVerified(user: $user, email: $email, verified: $verified) {
@@ -95,7 +101,7 @@ export function setUserEmailVerified(user: GQL.Scalars['ID'], email: string, ver
  * @deprecated Use logEvent
  */
 export function logUserEvent(event: GQL.UserEvent): void {
-    mutateGraphQL(
+    mutateGraphQL<logUserEventResult>(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
                 logUserEvent(event: $event, userCookieID: $userCookieID) {
@@ -125,7 +131,7 @@ export function logUserEvent(event: GQL.UserEvent): void {
  * Not used at all for public/sourcegraph.com usage.
  */
 export function logEvent(event: string, eventProperties?: any): void {
-    mutateGraphQL(
+    mutateGraphQL<logEventResult>(
         gql`
             mutation logEvent(
                 $event: String!

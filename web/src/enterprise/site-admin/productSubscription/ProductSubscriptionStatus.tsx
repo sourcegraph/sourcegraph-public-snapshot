@@ -16,6 +16,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import { ProductLicenseInfoResult } from '../../../graphql-operations'
 
 const queryProductLicenseInfo = (): Observable<GQL.ProductSubscriptionStatus> =>
     queryGraphQL<ProductLicenseInfoResult>(gql`

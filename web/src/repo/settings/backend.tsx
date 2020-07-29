@@ -4,6 +4,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
+import { RepositoryResult } from '../../graphql-operations'
 
 /**
  * Fetches a repository.

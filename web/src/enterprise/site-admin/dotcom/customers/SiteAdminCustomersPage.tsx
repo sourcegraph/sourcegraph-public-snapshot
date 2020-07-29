@@ -12,6 +12,7 @@ import { eventLogger } from '../../../../tracking/eventLogger'
 import { userURL } from '../../../../user'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { SiteAdminCustomerBillingLink } from './SiteAdminCustomerBillingLink'
+import { CustomersResult, CustomersVariables } from '../../../../graphql-operations'
 
 const siteAdminCustomerFragment = gql`
     fragment CustomerFields on User {
@@ -83,7 +84,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
     )
 }
 
-function queryCustomers(args: { first?: number; query?: string }): Observable<GQL.UserConnection> {
+function queryCustomers(args: CustomersVariables): Observable<CustomersResult['users']> {
     return queryGraphQL<CustomersResult>(
         gql`
             query Customers($first: Int, $query: String) {
@@ -99,10 +100,7 @@ function queryCustomers(args: { first?: number; query?: string }): Observable<GQ
             }
             ${siteAdminCustomerFragment}
         `,
-        {
-            first: args.first,
-            query: args.query,
-        } as GQL.UsersOnQueryArguments
+        args
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.users || (errors && errors.length > 0)) {

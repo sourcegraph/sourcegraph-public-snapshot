@@ -20,6 +20,7 @@ import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import { ProductSubscriptionResult } from '../../../graphql-operations'
 
 interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
     user: Pick<GQL.User, 'settingsURL'>
@@ -144,7 +145,9 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.ProductSubscription> {
+function queryProductSubscription(
+    uuid: string
+): Observable<ProductSubscriptionResult['dotcom']['productSubscription']> {
     return queryGraphQL<ProductSubscriptionResult>(
         gql`
             query ProductSubscription($uuid: String!) {

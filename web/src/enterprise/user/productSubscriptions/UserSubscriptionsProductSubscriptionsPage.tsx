@@ -16,6 +16,7 @@ import {
     ProductSubscriptionNodeHeader,
     ProductSubscriptionNodeProps,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
+import { ProductSubscriptionsResult, ProductSubscriptionsVariables } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.User
@@ -35,9 +36,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     }, [])
 
     const queryLicenses = useCallback(
-        (args: { first?: number }): Observable<GQL.ProductSubscriptionConnection> => {
-            const vars: GQL.ProductSubscriptionsOnDotcomQueryArguments = {
-                first: args.first,
+        (args: { first?: number }): Observable<ProductSubscriptionsResult['dotcom']['productSubscriptions']> => {
+            const vars: ProductSubscriptionsVariables = {
+                first: args.first ?? null,
                 account: props.user.id,
             }
             return queryGraphQL<ProductSubscriptionsResult>(

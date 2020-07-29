@@ -14,11 +14,11 @@ import { SurveyCTA } from './SurveyToast'
 import { Subscription } from 'rxjs'
 import { ThemeProps } from '../../../shared/src/theme'
 import TwitterIcon from 'mdi-react/TwitterIcon'
+import { OptionalAuthProps } from '../auth'
 
-interface SurveyFormProps {
+interface SurveyFormProps extends OptionalAuthProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.User | null
     score?: number
     onScoreChange?: (score: number) => void
     onSubmit?: () => void
@@ -175,9 +175,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
     }
 }
 
-interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, ThemeProps {
-    authenticatedUser: GQL.User | null
-}
+interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, ThemeProps, OptionalAuthProps {}
 
 export interface TweetFeedbackProps {
     score: number

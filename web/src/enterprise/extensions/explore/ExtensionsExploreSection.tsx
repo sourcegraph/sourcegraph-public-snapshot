@@ -10,6 +10,7 @@ import { queryGraphQL } from '../../../backend/graphql'
 import { ExtensionsExploreSectionExtensionCard } from './ExtensionsExploreSectionExtensionCard'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { ExploreExtensionsResult, ExploreExtensionsVariables } from '../../../graphql-operations'
 
 interface Props {
     history: H.History
@@ -19,7 +20,7 @@ const LOADING = 'loading' as const
 
 interface State {
     /** The extensions, loading, or an error. */
-    extensionsOrError: typeof LOADING | GQL.RegistryExtensionConnection | ErrorLike
+    extensionsOrError: typeof LOADING | ExploreExtensionsResult['extensionRegistry']['extensions'] | ErrorLike
 }
 
 /**
@@ -100,8 +101,8 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
 }
 
 function queryExtensions(
-    args: Pick<GQL.ExtensionsOnExtensionRegistryArguments, 'first' | 'prioritizeExtensionIDs'>
-): Observable<GQL.RegistryExtensionConnection> {
+    args: ExploreExtensionsVariables
+): Observable<ExploreExtensionsResult['extensionRegistry']['extensions']> {
     return queryGraphQL<ExploreExtensionsResult>(
         gql`
             query ExploreExtensions($first: Int, $prioritizeExtensionIDs: [String!]) {

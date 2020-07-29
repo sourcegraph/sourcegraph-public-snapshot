@@ -17,7 +17,7 @@ import { setUserEmailVerified } from '../backend'
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
-import { UserEmailsResult } from '../../../graphql-operations'
+import { UserEmailsResult, RemoveUserEmailResult } from '../../../graphql-operations'
 
 interface UserEmailNodeProps {
     node: GQL.UserEmail
@@ -93,7 +93,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             loading: true,
         })
 
-        mutateGraphQL(
+        mutateGraphQL<RemoveUserEmailResult>(
             gql`
                 mutation RemoveUserEmail($user: ID!, $email: String!) {
                     removeUserEmail(user: $user, email: $email) {

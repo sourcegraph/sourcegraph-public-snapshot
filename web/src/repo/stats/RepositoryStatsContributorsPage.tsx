@@ -19,6 +19,7 @@ import { quoteIfNeeded, searchQueryForRepoRevision, PatternTypeProps } from '../
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
+import { RepositoryContributorsResult } from '../../graphql-operations'
 
 interface QuerySpec {
     revisionRange: string | null

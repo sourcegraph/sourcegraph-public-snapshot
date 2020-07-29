@@ -20,6 +20,7 @@ import { extensionsQuery, isExtensionAdded } from './extension/extension'
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 import { ErrorAlert } from '../components/alerts'
+import { RegistryExtensionsResult, RegistryExtensionsVariables } from '../graphql-operations'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
@@ -31,7 +32,9 @@ const LOADING = 'loading' as const
 
 interface ExtensionsResult {
     /** The configured extensions. */
-    extensions: ConfiguredRegistryExtension<GQL.RegistryExtension>[]
+    extensions: ConfiguredRegistryExtension<
+        RegistryExtensionsResult['extensionRegistry']['extensions']['nodes'][number]
+    >[]
 
     /** An error message that should be displayed to the user (in addition to the configured extensions). */
     error: string | null
@@ -221,8 +224,12 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
             // toggling its enablement), to reduce UI jitter.
             take(1),
 
-            switchMap(viewerExtensions =>
-                from(
+            switchMap(viewerExtensions => {
+                const variables: RegistryExtensionsVariables = {
+                    query: args.query ?? null,
+                    prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
+                }
+                return from(
                     queryGraphQL<RegistryExtensionsResult>(
                         gql`
                             query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
@@ -270,10 +277,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                 viewerCanAdminister
                             }
                         `,
-                        {
-                            ...args,
-                            prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
-                        } as GQL.ExtensionsOnExtensionRegistryArguments
+                        variables
                     )
                 ).pipe(
                     map(({ data, errors }) => {
@@ -286,7 +290,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         }
                     })
                 )
-            ),
+            }),
             map(({ registryExtensions, error }) => ({
                 extensions: applyExtensionsQuery(
                     args.query || '',

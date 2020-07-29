@@ -25,6 +25,7 @@ import { Markdown } from '../../../shared/src/components/Markdown'
 import { pluralize } from '../../../shared/src/util/strings'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { OptionalAuthProps } from '../auth'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -46,8 +47,8 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
-    authenticatedUser: GQL.User | null
+        VersionContextProps,
+        OptionalAuthProps {
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History
 

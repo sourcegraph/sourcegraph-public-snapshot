@@ -11,6 +11,18 @@ import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
+import {
+    RepoGroupsResult,
+    SearchSuggestionsResult,
+    ReposByQueryResult,
+    savedSearchesResult,
+    SavedSearchResult,
+    highlightCodeResult,
+    ManyReposWarningResult,
+    CreateSavedSearchResult,
+    UpdateSavedSearchResult,
+    DeleteSavedSearchResult,
+} from '../graphql-operations'
 
 export function search(
     query: string,
@@ -25,7 +37,7 @@ export function search(
 
     return transformedQuery.pipe(
         switchMap(query =>
-            queryGraphQL<SearchResult>(
+            queryGraphQL<GQL.SearchResult>(
                 gql`
                     query Search(
                         $query: String!
@@ -380,7 +392,7 @@ export function createSavedSearch(
     userId: GQL.Scalars['ID'] | null,
     orgId: GQL.Scalars['ID'] | null
 ): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<CreateSavedSearchResult>(
         gql`
             mutation CreateSavedSearch(
                 $description: String!
@@ -426,7 +438,7 @@ export function updateSavedSearch(
     userId: GQL.Scalars['ID'] | null,
     orgId: GQL.Scalars['ID'] | null
 ): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<UpdateSavedSearchResult>(
         gql`
             mutation UpdateSavedSearch(
                 $id: ID!
@@ -467,7 +479,7 @@ export function updateSavedSearch(
 }
 
 export function deleteSavedSearch(id: GQL.Scalars['ID']): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<DeleteSavedSearchResult>(
         gql`
             mutation DeleteSavedSearch($id: ID!) {
                 deleteSavedSearch(id: $id) {

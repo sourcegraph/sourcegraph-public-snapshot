@@ -10,6 +10,7 @@ import { Timestamp } from '../../../components/time/Timestamp'
 import { userURL } from '../../../user'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { DeleteExternalAccountResult } from '../../../graphql-operations'
 
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {
@@ -30,7 +31,7 @@ export const externalAccountFragment = gql`
 `
 
 function deleteExternalAccount(externalAccount: GQL.Scalars['ID']): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<DeleteExternalAccountResult>(
         gql`
             mutation DeleteExternalAccount($externalAccount: ID!) {
                 deleteExternalAccount(externalAccount: $externalAccount) {

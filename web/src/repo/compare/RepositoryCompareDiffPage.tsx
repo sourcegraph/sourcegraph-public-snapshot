@@ -17,6 +17,7 @@ import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDiffFields, DiffStatFields } from '../../backend/diff'
+import { RepositoryComparisonDiffResult } from '../../graphql-operations'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.Scalars['ID']

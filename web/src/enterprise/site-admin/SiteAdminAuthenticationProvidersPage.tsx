@@ -9,6 +9,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { AuthProvidersResult } from '../../graphql-operations'
 
 interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */

@@ -23,6 +23,8 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { OrganizationResult } from '../../graphql-operations'
+import { OptionalAuthProps } from '../../auth'
 
 function queryOrganization(args: { name: string }): Observable<GQL.Org> {
     return queryGraphQL<OrganizationResult>(
@@ -74,16 +76,12 @@ interface Props
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
+        OptionalAuthProps,
         TelemetryProps,
         ExtensionsControllerProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
-
-    /**
-     * The currently authenticated user.
-     */
-    authenticatedUser: GQL.User | null
     history: H.History
 }
 
@@ -104,15 +102,13 @@ export interface OrgAreaPageProps
         ThemeProps,
         TelemetryProps,
         NamespaceProps,
+        OptionalAuthProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The org that is the subject of the page. */
     org: GQL.Org
 
     /** Called when the organization is updated and must be reloaded. */
     onOrganizationUpdate: () => void
-
-    /** The currently authenticated user. */
-    authenticatedUser: GQL.User | null
 }
 
 /**

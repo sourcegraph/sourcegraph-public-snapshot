@@ -9,6 +9,7 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { FileDiffHunkFields } from '../../graphql-operations'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -41,7 +42,7 @@ export const DiffHunk: React.FunctionComponent<
     {
         /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
         fileDiffAnchor: string
-        hunk: GQL.FileDiffHunk
+        hunk: FileDiffHunkFields
         lineNumbers: boolean
         decorations: Record<'head' | 'base', DecorationMapByLine>
         location: H.Location

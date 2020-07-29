@@ -20,18 +20,20 @@ import { SettingsPage } from './SettingsPage'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { SettingsCascadeResult } from '../graphql-operations'
+import { OptionalAuthProps } from '../auth'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
+interface SettingsAreaPageCommonProps
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        ThemeProps,
+        TelemetryProps,
+        OptionalAuthProps {
     /** The subject whose settings to edit. */
     subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
-
-    /**
-     * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
-     */
-    authenticatedUser: GQL.User | null
 }
 
 interface SettingsData {

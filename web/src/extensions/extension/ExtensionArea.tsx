@@ -20,6 +20,8 @@ import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionArea
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { RegistryExtensionResult } from '../../graphql-operations'
+import { OptionalAuthProps } from '../../auth'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -83,7 +85,8 @@ export interface ExtensionAreaRouteContext
     extends SettingsCascadeProps,
         PlatformContextProps,
         ThemeProps,
-        TelemetryProps {
+        TelemetryProps,
+        OptionalAuthProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -91,9 +94,6 @@ export interface ExtensionAreaRouteContext
     extension: ConfiguredRegistryExtension<GQL.RegistryExtension>
 
     onDidUpdateExtension: () => void
-
-    /** The currently authenticated user. */
-    authenticatedUser: GQL.User | null
 }
 
 /**

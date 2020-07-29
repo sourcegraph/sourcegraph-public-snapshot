@@ -20,6 +20,13 @@ import {
     ResolvedRevisionSpec,
 } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
+import {
+    RepositoryRedirectResult,
+    ResolveRevResult,
+    FileExternalLinksResult,
+    TreeEntriesResult,
+    HighlightedFileResult,
+} from '../graphql-operations'
 
 /**
  * Fetch the repository.
@@ -147,14 +154,10 @@ export const resolveRevision = memoizeObservable(
     makeRepoURI
 )
 
-interface HighlightedFileResult {
-    isDirectory: boolean
-    richHTML: string
-    highlightedFile: GQL.HighlightedFile
-}
+type HighlightedFileData = NonNullable<NonNullable<NonNullable<HighlightedFileResult['repository']>['commit']>['file']>
 
 const fetchHighlightedFile = memoizeObservable(
-    (context: FetchFileCtx): Observable<HighlightedFileResult> =>
+    (context: FetchFileCtx): Observable<HighlightedFileData> =>
         queryGraphQL<HighlightedFileResult>(
             gql`
                 query HighlightedFile(
@@ -184,8 +187,7 @@ const fetchHighlightedFile = memoizeObservable(
                 if (!data?.repository?.commit?.file?.highlight) {
                     throw createAggregateError(errors)
                 }
-                const file = data.repository.commit.file
-                return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
+                return data.repository.commit.file
             })
         ),
     context =>
@@ -203,7 +205,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
                 if (result.isDirectory) {
                     return []
                 }
-                const parsed = result.highlightedFile.html.slice('<table>'.length, -'</table>'.length)
+                const parsed = result.highlight.html.slice('<table>'.length, -'</table>'.length)
                 const rows = parsed.split('</tr>')
                 for (let index = 0; index < rows.length; ++index) {
                     rows[index] += '</tr>'
@@ -215,7 +217,11 @@ export const fetchHighlightedFileLines = memoizeObservable(
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
-    (context: RepoRev & { filePath: string }): Observable<GQL.ExternalLink[]> =>
+    (
+        context: RepoRev & { filePath: string }
+    ): Observable<
+        NonNullable<NonNullable<NonNullable<FileExternalLinksResult['repository']>['commit']>['file']>['externalURLs']
+    > =>
         queryGraphQL<FileExternalLinksResult>(
             gql`
                 query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
@@ -244,7 +250,9 @@ export const fetchFileExternalLinks = memoizeObservable(
 )
 
 export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.GitTree> =>
+    (
+        args: AbsoluteRepoFile & { first?: number }
+    ): Observable<NonNullable<NonNullable<TreeEntriesResult['repository']>['commit']>['tree']> =>
         queryGraphQL<TreeEntriesResult>(
             gql`
                 query TreeEntries(

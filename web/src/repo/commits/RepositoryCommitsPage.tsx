@@ -14,6 +14,7 @@ import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
+import { RepositoryGitCommitsResult } from '../../graphql-operations'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {

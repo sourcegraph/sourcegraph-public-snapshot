@@ -2,8 +2,6 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import {
     ExternalChangeset,
     ChangesetCheckState,
-    RepositoryComparison,
-    GitRevSpec,
     ChangesetExternalState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Observer } from 'rxjs'
@@ -30,7 +28,7 @@ import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { queryExternalChangesetWithFileDiffs, ExternalChangesetGraphQlNode } from '../backend'
+import { queryExternalChangesetWithFileDiffs } from '../backend'
 import { Collapsible } from '../../../../components/Collapsible'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'

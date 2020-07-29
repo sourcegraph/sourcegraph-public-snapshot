@@ -12,6 +12,7 @@ import { replaceRevisionInURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { RevisionSpec, FileSpec } from '../../../shared/src/util/url'
+import { FetchCommitsResult } from '../graphql-operations'
 
 interface CommitNodeProps {
     node: GQL.GitCommit

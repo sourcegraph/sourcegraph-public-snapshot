@@ -2,6 +2,7 @@ import { cloneDeep, isFunction } from 'lodash'
 import * as GQL from '../graphql/schema'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
+import { SettingsCascadeFields } from '../graphql-operations'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -144,11 +145,7 @@ export interface SubjectSettingsContents {
  *
  * @param subjects A list of settings subjects in the settings cascade. If empty, an error is thrown.
  */
-export function gqlToCascade({
-    subjects,
-}: {
-    subjects: (SettingsSubject & SubjectSettingsContents)[]
-}): SettingsCascadeOrError {
+export function gqlToCascade({ subjects }: Pick<SettingsCascadeFields, 'subjects'>): SettingsCascadeOrError {
     const configuredSubjects: ConfiguredSubjectOrError[] = []
     const allSettings: Settings[] = []
     const allSettingsErrors: ErrorLike[] = []

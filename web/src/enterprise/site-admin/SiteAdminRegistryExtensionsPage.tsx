@@ -17,6 +17,7 @@ import { deleteRegistryExtensionWithConfirmation } from '../extensions/registry/
 import { RegistryExtensionSourceBadge } from '../extensions/registry/RegistryExtensionSourceBadge'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { SiteAdminRegistryExtensionsResult } from '../../graphql-operations'
 
 interface RegistryExtensionNodeSiteAdminProps {
     node: GQL.RegistryExtension

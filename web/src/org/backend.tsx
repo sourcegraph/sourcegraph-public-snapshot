@@ -6,13 +6,20 @@ import { createAggregateError } from '../../../shared/src/util/errors'
 import { refreshAuthenticatedUser } from '../auth'
 import { mutateGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
-import { CreateOrganizationResult, CreateOrganizationVariables } from '../graphql-operations'
+import {
+    CreateOrganizationResult,
+    CreateOrganizationVariables,
+    removeUserFromOrganizationResult,
+    UpdateOrganizationResult,
+} from '../graphql-operations'
 
 /**
  * Sends a GraphQL mutation to create an organization and returns an Observable that emits the new organization,
  * then completes.
  */
-export function createOrganization(args: CreateOrganizationVariables): Observable<CreateOrganizationResult['createOrganization']> {
+export function createOrganization(
+    args: CreateOrganizationVariables
+): Observable<CreateOrganizationResult['createOrganization']> {
     return mutateGraphQL<CreateOrganizationResult>(
         gql`
             mutation CreateOrganization($name: String!, $displayName: String) {
@@ -46,7 +53,7 @@ export function removeUserFromOrganization(args: {
     /** The organization's ID. */
     organization: GQL.Scalars['ID']
 }): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<removeUserFromOrganizationResult>(
         gql`
             mutation removeUserFromOrganization($user: ID!, $organization: ID!) {
                 removeUserFromOrganization(user: $user, organization: $organization) {
@@ -76,7 +83,7 @@ export function removeUserFromOrganization(args: {
  * @returns Observable that emits `undefined`, then completes
  */
 export function updateOrganization(id: GQL.Scalars['ID'], displayName: string): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<UpdateOrganizationResult>(
         gql`
             mutation UpdateOrganization($id: ID!, $displayName: String) {
                 updateOrganization(id: $id, displayName: $displayName) {

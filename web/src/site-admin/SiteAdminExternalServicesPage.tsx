@@ -18,9 +18,10 @@ import { eventLogger } from '../tracking/eventLogger'
 import { ErrorAlert } from '../components/alerts'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
 import * as H from 'history'
+import { ExternalServicesResult, DeleteExternalServiceResult } from '../graphql-operations'
 
 async function deleteExternalService(externalService: GQL.Scalars['ID']): Promise<void> {
-    const result = await mutateGraphQL(
+    const result = await mutateGraphQL<DeleteExternalServiceResult>(
         gql`
             mutation DeleteExternalService($externalService: ID!) {
                 deleteExternalService(externalService: $externalService) {

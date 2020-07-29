@@ -16,6 +16,7 @@ import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
 import { TelemetryProps, TelemetryService } from '../../../shared/src/telemetry/telemetryService'
+import { addExternalServiceResult } from '../graphql-operations'
 
 interface Props extends ThemeProps, TelemetryProps {
     history: H.History
@@ -144,7 +145,7 @@ export function addExternalService(
     input: GQL.AddExternalServiceInput,
     eventLogger: TelemetryService
 ): Observable<GQL.ExternalService> {
-    return mutateGraphQL(
+    return mutateGraphQL<addExternalServiceResult>(
         gql`
             mutation addExternalService($input: AddExternalServiceInput!) {
                 addExternalService(input: $input) {

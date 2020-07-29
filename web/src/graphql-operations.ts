@@ -252,9 +252,6 @@ export interface WebGraphQlOperations {
     /** web/src/org/invite/InviteForm.tsx */
     AddUserToOrganization: (variables: AddUserToOrganizationVariables) => AddUserToOrganizationResult
 
-    /** web/src/platform/context.ts */
-    ViewerSettings: (variables: ViewerSettingsVariables) => ViewerSettingsResult
-
     /** web/src/repo/GitReference.tsx */
     RepositoryGitRefs: (variables: RepositoryGitRefsVariables) => RepositoryGitRefsResult
 
@@ -465,7 +462,7 @@ export interface WebGraphQlOperations {
     /** web/src/user/UserEventLogsPage.tsx */
     UserEventLogs: (variables: UserEventLogsVariables) => UserEventLogsResult
 
-    /** web/src/user/area/UserArea.tsx */
+    /** web/src/user/area/backend.tsx */
     User: (variables: UserVariables) => UserResult
 
     /** web/src/user/settings/accessTokens/UserSettingsCreateAccessTokenPage.tsx */
@@ -656,6 +653,14 @@ export type FileDiffHunkRangeFields = { startLine: number; lines: number }
 
 export type DiffStatFields = { added: number; changed: number; deleted: number }
 
+export type FileDiffHunkFields = {
+    oldNoNewlineAt: boolean
+    section: Maybe<string>
+    oldRange: { startLine: number; lines: number }
+    newRange: { startLine: number; lines: number }
+    highlight: { aborted: boolean; lines: Array<{ kind: DiffHunkLineType; html: string }> }
+}
+
 export type FileDiffFields = {
     __typename: 'FileDiff'
     oldPath: Maybe<string>
@@ -670,13 +675,7 @@ export type FileDiffFields = {
         | { __typename: 'VirtualFile'; binary: boolean; byteSize: number }
     >
     mostRelevantFile: { __typename: 'GitBlob'; url: string } | { __typename: 'VirtualFile'; url: string }
-    hunks: Array<{
-        oldNoNewlineAt: boolean
-        section: Maybe<string>
-        oldRange: { startLine: number; lines: number }
-        newRange: { startLine: number; lines: number }
-        highlight: { aborted: boolean; lines: Array<{ kind: DiffHunkLineType; html: string }> }
-    }>
+    hunks: Array<FileDiffHunkFields>
     stat: { added: number; changed: number; deleted: number }
 }
 
@@ -701,6 +700,12 @@ export type RepositoryComparisonFields = {
             | GitReferenceSpecFields_GitRef_
             | GitReferenceSpecFields_GitRevSpecExpr_
             | GitReferenceSpecFields_GitObject_
+    }
+    fileDiffs: {
+        totalCount: Maybe<number>
+        nodes: Array<FileDiffFields>
+        pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
+        diffStat: DiffStatFields
     }
 }
 
@@ -878,15 +883,7 @@ export type ExternalChangesetFileDiffsResult = {
         | {
               __typename: 'ExternalChangeset'
               diff: Maybe<
-                  | ({
-                        __typename: 'RepositoryComparison'
-                        fileDiffs: {
-                            totalCount: Maybe<number>
-                            nodes: Array<FileDiffFields>
-                            pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
-                            diffStat: DiffStatFields
-                        }
-                    } & RepositoryComparisonFields)
+                  | ({ __typename: 'RepositoryComparison' } & RepositoryComparisonFields)
                   | {
                         __typename: 'PreviewRepositoryComparison'
                         fileDiffs: {
@@ -923,6 +920,28 @@ export type CampaignsResult = {
     }
 }
 
+export type LsifUploadConnectionFields = {
+    totalCount: Maybe<number>
+    nodes: Array<{
+        id: string
+        state: LSIFUploadState
+        inputCommit: string
+        inputRoot: string
+        inputIndexer: string
+        uploadedAt: string
+        startedAt: Maybe<string>
+        finishedAt: Maybe<string>
+        placeInQueue: Maybe<number>
+        projectRoot: Maybe<{
+            url: string
+            path: string
+            repository: { url: string; name: string }
+            commit: { url: string; oid: string; abbreviatedOID: string }
+        }>
+    }>
+    pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
+}
+
 export type LsifUploadsVariables = Exact<{
     state: Maybe<LSIFUploadState>
     isLatestForRepo: Maybe<Scalars['Boolean']>
@@ -931,29 +950,7 @@ export type LsifUploadsVariables = Exact<{
     query: Maybe<Scalars['String']>
 }>
 
-export type LsifUploadsResult = {
-    lsifUploads: {
-        totalCount: Maybe<number>
-        nodes: Array<{
-            id: string
-            state: LSIFUploadState
-            inputCommit: string
-            inputRoot: string
-            inputIndexer: string
-            uploadedAt: string
-            startedAt: Maybe<string>
-            finishedAt: Maybe<string>
-            placeInQueue: Maybe<number>
-            projectRoot: Maybe<{
-                url: string
-                path: string
-                repository: { url: string; name: string }
-                commit: { url: string; oid: string; abbreviatedOID: string }
-            }>
-        }>
-        pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
-    }
-}
+export type LsifUploadsResult = { lsifUploads: LsifUploadConnectionFields }
 
 export type LsifUploadsWithRepoVariables = Exact<{
     repository: Scalars['ID']
@@ -972,30 +969,7 @@ export type LsifUploadsWithRepoResult = {
         | { __typename: 'OrganizationInvitation' }
         | { __typename: 'AccessToken' }
         | { __typename: 'ExternalAccount' }
-        | {
-              __typename: 'Repository'
-              lsifUploads: {
-                  totalCount: Maybe<number>
-                  nodes: Array<{
-                      id: string
-                      state: LSIFUploadState
-                      inputCommit: string
-                      inputRoot: string
-                      inputIndexer: string
-                      uploadedAt: string
-                      startedAt: Maybe<string>
-                      finishedAt: Maybe<string>
-                      placeInQueue: Maybe<number>
-                      projectRoot: Maybe<{
-                          url: string
-                          path: string
-                          repository: { url: string; name: string }
-                          commit: { url: string; oid: string; abbreviatedOID: string }
-                      }>
-                  }>
-                  pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
-              }
-          }
+        | { __typename: 'Repository'; lsifUploads: LsifUploadConnectionFields }
         | { __typename: 'GitCommit' }
         | { __typename: 'ExternalService' }
         | { __typename: 'GitRef' }
@@ -1072,6 +1046,28 @@ export type DeleteLsifUploadVariables = Exact<{
 
 export type DeleteLsifUploadResult = { deleteLSIFUpload: Maybe<{ alwaysNil: Maybe<string> }> }
 
+export type LsifIndexFields = {
+    id: string
+    state: LSIFIndexState
+    inputCommit: string
+    queuedAt: string
+    startedAt: Maybe<string>
+    finishedAt: Maybe<string>
+    placeInQueue: Maybe<number>
+    projectRoot: Maybe<{
+        url: string
+        path: string
+        repository: { url: string; name: string }
+        commit: { url: string; oid: string; abbreviatedOID: string }
+    }>
+}
+
+export type LsifIndexConnectionFields = {
+    totalCount: Maybe<number>
+    nodes: Array<LsifIndexFields>
+    pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
+}
+
 export type LsifIndexesVariables = Exact<{
     state: Maybe<LSIFIndexState>
     first: Maybe<Scalars['Int']>
@@ -1079,27 +1075,7 @@ export type LsifIndexesVariables = Exact<{
     query: Maybe<Scalars['String']>
 }>
 
-export type LsifIndexesResult = {
-    lsifIndexes: {
-        totalCount: Maybe<number>
-        nodes: Array<{
-            id: string
-            state: LSIFIndexState
-            inputCommit: string
-            queuedAt: string
-            startedAt: Maybe<string>
-            finishedAt: Maybe<string>
-            placeInQueue: Maybe<number>
-            projectRoot: Maybe<{
-                url: string
-                path: string
-                repository: { url: string; name: string }
-                commit: { url: string; oid: string; abbreviatedOID: string }
-            }>
-        }>
-        pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
-    }
-}
+export type LsifIndexesResult = { lsifIndexes: LsifIndexConnectionFields }
 
 export type LsifIndexesWithRepoVariables = Exact<{
     repository: Scalars['ID']
@@ -1117,28 +1093,7 @@ export type LsifIndexesWithRepoResult = {
         | { __typename: 'OrganizationInvitation' }
         | { __typename: 'AccessToken' }
         | { __typename: 'ExternalAccount' }
-        | {
-              __typename: 'Repository'
-              lsifIndexes: {
-                  totalCount: Maybe<number>
-                  nodes: Array<{
-                      id: string
-                      state: LSIFIndexState
-                      inputCommit: string
-                      queuedAt: string
-                      startedAt: Maybe<string>
-                      finishedAt: Maybe<string>
-                      placeInQueue: Maybe<number>
-                      projectRoot: Maybe<{
-                          url: string
-                          path: string
-                          repository: { url: string; name: string }
-                          commit: { url: string; oid: string; abbreviatedOID: string }
-                      }>
-                  }>
-                  pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
-              }
-          }
+        | { __typename: 'Repository'; lsifIndexes: LsifIndexConnectionFields }
         | { __typename: 'GitCommit' }
         | { __typename: 'ExternalService' }
         | { __typename: 'GitRef' }
@@ -1175,23 +1130,7 @@ export type LsifIndexResult = {
         | { __typename: 'ExternalService' }
         | { __typename: 'GitRef' }
         | { __typename: 'LSIFUpload' }
-        | {
-              __typename: 'LSIFIndex'
-              id: string
-              inputCommit: string
-              state: LSIFIndexState
-              failure: Maybe<string>
-              queuedAt: string
-              startedAt: Maybe<string>
-              finishedAt: Maybe<string>
-              placeInQueue: Maybe<number>
-              projectRoot: Maybe<{
-                  url: string
-                  path: string
-                  repository: { url: string; name: string }
-                  commit: { url: string; oid: string; abbreviatedOID: string }
-              }>
-          }
+        | ({ __typename: 'LSIFIndex' } & LsifIndexFields)
         | { __typename: 'SavedSearch' }
         | { __typename: 'VersionContext' }
         | { __typename: 'RegistryExtension' }
@@ -2183,48 +2122,6 @@ export type AddUserToOrganizationVariables = Exact<{
 }>
 
 export type AddUserToOrganizationResult = { addUserToOrganization: { alwaysNil: Maybe<string> } }
-
-export type SettingsCascadeFields = {
-    final: string
-    subjects: Array<
-        | {
-              __typename: 'User'
-              id: string
-              username: string
-              displayName: Maybe<string>
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-        | {
-              __typename: 'Org'
-              id: string
-              name: string
-              displayName: Maybe<string>
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-        | {
-              __typename: 'Site'
-              id: string
-              siteID: string
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-        | {
-              __typename: 'DefaultSettings'
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-    >
-}
-
-export type ViewerSettingsVariables = Exact<{ [key: string]: never }>
-
-export type ViewerSettingsResult = { viewerSettings: SettingsCascadeFields }
 
 export type GitRefFields = {
     id: string

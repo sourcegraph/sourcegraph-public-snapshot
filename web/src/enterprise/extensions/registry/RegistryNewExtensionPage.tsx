@@ -20,9 +20,14 @@ import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { CreateRegistryExtensionResult } from '../../../graphql-operations'
+import { RequiredAuthProps } from '../../../auth'
 
-function createExtension(publisher: GQL.Scalars['ID'], name: string): Observable<GQL.ExtensionRegistryCreateExtensionResult> {
-    return mutateGraphQL(
+function createExtension(
+    publisher: GQL.Scalars['ID'],
+    name: string
+): Observable<GQL.ExtensionRegistryCreateExtensionResult> {
+    return mutateGraphQL<CreateRegistryExtensionResult>(
         gql`
             mutation CreateRegistryExtension($publisher: ID!, $name: String!) {
                 extensionRegistry {
@@ -52,8 +57,7 @@ function createExtension(publisher: GQL.Scalars['ID'], name: string): Observable
     )
 }
 
-interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {
-    authenticatedUser: GQL.User
+interface Props extends RegistryAreaPageProps, RouteComponentProps<{}>, RequiredAuthProps {
     history: H.History
 }
 

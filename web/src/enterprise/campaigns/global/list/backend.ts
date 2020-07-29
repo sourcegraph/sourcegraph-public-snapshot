@@ -5,12 +5,13 @@ import { queryGraphQL } from '../../../../backend/graphql'
 import { Observable } from 'rxjs'
 import { Connection } from '../../../../components/FilteredConnection'
 import { CampaignNodeProps } from '../../list/CampaignNode'
+import { CampaignsResult, CampaignsVariables } from '../../../../graphql-operations'
 
 export const queryCampaigns = ({
     first,
     state,
     viewerCanAdminister,
-}: GQL.CampaignsOnQueryArguments): Observable<Connection<CampaignNodeProps['node']>> =>
+}: CampaignsVariables): Observable<Connection<CampaignNodeProps['node']>> =>
     queryGraphQL<CampaignsResult>(
         gql`
             query Campaigns($first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {

@@ -8,52 +8,57 @@ import {
     ActivationProps,
     ActivationStep,
 } from '../../../shared/src/components/activation/Activation'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent, logEvent } from '../user/settings/backend'
+import {
+    LinksForRepositoriesResult,
+    SiteAdminActivationStatusResult,
+    ActivationStatusResult,
+} from '../graphql-operations'
+import { OptionalAuthProps } from '../auth'
 
 /**
  * Fetches activation status from server.
  */
-const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompletionStatus> =>
-    queryGraphQL(
-        isSiteAdmin
-            ? gql`
-                  query SiteAdminActivationStatus {
-                      externalServices {
-                          totalCount
-                      }
-                      repositories {
-                          totalCount
-                      }
-                      viewerSettings {
-                          final
-                      }
-                      users {
-                          totalCount
-                      }
-                      currentUser {
-                          usageStatistics {
-                              searchQueries
-                              findReferencesActions
-                              codeIntelligenceActions
-                          }
+const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompletionStatus> => {
+    const query: Observable<GraphQLResult<SiteAdminActivationStatusResult | ActivationStatusResult>> = isSiteAdmin
+        ? queryGraphQL<SiteAdminActivationStatusResult>(gql`
+              query SiteAdminActivationStatus {
+                  externalServices {
+                      totalCount
+                  }
+                  repositories {
+                      totalCount
+                  }
+                  viewerSettings {
+                      final
+                  }
+                  users {
+                      totalCount
+                  }
+                  currentUser {
+                      usageStatistics {
+                          searchQueries
+                          findReferencesActions
+                          codeIntelligenceActions
                       }
                   }
-              `
-            : gql`
-                  query ActivationStatus {
-                      currentUser {
-                          usageStatistics {
-                              searchQueries
-                              findReferencesActions
-                              codeIntelligenceActions
-                          }
+              }
+          `)
+        : queryGraphQL<ActivationStatusResult>(gql`
+              query ActivationStatus {
+                  currentUser {
+                      usageStatistics {
+                          searchQueries
+                          findReferencesActions
+                          codeIntelligenceActions
                       }
                   }
-              `
-    ).pipe(
+              }
+          `)
+    return query.pipe(
         map(dataOrThrowErrors),
         map(data => {
             const authProviders = window.context.authProviders
@@ -65,7 +70,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                     // Remove codeIntelligenceActions from the GraphQL query above, as well.
                     usageStats && (usageStats.findReferencesActions > 0 || usageStats.codeIntelligenceActions > 10),
             }
-            if (isSiteAdmin) {
+            if ('externalServices' in data) {
                 completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
                 if (authProviders) {
                     completed.EnabledSharing =
@@ -75,6 +80,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
             return completed
         })
     )
+}
 
 /**
  * Returns the link a user should go to when they click on the uncompleted find-references
@@ -178,9 +184,7 @@ const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     }
 }
 
-interface WithActivationProps {
-    authenticatedUser: GQL.User | null
-}
+interface WithActivationProps extends OptionalAuthProps {}
 
 interface WithActivationState {
     completed?: ActivationCompletionStatus

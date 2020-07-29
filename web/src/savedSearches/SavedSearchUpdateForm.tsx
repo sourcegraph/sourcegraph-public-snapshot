@@ -19,10 +19,9 @@ import { NamespaceProps } from '../namespaces'
 import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
+import { OptionalAuthProps } from '../auth'
 
-interface Props extends RouteComponentProps<{ id: GQL.Scalars['ID'] }>, NamespaceProps {
-    authenticatedUser: GQL.User | null
-}
+interface Props extends RouteComponentProps<{ id: GQL.Scalars['ID'] }>, NamespaceProps, OptionalAuthProps {}
 
 const LOADING = 'loading' as const
 

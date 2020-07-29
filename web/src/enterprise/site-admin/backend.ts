@@ -3,6 +3,7 @@ import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { queryGraphQL } from '../../backend/graphql'
+import { SiteAdminLsifUploadResult } from '../../graphql-operations'
 
 /**
  * Fetch a single LSIF upload by id.

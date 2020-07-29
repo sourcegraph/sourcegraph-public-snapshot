@@ -14,9 +14,12 @@ import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 import { GitReferenceNode, queryGitReferences } from './GitReference'
 import { RevisionSpec } from '../../../shared/src/util/url'
+import { RepositoryGitCommitResult } from '../graphql-operations'
 
 const fetchRepositoryCommits = memoizeObservable(
-    (args: RevisionSpec & { repo: GQL.Scalars['ID']; first?: number; query?: string }): Observable<GQL.GitCommitConnection> =>
+    (
+        args: RevisionSpec & { repo: GQL.Scalars['ID']; first?: number; query?: string }
+    ): Observable<GQL.GitCommitConnection> =>
         queryGraphQL<RepositoryGitCommitResult>(
             gql`
                 query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {

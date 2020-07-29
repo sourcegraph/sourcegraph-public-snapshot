@@ -13,6 +13,25 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { Settings } from '../../../shared/src/settings/settings'
+import {
+    UsersResult,
+    OrganizationsResult,
+    RepositoriesResult,
+    UserUsageStatisticsResult,
+    SiteUsageStatisticsResult,
+    SiteResult,
+    AllConfigResult,
+    SiteUpdateCheckResult,
+    SiteMonitoringStatisticsResult,
+    UpdateMirrorRepositoryResult,
+    ScheduleRepositoryPermissionsSyncResult,
+    ScheduleUserPermissionsSyncResult,
+    UpdateSiteConfigurationResult,
+    ReloadSiteResult,
+    SetUserIsSiteAdminResult,
+    DeleteUserResult,
+    DeleteOrganizationResult,
+} from '../graphql-operations'
 
 /**
  * Fetches all users.
@@ -173,7 +192,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
 }
 
 export function updateMirrorRepository(args: { repository: GQL.Scalars['ID'] }): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<UpdateMirrorRepositoryResult>(
         gql`
             mutation UpdateMirrorRepository($repository: ID!) {
                 updateMirrorRepository(repository: $repository) {
@@ -198,7 +217,7 @@ export function checkMirrorRepositoryConnection(
               name: string
           }
 ): Observable<GQL.CheckMirrorRepositoryConnectionResult> {
-    return mutateGraphQL(
+    return mutateGraphQL<GQL.CheckMirrorRepositoryConnectionResult>(
         gql`
             mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
                 checkMirrorRepositoryConnection(repository: $repository, name: $name) {
@@ -215,7 +234,7 @@ export function checkMirrorRepositoryConnection(
 }
 
 export function scheduleRepositoryPermissionsSync(args: { repository: GQL.Scalars['ID'] }): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<ScheduleRepositoryPermissionsSyncResult>(
         gql`
             mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
                 scheduleRepositoryPermissionsSync(repository: $repository) {
@@ -232,7 +251,7 @@ export function scheduleRepositoryPermissionsSync(args: { repository: GQL.Scalar
 }
 
 export function scheduleUserPermissionsSync(args: { user: GQL.Scalars['ID'] }): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<ScheduleUserPermissionsSyncResult>(
         gql`
             mutation ScheduleUserPermissionsSync($user: ID!) {
                 scheduleUserPermissionsSync(user: $user) {
@@ -465,7 +484,7 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
  * required for the update to be applied.
  */
 export function updateSiteConfiguration(lastID: number, input: string): Observable<boolean> {
-    return mutateGraphQL(
+    return mutateGraphQL<UpdateSiteConfigurationResult>(
         gql`
             mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
                 updateSiteConfiguration(lastID: $lastID, input: $input)
@@ -482,7 +501,7 @@ export function updateSiteConfiguration(lastID: number, input: string): Observab
  * Reloads the site.
  */
 export function reloadSite(): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<ReloadSiteResult>(
         gql`
             mutation ReloadSite {
                 reloadSite {
@@ -501,7 +520,7 @@ export function reloadSite(): Observable<void> {
 }
 
 export function setUserIsSiteAdmin(userID: GQL.Scalars['ID'], siteAdmin: boolean): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<SetUserIsSiteAdminResult>(
         gql`
             mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
                 setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
@@ -517,7 +536,7 @@ export function setUserIsSiteAdmin(userID: GQL.Scalars['ID'], siteAdmin: boolean
 }
 
 export function randomizeUserPassword(user: GQL.Scalars['ID']): Observable<GQL.RandomizeUserPasswordResult> {
-    return mutateGraphQL(
+    return mutateGraphQL<GQL.RandomizeUserPasswordResult>(
         gql`
             mutation RandomizeUserPassword($user: ID!) {
                 randomizeUserPassword(user: $user) {
@@ -533,7 +552,7 @@ export function randomizeUserPassword(user: GQL.Scalars['ID']): Observable<GQL.R
 }
 
 export function deleteUser(user: GQL.Scalars['ID'], hard?: boolean): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<DeleteUserResult>(
         gql`
             mutation DeleteUser($user: ID!, $hard: Boolean) {
                 deleteUser(user: $user, hard: $hard) {
@@ -553,7 +572,7 @@ export function deleteUser(user: GQL.Scalars['ID'], hard?: boolean): Observable<
 }
 
 export function createUser(username: string, email: string | undefined): Observable<GQL.CreateUserResult> {
-    return mutateGraphQL(
+    return mutateGraphQL<GQL.CreateUserResult>(
         gql`
             mutation CreateUser($username: String!, $email: String) {
                 createUser(username: $username, email: $email) {
@@ -569,7 +588,7 @@ export function createUser(username: string, email: string | undefined): Observa
 }
 
 export function deleteOrganization(organization: GQL.Scalars['ID']): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<DeleteOrganizationResult>(
         gql`
             mutation DeleteOrganization($organization: ID!) {
                 deleteOrganization(organization: $organization) {

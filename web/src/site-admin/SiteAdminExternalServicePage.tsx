@@ -18,6 +18,7 @@ import { useEventObservable } from '../../../shared/src/util/useObservable'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
+import { ExternalServiceResult, UpdateExternalServiceResult } from '../graphql-operations'
 
 type ExternalService = Pick<GQL.ExternalService, 'id' | 'kind' | 'displayName' | 'config' | 'warning' | 'webhookURL'>
 
@@ -249,7 +250,7 @@ const externalServiceFragment = gql`
 `
 
 function updateExternalService(input: GQL.UpdateExternalServiceInput): Observable<ExternalService> {
-    return mutateGraphQL(
+    return mutateGraphQL<UpdateExternalServiceResult>(
         gql`
             mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
                 updateExternalService(input: $input) {

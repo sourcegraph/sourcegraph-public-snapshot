@@ -51,9 +51,6 @@ export interface BrowserGraphQlOperations {
     /** browser/src/shared/platform/context.test.tsx */
     ResolveRepoTest: (variables: ResolveRepoTestVariables) => ResolveRepoTestResult
 
-    /** browser/src/shared/platform/settings.ts */
-    ViewerConfiguration: (variables: ViewerConfigurationVariables) => ViewerConfigurationResult
-
     /** browser/src/shared/repo/backend.tsx */
     ResolveRepo: (variables: ResolveRepoVariables) => ResolveRepoResult
 
@@ -278,48 +275,6 @@ export type ResolveRepoTestVariables = Exact<{
 }>
 
 export type ResolveRepoTestResult = { repository: Maybe<{ url: string }> }
-
-export type ConfigurationCascadeFields = {
-    subjects: Array<
-        | {
-              __typename: 'User'
-              id: string
-              username: string
-              displayName: Maybe<string>
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-        | {
-              __typename: 'Org'
-              id: string
-              name: string
-              displayName: Maybe<string>
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-        | {
-              __typename: 'Site'
-              id: string
-              siteID: string
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-        | {
-              __typename: 'DefaultSettings'
-              settingsURL: Maybe<string>
-              viewerCanAdminister: boolean
-              latestSettings: Maybe<{ id: number; contents: string }>
-          }
-    >
-    merged: { contents: string; messages: Array<string> }
-}
-
-export type ViewerConfigurationVariables = Exact<{ [key: string]: never }>
-
-export type ViewerConfigurationResult = { viewerConfiguration: ConfigurationCascadeFields }
 
 export type ResolveRepoVariables = Exact<{
     rawRepoName: Scalars['String']

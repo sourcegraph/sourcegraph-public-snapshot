@@ -16,6 +16,7 @@ import {
     SiteAdminProductSubscriptionNodeHeader,
     SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
+import { ProductSubscriptionsDotComResult, ProductSubscriptionsDotComVariables } from '../../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {}
 
@@ -55,10 +56,9 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<Props> =
     )
 }
 
-function queryProductSubscriptions(args: {
-    first?: number
-    query?: string
-}): Observable<GQL.ProductSubscriptionConnection> {
+function queryProductSubscriptions(
+    args: ProductSubscriptionsDotComVariables
+): Observable<ProductSubscriptionsDotComResult['dotcom']['productSubscriptions']> {
     return queryGraphQL<ProductSubscriptionsDotComResult>(
         gql`
             query ProductSubscriptionsDotCom($first: Int, $account: ID, $query: String) {
@@ -76,10 +76,7 @@ function queryProductSubscriptions(args: {
             }
             ${siteAdminProductSubscriptionFragment}
         `,
-        {
-            first: args.first,
-            query: args.query,
-        } as GQL.ProductSubscriptionsOnDotcomQueryArguments
+        args
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.dotcom.productSubscriptions)

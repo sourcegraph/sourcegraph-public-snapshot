@@ -8,6 +8,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
+import { SetCustomerBillingResult, SetCustomerBillingVariables } from '../../../../graphql-operations'
 
 interface Props {
     /** The customer to show a billing link for. */
@@ -81,8 +82,8 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ c
     )
 }
 
-function setCustomerBilling(args: GQL.SetUserBillingOnDotcomMutationArguments): Observable<void> {
-    return mutateGraphQL(
+function setCustomerBilling(args: SetCustomerBillingVariables): Observable<void> {
+    return mutateGraphQL<SetCustomerBillingResult>(
         gql`
             mutation SetCustomerBilling($user: ID!, $billingCustomerID: String) {
                 dotcom {

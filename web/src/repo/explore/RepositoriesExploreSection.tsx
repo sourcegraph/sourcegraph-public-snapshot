@@ -12,6 +12,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { PatternTypeProps } from '../../search'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { ExploreRepositoriesResult, ExploreRepositoriesVariables } from '../../graphql-operations'
 
 const LOADING = 'loading' as const
 
@@ -21,14 +22,14 @@ interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
 
 interface State {
     /** The repositories, loading, or an error. */
-    repositoriesOrError: typeof LOADING | GQL.RepositoryConnection | ErrorLike
+    repositoriesOrError: typeof LOADING | ExploreRepositoriesResult['repositories'] | ErrorLike
 }
 
 /**
  * An explore section that shows a few repositories and a link to all.
  */
 export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
-    private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.RepositoriesOnQueryArguments, 'names'> = {
+    private static QUERY_REPOSITORIES_ARGS: ExploreRepositoriesVariables & { first: number } = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode
             ? [
@@ -58,7 +59,9 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     }
 
     public render(): JSX.Element | null {
-        const repositoriesOrError: (typeof LOADING | GQL.Repository)[] | ErrorLike =
+        const repositoriesOrError:
+            | (typeof LOADING | ExploreRepositoriesResult['repositories']['nodes'][number])[]
+            | ErrorLike =
             this.state.repositoriesOrError === LOADING
                 ? new Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
                 : isErrorLike(this.state.repositoriesOrError)
@@ -107,9 +110,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     }
 }
 
-function queryRepositories(
-    args: Pick<GQL.RepositoriesOnQueryArguments, 'first' | 'names'>
-): Observable<GQL.RepositoryConnection> {
+function queryRepositories(args: ExploreRepositoriesVariables): Observable<ExploreRepositoriesResult['repositories']> {
     return queryGraphQL<ExploreRepositoriesResult>(
         gql`
             query ExploreRepositories($first: Int, $names: [String!]) {

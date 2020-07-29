@@ -60,6 +60,7 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
 import { FlatExtHostAPI } from '../../shared/src/api/contract'
+import { OptionalAuthProps } from './auth'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -68,6 +69,7 @@ export interface LayoutProps
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
         ThemeProps,
+        OptionalAuthProps,
         EventLoggerProps,
         ThemePreferenceProps,
         ActivationProps,
@@ -98,8 +100,6 @@ export interface LayoutProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
-
-    authenticatedUser: GQL.User | null
 
     /**
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either

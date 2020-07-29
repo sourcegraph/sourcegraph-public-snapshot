@@ -17,6 +17,7 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { RepositoryTextSearchIndexResult } from '../../graphql-operations'
 
 /**
  * Fetches a repository's text search index information.

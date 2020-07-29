@@ -347,9 +347,9 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
  * The arguments for the Props.queryConnection function.
  */
 export interface FilteredConnectionQueryArgs {
-    first?: number | null
-    after?: string | null
-    query?: string | null
+    first: number | null
+    after: string | null
+    query: string | null
 }
 
 /**
@@ -547,7 +547,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 // load that many results. If we weren't given such a value or this is a
                                 // subsequent request, only ask for one page of results.
                                 first: (queryCount === 1 && this.state.visible) || this.state.first,
-                                after: shouldRefresh && this.state.after || null,
+                                after: (shouldRefresh && this.state.after) || null,
                                 query,
                                 ...(filter ? filter.args : {}),
                             })

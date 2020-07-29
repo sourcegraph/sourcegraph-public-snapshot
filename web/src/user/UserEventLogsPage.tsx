@@ -11,6 +11,7 @@ import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAreaRouteContext } from './area/UserArea'
+import { UserEventLogsResult } from '../graphql-operations'
 
 interface UserEventNodeProps {
     /**

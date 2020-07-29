@@ -34,6 +34,9 @@ export interface SharedGraphQlOperations {
     Extensions: (variables: ExtensionsVariables) => ExtensionsResult
 
     /** shared/src/settings/edit.ts */
+    ViewerSettings: (variables: ViewerSettingsVariables) => ViewerSettingsResult
+
+    /** shared/src/settings/edit.ts */
     EditSettings: (variables: EditSettingsVariables) => EditSettingsResult
 
     /** shared/src/settings/edit.ts */
@@ -185,6 +188,49 @@ export type ExtensionsResult = {
         }
     }
 }
+
+export type SettingsCascadeFields = {
+    final: string
+    subjects: Array<
+        | {
+              __typename: 'User'
+              username: string
+              displayName: Maybe<string>
+              id: string
+              settingsURL: Maybe<string>
+              viewerCanAdminister: boolean
+              latestSettings: Maybe<{ id: number; contents: string }>
+          }
+        | {
+              __typename: 'Org'
+              name: string
+              displayName: Maybe<string>
+              id: string
+              settingsURL: Maybe<string>
+              viewerCanAdminister: boolean
+              latestSettings: Maybe<{ id: number; contents: string }>
+          }
+        | {
+              __typename: 'Site'
+              siteID: string
+              id: string
+              settingsURL: Maybe<string>
+              viewerCanAdminister: boolean
+              latestSettings: Maybe<{ id: number; contents: string }>
+          }
+        | {
+              __typename: 'DefaultSettings'
+              id: string
+              settingsURL: Maybe<string>
+              viewerCanAdminister: boolean
+              latestSettings: Maybe<{ id: number; contents: string }>
+          }
+    >
+}
+
+export type ViewerSettingsVariables = Exact<{ [key: string]: never }>
+
+export type ViewerSettingsResult = { viewerSettings: SettingsCascadeFields }
 
 export type EditSettingsVariables = Exact<{
     subject: Scalars['ID']

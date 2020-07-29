@@ -20,14 +20,13 @@ import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { UpdateRegistryExtensionResult, UpdateRegistryExtensionVariables } from '../../../graphql-operations'
+import { RequiredAuthProps } from '../../../auth'
 
 function updateExtension(
-    args: Pick<
-        GQL.UpdateExtensionOnExtensionRegistryMutationArguments,
-        Exclude<keyof GQL.UpdateExtensionOnExtensionRegistryMutationArguments, 'manifest'>
-    >
-): Observable<GQL.ExtensionRegistryUpdateExtensionResult> {
-    return mutateGraphQL(
+    args: UpdateRegistryExtensionVariables
+): Observable<UpdateRegistryExtensionResult['extensionRegistry']['updateExtension']> {
+    return mutateGraphQL<UpdateRegistryExtensionResult>(
         gql`
             mutation UpdateRegistryExtension($extension: ID!, $name: String) {
                 extensionRegistry {
@@ -55,8 +54,7 @@ function updateExtension(
     )
 }
 
-interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    authenticatedUser: GQL.User
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, RequiredAuthProps {
     history: H.History
 }
 

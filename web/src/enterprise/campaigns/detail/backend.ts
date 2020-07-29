@@ -10,6 +10,8 @@ import {
     CampaignChangesetsVariables,
     CampaignChangesetsResult,
     ExternalChangesetFileDiffsResult,
+    CampaignFields,
+    SyncChangesetResult,
 } from '../../../graphql-operations'
 
 const campaignFragment = gql`
@@ -48,9 +50,7 @@ const campaignFragment = gql`
     ${DiffStatFields}
 `
 
-export const fetchCampaignById = (
-    campaign: ID
-): Observable<(CampaignByIDResult['node'] & { __typename: 'Campaign' }) | null> =>
+export const fetchCampaignById = (campaign: ID): Observable<CampaignFields | null> =>
     queryGraphQL<CampaignByIDResult>(
         gql`
             query CampaignByID($campaign: ID!) {
@@ -172,7 +172,7 @@ export const queryChangesets = (
     )
 
 export async function syncChangeset(changeset: ID): Promise<void> {
-    const result = await mutateGraphQL(
+    const result = await mutateGraphQL<SyncChangesetResult>(
         gql`
             mutation SyncChangeset($changeset: ID!) {
                 syncChangeset(changeset: $changeset) {

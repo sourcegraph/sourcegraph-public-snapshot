@@ -4,6 +4,7 @@ import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
+import { ViewerRegistryPublishersResult, DeleteRegistryExtensionResult } from '../../../graphql-operations'
 
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.Scalars['ID']): Observable<boolean> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(
@@ -11,7 +12,7 @@ export function deleteRegistryExtensionWithConfirmation(extension: GQL.Scalars['
             if (!wasConfirmed) {
                 return [false]
             }
-            return mutateGraphQL(
+            return mutateGraphQL<DeleteRegistryExtensionResult>(
                 gql`
                     mutation DeleteRegistryExtension($extension: ID!) {
                         extensionRegistry {

@@ -11,6 +11,7 @@ import { userURL } from '../../user'
 import { AccessTokenCreatedAlert } from './AccessTokenCreatedAlert'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { DeleteAccessTokenResult } from '../../graphql-operations'
 
 export const accessTokenFragment = gql`
     fragment AccessTokenFields on AccessToken {
@@ -29,7 +30,7 @@ export const accessTokenFragment = gql`
 `
 
 function deleteAccessToken(tokenID: GQL.Scalars['ID']): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<DeleteAccessTokenResult>(
         gql`
             mutation DeleteAccessToken($tokenID: ID!) {
                 deleteAccessToken(byID: $tokenID) {

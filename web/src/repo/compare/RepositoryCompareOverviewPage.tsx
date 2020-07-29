@@ -21,6 +21,7 @@ import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { RepositoryComparisonResult } from '../../graphql-operations'
 
 function queryRepositoryComparison(args: {
     repo: GQL.Scalars['ID']

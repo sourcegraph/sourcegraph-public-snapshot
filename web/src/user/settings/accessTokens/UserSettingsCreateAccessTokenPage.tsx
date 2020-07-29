@@ -16,9 +16,14 @@ import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaRouteContext } from '../../area/UserArea'
 import { ErrorAlert } from '../../../components/alerts'
+import { CreateAccessTokenResult } from '../../../graphql-operations'
 
-function createAccessToken(user: GQL.Scalars['ID'], scopes: string[], note: string): Observable<GQL.CreateAccessTokenResult> {
-    return mutateGraphQL(
+function createAccessToken(
+    user: GQL.Scalars['ID'],
+    scopes: string[],
+    note: string
+): Observable<CreateAccessTokenResult['createAccessToken']> {
+    return mutateGraphQL<CreateAccessTokenResult>(
         gql`
             mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
                 createAccessToken(user: $user, scopes: $scopes, note: $note) {

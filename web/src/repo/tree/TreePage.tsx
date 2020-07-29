@@ -43,6 +43,7 @@ import { getViewsForContainer } from '../../../../shared/src/api/client/services
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { TreeCommitsResult } from '../../graphql-operations'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean

@@ -38,6 +38,7 @@ import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompare
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
 import { FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { RepositoryCommitResult } from '../../graphql-operations'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.Scalars['ID']; revspec: string }): Observable<GQL.GitCommit> =>

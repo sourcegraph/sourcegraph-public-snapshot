@@ -69,7 +69,7 @@ export function waitForRepo(
         indexed: mustBeIndexed = false,
     }: WaitForRepoOptions = {}
 ): Observable<void> {
-    const request = gqlClient.queryGraphQL<ResolveRevResult>(
+    const request = gqlClient.queryGraphQL<any>(
         gql`
             query ResolveRev($repoName: String!) {
                 repository(name: $repoName) {
@@ -189,7 +189,7 @@ export async function ensureNoTestExternalServices(
 
     for (const externalService of externalServices) {
         await gqlClient
-            .mutateGraphQL(
+            .mutateGraphQL<any>(
                 gql`
                     mutation DeleteExternalService($externalService: ID!) {
                         deleteExternalService(externalService: $externalService) {
@@ -215,7 +215,7 @@ export function getExternalServices(
     } = {}
 ): Promise<GQL.ExternalService[]> {
     return gqlClient
-        .queryGraphQL<ExternalServicesResult>(
+        .queryGraphQL<any>(
             gql`
                 query ExternalServices($first: Int) {
                     externalServices(first: $first) {
@@ -251,7 +251,7 @@ export async function updateExternalService(
     input: GQL.UpdateExternalServiceInput
 ): Promise<void> {
     await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<any>(
             gql`
                 mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
                     updateExternalService(input: $input) {
@@ -341,7 +341,7 @@ export async function deleteUser(
         }
     }
 
-    await requestGraphQL<GQL.Mutation>({
+    await requestGraphQL<any>({
         request: gql`
             mutation DeleteUser($user: ID!, $hard: Boolean) {
                 deleteUser(user: $user, hard: $hard) {
@@ -358,9 +358,13 @@ export async function deleteUser(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.Scalars['ID'], siteAdmin: boolean): Promise<void> {
+export async function setUserSiteAdmin(
+    gqlClient: GraphQLClient,
+    userID: GQL.Scalars['ID'],
+    siteAdmin: boolean
+): Promise<void> {
     await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<any>(
             gql`
                 mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
                     setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
@@ -379,7 +383,7 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.Sca
  */
 export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
     return gqlClient
-        .queryGraphQL<SiteFlagsResult>(
+        .queryGraphQL<any>(
             gql`
                 query SiteFlags {
                     site {
@@ -411,7 +415,7 @@ export async function setUserEmailVerified(
         throw new Error(`User ${username} does not exist`)
     }
     await gqlClient
-        .mutateGraphQL(
+        .mutateGraphQL<any>(
             gql`
                 mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
                     setUserEmailVerified(user: $user, email: $email, verified: $verified) {
@@ -429,10 +433,8 @@ export async function setUserEmailVerified(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export function getViewerSettings({
-    requestGraphQL,
-}: Pick<PlatformContext, 'requestGraphQL'>): Promise<any> {
-    return requestGraphQL<GQL.Query>({
+export function getViewerSettings({ requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>): Promise<any> {
+    return requestGraphQL<any>({
         request: gql`
             query ViewerSettings {
                 viewerSettings {
@@ -485,7 +487,7 @@ export function deleteOrganization(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     organization: GQL.Scalars['ID']
 ): Observable<void> {
-    return requestGraphQL<GQL.Mutation>({
+    return requestGraphQL<any>({
         request: gql`
             mutation DeleteOrganization($organization: ID!) {
                 deleteOrganization(organization: $organization) {
@@ -513,7 +515,7 @@ export function fetchAllOrganizations(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     args: { first?: number; query?: string }
 ): Observable<GQL.OrgConnection> {
-    return requestGraphQL<GQL.Query>({
+    return requestGraphQL<any>({
         request: gql`
             query Organizations($first: Int, $query: String) {
                 organizations(first: $first, query: $query) {
@@ -564,7 +566,7 @@ export function createOrganization(
         displayName?: string
     }
 ): Observable<GQL.Org> {
-    return requestGraphQL<GQL.Mutation>({
+    return requestGraphQL<any>({
         request: gql`
             mutation createOrganization($name: String!, $displayName: String) {
                 createOrganization(name: $name, displayName: $displayName) {
@@ -596,7 +598,7 @@ export function createUser(
     username: string,
     email: string | undefined
 ): Observable<GQL.CreateUserResult> {
-    return requestGraphQL<GQL.Mutation>({
+    return requestGraphQL<any>({
         request: gql`
             mutation CreateUser($username: String!, $email: String) {
                 createUser(username: $username, email: $email) {
@@ -620,7 +622,7 @@ export async function getUser(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string
 ): Promise<GQL.User | null> {
-    const user = await requestGraphQL<GQL.Query>({
+    const user = await requestGraphQL<any>({
         request: gql`
             query User($username: String!) {
                 user(username: $username) {
@@ -678,7 +680,7 @@ export function addExternalService(
         requestGraphQL,
     }: Pick<PlatformContext, 'requestGraphQL'> & { eventLogger: EventLogger }
 ): Observable<GQL.ExternalService> {
-    return requestGraphQL<GQL.Mutation>({
+    return requestGraphQL<any>({
         request: gql`
             mutation addExternalService($input: AddExternalServiceInput!) {
                 addExternalService(input: $input) {
@@ -732,7 +734,7 @@ export function search(
     version: string,
     patternType: GQL.SearchPatternType
 ): Promise<GQL.Search> {
-    return requestGraphQL<GQL.Query>({
+    return requestGraphQL<any>({
         request: gql`
         query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
             search(query: $query, version: $version, patternType: $patternType) {
@@ -831,7 +833,7 @@ export function search(
 export function fetchSiteConfiguration({
     requestGraphQL,
 }: Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.Site> {
-    return requestGraphQL<GQL.Query>({
+    return requestGraphQL<any>({
         request: gql`
             query Site {
                 site {
@@ -863,7 +865,7 @@ export function updateSiteConfiguration(
     lastID: number,
     input: string
 ): Observable<boolean> {
-    return requestGraphQL<GQL.Mutation>({
+    return requestGraphQL<any>({
         request: gql`
             mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
                 updateSiteConfiguration(lastID: $lastID, input: $input)

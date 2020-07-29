@@ -195,8 +195,13 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryUploads = useCallback(
-        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo?.id, ...args }),
-        [repo?.id, fetchLsifUploads]
+        (args: FilteredConnectionQueryArgs) =>
+            fetchLsifUploads(
+                repo
+                    ? { state: null, isLatestForRepo: null, repository: repo.id, ...args }
+                    : { state: null, isLatestForRepo: null, ...args }
+            ),
+        [repo, fetchLsifUploads]
     )
 
     return (

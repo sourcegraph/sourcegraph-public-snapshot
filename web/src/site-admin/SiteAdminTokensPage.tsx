@@ -12,10 +12,10 @@ import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../s
 import { eventLogger } from '../tracking/eventLogger'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { FilteredConnection } from '../components/FilteredConnection'
+import { SiteAdminAccessTokensResult } from '../graphql-operations'
+import { RequiredAuthProps } from '../auth'
 
-interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.User
-}
+interface Props extends RouteComponentProps<{}>, RequiredAuthProps {}
 
 interface State {}
 

@@ -9,6 +9,7 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { numberWithCommas } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
+import { RepositoryGitRefsResult } from '../graphql-operations'
 
 interface GitReferenceNodeProps {
     node: GQL.GitRef

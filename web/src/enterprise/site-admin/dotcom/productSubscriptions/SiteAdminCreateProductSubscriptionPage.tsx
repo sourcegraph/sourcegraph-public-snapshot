@@ -14,6 +14,12 @@ import { Form } from '../../../../components/Form'
 import { PageTitle } from '../../../../components/PageTitle'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
+import {
+    ProductSubscriptionAccountsResult,
+    CreateProductSubscriptionResult,
+    CreateProductSubscriptionVariables,
+} from '../../../../graphql-operations'
+import { RequiredAuthProps } from '../../../../auth'
 
 interface UserCreateSubscriptionNodeProps {
     /**
@@ -28,9 +34,9 @@ interface UserCreateSubscriptionNodeProps {
 }
 
 const createProductSubscription = (
-    args: GQL.CreateProductSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.ProductSubscription, 'urlForSiteAdmin'>> =>
-    mutateGraphQL(
+    args: CreateProductSubscriptionVariables
+): Observable<CreateProductSubscriptionResult['dotcom']['createProductSubscription']> =>
+    mutateGraphQL<CreateProductSubscriptionResult>(
         gql`
             mutation CreateProductSubscription($accountID: ID!) {
                 dotcom {
@@ -114,9 +120,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
 
 class FilteredUserConnection extends FilteredConnection<GQL.User, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
 
-interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.User
-}
+interface Props extends RouteComponentProps<{}>, RequiredAuthProps {}
 
 /**
  * Creates a product subscription for an account based on information provided in the displayed form.

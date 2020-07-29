@@ -22,6 +22,7 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { CampaignFields } from '../../../graphql-operations'
 
 interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
@@ -34,7 +35,7 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
     location: H.Location
 
     /** For testing only. */
-    _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.Scalars['ID']) => Observable<GQL.Campaign | null>)
+    _fetchCampaignById?: typeof fetchCampaignById
 }
 
 /**
@@ -59,7 +60,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     /** Retrigger changeset fetching */
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
 
-    const [campaign, setCampaign] = useState<GQL.Campaign | null>()
+    const [campaign, setCampaign] = useState<CampaignFields | null>()
 
     useEffect(() => {
         telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')

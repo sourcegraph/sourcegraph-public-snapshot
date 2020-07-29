@@ -3,6 +3,7 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../backend/graphql'
+import { SearchResultsStatsResult } from '../../../graphql-operations'
 
 export const querySearchResultsStats = (query: string): Observable<GQL.SearchResultsStats & { limitHit: boolean }> =>
     queryGraphQL<SearchResultsStatsResult>(

@@ -2,7 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
@@ -10,6 +10,7 @@ import { ProductPlanPrice } from './ProductPlanPrice'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import { ProductPlansResult } from '../../../graphql-operations'
 
 interface Props {
     /** The selected plan's billing ID. */
@@ -113,7 +114,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     )
 }
 
-function queryProductPlans(): Observable<GQL.ProductPlan[]> {
+function queryProductPlans(): Observable<ProductPlansResult['dotcom']['productPlans']> {
     return queryGraphQL<ProductPlansResult>(
         gql`
             query ProductPlans {
@@ -136,11 +137,7 @@ function queryProductPlans(): Observable<GQL.ProductPlan[]> {
             }
         `
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productPlans || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.dotcom.productPlans
-        })
+        map(dataOrThrowErrors),
+        map(data => data.dotcom.productPlans)
     )
 }

@@ -7,7 +7,17 @@ import {
 import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
-import { LsifIndexesForRepoResult, DeleteLsifUploadForRepoResult, LsifIndexesForRepoVariables, LsifIndexForRepoResult, LsifIndexForRepoVariables, LsifUploadsForRepoVariables, LsifUploadsForRepoResult } from '../../../graphql-operations'
+import {
+    LsifIndexesForRepoResult,
+    DeleteLsifUploadForRepoResult,
+    LsifIndexesForRepoVariables,
+    LsifIndexForRepoResult,
+    LsifIndexForRepoVariables,
+    LsifUploadsForRepoVariables,
+    LsifUploadsForRepoResult,
+    LsifUploadForRepoResult,
+    DeleteLsifIndexForRepoResult,
+} from '../../../graphql-operations'
 
 /**
  * Fetch LSIF uploads for a repository.
@@ -19,7 +29,9 @@ export function fetchLsifUploads({
     isLatestForRepo,
     first,
     after,
-}: LsifUploadsForRepoVariables): Observable<(LsifUploadsForRepoResult['node'] & { __typename: 'Repository' })['lsifUploads']> {
+}: LsifUploadsForRepoVariables): Observable<
+    (LsifUploadsForRepoResult['node'] & { __typename: 'Repository' })['lsifUploads']
+> {
     return queryGraphQL<LsifUploadsForRepoResult>(
         gql`
             query LsifUploadsForRepo(
@@ -285,7 +297,7 @@ export function fetchLsifIndex({ id }: LsifIndexForRepoVariables): Observable<GQ
  * Delete an LSIF index by id.
  */
 export function deleteLsifIndex({ id }: { id: string }): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<DeleteLsifIndexForRepoResult>(
         gql`
             mutation DeleteLsifIndexForRepo($id: ID!) {
                 deleteLSIFIndex(id: $id) {

@@ -19,6 +19,7 @@ import { UserAreaRouteContext } from '../../area/UserArea'
 import { UserAvatar } from '../../UserAvatar'
 import { updateUser } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
+import { UserForProfilePageResult } from '../../../graphql-operations'
 
 function queryUser(user: GQL.Scalars['ID']): Observable<GQL.User> {
     return queryGraphQL<UserForProfilePageResult>(
