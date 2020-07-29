@@ -99,7 +99,7 @@
           },
           "externalIDs": {
             "type": "array",
-            "description": "The changesets to import from the code host. For GitHub this is the PR number, for Gitlab this is the MR number, for Bitbucket server this is the PR number.",
+            "description": "The changesets to import from the code host. For GitHub this is the PR number, for GitLab this is the MR number, for Bitbucket Server this is the PR number.",
             "uniqueItems": true,
             "items": {
               "oneOf": [{ "type": "string" }, { "type": "integer" }]
