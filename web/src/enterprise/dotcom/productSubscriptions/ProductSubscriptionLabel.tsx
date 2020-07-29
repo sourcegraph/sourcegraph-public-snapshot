@@ -1,19 +1,13 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { formatUserCount } from '../../productSubscription/helpers'
+import { GraphQlProductSubscriptionNode } from './backend'
 
 /**
  * Displays a text label with the product name (e.g., "Sourcegraph Enterprise") and user count for the
  * subscription.
  */
 export const ProductSubscriptionLabel: React.FunctionComponent<{
-    productSubscription: {
-        invoiceItem?:
-            | ({
-                  plan: Pick<GQL.ProductPlan, 'name' | 'nameWithBrand'>
-              } & Pick<GQL.ProductSubscriptionInvoiceItem, 'userCount'>)
-            | null
-    } & Pick<GQL.ProductSubscription, 'activeLicense'>
+    productSubscription: GraphQlProductSubscriptionNode
 
     planField?: 'name' | 'nameWithBrand'
 

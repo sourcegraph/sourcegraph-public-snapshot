@@ -47,7 +47,7 @@ function createAccessToken(
 
 interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     /** Called when a new access token is created and should be temporarily displayed to the user. */
-    onDidCreateAccessToken: (result: GQL.CreateAccessTokenResult) => void
+    onDidCreateAccessToken: (result: CreateAccessTokenResult['createAccessToken']) => void
 }
 
 interface State {
@@ -57,7 +57,7 @@ interface State {
     /** The selected scopes checkboxes. */
     scopes: string[]
 
-    creationOrError?: 'loading' | GQL.CreateAccessTokenResult | ErrorLike
+    creationOrError?: 'loading' | CreateAccessTokenResult['createAccessToken'] | ErrorLike
 }
 
 /**

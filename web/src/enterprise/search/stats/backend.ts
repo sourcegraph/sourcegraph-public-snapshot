@@ -1,11 +1,12 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../backend/graphql'
 import { SearchResultsStatsResult } from '../../../graphql-operations'
 
-export const querySearchResultsStats = (query: string): Observable<GQL.SearchResultsStats & { limitHit: boolean }> =>
+export const querySearchResultsStats = (
+    query: string
+): Observable<NonNullable<SearchResultsStatsResult['search']>['stats'] & { limitHit: boolean }> =>
     queryGraphQL<SearchResultsStatsResult>(
         gql`
             query SearchResultsStats($query: String!) {

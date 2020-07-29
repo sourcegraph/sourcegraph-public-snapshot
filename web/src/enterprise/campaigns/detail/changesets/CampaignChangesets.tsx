@@ -3,7 +3,7 @@ import * as H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observable, Subject, merge, of } from 'rxjs'
 import { upperFirst, lowerCase } from 'lodash'
 import { queryChangesets as _queryChangesets } from '../backend'
@@ -38,7 +38,10 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     changesetUpdates: Subject<void>
 
     /** For testing only. */
-    queryChangesets?: (campaignID: GQL.Scalars['ID'], args: FilteredConnectionQueryArgs) => Observable<(CampaignChangesetsResult['node'] & { __typename: 'Campaign'})['changesets']>
+    queryChangesets?: (
+        campaignID: GQL.Scalars['ID'],
+        args: FilteredConnectionQueryArgs
+    ) => Observable<(CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']>
 }
 
 function getLSPTextDocumentPositionParameters(

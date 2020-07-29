@@ -216,12 +216,12 @@ export const fetchHighlightedFileLines = memoizeObservable(
     context => makeRepoURI(context) + `?isLightTheme=${String(context.isLightTheme)}`
 )
 
+export type ExternalLink = NonNullable<
+    NonNullable<NonNullable<FileExternalLinksResult['repository']>['commit']>['file']
+>['externalURLs'][number]
+
 export const fetchFileExternalLinks = memoizeObservable(
-    (
-        context: RepoRev & { filePath: string }
-    ): Observable<
-        NonNullable<NonNullable<NonNullable<FileExternalLinksResult['repository']>['commit']>['file']>['externalURLs']
-    > =>
+    (context: RepoRev & { filePath: string }): Observable<ExternalLink[]> =>
         queryGraphQL<FileExternalLinksResult>(
             gql`
                 query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
@@ -249,10 +249,10 @@ export const fetchFileExternalLinks = memoizeObservable(
     makeRepoURI
 )
 
+export type GitTree = NonNullable<NonNullable<NonNullable<TreeEntriesResult['repository']>['commit']>['tree']>
+
 export const fetchTreeEntries = memoizeObservable(
-    (
-        args: AbsoluteRepoFile & { first?: number }
-    ): Observable<NonNullable<NonNullable<TreeEntriesResult['repository']>['commit']>['tree']> =>
+    (args: AbsoluteRepoFile & { first?: number }): Observable<GitTree> =>
         queryGraphQL<TreeEntriesResult>(
             gql`
                 query TreeEntries(

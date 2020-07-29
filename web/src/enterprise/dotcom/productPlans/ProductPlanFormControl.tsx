@@ -1,16 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useMemo } from 'react'
-import { Observable } from 'rxjs'
-import { catchError, map, startWith, tap } from 'rxjs/operators'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../../backend/graphql'
+import { catchError, startWith, tap } from 'rxjs/operators'
+import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ProductPlanPrice } from './ProductPlanPrice'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
-import { ProductPlansResult } from '../../../graphql-operations'
+import { queryProductPlans } from './backend'
 
 interface Props {
     /** The selected plan's billing ID. */
@@ -111,33 +107,5 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                 </>
             )}
         </div>
-    )
-}
-
-function queryProductPlans(): Observable<ProductPlansResult['dotcom']['productPlans']> {
-    return queryGraphQL<ProductPlansResult>(
-        gql`
-            query ProductPlans {
-                dotcom {
-                    productPlans {
-                        productPlanID
-                        billingPlanID
-                        name
-                        pricePerUserPerYear
-                        minQuantity
-                        maxQuantity
-                        tiersMode
-                        planTiers {
-                            unitAmount
-                            upTo
-                            flatAmount
-                        }
-                    }
-                }
-            }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.dotcom.productPlans)
     )
 }

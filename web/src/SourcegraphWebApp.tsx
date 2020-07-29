@@ -18,7 +18,7 @@ import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContext } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { isErrorLike } from '../../shared/src/util/errors'
-import { authenticatedUser } from './auth'
+import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
@@ -94,7 +94,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
-    authenticatedUser?: GQL.User | null
+    authenticatedUser?: AuthenticatedUser | null
 
     viewerSubject: LayoutProps['viewerSubject']
 

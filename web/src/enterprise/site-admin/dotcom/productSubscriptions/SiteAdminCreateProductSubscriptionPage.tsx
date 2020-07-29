@@ -18,14 +18,17 @@ import {
     ProductSubscriptionAccountsResult,
     CreateProductSubscriptionResult,
     CreateProductSubscriptionVariables,
+    ProductSubscriptionAccountsVariables,
 } from '../../../../graphql-operations'
 import { RequiredAuthProps } from '../../../../auth'
+
+type ProductSubscriptionUserNode = ProductSubscriptionAccountsResult['users']['nodes'][number]
 
 interface UserCreateSubscriptionNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.User
+    node: ProductSubscriptionUserNode
 
     /**
      * Browser history, used to redirect the user to the new subscription after one is successfully created.
@@ -118,8 +121,6 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
     )
 }
 
-class FilteredUserConnection extends FilteredConnection<GQL.User, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
-
 interface Props extends RouteComponentProps<{}>, RequiredAuthProps {}
 
 /**
@@ -135,7 +136,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Pro
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
             <h2>Create product subscription</h2>
-            <FilteredUserConnection
+            <FilteredConnection<ProductSubscriptionUserNode, Pick<UserCreateSubscriptionNodeProps, 'history'>>
                 {...props}
                 className="list-group list-group-flush mt-3"
                 noun="user"
@@ -148,7 +149,9 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Pro
     )
 }
 
-function queryAccounts(args: { first?: number; query?: string }): Observable<GQL.UserConnection> {
+function queryAccounts(
+    args: ProductSubscriptionAccountsVariables
+): Observable<ProductSubscriptionAccountsResult['users']> {
     return queryGraphQL<ProductSubscriptionAccountsResult>(
         gql`
             query ProductSubscriptionAccounts($first: Int, $query: String) {

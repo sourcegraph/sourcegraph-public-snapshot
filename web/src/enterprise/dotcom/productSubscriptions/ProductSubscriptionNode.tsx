@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
+import { ProductSubscriptionsResult } from '../../../graphql-operations'
+import { GraphQlProductSubscriptionNode } from './backend'
 
 export const productSubscriptionFragment = gql`
     fragment ProductSubscriptionFields on ProductSubscription {
@@ -49,7 +51,7 @@ export const ProductSubscriptionNodeHeader: React.FunctionComponent = () => (
 )
 
 export interface ProductSubscriptionNodeProps {
-    node: GQL.ProductSubscription
+    node: GraphQlProductSubscriptionNode
 }
 
 export const ProductSubscriptionNode: React.FunctionComponent<ProductSubscriptionNodeProps> = ({ node }) => (

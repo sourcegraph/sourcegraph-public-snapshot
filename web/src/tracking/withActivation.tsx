@@ -17,7 +17,7 @@ import {
     SiteAdminActivationStatusResult,
     ActivationStatusResult,
 } from '../graphql-operations'
-import { OptionalAuthProps } from '../auth'
+import { OptionalAuthProps, AuthenticatedUser } from '../auth'
 
 /**
  * Fetches activation status from server.
@@ -214,7 +214,7 @@ export const withActivation = <P extends ActivationProps>(
         private updates = new Subject<Partial<ActivationCompletionStatus>>()
 
         public componentDidMount(): void {
-            const authenticatedUser: Observable<GQL.User | null> = this.componentUpdates.pipe(
+            const authenticatedUser: Observable<AuthenticatedUser | null> = this.componentUpdates.pipe(
                 startWith(this.props),
                 map(props => props.authenticatedUser),
                 distinctUntilChanged()

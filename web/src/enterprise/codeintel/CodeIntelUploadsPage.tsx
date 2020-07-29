@@ -16,6 +16,7 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
+import { LsifUploadConnectionFields } from '../../graphql-operations'
 
 const Header: FunctionComponent<{}> = () => (
     <thead>
@@ -31,8 +32,10 @@ const Header: FunctionComponent<{}> = () => (
     </thead>
 )
 
+export type GraphQlLsifUploadNode = LsifUploadConnectionFields['nodes'][number]
+
 export interface UploadNodeProps {
-    node: Upload
+    node: GraphQlLsifUploadNode
     onDelete: () => void
     history: H.History
 
@@ -226,7 +229,7 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({
                 intelligence for historic and branch commits.
             </p>
 
-            <FilteredConnection<Upload, Omit<UploadNodeProps, 'node'>>
+            <FilteredConnection<GraphQlLsifUploadNode, Omit<UploadNodeProps, 'node'>>
                 className="mt-3"
                 listComponent="table"
                 listClassName="table"

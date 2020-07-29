@@ -256,6 +256,7 @@ const lsifIndexFields = gql`
         }
         inputCommit
         queuedAt
+        failure
         startedAt
         finishedAt
         placeInQueue

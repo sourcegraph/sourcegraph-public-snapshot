@@ -8,7 +8,7 @@ import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { FilteredConnection } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
 import { RepositoriesForPopoverResult, RepositoriesForPopoverVariables } from '../graphql-operations'
 

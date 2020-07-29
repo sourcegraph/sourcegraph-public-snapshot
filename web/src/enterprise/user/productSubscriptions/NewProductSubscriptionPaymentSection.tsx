@@ -8,7 +8,7 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { numberWithCommas } from '../../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
@@ -47,7 +47,7 @@ interface Props {
 
 const LOADING = 'loading' as const
 
-type PreviewInvoiceOrError = GQL.ProductSubscriptionPreviewInvoice | null | typeof LOADING | ErrorLike
+type PreviewInvoiceOrError = ProductSubscriptionPreviewInvoice | null | typeof LOADING | ErrorLike
 
 const previewInvoiceValidity = (previewInvoice: PreviewInvoiceOrError): PaymentValidity =>
     previewInvoice === null ||
@@ -149,9 +149,11 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
     )
 }
 
+export type ProductSubscriptionPreviewInvoice = PreviewProductSubscriptionInvoiceResult['dotcom']['previewProductSubscriptionInvoice']
+
 function queryPreviewProductSubscriptionInvoice(
     args: PreviewProductSubscriptionInvoiceVariables
-): Observable<PreviewProductSubscriptionInvoiceResult['dotcom']['previewProductSubscriptionInvoice']> {
+): Observable<ProductSubscriptionPreviewInvoice> {
     return queryGraphQL<PreviewProductSubscriptionInvoiceResult>(
         gql`
             query PreviewProductSubscriptionInvoice(

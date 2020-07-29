@@ -26,7 +26,7 @@ import { RequiredAuthProps } from '../../../auth'
 function createExtension(
     publisher: GQL.Scalars['ID'],
     name: string
-): Observable<GQL.ExtensionRegistryCreateExtensionResult> {
+): Observable<CreateRegistryExtensionResult['extensionRegistry']['createExtension']> {
     return mutateGraphQL<CreateRegistryExtensionResult>(
         gql`
             mutation CreateRegistryExtension($publisher: ID!, $name: String!) {
@@ -57,9 +57,11 @@ function createExtension(
     )
 }
 
-interface Props extends RegistryAreaPageProps, RouteComponentProps<{}>, RequiredAuthProps {
-    history: H.History
-}
+type Props = RegistryAreaPageProps &
+    RouteComponentProps<{}> &
+    RequiredAuthProps & {
+        history: H.History
+    }
 
 interface State {
     /** The viewer's authorized publishers, undefined while loading, or an error. */

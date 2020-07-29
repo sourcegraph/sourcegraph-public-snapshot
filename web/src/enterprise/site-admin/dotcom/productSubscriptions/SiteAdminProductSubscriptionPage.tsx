@@ -253,7 +253,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.ProductSubscription> {
+function queryProductSubscription(
+    uuid: string
+): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
     return queryGraphQL<DotComProductSubscriptionResult>(
         gql`
             query DotComProductSubscription($uuid: String!) {

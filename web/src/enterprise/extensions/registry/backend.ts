@@ -35,7 +35,9 @@ export function deleteRegistryExtensionWithConfirmation(extension: GQL.Scalars['
     )
 }
 
-export function queryViewerRegistryPublishers(): Observable<GQL.RegistryPublisher[]> {
+export function queryViewerRegistryPublishers(): Observable<
+    ViewerRegistryPublishersResult['extensionRegistry']['viewerPublishers']
+> {
     return queryGraphQL<ViewerRegistryPublishersResult>(gql`
         query ViewerRegistryPublishers {
             extensionRegistry {

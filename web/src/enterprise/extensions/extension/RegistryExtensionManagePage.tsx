@@ -54,9 +54,11 @@ function updateExtension(
     )
 }
 
-interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, RequiredAuthProps {
-    history: H.History
-}
+type Props = ExtensionAreaRouteContext &
+    RouteComponentProps<{}> &
+    RequiredAuthProps & {
+        history: H.History
+    }
 
 interface State {
     name?: string
@@ -86,7 +88,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                 [{ updateOrError: 'loading' }],
                                 updateExtension({
                                     extension: this.props.extension.registryExtension!.id,
-                                    name: this.state.name,
+                                    name: this.state.name ?? null,
                                 }).pipe(
                                     tap(result => {
                                         // Redirect to the extension's new URL (if it changed).

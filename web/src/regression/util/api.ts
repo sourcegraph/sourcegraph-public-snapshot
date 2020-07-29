@@ -415,7 +415,7 @@ export async function setUserEmailVerified(
         throw new Error(`User ${username} does not exist`)
     }
     await gqlClient
-        .mutateGraphQL<any>(
+        .mutateGraphQL(
             gql`
                 mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
                     setUserEmailVerified(user: $user, email: $email, verified: $verified) {

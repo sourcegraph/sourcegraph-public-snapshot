@@ -10,7 +10,7 @@ import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TOD
 import { LinkOrButton } from '../../../../shared/src/components/LinkOrButton'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { fetchFileExternalLinks } from '../backend'
+import { fetchFileExternalLinks, ExternalLink } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
@@ -20,7 +20,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
     position?: Position
     range?: Range
 
-    externalLinks?: GQL.ExternalLink[]
+    externalLinks?: ExternalLink[]
 }
 
 interface State {
@@ -28,7 +28,7 @@ interface State {
      * The external links for the current file/dir, or undefined while loading, null while not
      * needed (because not viewing a file/dir), or an error.
      */
-    fileExternalLinksOrError?: GQL.ExternalLink[] | null | ErrorLike
+    fileExternalLinksOrError?: ExternalLink[] | null | ErrorLike
 }
 
 /**

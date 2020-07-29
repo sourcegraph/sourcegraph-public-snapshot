@@ -3,7 +3,7 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
 import { ID } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffFields, RepositoryComparisonFields } from '../../../backend/diff'
+import { DiffStatFields, RepositoryComparisonFields } from '../../../backend/diff'
 import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import {
     CampaignByIDResult,

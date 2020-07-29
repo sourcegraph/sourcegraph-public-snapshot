@@ -90,26 +90,11 @@ export interface WebGraphQlOperations {
     /** web/src/enterprise/extensions/registry/backend.ts */
     ViewerRegistryPublishers: (variables: ViewerRegistryPublishersVariables) => ViewerRegistryPublishersResult
 
-    /** web/src/enterprise/namespaces/backend.ts */
-    ViewerNamespaces: (variables: ViewerNamespacesVariables) => ViewerNamespacesResult
-
     /** web/src/enterprise/repo/settings/backend.tsx */
     LsifUploadsForRepo: (variables: LsifUploadsForRepoVariables) => LsifUploadsForRepoResult
 
     /** web/src/enterprise/repo/settings/backend.tsx */
-    LsifUploadForRepo: (variables: LsifUploadForRepoVariables) => LsifUploadForRepoResult
-
-    /** web/src/enterprise/repo/settings/backend.tsx */
     DeleteLsifUploadForRepo: (variables: DeleteLsifUploadForRepoVariables) => DeleteLsifUploadForRepoResult
-
-    /** web/src/enterprise/repo/settings/backend.tsx */
-    LsifIndexesForRepo: (variables: LsifIndexesForRepoVariables) => LsifIndexesForRepoResult
-
-    /** web/src/enterprise/repo/settings/backend.tsx */
-    LsifIndexForRepo: (variables: LsifIndexForRepoVariables) => LsifIndexForRepoResult
-
-    /** web/src/enterprise/repo/settings/backend.tsx */
-    DeleteLsifIndexForRepo: (variables: DeleteLsifIndexForRepoVariables) => DeleteLsifIndexForRepoResult
 
     /** web/src/enterprise/search/stats/backend.ts */
     SearchResultsStats: (variables: SearchResultsStatsVariables) => SearchResultsStatsResult
@@ -1051,6 +1036,7 @@ export type LsifIndexFields = {
     state: LSIFIndexState
     inputCommit: string
     queuedAt: string
+    failure: Maybe<string>
     startedAt: Maybe<string>
     finishedAt: Maybe<string>
     placeInQueue: Maybe<number>
@@ -1246,18 +1232,6 @@ export type ViewerRegistryPublishersResult = {
     }
 }
 
-export type ViewerNamespacesVariables = Exact<{ [key: string]: never }>
-
-export type ViewerNamespacesResult = {
-    currentUser: Maybe<{
-        __typename: 'User'
-        id: string
-        namespaceName: string
-        url: string
-        organizations: { nodes: Array<{ __typename: 'Org'; id: string; namespaceName: string; url: string }> }
-    }>
-}
-
 export type LsifUploadsForRepoVariables = Exact<{
     repository: Scalars['ID']
     state: Maybe<LSIFUploadState>
@@ -1313,176 +1287,11 @@ export type LsifUploadsForRepoResult = {
     >
 }
 
-export type LsifUploadForRepoVariables = Exact<{
-    id: Scalars['ID']
-}>
-
-export type LsifUploadForRepoResult = {
-    node: Maybe<
-        | { __typename: 'Campaign' }
-        | { __typename: 'User' }
-        | { __typename: 'Org' }
-        | { __typename: 'OrganizationInvitation' }
-        | { __typename: 'AccessToken' }
-        | { __typename: 'ExternalAccount' }
-        | { __typename: 'Repository' }
-        | { __typename: 'GitCommit' }
-        | { __typename: 'ExternalService' }
-        | { __typename: 'GitRef' }
-        | {
-              __typename: 'LSIFUpload'
-              id: string
-              inputCommit: string
-              inputRoot: string
-              inputIndexer: string
-              state: LSIFUploadState
-              failure: Maybe<string>
-              uploadedAt: string
-              startedAt: Maybe<string>
-              finishedAt: Maybe<string>
-              isLatestForRepo: boolean
-              placeInQueue: Maybe<number>
-              projectRoot: Maybe<{
-                  path: string
-                  url: string
-                  commit: {
-                      oid: string
-                      abbreviatedOID: string
-                      url: string
-                      repository: { name: string; url: string }
-                  }
-              }>
-          }
-        | { __typename: 'LSIFIndex' }
-        | { __typename: 'SavedSearch' }
-        | { __typename: 'VersionContext' }
-        | { __typename: 'RegistryExtension' }
-        | { __typename: 'ProductSubscription' }
-        | { __typename: 'ProductLicense' }
-        | { __typename: 'CampaignSpec' }
-        | { __typename: 'HiddenChangesetSpec' }
-        | { __typename: 'VisibleChangesetSpec' }
-        | { __typename: 'HiddenExternalChangeset' }
-        | { __typename: 'ExternalChangeset' }
-        | { __typename: 'ChangesetEvent' }
-    >
-}
-
 export type DeleteLsifUploadForRepoVariables = Exact<{
     id: Scalars['ID']
 }>
 
 export type DeleteLsifUploadForRepoResult = { deleteLSIFUpload: Maybe<{ alwaysNil: Maybe<string> }> }
-
-export type LsifIndexesForRepoVariables = Exact<{
-    repository: Scalars['ID']
-    state: Maybe<LSIFIndexState>
-    first: Maybe<Scalars['Int']>
-    after: Maybe<Scalars['String']>
-    query: Maybe<Scalars['String']>
-}>
-
-export type LsifIndexesForRepoResult = {
-    node: Maybe<
-        | { __typename: 'Campaign' }
-        | { __typename: 'User' }
-        | { __typename: 'Org' }
-        | { __typename: 'OrganizationInvitation' }
-        | { __typename: 'AccessToken' }
-        | { __typename: 'ExternalAccount' }
-        | {
-              __typename: 'Repository'
-              lsifIndexes: {
-                  totalCount: Maybe<number>
-                  nodes: Array<{
-                      id: string
-                      state: LSIFIndexState
-                      inputCommit: string
-                      queuedAt: string
-                      startedAt: Maybe<string>
-                      finishedAt: Maybe<string>
-                      placeInQueue: Maybe<number>
-                      projectRoot: Maybe<{ path: string; url: string; commit: { abbreviatedOID: string; url: string } }>
-                  }>
-                  pageInfo: { endCursor: Maybe<string>; hasNextPage: boolean }
-              }
-          }
-        | { __typename: 'GitCommit' }
-        | { __typename: 'ExternalService' }
-        | { __typename: 'GitRef' }
-        | { __typename: 'LSIFUpload' }
-        | { __typename: 'LSIFIndex' }
-        | { __typename: 'SavedSearch' }
-        | { __typename: 'VersionContext' }
-        | { __typename: 'RegistryExtension' }
-        | { __typename: 'ProductSubscription' }
-        | { __typename: 'ProductLicense' }
-        | { __typename: 'CampaignSpec' }
-        | { __typename: 'HiddenChangesetSpec' }
-        | { __typename: 'VisibleChangesetSpec' }
-        | { __typename: 'HiddenExternalChangeset' }
-        | { __typename: 'ExternalChangeset' }
-        | { __typename: 'ChangesetEvent' }
-    >
-}
-
-export type LsifIndexForRepoVariables = Exact<{
-    id: Scalars['ID']
-}>
-
-export type LsifIndexForRepoResult = {
-    node: Maybe<
-        | { __typename: 'Campaign' }
-        | { __typename: 'User' }
-        | { __typename: 'Org' }
-        | { __typename: 'OrganizationInvitation' }
-        | { __typename: 'AccessToken' }
-        | { __typename: 'ExternalAccount' }
-        | { __typename: 'Repository' }
-        | { __typename: 'GitCommit' }
-        | { __typename: 'ExternalService' }
-        | { __typename: 'GitRef' }
-        | { __typename: 'LSIFUpload' }
-        | {
-              __typename: 'LSIFIndex'
-              id: string
-              inputCommit: string
-              state: LSIFIndexState
-              failure: Maybe<string>
-              queuedAt: string
-              startedAt: Maybe<string>
-              finishedAt: Maybe<string>
-              placeInQueue: Maybe<number>
-              projectRoot: Maybe<{
-                  path: string
-                  url: string
-                  commit: {
-                      oid: string
-                      abbreviatedOID: string
-                      url: string
-                      repository: { name: string; url: string }
-                  }
-              }>
-          }
-        | { __typename: 'SavedSearch' }
-        | { __typename: 'VersionContext' }
-        | { __typename: 'RegistryExtension' }
-        | { __typename: 'ProductSubscription' }
-        | { __typename: 'ProductLicense' }
-        | { __typename: 'CampaignSpec' }
-        | { __typename: 'HiddenChangesetSpec' }
-        | { __typename: 'VisibleChangesetSpec' }
-        | { __typename: 'HiddenExternalChangeset' }
-        | { __typename: 'ExternalChangeset' }
-        | { __typename: 'ChangesetEvent' }
-    >
-}
-
-export type DeleteLsifIndexForRepoVariables = Exact<{
-    id: Scalars['ID']
-}>
-
-export type DeleteLsifIndexForRepoResult = { deleteLSIFIndex: Maybe<{ alwaysNil: Maybe<string> }> }
 
 export type SearchResultsStatsVariables = Exact<{
     query: Scalars['String']

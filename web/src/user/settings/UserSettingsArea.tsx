@@ -18,15 +18,14 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 
-export interface UserSettingsAreaProps
-    extends UserAreaRouteContext,
-        RouteComponentProps<{}>,
-        ThemeProps,
-        TelemetryProps,
-        RequiredAuthProps {
-    sideBarItems: UserSettingsSidebarItems
-    routes: readonly UserSettingsAreaRoute[]
-}
+export type UserSettingsAreaProps = UserAreaRouteContext &
+    RouteComponentProps<{}> &
+    ThemeProps &
+    TelemetryProps &
+    RequiredAuthProps & {
+        sideBarItems: UserSettingsSidebarItems
+        routes: readonly UserSettingsAreaRoute[]
+    }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
     /**
