@@ -25,8 +25,8 @@ import { queryGraphQL } from '../backend/graphql'
  * Fetch the repository.
  */
 export const fetchRepository = memoizeObservable(
-    (args: { repoName: string }): Observable<GQL.IRepository> =>
-        queryGraphQL(
+    (args: { repoName: string }): Observable<GQL.Repository> =>
+        queryGraphQL<RepositoryRedirectResult>(
             gql`
                 query RepositoryRedirect($repoName: String!) {
                     repositoryRedirect(name: $repoName) {
@@ -83,7 +83,7 @@ export interface ResolvedRevision extends ResolvedRevisionSpec {
  */
 export const resolveRevision = memoizeObservable(
     ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision> =>
-        queryGraphQL(
+        queryGraphQL<ResolveRevResult>(
             gql`
                 query ResolveRev($repoName: String!, $revision: String!) {
                     repositoryRedirect(name: $repoName) {
@@ -150,12 +150,12 @@ export const resolveRevision = memoizeObservable(
 interface HighlightedFileResult {
     isDirectory: boolean
     richHTML: string
-    highlightedFile: GQL.IHighlightedFile
+    highlightedFile: GQL.HighlightedFile
 }
 
 const fetchHighlightedFile = memoizeObservable(
     (context: FetchFileCtx): Observable<HighlightedFileResult> =>
-        queryGraphQL(
+        queryGraphQL<HighlightedFileResult>(
             gql`
                 query HighlightedFile(
                     $repoName: String!
@@ -215,8 +215,8 @@ export const fetchHighlightedFileLines = memoizeObservable(
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
-    (context: RepoRev & { filePath: string }): Observable<GQL.IExternalLink[]> =>
-        queryGraphQL(
+    (context: RepoRev & { filePath: string }): Observable<GQL.ExternalLink[]> =>
+        queryGraphQL<FileExternalLinksResult>(
             gql`
                 query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
                     repository(name: $repoName) {
@@ -244,8 +244,8 @@ export const fetchFileExternalLinks = memoizeObservable(
 )
 
 export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
-        queryGraphQL(
+    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.GitTree> =>
+        queryGraphQL<TreeEntriesResult>(
             gql`
                 query TreeEntries(
                     $repoName: String!

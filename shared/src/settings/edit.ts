@@ -13,13 +13,13 @@ import { isErrorLike } from '../util/errors'
  */
 export function updateSettings(
     { settings, requestGraphQL }: Pick<PlatformContext, 'settings' | 'requestGraphQL'>,
-    subjectToUpdate: GQL.ID,
+    subjectToUpdate: GQL.Scalars['ID'],
     args: SettingsEdit | string,
     applySettingsEdit: (
         { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-        subject: GQL.ID,
+        subject: GQL.Scalars['ID'],
         lastID: number | null,
-        edit: GQL.ISettingsEdit | string
+        edit: GQL.SettingsEdit | string
     ) => Promise<void>
 ): Promise<void> {
     return from(settings)
@@ -57,7 +57,7 @@ export function updateSettings(
         .toPromise()
 }
 
-function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
+function toGQLKeyPath(keyPath: (string | number)[]): GQL.KeyPathSegment[] {
     return keyPath.map(member => (typeof member === 'string' ? { property: member } : { index: member }))
 }
 
@@ -69,9 +69,9 @@ function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
  */
 export function mutateSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    subject: GQL.ID,
+    subject: GQL.Scalars['ID'],
     lastID: number | null,
-    edit: GQL.IConfigurationEdit | string
+    edit: GQL.ConfigurationEdit | string
 ): Promise<void> {
     return typeof edit === 'string'
         ? overwriteSettings({ requestGraphQL }, subject, lastID, edit)
@@ -88,9 +88,9 @@ export function mutateSettings(
  */
 function editSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    subject: GQL.ID,
+    subject: GQL.Scalars['ID'],
     lastID: number | null,
-    edit: GQL.IConfigurationEdit
+    edit: GQL.ConfigurationEdit
 ): Promise<void> {
     return from(
         requestGraphQL({
@@ -126,7 +126,7 @@ function editSettings(
  */
 export function overwriteSettings(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    subject: GQL.ID,
+    subject: GQL.Scalars['ID'],
     lastID: number | null,
     contents: string
 ): Promise<void> {

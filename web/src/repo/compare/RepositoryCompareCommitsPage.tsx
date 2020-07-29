@@ -12,12 +12,12 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 function queryRepositoryComparisonCommits(args: {
-    repo: GQL.ID
+    repo: GQL.Scalars['ID']
     base: string | null
     head: string | null
     first?: number
-}): Observable<GQL.IGitCommitConnection> {
-    return queryGraphQL(
+}): Observable<GQL.GitCommitConnection> {
+    return queryGraphQL<RepositoryComparisonCommitsResult>(
         gql`
             query RepositoryComparisonCommits($repo: ID!, $base: String, $head: String, $first: Int) {
                 node(id: $repo) {
@@ -43,7 +43,7 @@ function queryRepositoryComparisonCommits(args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as GQL.Repository
             if (!repo.comparison || !repo.comparison.commits || errors) {
                 throw createAggregateError(errors)
             }
@@ -89,7 +89,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
             <div className="repository-compare-page">
                 <div className="card">
                     <div className="card-header">Commits</div>
-                    <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                    <FilteredConnection<GQL.GitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                         listClassName="list-group list-group-flush"
                         noun="commit"
                         pluralNoun="commits"
@@ -112,7 +112,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> =>
+    private queryCommits = (args: { first?: number }): Observable<GQL.GitCommitConnection> =>
         queryRepositoryComparisonCommits({
             ...args,
             repo: this.props.repo.id,

@@ -12,7 +12,7 @@ import * as H from 'history'
 
 interface Props {
     /** The GraphQL ID of the user with whom the new emails are associated. */
-    user: GQL.ID
+    user: GQL.Scalars['ID']
 
     /** Called after successfully adding an email to the user. */
     onDidAdd: () => void

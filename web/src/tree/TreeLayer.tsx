@@ -54,7 +54,7 @@ export interface TreeLayerProps extends AbsoluteRepo {
 
 const LOADING = 'loading' as const
 interface TreeLayerState {
-    treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
+    treeOrError?: typeof LOADING | GQL.GitTree | ErrorLike
 }
 
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {

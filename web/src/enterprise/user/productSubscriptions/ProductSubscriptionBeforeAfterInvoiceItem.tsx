@@ -9,8 +9,8 @@ import { ExpirationDate } from '../../productSubscription/ExpirationDate'
  * subscription.
  */
 export const ProductSubscriptionBeforeAfterInvoiceItem: React.FunctionComponent<{
-    beforeInvoiceItem: GQL.IProductSubscriptionInvoiceItem
-    afterInvoiceItem: GQL.IProductSubscriptionInvoiceItem
+    beforeInvoiceItem: GQL.ProductSubscriptionInvoiceItem
+    afterInvoiceItem: GQL.ProductSubscriptionInvoiceItem
     className?: string
 }> = ({ beforeInvoiceItem, afterInvoiceItem, className = '' }) => {
     const planChanged = beforeInvoiceItem.plan.billingPlanID !== afterInvoiceItem.plan.billingPlanID

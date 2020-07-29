@@ -8,8 +8,8 @@ import { queryGraphQL } from '../../backend/graphql'
 /**
  * Fetches a repository.
  */
-export function fetchRepository(name: string): Observable<GQL.IRepository> {
-    return queryGraphQL(
+export function fetchRepository(name: string): Observable<GQL.Repository> {
+    return queryGraphQL<RepositoryResult>(
         gql`
             query Repository($name: String!) {
                 repository(name: $name) {

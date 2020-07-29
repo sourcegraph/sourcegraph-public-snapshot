@@ -24,12 +24,12 @@ interface UserNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.IUser
+    node: GQL.User
 
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
 
     /**
      * Called when the user is updated by an action in this list item.
@@ -276,12 +276,12 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
 }
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
     history: H.History
 }
 
 interface State {
-    users?: GQL.IUser[]
+    users?: GQL.User[]
     totalCount?: number
 }
 
@@ -320,7 +320,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                         </Link>
                     </div>
                 </div>
-                <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>
+                <FilteredConnection<GQL.User, Omit<UserNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="user"
                     pluralNoun="users"

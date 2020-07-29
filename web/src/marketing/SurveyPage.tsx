@@ -18,7 +18,7 @@ import TwitterIcon from 'mdi-react/TwitterIcon'
 interface SurveyFormProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     score?: number
     onScoreChange?: (score: number) => void
     onSubmit?: () => void
@@ -176,7 +176,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
 }
 
 interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, ThemeProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 export interface TweetFeedbackProps {

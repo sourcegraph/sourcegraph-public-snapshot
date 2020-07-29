@@ -16,6 +16,7 @@ import { isErrorLike } from '../../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'
+import { ViewerConfigurationResult } from '../../graphql-operations'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
@@ -114,9 +115,9 @@ const configurationCascadeFragment = gql`
  */
 export function fetchViewerSettings(
     requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>> {
+): Observable<Pick<GQL.SettingsCascade, 'subjects' | 'final'>> {
     return from(
-        requestGraphQL<GQL.IQuery>({
+        requestGraphQL<ViewerConfigurationResult>({
             request: gql`
                 query ViewerConfiguration {
                     viewerConfiguration {

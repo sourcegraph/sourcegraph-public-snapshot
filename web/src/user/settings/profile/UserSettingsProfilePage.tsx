@@ -20,8 +20,8 @@ import { UserAvatar } from '../../UserAvatar'
 import { updateUser } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
 
-function queryUser(user: GQL.ID): Observable<GQL.IUser> {
-    return queryGraphQL(
+function queryUser(user: GQL.Scalars['ID']): Observable<GQL.User> {
+    return queryGraphQL<UserForProfilePageResult>(
         gql`
             query UserForProfilePage($user: ID!) {
                 node(id: $user) {
@@ -41,7 +41,7 @@ function queryUser(user: GQL.ID): Observable<GQL.IUser> {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            return data.node as GQL.IUser
+            return data.node as GQL.User
         })
     )
 }
@@ -50,7 +50,7 @@ interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {}
 
 interface State {
     /** The user to edit, or an error, or undefined while loading. */
-    userOrError?: GQL.IUser | ErrorLike
+    userOrError?: GQL.User | ErrorLike
 
     loading: boolean
     saved: boolean

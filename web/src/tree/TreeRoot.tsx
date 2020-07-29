@@ -50,7 +50,7 @@ export interface TreeRootProps extends AbsoluteRepo {
 
 const LOADING = 'loading' as const
 interface TreeRootState {
-    treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
+    treeOrError?: typeof LOADING | GQL.GitTree | ErrorLike
 }
 
 export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {

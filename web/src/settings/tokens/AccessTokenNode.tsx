@@ -28,7 +28,7 @@ export const accessTokenFragment = gql`
     }
 `
 
-function deleteAccessToken(tokenID: GQL.ID): Observable<void> {
+function deleteAccessToken(tokenID: GQL.Scalars['ID']): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteAccessToken($tokenID: ID!) {
@@ -48,7 +48,7 @@ function deleteAccessToken(tokenID: GQL.ID): Observable<void> {
 }
 
 export interface AccessTokenNodeProps {
-    node: GQL.IAccessToken
+    node: GQL.AccessToken
 
     /** Whether the token's subject user should be displayed. */
     showSubject?: boolean
@@ -57,7 +57,7 @@ export interface AccessTokenNodeProps {
      * The newly created token, if any. This contains the secret for this node's token iff node.id
      * === newToken.id.
      */
-    newToken?: GQL.ICreateAccessTokenResult
+    newToken?: GQL.CreateAccessTokenResult
 
     onDidUpdate: () => void
     history: H.History

@@ -113,8 +113,8 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     )
 }
 
-function queryProductPlans(): Observable<GQL.IProductPlan[]> {
-    return queryGraphQL(
+function queryProductPlans(): Observable<GQL.ProductPlan[]> {
+    return queryGraphQL<ProductPlansResult>(
         gql`
             query ProductPlans {
                 dotcom {

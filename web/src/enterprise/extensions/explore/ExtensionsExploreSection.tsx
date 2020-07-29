@@ -19,7 +19,7 @@ const LOADING = 'loading' as const
 
 interface State {
     /** The extensions, loading, or an error. */
-    extensionsOrError: typeof LOADING | GQL.IRegistryExtensionConnection | ErrorLike
+    extensionsOrError: typeof LOADING | GQL.RegistryExtensionConnection | ErrorLike
 }
 
 /**
@@ -58,7 +58,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
     }
 
     public render(): JSX.Element | null {
-        const extensionsOrError: (typeof LOADING | GQL.IRegistryExtension)[] | ErrorLike =
+        const extensionsOrError: (typeof LOADING | GQL.RegistryExtension)[] | ErrorLike =
             this.state.extensionsOrError === LOADING
                 ? new Array(ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).fill(LOADING)
                 : isErrorLike(this.state.extensionsOrError)
@@ -76,7 +76,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                     <div className="list-group list-group-flush">
                         {extensionsOrError
                             .slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST)
-                            .filter((extension): extension is GQL.IRegistryExtension => extension !== LOADING)
+                            .filter((extension): extension is GQL.RegistryExtension => extension !== LOADING)
                             .map(extension => (
                                 <ExtensionsExploreSectionExtensionCard
                                     key={extension.id}
@@ -100,9 +100,9 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
 }
 
 function queryExtensions(
-    args: Pick<GQL.IExtensionsOnExtensionRegistryArguments, 'first' | 'prioritizeExtensionIDs'>
-): Observable<GQL.IRegistryExtensionConnection> {
-    return queryGraphQL(
+    args: Pick<GQL.ExtensionsOnExtensionRegistryArguments, 'first' | 'prioritizeExtensionIDs'>
+): Observable<GQL.RegistryExtensionConnection> {
+    return queryGraphQL<ExploreExtensionsResult>(
         gql`
             query ExploreExtensions($first: Int, $prioritizeExtensionIDs: [String!]) {
                 extensionRegistry {

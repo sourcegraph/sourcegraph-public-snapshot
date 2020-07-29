@@ -1,8 +1,8 @@
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import {
-    IExternalChangeset,
+    ExternalChangeset,
     ChangesetCheckState,
-    IRepositoryComparison,
+    RepositoryComparison,
     GitRevSpec,
     ChangesetExternalState,
 } from '../../../../../../shared/src/graphql/schema'
@@ -30,15 +30,16 @@ import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { queryExternalChangesetWithFileDiffs } from '../backend'
+import { queryExternalChangesetWithFileDiffs, ExternalChangesetGraphQlNode } from '../backend'
 import { Collapsible } from '../../../../components/Collapsible'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { tap, map } from 'rxjs/operators'
 import { ChangesetStateIcon } from './ChangesetStateIcon'
+import { RepositoryComparisonFields } from '../../../../graphql-operations'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
-    node: IExternalChangeset
+    node: ExternalChangeset
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
@@ -137,7 +138,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         </div>
     )
 
-    const [range, setRange] = useState<IRepositoryComparison['range']>()
+    const [range, setRange] = useState<RepositoryComparisonFields['range']>()
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
@@ -224,7 +225,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     )
 }
 
-function commitOIDForGitRevision(revision: GitRevSpec): string {
+function commitOIDForGitRevision(revision: RepositoryComparisonFields['range']['head']): string {
     switch (revision.__typename) {
         case 'GitObject':
             return revision.oid

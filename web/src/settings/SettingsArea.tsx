@@ -31,11 +31,11 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 interface SettingsData {
-    subjects: GQL.ISettingsCascade['subjects']
+    subjects: GQL.SettingsCascade['subjects']
     settingsJSONSchema: { $id: string }
 }
 
@@ -179,7 +179,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = (): void => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: Pick<GQL.SettingsCascade, 'subjects'>): Observable<{ $id: string }> {
         return queryConfiguredRegistryExtensions(
             this.props.platformContext,
             extensionIDsFromSettings(gqlToCascade(cascade))
@@ -196,8 +196,8 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
-    return queryGraphQL(
+function fetchSettingsCascade(subject: GQL.Scalars['ID']): Observable<Pick<GQL.SettingsCascade, 'subjects'>> {
+    return queryGraphQL<SettingsCascadeResult>(
         gql`
             query SettingsCascade($subject: ID!) {
                 settingsSubject(id: $subject) {

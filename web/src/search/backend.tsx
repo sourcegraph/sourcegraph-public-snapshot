@@ -18,14 +18,14 @@ export function search(
     patternType: GQL.SearchPatternType,
     versionContext: string | undefined,
     extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
-): Observable<GQL.ISearchResults | ErrorLike> {
+): Observable<GQL.SearchResults | ErrorLike> {
     const transformedQuery = from(extensionHostPromise).pipe(
         switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
     )
 
     return transformedQuery.pipe(
         switchMap(query =>
-            queryGraphQL(
+            queryGraphQL<SearchResult>(
                 gql`
                     query Search(
                         $query: String!
@@ -223,7 +223,7 @@ export function search(
  * which would fail when accessing window.context.xhrHeaders.
  */
 const repogroupSuggestions = defer(() =>
-    queryGraphQL(gql`
+    queryGraphQL<RepoGroupsResult>(gql`
         query RepoGroups {
             repoGroups {
                 __typename
@@ -241,7 +241,7 @@ const repogroupSuggestions = defer(() =>
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
     return combineLatest([
         repogroupSuggestions,
-        queryGraphQL(
+        queryGraphQL<SearchSuggestionsResult>(
             gql`
                 query SearchSuggestions($query: String!) {
                     search(query: $query) {
@@ -290,7 +290,7 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
 }
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
-    return queryGraphQL(
+    return queryGraphQL<ReposByQueryResult>(
         gql`
             query ReposByQuery($query: String!) {
                 search(query: $query) {
@@ -328,8 +328,8 @@ const savedSearchFragment = gql`
     }
 `
 
-export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
-    return queryGraphQL(gql`
+export function fetchSavedSearches(): Observable<GQL.SavedSearch[]> {
+    return queryGraphQL<savedSearchesResult>(gql`
         query savedSearches {
             savedSearches {
                 ...SavedSearchFields
@@ -346,8 +346,8 @@ export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
     )
 }
 
-export function fetchSavedSearch(id: GQL.ID): Observable<GQL.ISavedSearch> {
-    return queryGraphQL(
+export function fetchSavedSearch(id: GQL.Scalars['ID']): Observable<GQL.SavedSearch> {
+    return queryGraphQL<SavedSearchResult>(
         gql`
             query SavedSearch($id: ID!) {
                 node(id: $id) {
@@ -368,7 +368,7 @@ export function fetchSavedSearch(id: GQL.ID): Observable<GQL.ISavedSearch> {
         { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.ISavedSearch)
+        map(data => data.node as GQL.SavedSearch)
     )
 }
 
@@ -377,8 +377,8 @@ export function createSavedSearch(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: GQL.ID | null,
-    orgId: GQL.ID | null
+    userId: GQL.Scalars['ID'] | null,
+    orgId: GQL.Scalars['ID'] | null
 ): Observable<void> {
     return mutateGraphQL(
         gql`
@@ -418,13 +418,13 @@ export function createSavedSearch(
 }
 
 export function updateSavedSearch(
-    id: GQL.ID,
+    id: GQL.Scalars['ID'],
     description: string,
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: GQL.ID | null,
-    orgId: GQL.ID | null
+    userId: GQL.Scalars['ID'] | null,
+    orgId: GQL.Scalars['ID'] | null
 ): Observable<void> {
     return mutateGraphQL(
         gql`
@@ -466,7 +466,7 @@ export function updateSavedSearch(
     )
 }
 
-export function deleteSavedSearch(id: GQL.ID): Observable<void> {
+export function deleteSavedSearch(id: GQL.Scalars['ID']): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteSavedSearch($id: ID!) {
@@ -489,7 +489,7 @@ export const highlightCode = memoizeObservable(
         disableTimeout: boolean
         isLightTheme: boolean
     }): Observable<string> =>
-        queryGraphQL(
+        queryGraphQL<highlightCodeResult>(
             gql`
                 query highlightCode(
                     $code: String!
@@ -527,7 +527,7 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
         return of(false)
     }
     const manyReposWarningLimit = 100
-    return queryGraphQL(
+    return queryGraphQL<ManyReposWarningResult>(
         gql`
             query ManyReposWarning($first: Int) {
                 repositories(first: $first) {

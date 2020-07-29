@@ -4,8 +4,8 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../backend/graphql'
 
-export const querySearchResultsStats = (query: string): Observable<GQL.ISearchResultsStats & { limitHit: boolean }> =>
-    queryGraphQL(
+export const querySearchResultsStats = (query: string): Observable<GQL.SearchResultsStats & { limitHit: boolean }> =>
+    queryGraphQL<SearchResultsStatsResult>(
         gql`
             query SearchResultsStats($query: String!) {
                 search(query: $query) {

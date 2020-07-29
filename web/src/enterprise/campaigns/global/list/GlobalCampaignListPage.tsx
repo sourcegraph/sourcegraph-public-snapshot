@@ -2,12 +2,12 @@ import React, { useEffect } from 'react'
 import { queryCampaigns as _queryCampaigns } from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
-import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
+import { User, CampaignState } from '../../../../../../shared/src/graphql/schema'
 import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 
 interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
-    authenticatedUser: Pick<IUser, 'siteAdmin'>
+    authenticatedUser: Pick<User, 'siteAdmin'>
     queryCampaigns?: typeof _queryCampaigns
 }
 

@@ -16,7 +16,7 @@ interface UserEventNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.IEventLog
+    node: GQL.EventLog
 }
 
 export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ node }: UserEventNodeProps) => (
@@ -56,7 +56,7 @@ export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProp
         return (
             <div>
                 <PageTitle title="User event log" />
-                <FilteredConnection<GQL.IEventLog, {}>
+                <FilteredConnection<GQL.EventLog, {}>
                     key="chronological"
                     defaultFirst={50}
                     className="list-group list-group-flush"
@@ -72,8 +72,8 @@ export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProp
         )
     }
 
-    private queryUserEventLogs = (args: { first?: number }): Observable<GQL.IEventLogsConnection> =>
-        queryGraphQL(
+    private queryUserEventLogs = (args: { first?: number }): Observable<GQL.EventLogsConnection> =>
+        queryGraphQL<UserEventLogsResult>(
             gql`
                 query UserEventLogs($user: ID!, $first: Int) {
                     node(id: $user) {
@@ -97,6 +97,6 @@ export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProp
             { ...args, user: this.props.user.id }
         ).pipe(
             map(dataOrThrowErrors),
-            map(data => (data.node as GQL.IUser).eventLogs)
+            map(data => (data.node as GQL.User).eventLogs)
         )
 }

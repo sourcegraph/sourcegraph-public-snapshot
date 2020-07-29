@@ -28,13 +28,13 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
      * The campaign ID.
      * If not given, will display a creation form.
      */
-    campaignID?: GQL.ID
-    authenticatedUser: Pick<GQL.IUser, 'id' | 'username' | 'avatarURL'>
+    campaignID?: GQL.Scalars['ID']
+    authenticatedUser: Pick<GQL.User, 'id' | 'username' | 'avatarURL'>
     history: H.History
     location: H.Location
 
     /** For testing only. */
-    _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.ID) => Observable<GQL.ICampaign | null>)
+    _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.Scalars['ID']) => Observable<GQL.Campaign | null>)
 }
 
 /**
@@ -59,7 +59,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     /** Retrigger changeset fetching */
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
 
-    const [campaign, setCampaign] = useState<GQL.ICampaign | null>()
+    const [campaign, setCampaign] = useState<GQL.Campaign | null>()
 
     useEffect(() => {
         telemetryService.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')

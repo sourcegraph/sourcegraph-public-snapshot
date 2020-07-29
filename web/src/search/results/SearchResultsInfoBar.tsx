@@ -27,11 +27,11 @@ interface SearchResultsInfoBarProps
         TelemetryProps,
         PatternTypeProps {
     /** The currently authenticated user or null */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 
     /** The loaded search results and metadata */
     query?: string
-    results: GQL.ISearchResults
+    results: GQL.SearchResults
     onShowMoreResultsClick: () => void
 
     // Expand all feature

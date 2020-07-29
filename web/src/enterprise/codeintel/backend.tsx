@@ -7,10 +7,18 @@ import {
 import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { queryGraphQL, mutateGraphQL } from '../../backend/graphql'
+import {
+    LsifUploadsResult,
+    LsifUploadsWithRepoResult,
+    LsifUploadResult,
+    LsifIndexResult,
+    LsifIndexesResult,
+    LsifIndexesVariables,
+} from '../../graphql-operations'
 
 // Create an expected subtype including only the fields that we use in this component so
 // that storybook tests do not need to define a full IGitTree type (which is very large).
-export type Upload = Omit<GQL.ILSIFUpload, '__typename' | 'projectRoot'> & {
+export type Upload = Omit<GQL.LSIFUpload, '__typename' | 'projectRoot'> & {
     projectRoot: {
         url: string
         path: string
@@ -26,7 +34,7 @@ export type Upload = Omit<GQL.ILSIFUpload, '__typename' | 'projectRoot'> & {
     } | null
 }
 
-export type UploadConnection = Omit<GQL.ILSIFUploadConnection, '__typename' | 'nodes'> & {
+export type UploadConnection = Omit<GQL.LSIFUploadConnection, '__typename' | 'nodes'> & {
     nodes: Upload[]
 }
 
@@ -41,9 +49,9 @@ export function fetchLsifUploads({
     isLatestForRepo,
     first,
     after,
-}: { repository?: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<UploadConnection> {
+}: { repository?: string } & GQL.LsifUploadsOnRepositoryArguments): Observable<UploadConnection> {
     if (!repository) {
-        return queryGraphQL(
+        return queryGraphQL<LsifUploadsResult>(
             gql`
                 query LsifUploads(
                     $state: LSIFUploadState
@@ -99,7 +107,7 @@ export function fetchLsifUploads({
         )
     }
 
-    return queryGraphQL(
+    return queryGraphQL<LsifUploadsWithRepoResult>(
         gql`
             query LsifUploadsWithRepo(
                 $repository: ID!
@@ -171,7 +179,7 @@ export function fetchLsifUploads({
 }
 
 export function fetchLsifUpload({ id }: { id: string }): Observable<Upload | null> {
-    return queryGraphQL(
+    return queryGraphQL<LsifUploadResult>(
         gql`
             query LsifUpload($id: ID!) {
                 node(id: $id) {
@@ -243,7 +251,7 @@ export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
 
 // Create an expected subtype including only the fields that we use in this component so
 // that storybook tests do not need to define a full IGitTree type (which is very large).
-export type Index = Omit<GQL.ILSIFIndex, '__typename' | 'projectRoot'> & {
+export type Index = Omit<GQL.LSIFIndex, '__typename' | 'projectRoot'> & {
     projectRoot: {
         url: string
         path: string
@@ -259,7 +267,7 @@ export type Index = Omit<GQL.ILSIFIndex, '__typename' | 'projectRoot'> & {
     } | null
 }
 
-export type IndexConnection = Omit<GQL.ILSIFIndexConnection, '__typename' | 'nodes'> & {
+export type IndexConnection = Omit<GQL.LSIFIndexConnection, '__typename' | 'nodes'> & {
     nodes: Index[]
 }
 
@@ -273,9 +281,9 @@ export function fetchLsifIndexes({
     state,
     first,
     after,
-}: { repository?: string } & GQL.ILsifIndexesOnRepositoryArguments): Observable<IndexConnection> {
+}: LsifIndexesVariables): Observable<IndexConnection> {
     if (!repository) {
-        return queryGraphQL(
+        return queryGraphQL<LsifIndexesResult>(
             gql`
                 query LsifIndexes($state: LSIFIndexState, $first: Int, $after: String, $query: String) {
                     lsifIndexes(query: $query, state: $state, first: $first, after: $after) {
@@ -317,7 +325,7 @@ export function fetchLsifIndexes({
         )
     }
 
-    return queryGraphQL(
+    return queryGraphQL<LsifIndexesWithRepoResult>(
         gql`
             query LsifIndexesWithRepo(
                 $repository: ID!
@@ -380,7 +388,7 @@ export function fetchLsifIndexes({
 }
 
 export function fetchLsifIndex({ id }: { id: string }): Observable<Index | null> {
-    return queryGraphQL(
+    return queryGraphQL<LsifIndexResult>(
         gql`
             query LsifIndex($id: ID!) {
                 node(id: $id) {

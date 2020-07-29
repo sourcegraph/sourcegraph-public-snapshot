@@ -37,7 +37,7 @@ interface Props
         ActivationProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     showDotComMarketing: boolean
     showCampaigns: boolean
     isSourcegraphDotCom: boolean

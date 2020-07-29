@@ -12,7 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */
-    node: GQL.IAuthProvider
+    node: GQL.AuthProvider
 }
 
 /** Whether to show experimental auth features. */
@@ -62,7 +62,7 @@ const authProviderFragment = gql`
 
 interface Props extends RouteComponentProps<{}> {}
 
-class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvider> {}
+class FilteredAuthProviderConnection extends FilteredConnection<GQL.AuthProvider> {}
 
 /**
  * A page displaying the auth providers in site configuration.
@@ -97,8 +97,8 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
         )
     }
 
-    private queryAuthProviders = (args: {}): Observable<GQL.IAuthProviderConnection> =>
-        queryGraphQL(
+    private queryAuthProviders = (args: {}): Observable<GQL.AuthProviderConnection> =>
+        queryGraphQL<AuthProvidersResult>(
             gql`
                 query AuthProviders {
                     site {

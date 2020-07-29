@@ -8,7 +8,7 @@ import { NamespaceProps } from '../namespaces'
 import { ErrorAlert } from '../components/alerts'
 
 export interface SavedQueryFields {
-    id: GQL.ID
+    id: GQL.Scalars['ID']
     description: string
     query: string
     notify: boolean
@@ -19,7 +19,7 @@ export interface SavedQueryFields {
 interface Props extends RouteComponentProps<{}>, NamespaceProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
     submitLabel: string

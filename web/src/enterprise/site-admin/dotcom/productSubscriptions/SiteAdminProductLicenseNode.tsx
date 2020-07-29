@@ -37,7 +37,7 @@ export const siteAdminProductLicenseFragment = gql`
 `
 
 export interface SiteAdminProductLicenseNodeProps {
-    node: GQL.IProductLicense
+    node: GQL.ProductLicense
     showSubscription: boolean
 }
 

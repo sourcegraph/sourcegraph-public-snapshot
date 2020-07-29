@@ -5,6 +5,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../backend/graphql'
 import { eventLogger } from '../../tracking/eventLogger'
+import { UpdateUserResult, UpdatePasswordResult } from '../../graphql-operations'
 
 interface UpdateUserOptions {
     username: string | null
@@ -17,10 +18,10 @@ interface UpdateUserOptions {
 /**
  * Sends a GraphQL mutation to update a user's profile
  */
-export function updateUser(user: GQL.ID, args: UpdateUserOptions): Observable<void> {
-    return mutateGraphQL(
+export function updateUser(user: GQL.Scalars['ID'], args: UpdateUserOptions): Observable<void> {
+    return mutateGraphQL<UpdateUserResult>(
         gql`
-            mutation updateUser($user: ID!, $username: String, $displayName: String, $avatarURL: String) {
+            mutation UpdateUser($user: ID!, $username: String, $displayName: String, $avatarURL: String) {
                 updateUser(user: $user, username: $username, displayName: $displayName, avatarURL: $avatarURL) {
                     alwaysNil
                 }
@@ -39,9 +40,9 @@ export function updateUser(user: GQL.ID, args: UpdateUserOptions): Observable<vo
 }
 
 export function updatePassword(args: { oldPassword: string; newPassword: string }): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<UpdatePasswordResult>(
         gql`
-            mutation updatePassword($oldPassword: String!, $newPassword: String!) {
+            mutation UpdatePassword($oldPassword: String!, $newPassword: String!) {
                 updatePassword(oldPassword: $oldPassword, newPassword: $newPassword) {
                     alwaysNil
                 }
@@ -66,7 +67,7 @@ export function updatePassword(args: { oldPassword: string; newPassword: string 
  * @param email the email address to edit
  * @param verified the new verification state for the user email
  */
-export function setUserEmailVerified(user: GQL.ID, email: string, verified: boolean): Observable<void> {
+export function setUserEmailVerified(user: GQL.Scalars['ID'], email: string, verified: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {

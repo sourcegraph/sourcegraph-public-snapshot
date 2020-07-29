@@ -57,16 +57,16 @@ export interface RepoContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps {
-    repo: GQL.IRepository
-    authenticatedUser: GQL.IUser | null
+    repo: GQL.Repository
+    authenticatedUser: GQL.User | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
 
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
 
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
-    onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
+    onDidUpdateRepository: (update: Partial<GQL.Repository>) => void
+    onDidUpdateExternalLinks: (externalLinks: GQL.ExternalLink[] | undefined) => void
 
     globbing: boolean
 }
@@ -96,7 +96,7 @@ interface RepoContainerProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
@@ -109,7 +109,7 @@ interface RepoRevContainerState extends ParsedRepoRevision {
      * The fetched repository or an error if occurred.
      * `undefined` while loading.
      */
-    repoOrError?: GQL.IRepository | ErrorLike
+    repoOrError?: GQL.Repository | ErrorLike
 
     /**
      * The resolved revision or an error if it could not be resolved. `undefined` while loading. This value comes from
@@ -119,7 +119,7 @@ interface RepoRevContainerState extends ParsedRepoRevision {
     resolvedRevisionOrError?: ResolvedRevision | ErrorLike
 
     /** The external links to show in the repository header, if any. */
-    externalLinks?: GQL.IExternalLink[]
+    externalLinks?: GQL.ExternalLink[]
 
     repoHeaderContributionsLifecycleProps?: RepoHeaderContributionsLifecycleProps
 }
@@ -129,7 +129,7 @@ interface RepoRevContainerState extends ParsedRepoRevision {
  */
 export class RepoContainer extends React.Component<RepoContainerProps, RepoRevContainerState> {
     private componentUpdates = new Subject<RepoContainerProps>()
-    private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
+    private repositoryUpdates = new Subject<Partial<GQL.Repository>>()
     private revResolves = new Subject<ResolvedRevision | ErrorLike | undefined>()
     private subscriptions = new Subscription()
 
@@ -197,7 +197,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         // Merge in repository updates.
         this.subscriptions.add(
             this.repositoryUpdates.subscribe(update =>
-                this.setState(({ repoOrError }) => ({ repoOrError: { ...repoOrError, ...update } as GQL.IRepository }))
+                this.setState(({ repoOrError }) => ({ repoOrError: { ...repoOrError, ...update } as GQL.Repository }))
             )
         )
 
@@ -417,9 +417,9 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         )
     }
 
-    private onDidUpdateRepository = (update: Partial<GQL.IRepository>): void => this.repositoryUpdates.next(update)
+    private onDidUpdateRepository = (update: Partial<GQL.Repository>): void => this.repositoryUpdates.next(update)
 
-    private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
+    private onDidUpdateExternalLinks = (externalLinks: GQL.ExternalLink[] | undefined): void =>
         this.setState({ externalLinks })
 
     private onResolvedRevOrError = (value: ResolvedRevision | ErrorLike | undefined): void =>

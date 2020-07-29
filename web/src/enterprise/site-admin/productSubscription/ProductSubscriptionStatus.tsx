@@ -17,8 +17,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
 
-const queryProductLicenseInfo = (): Observable<GQL.IProductSubscriptionStatus> =>
-    queryGraphQL(gql`
+const queryProductLicenseInfo = (): Observable<GQL.ProductSubscriptionStatus> =>
+    queryGraphQL<ProductLicenseInfoResult>(gql`
         query ProductLicenseInfo {
             site {
                 productSubscription {

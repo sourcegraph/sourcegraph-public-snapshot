@@ -14,8 +14,8 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps {
-    authenticatedUser: GQL.IUser
-    site: Pick<GQL.ISite, '__typename' | 'id'>
+    authenticatedUser: GQL.User
+    site: Pick<GQL.Site, '__typename' | 'id'>
 }
 
 export const SiteAdminSettingsPage: React.FunctionComponent<Props> = props => (

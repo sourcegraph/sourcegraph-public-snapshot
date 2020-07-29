@@ -22,7 +22,7 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
 
 interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
-    user: Pick<GQL.IUser, 'settingsURL'>
+    user: Pick<GQL.User, 'settingsURL'>
 
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
@@ -144,8 +144,8 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
-    return queryGraphQL(
+function queryProductSubscription(uuid: string): Observable<GQL.ProductSubscription> {
+    return queryGraphQL<ProductSubscriptionResult>(
         gql`
             query ProductSubscription($uuid: String!) {
                 dotcom {

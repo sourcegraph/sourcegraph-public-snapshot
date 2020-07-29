@@ -124,7 +124,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, onDelete, history,
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo?: GQL.IRepository
+    repo?: GQL.Repository
     fetchLsifIndexes?: typeof defaultFetchLsifIndexes
 
     /** Function that returns the current time (for stability in visual tests). */

@@ -50,7 +50,7 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
 }
 
 interface Props {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 interface State {

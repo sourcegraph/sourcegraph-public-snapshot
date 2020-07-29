@@ -99,13 +99,13 @@ export interface LayoutProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 
     /**
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
      * the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
      */
-    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
 
     telemetryService: EventLogger
 
@@ -119,7 +119,7 @@ export interface LayoutProps
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
-    ) => Observable<GQL.ISearchResults | ErrorLike>
+    ) => Observable<GQL.SearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null

@@ -210,7 +210,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
 }
 
 interface ResetPasswordPageProps extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 /**

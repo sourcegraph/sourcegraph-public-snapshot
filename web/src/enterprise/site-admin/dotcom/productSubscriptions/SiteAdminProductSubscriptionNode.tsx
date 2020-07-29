@@ -57,7 +57,7 @@ export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent = (
 )
 
 export interface SiteAdminProductSubscriptionNodeProps {
-    node: GQL.IProductSubscription
+    node: GQL.ProductSubscription
 }
 
 /**

@@ -56,8 +56,8 @@ export function createPlatformContext(
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): BrowserPlatformContext {
-    const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
-    const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
+    const updatedViewerSettings = new ReplaySubject<Pick<GQL.SettingsCascade, 'subjects' | 'final'>>(1)
+    const requestGraphQL: PlatformContext['requestGraphQL'] = <T>({
         request,
         variables,
         mightContainPrivateInfo,

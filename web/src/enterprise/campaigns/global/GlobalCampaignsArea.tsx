@@ -2,7 +2,7 @@ import React from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 import { GlobalCampaignListPage } from './list/GlobalCampaignListPage'
 import { CampaignDetails } from '../detail/CampaignDetails'
-import { IUser } from '../../../../../shared/src/graphql/schema'
+import { User } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateCampaign } from './create/CreateCampaign'
@@ -21,7 +21,7 @@ interface Props
         ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps {
-    authenticatedUser: IUser | null
+    authenticatedUser: User | null
     isSourcegraphDotCom: boolean
 }
 
@@ -40,7 +40,7 @@ export const GlobalCampaignsArea: React.FunctionComponent<Props> = props => {
 }
 
 interface AuthenticatedProps extends Props {
-    authenticatedUser: IUser
+    authenticatedUser: User
 }
 
 export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => {

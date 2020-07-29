@@ -13,7 +13,7 @@ export interface NamespaceAreaContext
         Omit<PatternTypeProps, 'setPatternType'> {
     namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
 
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 export interface NamespaceAreaRoute extends RouteDescriptor<NamespaceAreaContext> {}

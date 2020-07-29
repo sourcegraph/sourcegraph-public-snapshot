@@ -29,7 +29,7 @@ export const externalAccountFragment = gql`
     }
 `
 
-function deleteExternalAccount(externalAccount: GQL.ID): Observable<void> {
+function deleteExternalAccount(externalAccount: GQL.Scalars['ID']): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation DeleteExternalAccount($externalAccount: ID!) {
@@ -49,7 +49,7 @@ function deleteExternalAccount(externalAccount: GQL.ID): Observable<void> {
 }
 
 export interface ExternalAccountNodeProps {
-    node: GQL.IExternalAccount
+    node: GQL.ExternalAccount
 
     showUser: boolean
 

@@ -23,7 +23,7 @@ const siteAdminCustomerFragment = gql`
 `
 
 interface SiteAdminCustomerNodeProps {
-    node: Pick<GQL.IUser, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>
+    node: Pick<GQL.User, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>
     onDidUpdate: () => void
 }
 
@@ -44,7 +44,7 @@ const SiteAdminCustomerNode: React.FunctionComponent<SiteAdminCustomerNodeProps>
 interface Props extends RouteComponentProps<{}> {}
 
 class FilteredSiteAdminCustomerConnection extends FilteredConnection<
-    Pick<GQL.IUser, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>,
+    Pick<GQL.User, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>,
     Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
 > {}
 
@@ -83,8 +83,8 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = pro
     )
 }
 
-function queryCustomers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
-    return queryGraphQL(
+function queryCustomers(args: { first?: number; query?: string }): Observable<GQL.UserConnection> {
+    return queryGraphQL<CustomersResult>(
         gql`
             query Customers($first: Int, $query: String) {
                 users(first: $first, query: $query) {
@@ -102,7 +102,7 @@ function queryCustomers(args: { first?: number; query?: string }): Observable<GQ
         {
             first: args.first,
             query: args.query,
-        } as GQL.IUsersOnQueryArguments
+        } as GQL.UsersOnQueryArguments
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.users || (errors && errors.length > 0)) {

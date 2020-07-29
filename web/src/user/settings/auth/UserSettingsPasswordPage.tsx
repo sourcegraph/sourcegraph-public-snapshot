@@ -14,8 +14,8 @@ import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
-    authenticatedUser: GQL.IUser
+    user: GQL.User
+    authenticatedUser: GQL.User
     history: H.History
 }
 

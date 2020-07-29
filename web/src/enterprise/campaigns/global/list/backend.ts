@@ -10,8 +10,8 @@ export const queryCampaigns = ({
     first,
     state,
     viewerCanAdminister,
-}: GQL.ICampaignsOnQueryArguments): Observable<Connection<CampaignNodeProps['node']>> =>
-    queryGraphQL(
+}: GQL.CampaignsOnQueryArguments): Observable<Connection<CampaignNodeProps['node']>> =>
+    queryGraphQL<CampaignsResult>(
         gql`
             query Campaigns($first: Int, $state: CampaignState, $viewerCanAdminister: Boolean) {
                 campaigns(first: $first, state: $state, viewerCanAdminister: $viewerCanAdminister) {

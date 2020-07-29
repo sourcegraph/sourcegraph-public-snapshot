@@ -7,6 +7,7 @@ import {
 import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
+import { LsifIndexesForRepoResult, DeleteLsifUploadForRepoResult, LsifIndexesForRepoVariables, LsifIndexForRepoResult, LsifIndexForRepoVariables, LsifUploadsForRepoVariables, LsifUploadsForRepoResult } from '../../../graphql-operations'
 
 /**
  * Fetch LSIF uploads for a repository.
@@ -18,8 +19,8 @@ export function fetchLsifUploads({
     isLatestForRepo,
     first,
     after,
-}: { repository: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<GQL.ILSIFUploadConnection> {
-    return queryGraphQL(
+}: LsifUploadsForRepoVariables): Observable<(LsifUploadsForRepoResult['node'] & { __typename: 'Repository' })['lsifUploads']> {
+    return queryGraphQL<LsifUploadsForRepoResult>(
         gql`
             query LsifUploadsForRepo(
                 $repository: ID!
@@ -88,8 +89,8 @@ export function fetchLsifUploads({
 /**
  * Fetch a single LSIF upload by id.
  */
-export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
-    return queryGraphQL(
+export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.LSIFUpload | null> {
+    return queryGraphQL<LsifUploadForRepoResult>(
         gql`
             query LsifUploadForRepo($id: ID!) {
                 node(id: $id) {
@@ -143,7 +144,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
  * Delete an LSIF upload by id.
  */
 export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
-    return mutateGraphQL(
+    return mutateGraphQL<DeleteLsifUploadForRepoResult>(
         gql`
             mutation DeleteLsifUploadForRepo($id: ID!) {
                 deleteLSIFUpload(id: $id) {
@@ -171,8 +172,8 @@ export function fetchLsifIndexes({
     state,
     first,
     after,
-}: { repository: string } & GQL.ILsifIndexesOnRepositoryArguments): Observable<GQL.ILSIFIndexConnection> {
-    return queryGraphQL(
+}: LsifIndexesForRepoVariables): Observable<GQL.LSIFIndexConnection> {
+    return queryGraphQL<LsifIndexesForRepoResult>(
         gql`
             query LsifIndexesForRepo(
                 $repository: ID!
@@ -232,8 +233,8 @@ export function fetchLsifIndexes({
 /**
  * Fetch a single LSIF index by id.
  */
-export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFIndex | null> {
-    return queryGraphQL(
+export function fetchLsifIndex({ id }: LsifIndexForRepoVariables): Observable<GQL.LSIFIndex | null> {
+    return queryGraphQL<LsifIndexForRepoResult>(
         gql`
             query LsifIndexForRepo($id: ID!) {
                 node(id: $id) {

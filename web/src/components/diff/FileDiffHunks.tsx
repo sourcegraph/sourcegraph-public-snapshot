@@ -18,7 +18,7 @@ import { diffDomFunctions } from '../../repo/compare/dom-functions'
 
 interface PartFileInfo {
     repoName: string
-    repoID: GQL.ID
+    repoID: GQL.Scalars['ID']
     revision: string
     commitID: string
 
@@ -46,7 +46,7 @@ interface FileHunksProps extends ThemeProps {
     } & ExtensionsControllerProps
 
     /** The file's hunks. */
-    hunks: GQL.IFileDiffHunk[]
+    hunks: GQL.FileDiffHunk[]
 
     /** Whether to show line numbers. */
     lineNumbers: boolean

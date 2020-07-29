@@ -12,7 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 export interface GitCommitNodeProps {
-    node: GQL.IGitCommit
+    node: GQL.GitCommit
 
     /** An optional additional CSS class name to apply to this element. */
     className?: string

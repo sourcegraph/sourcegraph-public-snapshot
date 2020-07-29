@@ -14,7 +14,7 @@ import { useEventObservable } from '../../../../../../shared/src/util/useObserva
 import * as H from 'history'
 
 interface Props {
-    subscriptionID: GQL.ID
+    subscriptionID: GQL.Scalars['ID']
     onGenerate: () => void
     history: H.History
 }
@@ -241,8 +241,8 @@ function addDaysAndRoundToEndOfDay(amount: number): number {
 }
 
 function generateProductLicenseForSubscription(
-    args: GQL.IGenerateProductLicenseForSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'id'>> {
+    args: GQL.GenerateProductLicenseForSubscriptionOnDotcomMutationArguments
+): Observable<Pick<GQL.ProductSubscription, 'id'>> {
     return mutateGraphQL(
         gql`
             mutation GenerateProductLicenseForSubscription(

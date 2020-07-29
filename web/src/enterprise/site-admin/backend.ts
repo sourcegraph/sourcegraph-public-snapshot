@@ -7,8 +7,8 @@ import { queryGraphQL } from '../../backend/graphql'
 /**
  * Fetch a single LSIF upload by id.
  */
-export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
-    return queryGraphQL(
+export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.LSIFUpload | null> {
+    return queryGraphQL<SiteAdminLsifUploadResult>(
         gql`
             query SiteAdminLsifUpload($id: ID!) {
                 node(id: $id) {

@@ -25,8 +25,8 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { ThemeProps } from '../../../../../shared/src/theme'
 
 const publishExtension = (
-    args: Pick<GQL.IPublishExtensionOnExtensionRegistryMutationArguments, 'extensionID' | 'manifest' | 'bundle'>
-): Promise<GQL.IExtensionRegistryCreateExtensionResult> =>
+    args: Pick<GQL.PublishExtensionOnExtensionRegistryMutationArguments, 'extensionID' | 'manifest' | 'bundle'>
+): Promise<GQL.ExtensionRegistryCreateExtensionResult> =>
     mutateGraphQL(
         gql`
             mutation PublishRegistryExtension($extensionID: String!, $manifest: String!, $bundle: String!) {
@@ -49,9 +49,9 @@ const publishExtension = (
 
 interface Props extends ThemeProps, TelemetryProps {
     /** The extension that is the subject of the page. */
-    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
+    extension: ConfiguredRegistryExtension<GQL.RegistryExtension>
 
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
     history: H.History
 }
 

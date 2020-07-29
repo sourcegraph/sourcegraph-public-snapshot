@@ -3,7 +3,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { formatUserCount } from './helpers'
 
 export const ProductLicenseInfoDescription: React.FunctionComponent<{
-    licenseInfo: GQL.IProductLicenseInfo
+    licenseInfo: GQL.ProductLicenseInfo
     className?: string
 }> = ({ licenseInfo, className = '' }) => (
     <span

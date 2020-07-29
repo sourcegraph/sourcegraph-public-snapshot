@@ -26,8 +26,8 @@ import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
-const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<GQL.IUser> =>
-    queryGraphQL(
+const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<GQL.User> =>
+    queryGraphQL<UserResult>(
         gql`
             query User($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {
@@ -95,7 +95,7 @@ interface UserAreaProps
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 interface UserAreaState {
@@ -103,7 +103,7 @@ interface UserAreaState {
      * The fetched user (who is the subject of the page), or an error if an error occurred; undefined while
      * loading.
      */
-    userOrError?: GQL.IUser | Error
+    userOrError?: GQL.User | Error
 }
 
 /**
@@ -124,7 +124,7 @@ export interface UserAreaRouteContext
     /**
      * The user who is the subject of the page.
      */
-    user: GQL.IUser
+    user: GQL.User
 
     /** Called when the user is updated and must be reloaded. */
     onDidUpdateUser: () => void
@@ -135,7 +135,7 @@ export interface UserAreaRouteContext
      * For example, if Alice is viewing a user area page about Bob, then the authenticatedUser is Alice and the
      * user is Bob.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 }

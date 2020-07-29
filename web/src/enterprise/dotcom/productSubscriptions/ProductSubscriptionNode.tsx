@@ -49,7 +49,7 @@ export const ProductSubscriptionNodeHeader: React.FunctionComponent = () => (
 )
 
 export interface ProductSubscriptionNodeProps {
-    node: GQL.IProductSubscription
+    node: GQL.ProductSubscription
 }
 
 export const ProductSubscriptionNode: React.FunctionComponent<ProductSubscriptionNodeProps> = ({ node }) => (

@@ -20,7 +20,7 @@ import {
 interface Props extends RouteComponentProps<{}> {}
 
 class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
-    GQL.IProductSubscription,
+    GQL.ProductSubscription,
     SiteAdminProductSubscriptionNodeProps
 > {}
 
@@ -58,8 +58,8 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<Props> =
 function queryProductSubscriptions(args: {
     first?: number
     query?: string
-}): Observable<GQL.IProductSubscriptionConnection> {
-    return queryGraphQL(
+}): Observable<GQL.ProductSubscriptionConnection> {
+    return queryGraphQL<ProductSubscriptionsDotComResult>(
         gql`
             query ProductSubscriptionsDotCom($first: Int, $account: ID, $query: String) {
                 dotcom {
@@ -79,7 +79,7 @@ function queryProductSubscriptions(args: {
         {
             first: args.first,
             query: args.query,
-        } as GQL.IProductSubscriptionsOnDotcomQueryArguments
+        } as GQL.ProductSubscriptionsOnDotcomQueryArguments
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.dotcom.productSubscriptions)

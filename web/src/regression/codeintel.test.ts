@@ -667,7 +667,7 @@ async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unk
  */
 async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise<void> {
     const { nodes, hasNextPage } = await gqlClient
-        .queryGraphQL(
+        .queryGraphQL<ResolveRevResult>(
             gql`
                 query ResolveRev($repoName: String!) {
                     repository(name: $repoName) {

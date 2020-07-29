@@ -38,8 +38,8 @@ export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = p
     const [nextSubmit, createdServiceOrError] = useEventObservable(
         useCallback(
             (
-                submits: Observable<GQL.IAddExternalServiceInput>
-            ): Observable<typeof LOADING | ErrorLike | GQL.IExternalService> =>
+                submits: Observable<GQL.AddExternalServiceInput>
+            ): Observable<typeof LOADING | ErrorLike | GQL.ExternalService> =>
                 submits.pipe(
                     switchMap(input =>
                         concat(
@@ -65,7 +65,7 @@ export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = p
     }, [createdServiceOrError, props.history])
 
     const getExternalServiceInput = useCallback(
-        (): GQL.IAddExternalServiceInput => ({
+        (): GQL.AddExternalServiceInput => ({
             displayName,
             config,
             kind: props.externalService.kind,
@@ -74,7 +74,7 @@ export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = p
     )
 
     const onChange = useCallback(
-        (input: GQL.IAddExternalServiceInput): void => {
+        (input: GQL.AddExternalServiceInput): void => {
             setDisplayName(input.displayName)
             setConfig(input.config)
         },
@@ -141,9 +141,9 @@ export const SiteAdminAddExternalServicePage: React.FunctionComponent<Props> = p
 }
 
 export function addExternalService(
-    input: GQL.IAddExternalServiceInput,
+    input: GQL.AddExternalServiceInput,
     eventLogger: TelemetryService
-): Observable<GQL.IExternalService> {
+): Observable<GQL.ExternalService> {
     return mutateGraphQL(
         gql`
             mutation addExternalService($input: AddExternalServiceInput!) {

@@ -29,4 +29,4 @@ const watch = gulp.series(
   gulp.parallel(watchSchema, watchGraphQLTypes, watchGraphQlOperations, webWebpackDevServer)
 )
 
-module.exports = { generate, build, watch, schema, graphQLTypes }
+module.exports = { generate, build, watch, schema, graphQLTypes, graphQlOperations, watchGraphQlOperations }

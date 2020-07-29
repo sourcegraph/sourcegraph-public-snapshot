@@ -49,7 +49,7 @@ interface Props
         VersionContextProps {
     history: H.History
     location: H.Location<{ query: string }>
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean

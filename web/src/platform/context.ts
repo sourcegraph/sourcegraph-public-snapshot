@@ -1,12 +1,12 @@
 import { concat, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 import { createExtensionHost } from '../../../shared/src/api/extension/worker'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import { gqlToCascade } from '../../../shared/src/settings/settings'
-import { createAggregateError, asError } from '../../../shared/src/util/errors'
+import { asError } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import {
     toPrettyBlobURL,
@@ -19,12 +19,13 @@ import {
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { eventLogger } from '../tracking/eventLogger'
+import { ViewerSettingsResult } from '../graphql-operations'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
 export function createPlatformContext(): PlatformContext {
-    const updatedSettings = new ReplaySubject<GQL.ISettingsCascade>(1)
+    const updatedSettings = new ReplaySubject<GQL.SettingsCascade>(1)
     const context: PlatformContext = {
         settings: concat(fetchViewerSettings(), updatedSettings).pipe(map(gqlToCascade), publishReplay(1), refCount()),
         updateSettings: async (subject, edit) => {
@@ -119,8 +120,8 @@ const settingsCascadeFragment = gql`
  *
  * @returns Observable that emits the settings
  */
-function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
-    return queryGraphQL(gql`
+function fetchViewerSettings(): Observable<ViewerSettingsResult['viewerSettings']> {
+    return queryGraphQL<ViewerSettingsResult>(gql`
         query ViewerSettings {
             viewerSettings {
                 ...SettingsCascadeFields
@@ -128,11 +129,7 @@ function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
         }
         ${settingsCascadeFragment}
     `).pipe(
-        map(({ data, errors }) => {
-            if (!data?.viewerSettings) {
-                throw createAggregateError(errors)
-            }
-            return data.viewerSettings
-        })
+        map(dataOrThrowErrors),
+        map(data => data.viewerSettings)
     )
 }

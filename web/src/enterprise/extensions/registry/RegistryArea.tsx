@@ -17,7 +17,7 @@ interface Props extends RouteComponentProps<{}>, ExtensionsAreaRouteContext {}
  */
 export interface RegistryAreaPageProps extends PlatformContextProps {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 /**

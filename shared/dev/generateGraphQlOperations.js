@@ -6,6 +6,7 @@ const path = require('path')
 const ROOT_FOLDER = path.resolve(__dirname, '../../')
 
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './web')
+const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './shared')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/schema.graphql')
 
@@ -17,6 +18,12 @@ const WEB_DOCUMENTS_GLOB = [
   `!${WEB_FOLDER}/src/end-to-end/**/*.*`,
 ]
 
+const BROWSER_DOCUMENTS_GLOB = [
+  `${BROWSER_FOLDER}/src/**/*.{ts,tsx}`,
+  `!${BROWSER_FOLDER}/src/end-to-end/**/*.*`,
+  '!**/*.d.ts',
+]
+
 const plugins = [`${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`, 'typescript', 'typescript-operations']
 
 const codeToInsertIntoTypes = `
@@ -25,20 +32,20 @@ export type GitObjectID = string
 export type DateTime = string
 export type JSONCString = string
 
-export interface IGraphQLResponseRoot {
-    data?: IQuery | IMutation
-    errors?: IGraphQLResponseError[]
+export interface GraphQLResponseRoot {
+    data?: Query | Mutation
+    errors?: GraphQLResponseError[]
 }
 
-export interface IGraphQLResponseError {
+export interface GraphQLResponseError {
     /** Required for all errors */
     message: string
-    locations?: IGraphQLResponseErrorLocation[]
+    locations?: GraphQLResponseErrorLocation[]
     /** 7.2.2 says 'GraphQL servers may provide additional entries to error' */
     [propName: string]: any
 }
 
-export interface IGraphQLResponseErrorLocation {
+export interface GraphQLResponseErrorLocation {
     line: number
     column: number
 }
@@ -62,9 +69,17 @@ async function generateGraphQlOperations({ watch } = {}) {
         operationResultSuffix: 'Result',
         omitOperationSuffix: true,
         skipTypename: true,
-        namingConvention: 'keep',
+        namingConvention: {
+          typeNames: 'keep',
+          enumValues: 'keep',
+          transformUnderscore: true
+        },
         declarationKind: 'interface',
-        avoidOptionals: true,
+        avoidOptionals: {
+          field: true,
+          inputValue: false,
+          object: true,
+        },
         scalars: {
           DateTime: 'string',
           JSON: 'object',
@@ -74,6 +89,17 @@ async function generateGraphQlOperations({ watch } = {}) {
         },
       },
       generates: {
+        [path.join(ROOT_FOLDER, './browser/src/graphql-operations.ts')]: {
+          documents: BROWSER_DOCUMENTS_GLOB,
+          config: {
+            onlyOperationTypes: true,
+            noExport: false,
+            enumValues: '../../shared/src/graphql/schema',
+            interfaceNameForOperations: 'BrowserGraphQlOperations',
+          },
+          plugins,
+        },
+
         [path.join(ROOT_FOLDER, './web/src/graphql-operations.ts')]: {
           documents: WEB_DOCUMENTS_GLOB,
           config: {
@@ -109,7 +135,6 @@ async function generateGraphQlOperations({ watch } = {}) {
               inputValue: false,
               object: true,
             },
-            typesPrefix: 'I',
             enumPrefix: false,
             insertCodeSnippet: codeToInsertIntoTypes,
           },

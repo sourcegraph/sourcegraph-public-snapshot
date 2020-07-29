@@ -25,8 +25,8 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 export interface RepoSettingsAreaRouteContext {
-    repo: GQL.IRepository
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    repo: GQL.Repository
+    onDidUpdateRepository: (update: Partial<GQL.Repository>) => void
 }
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
@@ -34,14 +34,14 @@ export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaR
 interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
-    repo: GQL.IRepository
-    authenticatedUser: GQL.IUser | null
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    repo: GQL.Repository
+    authenticatedUser: GQL.User | null
+    onDidUpdateRepository: (update: Partial<GQL.Repository>) => void
     history: H.History
 }
 
 interface State {
-    repo?: GQL.IRepository | null
+    repo?: GQL.Repository | null
     error?: string
 }
 

@@ -74,8 +74,8 @@ export { ChangesetState }
 
 export interface ConfigurationEdit {
     keyPath: Array<KeyPathSegment>
-    value: Maybe<Scalars['JSONValue']>
-    valueIsJSONCEncodedString: Maybe<Scalars['Boolean']>
+    value?: Maybe<Scalars['JSONValue']>
+    valueIsJSONCEncodedString?: Maybe<Scalars['Boolean']>
 }
 
 export { DiagnosticSeverity }
@@ -93,8 +93,8 @@ export { GitRefOrder }
 export { GitRefType }
 
 export interface KeyPathSegment {
-    property: Maybe<Scalars['String']>
-    index: Maybe<Scalars['Int']>
+    property?: Maybe<Scalars['String']>
+    index?: Maybe<Scalars['Int']>
 }
 
 export { LSIFIndexState }
@@ -102,7 +102,7 @@ export { LSIFIndexState }
 export { LSIFUploadState }
 
 export interface MarkdownOptions {
-    alwaysNil: Maybe<Scalars['String']>
+    alwaysNil?: Maybe<Scalars['String']>
 }
 
 export { OrganizationInvitationResponseType }
@@ -128,28 +128,28 @@ export { SearchVersion }
 
 export interface SettingsEdit {
     keyPath: Array<KeyPathSegment>
-    value: Maybe<Scalars['JSONValue']>
-    valueIsJSONCEncodedString: Maybe<Scalars['Boolean']>
+    value?: Maybe<Scalars['JSONValue']>
+    valueIsJSONCEncodedString?: Maybe<Scalars['Boolean']>
 }
 
 export interface SettingsMutationGroupInput {
     subject: Scalars['ID']
-    lastID: Maybe<Scalars['Int']>
+    lastID?: Maybe<Scalars['Int']>
 }
 
 export interface SurveySubmissionInput {
-    email: Maybe<Scalars['String']>
+    email?: Maybe<Scalars['String']>
     score: Scalars['Int']
-    reason: Maybe<Scalars['String']>
-    better: Maybe<Scalars['String']>
+    reason?: Maybe<Scalars['String']>
+    better?: Maybe<Scalars['String']>
 }
 
 export { SymbolKind }
 
 export interface UpdateExternalServiceInput {
     id: Scalars['ID']
-    displayName: Maybe<Scalars['String']>
-    config: Maybe<Scalars['String']>
+    displayName?: Maybe<Scalars['String']>
+    config?: Maybe<Scalars['String']>
 }
 
 export { UserActivePeriod }
@@ -158,7 +158,7 @@ export { UserEvent }
 
 export interface UserPermission {
     bindID: Scalars['String']
-    permission: Maybe<RepositoryPermission>
+    permission?: Maybe<RepositoryPermission>
 }
 
 export type ResolveRawRepoNameVariables = Exact<{

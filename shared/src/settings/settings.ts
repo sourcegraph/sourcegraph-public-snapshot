@@ -6,7 +6,7 @@ import { parseJSONCOrError } from '../util/jsonc'
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
  * such as the browser extension). This subject doesn't exist in the GraphQL API, but the related types that are
- * also used as settings subjects {@link GQL.IUser}, {@link GQL.IOrg}, and {@link GQL.ISite} do.
+ * also used as settings subjects {@link GQL.User}, {@link GQL.Org}, and {@link GQL.Site} do.
  */
 export interface IClient {
     __typename: 'Client'
@@ -35,13 +35,13 @@ export interface Settings {
  * A settings subject is something that can have settings associated with it, such as a site ("global
  * settings"), an organization ("organization settings"), a user ("user settings"), etc.
  */
-export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> &
+export type SettingsSubject = Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'> &
     (
         | Pick<IClient, '__typename' | 'displayName'>
-        | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
-        | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
-        | Pick<GQL.ISite, '__typename'>
-        | Pick<GQL.IDefaultSettings, '__typename'>
+        | Pick<GQL.User, '__typename' | 'username' | 'displayName'>
+        | Pick<GQL.Org, '__typename' | 'name' | 'displayName'>
+        | Pick<GQL.Site, '__typename'>
+        | Pick<GQL.DefaultSettings, '__typename'>
     )
 
 /**

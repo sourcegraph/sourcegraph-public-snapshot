@@ -27,8 +27,8 @@ export function submitSurvey(input: SurveyResponse): Observable<void> {
 /**
  * Fetches survey responses.
  */
-export function fetchAllSurveyResponses(args: { first?: number }): Observable<GQL.ISurveyResponseConnection> {
-    return queryGraphQL(
+export function fetchAllSurveyResponses(args: { first?: number }): Observable<GQL.SurveyResponseConnection> {
+    return queryGraphQL<FetchSurveyResponsesResult>(
         gql`
             query FetchSurveyResponses {
                 surveyResponses {
@@ -64,8 +64,8 @@ export function fetchAllUsersWithSurveyResponses(args: {
     activePeriod?: GQL.UserActivePeriod
     first?: number
     query?: string
-}): Observable<GQL.IUserConnection> {
-    return queryGraphQL(
+}): Observable<GQL.UserConnection> {
+    return queryGraphQL<FetchAllUsersWithSurveyResponsesResult>(
         gql`
             query FetchAllUsersWithSurveyResponses($activePeriod: UserActivePeriod, $first: Int, $query: String) {
                 users(activePeriod: $activePeriod, first: $first, query: $query) {
@@ -96,13 +96,13 @@ export function fetchAllUsersWithSurveyResponses(args: {
     )
 }
 
-export type SurveyResponseConnectionAggregates = Exclude<GQL.ISurveyResponseConnection, 'nodes'>
+export type SurveyResponseConnectionAggregates = Exclude<GQL.SurveyResponseConnection, 'nodes'>
 
 /**
  * Fetches survey response aggregate data.
  */
 export function fetchSurveyResponseAggregates(): Observable<SurveyResponseConnectionAggregates> {
-    return queryGraphQL(
+    return queryGraphQL<FetchSurveyResponseAggregatesResult>(
         gql`
             query FetchSurveyResponseAggregates {
                 surveyResponses {

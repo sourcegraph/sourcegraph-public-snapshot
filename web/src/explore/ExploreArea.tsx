@@ -16,10 +16,10 @@ export interface ExploreAreaSectionContext
         ThemeProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 
     /** The subject whose extensions and settings to display. */
-    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
 
     /** The viewer's settings. */
     settingsCascade: SettingsCascadeOrError

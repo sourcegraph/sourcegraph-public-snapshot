@@ -19,7 +19,7 @@ interface UserCreateSubscriptionNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.IUser
+    node: GQL.User
 
     /**
      * Browser history, used to redirect the user to the new subscription after one is successfully created.
@@ -28,8 +28,8 @@ interface UserCreateSubscriptionNodeProps {
 }
 
 const createProductSubscription = (
-    args: GQL.ICreateProductSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'>> =>
+    args: GQL.CreateProductSubscriptionOnDotcomMutationArguments
+): Observable<Pick<GQL.ProductSubscription, 'urlForSiteAdmin'>> =>
     mutateGraphQL(
         gql`
             mutation CreateProductSubscription($accountID: ID!) {
@@ -53,7 +53,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
         useCallback(
             (
                 submits: Observable<React.FormEvent<HTMLFormElement>>
-            ): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'> | 'saving' | ErrorLike> =>
+            ): Observable<Pick<GQL.ProductSubscription, 'urlForSiteAdmin'> | 'saving' | ErrorLike> =>
                 submits.pipe(
                     tap(event => event.preventDefault()),
                     tap(() => eventLogger.log('NewProductSubscriptionCreated')),
@@ -112,10 +112,10 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
     )
 }
 
-class FilteredUserConnection extends FilteredConnection<GQL.IUser, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
+class FilteredUserConnection extends FilteredConnection<GQL.User, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
 }
 
 /**
@@ -144,8 +144,8 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Pro
     )
 }
 
-function queryAccounts(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
-    return queryGraphQL(
+function queryAccounts(args: { first?: number; query?: string }): Observable<GQL.UserConnection> {
+    return queryGraphQL<ProductSubscriptionAccountsResult>(
         gql`
             query ProductSubscriptionAccounts($first: Int, $query: String) {
                 users(first: $first, query: $query) {

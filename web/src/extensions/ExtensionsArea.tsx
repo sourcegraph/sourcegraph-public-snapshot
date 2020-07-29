@@ -25,10 +25,10 @@ export interface ExtensionsAreaRouteContext
         ThemeProps,
         TelemetryProps {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 
     /** The subject whose extensions and configuration to display. */
-    subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
@@ -44,9 +44,9 @@ interface ExtensionsAreaProps
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 
-    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

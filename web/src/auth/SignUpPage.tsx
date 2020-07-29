@@ -12,7 +12,7 @@ import { SignUpArgs, SignUpForm } from './SignUpForm'
 interface SignUpPageProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 export class SignUpPage extends React.Component<SignUpPageProps> {

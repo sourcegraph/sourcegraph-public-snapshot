@@ -94,7 +94,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
-    authenticatedUser?: GQL.IUser | null
+    authenticatedUser?: GQL.User | null
 
     viewerSubject: LayoutProps['viewerSubject']
 
@@ -204,7 +204,7 @@ const readStoredThemePreference = (): ThemePreference => {
 }
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
-const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
+const SITE_SUBJECT_NO_ADMIN: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'> = {
     id: window.context.siteGQLID,
     viewerCanAdminister: false,
 }

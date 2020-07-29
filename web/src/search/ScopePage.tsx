@@ -41,13 +41,13 @@ const ScopeNotFound: React.FunctionComponent = () => (
 )
 
 interface Props
-    extends RouteComponentProps<{ id: GQL.ID }>,
+    extends RouteComponentProps<{ id: GQL.Scalars['ID'] }>,
         SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History
 

@@ -16,8 +16,8 @@ import { GitReferenceNode, queryGitReferences } from './GitReference'
 import { RevisionSpec } from '../../../shared/src/util/url'
 
 const fetchRepositoryCommits = memoizeObservable(
-    (args: RevisionSpec & { repo: GQL.ID; first?: number; query?: string }): Observable<GQL.IGitCommitConnection> =>
-        queryGraphQL(
+    (args: RevisionSpec & { repo: GQL.Scalars['ID']; first?: number; query?: string }): Observable<GQL.GitCommitConnection> =>
+        queryGraphQL<RepositoryGitCommitResult>(
             gql`
                 query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {
                     node(id: $repo) {
@@ -67,7 +67,7 @@ const fetchRepositoryCommits = memoizeObservable(
 )
 
 interface GitRefPopoverNodeProps {
-    node: GQL.IGitRef
+    node: GQL.GitRef
 
     defaultBranch: string
     currentRevision: string | undefined
@@ -104,7 +104,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> =
 }
 
 interface GitCommitNodeProps {
-    node: GQL.IGitCommit
+    node: GQL.GitCommit
 
     currentCommitID: string | undefined
 
@@ -137,7 +137,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
 }
 
 interface Props {
-    repo: GQL.ID
+    repo: GQL.Scalars['ID']
     repoName: string
     defaultBranch: string
 
@@ -187,7 +187,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                 >
                     {RevisionsPopover.TABS.map(tab =>
                         tab.type ? (
-                            <FilteredConnection<GQL.IGitRef, Omit<GitRefPopoverNodeProps, 'node'>>
+                            <FilteredConnection<GQL.GitRef, Omit<GitRefPopoverNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
@@ -211,7 +211,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 location={this.props.location}
                             />
                         ) : (
-                            <FilteredConnection<GQL.IGitCommit, Omit<GitCommitNodeProps, 'node'>>
+                            <FilteredConnection<GQL.GitCommit, Omit<GitCommitNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
                                 compact={true}
@@ -237,13 +237,13 @@ export class RevisionsPopover extends React.PureComponent<Props> {
         )
     }
 
-    private queryGitBranches = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
+    private queryGitBranches = (args: FilteredConnectionQueryArgs): Observable<GQL.GitRefConnection> =>
         queryGitReferences({ ...args, repo: this.props.repo, type: GQL.GitRefType.GIT_BRANCH, withBehindAhead: false })
 
-    private queryGitTags = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
+    private queryGitTags = (args: FilteredConnectionQueryArgs): Observable<GQL.GitRefConnection> =>
         queryGitReferences({ ...args, repo: this.props.repo, type: GQL.GitRefType.GIT_TAG, withBehindAhead: false })
 
-    private queryRepositoryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
+    private queryRepositoryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.GitCommitConnection> =>
         fetchRepositoryCommits({
             ...args,
             repo: this.props.repo,

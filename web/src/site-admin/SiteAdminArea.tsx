@@ -30,8 +30,8 @@ export interface SiteAdminAreaRouteContext
         SettingsCascadeProps,
         ActivationProps,
         TelemetryProps {
-    site: Pick<GQL.ISite, '__typename' | 'id'>
-    authenticatedUser: GQL.IUser
+    site: Pick<GQL.Site, '__typename' | 'id'>
+    authenticatedUser: GQL.User
     isLightTheme: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
@@ -49,7 +49,7 @@ interface SiteAdminAreaProps
     routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType[]
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
     isLightTheme: boolean
 }
 

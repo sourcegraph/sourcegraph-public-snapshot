@@ -5,7 +5,7 @@ import { Namespace } from '../../../../shared/src/graphql/schema'
 import { map } from 'rxjs/operators'
 
 export const queryNamespaces = (): Observable<Pick<Namespace, '__typename' | 'id' | 'namespaceName' | 'url'>[]> =>
-    queryGraphQL(
+    queryGraphQL<ViewerNamespacesResult>(
         gql`
             query ViewerNamespaces {
                 # TODO expose combined namespaces field

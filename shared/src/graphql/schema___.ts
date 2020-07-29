@@ -4,7 +4,7 @@ export type DateTime = string
 export type JSONCString = string
 
 export interface IGraphQLResponseRoot {
-    data?: IQuery | IMutation
+    data?: Query | Mutation
     errors?: IGraphQLResponseError[]
 }
 
@@ -21,13 +21,13 @@ export interface IGraphQLResponseErrorLocation {
     column: number
 }
 
-export interface IQuery {
+export interface Query {
     __typename: 'Query'
 
     /**
      * @deprecated "this will be removed."
      */
-    root: IQuery
+    root: Query
     node: Node | null
     campaigns: ICampaignConnection
     repository: IRepository | null
@@ -259,7 +259,7 @@ export type Node =
     | IRegistryExtension
     | IProductSubscription
     | IProductLicense
-    | IExternalChangeset
+    | ExternalChangeset
     | IChangesetEvent
     | IPatch
     | IHiddenPatch
@@ -693,12 +693,12 @@ export enum RepositoryPermission {
 
 export interface IRepositoryComparisonConnection {
     __typename: 'RepositoryComparisonConnection'
-    nodes: IRepositoryComparison[]
+    nodes: RepositoryComparison[]
     totalCount: number
     pageInfo: IPageInfo
 }
 
-export interface IRepositoryComparison {
+export interface RepositoryComparison {
     __typename: 'RepositoryComparison'
     baseRepository: IRepository
     headRepository: IRepository
@@ -748,7 +748,7 @@ export interface IRepository {
     gitRefs: IGitRefConnection
     branches: IGitRefConnection
     tags: IGitRefConnection
-    comparison: IRepositoryComparison
+    comparison: RepositoryComparison
     contributors: IRepositoryContributorConnection
     viewerCanAdminister: boolean
     icon: string
@@ -1692,7 +1692,7 @@ export interface IChangesetConnection {
     pageInfo: IPageInfo
 }
 
-export type Changeset = IExternalChangeset | IHiddenExternalChangeset
+export type Changeset = ExternalChangeset | IHiddenExternalChangeset
 
 export interface IChangeset {
     __typename: 'Changeset'
@@ -2351,9 +2351,9 @@ export interface ISyncError {
     message: string
 }
 
-export interface IMutation {
+export interface Mutation {
     __typename: 'Mutation'
-    createChangesets: IExternalChangeset[]
+    createChangesets: ExternalChangeset[]
     addChangesetsToCampaign: ICampaign
     createCampaign: ICampaign
     createPatchSetFromPatches: IPatchSet
@@ -2728,7 +2728,7 @@ export interface ICreateChangesetInput {
     externalID: string
 }
 
-export interface IExternalChangeset {
+export interface ExternalChangeset {
     __typename: 'ExternalChangeset'
     id: ID
     externalID: string
@@ -2746,7 +2746,7 @@ export interface IExternalChangeset {
     reviewState: ChangesetReviewState
     base: IGitRef | null
     head: IGitRef | null
-    diff: IRepositoryComparison | null
+    diff: RepositoryComparison | null
     diffStat: IDiffStat | null
     checkState: ChangesetCheckState | null
 }
@@ -2772,7 +2772,7 @@ export interface IChangesetEventConnection {
 export interface IChangesetEvent {
     __typename: 'ChangesetEvent'
     id: ID
-    changeset: IExternalChangeset
+    changeset: ExternalChangeset
     createdAt: DateTime
 }
 

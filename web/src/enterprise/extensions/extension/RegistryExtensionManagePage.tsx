@@ -23,10 +23,10 @@ import * as H from 'history'
 
 function updateExtension(
     args: Pick<
-        GQL.IUpdateExtensionOnExtensionRegistryMutationArguments,
-        Exclude<keyof GQL.IUpdateExtensionOnExtensionRegistryMutationArguments, 'manifest'>
+        GQL.UpdateExtensionOnExtensionRegistryMutationArguments,
+        Exclude<keyof GQL.UpdateExtensionOnExtensionRegistryMutationArguments, 'manifest'>
     >
-): Observable<GQL.IExtensionRegistryUpdateExtensionResult> {
+): Observable<GQL.ExtensionRegistryUpdateExtensionResult> {
     return mutateGraphQL(
         gql`
             mutation UpdateRegistryExtension($extension: ID!, $name: String) {
@@ -56,7 +56,7 @@ function updateExtension(
 }
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
     history: H.History
 }
 
@@ -64,7 +64,7 @@ interface State {
     name?: string
 
     /** The update result, undefined if not triggered, 'loading', or an error. */
-    updateOrError?: 'loading' | GQL.IExtensionRegistryUpdateExtensionResult | ErrorLike
+    updateOrError?: 'loading' | GQL.ExtensionRegistryUpdateExtensionResult | ErrorLike
 }
 
 /** A page for managing an extension in the extension registry. */

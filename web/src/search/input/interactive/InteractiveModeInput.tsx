@@ -62,7 +62,7 @@ interface InteractiveModeProps
 
     // For NavLinks
     authRequired?: boolean
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
 

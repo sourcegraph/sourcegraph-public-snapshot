@@ -28,16 +28,17 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
+import { CampaignChangesetsResult } from '../../../../graphql-operations'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'>
+    campaign: Pick<GQL.Campaign, 'id' | 'closedAt' | 'viewerCanAdminister'>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
 
     /** For testing only. */
-    queryChangesets?: (campaignID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<Connection<GQL.Changeset>>
+    queryChangesets?: (campaignID: GQL.Scalars['ID'], args: FilteredConnectionQueryArgs) => Observable<(CampaignChangesetsResult['node'] & { __typename: 'Campaign'})['changesets']>
 }
 
 function getLSPTextDocumentPositionParameters(

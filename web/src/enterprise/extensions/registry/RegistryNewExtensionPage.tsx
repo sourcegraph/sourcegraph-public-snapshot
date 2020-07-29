@@ -21,7 +21,7 @@ import { RegistryAreaPageProps } from './RegistryArea'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 
-function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
+function createExtension(publisher: GQL.Scalars['ID'], name: string): Observable<GQL.ExtensionRegistryCreateExtensionResult> {
     return mutateGraphQL(
         gql`
             mutation CreateRegistryExtension($publisher: ID!, $name: String!) {
@@ -53,7 +53,7 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
 }
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
     history: H.History
 }
 
@@ -62,10 +62,10 @@ interface State {
     publishersOrError: 'loading' | RegistryPublisher[] | ErrorLike
 
     name: string
-    publisher?: GQL.ID
+    publisher?: GQL.Scalars['ID']
 
     /** The creation result, undefined while loading, or an error. */
-    creationOrError?: 'loading' | GQL.IExtensionRegistryCreateExtensionResult | ErrorLike
+    creationOrError?: 'loading' | GQL.ExtensionRegistryCreateExtensionResult | ErrorLike
 }
 
 /** A page with a form to create a new extension in the extension registry. */

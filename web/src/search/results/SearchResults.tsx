@@ -49,7 +49,7 @@ export interface SearchResultsProps
         CaseSensitivityProps,
         InteractiveSearchProps,
         VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     location: H.Location
     history: H.History
     navbarSearchQueryState: QueryState
@@ -61,7 +61,7 @@ export interface SearchResultsProps
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtHostAPI>>
-    ) => Observable<GQL.ISearchResults | ErrorLike>
+    ) => Observable<GQL.SearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
     setVersionContext: (versionContext: string | undefined) => void
@@ -71,7 +71,7 @@ export interface SearchResultsProps
 
 interface SearchResultsState {
     /** The loaded search results, error or undefined while loading */
-    resultsOrError?: GQL.ISearchResults
+    resultsOrError?: GQL.SearchResults
     allExpanded: boolean
 
     // Saved Queries
@@ -401,7 +401,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     private calculateCount = (): number => {
         // This function can only get called if the results were successfully loaded,
         // so casting is the right thing to do here
-        const results = this.state.resultsOrError as GQL.ISearchResults
+        const results = this.state.resultsOrError as GQL.SearchResults
 
         const parameters = new URLSearchParams(this.props.location.search)
         const query = parameters.get('q') || ''

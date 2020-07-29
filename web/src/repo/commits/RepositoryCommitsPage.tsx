@@ -62,12 +62,12 @@ export const gitCommitFragment = gql`
 `
 
 const fetchGitCommits = (args: {
-    repo: GQL.ID
+    repo: GQL.Scalars['ID']
     revspec: string
     first?: number
     query?: string
-}): Observable<GQL.IGitCommitConnection> =>
-    queryGraphQL(
+}): Observable<GQL.GitCommitConnection> =>
+    queryGraphQL<RepositoryGitCommitsResult>(
         gql`
             query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $query: String) {
                 node(id: $repo) {
@@ -93,7 +93,7 @@ const fetchGitCommits = (args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as GQL.Repository
             if (!repo.commit || !repo.commit.ancestors) {
                 throw createAggregateError(errors)
             }
@@ -102,7 +102,7 @@ const fetchGitCommits = (args: {
     )
 
 interface Props extends RepoHeaderContributionsLifecycleProps, Partial<RevisionSpec>, ResolvedRevisionSpec {
-    repo: GQL.IRepository
+    repo: GQL.Repository
 
     history: H.History
     location: H.Location
@@ -123,7 +123,7 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
                     element={<RepoHeaderBreadcrumbNavItem key="commits">Commits</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                <FilteredConnection<GQL.GitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                     className="repository-commits-page__content"
                     listClassName="list-group list-group-flush"
                     noun="commit"
@@ -141,6 +141,6 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
+    private queryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.GitCommitConnection> =>
         fetchGitCommits({ ...args, repo: this.props.repo.id, revspec: this.props.commitID })
 }

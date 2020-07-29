@@ -6,9 +6,9 @@ import * as GQL from '../../../shared/src/graphql/schema'
  * Wraps a React component and requires an authenticated user. If the viewer is not authenticated, it redirects to
  * the sign-in flow.
  */
-export const withAuthenticatedUser = <P extends object & { authenticatedUser: GQL.IUser }>(
+export const withAuthenticatedUser = <P extends object & { authenticatedUser: GQL.User }>(
     Component: React.ComponentType<P>
-): React.ComponentType<Pick<P, Exclude<keyof P, 'authenticatedUser'>> & { authenticatedUser: GQL.IUser | null }> => ({
+): React.ComponentType<Pick<P, Exclude<keyof P, 'authenticatedUser'>> & { authenticatedUser: GQL.User | null }> => ({
     authenticatedUser,
     ...props
 }) => {

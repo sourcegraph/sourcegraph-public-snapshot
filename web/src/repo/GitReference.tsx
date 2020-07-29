@@ -11,7 +11,7 @@ import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
 
 interface GitReferenceNodeProps {
-    node: GQL.IGitRef
+    node: GQL.GitRef
 
     /** Link URL; if undefined, node.url is used. */
     url?: string
@@ -93,13 +93,13 @@ export const gitReferenceFragments = gql`
 
 export const queryGitReferences = memoizeObservable(
     (args: {
-        repo: GQL.ID
+        repo: GQL.Scalars['ID']
         first?: number
         query?: string
         type: GQL.GitRefType
         withBehindAhead?: boolean
-    }): Observable<GQL.IGitRefConnection> =>
-        queryGraphQL(
+    }): Observable<GQL.GitRefConnection> =>
+        queryGraphQL<RepositoryGitRefsResult>(
             gql`
                 query RepositoryGitRefs(
                     $repo: ID!
@@ -131,10 +131,10 @@ export const queryGitReferences = memoizeObservable(
             }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || !(data.node as GQL.IRepository).gitRefs) {
+                if (!data || !data.node || !(data.node as GQL.Repository).gitRefs) {
                     throw createAggregateError(errors)
                 }
-                return (data.node as GQL.IRepository).gitRefs
+                return (data.node as GQL.Repository).gitRefs
             })
         ),
     args => `${args.repo}:${String(args.first)}:${String(args.query)}:${args.type}`

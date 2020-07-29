@@ -48,7 +48,7 @@ interface Props
         CopyQueryButtonProps,
         Pick<SubmitSearchParams, 'source'>,
         VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean

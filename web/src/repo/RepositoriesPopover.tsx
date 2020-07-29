@@ -12,8 +12,8 @@ import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
 
-function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
-    return queryGraphQL(
+function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.RepositoryConnection> {
+    return queryGraphQL<RepositoriesForPopoverResult>(
         gql`
             query RepositoriesForPopover($first: Int, $query: String) {
                 repositories(first: $first, query: $query) {
@@ -40,8 +40,8 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
 }
 
 interface RepositoryNodeProps {
-    node: GQL.IRepository
-    currentRepo?: GQL.ID
+    node: GQL.Repository
+    currentRepo?: GQL.Scalars['ID']
 }
 
 const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, currentRepo }) => (
@@ -64,13 +64,13 @@ interface Props {
     /**
      * The current repository (shown as selected in the list), if any.
      */
-    currentRepo?: GQL.ID
+    currentRepo?: GQL.Scalars['ID']
 
     history: H.History
     location: H.Location
 }
 
-class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
+class FilteredRepositoryConnection extends FilteredConnection<GQL.Repository> {}
 
 /**
  * A popover that displays a searchable list of repositories.
@@ -105,6 +105,6 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
+    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.RepositoryConnection> =>
         fetchRepositories({ ...args })
 }

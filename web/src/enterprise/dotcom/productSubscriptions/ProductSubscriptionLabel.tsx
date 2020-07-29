@@ -10,10 +10,10 @@ export const ProductSubscriptionLabel: React.FunctionComponent<{
     productSubscription: {
         invoiceItem?:
             | ({
-                  plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'>
-              } & Pick<GQL.IProductSubscriptionInvoiceItem, 'userCount'>)
+                  plan: Pick<GQL.ProductPlan, 'name' | 'nameWithBrand'>
+              } & Pick<GQL.ProductSubscriptionInvoiceItem, 'userCount'>)
             | null
-    } & Pick<GQL.IProductSubscription, 'activeLicense'>
+    } & Pick<GQL.ProductSubscription, 'activeLicense'>
 
     planField?: 'name' | 'nameWithBrand'
 

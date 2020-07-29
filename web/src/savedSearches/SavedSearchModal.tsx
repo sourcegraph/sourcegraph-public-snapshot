@@ -7,7 +7,7 @@ import { PatternTypeProps } from '../search'
 interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     query?: string
     onDidCancel: () => void
 }

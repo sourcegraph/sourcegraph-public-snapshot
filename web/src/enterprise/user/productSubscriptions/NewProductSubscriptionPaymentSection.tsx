@@ -21,15 +21,15 @@ interface Props {
      * The ID of the account associated with the subscription, or null if there is none (in which case the
      * subscription price can be quoted but the subscription can't be bought).
      */
-    accountID: GQL.ID | null
+    accountID: GQL.Scalars['ID'] | null
 
     /** The existing product subscription to edit, or null if this is a new subscription. */
-    subscriptionID: GQL.ID | null
+    subscriptionID: GQL.Scalars['ID'] | null
 
     /**
      * The product subscription chosen by the user, or null for an invalid choice.
      */
-    productSubscription: GQL.IProductSubscriptionInput | null
+    productSubscription: GQL.ProductSubscriptionInput | null
 
     /**
      * Called when the validity state of the payment and billing information changes. Initially it
@@ -43,7 +43,7 @@ interface Props {
 
 const LOADING = 'loading' as const
 
-type PreviewInvoiceOrError = GQL.IProductSubscriptionPreviewInvoice | null | typeof LOADING | ErrorLike
+type PreviewInvoiceOrError = GQL.ProductSubscriptionPreviewInvoice | null | typeof LOADING | ErrorLike
 
 const previewInvoiceValidity = (previewInvoice: PreviewInvoiceOrError): PaymentValidity =>
     previewInvoice === null ||
@@ -146,9 +146,9 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
 }
 
 function queryPreviewProductSubscriptionInvoice(
-    args: GQL.IPreviewProductSubscriptionInvoiceOnDotcomQueryArguments
-): Observable<GQL.IProductSubscriptionPreviewInvoice> {
-    return queryGraphQL(
+    args: GQL.PreviewProductSubscriptionInvoiceOnDotcomQueryArguments
+): Observable<GQL.ProductSubscriptionPreviewInvoice> {
+    return queryGraphQL<PreviewProductSubscriptionInvoiceResult>(
         gql`
             query PreviewProductSubscriptionInvoice(
                 $account: ID

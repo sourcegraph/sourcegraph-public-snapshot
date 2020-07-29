@@ -12,7 +12,7 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 interface SignInPageProps {
     location: H.Location
     history: H.History
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { Changeset } from '../../../../../../shared/src/graphql/schema'
+import { ExternalChangeset, HiddenExternalChangeset } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Observer } from 'rxjs'
@@ -12,7 +12,7 @@ import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 
 export interface ChangesetNodeProps extends ThemeProps {
-    node: Changeset
+    node: ExternalChangeset | HiddenExternalChangeset
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History

@@ -11,10 +11,10 @@ import * as H from 'history'
 import { changesetExternalStateIcons, changesetExternalStateColorClasses } from '../detail/changesets/presentation'
 import { Timestamp } from '../../../components/time/Timestamp'
 
-export type CampaignNodeCampaign = Pick<GQL.ICampaign, 'id' | 'closedAt' | 'name' | 'description' | 'createdAt'> & {
-    author: Pick<GQL.ICampaign['author'], 'username'>
+export type CampaignNodeCampaign = Pick<GQL.Campaign, 'id' | 'closedAt' | 'name' | 'description' | 'createdAt'> & {
+    author: Pick<GQL.Campaign['author'], 'username'>
     changesets: {
-        stats: Pick<GQL.ICampaign['changesets']['stats'], 'open' | 'closed' | 'merged'>
+        stats: Pick<GQL.Campaign['changesets']['stats'], 'open' | 'closed' | 'merged'>
     }
 }
 

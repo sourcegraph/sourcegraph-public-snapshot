@@ -21,7 +21,7 @@ import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
 
 interface Props extends OrgAreaPageProps {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.User
 
     /** Called when the viewer responds to the invitation. */
     onDidRespondToInvitation: () => void
@@ -188,7 +188,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
         }
 
         private respondToOrganizationInvitation = (
-            args: GQL.IRespondToOrganizationInvitationOnMutationArguments
+            args: GQL.RespondToOrganizationInvitationOnMutationArguments
         ): Observable<void> =>
             mutateGraphQL(
                 gql`

@@ -59,7 +59,7 @@ export interface RepoRevisionContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         RevisionSpec {
-    repo: GQL.IRepository
+    repo: GQL.Repository
     resolvedRev: ResolvedRevision
 
     /** The URL route match for {@link RepoRevisionContainer}. */
@@ -88,8 +88,8 @@ interface RepoRevisionContainerProps
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    repo: GQL.IRepository
-    authenticatedUser: GQL.IUser | null
+    repo: GQL.Repository
+    authenticatedUser: GQL.User | null
     routePrefix: string
 
     /**

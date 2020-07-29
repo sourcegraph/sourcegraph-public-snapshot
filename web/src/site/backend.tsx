@@ -20,7 +20,7 @@ export function refreshSiteFlags(): Observable<never> {
         take(1),
         filter(authRequired => !authRequired),
         mergeMap(() =>
-            queryGraphQL(gql`
+            queryGraphQL<SiteFlagsResult>(gql`
                 query SiteFlags {
                     site {
                         needsRepositoryConfiguration

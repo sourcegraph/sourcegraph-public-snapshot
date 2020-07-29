@@ -5,7 +5,7 @@ import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptions
 import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 /**

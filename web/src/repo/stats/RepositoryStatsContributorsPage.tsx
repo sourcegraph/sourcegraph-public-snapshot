@@ -27,7 +27,7 @@ interface QuerySpec {
 }
 
 interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'setPatternType'> {
-    node: GQL.IRepositoryContributor
+    node: GQL.RepositoryContributor
     repoName: string
     globbing: boolean
 }
@@ -41,7 +41,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     patternType,
     globbing,
 }) => {
-    const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
+    const commit = node.commits.nodes[0] as GQL.GitCommit | undefined
 
     const query: string = [
         searchQueryForRepoRevision(repoName, globbing),
@@ -93,13 +93,13 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
 
 const queryRepositoryContributors = memoizeObservable(
     (args: {
-        repo: GQL.ID
+        repo: GQL.Scalars['ID']
         first?: number
         revisionRange?: string
         after?: string
         path?: string
-    }): Observable<GQL.IRepositoryContributorConnection> =>
-        queryGraphQL(
+    }): Observable<GQL.RepositoryContributorConnection> =>
+        queryGraphQL<RepositoryContributorsResult>(
             gql`
                 query RepositoryContributors(
                     $repo: ID!
@@ -147,10 +147,10 @@ const queryRepositoryContributors = memoizeObservable(
             args
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || !(data.node as GQL.IRepository).contributors || errors) {
+                if (!data || !data.node || !(data.node as GQL.Repository).contributors || errors) {
                     throw createAggregateError(errors)
                 }
-                return (data.node as GQL.IRepository).contributors
+                return (data.node as GQL.Repository).contributors
             })
         ),
     args =>
@@ -167,7 +167,7 @@ interface Props
 }
 
 class FilteredContributorsConnection extends FilteredConnection<
-    GQL.IRepositoryContributor,
+    GQL.RepositoryContributor,
     Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType' | 'globbing'>
 > {}
 
@@ -399,7 +399,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
 
     private queryRepositoryContributors = (args: {
         first?: number
-    }): Observable<GQL.IRepositoryContributorConnection> => {
+    }): Observable<GQL.RepositoryContributorConnection> => {
         const { revisionRange, after, path } = this.getDerivedProps()
         return queryRepositoryContributors({
             ...args,

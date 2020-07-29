@@ -33,10 +33,10 @@ interface Props
         ActivationProps {
     location: H.Location
     history: H.History
-    repoID: GQL.ID
+    repoID: GQL.Scalars['ID']
     repoName: string
     commitID: string
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'

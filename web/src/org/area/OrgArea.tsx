@@ -24,8 +24,8 @@ import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
-function queryOrganization(args: { name: string }): Observable<GQL.IOrg> {
-    return queryGraphQL(
+function queryOrganization(args: { name: string }): Observable<GQL.Org> {
+    return queryGraphQL<OrganizationResult>(
         gql`
             query Organization($name: String!) {
                 organization(name: $name) {
@@ -83,7 +83,7 @@ interface Props
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     history: H.History
 }
 
@@ -91,7 +91,7 @@ interface State {
     /**
      * The fetched org or an error if an error occurred; undefined while loading.
      */
-    orgOrError?: GQL.IOrg | ErrorLike
+    orgOrError?: GQL.Org | ErrorLike
 }
 
 /**
@@ -106,13 +106,13 @@ export interface OrgAreaPageProps
         NamespaceProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     /** The org that is the subject of the page. */
-    org: GQL.IOrg
+    org: GQL.Org
 
     /** Called when the organization is updated and must be reloaded. */
     onOrganizationUpdate: () => void
 
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 /**

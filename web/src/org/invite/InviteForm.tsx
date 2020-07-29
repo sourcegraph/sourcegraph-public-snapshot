@@ -16,12 +16,13 @@ import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
+import { InviteUserToOrganizationResult, AddUserToOrganizationResult } from '../../graphql-operations'
 
 function inviteUserToOrganization(
     username: string,
-    organization: GQL.ID
-): Observable<GQL.IInviteUserToOrganizationResult> {
-    return mutateGraphQL(
+    organization: GQL.Scalars['ID']
+): Observable<InviteUserToOrganizationResult['inviteUserToOrganization']> {
+    return mutateGraphQL<InviteUserToOrganizationResult>(
         gql`
             mutation InviteUserToOrganization($organization: ID!, $username: String!) {
                 inviteUserToOrganization(organization: $organization, username: $username) {
@@ -46,8 +47,8 @@ function inviteUserToOrganization(
     )
 }
 
-function addUserToOrganization(username: string, organization: GQL.ID): Observable<void> {
-    return mutateGraphQL(
+function addUserToOrganization(username: string, organization: GQL.Scalars['ID']): Observable<void> {
+    return mutateGraphQL<AddUserToOrganizationResult>(
         gql`
             mutation AddUserToOrganization($organization: ID!, $username: String!) {
                 addUserToOrganization(organization: $organization, username: $username) {
@@ -98,7 +99,7 @@ const InvitedNotification: React.FunctionComponent<{
 
 interface Props {
     orgID: string
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 
     /** Called when the organization members list changes. */
     onDidUpdateOrganizationMembers: () => void
@@ -107,7 +108,7 @@ interface Props {
     history: H.History
 }
 
-interface SubmittedInvite extends Pick<GQL.IInviteUserToOrganizationResult, 'sentInvitationEmail' | 'invitationURL'> {
+interface SubmittedInvite extends Pick<GQL.InviteUserToOrganizationResult, 'sentInvitationEmail' | 'invitationURL'> {
     username: string
 }
 

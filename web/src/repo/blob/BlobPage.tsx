@@ -49,7 +49,7 @@ const fetchBlob = memoizeObservable(
         isLightTheme: boolean
         disableTimeout: boolean
     }): Observable<GQL.File2> =>
-        queryGraphQL(
+        queryGraphQL<BlobResult>(
             gql`
                 query Blob(
                     $repoName: String!
@@ -96,8 +96,8 @@ interface Props
         ThemeProps {
     location: H.Location
     history: H.History
-    repoID: GQL.ID
-    authenticatedUser: GQL.IUser | null
+    repoID: GQL.Scalars['ID']
+    authenticatedUser: GQL.User | null
 }
 
 interface State {

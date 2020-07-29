@@ -5,10 +5,10 @@ export interface TreeEntryInfo {
     path: string
     name: string
     isDirectory: boolean
-    commit: GQL.IGitCommit
-    repository: GQL.IRepository
+    commit: GQL.GitCommit
+    repository: GQL.Repository
     url: string
-    submodule: GQL.ISubmodule | null
+    submodule: GQL.Submodule | null
     isSingleChild: boolean
 }
 

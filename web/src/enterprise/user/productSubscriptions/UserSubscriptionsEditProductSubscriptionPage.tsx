@@ -18,14 +18,14 @@ import { useEventObservable, useObservable } from '../../../../../shared/src/uti
 import * as H from 'history'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
-    user: Pick<GQL.IUser, 'id'>
+    user: Pick<GQL.User, 'id'>
 
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
     history: H.History
 }
 
-type ProductSubscription = Pick<GQL.IProductSubscription, 'id' | 'name' | 'invoiceItem' | 'url'>
+type ProductSubscription = Pick<GQL.ProductSubscription, 'id' | 'name' | 'invoiceItem' | 'url'>
 
 const LOADING = 'loading' as const
 
@@ -135,7 +135,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
 }
 
 function queryProductSubscription(uuid: string): Observable<ProductSubscription> {
-    return queryGraphQL(
+    return queryGraphQL<ProductSubscriptionOnEditPageResult>(
         gql`
             query ProductSubscriptionOnEditPage($uuid: String!) {
                 dotcom {
@@ -170,8 +170,8 @@ function queryProductSubscription(uuid: string): Observable<ProductSubscription>
 }
 
 function updatePaidProductSubscription(
-    args: GQL.IUpdatePaidProductSubscriptionOnDotcomMutationArguments
-): Observable<GQL.IUpdatePaidProductSubscriptionResult> {
+    args: GQL.UpdatePaidProductSubscriptionOnDotcomMutationArguments
+): Observable<GQL.UpdatePaidProductSubscriptionResult> {
     return mutateGraphQL(
         gql`
             mutation UpdatePaidProductSubscription(

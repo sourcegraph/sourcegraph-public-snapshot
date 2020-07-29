@@ -31,7 +31,7 @@ const LOADING = 'loading' as const
 
 interface ExtensionsResult {
     /** The configured extensions. */
-    extensions: ConfiguredRegistryExtension<GQL.IRegistryExtension>[]
+    extensions: ConfiguredRegistryExtension<GQL.RegistryExtension>[]
 
     /** An error message that should be displayed to the user (in addition to the configured extensions). */
     error: string | null
@@ -223,7 +223,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
 
             switchMap(viewerExtensions =>
                 from(
-                    queryGraphQL(
+                    queryGraphQL<RegistryExtensionsResult>(
                         gql`
                             query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
                                 extensionRegistry {
@@ -273,7 +273,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         {
                             ...args,
                             prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
-                        } as GQL.IExtensionsOnExtensionRegistryArguments
+                        } as GQL.ExtensionsOnExtensionRegistryArguments
                     )
                 ).pipe(
                     map(({ data, errors }) => {

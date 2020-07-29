@@ -11,7 +11,7 @@ import { useEventObservable } from '../../../../../../shared/src/util/useObserva
 
 interface Props {
     /** The product subscription to show a billing link for. */
-    productSubscription: Pick<GQL.IProductSubscription, 'id' | 'urlForSiteAdminBilling'>
+    productSubscription: Pick<GQL.ProductSubscription, 'id' | 'urlForSiteAdminBilling'>
 
     /** Called when the product subscription is updated. */
     onDidUpdate: () => void
@@ -30,7 +30,7 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
     /** The result of updating this subscription: undefined for done or not started, loading, or an error. */
     const [nextUpdate, update] = useEventObservable(
         useCallback(
-            (updates: Observable<{ id: GQL.ID; billingSubscriptionID: string | null }>) =>
+            (updates: Observable<{ id: GQL.Scalars['ID']; billingSubscriptionID: string | null }>) =>
                 updates.pipe(
                     switchMap(({ id, billingSubscriptionID }) =>
                         setProductSubscriptionBilling({ id, billingSubscriptionID }).pipe(
@@ -85,7 +85,7 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
 }
 
 function setProductSubscriptionBilling(
-    args: GQL.ISetProductSubscriptionBillingOnDotcomMutationArguments
+    args: GQL.SetProductSubscriptionBillingOnDotcomMutationArguments
 ): Observable<void> {
     return mutateGraphQL(
         gql`

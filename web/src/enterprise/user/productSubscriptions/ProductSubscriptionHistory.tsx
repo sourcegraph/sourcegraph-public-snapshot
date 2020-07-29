@@ -6,7 +6,7 @@ import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 
 export const ProductSubscriptionHistory: React.FunctionComponent<{
-    productSubscription: Pick<GQL.IProductSubscription, 'events'>
+    productSubscription: Pick<GQL.ProductSubscription, 'events'>
 }> = ({ productSubscription }) =>
     productSubscription.events.length > 0 ? (
         <table className="table mb-0">

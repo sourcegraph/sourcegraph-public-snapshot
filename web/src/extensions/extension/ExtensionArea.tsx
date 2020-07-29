@@ -73,7 +73,7 @@ export interface ExtensionAreaProps
 
 interface ExtensionAreaState {
     /** The registry extension, undefined while loading, or an error.  */
-    extensionOrError?: ConfiguredRegistryExtension<GQL.IRegistryExtension> | ErrorLike
+    extensionOrError?: ConfiguredRegistryExtension<GQL.RegistryExtension> | ErrorLike
 }
 
 /**
@@ -88,12 +88,12 @@ export interface ExtensionAreaRouteContext
     url: string
 
     /** The extension that is the subject of the page. */
-    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
+    extension: ConfiguredRegistryExtension<GQL.RegistryExtension>
 
     onDidUpdateExtension: () => void
 
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 /**
@@ -231,8 +231,8 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
     private onDidUpdateExtension = (): void => this.refreshRequests.next()
 }
 
-function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension<GQL.IRegistryExtension>> {
-    return queryGraphQL(
+function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension<GQL.RegistryExtension>> {
+    return queryGraphQL<RegistryExtensionResult>(
         gql`
             query RegistryExtension($extensionID: String!) {
                 extensionRegistry {

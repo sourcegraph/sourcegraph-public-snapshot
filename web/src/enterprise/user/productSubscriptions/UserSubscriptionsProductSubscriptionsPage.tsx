@@ -18,11 +18,11 @@ import {
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
+    user: GQL.User
 }
 
 class FilteredProductSubscriptionConnection extends FilteredConnection<
-    GQL.IProductSubscription,
+    GQL.ProductSubscription,
     ProductSubscriptionNodeProps
 > {}
 
@@ -35,12 +35,12 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     }, [])
 
     const queryLicenses = useCallback(
-        (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> => {
-            const vars: GQL.IProductSubscriptionsOnDotcomQueryArguments = {
+        (args: { first?: number }): Observable<GQL.ProductSubscriptionConnection> => {
+            const vars: GQL.ProductSubscriptionsOnDotcomQueryArguments = {
                 first: args.first,
                 account: props.user.id,
             }
-            return queryGraphQL(
+            return queryGraphQL<ProductSubscriptionsResult>(
                 gql`
                     query ProductSubscriptions($first: Int, $account: ID) {
                         dotcom {

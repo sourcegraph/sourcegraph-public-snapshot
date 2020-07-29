@@ -40,7 +40,7 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
 }
 
 class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    GQL.IProductLicense,
+    GQL.ProductLicense,
     Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
 > {}
 
@@ -247,8 +247,8 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
-    return queryGraphQL(
+function queryProductSubscription(uuid: string): Observable<GQL.ProductSubscription> {
+    return queryGraphQL<DotComProductSubscriptionResult>(
         gql`
             query DotComProductSubscription($uuid: String!) {
                 dotcom {
@@ -319,8 +319,8 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
 function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
-): Observable<GQL.IProductLicenseConnection> {
-    return queryGraphQL(
+): Observable<GQL.ProductLicenseConnection> {
+    return queryGraphQL<ProductLicensesResult>(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {
                 dotcom {
@@ -359,7 +359,7 @@ function queryProductLicenses(
     )
 }
 
-function archiveProductSubscription(args: GQL.IArchiveProductSubscriptionOnDotcomMutationArguments): Observable<void> {
+function archiveProductSubscription(args: GQL.ArchiveProductSubscriptionOnDotcomMutationArguments): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation ArchiveProductSubscription($id: ID!) {

@@ -11,7 +11,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
 interface Props extends RouteComponentProps, NamespaceProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 const LOADING = 'loading' as const

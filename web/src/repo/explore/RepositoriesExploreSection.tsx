@@ -21,14 +21,14 @@ interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
 
 interface State {
     /** The repositories, loading, or an error. */
-    repositoriesOrError: typeof LOADING | GQL.IRepositoryConnection | ErrorLike
+    repositoriesOrError: typeof LOADING | GQL.RepositoryConnection | ErrorLike
 }
 
 /**
  * An explore section that shows a few repositories and a link to all.
  */
 export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
-    private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
+    private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.RepositoriesOnQueryArguments, 'names'> = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode
             ? [
@@ -58,7 +58,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     }
 
     public render(): JSX.Element | null {
-        const repositoriesOrError: (typeof LOADING | GQL.IRepository)[] | ErrorLike =
+        const repositoriesOrError: (typeof LOADING | GQL.Repository)[] | ErrorLike =
             this.state.repositoriesOrError === LOADING
                 ? new Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
                 : isErrorLike(this.state.repositoriesOrError)
@@ -108,9 +108,9 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
 }
 
 function queryRepositories(
-    args: Pick<GQL.IRepositoriesOnQueryArguments, 'first' | 'names'>
-): Observable<GQL.IRepositoryConnection> {
-    return queryGraphQL(
+    args: Pick<GQL.RepositoriesOnQueryArguments, 'first' | 'names'>
+): Observable<GQL.RepositoryConnection> {
+    return queryGraphQL<ExploreRepositoriesResult>(
         gql`
             query ExploreRepositories($first: Int, $names: [String!]) {
                 repositories(first: $first, names: $names) {

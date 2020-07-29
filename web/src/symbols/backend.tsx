@@ -8,11 +8,11 @@ import { queryGraphQL } from '../backend/graphql'
  * Fetches symbols.
  */
 export function fetchSymbols(
-    repo: GQL.ID,
+    repo: GQL.Scalars['ID'],
     revision: string,
     args: { first?: number; query?: string; includePatterns?: string[] }
-): Observable<GQL.ISymbolConnection> {
-    return queryGraphQL(
+): Observable<GQL.SymbolConnection> {
+    return queryGraphQL<SymbolsResult>(
         gql`
             query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
                 node(id: $repo) {

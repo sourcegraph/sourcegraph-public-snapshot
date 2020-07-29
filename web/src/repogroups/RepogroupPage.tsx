@@ -45,7 +45,7 @@ export interface RepogroupPageProps
         SmartSearchFieldProps,
         CopyQueryButtonProps,
         VersionContextProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean

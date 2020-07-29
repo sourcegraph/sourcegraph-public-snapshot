@@ -82,7 +82,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
  * this by linking to a code file or actual symbol.
  */
 const fetchReferencesLink = (): Observable<string | null> =>
-    queryGraphQL(gql`
+    queryGraphQL<LinksForRepositoriesResult>(gql`
         query LinksForRepositories {
             repositories(cloned: true, first: 100, indexed: true) {
                 nodes {
@@ -113,7 +113,7 @@ const fetchReferencesLink = (): Observable<string | null> =>
 /**
  * Gets the activation steps that need to be completed for a given user.
  */
-const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
+const getActivationSteps = (authenticatedUser: GQL.User): ActivationStep[] => {
     const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
         {
             id: 'ConnectedCodeHost',
@@ -179,7 +179,7 @@ const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
 }
 
 interface WithActivationProps {
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.User | null
 }
 
 interface WithActivationState {
@@ -210,7 +210,7 @@ export const withActivation = <P extends ActivationProps>(
         private updates = new Subject<Partial<ActivationCompletionStatus>>()
 
         public componentDidMount(): void {
-            const authenticatedUser: Observable<GQL.IUser | null> = this.componentUpdates.pipe(
+            const authenticatedUser: Observable<GQL.User | null> = this.componentUpdates.pipe(
                 startWith(this.props),
                 map(props => props.authenticatedUser),
                 distinctUntilChanged()
@@ -254,7 +254,7 @@ export const withActivation = <P extends ActivationProps>(
         }
 
         private steps(): ActivationStep[] | undefined {
-            const user: GQL.IUser | null = this.props.authenticatedUser
+            const user: GQL.User | null = this.props.authenticatedUser
             if (user) {
                 return getActivationSteps(user)
             }

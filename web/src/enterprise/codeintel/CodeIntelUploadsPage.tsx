@@ -138,7 +138,7 @@ const UploadNode: FunctionComponent<UploadNodeProps> = ({ node, onDelete, histor
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo?: GQL.IRepository
+    repo?: GQL.Repository
     fetchLsifUploads?: typeof defaultFetchLsifUploads
 
     /** Function that returns the current time (for stability in visual tests). */

@@ -14,7 +14,7 @@ import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { RevisionSpec, FileSpec } from '../../../shared/src/util/url'
 
 interface CommitNodeProps {
-    node: GQL.IGitCommit
+    node: GQL.GitCommit
     location: H.Location
 }
 
@@ -38,7 +38,7 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }
 )
 
 interface Props extends Partial<RevisionSpec>, FileSpec {
-    repoID: GQL.ID
+    repoID: GQL.Scalars['ID']
     history: H.History
     location: H.Location
 }
@@ -46,7 +46,7 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'location'>>
+            <FilteredConnection<GQL.GitCommit, Pick<CommitNodeProps, 'location'>>
                 className="list-group list-group-flush"
                 compact={true}
                 noun="commit"
@@ -63,16 +63,16 @@ export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
         )
     }
 
-    private fetchCommits = (args: { query?: string }): Observable<GQL.IGitCommitConnection> =>
+    private fetchCommits = (args: { query?: string }): Observable<GQL.GitCommitConnection> =>
         fetchCommits(this.props.repoID, this.props.revision || '', { ...args, currentPath: this.props.filePath || '' })
 }
 
 function fetchCommits(
-    repo: GQL.ID,
+    repo: GQL.Scalars['ID'],
     revision: string,
     args: { first?: number; currentPath?: string; query?: string }
-): Observable<GQL.IGitCommitConnection> {
-    return queryGraphQL(
+): Observable<GQL.GitCommitConnection> {
+    return queryGraphQL<FetchCommitsResult>(
         gql`
             query FetchCommits($repo: ID!, $revision: String!, $first: Int, $currentPath: String, $query: String) {
                 node(id: $repo) {

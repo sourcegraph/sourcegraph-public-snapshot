@@ -238,7 +238,7 @@ export interface WebGraphQlOperations {
     OrganizationMembers: (variables: OrganizationMembersVariables) => OrganizationMembersResult
 
     /** web/src/org/backend.tsx */
-    createOrganization: (variables: createOrganizationVariables) => createOrganizationResult
+    CreateOrganization: (variables: CreateOrganizationVariables) => CreateOrganizationResult
 
     /** web/src/org/backend.tsx */
     removeUserFromOrganization: (variables: removeUserFromOrganizationVariables) => removeUserFromOrganizationResult
@@ -475,10 +475,10 @@ export interface WebGraphQlOperations {
     AccessTokens: (variables: AccessTokensVariables) => AccessTokensResult
 
     /** web/src/user/settings/backend.tsx */
-    updateUser: (variables: updateUserVariables) => updateUserResult
+    UpdateUser: (variables: UpdateUserVariables) => UpdateUserResult
 
     /** web/src/user/settings/backend.tsx */
-    updatePassword: (variables: updatePasswordVariables) => updatePasswordResult
+    UpdatePassword: (variables: UpdatePasswordVariables) => UpdatePasswordResult
 
     /** web/src/user/settings/backend.tsx */
     SetUserEmailVerified: (variables: SetUserEmailVerifiedVariables) => SetUserEmailVerifiedResult
@@ -536,8 +536,8 @@ export { ChangesetState }
 
 export interface ConfigurationEdit {
     keyPath: Array<KeyPathSegment>
-    value: Maybe<Scalars['JSONValue']>
-    valueIsJSONCEncodedString: Maybe<Scalars['Boolean']>
+    value?: Maybe<Scalars['JSONValue']>
+    valueIsJSONCEncodedString?: Maybe<Scalars['Boolean']>
 }
 
 export { DiagnosticSeverity }
@@ -555,8 +555,8 @@ export { GitRefOrder }
 export { GitRefType }
 
 export interface KeyPathSegment {
-    property: Maybe<Scalars['String']>
-    index: Maybe<Scalars['Int']>
+    property?: Maybe<Scalars['String']>
+    index?: Maybe<Scalars['Int']>
 }
 
 export { LSIFIndexState }
@@ -564,7 +564,7 @@ export { LSIFIndexState }
 export { LSIFUploadState }
 
 export interface MarkdownOptions {
-    alwaysNil: Maybe<Scalars['String']>
+    alwaysNil?: Maybe<Scalars['String']>
 }
 
 export { OrganizationInvitationResponseType }
@@ -590,28 +590,28 @@ export { SearchVersion }
 
 export interface SettingsEdit {
     keyPath: Array<KeyPathSegment>
-    value: Maybe<Scalars['JSONValue']>
-    valueIsJSONCEncodedString: Maybe<Scalars['Boolean']>
+    value?: Maybe<Scalars['JSONValue']>
+    valueIsJSONCEncodedString?: Maybe<Scalars['Boolean']>
 }
 
 export interface SettingsMutationGroupInput {
     subject: Scalars['ID']
-    lastID: Maybe<Scalars['Int']>
+    lastID?: Maybe<Scalars['Int']>
 }
 
 export interface SurveySubmissionInput {
-    email: Maybe<Scalars['String']>
+    email?: Maybe<Scalars['String']>
     score: Scalars['Int']
-    reason: Maybe<Scalars['String']>
-    better: Maybe<Scalars['String']>
+    reason?: Maybe<Scalars['String']>
+    better?: Maybe<Scalars['String']>
 }
 
 export { SymbolKind }
 
 export interface UpdateExternalServiceInput {
     id: Scalars['ID']
-    displayName: Maybe<Scalars['String']>
-    config: Maybe<Scalars['String']>
+    displayName?: Maybe<Scalars['String']>
+    config?: Maybe<Scalars['String']>
 }
 
 export { UserActivePeriod }
@@ -620,7 +620,7 @@ export { UserEvent }
 
 export interface UserPermission {
     bindID: Scalars['String']
-    permission: Maybe<RepositoryPermission>
+    permission?: Maybe<RepositoryPermission>
 }
 
 export type CurrentAuthStateVariables = Exact<{ [key: string]: never }>
@@ -678,6 +678,37 @@ export type FileDiffFields = {
         highlight: { aborted: boolean; lines: Array<{ kind: DiffHunkLineType; html: string }> }
     }>
     stat: { added: number; changed: number; deleted: number }
+}
+
+type GitReferenceSpecFields_GitRef_ = { __typename: 'GitRef'; target: { oid: string } }
+
+type GitReferenceSpecFields_GitRevSpecExpr_ = { __typename: 'GitRevSpecExpr'; object: Maybe<{ oid: string }> }
+
+type GitReferenceSpecFields_GitObject_ = { __typename: 'GitObject'; oid: string }
+
+export type GitReferenceSpecFields =
+    | GitReferenceSpecFields_GitRef_
+    | GitReferenceSpecFields_GitRevSpecExpr_
+    | GitReferenceSpecFields_GitObject_
+
+export type RepositoryComparisonFields = {
+    range: {
+        base:
+            | GitReferenceSpecFields_GitRef_
+            | GitReferenceSpecFields_GitRevSpecExpr_
+            | GitReferenceSpecFields_GitObject_
+        head:
+            | GitReferenceSpecFields_GitRef_
+            | GitReferenceSpecFields_GitRevSpecExpr_
+            | GitReferenceSpecFields_GitObject_
+    }
+}
+
+export type FileDiffConnectionFields = {
+    totalCount: Maybe<number>
+    nodes: Array<FileDiffFields>
+    pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
+    diffStat: DiffStatFields
 }
 
 export type CampaignFields = {
@@ -847,25 +878,15 @@ export type ExternalChangesetFileDiffsResult = {
         | {
               __typename: 'ExternalChangeset'
               diff: Maybe<
-                  | {
+                  | ({
                         __typename: 'RepositoryComparison'
-                        range: {
-                            base:
-                                | GitRefSpecFields_GitRef_
-                                | GitRefSpecFields_GitRevSpecExpr_
-                                | GitRefSpecFields_GitObject_
-                            head:
-                                | GitRefSpecFields_GitRef_
-                                | GitRefSpecFields_GitRevSpecExpr_
-                                | GitRefSpecFields_GitObject_
-                        }
                         fileDiffs: {
                             totalCount: Maybe<number>
                             nodes: Array<FileDiffFields>
                             pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
                             diffStat: DiffStatFields
                         }
-                    }
+                    } & RepositoryComparisonFields)
                   | {
                         __typename: 'PreviewRepositoryComparison'
                         fileDiffs: {
@@ -880,14 +901,6 @@ export type ExternalChangesetFileDiffsResult = {
         | { __typename: 'ChangesetEvent' }
     >
 }
-
-type GitRefSpecFields_GitRef_ = { __typename: 'GitRef'; target: { oid: string } }
-
-type GitRefSpecFields_GitRevSpecExpr_ = { __typename: 'GitRevSpecExpr'; object: Maybe<{ oid: string }> }
-
-type GitRefSpecFields_GitObject_ = { __typename: 'GitObject'; oid: string }
-
-export type GitRefSpecFields = GitRefSpecFields_GitRef_ | GitRefSpecFields_GitRevSpecExpr_ | GitRefSpecFields_GitObject_
 
 export type CampaignsVariables = Exact<{
     first: Maybe<Scalars['Int']>
@@ -1559,10 +1572,6 @@ export type AuthProvidersResult = {
 
 export type ExternalAccountsVariables = Exact<{
     first: Maybe<Scalars['Int']>
-    user: Maybe<Scalars['ID']>
-    serviceType: Maybe<Scalars['String']>
-    serviceID: Maybe<Scalars['String']>
-    clientID: Maybe<Scalars['String']>
 }>
 
 export type ExternalAccountsResult = {
@@ -2138,12 +2147,12 @@ export type OrganizationMembersResult = {
     }>
 }
 
-export type createOrganizationVariables = Exact<{
+export type CreateOrganizationVariables = Exact<{
     name: Scalars['String']
     displayName: Maybe<Scalars['String']>
 }>
 
-export type createOrganizationResult = { createOrganization: { id: string; name: string } }
+export type CreateOrganizationResult = { createOrganization: { id: string; name: string } }
 
 export type removeUserFromOrganizationVariables = Exact<{
     user: Scalars['ID']
@@ -3530,21 +3539,21 @@ export type AccessTokensResult = {
     }>
 }
 
-export type updateUserVariables = Exact<{
+export type UpdateUserVariables = Exact<{
     user: Scalars['ID']
     username: Maybe<Scalars['String']>
     displayName: Maybe<Scalars['String']>
     avatarURL: Maybe<Scalars['String']>
 }>
 
-export type updateUserResult = { updateUser: { alwaysNil: Maybe<string> } }
+export type UpdateUserResult = { updateUser: { alwaysNil: Maybe<string> } }
 
-export type updatePasswordVariables = Exact<{
+export type UpdatePasswordVariables = Exact<{
     oldPassword: Scalars['String']
     newPassword: Scalars['String']
 }>
 
-export type updatePasswordResult = { updatePassword: Maybe<{ alwaysNil: Maybe<string> }> }
+export type UpdatePasswordResult = { updatePassword: Maybe<{ alwaysNil: Maybe<string> }> }
 
 export type SetUserEmailVerifiedVariables = Exact<{
     user: Scalars['ID']
