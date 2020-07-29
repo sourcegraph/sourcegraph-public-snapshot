@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type indexedRequestType string
@@ -195,8 +196,9 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	return k
 }
 
-func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
+func zoektSearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
+		Trace:                  ot.ShouldTrace(ctx),
 		MaxWallTime:            defaultTimeout,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
@@ -241,7 +243,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
 
 	k := zoektResultCountFactor(len(repos.repoBranches), args.PatternInfo)
-	searchOpts := zoektSearchOpts(k, args.PatternInfo)
+	searchOpts := zoektSearchOpts(ctx, k, args.PatternInfo)
 
 	if args.UseFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
