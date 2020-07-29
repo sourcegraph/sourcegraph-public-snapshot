@@ -292,7 +292,9 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						}
 						req.Header.Add(webhooks.TokenHeaderName, "secret")
 
+						changesetEnqueued := false
 						repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+							changesetEnqueued = true
 							if diff := cmp.Diff(ids, []int64{changeset.ID}); diff != "" {
 								t.Errorf("unexpected changeset ID: %s", diff)
 							}
@@ -306,6 +308,9 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						resp := rec.Result()
 						if have, want := resp.StatusCode, http.StatusNoContent; have != want {
 							t.Errorf("unexpected status code: have %d; want %d", have, want)
+						}
+						if !changesetEnqueued {
+							t.Error("changeset was not enqueued")
 						}
 					})
 				}
