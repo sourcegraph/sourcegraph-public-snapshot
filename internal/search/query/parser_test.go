@@ -950,10 +950,7 @@ func TestMatchUnaryKeyword(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &parser{
-				buf: tt.buf,
-				pos: tt.pos,
-			}
+			p := &parser{buf: tt.buf, pos: tt.pos}
 			if got := p.matchUnaryKeyword("NOT"); got != tt.want {
 				t.Errorf("matchUnaryKeyword() = %v, want %v", got, tt.want)
 			}
