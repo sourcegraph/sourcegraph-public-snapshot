@@ -302,6 +302,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldMax,
 		FieldTimeout,
+		FieldReplace,
 		FieldCombyRule:
 		return satisfies(isSingular, isNotNegated)
 	default:

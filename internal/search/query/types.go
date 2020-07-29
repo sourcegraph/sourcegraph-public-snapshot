@@ -251,6 +251,7 @@ func (q AndOrQuery) valueToTypedValue(field, value string, label labels) []*type
 		FieldCount,
 		FieldMax,
 		FieldTimeout,
+		FieldReplace,
 		FieldCombyRule:
 		return []*types.Value{{String: &value}}
 	}
