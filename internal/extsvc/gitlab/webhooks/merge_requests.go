@@ -34,6 +34,12 @@ func (e *MergeRequestMergeEvent) ToEvent() *MergeRequestEvent      { return &e.M
 func (e *MergeRequestReopenEvent) ToEvent() *MergeRequestEvent     { return &e.MergeRequestEvent }
 func (e *MergeRequestUnapprovedEvent) ToEvent() *MergeRequestEvent { return &e.MergeRequestEvent }
 
+// We don't define Key() methods on MergeRequestApprovedEvent and
+// MergeRequestUnapprovedEvent because we don't need them when handling
+// webhooks: those events don't include enough information (specifically, the
+// system note ID) for us to create changeset events from them, so those types
+// don't need to implement keyer.
+
 func (e *MergeRequestCloseEvent) Key() string  { return e.key("Close") }
 func (e *MergeRequestMergeEvent) Key() string  { return e.key("Merge") }
 func (e *MergeRequestReopenEvent) Key() string { return e.key("Reopen") }
