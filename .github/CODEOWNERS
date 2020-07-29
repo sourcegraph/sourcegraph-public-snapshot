@@ -116,13 +116,14 @@
 /internal/actor/ @beyang @unknwon
 
 # Cloud
-/cmd/frontend/authz/ @sourcegraph/cloud
+/internal/authz/ @sourcegraph/cloud
 /cmd/frontend/globals/ @sourcegraph/cloud @slimsag
 /cmd/frontend/internal/bg/ @sourcegraph/cloud @slimsag
 /cmd/github-proxy/ @sourcegraph/cloud
 /cmd/gitserver/ @sourcegraph/cloud
 /cmd/repo-updater/ @sourcegraph/cloud
 /enterprise/cmd/frontend/authz/ @sourcegraph/cloud
+/enterprise/internal/authz/ @sourcegraph/cloud
 /enterprise/internal/db/ @sourcegraph/cloud
 /enterprise/cmd/frontend/internal/authz/ @sourcegraph/cloud
 /enterprise/cmd/repo-updater/ @sourcegraph/cloud
