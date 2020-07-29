@@ -194,6 +194,7 @@ const GitLabSchemaJSON = `{
         "type": "object",
         "title": "GitLabWebhook",
         "required": ["secret"],
+        "additionalProperties": false,
         "properties": {
           "secret": {
             "description": "The secret used to authenticate incoming webhook requests",
