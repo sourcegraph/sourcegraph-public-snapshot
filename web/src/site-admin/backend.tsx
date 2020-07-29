@@ -632,6 +632,7 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
                             name
                             timestamp
                             average
+                            owner
                         }
                     }
                 }
