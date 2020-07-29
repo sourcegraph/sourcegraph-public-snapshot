@@ -9,6 +9,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Breadcrumbs } from '../components/Breadcrumbs'
 
 interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'> {}
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
@@ -25,6 +26,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
     )
     return (
         <div className="container mt-3">
+            <Breadcrumbs breadcrumbs={['Insights']} />
             <div className="d-flex align-items-center">
                 <h1 className="flex-grow-1 text-nowrap">
                     <InsightsIcon className="icon-inline" /> Insights{' '}
