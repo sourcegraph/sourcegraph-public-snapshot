@@ -24,12 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
-	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
@@ -125,7 +126,7 @@ func initAuthz(ctx context.Context, enterpriseServices *enterprise.Services) {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
+				eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
