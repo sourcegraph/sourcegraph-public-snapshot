@@ -39,8 +39,9 @@ export const RepositoryBranchesArea: React.FunctionComponent<Props> = props => {
         repo: props.repo,
     }
 
-    useEffect(() =>
-        props.pushBreadcrumb(<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>, [])
+    useEffect(
+        () => props.pushBreadcrumb(<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>),
+        []
     )
 
     return (

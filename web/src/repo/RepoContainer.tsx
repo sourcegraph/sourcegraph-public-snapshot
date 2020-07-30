@@ -1,6 +1,6 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable, NEVER, ObservableInput, of } from 'rxjs'
@@ -162,7 +162,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     >()
 
     // The breadcrumbs and breadcrumb props for the repo header.
-    const { breadcrumbs, pushBreadcrumb } = useBreadcrumbs()
+    const { /* breadcrumbs,  */ pushBreadcrumb } = useBreadcrumbs()
 
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
