@@ -5,7 +5,6 @@ exports[`CampaignNode campaign without description 1`] = `
   history="[History]"
   node={
     Object {
-      "__typename": "Campaign",
       "author": Object {
         "username": "alice",
       },
@@ -21,9 +20,6 @@ exports[`CampaignNode campaign without description 1`] = `
       "description": null,
       "id": "123",
       "name": "Upgrade lodash to v4",
-      "patches": Object {
-        "totalCount": 2,
-      },
     }
   }
   now={2019-01-01T23:15:01.000Z}
@@ -171,7 +167,6 @@ exports[`CampaignNode closed campaign 1`] = `
   history="[History]"
   node={
     Object {
-      "__typename": "Campaign",
       "author": Object {
         "username": "alice",
       },
@@ -191,9 +186,6 @@ exports[`CampaignNode closed campaign 1`] = `
         ",
       "id": "123",
       "name": "Upgrade lodash to v4",
-      "patches": Object {
-        "totalCount": 2,
-      },
     }
   }
   now={2019-01-01T23:15:01.000Z}
@@ -349,7 +341,6 @@ exports[`CampaignNode open campaign 1`] = `
   history="[History]"
   node={
     Object {
-      "__typename": "Campaign",
       "author": Object {
         "username": "alice",
       },
@@ -369,9 +360,6 @@ exports[`CampaignNode open campaign 1`] = `
         ",
       "id": "123",
       "name": "Upgrade lodash to v4",
-      "patches": Object {
-        "totalCount": 2,
-      },
     }
   }
   now={2019-01-01T23:15:01.000Z}

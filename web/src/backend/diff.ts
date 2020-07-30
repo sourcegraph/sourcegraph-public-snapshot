@@ -15,6 +15,28 @@ export const DiffStatFields = gql`
     }
 `
 
+export const FileDiffHunkFields = gql`
+    fragment FileDiffHunkFields on FileDiffHunk {
+        oldRange {
+            startLine
+            lines
+        }
+        oldNoNewlineAt
+        newRange {
+            startLine
+            lines
+        }
+        section
+        highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
+            aborted
+            lines {
+                kind
+                html
+            }
+        }
+    }
+`
+
 export const FileDiffFields = gql`
     fragment FileDiffFields on FileDiff {
         __typename
@@ -35,23 +57,7 @@ export const FileDiffFields = gql`
             url
         }
         hunks {
-            oldRange {
-                startLine
-                lines
-            }
-            oldNoNewlineAt
-            newRange {
-                startLine
-                lines
-            }
-            section
-            highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
-                aborted
-                lines {
-                    kind
-                    html
-                }
-            }
+            ...FileDiffHunkFields
         }
         stat {
             added
@@ -60,4 +66,6 @@ export const FileDiffFields = gql`
         }
         internalID
     }
+
+    ${FileDiffHunkFields}
 `
