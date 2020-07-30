@@ -55,7 +55,7 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
 export function requestGraphQL<T, V = object>({
     request,
     baseUrl,
-    variables = V,
+    variables,
     ...options
 }: GraphQLRequestOptions & {
     request: string
