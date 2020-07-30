@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,20 +15,26 @@ import (
 // changes very rarely, so we can cache for a while.
 const defaultReposMaxAge = time.Minute
 
-type defaultRepos struct {
-	mu      sync.Mutex
-	cache   []*types.Repo
+type cachedRepos struct {
+	repos   []*types.Repo
 	fetched time.Time
 }
 
-func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
-	s.mu.Lock()
-	cached, fetched := s.cache, s.fetched
-	s.mu.Unlock()
+func (c *cachedRepos) Repos() []*types.Repo {
+	if c == nil || time.Since(c.fetched) > defaultReposMaxAge {
+		return nil
+	}
+	return append([]*types.Repo{}, c.repos...)
+}
 
-	if time.Since(fetched) < defaultReposMaxAge {
-		// Return a copy since the cached slice may be mutated
-		return append([]*types.Repo{}, cached...), nil
+type defaultRepos struct {
+	cache atomic.Value
+}
+
+func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
+	cached, _ := s.cache.Load().(*cachedRepos)
+	if repos := cached.Repos(); repos != nil {
+		return repos, nil
 	}
 
 	const q = `
@@ -54,18 +60,15 @@ ON default_repos.repo_id = repo.id
 		return nil, errors.Wrap(err, "scanning rows from default_repos table")
 	}
 
-	s.mu.Lock()
-	s.cache = repos
-	s.fetched = time.Now()
-	s.mu.Unlock()
+	s.cache.Store(&cachedRepos{
+		// Copy since repos will be mutated by the caller
+		repos:   append([]*types.Repo{}, repos...),
+		fetched: time.Now(),
+	})
 
-	// Return a copy since the cached slice may be mutated
-	return append([]*types.Repo{}, repos...), nil
+	return repos, nil
 }
 
 func (s *defaultRepos) resetCache() {
-	s.mu.Lock()
-	s.cache = nil
-	s.fetched = time.Unix(0, 0)
-	s.mu.Unlock()
+	s.cache.Store(&cachedRepos{})
 }
