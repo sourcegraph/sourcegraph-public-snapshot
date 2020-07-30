@@ -36,17 +36,15 @@ type Encrypter struct {
 }
 
 // Returns an enrypted string.
-func (e *Encrypter) encrypt(key []byte, value string) (string, error) {
+func (e *Encrypter) encrypt(key []byte, b []byte) (string, error) {
 	// create a one time nonce of standard length, without repetitions
-
-	byteVal := []byte(value)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
 	}
 
-	encrypted := make([]byte, aes.BlockSize+len(byteVal))
+	encrypted := make([]byte, aes.BlockSize+len(b))
 	nonce := encrypted[:aes.BlockSize]
 
 	_, err = io.ReadFull(rand.Reader, nonce)
@@ -55,13 +53,25 @@ func (e *Encrypter) encrypt(key []byte, value string) (string, error) {
 	}
 
 	stream := cipher.NewCFBEncrypter(block, nonce)
-	stream.XORKeyStream(encrypted[aes.BlockSize:], byteVal)
+	stream.XORKeyStream(encrypted[aes.BlockSize:], b)
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
 
 // Encrypts the string, returning the encrypted value.
+func (e *Encrypter) EncryptBytes(b []byte) (string, error) {
+	return e.encrypt(e.EncryptionKey, b)
+}
+
+// Encrypts the string, returning the encrypted value.
 func (e *Encrypter) Encrypt(value string) (string, error) {
-	return e.encrypt(e.EncryptionKey, value)
+	return e.encrypt(e.EncryptionKey, []byte(value))
+}
+
+func (e *Encrypter) EncryptBytesIfPossible(b []byte) (string, error) {
+	if isEncrypted {
+		return e.EncryptBytes(b)
+	}
+	return string(b), nil
 }
 
 // EncryptIfPossible encrypts  the string if encryption is configured.
@@ -73,8 +83,16 @@ func (e *Encrypter) EncryptIfPossible(value string) (string, error) {
 	return value, nil
 }
 
+func (e *Encrypter) Decrypt(value string) (string, error) {
+	return e.decrypt(value)
+}
+
+func (e *Encrypter) DecryptBytes(b []byte) (string, error) {
+	return e.decrypt(string(b))
+}
+
 // Decrypts the string, returning the decrypted value.
-func (e *Encrypter) Decrypt(encodedValue string) (string, error) {
+func (e *Encrypter) decrypt(encodedValue string) (string, error) {
 	encrypted, err := base64.StdEncoding.DecodeString(encodedValue)
 	if err != nil {
 		return "", nil
@@ -105,6 +123,13 @@ func (e *Encrypter) DecryptIfPossible(value string) (string, error) {
 	return value, nil
 }
 
+func (e *Encrypter) DecryptBytesIfPossible(b []byte) (string, error) {
+	if isEncrypted {
+		return e.DecryptBytes(b)
+	}
+	return string(b), nil
+}
+
 // This function rotates the encryption used on an item by decryping and then recencrypting.
 // Rotating keys updates the EncryptionKey within the Encrypter object
 func (e *Encrypter) RotateKey(newKey []byte, encryptedValue string) (string, error) {
@@ -114,5 +139,5 @@ func (e *Encrypter) RotateKey(newKey []byte, encryptedValue string) (string, err
 	}
 
 	e.EncryptionKey = newKey
-	return e.encrypt(newKey, decrypted)
+	return e.encrypt(newKey, []byte(decrypted))
 }
