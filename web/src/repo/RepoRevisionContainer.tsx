@@ -40,6 +40,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
+import { UpdateBreadcrumbsProps } from '../components/Breadcrumbs'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -58,7 +59,8 @@ export interface RepoRevisionContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        RevisionSpec {
+        RevisionSpec,
+        UpdateBreadcrumbsProps {
     repo: GQL.IRepository
     resolvedRev: ResolvedRevision
 
@@ -84,7 +86,8 @@ interface RepoRevisionContainerProps
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        RevisionSpec {
+        RevisionSpec,
+        UpdateBreadcrumbsProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -224,27 +227,8 @@ export class RepoRevisionContainer extends React.PureComponent<RepoRevisionConta
         }
 
         const context: RepoRevisionContainerContext = {
-            platformContext: this.props.platformContext,
-            extensionsController: this.props.extensionsController,
-            isLightTheme: this.props.isLightTheme,
-            telemetryService: this.props.telemetryService,
-            activation: this.props.activation,
-            repo: this.props.repo,
-            repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,
+            ...this.props,
             resolvedRev: this.props.resolvedRevisionOrError,
-            revision: this.props.revision,
-            routePrefix: this.props.routePrefix,
-            authenticatedUser: this.props.authenticatedUser,
-            settingsCascade: this.props.settingsCascade,
-            patternType: this.props.patternType,
-            setPatternType: this.props.setPatternType,
-            caseSensitive: this.props.caseSensitive,
-            setCaseSensitivity: this.props.setCaseSensitivity,
-            repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
-            repoSettingsSidebarGroups: this.props.repoSettingsSidebarGroups,
-            copyQueryButton: this.props.copyQueryButton,
-            versionContext: this.props.versionContext,
-            globbing: this.props.globbing,
         }
 
         return (
