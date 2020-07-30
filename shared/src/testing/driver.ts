@@ -432,12 +432,12 @@ export class Driver {
         return (await handle.jsonValue()) as T
     }
 
-    private async makeGraphQLRequest<T>({
+    private async makeGraphQLRequest<T, V = object>({
         request,
         variables,
     }: {
         request: string
-        variables: {}
+        variables: V
     }): Promise<GraphQLResult<T>> {
         const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
         const xhrHeaders =
