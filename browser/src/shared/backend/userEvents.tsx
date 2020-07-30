@@ -43,7 +43,7 @@ export const logUserEvent = (
  * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
  */
 export const logEvent = (
-    event: { name: string; userCookieID: string; url: string; argument?: string },
+    event: { name: string; userCookieID: string; url: string; argument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.

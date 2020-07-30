@@ -32,6 +32,7 @@ To set up notifications for these alerts, see: [alerting](alerting.md).
   - `"gitserver"`
   - `"precise-code-intel"`
   - `"query-runner"`
+  - `"replacer"`
   - `"repo-updater"`
   - `"searcher"`
   - `"symbols"`

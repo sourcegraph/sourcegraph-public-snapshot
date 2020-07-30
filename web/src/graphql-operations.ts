@@ -3774,6 +3774,7 @@ export type SearchVariables = {
     query: string
     version: 'V1' | 'V2'
     patternType: 'literal' | 'regexp' | 'structural'
+    useCodemod: boolean
     versionContext: string | null
 }
 export type SearchResult = {
@@ -3802,7 +3803,7 @@ export type SearchResult = {
                 kind: string
             }[]
             results: ({
-                __typename: 'FileMatch' | 'CommitSearchResult' | 'Repository'
+                __typename: 'FileMatch' | 'CommitSearchResult' | 'Repository' | 'CodemodResult'
             } & (
                 | {
                       id: string
