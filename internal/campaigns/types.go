@@ -1228,6 +1228,26 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 		// We always get the full event, so safe to replace it
 		*e = *o
 
+	case *gitlabwebhooks.MergeRequestCloseEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestCloseEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.MergeRequestMergeEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestMergeEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.MergeRequestReopenEvent:
+		o := o.Metadata.(*gitlabwebhooks.MergeRequestReopenEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *gitlabwebhooks.PipelineEvent:
+		o := o.Metadata.(*gitlabwebhooks.PipelineEvent)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
 	default:
 		return errors.Errorf("unknown changeset event metadata %T", e)
 	}
