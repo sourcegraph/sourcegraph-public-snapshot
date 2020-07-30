@@ -133,8 +133,6 @@ function watchSchema() {
   return gulp.watch(path.join(__dirname, '../schema/*.schema.json'), schema)
 }
 
-// const watchGraphQlOperations = () => generateGraphQlOperations(true)
-
 module.exports = {
   watchSchema,
   schema,
