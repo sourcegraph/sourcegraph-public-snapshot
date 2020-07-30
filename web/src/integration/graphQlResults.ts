@@ -31,7 +31,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         viewerSettings: {
             subjects: [
                 {
-                    __typename: 'DefaultSettings' as const,
+                    __typename: 'DefaultSettings',
                     latestSettings: {
                         id: 0,
                         contents: JSON.stringify({}),
@@ -48,7 +48,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                     settingsURL: '/site-admin/global-settings',
                     viewerCanAdminister: true,
                 },
-            ] as any, // this is needed because ts-graphql-plugin has a bug in detecting types for unions in fragments
+            ],
             final: JSON.stringify({}),
         },
     }),
@@ -78,7 +78,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
 
     StatusMessages: () => ({
-        statusMessages: [] as StatusMessage[],
+        statusMessages: [],
     }),
 
     SiteAdminActivationStatus: () => ({
