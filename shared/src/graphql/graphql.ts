@@ -52,14 +52,14 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
-export function requestGraphQL<T>({
+export function requestGraphQL<T, V = object>({
     request,
     baseUrl,
-    variables = {},
+    variables = V,
     ...options
 }: GraphQLRequestOptions & {
     request: string
-    variables?: {}
+    variables?: V
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`

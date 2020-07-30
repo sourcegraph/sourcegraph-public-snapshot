@@ -50,11 +50,17 @@ const configureOmnibox = (serverUrl: string): void => {
     })
 }
 
-const requestGraphQL = <T>({ request, variables }: { request: string; variables: {} }): Observable<GraphQLResult<T>> =>
+const requestGraphQL = <T, V = object>({
+    request,
+    variables,
+}: {
+    request: string
+    variables: V
+}): Observable<GraphQLResult<T>> =>
     observeSourcegraphURL(IS_EXTENSION).pipe(
         take(1),
         switchMap(sourcegraphURL =>
-            requestGraphQLCommon<T>({
+            requestGraphQLCommon<T, V>({
                 request,
                 variables,
                 baseUrl: sourcegraphURL,
@@ -137,8 +143,14 @@ async function main(): Promise<void> {
             return createBlobURLForBundle(bundleUrl)
         },
 
-        async requestGraphQL<T>({ request, variables }: { request: string; variables: {} }): Promise<GraphQLResult<T>> {
-            return requestGraphQL<T>({ request, variables }).toPromise()
+        async requestGraphQL<T, V = object>({
+            request,
+            variables,
+        }: {
+            request: string
+            variables: V
+        }): Promise<GraphQLResult<T>> {
+            return requestGraphQL<T, V>({ request, variables }).toPromise()
         },
     }
 
