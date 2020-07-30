@@ -454,7 +454,7 @@ type Mutation {
     #
 
     # Set the status of a test alert of the specified parameters - useful for validating
-    # `observability.alerts` configuration.
+    # 'observability.alerts' configuration.
     setObservabilityTestAlertState(
         # Level of alert to test - either warning or critical.
         level: String!
