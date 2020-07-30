@@ -76,6 +76,21 @@ Note that to receive email notifications, the [`email.address`](../config/site_c
 ]
 ```
 
+### Testing alerts
+
+Configured alerts can be tested using the Sourcegraph GraphQL API. Visit your API Console (e.g. `https://sourcegraph.example.com/api/console`) and use the following mutation to trigger an alert:
+
+```gql
+mutation {
+  setObservabilityTestAlertState(
+    level: "critical",
+    firing: true
+  ) { alwaysNil }
+}
+```
+
+Once you have verified your notifiers are configured correctly, make sure to set the alert state to `firing: false` with another API request.
+
 ### Silencing alerts
 
 If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the `observability.silenceAlerts` field. For example:
