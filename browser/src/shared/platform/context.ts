@@ -57,13 +57,13 @@ export function createPlatformContext(
     isExtension: boolean
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
-    const requestGraphQL: PlatformContext['requestGraphQL'] = <T>({
+    const requestGraphQL: PlatformContext['requestGraphQL'] = <T, V = object>({
         request,
         variables,
         mightContainPrivateInfo,
     }: {
         request: string
-        variables: {}
+        variables: V
         mightContainPrivateInfo: boolean
     }): Observable<GraphQLResult<T>> =>
         observeSourcegraphURL(isExtension).pipe(
@@ -77,7 +77,7 @@ export function createPlatformContext(
                         throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
                     }
                 }
-                return requestGraphQlHelper(isExtension, sourcegraphURL)<T>({ request, variables })
+                return requestGraphQlHelper(isExtension, sourcegraphURL)<T, V>({ request, variables })
             })
         )
 
