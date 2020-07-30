@@ -65,7 +65,6 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// We don't want to return a non-2XX status code and have GitLab
 			// retry the webhook, so we'll log that we don't know what to do
 			// and return 204.
-			log15.Info("cannot handle GitLab webhook event of unknown type", "error", err)
 			respond(w, http.StatusNoContent, err)
 		} else {
 			respond(w, http.StatusInternalServerError, errors.Wrap(err, "unmarshalling payload"))
@@ -169,7 +168,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 
 	// We don't want to return a non-2XX status code and have GitLab retry the
 	// webhook, so we'll log that we don't know what to do and return 204.
-	log15.Info("cannot handle GitLab webhook event of unknown type", "event", event, "type", fmt.Sprintf("%T", event))
+	log15.Debug("cannot handle GitLab webhook event of unknown type", "event", event, "type", fmt.Sprintf("%T", event))
 	return nil
 }
 
