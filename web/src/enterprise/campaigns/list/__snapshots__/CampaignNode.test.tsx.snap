@@ -74,11 +74,9 @@ exports[`CampaignNode campaign without description 1`] = `
             </span>
              
             by 
-            <span
-              className="badge badge-secondary"
-            >
+            <strong>
               alice
-            </span>
+            </strong>
           </small>
         </div>
         <Markdown
@@ -246,11 +244,9 @@ exports[`CampaignNode closed campaign 1`] = `
             </span>
              
             by 
-            <span
-              className="badge badge-secondary"
-            >
+            <strong>
               alice
-            </span>
+            </strong>
           </small>
         </div>
         <Markdown
@@ -426,11 +422,9 @@ exports[`CampaignNode open campaign 1`] = `
             </span>
              
             by 
-            <span
-              className="badge badge-secondary"
-            >
+            <strong>
               alice
-            </span>
+            </strong>
           </small>
         </div>
         <Markdown
