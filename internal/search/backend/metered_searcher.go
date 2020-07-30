@@ -37,13 +37,20 @@ func NewMeteredSearcher(hostname string, z zoekt.Searcher) zoekt.Searcher {
 func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
-	cat := "SearchAll"
-	if m.hostname != "" {
+	var cat string
+	var tags []trace.Tag
+	if m.hostname == "" {
+		cat = "SearchAll"
+	} else {
 		cat = "Search"
+		tags = []trace.Tag{
+			{Key: "span.kind", Value: "client"},
+			{Key: "peer.address", Value: m.hostname},
+			{Key: "peer.service", Value: "zoekt"},
+		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q))
-	tr.LogFields(log.String("hostname", m.hostname))
+	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
 	if opts != nil {
 		tr.LogFields(
 			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
@@ -95,13 +102,20 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
 	start := time.Now()
 
-	cat := "ListAll"
-	if m.hostname != "" {
+	var cat string
+	var tags []trace.Tag
+	if m.hostname == "" {
+		cat = "ListAll"
+	} else {
 		cat = "List"
+		tags = []trace.Tag{
+			{Key: "span.kind", Value: "client"},
+			{Key: "peer.address", Value: m.hostname},
+			{Key: "peer.service", Value: "zoekt"},
+		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q))
-	tr.LogFields(log.String("hostname", m.hostname))
+	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
 
 	zsl, err := m.Searcher.List(ctx, q)
 
