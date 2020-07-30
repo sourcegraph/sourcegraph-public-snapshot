@@ -46,14 +46,14 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	tr.LogFields(log.String("hostname", m.hostname))
 	if opts != nil {
 		tr.LogFields(
-			log.Bool("opts.EstimateDocCount", opts.EstimateDocCount),
-			log.Bool("opts.Whole", opts.Whole),
-			log.Int("opts.ShardMaxMatchCount", opts.ShardMaxMatchCount),
-			log.Int("opts.TotalMaxMatchCount", opts.TotalMaxMatchCount),
-			log.Int("opts.ShardMaxImportantMatch", opts.ShardMaxImportantMatch),
-			log.Int("opts.TotalMaxImportantMatch", opts.TotalMaxImportantMatch),
-			log.Int64("opts.MaxWallTimeMS", opts.MaxWallTime.Milliseconds()),
-			log.Int("opts.MaxDocDisplayCount", opts.MaxDocDisplayCount),
+			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
+			log.Bool("opts.whole", opts.Whole),
+			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
+			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
+			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
+			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
+			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
+			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		)
 	}
 
@@ -71,20 +71,20 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	if zsr != nil {
 		tr.LogFields(
 			log.Int("filematches", len(zsr.Files)),
-			log.Int64("rpc.latencyms", (d-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
-			log.Int64("stats.ContentBytesLoaded", zsr.Stats.ContentBytesLoaded),
-			log.Int64("stats.IndexBytesLoaded", zsr.Stats.IndexBytesLoaded),
-			log.Int("stats.Crashes", zsr.Stats.Crashes),
-			log.Int64("stats.DurationMS", zsr.Stats.Duration.Milliseconds()),
-			log.Int("stats.FileCount", zsr.Stats.FileCount),
-			log.Int("stats.ShardFilesConsidered", zsr.Stats.ShardFilesConsidered),
-			log.Int("stats.FilesConsidered", zsr.Stats.FilesConsidered),
-			log.Int("stats.FilesLoaded", zsr.Stats.FilesLoaded),
-			log.Int("stats.FilesSkipped", zsr.Stats.FilesSkipped),
-			log.Int("stats.ShardsSkipped", zsr.Stats.ShardsSkipped),
-			log.Int("stats.MatchCount", zsr.Stats.MatchCount),
-			log.Int("stats.NgramMatches", zsr.Stats.NgramMatches),
-			log.Int64("stats.WaitMS", zsr.Stats.Wait.Milliseconds()),
+			log.Int64("rpc.latency_ms", (d-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
+			log.Int64("stats.content_bytes_loaded", zsr.Stats.ContentBytesLoaded),
+			log.Int64("stats.index_bytes_loaded", zsr.Stats.IndexBytesLoaded),
+			log.Int("stats.crashes", zsr.Stats.Crashes),
+			log.Int64("stats.duration_ms", zsr.Stats.Duration.Milliseconds()),
+			log.Int("stats.file_count", zsr.Stats.FileCount),
+			log.Int("stats.shard_files_considered", zsr.Stats.ShardFilesConsidered),
+			log.Int("stats.files_considered", zsr.Stats.FilesConsidered),
+			log.Int("stats.files_loaded", zsr.Stats.FilesLoaded),
+			log.Int("stats.files_skipped", zsr.Stats.FilesSkipped),
+			log.Int("stats.shards_skipped", zsr.Stats.ShardsSkipped),
+			log.Int("stats.match_count", zsr.Stats.MatchCount),
+			log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
+			log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
 		)
 	}
 	tr.Finish()
