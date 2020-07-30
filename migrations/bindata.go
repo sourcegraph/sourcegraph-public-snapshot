@@ -90,6 +90,8 @@
 // 1528395693_remove_old_campaigns_workflow_tables.up.sql (208B)
 // 1528395694_lsif_nearest_uploads.down.sql (126B)
 // 1528395694_lsif_nearest_uploads.up.sql (646B)
+// 1528395695_readonly_user.down.sql (292B)
+// 1528395695_readonly_user.up.sql (304B)
 
 package migrations
 
@@ -1958,6 +1960,46 @@ func _1528395694_lsif_nearest_uploadsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395695_readonly_userDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xce\xcf\x6a\x84\x30\x10\xc7\xf1\x7b\x9e\xe2\x77\xdb\x87\xf0\x34\xc6\x69\x1a\x88\xc9\x92\x19\xdb\xf3\x76\x2b\x2a\x14\x94\xa8\xf4\xf5\x4b\x41\x0b\xfd\x43\xaf\xc3\x7c\xbe\x33\x35\x3b\x1f\x2b\x63\x6c\x66\x52\x46\x27\x9c\xb1\x0e\xa5\xbf\xbd\xf6\x05\xef\xd3\x36\xe2\x4a\x22\xcf\x29\x37\xb8\x9c\xf3\x4b\x65\x5c\xa6\xa8\xb0\x29\x46\xb6\x8a\x14\xd1\x90\x52\x4d\xc2\x58\xe7\xbd\xdc\xfb\xa1\xdc\x96\x11\x9a\xbe\x5a\x27\xe9\x84\x1c\x7f\x02\xb1\x8f\xdc\x12\x96\xfd\xe5\x6d\xba\x63\x9b\x7f\x6d\x0a\x87\xa3\x4d\x21\x40\xa9\x0e\x2c\xf0\xff\x42\x0a\xca\x19\x0d\x3f\x50\x17\x14\xd7\xec\x9f\x7c\x60\xf7\x17\xfb\x79\xe2\xc8\x7f\x7b\xd8\xd8\xd4\xb6\x5e\x2b\xf3\x11\x00\x00\xff\xff\x99\x3f\xd9\x15\x24\x01\x00\x00")
+
+func _1528395695_readonly_userDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395695_readonly_userDownSql,
+		"1528395695_readonly_user.down.sql",
+	)
+}
+
+func _1528395695_readonly_userDownSql() (*asset, error) {
+	bytes, err := _1528395695_readonly_userDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395695_readonly_user.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb9, 0xc5, 0x2, 0x84, 0xb1, 0x5d, 0x1, 0xd, 0xf5, 0xe7, 0x51, 0x71, 0x63, 0xc2, 0xb3, 0x82, 0x64, 0x23, 0x68, 0x92, 0xfa, 0x16, 0x89, 0x82, 0x89, 0xe2, 0xf5, 0x52, 0xd8, 0xda, 0x10, 0x2e}}
+	return a, nil
+}
+
+var __1528395695_readonly_userUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\xcf\xc1\x0a\x83\x30\x0c\x06\xe0\x7b\x9f\x22\x37\x1f\xa2\xa7\xa8\xd1\x95\xa5\x8d\xb4\x9d\x77\xe7\xc4\x0d\x06\x93\x8a\xef\x3f\x10\x84\x82\xec\xb2\xeb\x0f\xff\x97\xfc\x25\xb5\xc6\x69\xa5\x3c\xf5\x72\x25\x40\x66\xe8\xbc\xe9\x0d\x53\x4b\x01\xc4\xed\x49\xc4\x92\x29\x80\x71\x10\xaa\x0b\x59\x84\x65\xbb\xbf\x5f\x23\x34\x5e\x2c\x14\xeb\x9c\xa6\xe1\x31\xa5\x42\xff\x56\xfe\xed\xd5\x18\xb1\xc4\x40\xb0\x7e\xb6\x34\x4e\x73\x1a\x96\xe7\xb9\x8e\x1c\xc9\x43\x4d\x0d\xde\x38\xe6\xc2\xe9\xe3\xec\x90\xb8\x63\xd7\xee\x1d\x9c\x56\xb5\x97\x0e\xbc\x30\x65\x99\xaa\xc4\x5a\x13\xb5\xfa\x06\x00\x00\xff\xff\x5d\x28\xf8\x23\x30\x01\x00\x00")
+
+func _1528395695_readonly_userUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395695_readonly_userUpSql,
+		"1528395695_readonly_user.up.sql",
+	)
+}
+
+func _1528395695_readonly_userUpSql() (*asset, error) {
+	bytes, err := _1528395695_readonly_userUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395695_readonly_user.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x76, 0x14, 0x5b, 0xd, 0x48, 0x71, 0x85, 0xbf, 0x68, 0x1, 0xc2, 0x58, 0x1b, 0xea, 0x2d, 0x4e, 0x1a, 0x5e, 0x89, 0x4a, 0x91, 0xa1, 0x4d, 0xc2, 0x40, 0x46, 0xc0, 0xcb, 0x93, 0x44, 0x34, 0xe}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2139,6 +2181,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395693_remove_old_campaigns_workflow_tables.up.sql":                  _1528395693_remove_old_campaigns_workflow_tablesUpSql,
 	"1528395694_lsif_nearest_uploads.down.sql":                                _1528395694_lsif_nearest_uploadsDownSql,
 	"1528395694_lsif_nearest_uploads.up.sql":                                  _1528395694_lsif_nearest_uploadsUpSql,
+	"1528395695_readonly_user.down.sql":                                       _1528395695_readonly_userDownSql,
+	"1528395695_readonly_user.up.sql":                                         _1528395695_readonly_userUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2275,6 +2319,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395693_remove_old_campaigns_workflow_tables.up.sql":                  {_1528395693_remove_old_campaigns_workflow_tablesUpSql, map[string]*bintree{}},
 	"1528395694_lsif_nearest_uploads.down.sql":                                {_1528395694_lsif_nearest_uploadsDownSql, map[string]*bintree{}},
 	"1528395694_lsif_nearest_uploads.up.sql":                                  {_1528395694_lsif_nearest_uploadsUpSql, map[string]*bintree{}},
+	"1528395695_readonly_user.down.sql":                                       {_1528395695_readonly_userDownSql, map[string]*bintree{}},
+	"1528395695_readonly_user.up.sql":                                         {_1528395695_readonly_userUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
