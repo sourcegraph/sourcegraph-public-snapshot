@@ -74,7 +74,9 @@ exports[`CampaignNode campaign without description 1`] = `
             </span>
              
             by 
-            alice
+            <strong>
+              alice
+            </strong>
           </small>
         </div>
         <Markdown
@@ -242,7 +244,9 @@ exports[`CampaignNode closed campaign 1`] = `
             </span>
              
             by 
-            alice
+            <strong>
+              alice
+            </strong>
           </small>
         </div>
         <Markdown
@@ -418,7 +422,9 @@ exports[`CampaignNode open campaign 1`] = `
             </span>
              
             by 
-            alice
+            <strong>
+              alice
+            </strong>
           </small>
         </div>
         <Markdown
