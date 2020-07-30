@@ -813,58 +813,84 @@ func (e *ChangesetEvent) Changeset() int64 {
 func (e *ChangesetEvent) Timestamp() time.Time {
 	var t time.Time
 
-	switch e := e.Metadata.(type) {
+	switch ev := e.Metadata.(type) {
 	case *github.AssignedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ClosedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.IssueComment:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.RenamedTitleEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.MergedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.PullRequestReview:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.PullRequestReviewComment:
-		t = e.UpdatedAt
+		t = ev.UpdatedAt
 	case *github.ReopenedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewDismissedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewRequestRemovedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.ReviewRequestedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.UnassignedEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.LabelEvent:
-		t = e.CreatedAt
+		t = ev.CreatedAt
 	case *github.CommitStatus:
-		t = e.ReceivedAt
+		t = ev.ReceivedAt
 	case *github.CheckSuite:
-		return e.ReceivedAt
+		return ev.ReceivedAt
 	case *github.CheckRun:
-		return e.ReceivedAt
+		return ev.ReceivedAt
 	case *bitbucketserver.Activity:
-		t = unixMilliToTime(int64(e.CreatedDate))
+		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.ParticipantStatusEvent:
-		t = unixMilliToTime(int64(e.CreatedDate))
+		t = unixMilliToTime(int64(ev.CreatedDate))
 	case *bitbucketserver.CommitStatus:
-		t = unixMilliToTime(int64(e.Status.DateAdded))
+		t = unixMilliToTime(int64(ev.Status.DateAdded))
 	case *gitlab.ReviewApproved:
-		return e.CreatedAt.Time
+		return ev.CreatedAt.Time
 	case *gitlab.ReviewUnapproved:
-		return e.CreatedAt.Time
+		return ev.CreatedAt.Time
+	case *gitlabwebhooks.MergeRequestCloseEvent,
+		*gitlabwebhooks.MergeRequestMergeEvent,
+		*gitlabwebhooks.MergeRequestReopenEvent,
+		*gitlabwebhooks.PipelineEvent:
+		// These events do not inherently have timestamps from GitLab, so we
+		// fall back to the event record we created when we received the
+		// webhook.
+		return e.CreatedAt
 	}
 
 	return t
 }
 
 // Update updates the metadata of e with new metadata in o.
-func (e *ChangesetEvent) Update(o *ChangesetEvent) {
-	if e.ChangesetID != o.ChangesetID || e.Kind != o.Kind || e.Key != o.Key {
-		return
+func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
+	if e.ChangesetID != o.ChangesetID {
+		return &changesetEventUpdateMismatchError{
+			field:    "ChangesetID",
+			original: e.ChangesetID,
+			revised:  o.ChangesetID,
+		}
+	}
+	if e.Kind != o.Kind {
+		return &changesetEventUpdateMismatchError{
+			field:    "Kind",
+			original: e.Kind,
+			revised:  o.Kind,
+		}
+	}
+	if e.Key != o.Key {
+		return &changesetEventUpdateMismatchError{
+			field:    "Key",
+			original: e.Key,
+			revised:  o.Key,
+		}
 	}
 
 	switch e := e.Metadata.(type) {
@@ -1203,8 +1229,20 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		*e = *o
 
 	default:
-		panic(errors.Errorf("unknown changeset event metadata %T", e))
+		return errors.Errorf("unknown changeset event metadata %T", e)
 	}
+
+	return nil
+}
+
+type changesetEventUpdateMismatchError struct {
+	field    string
+	original interface{}
+	revised  interface{}
+}
+
+func (e *changesetEventUpdateMismatchError) Error() string {
+	return fmt.Sprintf("%s '%v' on the revised changeset event does not match %s '%v' on the original changeset event", e.field, e.revised, e.field, e.original)
 }
 
 func updateGithubCheckRun(e, o *github.CheckRun) {

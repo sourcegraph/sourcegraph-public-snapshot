@@ -153,7 +153,9 @@ func (h Webhook) upsertChangesetEvent(
 		// encoded in Update. This is because some webhooks payloads don't contain
 		// all the information that we can get from the API, so we only update the
 		// bits that we know are more up to date and leave the others as they were.
-		existing.Update(event)
+		if err := existing.Update(event); err != nil {
+			return err
+		}
 		event = existing
 	}
 
