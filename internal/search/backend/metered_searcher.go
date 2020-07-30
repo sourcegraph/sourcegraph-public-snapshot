@@ -43,10 +43,19 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	}
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q))
-	tr.LogFields(
-		log.String("hostname", m.hostname),
-		log.Object("options", opts),
-	)
+	tr.LogFields(log.String("hostname", m.hostname))
+	if opts != nil {
+		tr.LogFields(
+			log.Bool("opts.EstimateDocCount", opts.EstimateDocCount),
+			log.Bool("opts.Whole", opts.Whole),
+			log.Int("opts.ShardMaxMatchCount", opts.ShardMaxMatchCount),
+			log.Int("opts.TotalMaxMatchCount", opts.TotalMaxMatchCount),
+			log.Int("opts.ShardMaxImportantMatch", opts.ShardMaxImportantMatch),
+			log.Int("opts.TotalMaxImportantMatch", opts.TotalMaxImportantMatch),
+			log.Int64("opts.MaxWallTimeMS", opts.MaxWallTime.Milliseconds()),
+			log.Int("opts.MaxDocDisplayCount", opts.MaxDocDisplayCount),
+		)
+	}
 
 	zsr, err := m.Searcher.Search(ctx, q, opts)
 
@@ -61,7 +70,19 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	if zsr != nil {
 		tr.LogFields(
 			log.Int("filematches", len(zsr.Files)),
-			log.Object("stats", &zsr.Stats),
+			log.Int64("stats.ContentBytesLoaded", zsr.Stats.ContentBytesLoaded),
+			log.Int64("stats.IndexBytesLoaded", zsr.Stats.IndexBytesLoaded),
+			log.Int("stats.Crashes", zsr.Stats.Crashes),
+			log.Int64("stats.DurationMS", zsr.Stats.Duration.Milliseconds()),
+			log.Int("stats.FileCount", zsr.Stats.FileCount),
+			log.Int("stats.ShardFilesConsidered", zsr.Stats.ShardFilesConsidered),
+			log.Int("stats.FilesConsidered", zsr.Stats.FilesConsidered),
+			log.Int("stats.FilesLoaded", zsr.Stats.FilesLoaded),
+			log.Int("stats.FilesSkipped", zsr.Stats.FilesSkipped),
+			log.Int("stats.ShardsSkipped", zsr.Stats.ShardsSkipped),
+			log.Int("stats.MatchCount", zsr.Stats.MatchCount),
+			log.Int("stats.NgramMatches", zsr.Stats.NgramMatches),
+			log.Int64("stats.WaitMS", zsr.Stats.Wait.Milliseconds()),
 		)
 	}
 	tr.Finish()
