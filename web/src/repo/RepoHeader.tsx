@@ -181,11 +181,13 @@ export class RepoHeader extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
-
         this.state = {
             repoHeaderContributions: [...(props.contributions || [])],
         }
+    }
+
+    public componentDidMount(): void {
+        this.props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
     }
 
     public render(): JSX.Element | null {
