@@ -171,7 +171,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 ? [
                       {
                           uri: makeRepoURI({
-                              repoName: repoName,
+                              repoName,
                               revision: resolvedRevisionOrError.commitID,
                           }),
                           inputRevision: revision || '',
@@ -181,7 +181,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
         // Clear the Sourcegraph extensions model's roots when navigating away.
         return () => props.extensionsController.services.workspace.roots.next([])
-    }, [resolvedRevisionOrError])
+    }, [props.extensionsController.services.workspace.roots, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
     useEffect(() => {
@@ -215,7 +215,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 cursorPosition: query.length,
             })
         }
-    }, [revision, filePath, props.globbing, props.splitSearchModes, props.interactiveSearchMode])
+    }, [revision, filePath, props, repoName])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -269,11 +269,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 key="go-to-code-host"
                                 repo={repoOrError}
                                 // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                                revision={
-                                    rawRevision ||
-                                    (repoOrError.defaultBranch && repoOrError.defaultBranch.displayName) ||
-                                    'HEAD'
-                                }
+                                revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
                                 filePath={filePath}
                                 commitRange={commitRange}
                                 position={position}
