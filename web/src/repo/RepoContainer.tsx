@@ -236,7 +236,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }, [
         revision,
         filePath,
-        props,
         repoName,
         onFiltersInQueryChange,
         onNavbarQueryChange,
