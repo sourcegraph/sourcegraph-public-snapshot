@@ -6,7 +6,11 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable, NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
-import { isRepoNotFoundErrorLike, isRepoSeeOtherErrorLike } from '../../../shared/src/backend/errors'
+import {
+    isRepoNotFoundErrorLike,
+    isRepoSeeOtherErrorLike,
+    isCloneInProgressErrorLike,
+} from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -28,7 +32,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchRepository, ResolvedRevision } from './backend'
+import { fetchRepository, ResolvedRevision, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
@@ -42,6 +46,7 @@ import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { UpdateBreadcrumbsProps, useBreadcrumbs } from '../components/Breadcrumbs'
 import { useObservable, useEventObservable } from '../../../shared/src/util/useObservable'
+import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -148,10 +153,22 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
     )
 
-    // The resolved revision or an error if it could not be resolved. `undefined` while loading. This value comes from
-    // this component's child RepoRevisionContainer, but it lives here because it's used by other children than just
-    // RepoRevisionContainer.
-    const [resolvedRevisionOrError, setResolvedRevisionOrError] = useState<ResolvedRevision | ErrorLike>()
+    const resolvedRevisionOrError = useObservable(
+        React.useMemo(
+            () =>
+                resolveRevision({ repoName, revision }).pipe(
+                    catchError(error => {
+                        if (isCloneInProgressErrorLike(error)) {
+                            return of<ErrorLike>(asError(error))
+                        }
+                        throw error
+                    }),
+                    repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
+                    catchError(error => of<ErrorLike>(asError(error)))
+                ),
+            [repoName, revision]
+        )
+    )
 
     // The external links to show in the repository header, if any.
     const [externalLinks, setExternalLinks] = useState<GQL.IExternalLink[] | undefined>()
@@ -184,38 +201,49 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }, [props.extensionsController.services.workspace.roots, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
+    const { splitSearchModes, interactiveSearchMode, globbing, onFiltersInQueryChange, onNavbarQueryChange } = props
     useEffect(() => {
-        if (props.splitSearchModes && props.interactiveSearchMode) {
+        if (splitSearchModes && interactiveSearchMode) {
             const filters: FiltersToTypeAndValue = {
                 [uniqueId('repo')]: {
                     type: FilterType.repo,
-                    value: repoFilterForRepoRevision(repoName, props.globbing, revision),
+                    value: repoFilterForRepoRevision(repoName, globbing, revision),
                     editable: false,
                 },
             }
             if (filePath) {
                 filters[uniqueId('file')] = {
                     type: FilterType.file,
-                    value: props.globbing ? filePath : `^${escapeRegExp(filePath)}`,
+                    value: globbing ? filePath : `^${escapeRegExp(filePath)}`,
                     editable: false,
                 }
             }
-            props.onFiltersInQueryChange(filters)
-            props.onNavbarQueryChange({
+            onFiltersInQueryChange(filters)
+            onNavbarQueryChange({
                 query: '',
                 cursorPosition: 0,
             })
         } else {
-            let query = searchQueryForRepoRevision(repoName, props.globbing, revision)
+            let query = searchQueryForRepoRevision(repoName, globbing, revision)
             if (filePath) {
-                query = `${query.trimEnd()} file:${props.globbing ? filePath : '^' + escapeRegExp(filePath)}`
+                query = `${query.trimEnd()} file:${globbing ? filePath : '^' + escapeRegExp(filePath)}`
             }
-            props.onNavbarQueryChange({
+            onNavbarQueryChange({
                 query,
                 cursorPosition: query.length,
             })
         }
-    }, [revision, filePath, props, repoName])
+    }, [
+        revision,
+        filePath,
+        props,
+        repoName,
+        onFiltersInQueryChange,
+        onNavbarQueryChange,
+        splitSearchModes,
+        globbing,
+        interactiveSearchMode,
+    ])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -301,7 +329,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     routes={props.repoRevisionContainerRoutes}
                                     revision={revision || ''}
                                     resolvedRevisionOrError={resolvedRevisionOrError}
-                                    onResolvedRevisionOrError={setResolvedRevisionOrError}
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                 />
