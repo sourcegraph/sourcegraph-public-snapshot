@@ -64,12 +64,14 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		code = "error"
 	}
 
-	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
+	d := time.Since(start)
+	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(d.Seconds())
 
 	tr.SetError(err)
 	if zsr != nil {
 		tr.LogFields(
 			log.Int("filematches", len(zsr.Files)),
+			log.Int64("rpc.latencyms", (d-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
 			log.Int64("stats.ContentBytesLoaded", zsr.Stats.ContentBytesLoaded),
 			log.Int64("stats.IndexBytesLoaded", zsr.Stats.IndexBytesLoaded),
 			log.Int("stats.Crashes", zsr.Stats.Crashes),
