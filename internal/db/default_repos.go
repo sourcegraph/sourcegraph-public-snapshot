@@ -23,7 +23,7 @@ type defaultRepos struct {
 
 func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
 	s.mu.Lock()
-	cached, fetched := cache, fetched
+	cached, fetched := s.cache, s.fetched
 	s.mu.Unlock()
 
 	if time.Since(fetched) < defaultReposMaxAge {
@@ -61,4 +61,11 @@ ON default_repos.repo_id = repo.id
 
 	// Return a copy since the cached slice may be mutated
 	return append([]*types.Repo{}, repos...), nil
+}
+
+func (s *defaultRepos) resetCache() {
+	s.mu.Lock()
+	s.cache = nil
+	s.fetched = time.Unix(0, 0)
+	s.mu.Unlock()
 }
