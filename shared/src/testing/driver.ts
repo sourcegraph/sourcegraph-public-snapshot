@@ -432,7 +432,7 @@ export class Driver {
         return (await handle.jsonValue()) as T
     }
 
-    private async makeGraphQLRequest<T extends IQuery | IMutation>({
+    private async makeGraphQLRequest<T>({
         request,
         variables,
     }: {

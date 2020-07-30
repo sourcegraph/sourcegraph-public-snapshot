@@ -8,7 +8,6 @@ import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take, concatMap
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { BackgroundMessageHandlers } from '../web-extension-api/types'
 import { initializeOmniboxInterface } from '../../shared/cli'
 import { initSentry } from '../../shared/sentry'
@@ -51,13 +50,7 @@ const configureOmnibox = (serverUrl: string): void => {
     })
 }
 
-const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
-    request,
-    variables,
-}: {
-    request: string
-    variables: {}
-}): Observable<GraphQLResult<T>> =>
+const requestGraphQL = <T>({ request, variables }: { request: string; variables: {} }): Observable<GraphQLResult<T>> =>
     observeSourcegraphURL(IS_EXTENSION).pipe(
         take(1),
         switchMap(sourcegraphURL =>
@@ -144,13 +137,7 @@ async function main(): Promise<void> {
             return createBlobURLForBundle(bundleUrl)
         },
 
-        async requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
-            request,
-            variables,
-        }: {
-            request: string
-            variables: {}
-        }): Promise<GraphQLResult<T>> {
+        async requestGraphQL<T>({ request, variables }: { request: string; variables: {} }): Promise<GraphQLResult<T>> {
             return requestGraphQL<T>({ request, variables }).toPromise()
         },
     }
