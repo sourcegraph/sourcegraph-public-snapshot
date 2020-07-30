@@ -1,6 +1,7 @@
 import { gql } from '../../../../shared/src/graphql/graphql'
 import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../util/context'
 import { createPlatformContext } from './context'
+import { PrivateRepoPublicSourcegraphComError } from '../../../../shared/src/backend/errors'
 
 describe('Platform Context', () => {
     describe('requestGraphQL()', () => {
@@ -29,10 +30,7 @@ describe('Platform Context', () => {
                     variables: { repoName: 'foo' },
                     mightContainPrivateInfo: true,
                 }).toPromise()
-            ).rejects.toMatchObject({
-                message:
-                    'A ResolveRepo GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.',
-            })
+            ).rejects.toBeInstanceOf(PrivateRepoPublicSourcegraphComError)
         })
     })
 })
