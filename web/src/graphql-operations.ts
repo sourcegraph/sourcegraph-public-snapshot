@@ -712,7 +712,7 @@ export type CampaignFields = {
     closedAt: Maybe<string>
     viewerCanAdminister: boolean
     author: { username: string; avatarURL: Maybe<string> }
-    changesets: { totalCount: number }
+    changesets: { totalCount: number; stats: { total: number; closed: number; merged: number } }
     changesetCountsOverTime: Array<{
         date: string
         merged: number
@@ -724,6 +724,8 @@ export type CampaignFields = {
     }>
     diffStat: DiffStatFields
 }
+
+export type ChangesetLabelFields = { color: string; description: Maybe<string>; text: string }
 
 export type CampaignByIDVariables = Exact<{
     campaign: Scalars['ID']
@@ -757,6 +759,41 @@ export type CampaignByIDResult = {
     >
 }
 
+type ChangesetFields_HiddenExternalChangeset_ = {
+    __typename: 'HiddenExternalChangeset'
+    id: string
+    state: ChangesetState
+    createdAt: string
+    updatedAt: string
+    nextSyncAt: Maybe<string>
+    externalState: Maybe<ChangesetExternalState>
+}
+
+type ChangesetFields_ExternalChangeset_ = {
+    __typename: 'ExternalChangeset'
+    id: string
+    title: string
+    body: string
+    reviewState: Maybe<ChangesetReviewState>
+    checkState: Maybe<ChangesetCheckState>
+    externalID: Maybe<string>
+    state: ChangesetState
+    createdAt: string
+    updatedAt: string
+    nextSyncAt: Maybe<string>
+    externalState: Maybe<ChangesetExternalState>
+    labels: Array<ChangesetLabelFields>
+    repository: { id: string; name: string; url: string }
+    externalURL: Maybe<{ url: string }>
+    diff: Maybe<
+        | { __typename: 'RepositoryComparison'; fileDiffs: { diffStat: DiffStatFields } }
+        | { __typename: 'PreviewRepositoryComparison'; fileDiffs: { diffStat: DiffStatFields } }
+    >
+    diffStat: Maybe<{ added: number; changed: number; deleted: number }>
+}
+
+export type ChangesetFields = ChangesetFields_HiddenExternalChangeset_ | ChangesetFields_ExternalChangeset_
+
 export type CampaignChangesetsVariables = Exact<{
     campaign: Scalars['ID']
     first: Maybe<Scalars['Int']>
@@ -771,37 +808,7 @@ export type CampaignChangesetsResult = {
               __typename: 'Campaign'
               changesets: {
                   totalCount: number
-                  nodes: Array<
-                      | {
-                            __typename: 'HiddenExternalChangeset'
-                            id: string
-                            state: ChangesetState
-                            createdAt: string
-                            updatedAt: string
-                            nextSyncAt: Maybe<string>
-                        }
-                      | {
-                            __typename: 'ExternalChangeset'
-                            id: string
-                            title: string
-                            body: string
-                            reviewState: Maybe<ChangesetReviewState>
-                            checkState: Maybe<ChangesetCheckState>
-                            externalID: Maybe<string>
-                            state: ChangesetState
-                            createdAt: string
-                            updatedAt: string
-                            nextSyncAt: Maybe<string>
-                            labels: Array<{ text: string; description: Maybe<string>; color: string }>
-                            repository: { id: string; name: string; url: string }
-                            externalURL: Maybe<{ url: string }>
-                            diff: Maybe<
-                                | { __typename: 'RepositoryComparison'; fileDiffs: { diffStat: DiffStatFields } }
-                                | { __typename: 'PreviewRepositoryComparison'; fileDiffs: { diffStat: DiffStatFields } }
-                            >
-                            diffStat: Maybe<{ added: number; changed: number; deleted: number }>
-                        }
-                  >
+                  nodes: Array<ChangesetFields_HiddenExternalChangeset_ | ChangesetFields_ExternalChangeset_>
               }
           }
         | { __typename: 'User' }
@@ -884,26 +891,23 @@ export type ExternalChangesetFileDiffsResult = {
     >
 }
 
+export type ListCampaign = {
+    id: string
+    name: string
+    description: Maybe<string>
+    createdAt: string
+    closedAt: Maybe<string>
+    author: { username: string }
+    changesets: { stats: { open: number; closed: number; merged: number } }
+}
+
 export type CampaignsVariables = Exact<{
     first: Maybe<Scalars['Int']>
     state: Maybe<CampaignState>
     viewerCanAdminister: Maybe<Scalars['Boolean']>
 }>
 
-export type CampaignsResult = {
-    campaigns: {
-        totalCount: number
-        nodes: Array<{
-            id: string
-            name: string
-            description: Maybe<string>
-            createdAt: string
-            closedAt: Maybe<string>
-            author: { username: string }
-            changesets: { stats: { open: number; closed: number; merged: number } }
-        }>
-    }
-}
+export type CampaignsResult = { campaigns: { totalCount: number; nodes: Array<ListCampaign> } }
 
 export type LsifUploadConnectionFields = {
     totalCount: Maybe<number>

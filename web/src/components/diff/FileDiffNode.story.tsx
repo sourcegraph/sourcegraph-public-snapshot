@@ -6,7 +6,6 @@ import { createMemoryHistory } from 'history'
 import webStyles from '../../SourcegraphWebApp.scss'
 import { DEMO_HUNKS } from './FileDiffHunks.story'
 import { MemoryRouter } from 'react-router'
-import { GitBlob } from '../../../../shared/src/graphql/schema'
 import { FileDiffFields } from '../../graphql-operations'
 
 export const FILE_DIFF_NODES: FileDiffFields[] = [
@@ -41,8 +40,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         },
         mostRelevantFile: {
             __typename: 'VirtualFile',
-            binary: false,
-            name: 'deleted_file.md',
+            url: '/deleted_file.md',
         },
         newPath: null,
         oldPath: 'deleted_file.md',
@@ -56,14 +54,11 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         newFile: {
             __typename: 'VirtualFile',
             binary: true,
-            name: 'new_file.md',
             byteSize: 1280,
         },
         mostRelevantFile: {
             __typename: 'VirtualFile',
-            binary: true,
-            name: 'new_file.md',
-            byteSize: 1280,
+            url: '/new_file.md',
         },
         newPath: 'new_file.md',
         oldPath: null,
@@ -77,14 +72,11 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldFile: {
             __typename: 'VirtualFile',
             binary: true,
-            name: 'deleted_file.md',
             byteSize: 1280,
         },
         mostRelevantFile: {
             __typename: 'VirtualFile',
-            binary: true,
-            name: 'deleted_file.md',
-            byteSize: 1280,
+            url: '/deleted_file.md',
         },
         newPath: null,
         oldPath: 'deleted_file.md',
@@ -97,17 +89,16 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
-            name: 'existing_file.md',
+            byteSize: 0,
         },
         newFile: {
             __typename: 'VirtualFile',
             binary: false,
-            name: 'existing_file.md',
+            byteSize: 0,
         },
         mostRelevantFile: {
             __typename: 'VirtualFile',
-            binary: false,
-            name: 'existing_file.md',
+            url: '/existing_file.md',
         },
         newPath: 'existing_file.md',
         oldPath: 'existing_file.md',
@@ -120,18 +111,17 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldFile: {
             __typename: 'GitBlob',
             binary: false,
-            name: 'existing_git_file.md',
-        } as GitBlob,
+            byteSize: 0,
+        },
         newFile: {
             __typename: 'GitBlob',
             binary: false,
-            name: 'existing_git_file.md',
-        } as GitBlob,
+            byteSize: 0,
+        },
         mostRelevantFile: {
             __typename: 'GitBlob',
-            binary: false,
-            name: 'existing_git_file.md',
-        } as GitBlob,
+            url: 'http://test.test/gitblob',
+        },
         newPath: 'existing_git_file.md',
         oldPath: 'existing_git_file.md',
     },
@@ -143,17 +133,16 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
-            name: 'from.md',
+            byteSize: 0,
         },
         newFile: {
             __typename: 'VirtualFile',
             binary: false,
-            name: 'to.md',
+            byteSize: 0,
         },
         mostRelevantFile: {
             __typename: 'VirtualFile',
-            binary: false,
-            name: 'to.md',
+            url: '/to.md',
         },
         newPath: 'to.md',
         oldPath: 'from.md',
@@ -166,17 +155,16 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         oldFile: {
             __typename: 'VirtualFile',
             binary: false,
-            name: 'from.md',
+            byteSize: 0,
         },
         newFile: {
             __typename: 'VirtualFile',
             binary: false,
-            name: 'to.md',
+            byteSize: 0,
         },
         mostRelevantFile: {
             __typename: 'VirtualFile',
-            binary: false,
-            name: 'to.md',
+            url: '/to.md',
         },
         newPath: 'to.md',
         oldPath: 'from.md',

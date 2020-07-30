@@ -10,16 +10,10 @@ import parseISO from 'date-fns/parseISO'
 import * as H from 'history'
 import { changesetExternalStateIcons, changesetExternalStateColorClasses } from '../detail/changesets/presentation'
 import { Timestamp } from '../../../components/time/Timestamp'
-
-export type CampaignNodeCampaign = Pick<GQL.Campaign, 'id' | 'closedAt' | 'name' | 'description' | 'createdAt'> & {
-    author: Pick<GQL.Campaign['author'], 'username'>
-    changesets: {
-        stats: Pick<GQL.Campaign['changesets']['stats'], 'open' | 'closed' | 'merged'>
-    }
-}
+import { ListCampaign } from '../../../graphql-operations'
 
 export interface CampaignNodeProps {
-    node: CampaignNodeCampaign
+    node: ListCampaign
     /** Used for testing purposes. Sets the current date */
     now?: Date
     history: H.History

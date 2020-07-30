@@ -3,8 +3,9 @@ import { queryCampaigns as _queryCampaigns } from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
 import { User, CampaignState } from '../../../../../../shared/src/graphql/schema'
-import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
+import { CampaignNode, CampaignNodeProps } from '../../list/CampaignNode'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
+import { ListCampaign } from '../../../../graphql-operations'
 
 interface Props extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: Pick<User, 'siteAdmin'>
@@ -70,7 +71,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                 </div>
             </div>
 
-            <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
+            <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
                 {...props}
                 nodeComponent={CampaignNode}
                 nodeComponentProps={{ history: props.history }}

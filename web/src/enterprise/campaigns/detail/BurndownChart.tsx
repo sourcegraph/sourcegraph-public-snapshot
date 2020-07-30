@@ -11,9 +11,10 @@ import {
     YAxis,
     TooltipPayload,
 } from 'recharts'
-import { Campaign, ChangesetCounts } from '../../../../../shared/src/graphql/schema'
+import { ChangesetCounts } from '../../../../../shared/src/graphql/schema'
+import { CampaignFields } from '../../../graphql-operations'
 
-interface Props extends Pick<Campaign, 'changesetCountsOverTime'> {
+interface Props extends Pick<CampaignFields, 'changesetCountsOverTime'> {
     history: H.History
     width?: string | number
 }

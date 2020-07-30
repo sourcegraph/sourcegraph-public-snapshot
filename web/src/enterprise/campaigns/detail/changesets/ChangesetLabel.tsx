@@ -1,9 +1,9 @@
 import React from 'react'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
 import classNames from 'classnames'
+import { ChangesetLabelFields } from '../../../../graphql-operations'
 
 interface Props {
-    label: GQL.ChangesetLabel
+    label: ChangesetLabelFields
 }
 
 /**

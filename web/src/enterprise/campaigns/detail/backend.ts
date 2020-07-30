@@ -31,6 +31,11 @@ const campaignFragment = gql`
         viewerCanAdminister
         changesets {
             totalCount
+            stats {
+                total
+                closed
+                merged
+            }
         }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {
@@ -48,6 +53,14 @@ const campaignFragment = gql`
     }
 
     ${DiffStatFields}
+`
+
+const changesetLabelFragment = gql`
+    fragment ChangesetLabelFields on ChangesetLabel {
+        color
+        description
+        text
+    }
 `
 
 export const fetchCampaignById = (campaign: ID): Observable<CampaignFields | null> =>
@@ -77,10 +90,75 @@ export const fetchCampaignById = (campaign: ID): Observable<CampaignFields | nul
         })
     )
 
-export const queryChangesets = (
-    campaign: ID,
-    { first, state, reviewState, checkState }: CampaignChangesetsVariables
-): Observable<(CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']> =>
+export const ChangesetFieldsFragment = gql`
+    fragment ChangesetFields on Changeset {
+        __typename
+
+        state
+        createdAt
+        updatedAt
+        nextSyncAt
+        externalState
+        ... on HiddenExternalChangeset {
+            id
+        }
+        ... on ExternalChangeset {
+            id
+            title
+            body
+            reviewState
+            checkState
+            labels {
+                ...ChangesetLabelFields
+            }
+            repository {
+                id
+                name
+                url
+            }
+            externalURL {
+                url
+            }
+            externalID
+            diff {
+                __typename
+                ... on PreviewRepositoryComparison {
+                    fileDiffs {
+                        diffStat {
+                            ...DiffStatFields
+                        }
+                    }
+                }
+                ... on RepositoryComparison {
+                    fileDiffs {
+                        diffStat {
+                            ...DiffStatFields
+                        }
+                    }
+                }
+            }
+            diffStat {
+                added
+                changed
+                deleted
+            }
+        }
+    }
+
+    ${DiffStatFields}
+
+    ${changesetLabelFragment}
+`
+
+export const queryChangesets = ({
+    campaign,
+    first,
+    state,
+    reviewState,
+    checkState,
+}: CampaignChangesetsVariables): Observable<
+    (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
+> =>
     queryGraphQL<CampaignChangesetsResult>(
         gql`
             query CampaignChangesets(
@@ -96,66 +174,14 @@ export const queryChangesets = (
                         changesets(first: $first, state: $state, reviewState: $reviewState, checkState: $checkState) {
                             totalCount
                             nodes {
-                                __typename
-
-                                state
-                                createdAt
-                                updatedAt
-                                nextSyncAt
-
-                                ... on HiddenExternalChangeset {
-                                    id
-                                }
-                                ... on ExternalChangeset {
-                                    id
-                                    title
-                                    body
-                                    reviewState
-                                    checkState
-                                    labels {
-                                        text
-                                        description
-                                        color
-                                    }
-                                    repository {
-                                        id
-                                        name
-                                        url
-                                    }
-                                    externalURL {
-                                        url
-                                    }
-                                    externalID
-                                    diff {
-                                        __typename
-                                        ... on PreviewRepositoryComparison {
-                                            fileDiffs {
-                                                diffStat {
-                                                    ...DiffStatFields
-                                                }
-                                            }
-                                        }
-                                        ... on RepositoryComparison {
-                                            fileDiffs {
-                                                diffStat {
-                                                    ...DiffStatFields
-                                                }
-                                            }
-                                        }
-                                    }
-                                    diffStat {
-                                        added
-                                        changed
-                                        deleted
-                                    }
-                                }
+                                ...ChangesetFields
                             }
                         }
                     }
                 }
             }
 
-            ${DiffStatFields}
+            ${ChangesetFieldsFragment}
         `,
         { campaign, first, state, reviewState, checkState }
     ).pipe(
