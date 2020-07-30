@@ -1,13 +1,13 @@
 import { Observable, of, throwError } from 'rxjs'
 import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../../../shared/src/graphql/schema'
+import { IQuery } from '../../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 
 export interface GraphQLResponseMap {
     [requestName: string]: (
         variables: { [k: string]: any },
         mightContainPrivateInfo?: boolean
-    ) => Observable<SuccessGraphQLResult<IQuery | IMutation>>
+    ) => Observable<SuccessGraphQLResult<any>>
 }
 
 export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
@@ -88,13 +88,13 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
  */
 export const mockRequestGraphQL = (
     responseMap: GraphQLResponseMap = DEFAULT_GRAPHQL_RESPONSES
-): PlatformContext['requestGraphQL'] => <R extends IQuery | IMutation>({
+): PlatformContext['requestGraphQL'] => <R, V = object>({
     request,
     variables,
     mightContainPrivateInfo,
 }: {
     request: string
-    variables: {}
+    variables: V
     mightContainPrivateInfo?: boolean
 }) => {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
