@@ -1,4 +1,3 @@
-import { StatusMessage } from '../../../shared/src/graphql/schema'
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
@@ -32,6 +31,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             subjects: [
                 {
                     __typename: 'DefaultSettings',
+                    settingsURL: null,
+                    viewerCanAdminister: false,
                     latestSettings: {
                         id: 0,
                         contents: JSON.stringify({}),
