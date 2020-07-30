@@ -131,12 +131,15 @@ func (s *store) WaitUntilInitialized() {
 			}
 		}
 
+		timer := time.NewTimer(deadlockTimeout)
+		defer timer.Stop()
+
 		select {
 		// Frontend has initialized its configuration server.
 		case <-configurationServerFrontendOnlyInitialized:
 		// We assume that we're in an unrecoverable deadlock if frontend hasn't
 		// started its configuration server after a while.
-		case <-time.After(deadlockTimeout):
+		case <-timer.C:
 			// The running goroutine is not necessarily the cause of the
 			// deadlock, so ask Go to dump all goroutine stack traces.
 			debug.SetTraceback("all")
