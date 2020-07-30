@@ -249,7 +249,7 @@ func overrideSearchType(input string, searchType query.SearchType, useNewParser 
 			// parse errors will be raised by subsequent parser calls.
 			return searchType
 		}
-		query.VisitField(q, "patterntype", func(value string, _ bool) {
+		query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
 			switch value {
 			case "regex", "regexp":
 				searchType = query.SearchTypeRegex
