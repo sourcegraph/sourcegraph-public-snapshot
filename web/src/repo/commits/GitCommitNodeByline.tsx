@@ -3,6 +3,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { Timestamp } from '../../components/time/Timestamp'
 import { UserAvatar } from '../../user/UserAvatar'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
+import { SignatureFields } from '../../graphql-operations'
 
 /**
  * The subset of {@link GQL.Signature} information needed by {@link GitCommitNodeByline}. Using the
@@ -18,8 +19,8 @@ interface Signature extends Pick<GQL.Signature, 'date'> {
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
 export const GitCommitNodeByline: React.FunctionComponent<{
-    author: GQL.Signature | Signature
-    committer: GQL.Signature | Signature | null
+    author: SignatureFields
+    committer: SignatureFields | null
     className?: string
     compact?: boolean
 }> = ({ author, committer, className = '', compact }) => {

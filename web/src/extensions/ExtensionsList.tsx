@@ -10,7 +10,6 @@ import {
 } from '../../../shared/src/extensions/extension'
 import { viewerConfiguredExtensions } from '../../../shared/src/extensions/helpers'
 import { gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { Settings, SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'

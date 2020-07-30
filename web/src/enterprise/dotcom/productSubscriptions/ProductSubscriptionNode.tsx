@@ -1,10 +1,8 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
-import { ProductSubscriptionsResult } from '../../../graphql-operations'
-import { GraphQlProductSubscriptionNode } from './backend'
+import { ProductSubscriptionFields } from '../../../graphql-operations'
 
 export const productSubscriptionFragment = gql`
     fragment ProductSubscriptionFields on ProductSubscription {
@@ -21,6 +19,7 @@ export const productSubscriptionFragment = gql`
         }
         invoiceItem {
             plan {
+                name
                 nameWithBrand
             }
             userCount
@@ -51,7 +50,7 @@ export const ProductSubscriptionNodeHeader: React.FunctionComponent = () => (
 )
 
 export interface ProductSubscriptionNodeProps {
-    node: GraphQlProductSubscriptionNode
+    node: ProductSubscriptionFields
 }
 
 export const ProductSubscriptionNode: React.FunctionComponent<ProductSubscriptionNodeProps> = ({ node }) => (

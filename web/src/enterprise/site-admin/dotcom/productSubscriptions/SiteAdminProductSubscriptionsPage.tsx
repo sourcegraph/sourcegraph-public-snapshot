@@ -16,14 +16,13 @@ import {
     SiteAdminProductSubscriptionNodeHeader,
     SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
-import { ProductSubscriptionsDotComResult, ProductSubscriptionsDotComVariables } from '../../../../graphql-operations'
+import {
+    ProductSubscriptionsDotComResult,
+    ProductSubscriptionsDotComVariables,
+    SiteAdminProductSubscriptionFields,
+} from '../../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
-    GQL.ProductSubscription,
-    SiteAdminProductSubscriptionNodeProps
-> {}
 
 /**
  * Displays the product subscriptions that have been created on Sourcegraph.com.
@@ -40,7 +39,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<Props> =
                     Create product subscription
                 </Link>
             </div>
-            <FilteredSiteAdminProductSubscriptionConnection
+            <FilteredConnection<SiteAdminProductSubscriptionFields, SiteAdminProductSubscriptionNodeProps>
                 className="mt-3"
                 listComponent="table"
                 listClassName="table"

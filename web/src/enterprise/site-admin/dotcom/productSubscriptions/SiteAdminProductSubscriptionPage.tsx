@@ -7,10 +7,9 @@ import { Link } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 import { gql, dataOrThrowErrors } from '../../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
-import { FilteredConnection } from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { eventLogger } from '../../../../tracking/eventLogger'
@@ -34,7 +33,10 @@ import {
     ProductLicensesResult,
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
+    ProductLicensesVariables,
+    ProductLicenseFields,
 } from '../../../../graphql-operations'
+import { productSubscriptionFragment } from '../../../dotcom/productSubscriptions/ProductSubscriptionNode'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     /** For mocking in tests only. */
@@ -44,11 +46,6 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     _queryProductLicenses?: typeof queryProductLicenses
     history: H.History
 }
-
-class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    GQL.ProductLicense,
-    Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
-> {}
 
 const LOADING = 'loading' as const
 
@@ -111,7 +108,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
     )
 
     const queryProductLicensesForSubscription = useCallback(
-        (args: { first?: number }) => _queryProductLicenses(subscriptionUUID, args),
+        (args: FilteredConnectionQueryArgs) => _queryProductLicenses(subscriptionUUID, args),
         [_queryProductLicenses, subscriptionUUID]
     )
 
@@ -228,7 +225,10 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 />
                             </div>
                         )}
-                        <FilteredSiteAdminProductLicenseConnection
+                        <FilteredConnection<
+                            ProductLicenseFields,
+                            Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
+                        >
                             className="list-group list-group-flush"
                             noun="product license"
                             pluralNoun="product licenses"
@@ -253,25 +253,15 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
     )
 }
 
-function queryProductSubscription(
-    uuid: string
-): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
+type GraphQlSiteAdminProductSubscription = DotComProductSubscriptionResult['dotcom']['productSubscription']
+
+function queryProductSubscription(uuid: string): Observable<GraphQlSiteAdminProductSubscription> {
     return queryGraphQL<DotComProductSubscriptionResult>(
         gql`
             query DotComProductSubscription($uuid: String!) {
                 dotcom {
                     productSubscription(uuid: $uuid) {
-                        id
-                        name
-                        account {
-                            id
-                            username
-                            displayName
-                            emails {
-                                email
-                                verified
-                            }
-                        }
+                        ...ProductSubscriptionFields
                         invoiceItem {
                             plan {
                                 billingPlanID
@@ -305,13 +295,11 @@ function queryProductSubscription(
                                 hasNextPage
                             }
                         }
-                        createdAt
-                        isArchived
-                        url
                         urlForSiteAdminBilling
                     }
                 }
             }
+            ${productSubscriptionFragment}
         `,
         { uuid }
     ).pipe(
@@ -326,7 +314,7 @@ function queryProductSubscription(
 
 function queryProductLicenses(
     subscriptionUUID: string,
-    args: { first?: number }
+    args: Omit<ProductLicensesVariables, 'subscriptionUUID'>
 ): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
     return queryGraphQL<ProductLicensesResult>(
         gql`

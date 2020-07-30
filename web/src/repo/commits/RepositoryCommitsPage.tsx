@@ -55,6 +55,7 @@ export const gitCommitFragment = gql`
             user {
                 id
                 username
+                displayName
                 url
             }
         }

@@ -43,6 +43,8 @@ function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disa
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
 }
 
+type GraphQlBlob = NonNullable<NonNullable<NonNullable<BlobResult['repository']>['commit']>['file']>
+
 const fetchBlob = memoizeObservable(
     (args: {
         repoName: string
@@ -50,7 +52,7 @@ const fetchBlob = memoizeObservable(
         filePath: string
         isLightTheme: boolean
         disableTimeout: boolean
-    }): Observable<GQL.File2> =>
+    }): Observable<GraphQlBlob> =>
         queryGraphQL<BlobResult>(
             gql`
                 query Blob(
@@ -109,7 +111,7 @@ interface State {
      * The blob data or error that happened.
      * undefined while loading.
      */
-    blobOrError?: GQL.File2 | ErrorLike
+    blobOrError?: GraphQlBlob | ErrorLike
 }
 
 // eslint-disable-next-line react/no-unsafe

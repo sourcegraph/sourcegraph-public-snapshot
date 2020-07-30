@@ -1,6 +1,5 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { OptionalAuthProps } from '../../../auth'

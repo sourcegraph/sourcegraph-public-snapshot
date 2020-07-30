@@ -8,8 +8,9 @@ import { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
+import { OptionalAuthProps } from '../auth'
 
-interface Props extends RouteComponentProps, NamespaceProps {}
+interface Props extends RouteComponentProps, NamespaceProps, OptionalAuthProps {}
 
 const LOADING = 'loading' as const
 

@@ -7,15 +7,19 @@ import { map } from 'rxjs/operators'
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
-import { FilteredConnection } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { replaceRevisionInURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { RevisionSpec, FileSpec } from '../../../shared/src/util/url'
-import { FetchCommitsResult } from '../graphql-operations'
+import { FetchCommitsResult, FetchCommitsVariables, GitCommitFields } from '../graphql-operations'
+
+type GraphQlCommitConnection = NonNullable<
+    NonNullable<FetchCommitsResult['node'] & { __typename: 'Repository' }>['commit']
+>['ancestors']
 
 interface CommitNodeProps {
-    node: GQL.GitCommit
+    node: GitCommitFields
     location: H.Location
 }
 
@@ -47,7 +51,7 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <FilteredConnection<GQL.GitCommit, Pick<CommitNodeProps, 'location'>>
+            <FilteredConnection<GitCommitFields, Pick<CommitNodeProps, 'location'>>
                 className="list-group list-group-flush"
                 compact={true}
                 noun="commit"
@@ -64,15 +68,15 @@ export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
         )
     }
 
-    private fetchCommits = (args: { query?: string }): Observable<GQL.GitCommitConnection> =>
+    private fetchCommits = (args: FilteredConnectionQueryArgs): Observable<GraphQlCommitConnection> =>
         fetchCommits(this.props.repoID, this.props.revision || '', { ...args, currentPath: this.props.filePath || '' })
 }
 
 function fetchCommits(
     repo: GQL.Scalars['ID'],
     revision: string,
-    args: { first?: number; currentPath?: string; query?: string }
-): Observable<GQL.GitCommitConnection> {
+    args: Omit<FetchCommitsVariables, 'repo' | 'revision'>
+): Observable<GraphQlCommitConnection> {
     return queryGraphQL<FetchCommitsResult>(
         gql`
             query FetchCommits($repo: ID!, $revision: String!, $first: Int, $currentPath: String, $query: String) {

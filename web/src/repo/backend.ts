@@ -8,7 +8,6 @@ import {
 } from '../../../shared/src/backend/errors'
 import { FetchFileCtx } from '../../../shared/src/components/CodeExcerpt'
 import { gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import {
@@ -28,11 +27,15 @@ import {
     HighlightedFileResult,
 } from '../graphql-operations'
 
+type Repository = NonNullable<RepositoryRedirectResult['repositoryRedirect']> & {
+    __typename: 'Repository'
+}
+
 /**
  * Fetch the repository.
  */
 export const fetchRepository = memoizeObservable(
-    (args: { repoName: string }): Observable<GQL.Repository> =>
+    (args: { repoName: string }): Observable<Repository> =>
         queryGraphQL<RepositoryRedirectResult>(
             gql`
                 query RepositoryRedirect($repoName: String!) {

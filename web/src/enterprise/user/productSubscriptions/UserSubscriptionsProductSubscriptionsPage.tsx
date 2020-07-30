@@ -15,9 +15,12 @@ import {
     ProductSubscriptionNode,
     ProductSubscriptionNodeHeader,
     ProductSubscriptionNodeProps,
-    GraphQlProductSubscriptionConnection,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
 import { ProductSubscriptionsResult, ProductSubscriptionsVariables } from '../../../graphql-operations'
+import {
+    GraphQlProductSubscriptionNode,
+    GraphQlProductSubscriptionConnection,
+} from '../../dotcom/productSubscriptions/backend'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.User

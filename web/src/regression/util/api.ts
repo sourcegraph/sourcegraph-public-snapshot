@@ -69,7 +69,7 @@ export function waitForRepo(
         indexed: mustBeIndexed = false,
     }: WaitForRepoOptions = {}
 ): Observable<void> {
-    const request = gqlClient.queryGraphQL<any>(
+    const request = gqlClient.queryGraphQL(
         gql`
             query ResolveRev($repoName: String!) {
                 repository(name: $repoName) {
@@ -189,7 +189,7 @@ export async function ensureNoTestExternalServices(
 
     for (const externalService of externalServices) {
         await gqlClient
-            .mutateGraphQL<any>(
+            .mutateGraphQL(
                 gql`
                     mutation DeleteExternalService($externalService: ID!) {
                         deleteExternalService(externalService: $externalService) {
@@ -215,7 +215,7 @@ export function getExternalServices(
     } = {}
 ): Promise<GQL.ExternalService[]> {
     return gqlClient
-        .queryGraphQL<any>(
+        .queryGraphQL(
             gql`
                 query ExternalServices($first: Int) {
                     externalServices(first: $first) {
@@ -251,7 +251,7 @@ export async function updateExternalService(
     input: GQL.UpdateExternalServiceInput
 ): Promise<void> {
     await gqlClient
-        .mutateGraphQL<any>(
+        .mutateGraphQL(
             gql`
                 mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
                     updateExternalService(input: $input) {
@@ -364,7 +364,7 @@ export async function setUserSiteAdmin(
     siteAdmin: boolean
 ): Promise<void> {
     await gqlClient
-        .mutateGraphQL<any>(
+        .mutateGraphQL(
             gql`
                 mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
                     setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
@@ -383,7 +383,7 @@ export async function setUserSiteAdmin(
  */
 export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
     return gqlClient
-        .queryGraphQL<any>(
+        .queryGraphQL(
             gql`
                 query SiteFlags {
                     site {

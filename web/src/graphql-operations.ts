@@ -69,7 +69,7 @@ export interface WebGraphQlOperations {
     /** web/src/enterprise/codeintel/backend.tsx */
     DeleteLsifIndex: (variables: DeleteLsifIndexVariables) => DeleteLsifIndexResult
 
-    /** web/src/enterprise/dotcom/productPlans/ProductPlanFormControl.tsx */
+    /** web/src/enterprise/dotcom/productPlans/backend.tsx */
     ProductPlans: (variables: ProductPlansVariables) => ProductPlansResult
 
     /** web/src/enterprise/extensions/explore/ExtensionsExploreSection.tsx */
@@ -1166,7 +1166,7 @@ export type ProductSubscriptionFields = {
         displayName: Maybe<string>
         emails: Array<{ email: string; verified: boolean }>
     }>
-    invoiceItem: Maybe<{ userCount: number; expiresAt: string; plan: { nameWithBrand: string } }>
+    invoiceItem: Maybe<{ userCount: number; expiresAt: string; plan: { name: string; nameWithBrand: string } }>
     activeLicense: Maybe<{
         licenseKey: string
         info: Maybe<{ productNameWithBrand: string; tags: Array<string>; userCount: number; expiresAt: string }>
@@ -1502,18 +1502,7 @@ export type DotComProductSubscriptionVariables = Exact<{
 export type DotComProductSubscriptionResult = {
     dotcom: {
         productSubscription: {
-            id: string
-            name: string
-            createdAt: string
-            isArchived: boolean
-            url: string
             urlForSiteAdminBilling: Maybe<string>
-            account: Maybe<{
-                id: string
-                username: string
-                displayName: Maybe<string>
-                emails: Array<{ email: string; verified: boolean }>
-            }>
             invoiceItem: Maybe<{
                 userCount: number
                 expiresAt: string
@@ -1530,7 +1519,7 @@ export type DotComProductSubscriptionResult = {
                 }>
                 pageInfo: { hasNextPage: boolean }
             }
-        }
+        } & ProductSubscriptionFields
     }
 }
 
@@ -2234,7 +2223,7 @@ export type SignatureFields = {
         name: string
         email: string
         displayName: string
-        user: Maybe<{ id: string; username: string; url: string }>
+        user: Maybe<{ id: string; username: string; displayName: Maybe<string>; url: string }>
     }
 }
 

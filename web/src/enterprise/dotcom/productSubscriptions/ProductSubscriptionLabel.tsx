@@ -1,13 +1,13 @@
 import React from 'react'
 import { formatUserCount } from '../../productSubscription/helpers'
-import { GraphQlProductSubscriptionNode } from './backend'
+import { ProductSubscriptionFields } from '../../../graphql-operations'
 
 /**
  * Displays a text label with the product name (e.g., "Sourcegraph Enterprise") and user count for the
  * subscription.
  */
 export const ProductSubscriptionLabel: React.FunctionComponent<{
-    productSubscription: GraphQlProductSubscriptionNode
+    productSubscription: ProductSubscriptionFields
 
     planField?: 'name' | 'nameWithBrand'
 
