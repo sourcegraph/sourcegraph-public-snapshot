@@ -12,6 +12,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -196,9 +197,24 @@ func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	return k
 }
 
+func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
+	if !ot.ShouldTrace(ctx) {
+		return false, nil
+	}
+
+	spanContext = make(map[string]string)
+	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
+		log15.Warn("Error injecting span context into map: %s", err)
+		return true, nil
+	}
+	return true, spanContext
+}
+
 func zoektSearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
-		Trace:                  ot.ShouldTrace(ctx),
+		Trace:                  shouldTrace,
+		SpanContext:            spanContext,
 		MaxWallTime:            defaultTimeout,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
