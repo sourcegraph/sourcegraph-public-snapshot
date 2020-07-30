@@ -34,7 +34,7 @@ React components are often structured to display a subfield of a query.
 The best way to declare this input type is to define a _GraphQL fragment_ with the component, then using the auto-generated type for that fragment.
 This ensures the parent component don't forget to query a required field and it makes it easy to hard-code stub results in tests.
 
-```ts
+```tsx
 import { PersionFields } from '../graphql-operations'
 
 export const personFields = gql`
