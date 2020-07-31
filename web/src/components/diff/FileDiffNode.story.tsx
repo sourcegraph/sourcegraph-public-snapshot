@@ -160,6 +160,29 @@ export const FILE_DIFF_NODES: IFileDiff[] = [
     },
     {
         __typename: 'FileDiff',
+        hunks: DEMO_HUNKS,
+        internalID: 'abcdef123',
+        stat: { __typename: 'DiffStat', added: 0, changed: 1, deleted: 0 },
+        oldFile: {
+            __typename: 'VirtualFile',
+            binary: false,
+            name: 'dir1/from.md',
+        } as IVirtualFile,
+        newFile: {
+            __typename: 'VirtualFile',
+            binary: false,
+            name: 'dir2/to.md',
+        } as IVirtualFile,
+        mostRelevantFile: {
+            __typename: 'VirtualFile',
+            binary: false,
+            name: 'dir2/to.md',
+        } as IVirtualFile,
+        newPath: 'dir2/to.md',
+        oldPath: 'dir1/from.md',
+    },
+    {
+        __typename: 'FileDiff',
         hunks: [],
         internalID: 'abcdef123',
         stat: { __typename: 'DiffStat', added: 0, changed: 0, deleted: 0 },

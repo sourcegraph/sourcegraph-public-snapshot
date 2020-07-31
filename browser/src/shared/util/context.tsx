@@ -28,7 +28,10 @@ export function getAssetsURL(sourcegraphURL: string): string {
     return assetsURL.endsWith('/') ? assetsURL : assetsURL + '/'
 }
 
-type PlatformName = NonNullable<typeof globalThis.SOURCEGRAPH_INTEGRATION> | 'firefox-extension' | 'chrome-extension'
+export type PlatformName =
+    | NonNullable<typeof globalThis.SOURCEGRAPH_INTEGRATION>
+    | 'firefox-extension'
+    | 'chrome-extension'
 
 export function getPlatformName(): PlatformName {
     if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {

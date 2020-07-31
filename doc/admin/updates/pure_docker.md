@@ -4,6 +4,11 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
+## v3.16.0 -> v3.17.2 changes
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2895236661de3ff633ee56fe0b87e9a0f530cc60
 
 ## v3.15.1 → v3.16.0 changes
 

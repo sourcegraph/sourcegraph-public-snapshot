@@ -406,7 +406,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		defer cancel()
 	outer:
 		for i, repoParent := range pathParentsByFrequency(paths) {
-			if i >= maxParentsToPropose || ctx.Err() == nil {
+			if i >= maxParentsToPropose || ctx.Err() != nil {
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"

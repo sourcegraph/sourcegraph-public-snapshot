@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/src-d/enry/v2"
 
 	"github.com/hashicorp/go-multierror"
@@ -686,35 +686,45 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 // they occur in the same file, and taking care to update match counts.
 func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	var count int // count non-overlapping files when we merge.
-	for _, leftMatch := range left.SearchResults {
-		for _, rightMatch := range right.SearchResults {
-			rightFileMatch, ok := rightMatch.ToFileMatch()
-			if !ok {
-				left.SearchResults = append(left.SearchResults, rightMatch)
-				count++
-				continue
-			}
+	var merged []SearchResultResolver
+	rightFileMatches := make(map[string]*FileMatchResolver)
 
-			leftFileMatch, ok := leftMatch.ToFileMatch()
-			if !ok {
-				left.SearchResults = append(left.SearchResults, rightMatch)
-				count++
-				continue
-			}
-
-			if leftFileMatch.uri == rightFileMatch.uri {
-				// Do not count this match, since it will be counted by the outer-loop.
-				leftFileMatch.JLineMatches = append(leftFileMatch.JLineMatches, rightFileMatch.JLineMatches...)
-				leftFileMatch.MatchCount += rightFileMatch.MatchCount
-				leftFileMatch.JLimitHit = leftFileMatch.JLimitHit || rightFileMatch.JLimitHit
-			} else {
-				left.SearchResults = append(left.SearchResults, rightMatch)
-				count++
-			}
+	// accumulate file matches for the right subexpression in a lookup.
+	for _, r := range right.SearchResults {
+		if fileMatch, ok := r.ToFileMatch(); ok {
+			rightFileMatches[fileMatch.uri] = fileMatch
+			continue
 		}
-		count++
+		merged = append(merged, r)
 	}
-	// merge common search data.
+
+	for _, leftMatch := range left.SearchResults {
+		leftFileMatch, ok := leftMatch.ToFileMatch()
+		if !ok {
+			merged = append(merged, leftMatch)
+			continue
+		}
+
+		rightFileMatch := rightFileMatches[leftFileMatch.uri]
+		if rightFileMatch == nil {
+			// no overlap with existing matches.
+			merged = append(merged, leftMatch)
+			count++
+			continue
+		}
+
+		// merge line matches with a file match that already exists.
+		rightFileMatch.JLineMatches = append(rightFileMatch.JLineMatches, leftFileMatch.JLineMatches...)
+		rightFileMatch.MatchCount += leftFileMatch.MatchCount
+		rightFileMatch.JLimitHit = rightFileMatch.JLimitHit || leftFileMatch.JLimitHit
+		rightFileMatches[leftFileMatch.uri] = rightFileMatch
+	}
+
+	for _, v := range rightFileMatches {
+		merged = append(merged, v)
+	}
+
+	left.SearchResults = merged
 	left.searchResultsCommon.update(right.searchResultsCommon)
 	// set the count that tracks non-overlapping result count.
 	left.searchResultsCommon.resultCount = int32(count)
@@ -804,7 +814,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	want := 5
 
 	var countStr string
-	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -876,7 +886,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 
 	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
 		countStr = value
 	})
 	if countStr != "" {
