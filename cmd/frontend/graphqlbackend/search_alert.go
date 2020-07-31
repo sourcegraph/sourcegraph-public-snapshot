@@ -42,6 +42,34 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
+func alertForCommitParamNoType(paramName string, p syntax.ParseTree, patternType query.SearchType) *searchAlert {
+	return &searchAlert{
+		prometheusType: "commit_parameter_no_type",
+		title:          "A commit parameter was specified without the type of search",
+		description:    fmt.Sprintf("Your query contains the parameter %s, so you need to add either type:diff or type:commit to the query", paramName),
+		proposedQueries: []*searchQueryDescription{
+			{
+				description: "Add type:commit",
+				query: append(p, &syntax.Expr{
+					Field:     "type",
+					Value:     "commit",
+					ValueType: syntax.TokenLiteral,
+				}).String(),
+				patternType: patternType,
+			},
+			{
+				description: "Add type:diff",
+				query: append(p, &syntax.Expr{
+					Field:     "type",
+					Value:     "diff",
+					ValueType: syntax.TokenLiteral,
+				}).String(),
+				patternType: patternType,
+			},
+		},
+	}
+}
+
 func alertForCappedAndExpression() *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceed_and_expression_search_limit",
