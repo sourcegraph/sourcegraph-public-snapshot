@@ -107,7 +107,49 @@ interface RepoRevisionContainerProps
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
-export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = props => {
+export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = ({
+    pushBreadcrumb,
+    ...props
+}) => {
+    useEffect(() => {
+        if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
+            return
+        }
+        pushBreadcrumb(
+            <div className="d-flex align-items-center" key="repo-revision">
+                <span className="test-revision">
+                    {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
+                        ? props.resolvedRevisionOrError.commitID.slice(0, 7)
+                        : props.revision) ||
+                        props.resolvedRevisionOrError.defaultBranch ||
+                        'HEAD'}
+                </span>
+                <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
+                    <MenuDownIcon className="icon-inline" />
+                </button>
+                <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
+                    <RevisionsPopover
+                        repo={props.repo.id}
+                        repoName={props.repo.name}
+                        defaultBranch={props.resolvedRevisionOrError.defaultBranch}
+                        currentRev={props.revision}
+                        currentCommitID={props.resolvedRevisionOrError.commitID}
+                        history={props.history}
+                        location={props.location}
+                    />
+                </UncontrolledPopover>
+            </div>
+        )
+    }, [
+        props.revision,
+        props.resolvedRevisionOrError,
+        props.repo.id,
+        props.repo.name,
+        pushBreadcrumb,
+        props.history,
+        props.location,
+    ])
+
     if (!props.resolvedRevisionOrError) {
         // Render nothing while loading
         return null
@@ -155,38 +197,9 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
     const context: RepoRevisionContainerContext = {
         ...props,
+        pushBreadcrumb,
         resolvedRev: props.resolvedRevisionOrError,
     }
-
-    useEffect(
-        () =>
-            props.pushBreadcrumb(
-                <div className="d-flex align-items-center" key="repo-revision">
-                    <span className="test-revision">
-                        {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
-                            ? props.resolvedRevisionOrError.commitID.slice(0, 7)
-                            : props.revision) ||
-                            props.resolvedRevisionOrError.defaultBranch ||
-                            'HEAD'}
-                    </span>
-                    <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
-                        <MenuDownIcon className="icon-inline" />
-                    </button>
-                    <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
-                        <RevisionsPopover
-                            repo={props.repo.id}
-                            repoName={props.repo.name}
-                            defaultBranch={props.resolvedRevisionOrError.defaultBranch}
-                            currentRev={props.revision}
-                            currentCommitID={props.resolvedRevisionOrError.commitID}
-                            history={props.history}
-                            location={props.location}
-                        />
-                    </UncontrolledPopover>
-                </div>
-            ),
-        [props.revision, props.resolvedRevisionOrError, props.repo.id, props.repo.name]
-    )
 
     return (
         <div className="repo-revision-container">
