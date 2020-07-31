@@ -9,7 +9,7 @@ interface Props {
     badge?: string // TODO: consider support for multiple badges
 }
 
-export const PageHeader = ({ title, icon, actions, badge, breadcrumbs }: Props) => (
+export const PageHeader: React.FunctionComponent<Props> = ({ title, icon, actions, badge, breadcrumbs }) => (
     <>
         <Breadcrumbs breadcrumbs={breadcrumbs} />
         <div className="d-flex align-items-center">
@@ -17,7 +17,7 @@ export const PageHeader = ({ title, icon, actions, badge, breadcrumbs }: Props) 
                 {icon} {title}
                 {badge && (
                     <sup>
-                        <span className="badge badge-primary text-uppercase">{badge}</span>
+                        <span className="badge badge-info text-uppercase">{badge}</span>
                     </sup>
                 )}
             </h1>
