@@ -307,7 +307,7 @@
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.4.1",
     "recharts": "^1.8.5",
-    "rxjs": "^6.6.0",
+    "rxjs": "^6.6.2",
     "sanitize-html": "^1.26.0",
     "semver": "^7.3.2",
     "slugify": "^1.4.4",
