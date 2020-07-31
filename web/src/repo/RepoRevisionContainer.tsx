@@ -115,7 +115,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
             return
         }
-        pushBreadcrumb(
+        return pushBreadcrumb(
             <div className="d-flex align-items-center" key="repo-revision">
                 <span className="test-revision">
                     {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
