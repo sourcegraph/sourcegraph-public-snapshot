@@ -174,7 +174,7 @@ interface Props
  */
 export const RepoHeader: React.FunctionComponent<Props> = ({
     onLifecyclePropsChange,
-    pushBreadcrumb,
+    setBreadcrumb,
     resolvedRev,
     repo,
     ...props
@@ -191,7 +191,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
     const { history, location } = props
     useEffect(
         () =>
-            pushBreadcrumb(
+            setBreadcrumb(
                 'repo',
                 <>
                     <Link
@@ -209,7 +209,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                     </UncontrolledPopover>
                 </>
             ),
-        [history, location, pushBreadcrumb, repo.id, repo.url, repoBase, repoDirectory, resolvedRev]
+        [history, location, setBreadcrumb, repo.id, repo.url, repoBase, repoDirectory, resolvedRev]
     )
     const context: RepoHeaderContext = {
         repoName: repo.name,

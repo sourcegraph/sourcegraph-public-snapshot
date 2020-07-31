@@ -108,14 +108,14 @@ interface RepoRevisionContainerProps
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
 export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = ({
-    pushBreadcrumb,
+    setBreadcrumb,
     ...props
 }) => {
     useEffect(() => {
         if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
             return
         }
-        return pushBreadcrumb(
+        return setBreadcrumb(
             'revision',
             <div className="d-flex align-items-center" key="repo-revision">
                 <span className="test-revision">
@@ -146,7 +146,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         props.resolvedRevisionOrError,
         props.repo.id,
         props.repo.name,
-        pushBreadcrumb,
+        setBreadcrumb,
         props.history,
         props.location,
     ])
@@ -198,7 +198,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
     const context: RepoRevisionContainerContext = {
         ...props,
-        pushBreadcrumb,
+        setBreadcrumb,
         resolvedRev: props.resolvedRevisionOrError,
     }
 

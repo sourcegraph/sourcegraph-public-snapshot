@@ -112,11 +112,11 @@ interface Props
 }
 
 /** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ pushBreadcrumb, ...props }) => {
+export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ setBreadcrumb, ...props }) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
-    useEffect(() => pushBreadcrumb('commits', 'Commits'), [pushBreadcrumb])
+    useEffect(() => setBreadcrumb('commits', 'Commits'), [setBreadcrumb])
     const queryCommits = useCallback(
         (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
             fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),

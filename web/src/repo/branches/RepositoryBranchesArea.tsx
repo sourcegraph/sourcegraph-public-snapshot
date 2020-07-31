@@ -34,18 +34,18 @@ export interface RepositoryBranchesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ pushBreadcrumb, repo, match }) => {
+export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ setBreadcrumb, repo, match }) => {
     const transferProps: { repo: GQL.IRepository } = {
         repo,
     }
 
     useEffect(
         () =>
-            pushBreadcrumb(
+            setBreadcrumb(
                 'branches',
                 <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>
             ),
-        [pushBreadcrumb]
+        [setBreadcrumb]
     )
 
     return (
