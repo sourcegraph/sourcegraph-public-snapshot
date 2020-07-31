@@ -13,13 +13,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
+// This is a test script that I use to manually integration-test the new
+// changeset reconciler.
+//
+// It's pretty self-explanatory, I guess, and I want to keep it around for a bit.
+
+const (
+	// It's local access token, don't worry.
+	authHeader = `token 1b13a0a1217377aa9a43d7cc46782f24b648ab0c`
+
+	graphqlEndpoint = `http://localhost:3082/.api/graphql`
+)
+
 func main() {
 	// deleteEverything()
 
 	err := applySpecs(applyOpts{
-		namespace:    "VXNlcjoxCg==",
+		namespace:    "VXNlcjoxCg==", // User:1
 		campaignSpec: newCampaignSpec("thorstens-campaign", "Updated description of my campaign"),
 		changesetSpecs: []string{
+			// "UmVwb3NpdG9yeToy" is "Repository:1"
+			//
+			//
 			// `{"baseRepository":"UmVwb3NpdG9yeToy","externalID":"1"}`,
 			// `{"baseRepository":"UmVwb3NpdG9yeToy","externalID":"311"}`,
 			// `{"baseRepository":"UmVwb3NpdG9yeToy","externalID":"309"}`,
@@ -146,8 +161,6 @@ mutation CreateCampaignSpec {
 }
 `
 
-const authHeader = `token 1b13a0a1217377aa9a43d7cc46782f24b648ab0c`
-
 type graphqlPayload struct {
 	Query string
 }
@@ -182,7 +195,7 @@ func sendRequest(query string) (graphqlResponse, error) {
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(graphqlPayload{Query: query})
 
-	req, err := http.NewRequest("POST", "http://localhost:3082/.api/graphql", b)
+	req, err := http.NewRequest("POST", graphqlEndpoint, b)
 	if err != nil {
 		return res, err
 	}
@@ -283,10 +296,6 @@ func deleteEverything() {
 	}
 }
 
-//
-//
-//
-//
 //
 //            ____  __  ______________   _________    ____  ______
 //           / __ \/ / / / ____/_  __/  /_  __/   |  / __ \/ ____/
