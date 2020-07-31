@@ -210,10 +210,16 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
             }
         }
         if (contribution.views) {
-            if (!merged.views) {
-                merged.views = [...contribution.views]
-            } else {
-                merged.views = [...merged.views, ...contribution.views]
+            // swallow errors from malformed manifests so the sqs/word-count extension doesn't
+            // break other extensions: https://github.com/sourcegraph/sourcegraph/issues/10600
+            try {
+                if (!merged.views) {
+                    merged.views = [...contribution.views]
+                } else {
+                    merged.views = [...merged.views, ...contribution.views]
+                }
+            } catch {
+                continue
             }
         }
         if (contribution.searchFilters) {
