@@ -76,7 +76,7 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			problems := []string{}
-			receivers, routes := newRoutesAndReceivers(tt.args.newAlerts, func(err error) {
+			receivers, routes := newRoutesAndReceivers(tt.args.newAlerts, "https://sourcegraph.com", func(err error) {
 				problems = append(problems, err.Error())
 			})
 			if len(tt.wantProblems) != len(problems) {
