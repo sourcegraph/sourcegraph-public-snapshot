@@ -90,7 +90,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                     "externalURL": Object {
                       "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",
                     },
-                    "id": "Q2hhbmdlc2V0OjEyMw==",
+                    "id": "TestExternalChangeset",
                     "labels": Array [
                       Object {
                         "color": "93ba13",
@@ -100,7 +100,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
                     ],
                     "nextSyncAt": null,
                     "repository": Object {
-                      "id": "UmVwb3NpdG9yeToxMjM=",
+                      "id": "TestRepository",
                       "name": "sourcegraph",
                       "url": "github.com/sourcegraph/sourcegraph",
                     },
@@ -160,7 +160,7 @@ exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
       noun="changed file"
       pluralNoun="changed files"
       queryConnection={[Function]}
-      updateOnChange="UmVwb3NpdG9yeToxMjM="
+      updateOnChange="TestRepository"
       useURLQuery={false}
     />
   </Collapsible>
