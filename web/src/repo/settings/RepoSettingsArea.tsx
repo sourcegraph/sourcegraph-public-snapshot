@@ -49,7 +49,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({ pushBreadcrum
     const repoOrError = useObservable(
         useMemo(() => fetchRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [repoName])
     )
-    useEffect(() => pushBreadcrumb('Settings'), [])
+    useEffect(() => pushBreadcrumb('Settings'), [pushBreadcrumb])
 
     if (repoOrError === undefined) {
         return null

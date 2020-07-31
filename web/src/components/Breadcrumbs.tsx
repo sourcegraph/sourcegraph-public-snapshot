@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 interface BreadcrumbsProps {
@@ -11,12 +11,16 @@ export interface UpdateBreadcrumbsProps {
 
 export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
     const [breadcrumbs, setBreadcrumbs] = useState<React.ReactNode[]>([])
+    const pushBreadcrumb = useCallback(
+        (element: React.ReactNode) => {
+            setBreadcrumbs(breadcrumbs => [...breadcrumbs, element])
+            return () => setBreadcrumbs(breadcrumbs => breadcrumbs.filter(breadcrumb => breadcrumb !== element))
+        },
+        [setBreadcrumbs]
+    )
     return {
         breadcrumbs,
-        pushBreadcrumb: element => {
-            setBreadcrumbs([...breadcrumbs, element])
-            return () => setBreadcrumbs(breadcrumbs.filter(breadcrumb => breadcrumb !== element))
-        },
+        pushBreadcrumb,
     }
 }
 
