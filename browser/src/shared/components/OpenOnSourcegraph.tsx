@@ -13,6 +13,6 @@ export const OpenOnSourcegraph: React.FunctionComponent<Props> = ({
     className,
     ...props
 }) => {
-    const url = `${sourcegraphURL}/${repoName}@${revision}}/-/blob/${filePath}?utm_source=${getPlatformName()}`
+    const url = `${sourcegraphURL}/${repoName}@${revision}/-/blob/${filePath}?utm_source=${getPlatformName()}`
     return <SourcegraphIconButton {...props} className={classNames('open-on-sourcegraph', className)} href={url} />
 }
