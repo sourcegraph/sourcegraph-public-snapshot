@@ -483,6 +483,14 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			input: "[a-z--0]",
 			want:  "^[a-z--0]$",
 		},
+		{
+			input: "[a^b]",
+			want:  "$[a^b]^",
+		},
+		{
+			input: "[ab^]",
+			want:  "$[ab^]^",
+		},
 	}
 
 	for _, c := range cases {
