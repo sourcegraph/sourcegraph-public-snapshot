@@ -193,7 +193,7 @@ func (h *GitLabWebhook) handleMergeRequestApprovalEvent(ctx context.Context, esI
 	// to avoid unexpected retries.
 	//
 	// To meet this goal, rather than synchronously synchronizing here, we'll
-	// instead ask repo-updater to prioritise the sync of this changeset and let
+	// instead ask repo-updater to prioritize the sync of this changeset and let
 	// the normal sync process take care of pulling the notes and pipelines and
 	// putting things in the right places. The downside is that the updated
 	// changeset state won't appear _quite_ as instantaneously to the user, but
