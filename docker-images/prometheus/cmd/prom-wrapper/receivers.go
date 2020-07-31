@@ -153,10 +153,8 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				Message:     notificationTitleTemplate,
 				Description: notificationBodyTemplateWithoutLinks,
 				Responders:  responders,
-				Details: map[string]string{
-					"solutions": alertSolutionsURLTemplate,
-					"dashboard": dashboardURLTemplate,
-				},
+				Note:        fmt.Sprintf("For possible solutions, please refer to our documentation: %s", alertSolutionsURLTemplate),
+				Source:      dashboardURLTemplate,
 
 				NotifierConfig: notifierConfig,
 			})
