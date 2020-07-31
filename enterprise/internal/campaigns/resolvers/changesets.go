@@ -437,10 +437,7 @@ func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
 	return &state
 }
 
-func (r *changesetResolver) Error() *string {
-	// TODO: Implement.
-	return nil
-}
+func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
 	// Not every code host supports labels on changesets so don't make a DB call unless we need to.
