@@ -48,6 +48,7 @@ type MergeRequestCloseEvent struct{ MergeRequestEventCommon }
 type MergeRequestMergeEvent struct{ MergeRequestEventCommon }
 type MergeRequestReopenEvent struct{ MergeRequestEventCommon }
 type MergeRequestUnapprovedEvent struct{ MergeRequestEventCommon }
+type MergeRequestUpdateEvent struct{ MergeRequestEventCommon }
 
 func (e *MergeRequestApprovedEvent) ToEvent() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
@@ -62,6 +63,9 @@ func (e *MergeRequestReopenEvent) ToEvent() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
 func (e *MergeRequestUnapprovedEvent) ToEvent() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+func (e *MergeRequestUpdateEvent) ToEvent() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
 
@@ -128,6 +132,9 @@ func (mre *mergeRequestEvent) downcast() (interface{}, error) {
 
 	case "unapproved":
 		return &MergeRequestUnapprovedEvent{e}, nil
+
+	case "update":
+		return &MergeRequestUpdateEvent{e}, nil
 	}
 
 	return nil, errors.Wrapf(ErrObjectKindUnknown, "unknown merge request event action: %s", mre.ObjectAttributes.Action)

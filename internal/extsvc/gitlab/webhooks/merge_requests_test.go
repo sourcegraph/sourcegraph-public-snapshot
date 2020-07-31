@@ -42,6 +42,7 @@ func TestMergeRequestDowncast(t *testing.T) {
 			{action: "merge", want: "*webhooks.MergeRequestMergeEvent"},
 			{action: "reopen", want: "*webhooks.MergeRequestReopenEvent"},
 			{action: "unapproved", want: "*webhooks.MergeRequestUnapprovedEvent"},
+			{action: "update", want: "*webhooks.MergeRequestUpdateEvent"},
 		} {
 			t.Run(tc.want, func(t *testing.T) {
 				mre := &mergeRequestEvent{
