@@ -26,6 +26,13 @@ func TestParseParameterList(t *testing.T) {
 			WantLabels: None,
 		},
 		{
+			Name:       "Normal field:value with trailing space",
+			Input:      `file:README.md    `,
+			Want:       `{"field":"file","value":"README.md","negated":false}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+			WantLabels: None,
+		},
+		{
 			Name:       "First char is colon",
 			Input:      `:foo`,
 			Want:       `{"value":":foo","negated":false}`,
@@ -58,6 +65,34 @@ func TestParseParameterList(t *testing.T) {
 			Input:      `-file:README.md`,
 			Want:       `{"field":"file","value":"README.md","negated":true}`,
 			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on file",
+			Input:      `NOT file:README.md`,
+			Want:       `{"field":"file","value":"README.md","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on unsupported key-value pair",
+			Input:      `NOT foo:bar`,
+			Want:       `{"value":"foo:bar","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "NOT prefix on content",
+			Input:      `NOT content:bar`,
+			Want:       `{"field":"content","value":"bar","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+			WantLabels: Regexp,
+		},
+		{
+			Name:       "Double NOT",
+			Input:      `NOT NOT`,
+			Want:       `{"value":"NOT","negated":true}`,
+			WantRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
 			WantLabels: Regexp,
 		},
 		{
@@ -870,6 +905,48 @@ func TestMergePatterns(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestMatchUnaryKeyword(t *testing.T) {
+	tests := []struct {
+		in   string
+		pos  int
+		want bool
+	}{
+		{
+			in:   "NOT bar",
+			pos:  0,
+			want: true,
+		},
+		{
+			in:   "foo NOT bar",
+			pos:  4,
+			want: true,
+		},
+		{
+			in:   "foo NOT",
+			pos:  4,
+			want: false,
+		},
+		{
+			in:   "fooNOT bar",
+			pos:  3,
+			want: false,
+		},
+		{
+			in:   "NOTbar",
+			pos:  0,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			p := &parser{buf: []byte(tt.in), pos: tt.pos}
+			if got := p.matchUnaryKeyword("NOT"); got != tt.want {
+				t.Errorf("matchUnaryKeyword() = %v, want %v", got, tt.want)
 			}
 		})
 	}

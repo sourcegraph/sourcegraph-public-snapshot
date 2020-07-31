@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 func Searcher() *Container {
 	return &Container{
 		Name:        "searcher",
@@ -20,6 +22,14 @@ func Searcher() *Container {
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
+						{
+							Name:              "error_ratio",
+							Description:       "error ratio over 10m",
+							Query:             `searcher_errors:ratio10m`,
+							Warning:           Alert{GreaterOrEqual: 0.1, For: 20 * time.Minute},
+							Owner:             ObservableOwnerSearch,
+							PossibleSolutions: "none",
+						},
 						sharedFrontendInternalAPIErrorResponses("searcher"),
 					},
 				},
@@ -29,9 +39,12 @@ func Searcher() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("searcher"),
-						sharedContainerMemoryUsage("searcher"),
 						sharedContainerCPUUsage("searcher"),
+						sharedContainerMemoryUsage("searcher"),
+					},
+					{
+						sharedContainerRestarts("searcher"),
+						sharedContainerFsInodes("searcher"),
 					},
 				},
 			},
@@ -46,6 +59,25 @@ func Searcher() *Container {
 					{
 						sharedProvisioningCPUUsage5m("searcher"),
 						sharedProvisioningMemoryUsage5m("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("searcher"),
+						sharedGoGcDuration("searcher"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("searcher"),
 					},
 				},
 			},

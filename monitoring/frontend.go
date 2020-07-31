@@ -76,6 +76,8 @@ func Frontend() *Container {
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
+					},
+					{
 						{
 							Name:            "search_alert_user_suggestions",
 							Description:     "search alert user suggestions shown every 5m",
@@ -86,6 +88,19 @@ func Frontend() *Container {
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
 								- This indicates your user's are making syntax errors or similar user errors.
+							`,
+						},
+						{
+							Name:            "page_load_latency",
+							Description:     "90th percentile page load latency over all routes over 10m",
+							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{job="sourcegraph-frontend",route!="raw"}[10m])))`,
+							DataMayNotExist: true,
+							Critical:        Alert{GreaterOrEqual: 20},
+							PanelOptions:    PanelOptions().LegendFormat("latency"),
+							Owner:           ObservableOwnerSearch,
+							PossibleSolutions: `
+								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+								- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
 							`,
 						},
 					},
@@ -436,9 +451,12 @@ func Frontend() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("frontend"),
-						sharedContainerMemoryUsage("frontend"),
 						sharedContainerCPUUsage("frontend"),
+						sharedContainerMemoryUsage("frontend"),
+					},
+					{
+						sharedContainerRestarts("frontend"),
+						sharedContainerFsInodes("frontend"),
 					},
 				},
 			},
@@ -453,6 +471,25 @@ func Frontend() *Container {
 					{
 						sharedProvisioningCPUUsage5m("frontend"),
 						sharedProvisioningMemoryUsage5m("frontend"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("frontend"),
+						sharedGoGcDuration("frontend"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("frontend"),
 					},
 				},
 			},

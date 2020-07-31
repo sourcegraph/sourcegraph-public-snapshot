@@ -249,7 +249,7 @@ func overrideSearchType(input string, searchType query.SearchType, useNewParser 
 			// parse errors will be raised by subsequent parser calls.
 			return searchType
 		}
-		query.VisitField(q, "patterntype", func(value string, _ bool) {
+		query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
 			switch value {
 			case "regex", "regexp":
 				searchType = query.SearchTypeRegex
@@ -667,8 +667,55 @@ type resolveRepoOp struct {
 	query              query.QueryInfo
 }
 
+func (op *resolveRepoOp) String() string {
+	var b strings.Builder
+	if len(op.repoFilters) == 0 {
+		b.WriteString("r=[]")
+	}
+	for i, r := range op.repoFilters {
+		if i != 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(strconv.Quote(r))
+	}
+
+	if len(op.minusRepoFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " -r=%v", op.minusRepoFilters)
+	}
+	if len(op.repoGroupFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " groups=%v", op.repoGroupFilters)
+	}
+	if op.versionContextName != "" {
+		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.versionContextName)
+	}
+	if op.commitAfter != "" {
+		_, _ = fmt.Fprintf(&b, " commitAfter=%q", op.commitAfter)
+	}
+
+	if op.noForks {
+		b.WriteString(" noForks")
+	}
+	if op.onlyForks {
+		b.WriteString(" onlyForks")
+	}
+	if op.noArchived {
+		b.WriteString(" noArchived")
+	}
+	if op.onlyArchived {
+		b.WriteString(" onlyArchived")
+	}
+	if op.onlyPrivate {
+		b.WriteString(" onlyPrivate")
+	}
+	if op.onlyPublic {
+		b.WriteString(" onlyPublic")
+	}
+
+	return b.String()
+}
+
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, excludedRepos *excludedRepos, err error) {
-	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("%+v", op))
+	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -698,6 +745,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
 			}
 		}
+		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
 		includePatterns = append(includePatterns, unionRegExps(patterns))
 
 		// Ensure we don't omit any repos explicitly included via a repo group.
@@ -731,10 +779,12 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
+		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {
 			return nil, nil, false, nil, errors.Wrap(err, "getting list of default repos")
 		}
+		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(defaultRepos))
 
 		// Search all default repos since indexed search is fast.
 		if len(defaultRepos) > maxRepoListSize {
@@ -765,6 +815,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyPrivate:  op.onlyPrivate,
 		}
 		excludedRepos = computeExcludedRepositories(ctx, op.query, options)
+		tr.LazyPrintf("excluded repos: %+v", excludedRepos)
 		repos, err = db.Repos.List(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 		if err != nil {
@@ -848,7 +899,10 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	tr.LazyPrintf("Associate/validate revs - done")
 
 	if op.commitAfter != "" {
+		start := time.Now()
+		before := len(repoRevisions)
 		repoRevisions, err = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
+		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(repoRevisions), time.Since(start))
 	}
 
 	return repoRevisions, missingRepoRevisions, overLimit, excludedRepos, err

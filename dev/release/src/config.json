@@ -1,15 +1,15 @@
 {
   "teamEmail": "team@sourcegraph.com",
 
-  "captainSlackUsername": "uwe",
-  "captainGitHubUsername": "uwedeportivo",
+  "captainSlackUsername": "marek",
+  "captainGitHubUsername": "marekweb",
 
   "majorVersion": "3",
-  "minorVersion": "17",
-  "releaseDateTime": "20 June 2020 10:00 PST",
-  "oneWorkingDayBeforeRelease": "19 June 2020 10:00 PST",
-  "fourWorkingDaysBeforeRelease": "16 June 2020 10:00 PST",
-  "fiveWorkingDaysBeforeRelease": "15 June 2020 10:00 PST",
+  "minorVersion": "19",
+  "releaseDateTime": "20 August 2020 10:00 PST",
+  "oneWorkingDayBeforeRelease": "19 August 2020 10:00 PST",
+  "fourWorkingDaysBeforeRelease": "14 August 2020 10:00 PST",
+  "fiveWorkingDaysBeforeRelease": "13 August 2020 10:00 PST",
 
   "slackAnnounceChannel": "dev-announce"
 }
