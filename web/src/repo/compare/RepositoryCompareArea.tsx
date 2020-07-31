@@ -29,13 +29,12 @@ import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
-import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
-import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
+import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -51,7 +50,8 @@ interface RepositoryCompareAreaProps
         PlatformContextProps,
         EventLoggerProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        UpdateBreadcrumbsProps {
     repo: GQL.IRepository
     history: H.History
 }
@@ -148,6 +148,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
+        this.subscriptions.add(this.props.pushBreadcrumb('Compare'))
     }
 
     public shouldComponentUpdate(nextProps: Readonly<RepositoryCompareAreaProps>, nextState: Readonly<State>): boolean {
@@ -188,11 +189,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
         return (
             <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
-                <RepoHeaderContributionPortal
-                    position="nav"
-                    element={<RepoHeaderBreadcrumbNavItem key="compare">Compare</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                />
                 <RepositoryCompareHeader
                     className="my-3"
                     {...commonProps}
