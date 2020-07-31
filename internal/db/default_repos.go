@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,14 +28,18 @@ func (c *cachedRepos) Repos() []*types.Repo {
 }
 
 type defaultRepos struct {
-	cache atomic.Value
+	mu    sync.Mutex
+	cache *cachedRepos
 }
 
 func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
-	cached, _ := s.cache.Load().(*cachedRepos)
-	if repos := cached.Repos(); repos != nil {
-		return repos, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	cached := s.cache.Repos()
+	if cached != nil {
+		return cached, nil
 	}
+	// We continue to hold the lock here so that only one process actually performs the query
 
 	const q = `
 SELECT default_repos.repo_id, repo.name
@@ -60,15 +64,17 @@ ON default_repos.repo_id = repo.id
 		return nil, errors.Wrap(err, "scanning rows from default_repos table")
 	}
 
-	s.cache.Store(&cachedRepos{
+	s.cache = &cachedRepos{
 		// Copy since repos will be mutated by the caller
 		repos:   append([]*types.Repo{}, repos...),
 		fetched: time.Now(),
-	})
+	}
 
 	return repos, nil
 }
 
 func (s *defaultRepos) resetCache() {
-	s.cache.Store(&cachedRepos{})
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cache = &cachedRepos{}
 }
