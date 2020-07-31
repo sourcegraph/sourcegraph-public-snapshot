@@ -1,11 +1,5 @@
 import { ThemeProps } from '../../../../../../shared/src/theme'
-import {
-    IExternalChangeset,
-    ChangesetCheckState,
-    IRepositoryComparison,
-    GitRevSpec,
-    ChangesetExternalState,
-} from '../../../../../../shared/src/graphql/schema'
+import { ChangesetCheckState, ChangesetExternalState } from '../../../../../../shared/src/graphql/schema'
 import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
@@ -36,9 +30,10 @@ import { FileDiffConnection } from '../../../../components/diff/FileDiffConnecti
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { tap, map } from 'rxjs/operators'
 import { ChangesetStateIcon } from './ChangesetStateIcon'
+import { ChangesetFields, GitRefSpecFields, ExternalChangesetFileDiffsFields } from '../../../../graphql-operations'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
-    node: IExternalChangeset
+    node: ChangesetFields & { __typename: 'ExternalChangeset' }
     viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
@@ -122,27 +117,34 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
-            {ReviewStateIcon && (
+            {ReviewStateIcon && node.reviewState && (
                 <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                     <ReviewStateIcon
                         className={
                             node.externalState === ChangesetExternalState.DELETED
                                 ? 'text-muted'
-                                : `text-${changesetReviewStateColors[node.reviewState!]}`
+                                : `text-${changesetReviewStateColors[node.reviewState]}`
                         }
-                        data-tooltip={changesetStateLabels[node.reviewState!]}
+                        data-tooltip={changesetStateLabels[node.reviewState]}
                     />
                 </div>
             )}
         </div>
     )
 
-    const [range, setRange] = useState<IRepositoryComparison['range']>()
+    const [range, setRange] = useState<
+        (NonNullable<ExternalChangesetFileDiffsFields['diff']> & { __typename: 'RepositoryComparison' })['range']
+    >()
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            queryExternalChangesetWithFileDiffs(node.id, { ...args, isLightTheme }).pipe(
+            queryExternalChangesetWithFileDiffs({
+                after: args.after ?? null,
+                first: args.first ?? null,
+                externalChangeset: node.id,
+                isLightTheme,
+            }).pipe(
                 map(changeset => {
                     if (!changeset.diff) {
                         throw new Error('The given changeset has no diff')
@@ -184,47 +186,41 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     return (
         <li className="list-group-item test-changeset-node">
-            {node.diff?.fileDiffs ? (
-                <Collapsible
-                    titleClassName="changeset-node__content flex-fill"
-                    expandedButtonClassName="mb-3"
-                    title={changesetNodeRow}
-                    wholeTitleClickable={false}
-                >
-                    <FileDiffConnection
-                        listClassName="list-group list-group-flush"
-                        noun="changed file"
-                        pluralNoun="changed files"
-                        queryConnection={queryFileDiffs}
-                        nodeComponent={FileDiffNode}
-                        nodeComponentProps={{
-                            history,
-                            location,
-                            isLightTheme,
-                            persistLines: true,
-                            extensionInfo: hydratedExtensionInfo,
-                            lineNumbers: true,
-                        }}
-                        updateOnChange={node.repository.id}
-                        defaultFirst={15}
-                        hideSearch={true}
-                        noSummaryIfAllNodesVisible={true}
-                        history={history}
-                        location={location}
-                        useURLQuery={false}
-                        cursorPaging={true}
-                    />
-                </Collapsible>
-            ) : (
-                <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
-                    {changesetNodeRow}
-                </div>
-            )}
+            <Collapsible
+                titleClassName="changeset-node__content flex-fill"
+                expandedButtonClassName="mb-3"
+                title={changesetNodeRow}
+                wholeTitleClickable={false}
+            >
+                <FileDiffConnection
+                    listClassName="list-group list-group-flush"
+                    noun="changed file"
+                    pluralNoun="changed files"
+                    queryConnection={queryFileDiffs}
+                    nodeComponent={FileDiffNode}
+                    nodeComponentProps={{
+                        history,
+                        location,
+                        isLightTheme,
+                        persistLines: true,
+                        extensionInfo: hydratedExtensionInfo,
+                        lineNumbers: true,
+                    }}
+                    updateOnChange={node.repository.id}
+                    defaultFirst={15}
+                    hideSearch={true}
+                    noSummaryIfAllNodesVisible={true}
+                    history={history}
+                    location={location}
+                    useURLQuery={false}
+                    cursorPaging={true}
+                />
+            </Collapsible>
         </li>
     )
 }
 
-function commitOIDForGitRevision(revision: GitRevSpec): string {
+function commitOIDForGitRevision(revision: GitRefSpecFields): string {
     switch (revision.__typename) {
         case 'GitObject':
             return revision.oid

@@ -21,9 +21,6 @@ type MockClient struct {
 	// CommitGraphFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitGraph.
 	CommitGraphFunc *ClientCommitGraphFunc
-	// CommitsNearFunc is an instance of a mock function object controlling
-	// the behavior of the method CommitsNear.
-	CommitsNearFunc *ClientCommitsNearFunc
 	// DirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method DirectoryChildren.
 	DirectoryChildrenFunc *ClientDirectoryChildrenFunc
@@ -49,11 +46,6 @@ func NewMockClient() *MockClient {
 		},
 		CommitGraphFunc: &ClientCommitGraphFunc{
 			defaultHook: func(context.Context, store.Store, int) (map[string][]string, error) {
-				return nil, nil
-			},
-		},
-		CommitsNearFunc: &ClientCommitsNearFunc{
-			defaultHook: func(context.Context, store.Store, int, string) (map[string][]string, error) {
 				return nil, nil
 			},
 		},
@@ -89,9 +81,6 @@ func NewMockClientFrom(i gitserver.Client) *MockClient {
 		},
 		CommitGraphFunc: &ClientCommitGraphFunc{
 			defaultHook: i.CommitGraph,
-		},
-		CommitsNearFunc: &ClientCommitsNearFunc{
-			defaultHook: i.CommitsNear,
 		},
 		DirectoryChildrenFunc: &ClientDirectoryChildrenFunc{
 			defaultHook: i.DirectoryChildren,
@@ -223,117 +212,6 @@ func (c ClientArchiveFuncCall) Results() []interface{} {
 }
 
 // ClientCommitGraphFunc describes the behavior when the CommitGraph method
-// of the parent MockClient instance is invoked.
-type ClientCommitGraphFunc struct {
-	defaultHook func(context.Context, store.Store, int) (map[string][]string, error)
-	hooks       []func(context.Context, store.Store, int) (map[string][]string, error)
-	history     []ClientCommitGraphFuncCall
-	mutex       sync.Mutex
-}
-
-// CommitGraph delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) CommitGraph(v0 context.Context, v1 store.Store, v2 int) (map[string][]string, error) {
-	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2)
-	m.CommitGraphFunc.appendCall(ClientCommitGraphFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CommitGraph method
-// of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, store.Store, int) (map[string][]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitGraph method of the parent MockClient instance inovkes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientCommitGraphFunc) PushHook(hook func(context.Context, store.Store, int) (map[string][]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *ClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.Store, int) (map[string][]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *ClientCommitGraphFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(context.Context, store.Store, int) (map[string][]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientCommitGraphFunc) nextHook() func(context.Context, store.Store, int) (map[string][]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientCommitGraphFunc) appendCall(r0 ClientCommitGraphFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientCommitGraphFuncCall objects
-// describing the invocations of this function.
-func (f *ClientCommitGraphFunc) History() []ClientCommitGraphFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientCommitGraphFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientCommitGraphFuncCall is an object that describes an invocation of
-// method CommitGraph on an instance of MockClient.
-type ClientCommitGraphFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 store.Store
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string][]string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientCommitGraphFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientCommitGraphFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientCommitsNearFunc describes the behavior when the CommitsNear method
 // of the parent MockClient instance is invoked.
 type ClientCommitGraphFunc struct {
 	defaultHook func(context.Context, store.Store, int) (map[string][]string, error)

@@ -108,12 +108,15 @@ export function parseSearchURL(
     }
 }
 
-export function repoFilterForRepoRevision(repoName: string, revision?: string): string {
+export function repoFilterForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
+    if (globbing) {
+        return `${quoteIfNeeded(`${repoName}${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
+    }
     return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
-export function searchQueryForRepoRevision(repoName: string, revision?: string): string {
-    return `repo:${repoFilterForRepoRevision(repoName, revision)} `
+export function searchQueryForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
+    return `repo:${repoFilterForRepoRevision(repoName, globbing, revision)} `
 }
 
 function abbreviateOID(oid: string): string {

@@ -583,7 +583,7 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 	if err != nil {
 		return err
 	}
-	defer tx.Done(&err)
+	defer func() { err = tx.Done(err) }()
 
 	if err = tx.UpdateChangesets(ctx, cs...); err != nil {
 		return err

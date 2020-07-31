@@ -17,10 +17,6 @@ type Client interface {
 	// to its parents.
 	CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error)
 
-	// CommitGraph returns the commit graph for the given repository as a mapping from a commit
-	// to its parents.
-	CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error)
-
 	// DirectoryChildren determines all children known to git for the given directory names via an invocation
 	// of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 	// that key are the files nested under that directory.
@@ -44,10 +40,6 @@ var DefaultClient Client = &defaultClient{}
 
 func (c *defaultClient) Head(ctx context.Context, store store.Store, repositoryID int) (string, error) {
 	return Head(ctx, store, repositoryID)
-}
-
-func (c *defaultClient) CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error) {
-	return CommitGraph(ctx, store, repositoryID)
 }
 
 func (c *defaultClient) CommitGraph(ctx context.Context, store store.Store, repositoryID int) (map[string][]string, error) {

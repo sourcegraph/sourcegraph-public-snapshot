@@ -368,18 +368,6 @@ Indexes:
 
 ```
 
-# Table "public.lsif_dirty_repositories"
-```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- dirty_token   | integer | not null
- update_token  | integer | not null
-Indexes:
-    "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
-
-```
-
 # Table "public.lsif_indexable_repositories"
 ```
          Column         |           Type           |                                Modifiers                                 

@@ -105,7 +105,7 @@ func (h Webhook) upsertChangesetEvent(
 	if tx, err = h.Store.Transact(ctx); err != nil {
 		return err
 	}
-	defer tx.Done(&err)
+	defer func() { err = tx.Done(err) }()
 
 	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
 	if err != nil {

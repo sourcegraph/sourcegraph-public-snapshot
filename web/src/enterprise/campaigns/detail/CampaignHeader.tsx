@@ -14,9 +14,7 @@ export const CampaignHeader: React.FunctionComponent<Props> = ({ className }) =>
         <CampaignsIcon className="icon-inline mr-2" />
         Campaigns
         <sup>
-            <small>
-                <span className="ml-2 badge badge-primary">BETA</span>
-            </small>
+            <span className="ml-2 badge badge-primary text-uppercase">Beta</span>
         </sup>
     </h1>
 )

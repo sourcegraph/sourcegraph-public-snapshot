@@ -496,7 +496,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`exclude.0.name: Does not match pattern '^~?[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
@@ -521,6 +521,22 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
+			kind: extsvc.KindBitbucketServer,
+			desc: "personal repos may be excluded",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
+				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
+				"exclude": [
+					{"name": "~FOO/bar", "id": 1234},
+					{"pattern": "^private/.*"}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
 			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid empty repos",
 			config: `{"repos": []}`,
@@ -530,7 +546,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid empty repos item",
 			config: `{"repos": [""]}`,
-			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`repos.0: Does not match pattern '^~?[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
@@ -559,6 +575,22 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"repos": [
 					"foo/bar",
 					"bar/baz"
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind: extsvc.KindBitbucketServer,
+			desc: "valid personal repos",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
+				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
+				"repos": [
+					"~FOO/bar",
+					"~FOO/baz"
 				]
 			}`,
 			assert: equals(`<nil>`),

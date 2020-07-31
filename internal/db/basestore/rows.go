@@ -107,7 +107,7 @@ func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {
 	return 0, false, nil
 }
 
-// ScanBools reads integer values from the given row object.
+// ScanBools reads bool values from the given row object.
 func ScanBools(rows *sql.Rows, queryErr error) (_ []bool, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -127,7 +127,7 @@ func ScanBools(rows *sql.Rows, queryErr error) (_ []bool, err error) {
 	return values, nil
 }
 
-// ScanFirstBool reads integer values from the given row object and returns the first one.
+// ScanFirstBool reads bool values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
 func ScanFirstBool(rows *sql.Rows, queryErr error) (_ bool, _ bool, err error) {
 	if queryErr != nil {

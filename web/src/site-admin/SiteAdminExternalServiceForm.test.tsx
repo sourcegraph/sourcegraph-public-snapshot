@@ -8,6 +8,7 @@ import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryService'
 
 describe('<SiteAdminExternalServiceForm />', () => {
     const baseProps = {
@@ -30,6 +31,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
                 }}
                 mode="create"
                 loading={false}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
         expect(component.toJSON()).toMatchSnapshot()
@@ -45,6 +47,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
                 }}
                 mode="create"
                 loading={false}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
         expect(component.toJSON()).toMatchSnapshot()
@@ -60,6 +63,7 @@ describe('<SiteAdminExternalServiceForm />', () => {
                 }}
                 mode="create"
                 loading={true}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
         expect(component.toJSON()).toMatchSnapshot()

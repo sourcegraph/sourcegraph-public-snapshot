@@ -134,7 +134,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
  */
 export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRepository: boolean }
 
-type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
+export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {

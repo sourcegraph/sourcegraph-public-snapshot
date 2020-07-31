@@ -65,7 +65,7 @@ function queryProductSubscriptions(args: {
                 dotcom {
                     productSubscriptions(first: $first, account: $account, query: $query) {
                         nodes {
-                            ...ProductSubscriptionFields
+                            ...SiteAdminProductSubscriptionFields
                         }
                         totalCount
                         pageInfo {

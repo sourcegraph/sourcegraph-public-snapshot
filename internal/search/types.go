@@ -107,6 +107,7 @@ type TextParametersForCommitParameters struct {
 // sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
 	Pattern         string
+	IsNegated       bool
 	IsRegExp        bool
 	IsStructuralPat bool
 	CombyRule       string

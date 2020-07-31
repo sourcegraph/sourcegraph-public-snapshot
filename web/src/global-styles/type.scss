@@ -26,7 +26,7 @@ h4 {
 }
 
 h5 {
-    font-size: 12px;
+    font-size: 14px;
     letter-spacing: 1px;
     font-weight: 500;
     text-transform: uppercase;
@@ -35,4 +35,12 @@ h5 {
 
 small {
     font-size: 12px;
+}
+
+sup,
+sub {
+    font-size: 0.5em;
+}
+sup {
+    top: -1em;
 }

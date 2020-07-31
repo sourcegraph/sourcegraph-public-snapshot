@@ -64,6 +64,7 @@ import { generateFiltersQuery } from '../../shared/src/util/url'
 import { NotificationType } from '../../shared/src/api/client/services/notifications'
 import { SettingsExperimentalFeatures } from './schema/settings.schema'
 import { VersionContext } from './schema/site.schema'
+import { globbingEnabledFromSettings } from './util/globbing'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -167,6 +168,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     previousVersionContext: string | null
 
     showRepogroupHomepage: boolean
+
+    /**
+     * Whether globbing is enabled for filters.
+     */
+    globbing: boolean
 }
 
 const notificationClassNames = {
@@ -253,6 +259,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             availableVersionContexts,
             previousVersionContext,
             showRepogroupHomepage: false,
+            globbing: false,
         }
     }
 
@@ -292,6 +299,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         this.subscriptions.add(
             from(this.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
+        )
+
+        this.subscriptions.add(
+            from(this.platformContext.settings).subscribe(settingsCascade =>
+                this.setState({ globbing: globbingEnabledFromSettings(settingsCascade) })
+            )
         )
 
         this.subscriptions.add(
@@ -457,6 +470,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     availableVersionContexts={this.state.availableVersionContexts}
                                     previousVersionContext={this.state.previousVersionContext}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
+                                    globbing={this.state.globbing}
                                 />
                             )}
                         />

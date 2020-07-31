@@ -24,6 +24,7 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         Omit<PatternTypeProps, 'setPatternType'> {
     repo: GQL.IRepository
+    globbing: boolean
 }
 
 /**
@@ -72,6 +73,7 @@ export class RepositoryStatsArea extends React.Component<Props> {
                                 {...routeComponentProps}
                                 {...transferProps}
                                 patternType={this.props.patternType}
+                                globbing={this.props.globbing}
                             />
                         )}
                     />

@@ -494,12 +494,58 @@ func TestTranslateBadGlobPattern(t *testing.T) {
 		{input: "fo[o"},
 		{input: "[z-a]"},
 		{input: "[a-z--0]"},
+		{input: "0[0300z0_0]\\"},
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			_, err := globToRegex(c.input)
 			if diff := cmp.Diff(ErrBadGlobPattern.Error(), err.Error()); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestReporevToRegex(t *testing.T) {
+	tests := []struct {
+		name string
+		arg  string
+		want string
+	}{
+		{
+			name: "no revision",
+			arg:  "github.com/foo",
+			want: "^github\\.com/foo$",
+		},
+		{
+			name: "with revision",
+			arg:  "github.com/foo@bar",
+			want: "^github\\.com/foo$@bar",
+		},
+		{
+			name: "empty string",
+			arg:  "",
+			want: "",
+		},
+		{
+			name: "many @",
+			arg:  "foo@bar@bas",
+			want: "^foo$@bar@bas",
+		},
+		{
+			name: "just @",
+			arg:  "@",
+			want: "@",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := reporevToRegex(tt.arg)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tt.want {
+				t.Fatalf("reporevToRegex() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

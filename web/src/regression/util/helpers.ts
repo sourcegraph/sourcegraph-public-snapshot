@@ -317,7 +317,7 @@ export async function loginToGitHub(driver: Driver, username: string, password: 
 }
 
 export async function loginToGitLab(driver: Driver, username: string, password: string): Promise<void> {
-    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 2000 })
+    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 10000 })
     await driver.replaceText({
         selector: '#user_login',
         newText: username,

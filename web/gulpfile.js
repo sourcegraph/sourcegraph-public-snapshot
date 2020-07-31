@@ -4,7 +4,7 @@ const log = require('fancy-log')
 const gulp = require('gulp')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
-const { graphQLTypes, schema, watchGraphQLTypes, watchSchema } = require('../shared/gulpfile')
+const { graphQlSchema, schema, watchGraphQlSchema, watchSchema } = require('../shared/gulpfile')
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
@@ -72,15 +72,15 @@ async function webpackDevelopmentServer() {
 /**
  * Builds everything.
  */
-const build = gulp.parallel(gulp.series(gulp.parallel(schema, graphQLTypes), gulp.parallel(webpack)))
+const build = gulp.parallel(gulp.series(gulp.parallel(schema, graphQlSchema), gulp.parallel(webpack)))
 
 /**
  * Watches everything and rebuilds on file changes.
  */
 const watch = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  gulp.parallel(schema, graphQLTypes),
-  gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevelopmentServer)
+  gulp.parallel(schema, graphQlSchema),
+  gulp.parallel(watchSchema, watchGraphQlSchema, webpackDevelopmentServer)
 )
 
 module.exports = { build, watch, webpackDevServer: webpackDevelopmentServer, webpack }

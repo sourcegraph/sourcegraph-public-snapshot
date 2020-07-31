@@ -79,7 +79,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(len(campaignSpecs)); have != want {
+		if have, want := count, len(campaignSpecs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 	})
@@ -229,7 +229,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 				t.Fatal(err)
 			}
 
-			if have, want := count, int64(len(campaignSpecs)-(i+1)); have != want {
+			if have, want := count, len(campaignSpecs)-(i+1); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}

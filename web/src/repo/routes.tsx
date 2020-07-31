@@ -99,6 +99,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             setCaseSensitivity,
             copyQueryButton,
             versionContext,
+            globbing,
             ...context
         }: RepoRevisionContainerContext &
             RouteComponentProps<{
@@ -142,6 +143,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 setCaseSensitivity,
                 copyQueryButton,
                 versionContext,
+                globbing,
             }
 
             return (

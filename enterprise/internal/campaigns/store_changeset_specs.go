@@ -51,10 +51,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanChangesetSpec(c, sc)
-		return c.ID, 1, err
-	})
+	return s.query(ctx, q, func(sc scanner) error { return scanChangesetSpec(c, sc) })
 }
 
 var createChangesetSpecQueryFmtstr = `
@@ -106,9 +103,8 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *campaigns.ChangesetS
 		return err
 	}
 
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanChangesetSpec(c, sc)
-		return c.ID, 1, err
+	return s.query(ctx, q, func(sc scanner) error {
+		return scanChangesetSpec(c, sc)
 	})
 }
 
@@ -146,13 +142,7 @@ func (s *Store) updateChangesetSpecQuery(c *campaigns.ChangesetSpec) (*sqlf.Quer
 
 // DeleteChangesetSpec deletes the ChangesetSpec with the given ID.
 func (s *Store) DeleteChangesetSpec(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteChangesetSpecQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteChangesetSpecQueryFmtstr, id))
 }
 
 var deleteChangesetSpecQueryFmtstr = `
@@ -167,12 +157,8 @@ type CountChangesetSpecsOpts struct {
 }
 
 // CountChangesetSpecs returns the number of changeset specs in the database.
-func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (count int64, _ error) {
-	q := countChangesetSpecsQuery(&opts)
-	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&count)
-		return 0, count, err
-	})
+func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (int, error) {
+	return s.queryCount(ctx, countChangesetSpecsQuery(&opts))
 }
 
 var countChangesetSpecsQueryFmtstr = `
@@ -211,8 +197,8 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 	q := getChangesetSpecQuery(&opts)
 
 	var c campaigns.ChangesetSpec
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanChangesetSpec(&c, sc)
+	err := s.query(ctx, q, func(sc scanner) error {
+		return scanChangesetSpec(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -269,13 +255,13 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 	q := listChangesetSpecsQuery(&opts)
 
 	cs = make([]*campaigns.ChangesetSpec, 0, opts.Limit)
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.ChangesetSpec
-		if err = scanChangesetSpec(&c, sc); err != nil {
-			return 0, 0, err
+		if err := scanChangesetSpec(&c, sc); err != nil {
+			return err
 		}
 		cs = append(cs, &c)
-		return c.ID, 1, err
+		return nil
 	})
 
 	if opts.Limit != 0 && len(cs) == opts.Limit {
@@ -335,12 +321,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
 	expirationTime := s.now().Add(-campaigns.ChangesetSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, expirationTime)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.Store.Exec(ctx, q)
 }
 
 var deleteExpiredChangesetSpecsQueryFmtstr = `

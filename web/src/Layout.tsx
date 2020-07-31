@@ -123,7 +123,7 @@ export interface LayoutProps
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
-
+    globbing: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     children?: never
