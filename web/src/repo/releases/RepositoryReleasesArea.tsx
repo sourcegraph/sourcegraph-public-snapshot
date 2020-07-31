@@ -38,14 +38,14 @@ export interface RepositoryReleasesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryReleasesArea: React.FunctionComponent<Props> = props => {
+export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ pushBreadcrumb, repo, routePrefix }) => {
     useEffect(
-        () => props.pushBreadcrumb(<RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>),
-        []
+        () => pushBreadcrumb('tags', <RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>),
+        [pushBreadcrumb]
     )
 
     const transferProps: { repo: GQL.IRepository } = {
-        repo: props.repo,
+        repo,
     }
 
     return (
@@ -55,7 +55,7 @@ export const RepositoryReleasesArea: React.FunctionComponent<Props> = props => {
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         <Route
-                            path={`${props.routePrefix}/-/tags`}
+                            path={`${routePrefix}/-/tags`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
                             render={routeComponentProps => (

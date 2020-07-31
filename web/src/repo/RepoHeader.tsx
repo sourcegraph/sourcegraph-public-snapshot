@@ -192,6 +192,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
     useEffect(
         () =>
             pushBreadcrumb(
+                'repo',
                 <>
                     <Link
                         to={resolvedRev && !isErrorLike(resolvedRev) ? resolvedRev.rootTreeURL : repo.url}

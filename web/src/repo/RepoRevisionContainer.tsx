@@ -116,6 +116,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
             return
         }
         return pushBreadcrumb(
+            'revision',
             <div className="d-flex align-items-center" key="repo-revision">
                 <span className="test-revision">
                     {(props.revision && props.revision === props.resolvedRevisionOrError.commitID

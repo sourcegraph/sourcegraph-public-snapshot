@@ -1,10 +1,10 @@
 import React from 'react'
 import { Breadcrumbs } from './Breadcrumbs'
+import { BreadcrumbProps } from 'reactstrap'
 
-interface Props {
+interface Props extends BreadcrumbProps {
     title: string
     icon: React.ReactNode
-    breadcrumbs: React.ReactNode[]
     actions?: React.ReactNode
     badge?: string // TODO: consider support for multiple badges
 }

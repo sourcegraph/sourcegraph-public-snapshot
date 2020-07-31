@@ -1,20 +1,29 @@
 import React, { useState, useCallback } from 'react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
+export interface Breadcrumb {
+    key: string
+    element: React.ReactNode
+}
+
 export interface BreadcrumbsProps {
-    breadcrumbs: React.ReactNode[]
+    breadcrumbs: Breadcrumb[]
 }
 
 export interface UpdateBreadcrumbsProps {
-    pushBreadcrumb: (element: React.ReactNode) => () => void
+    pushBreadcrumb: (key: string, element: React.ReactNode) => () => void
 }
 
 export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
-    const [breadcrumbs, setBreadcrumbs] = useState<React.ReactNode[]>([])
+    const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([])
     const pushBreadcrumb = useCallback(
-        (element: React.ReactNode) => {
-            setBreadcrumbs(breadcrumbs => [...breadcrumbs, element])
-            return () => setBreadcrumbs(breadcrumbs => breadcrumbs.filter(breadcrumb => breadcrumb !== element))
+        (key: string, element: React.ReactNode) => {
+            console.log('pushBreadcrumb', key)
+            setBreadcrumbs(breadcrumbs => [...breadcrumbs, { key, element }])
+            return () => {
+                console.log('popBreadcrumb', key)
+                setBreadcrumbs(breadcrumbs => breadcrumbs.filter(breadcrumb => breadcrumb.key !== key))
+            }
         },
         [setBreadcrumbs]
     )
@@ -28,10 +37,10 @@ export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = props => {
     const { breadcrumbs } = props
     return (
         <>
-            {breadcrumbs.map((breadcrumb, index) => (
-                <>
-                    {index !== 0 && <ChevronRightIcon />} {breadcrumb}
-                </>
+            {breadcrumbs.map(({ element, key }, index) => (
+                <React.Fragment key={key}>
+                    {index !== 0 && <ChevronRightIcon />} {element}
+                </React.Fragment>
             ))}
         </>
     )

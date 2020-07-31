@@ -116,7 +116,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ pushBrea
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
-    useEffect(() => pushBreadcrumb('Commits'), [pushBreadcrumb])
+    useEffect(() => pushBreadcrumb('commits', 'Commits'), [pushBreadcrumb])
     const queryCommits = useCallback(
         (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
             fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),

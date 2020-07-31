@@ -19,9 +19,9 @@ add(
     () => (
         <Breadcrumbs
             breadcrumbs={[
-                <span className="">Level 2</span>,
-                <span className="">Level 3</span>,
-                <span className="">Page name</span>,
+                { key: '1', element: <span className="">Level 2</span> },
+                { key: '2', element: <span className="">Level 3</span> },
+                { key: '3', element: <span className="">Page name</span> },
             ]}
         />
     ),

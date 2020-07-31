@@ -34,23 +34,27 @@ export interface RepositoryBranchesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesArea: React.FunctionComponent<Props> = props => {
+export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ pushBreadcrumb, repo, match }) => {
     const transferProps: { repo: GQL.IRepository } = {
-        repo: props.repo,
+        repo,
     }
 
     useEffect(
-        () => props.pushBreadcrumb(<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>),
-        []
+        () =>
+            pushBreadcrumb(
+                'branches',
+                <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>
+            ),
+        [pushBreadcrumb]
     )
 
     return (
         <div className="repository-branches-area container">
-            <RepositoryBranchesNavbar className="my-3" repo={props.repo.name} />
+            <RepositoryBranchesNavbar className="my-3" repo={repo.name} />
             <Switch>
                 {/* eslint-disable react/jsx-no-bind */}
                 <Route
-                    path={`${props.match.url}`}
+                    path={`${match.url}`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
                     render={routeComponentProps => (
@@ -58,7 +62,7 @@ export const RepositoryBranchesArea: React.FunctionComponent<Props> = props => {
                     )}
                 />
                 <Route
-                    path={`${props.match.url}/all`}
+                    path={`${match.url}/all`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
                     render={routeComponentProps => (
