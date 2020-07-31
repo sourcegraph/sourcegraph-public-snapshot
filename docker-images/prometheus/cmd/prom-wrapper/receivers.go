@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
@@ -21,6 +22,7 @@ const (
 	colorGood     = "#00FF00" // green
 )
 
+// Static alertmanager templates
 var (
 	// Alertmanager notification template reference: https://prometheus.io/docs/alerting/latest/notifications
 	// All labels used in these templates should be included in route.GroupByStr
@@ -30,39 +32,82 @@ var (
 	firingTitleTemplate       = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
 	resolvedTitleTemplate     = "[RESOLVED] {{ .CommonLabels.description }}"
 	notificationTitleTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingTitleTemplate, resolvedTitleTemplate)
-
-	// Body templates
-	firingBodyTemplate = fmt.Sprintf(`{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}'.
-
-For possible solutions, please refer to %s`, alertSolutionsURLTemplate)
-	resolvedBodyTemplate     = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.`
-	notificationBodyTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplate, resolvedBodyTemplate)
 )
 
-// newReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers.
-// Each alert level has a receiver, which has configuration for all channels for that level.
-func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error)) []*amconfig.Receiver {
+// newRoutesAndReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers
+// and routes. Each alert level has a receiver, which has configuration for all channels for that level. Additional
+// routes can route alerts based on `alerts.on`, but all alerts still fall through to the per-level receivers.
+func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]*amconfig.Receiver, []*amconfig.Route) {
 	var (
-		warningReceiver  = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
-		criticalReceiver = &amconfig.Receiver{Name: alertmanagerCriticalReceiver}
+		warningReceiver     = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
+		criticalReceiver    = &amconfig.Receiver{Name: alertmanagerCriticalReceiver}
+		additionalReceivers []*amconfig.Receiver
+		additionalRoutes    []*amconfig.Route
+	)
+
+	// Parameterized alertmanager templates
+	var (
+		dashboardURLTemplate = strings.TrimSuffix(externalURL, "/") + `/-/debug/grafana/d/{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}`
+
+		// messages for different states
+		firingBodyTemplate          = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).`
+		firingBodyTemplateWithLinks = fmt.Sprintf(`%s
+
+For possible solutions, please refer to our documentation: %s
+For more details, please refer to the service dashboard: %s`, firingBodyTemplate, alertSolutionsURLTemplate, dashboardURLTemplate)
+		resolvedBodyTemplate = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.`
+
+		// use for notifiers that provide fields for links
+		notificationBodyTemplateWithoutLinks = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplate, resolvedBodyTemplate)
+		// use for notifiers that don't provide fields for links
+		notificationBodyTemplateWithLinks = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplateWithLinks, resolvedBodyTemplate)
 	)
 
 	for i, alert := range newAlerts {
 		var receiver *amconfig.Receiver
-		var color string
+		var activeColor string
 		if alert.Level == "critical" {
 			receiver = criticalReceiver
-			color = colorCritical
+			activeColor = colorCritical
 		} else {
 			receiver = warningReceiver
-			color = colorWarning
+			activeColor = colorWarning
 		}
-		colorTemplate := fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, color, colorGood)
+		colorTemplate := fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, activeColor, colorGood)
+
+		// generate a new receiver and route for alerts with 'Owners'
+		if len(alert.Owners) > 0 {
+			owners := strings.Join(alert.Owners, "|")
+			ownerRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
+			if err != nil {
+				newProblem(fmt.Errorf("failed to apply alert %d: %w", i, err))
+				continue
+			}
+
+			receiverName := fmt.Sprintf("src-%s-on-%s", alert.Level, owners)
+			receiver = &amconfig.Receiver{Name: receiverName}
+			additionalReceivers = append(additionalReceivers, receiver)
+			additionalRoutes = append(additionalRoutes, &amconfig.Route{
+				Receiver: receiverName,
+				Match: map[string]string{
+					"level": alert.Level,
+				},
+				MatchRE: amconfig.MatchRegexps{
+					"owner": *ownerRegexp,
+				},
+				// Generated routes are set up as siblings. Generally, Alertmanager
+				// matches on exactly one route, but for additionalRoutes we don't
+				// want to prevent other routes from getting this alert, so we configure
+				// this route with 'continue: true'
+				//
+				// Also see https://prometheus.io/docs/alerting/latest/configuration/#route
+				Continue: true,
+			})
+		}
 
 		notifierConfig := amconfig.NotifierConfig{
 			VSendResolved: !alert.DisableSendResolved,
 		}
-
 		notifier := alert.Notifier
 		switch {
 		// https://prometheus.io/docs/alerting/latest/configuration/#email_config
@@ -73,8 +118,9 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				Headers: map[string]string{
 					"subject": notificationTitleTemplate,
 				},
-				HTML: fmt.Sprintf(`<body>%s</body>`, notificationBodyTemplate),
-				Text: notificationBodyTemplate,
+				HTML: fmt.Sprintf(`<body>%s</body>`, notificationBodyTemplateWithLinks),
+				Text: notificationBodyTemplateWithLinks,
+
 				// SMTP configuration is applied globally by changeSMTP
 
 				NotifierConfig: notifierConfig,
@@ -105,8 +151,13 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 				APIURL: apiURL,
 
 				Message:     notificationTitleTemplate,
-				Description: notificationBodyTemplate,
+				Description: notificationBodyTemplateWithoutLinks,
+				Priority:    notifier.Opsgenie.Priority,
 				Responders:  responders,
+				Source:      dashboardURLTemplate,
+				Details: map[string]string{
+					"Solutions": alertSolutionsURLTemplate,
+				},
 
 				NotifierConfig: notifierConfig,
 			})
@@ -129,8 +180,11 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 				Description: notificationTitleTemplate,
 				Links: []amconfig.PagerdutyLink{{
-					Text: "Alert solutions",
+					Text: "Solutions",
 					Href: alertSolutionsURLTemplate,
+				}, {
+					Text: "Dashboard",
+					Href: dashboardURLTemplate,
 				}},
 
 				NotifierConfig: notifierConfig,
@@ -156,8 +210,18 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 
 				Title:     notificationTitleTemplate,
 				TitleLink: alertSolutionsURLTemplate,
-				Text:      notificationBodyTemplate,
-				Color:     colorTemplate,
+
+				Text: notificationBodyTemplateWithoutLinks,
+				Actions: []*amconfig.SlackAction{{
+					Text: "Solutions",
+					Type: "button",
+					URL:  alertSolutionsURLTemplate,
+				}, {
+					Text: "Dashboard",
+					Type: "button",
+					URL:  dashboardURLTemplate,
+				}},
+				Color: colorTemplate,
 
 				NotifierConfig: notifierConfig,
 			})
@@ -188,5 +252,16 @@ func newReceivers(newAlerts []*schema.ObservabilityAlerts, newProblem func(error
 		}
 	}
 
-	return []*amconfig.Receiver{warningReceiver, criticalReceiver}
+	return append(additionalReceivers, warningReceiver, criticalReceiver),
+		append(additionalRoutes, &amconfig.Route{
+			Receiver: alertmanagerWarningReceiver,
+			Match: map[string]string{
+				"level": "warning",
+			},
+		}, &amconfig.Route{
+			Receiver: alertmanagerCriticalReceiver,
+			Match: map[string]string{
+				"level": "critical",
+			},
+		})
 }

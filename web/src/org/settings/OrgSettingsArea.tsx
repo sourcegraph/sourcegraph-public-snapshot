@@ -49,7 +49,6 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                         {...routeComponentProps}
                                         {...props}
                                         subject={props.org}
-                                        isLightTheme={props.isLightTheme}
                                         extraHeader={
                                             <>
                                                 {props.authenticatedUser &&

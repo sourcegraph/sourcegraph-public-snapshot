@@ -4,7 +4,7 @@ You can use [Perforce](https://perforce.com) repositories with Sourcegraph by us
 
 Screenshot of using Sourcegraph for code navigation in a Perforce repository:
 
-![Viewing a Perforce repository on Sourcegraph](https://storage.googleapis.com/sourcegraph-assets/git-p4-example.png)
+![Viewing a Perforce repository on Sourcegraph](https://sourcegraphstatic.com/git-p4-example.png)
 
 ## Instructions
 

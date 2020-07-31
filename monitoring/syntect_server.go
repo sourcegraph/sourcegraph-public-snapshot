@@ -17,6 +17,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("error"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("panic"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -37,6 +39,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("timeout"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -46,6 +49,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 1},
 							PanelOptions:      PanelOptions().LegendFormat("worker death"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -56,9 +60,12 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("syntect-server"),
-						sharedContainerMemoryUsage("syntect-server"),
 						sharedContainerCPUUsage("syntect-server"),
+						sharedContainerMemoryUsage("syntect-server"),
+					},
+					{
+						sharedContainerRestarts("syntect-server"),
+						sharedContainerFsInodes("syntect-server"),
 					},
 				},
 			},
@@ -73,6 +80,15 @@ func SyntectServer() *Container {
 					{
 						sharedProvisioningCPUUsage5m("syntect-server"),
 						sharedProvisioningMemoryUsage5m("syntect-server"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("syntect-server"),
 					},
 				},
 			},

@@ -80,7 +80,13 @@ func (api *codeIntelAPI) updateCommitGraph(ctx context.Context, repositoryID int
 	// If we are not aware of this commit, we need to update our commits table and the
 	// visibility of the dumps in this repository.
 	if err := api.commitUpdater.Update(ctx, repositoryID, func(ctx context.Context) (bool, error) {
-		return api.store.HasCommit(ctx, repositoryID, commit)
+		hasCommit, err := api.store.HasCommit(ctx, repositoryID, commit)
+		if err != nil {
+			return false, err
+		}
+
+		// Continue with the update if we don't have this commit
+		return !hasCommit, nil
 	}); err != nil {
 		return false, errors.Wrap(err, "commitUpdater.Update")
 	}

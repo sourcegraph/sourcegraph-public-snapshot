@@ -87,7 +87,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(len(changesetSpecs)); have != want {
+		if have, want := count, len(changesetSpecs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
@@ -104,7 +104,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				if have, want := subCount, int64(1); have != want {
+				if have, want := subCount, 1; have != want {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 				testsRan = true
@@ -311,7 +311,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				t.Fatal(err)
 			}
 
-			if have, want := count, int64(len(changesetSpecs)-(i+1)); have != want {
+			if have, want := count, len(changesetSpecs)-(i+1); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}

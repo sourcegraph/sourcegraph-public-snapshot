@@ -28,6 +28,7 @@ describe('PlainQueryInput', () => {
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
                         versionContext={undefined}
+                        globbing={false}
                     />
                 )
                 .toJSON()
@@ -54,6 +55,7 @@ describe('PlainQueryInput', () => {
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
                         versionContext={undefined}
+                        globbing={false}
                     />
                 )
                 .toJSON()

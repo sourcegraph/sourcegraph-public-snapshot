@@ -2,9 +2,10 @@ package db
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -59,14 +60,15 @@ func Test_defaultRepos_List(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
+			DefaultRepos.resetCache()
 
 			repos, err := DefaultRepos.List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(repos, tc.repos) {
-				t.Errorf("repos = %v, want %v", repos, tc.repos)
+			if diff := cmp.Diff(repos, tc.repos, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

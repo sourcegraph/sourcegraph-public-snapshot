@@ -29,6 +29,7 @@ interface QuerySpec {
 interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'setPatternType'> {
     node: GQL.IRepositoryContributor
     repoName: string
+    globbing: boolean
 }
 
 const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
@@ -38,11 +39,12 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     after,
     path,
     patternType,
+    globbing,
 }) => {
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
 
     const query: string = [
-        searchQueryForRepoRevision(repoName),
+        searchQueryForRepoRevision(repoName, globbing),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
@@ -160,11 +162,13 @@ const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b ||
 interface Props
     extends RepositoryStatsAreaPageProps,
         RouteComponentProps<{}>,
-        Omit<PatternTypeProps, 'setPatternType'> {}
+        Omit<PatternTypeProps, 'setPatternType'> {
+    globbing: boolean
+}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType' | 'globbing'>
 > {}
 
 interface State extends QuerySpec {}
@@ -354,6 +358,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         after,
                         path,
                         patternType: this.props.patternType,
+                        globbing: this.props.globbing,
                     }}
                     defaultFirst={20}
                     hideSearch={true}
