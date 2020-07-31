@@ -57,22 +57,6 @@ Loop:
 			i++
 		default: // translate character range lo-hi.
 
-			// '-' is treated literally at the start and end of
-			// of a character class.
-			if r[i] == '-' {
-				if i == lenR-1 {
-					// no closing bracket
-					return -1, "", ErrBadGlobPattern
-				}
-
-				if i > startIx && r[i+1] != ']' {
-					// '-' cannot be the lower end of a range
-					// unless it is the first character within
-					// the character class.
-					return -1, "", ErrBadGlobPattern
-				}
-			}
-
 			if r[i] == '^' && i == startIx && (i < lenR-1 && r[i+1] == ']') {
 				// the character class cannot contain just the caret
 				return -1, "", ErrBadGlobPattern
