@@ -32,7 +32,6 @@ type ObservedStore struct {
 	getDumpByIDOperation                    *observation.Operation
 	findClosestDumpsOperation               *observation.Operation
 	deleteOldestDumpOperation               *observation.Operation
-	updateDumpsVisibleFromTipOperation      *observation.Operation
 	deleteOverlappingDumpsOperation         *observation.Operation
 	getPackageOperation                     *observation.Operation
 	updatePackagesOperation                 *observation.Operation
@@ -41,7 +40,6 @@ type ObservedStore struct {
 	packageReferencePagerOperation          *observation.Operation
 	hasRepositoryOperation                  *observation.Operation
 	hasCommitOperation                      *observation.Operation
-	updateCommitsOperation                  *observation.Operation
 	markRepositoryAsDirtyOperation          *observation.Operation
 	dirtyRepositoriesOperation              *observation.Operation
 	fixCommitsOperation                     *observation.Operation
@@ -172,11 +170,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 			MetricLabels: []string{"delete_oldest_dump"},
 			Metrics:      metrics,
 		}),
-		updateDumpsVisibleFromTipOperation: observationContext.Operation(observation.Op{
-			Name:         "store.UpdateDumpsVisibleFromTip",
-			MetricLabels: []string{"update_dumps_visible_from_tip"},
-			Metrics:      metrics,
-		}),
 		deleteOverlappingDumpsOperation: observationContext.Operation(observation.Op{
 			Name:         "store.DeleteOverlappingDumps",
 			MetricLabels: []string{"delete_overlapping_dumps"},
@@ -215,11 +208,6 @@ func NewObserved(store Store, observationContext *observation.Context) Store {
 		hasCommitOperation: observationContext.Operation(observation.Op{
 			Name:         "store.HasCommit",
 			MetricLabels: []string{"has_commit"},
-			Metrics:      metrics,
-		}),
-		updateCommitsOperation: observationContext.Operation(observation.Op{
-			Name:         "store.UpdateCommits",
-			MetricLabels: []string{"update_commits"},
 			Metrics:      metrics,
 		}),
 		markRepositoryAsDirtyOperation: observationContext.Operation(observation.Op{
@@ -352,7 +340,6 @@ func (s *ObservedStore) wrap(other Store) Store {
 		getDumpByIDOperation:                    s.getDumpByIDOperation,
 		findClosestDumpsOperation:               s.findClosestDumpsOperation,
 		deleteOldestDumpOperation:               s.deleteOldestDumpOperation,
-		updateDumpsVisibleFromTipOperation:      s.updateDumpsVisibleFromTipOperation,
 		deleteOverlappingDumpsOperation:         s.deleteOverlappingDumpsOperation,
 		getPackageOperation:                     s.getPackageOperation,
 		updatePackagesOperation:                 s.updatePackagesOperation,
@@ -361,7 +348,6 @@ func (s *ObservedStore) wrap(other Store) Store {
 		packageReferencePagerOperation:          s.packageReferencePagerOperation,
 		hasRepositoryOperation:                  s.hasRepositoryOperation,
 		hasCommitOperation:                      s.hasCommitOperation,
-		updateCommitsOperation:                  s.updateCommitsOperation,
 		markRepositoryAsDirtyOperation:          s.markRepositoryAsDirtyOperation,
 		dirtyRepositoriesOperation:              s.dirtyRepositoriesOperation,
 		fixCommitsOperation:                     s.fixCommitsOperation,
@@ -554,13 +540,6 @@ func (s *ObservedStore) DeleteOldestDump(ctx context.Context) (_ int, _ bool, er
 	return s.store.DeleteOldestDump(ctx)
 }
 
-// UpdateDumpsVisibleFromTip calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
-	ctx, endObservation := s.updateDumpsVisibleFromTipOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit)
-}
-
 // DeleteOverlappingDumps calls into the inner store and registers the observed results.
 func (s *ObservedStore) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
 	ctx, endObservation := s.deleteOverlappingDumpsOperation.With(ctx, &err, observation.Args{})
@@ -617,13 +596,6 @@ func (s *ObservedStore) HasCommit(ctx context.Context, repositoryID int, commit 
 	return s.store.HasCommit(ctx, repositoryID, commit)
 }
 
-// UpdateCommits calls into the inner store and registers the observed results.
-func (s *ObservedStore) UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) (err error) {
-	ctx, endObservation := s.updateCommitsOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-	return s.store.UpdateCommits(ctx, repositoryID, commits)
-}
-
 // MarkRepositoryAsDirty calls into the inner store and registers the observed results.
 func (s *ObservedStore) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
 	ctx, endObservation := s.markRepositoryAsDirtyOperation.With(ctx, &err, observation.Args{})
@@ -674,9 +646,9 @@ func (s *ObservedStore) GetIndexByID(ctx context.Context, id int) (_ Index, _ bo
 }
 
 // GetIndexes calls into the inner store and registers the observed results.
-func (s *ObservedStore) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
+func (s *ObservedStore) GetIndexes(ctx context.Context, opts GetIndexesOptions) (indexes []Index, _ int, err error) {
 	ctx, endObservation := s.getIndexesOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(float64(len(indexes)), observation.Args{}) }()
 	return s.store.GetIndexes(ctx, opts)
 }
 

@@ -157,13 +157,6 @@ type MockStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *StoreTransactFunc
-	// UpdateCommitsFunc is an instance of a mock function object
-	// controlling the behavior of the method UpdateCommits.
-	UpdateCommitsFunc *StoreUpdateCommitsFunc
-	// UpdateDumpsVisibleFromTipFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UpdateDumpsVisibleFromTip.
-	UpdateDumpsVisibleFromTipFunc *StoreUpdateDumpsVisibleFromTipFunc
 	// UpdateIndexableRepositoryFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// UpdateIndexableRepository.
@@ -413,16 +406,6 @@ func NewMockStore() *MockStore {
 				return nil, nil
 			},
 		},
-		UpdateCommitsFunc: &StoreUpdateCommitsFunc{
-			defaultHook: func(context.Context, int, map[string][]string) error {
-				return nil
-			},
-		},
-		UpdateDumpsVisibleFromTipFunc: &StoreUpdateDumpsVisibleFromTipFunc{
-			defaultHook: func(context.Context, int, string) error {
-				return nil
-			},
-		},
 		UpdateIndexableRepositoryFunc: &StoreUpdateIndexableRepositoryFunc{
 			defaultHook: func(context.Context, store.UpdateableIndexableRepository, time.Time) error {
 				return nil
@@ -587,12 +570,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: i.Transact,
-		},
-		UpdateCommitsFunc: &StoreUpdateCommitsFunc{
-			defaultHook: i.UpdateCommits,
-		},
-		UpdateDumpsVisibleFromTipFunc: &StoreUpdateDumpsVisibleFromTipFunc{
-			defaultHook: i.UpdateDumpsVisibleFromTip,
 		},
 		UpdateIndexableRepositoryFunc: &StoreUpdateIndexableRepositoryFunc{
 			defaultHook: i.UpdateIndexableRepository,
@@ -5670,225 +5647,6 @@ func (c StoreTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreUpdateCommitsFunc describes the behavior when the UpdateCommits
-// method of the parent MockStore instance is invoked.
-type StoreUpdateCommitsFunc struct {
-	defaultHook func(context.Context, int, map[string][]string) error
-	hooks       []func(context.Context, int, map[string][]string) error
-	history     []StoreUpdateCommitsFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateCommits delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockStore) UpdateCommits(v0 context.Context, v1 int, v2 map[string][]string) error {
-	r0 := m.UpdateCommitsFunc.nextHook()(v0, v1, v2)
-	m.UpdateCommitsFunc.appendCall(StoreUpdateCommitsFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the UpdateCommits method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreUpdateCommitsFunc) SetDefaultHook(hook func(context.Context, int, map[string][]string) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateCommits method of the parent MockStore instance inovkes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreUpdateCommitsFunc) PushHook(hook func(context.Context, int, map[string][]string) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreUpdateCommitsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, map[string][]string) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreUpdateCommitsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, map[string][]string) error {
-		return r0
-	})
-}
-
-func (f *StoreUpdateCommitsFunc) nextHook() func(context.Context, int, map[string][]string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreUpdateCommitsFunc) appendCall(r0 StoreUpdateCommitsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreUpdateCommitsFuncCall objects
-// describing the invocations of this function.
-func (f *StoreUpdateCommitsFunc) History() []StoreUpdateCommitsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreUpdateCommitsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreUpdateCommitsFuncCall is an object that describes an invocation of
-// method UpdateCommits on an instance of MockStore.
-type StoreUpdateCommitsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 map[string][]string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreUpdateCommitsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreUpdateCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// StoreUpdateDumpsVisibleFromTipFunc describes the behavior when the
-// UpdateDumpsVisibleFromTip method of the parent MockStore instance is
-// invoked.
-type StoreUpdateDumpsVisibleFromTipFunc struct {
-	defaultHook func(context.Context, int, string) error
-	hooks       []func(context.Context, int, string) error
-	history     []StoreUpdateDumpsVisibleFromTipFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateDumpsVisibleFromTip delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UpdateDumpsVisibleFromTip(v0 context.Context, v1 int, v2 string) error {
-	r0 := m.UpdateDumpsVisibleFromTipFunc.nextHook()(v0, v1, v2)
-	m.UpdateDumpsVisibleFromTipFunc.appendCall(StoreUpdateDumpsVisibleFromTipFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UpdateDumpsVisibleFromTip method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreUpdateDumpsVisibleFromTipFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateDumpsVisibleFromTip method of the parent MockStore instance inovkes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreUpdateDumpsVisibleFromTipFunc) PushHook(hook func(context.Context, int, string) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreUpdateDumpsVisibleFromTipFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreUpdateDumpsVisibleFromTipFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-func (f *StoreUpdateDumpsVisibleFromTipFunc) nextHook() func(context.Context, int, string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreUpdateDumpsVisibleFromTipFunc) appendCall(r0 StoreUpdateDumpsVisibleFromTipFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreUpdateDumpsVisibleFromTipFuncCall
-// objects describing the invocations of this function.
-func (f *StoreUpdateDumpsVisibleFromTipFunc) History() []StoreUpdateDumpsVisibleFromTipFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreUpdateDumpsVisibleFromTipFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreUpdateDumpsVisibleFromTipFuncCall is an object that describes an
-// invocation of method UpdateDumpsVisibleFromTip on an instance of
-// MockStore.
-type StoreUpdateDumpsVisibleFromTipFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreUpdateDumpsVisibleFromTipFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreUpdateDumpsVisibleFromTipFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // StoreUpdateIndexableRepositoryFunc describes the behavior when the

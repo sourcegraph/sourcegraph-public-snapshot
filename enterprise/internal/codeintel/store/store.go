@@ -99,9 +99,6 @@ type Store interface {
 	// will be marked as dirty so that its commit graph will be updated in the background.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
 
-	// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
-	UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) error
-
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
 	// the state of a processing upload to completed as there is a unique index on these four columns.
@@ -130,9 +127,6 @@ type Store interface {
 
 	// HasCommit determines if the given commit is known for the given repository.
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
-
-	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
-	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error
 
 	// MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
