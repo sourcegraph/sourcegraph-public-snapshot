@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-interface BreadcrumbsProps {
+export interface BreadcrumbsProps {
     breadcrumbs: React.ReactNode[]
 }
 

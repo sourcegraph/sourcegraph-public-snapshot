@@ -1,8 +1,7 @@
 import * as H from 'history'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import * as React from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { UncontrolledPopover } from 'reactstrap'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
@@ -17,7 +16,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
-import { Breadcrumbs } from '../components/Breadcrumbs'
+import { Breadcrumbs, UpdateBreadcrumbsProps, BreadcrumbsProps } from '../components/Breadcrumbs'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -27,7 +26,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 class RepoHeaderContributionStore {
     constructor(
         /** The common ancestor component's setState method. */
-        private setState: (callback: (prevState: RepoHeaderContributionsProps) => RepoHeaderContributionsProps) => void
+        private setState: (callback: (prevState: RepoHeaderContribution[]) => RepoHeaderContribution[]) => void
     ) {}
 
     private onRepoHeaderContributionAdd(item: RepoHeaderContribution): void {
@@ -40,20 +39,18 @@ class RepoHeaderContributionStore {
             )
         }
 
-        this.setState((previousState: RepoHeaderContributionsProps) => ({
-            repoHeaderContributions: previousState.repoHeaderContributions
+        this.setState((previousContributions: RepoHeaderContribution[]) =>
+            previousContributions
                 .filter(({ element }) => element.key !== item.element.key)
                 .concat(item)
-                .sort(byPriority),
-        }))
+                .sort(byPriority)
+        )
     }
 
     private onRepoHeaderContributionRemove(key: string): void {
-        this.setState(previousState => ({
-            repoHeaderContributions: previousState.repoHeaderContributions.filter(
-                contribution => contribution.element.key !== key
-            ),
-        }))
+        this.setState(previousContributions =>
+            previousContributions.filter(contribution => contribution.element.key !== key)
+        )
     }
 
     /** Props to pass to the owner's children (that need to contribute to RepoHeader). */
@@ -127,7 +124,12 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLoggerProps {
+interface Props
+    extends PlatformContextProps,
+        ExtensionsControllerProps,
+        EventLoggerProps,
+        UpdateBreadcrumbsProps,
+        BreadcrumbsProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -156,13 +158,6 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
     revision?: string
 
     /**
-     * Initial list of repo header contributions
-     */
-    contributions?: RepoHeaderContribution[]
-
-    breadcrumbs?: React.ReactNode[]
-
-    /**
      * Called in the constructor when the store is constructed. The parent component propagates these lifecycle
      * callbacks to its children for them to add and remove contributions.
      */
@@ -172,46 +167,34 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
     history: H.History
 }
 
-interface State extends RepoHeaderContributionsProps {}
-
 /**
  * The repository header with the breadcrumb, revision switcher, and other items.
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export class RepoHeader extends React.PureComponent<Props, State> {
-    public state: State
-
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            repoHeaderContributions: [...(props.contributions || [])],
-        }
-    }
-
-    public componentDidMount(): void {
-        this.props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
-    }
-
-    public render(): JSX.Element | null {
-        const navActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'nav')
-        const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
-        const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
-
-        const [repoDirectory, repoBase] = splitPath(displayRepoName(this.props.repo.name))
-        const context: RepoHeaderContext = {
-            repoName: this.props.repo.name,
-            encodedRev: this.props.revision,
-        }
-        return (
-            <nav className="repo-header navbar navbar-expand">
-                <div className="d-flex align-items-center">
+export const RepoHeader: React.FunctionComponent<Props> = ({
+    onLifecyclePropsChange,
+    pushBreadcrumb,
+    resolvedRev,
+    repo,
+    ...props
+}) => {
+    const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
+    const repoHeaderContributionStore = useMemo(
+        () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
+        [setRepoHeaderContributions]
+    )
+    useEffect(() => {
+        onLifecyclePropsChange(repoHeaderContributionStore.props)
+    }, [onLifecyclePropsChange, repoHeaderContributionStore])
+    const [repoDirectory, repoBase] = splitPath(displayRepoName(repo.name))
+    const { history, location } = props
+    useEffect(
+        () =>
+            pushBreadcrumb(
+                <>
                     <Link
-                        to={
-                            this.props.resolvedRev && !isErrorLike(this.props.resolvedRev)
-                                ? this.props.resolvedRev.rootTreeURL
-                                : this.props.repo.url
-                        }
+                        to={resolvedRev && !isErrorLike(resolvedRev) ? resolvedRev.rootTreeURL : repo.url}
                         className="repo-header__repo"
                     >
                         {repoDirectory ? `${repoDirectory}/` : ''}
@@ -221,67 +204,66 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         <MenuDownIcon className="icon-inline" />
                     </button>
                     <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
-                        <RepositoriesPopover
-                            currentRepo={this.props.repo.id}
-                            history={this.props.history}
-                            location={this.props.location}
-                        />
+                        <RepositoriesPopover currentRepo={repo.id} history={history} location={location} />
                     </UncontrolledPopover>
-                    {/* TODO: portal contributions to nav being replaced by Breadcrumbs */}
-                    {navActions.map((a, index) => (
-                        <div className="navbar-nav" key={a.element.key || index}>
-                            <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
-                            {a.element}
-                        </div>
-                    ))}
-                    {/* Breadcrump for the nav elements */}
-                    <Breadcrumbs breadcrumbs={this.props.breadcrumbs || []} />
-                </div>
-                <ul className="navbar-nav">
-                    {leftActions.map((a, index) => (
-                        <li className="nav-item" key={a.element.key || index}>
-                            {a.element}
-                        </li>
-                    ))}
-                </ul>
-                <div className="repo-header__spacer" />
-                <ul className="navbar-nav">
-                    <WebActionsNavItems
-                        {...this.props}
-                        listItemClass="repo-header__action-list-item"
-                        actionItemPressedClass="repo-header__action-item--pressed"
-                        menu={ContributableMenu.EditorTitle}
-                    />
-                </ul>
-                <ul className="navbar-nav">
-                    {this.props.actionButtons.map(
-                        ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
-                            condition(context) && (
-                                <li className="nav-item repo-header__action-list-item" key={label}>
-                                    <LinkOrButton to={to(context)} data-tooltip={tooltip}>
-                                        {Icon && <Icon className="icon-inline" />}{' '}
-                                        <span className="d-none d-lg-inline">{label}</span>
-                                    </LinkOrButton>
-                                </li>
-                            )
-                    )}
-                    {rightActions.map((a, index) => (
-                        <li className="nav-item repo-header__action-list-item" key={a.element.key || index}>
-                            {a.element}
-                        </li>
-                    ))}
-                    {this.props.repo.viewerCanAdminister && (
-                        <li className="nav-item repo-header__action-list-item">
-                            <LinkOrButton to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
-                                <SettingsIcon className="icon-inline" />{' '}
-                                <span className="d-none d-lg-inline">Settings</span>
-                            </LinkOrButton>
-                        </li>
-                    )}
-                </ul>
-            </nav>
-        )
+                </>
+            ),
+        [history, location, pushBreadcrumb, repo.id, repo.url, repoBase, repoDirectory, resolvedRev]
+    )
+    const context: RepoHeaderContext = {
+        repoName: repo.name,
+        encodedRev: props.revision,
     }
-
-    private repoHeaderContributionStore = new RepoHeaderContributionStore(stateUpdate => this.setState(stateUpdate))
+    const leftActions = repoHeaderContributions.filter(({ position }) => position === 'left')
+    const rightActions = repoHeaderContributions.filter(({ position }) => position === 'right')
+    return (
+        <nav className="repo-header navbar navbar-expand">
+            <div className="d-flex align-items-center">
+                {/* Breadcrump for the nav elements */}
+                <Breadcrumbs breadcrumbs={props.breadcrumbs} />
+            </div>
+            <ul className="navbar-nav">
+                {leftActions.map((a, index) => (
+                    <li className="nav-item" key={a.element.key || index}>
+                        {a.element}
+                    </li>
+                ))}
+            </ul>
+            <div className="repo-header__spacer" />
+            <ul className="navbar-nav">
+                <WebActionsNavItems
+                    {...props}
+                    listItemClass="repo-header__action-list-item"
+                    actionItemPressedClass="repo-header__action-item--pressed"
+                    menu={ContributableMenu.EditorTitle}
+                />
+            </ul>
+            <ul className="navbar-nav">
+                {props.actionButtons.map(
+                    ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
+                        condition(context) && (
+                            <li className="nav-item repo-header__action-list-item" key={label}>
+                                <LinkOrButton to={to(context)} data-tooltip={tooltip}>
+                                    {Icon && <Icon className="icon-inline" />}{' '}
+                                    <span className="d-none d-lg-inline">{label}</span>
+                                </LinkOrButton>
+                            </li>
+                        )
+                )}
+                {rightActions.map((a, index) => (
+                    <li className="nav-item repo-header__action-list-item" key={a.element.key || index}>
+                        {a.element}
+                    </li>
+                ))}
+                {repo.viewerCanAdminister && (
+                    <li className="nav-item repo-header__action-list-item">
+                        <LinkOrButton to={`/${repo.name}/-/settings`} data-tooltip="Repository settings">
+                            <SettingsIcon className="icon-inline" />{' '}
+                            <span className="d-none d-lg-inline">Settings</span>
+                        </LinkOrButton>
+                    </li>
+                )}
+            </ul>
+        </nav>
+    )
 }

@@ -286,6 +286,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 breadcrumbs={breadcrumbs}
+                pushBreadcrumb={pushBreadcrumb}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 contributions={[
                     {
