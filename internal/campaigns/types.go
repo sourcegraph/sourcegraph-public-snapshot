@@ -264,6 +264,10 @@ type Changeset struct {
 	ExternalState       ChangesetExternalState
 	ExternalReviewState ChangesetReviewState
 	ExternalCheckState  ChangesetCheckState
+	DiffStatAdded       *int32
+	DiffStatChanged     *int32
+	DiffStatDeleted     *int32
+	SyncState           ChangesetSyncState
 
 	// The campaign that "owns" this changeset: it can create/close it on code host.
 	OwnedByCampaignID int64
@@ -272,17 +276,13 @@ type Changeset struct {
 	// Whether it was imported/tracked by a campaign.
 	AddedToCampaign bool
 
-	DiffStatAdded   *int32
-	DiffStatChanged *int32
-	DiffStatDeleted *int32
-	SyncState       ChangesetSyncState
-
 	CurrentSpecID  int64
 	PreviousSpecID int64
 
 	PublicationState ChangesetPublicationState // "unpublished", "published"
 
-	ReconcilerState ReconcilerState // "queued", "processing", "completed", "errored"
+	// All of the following fields are used by workerutils.Worker.
+	ReconcilerState ReconcilerState
 	FailureMessage  *string
 	StartedAt       time.Time
 	FinishedAt      time.Time
