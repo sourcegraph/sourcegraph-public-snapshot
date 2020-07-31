@@ -276,6 +276,7 @@ type Changeset struct {
 	// Whether it was imported/tracked by a campaign.
 	AddedToCampaign bool
 
+	// This is 0 if the Changeset isn't owned by Sourcegraph.
 	CurrentSpecID  int64
 	PreviousSpecID int64
 
@@ -1664,9 +1665,9 @@ type ChangesetSpec struct {
 
 	RawSpec string
 	// TODO(mrnugget): should we rename the "spec" column to "description"?
-	// TODO: should we make this a pointer? Otherwise we're passing around a
-	// really heavy struct all the time, since ChangesetSpecDescription
-	// includes the diff
+	// TODO(mrnugget): should we make this a pointer? Otherwise we're passing
+	// around a really heavy struct all the time, since
+	// ChangesetSpecDescription includes the diff.
 	Spec ChangesetSpecDescription
 
 	DiffStatAdded   int32
