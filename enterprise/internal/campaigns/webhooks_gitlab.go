@@ -141,10 +141,38 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 	}
 
 	switch e := event.(type) {
-	// Merge request approval and unapproval events need to be special cased.
+	// Some merge request event types require us to do a full resync.
+	//
+	// For example, approvals and unapprovals manifest in normal syncs as
+	// system notes, but we _don't_ get them as note events in webhooks.
+	// Instead, we get a merge request webhook with an "approved" or
+	// "unapproved" action field that magically appears in the object (merge
+	// request) attributes and no further details on who changed the approval
+	// status, the note ID, or anything else we can use to deduplicate later.
+	//
+	// Similarly, for update events, we don't get the full set of fields that
+	// we get when we sync using the REST API (presumably because this reflects
+	// the data types at the point webhooks were added to GitLab several years
+	// ago, and not today): labels come in a different format outside of the
+	// merge request, and we'd still have to go query for notes and pipelines.
+	//
+	// Therefore, the only realistic action we can take here is to re-sync the
+	// changeset as a whole. The problem is that — since we only have the merge
+	// request — this requires three requests to the REST API, and GitLab's
+	// documentation is quite clear that webhooks should run as fast as possible
+	// to avoid unexpected retries.
+	//
+	// To meet this goal, rather than synchronously synchronizing here, we'll
+	// instead ask repo-updater to prioritize the sync of this changeset and let
+	// the normal sync process take care of pulling the notes and pipelines and
+	// putting things in the right places. The downside is that the updated
+	// changeset state won't appear _quite_ as instantaneously to the user, but
+	// this is the best compromise given the limited payload we get in the
+	// webhook.
 	case *webhooks.MergeRequestApprovedEvent,
-		*webhooks.MergeRequestUnapprovedEvent:
-		if err := h.handleMergeRequestApprovalEvent(ctx, esID, e.(webhooks.MergeRequestEventContainer).ToEvent()); err != nil {
+		*webhooks.MergeRequestUnapprovedEvent,
+		*webhooks.MergeRequestUpdateEvent:
+		if err := h.enqueueChangesetSyncFromEvent(ctx, esID, e.(webhooks.MergeRequestEventContainer).ToEvent()); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  err,
@@ -178,28 +206,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalS
 	return nil
 }
 
-func (h *GitLabWebhook) handleMergeRequestApprovalEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEventCommon) error {
-	// So this is fun: although approvals and unapprovals manifest in normal
-	// syncs as system notes, we _don't_ get them as note events in webhooks.
-	// Instead, we get a merge request webhook with an "approved" or
-	// "unapproved" action field that magically appears in the object (merge
-	// request) attributes and no further details on who changed the approval
-	// status, the note ID, or anything else we can use to deduplicate later.
-	//
-	// Therefore, the only realistic action we can take here is to re-sync the
-	// changeset as a whole. The problem is that — since we only have the merge
-	// request — this requires three requests to the REST API, and GitLab's
-	// documentation is quite clear that webhooks should run as fast as possible
-	// to avoid unexpected retries.
-	//
-	// To meet this goal, rather than synchronously synchronizing here, we'll
-	// instead ask repo-updater to prioritize the sync of this changeset and let
-	// the normal sync process take care of pulling the notes and pipelines and
-	// putting things in the right places. The downside is that the updated
-	// changeset state won't appear _quite_ as instantaneously to the user, but
-	// this is the best compromise given the limited payload we get in the
-	// webhook.
-	//
+func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEventCommon) error {
 	// We need to get our changeset ID for this to work. To get _there_, we need
 	// the repo ID, and then we can use the merge request IID to match the
 	// external ID.

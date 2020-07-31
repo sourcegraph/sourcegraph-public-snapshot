@@ -493,7 +493,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 			})
 
-			t.Run("error from handleMergeRequestApprovalEvent", func(t *testing.T) {
+			t.Run("error from enqueueChangesetSyncFromEvent", func(t *testing.T) {
 				store, rstore, clock := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store, rstore, clock.now)
 				es := createGitLabExternalService(t, ctx, rstore)
@@ -557,7 +557,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 		})
 
-		t.Run("handleMergeRequestApprovalEvent", func(t *testing.T) {
+		t.Run("enqueueChangesetSyncFromEvent", func(t *testing.T) {
 			// Since these tests don't write to the database, we can just share
 			// the same database setup.
 			store, rstore, clock := gitLabTestSetup(t, db)
@@ -590,7 +590,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					MergeRequest: &gitlab.MergeRequest{IID: gitlab.ID(cid)},
 				}
 
-				if err := h.handleMergeRequestApprovalEvent(ctx, esid, event); err == nil {
+				if err := h.enqueueChangesetSyncFromEvent(ctx, esid, event); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -603,7 +603,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					MergeRequest: &gitlab.MergeRequest{IID: 12345},
 				}
 
-				if err := h.handleMergeRequestApprovalEvent(ctx, esid, event); err == nil {
+				if err := h.enqueueChangesetSyncFromEvent(ctx, esid, event); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -629,7 +629,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 				defer func() { repoupdater.MockEnqueueChangesetSync = nil }()
 
-				if have := h.handleMergeRequestApprovalEvent(ctx, esid, event); !errors.Is(have, want) {
+				if have := h.enqueueChangesetSyncFromEvent(ctx, esid, event); !errors.Is(have, want) {
 					t.Errorf("unexpected error: have %+v; want %+v", have, want)
 				}
 			})
@@ -647,7 +647,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 				defer func() { repoupdater.MockEnqueueChangesetSync = nil }()
 
-				if err := h.handleMergeRequestApprovalEvent(ctx, esid, event); err != nil {
+				if err := h.enqueueChangesetSyncFromEvent(ctx, esid, event); err != nil {
 					t.Errorf("unexpected non-nil error: %+v", err)
 				}
 			})
