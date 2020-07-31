@@ -26,8 +26,8 @@ type Updater interface {
 	// be passed to skip this check.
 	Update(ctx context.Context, repositoryID int, check CheckFunc) error
 
-	// Update pulls the commit graph for the given repository from gitserver, pulls the set of
-	// LSIF upload objects for the given repository from Postgres, and correlates them into a
+	// TryUpdate pulls the commit graph for the given repository from gitserver, pulls the set
+	// of LSIF upload objects for the given repository from Postgres, and correlates them into a
 	// visibility graph. This graph is then upserted back into Postgres for use by find closest
 	// dumps queries.
 	//
@@ -84,8 +84,8 @@ func (u *updater) Update(ctx context.Context, repositoryID int, check CheckFunc)
 	return u.update(ctx, repositoryID, 0)
 }
 
-// Update pulls the commit graph for the given repository from gitserver, pulls the set of
-// LSIF upload objects for the given repository from Postgres, and correlates them into a
+// Try Update pulls the commit graph for the given repository from gitserver, pulls the set
+// of LSIF upload objects for the given repository from Postgres, and correlates them into a
 // visibility graph. This graph is then upserted back into Postgres for use by find closest
 // dumps queries.
 //
