@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	intSecrets "github.com/sourcegraph/sourcegraph/internal/secrets"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -629,6 +630,17 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			return nil, errors.Wrapf(err, "batchReposQuery: metadata marshalling failed")
 		}
 
+		sourcesEncrypted, err := intSecrets.CryptObject.EncryptBytesIfPossible(sources)
+		if err != nil {
+			return nil, err
+		}
+		metadataEncrypted, err := intSecrets.CryptObject.EncryptBytesIfPossible(metadata)
+		if err != nil {
+			return nil, err
+		}
+		metadataJSON := json.RawMessage([]byte(metadataEncrypted))
+		sourcesJSON := json.RawMessage([]byte(sourcesEncrypted))
+
 		records = append(records, record{
 			ID:                  r.ID,
 			Name:                r.Name,
@@ -644,8 +656,8 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			Archived:            r.Archived,
 			Fork:                r.Fork,
 			Private:             r.Private,
-			Sources:             sources,
-			Metadata:            metadata,
+			Sources:             sourcesJSON,
+			Metadata:            metadataJSON,
 		})
 	}
 
@@ -838,11 +850,16 @@ func closeErr(c io.Closer, err *error) {
 }
 
 func scanExternalService(svc *ExternalService, s scanner) error {
+	svcConfig, err := intSecrets.CryptObject.DecryptIfPossible(svc.Config)
+	if err != nil {
+		return err
+	}
+
 	return s.Scan(
 		&svc.ID,
 		&svc.Kind,
 		&svc.DisplayName,
-		&svc.Config,
+		&svcConfig,
 		&svc.CreatedAt,
 		&dbutil.NullTime{Time: &svc.UpdatedAt},
 		&dbutil.NullTime{Time: &svc.DeletedAt},
@@ -851,6 +868,7 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 
 func scanRepo(r *Repo, s scanner) error {
 	var sources, metadata json.RawMessage
+
 	err := s.Scan(
 		&r.ID,
 		&r.Name,
@@ -874,7 +892,12 @@ func scanRepo(r *Repo, s scanner) error {
 		return err
 	}
 
-	if err = json.Unmarshal(sources, &r.Sources); err != nil {
+	decryptedSources, err := intSecrets.CryptObject.DecryptBytesIfPossible(sources)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal([]byte(decryptedSources), &r.Sources); err != nil {
 		return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
 	}
 
@@ -899,7 +922,12 @@ func scanRepo(r *Repo, s scanner) error {
 		return nil
 	}
 
-	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
+	decryptedMetadata, err := intSecrets.CryptObject.DecryptBytesIfPossible(metadata)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal([]byte(decryptedMetadata), r.Metadata); err != nil {
 		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
 	}
 
