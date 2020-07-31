@@ -39,7 +39,7 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err err
 	if cached != nil {
 		return cached, nil
 	}
-	// We continue to hold the lock here so that only one process goroutine performs the query
+	// We continue to hold the lock here so that only one goroutine performs the query
 
 	const q = `
 SELECT default_repos.repo_id, repo.name
