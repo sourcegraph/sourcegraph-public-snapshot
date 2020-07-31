@@ -1,5 +1,5 @@
 import * as H from 'history'
-import * as React from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -11,9 +11,9 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
-import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
+import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -101,7 +101,11 @@ const fetchGitCommits = (args: {
         })
     )
 
-interface Props extends RepoHeaderContributionsLifecycleProps, Partial<RevisionSpec>, ResolvedRevisionSpec {
+interface Props
+    extends RepoHeaderContributionsLifecycleProps,
+        Partial<RevisionSpec>,
+        ResolvedRevisionSpec,
+        UpdateBread {
     repo: GQL.IRepository
 
     history: H.History
@@ -109,38 +113,34 @@ interface Props extends RepoHeaderContributionsLifecycleProps, Partial<RevisionS
 }
 
 /** A page that shows a repository's commits at the current revision. */
-export class RepositoryCommitsPage extends React.PureComponent<Props> {
-    public componentDidMount(): void {
+export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ pushBreadcrumb, ...props }) => {
+    useEffect(() => {
         eventLogger.logViewEvent('RepositoryCommits')
-    }
+    }, [])
+    useEffect(() => pushBreadcrumb('Commits'), [pushBreadcrumb])
+    const queryCommits = useCallback(
+        (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
+            fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),
+        [props.repo.id, props.commitID]
+    )
 
-    public render(): JSX.Element | null {
-        return (
-            <div className="repository-commits-page">
-                <PageTitle title="Commits" />
-                <RepoHeaderContributionPortal
-                    position="nav"
-                    element={<RepoHeaderBreadcrumbNavItem key="commits">Commits</RepoHeaderBreadcrumbNavItem>}
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                />
-                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
-                    className="repository-commits-page__content"
-                    listClassName="list-group list-group-flush"
-                    noun="commit"
-                    pluralNoun="commits"
-                    queryConnection={this.queryCommits}
-                    nodeComponent={GitCommitNode}
-                    nodeComponentProps={{ className: 'list-group-item' }}
-                    defaultFirst={20}
-                    autoFocus={true}
-                    history={this.props.history}
-                    hideSearch={true}
-                    location={this.props.location}
-                />
-            </div>
-        )
-    }
-
-    private queryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
-        fetchGitCommits({ ...args, repo: this.props.repo.id, revspec: this.props.commitID })
+    return (
+        <div className="repository-commits-page">
+            <PageTitle title="Commits" />
+            <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                className="repository-commits-page__content"
+                listClassName="list-group list-group-flush"
+                noun="commit"
+                pluralNoun="commits"
+                queryConnection={queryCommits}
+                nodeComponent={GitCommitNode}
+                nodeComponentProps={{ className: 'list-group-item' }}
+                defaultFirst={20}
+                autoFocus={true}
+                history={props.history}
+                hideSearch={true}
+                location={props.location}
+            />
+        </div>
+    )
 }
