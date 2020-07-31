@@ -65,7 +65,13 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// We don't want to return a non-2XX status code and have GitLab
 			// retry the webhook, so we'll log that we don't know what to do
 			// and return 204.
-			respond(w, http.StatusNoContent, err)
+			log15.Debug("unknown object kind", "err", err)
+
+			// We don't use respond() here so that we don't log an error, since
+			// this really isn't one.
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(http.StatusNoContent)
+			fmt.Fprintf(w, "%v", err)
 		} else {
 			respond(w, http.StatusInternalServerError, errors.Wrap(err, "unmarshalling payload"))
 		}
