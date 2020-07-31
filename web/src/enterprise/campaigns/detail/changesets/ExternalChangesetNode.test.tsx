@@ -30,7 +30,7 @@ describe('ExternalChangesetNode', () => {
                     viewerCanAdminister={true}
                     node={{
                         __typename: 'ExternalChangeset',
-                        id: 'Q2hhbmdlc2V0OjEyMw==',
+                        id: 'TestExternalChangeset',
                         reviewState: ChangesetReviewState.PENDING,
                         state: ChangesetState.UNPUBLISHED,
                         externalState: ChangesetExternalState.OPEN,
@@ -56,7 +56,7 @@ describe('ExternalChangesetNode', () => {
                         repository: {
                             name: 'sourcegraph',
                             url: 'github.com/sourcegraph/sourcegraph',
-                            id: 'UmVwb3NpdG9yeToxMjM=',
+                            id: 'TestRepository',
                         },
                         createdAt: new Date('2020-01-01').toISOString(),
                         updatedAt: new Date('2020-01-01').toISOString(),
