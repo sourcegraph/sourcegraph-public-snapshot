@@ -152,6 +152,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 
 				Message:     notificationTitleTemplate,
 				Description: notificationBodyTemplateWithoutLinks,
+				Priority:    notifier.Opsgenie.Priority,
 				Responders:  responders,
 				Source:      dashboardURLTemplate,
 				Details: map[string]string{
