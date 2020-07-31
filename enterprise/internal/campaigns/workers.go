@@ -17,7 +17,7 @@ import (
 )
 
 // RunWorkers starts a workerutil.NewWorker that fetches enqueued changesets
-// from the database and passed them to the changeset reconciler for
+// from the database and passes them to the changeset reconciler for
 // processing.
 func RunWorkers(
 	ctx context.Context,
