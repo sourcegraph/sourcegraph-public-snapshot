@@ -76,8 +76,6 @@ func Frontend() *Container {
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
-					},
-					{
 						{
 							Name:            "search_alert_user_suggestions",
 							Description:     "search alert user suggestions shown every 5m",
@@ -90,12 +88,27 @@ func Frontend() *Container {
 								- This indicates your user's are making syntax errors or similar user errors.
 							`,
 						},
+					},
+					{
 						{
 							Name:            "page_load_latency",
 							Description:     "90th percentile page load latency over all routes over 10m",
-							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{job="sourcegraph-frontend",route!="raw"}[10m])))`,
+							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
 							DataMayNotExist: true,
-							Critical:        Alert{GreaterOrEqual: 20},
+							Critical:        Alert{GreaterOrEqual: 2},
+							PanelOptions:    PanelOptions().LegendFormat("latency"),
+							Owner:           ObservableOwnerSearch,
+							PossibleSolutions: `
+								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+								- Trace a request to see what is the slowest part - refer to: https://docs.sourcegraph.com/admin/observability/tracing
+							`,
+						},
+						{
+							Name:            "blob_load_latency",
+							Description:     "90th percentile blob load latency over 10m",
+							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
+							DataMayNotExist: true,
+							Critical:        Alert{GreaterOrEqual: 2},
 							PanelOptions:    PanelOptions().LegendFormat("latency"),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
