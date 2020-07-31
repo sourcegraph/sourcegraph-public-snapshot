@@ -423,11 +423,11 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			want:  "^h[a-z]llo$",
 		},
 		{
-			input: "h[!a-z]llo",
+			input: "h[^a-z]llo",
 			want:  "^h[^a-z]llo$",
 		},
 		{
-			input: "h[!abcde]llo",
+			input: "h[^abcde]llo",
 			want:  "^h[^abcde]llo$",
 		},
 		{
@@ -470,6 +470,10 @@ func TestTranslateGlobToRegex(t *testing.T) {
 			input: "",
 			want:  "",
 		},
+		{
+			input: "[!a]",
+			want:  "^[!a]$",
+		},
 	}
 
 	for _, c := range cases {
@@ -495,6 +499,7 @@ func TestTranslateBadGlobPattern(t *testing.T) {
 		{input: "[z-a]"},
 		{input: "[a-z--0]"},
 		{input: "0[0300z0_0]\\"},
+		{input: "[^]"},
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {

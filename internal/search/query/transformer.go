@@ -49,13 +49,6 @@ func translateCharacterClass(r []rune, startIx int) (int, string, error) {
 Loop:
 	for i < lenR {
 		switch r[i] {
-		case '!':
-			if i == startIx {
-				sb.WriteRune('^')
-			} else {
-				sb.WriteRune(r[i])
-			}
-			i++
 		case ']':
 			if i > startIx {
 				break Loop
@@ -79,6 +72,12 @@ Loop:
 					return -1, "", ErrBadGlobPattern
 				}
 			}
+
+			if r[i] == '^' && i == startIx && (i < lenR-1 && r[i+1] == ']') {
+				// the character class cannot contain just the caret
+				return -1, "", ErrBadGlobPattern
+			}
+
 			lo := r[i]
 			sb.WriteRune(r[i]) // lo
 			i++
