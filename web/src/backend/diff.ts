@@ -1,13 +1,13 @@
 import { gql } from '../../../shared/src/graphql/graphql'
 
-export const FileDiffHunkRangeFields = gql`
+export const fileDiffHunkRangeFields = gql`
     fragment FileDiffHunkRangeFields on FileDiffHunkRange {
         startLine
         lines
     }
 `
 
-export const DiffStatFields = gql`
+export const diffStatFields = gql`
     fragment DiffStatFields on DiffStat {
         added
         changed
@@ -15,7 +15,7 @@ export const DiffStatFields = gql`
     }
 `
 
-export const FileDiffHunkFields = gql`
+export const fileDiffHunkFields = gql`
     fragment FileDiffHunkFields on FileDiffHunk {
         oldRange {
             startLine
@@ -37,7 +37,7 @@ export const FileDiffHunkFields = gql`
     }
 `
 
-export const FileDiffFields = gql`
+export const fileDiffFields = gql`
     fragment FileDiffFields on FileDiff {
         __typename
         oldPath
@@ -67,5 +67,5 @@ export const FileDiffFields = gql`
         internalID
     }
 
-    ${FileDiffHunkFields}
+    ${fileDiffHunkFields}
 `

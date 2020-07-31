@@ -2,7 +2,7 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql, requestGraphQL } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import { ID } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffFields } from '../../../backend/diff'
+import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {
     CampaignFields,
     CampaignByIDResult,
@@ -62,7 +62,7 @@ const campaignFragment = gql`
 
     ${changesetCountsOverTimeFragment}
 
-    ${DiffStatFields}
+    ${diffStatFields}
 `
 
 const changesetLabelFragment = gql`
@@ -100,7 +100,7 @@ export const fetchCampaignById = (campaign: ID): Observable<CampaignFields | nul
         })
     )
 
-export const ChangesetFieldsFragment = gql`
+export const changesetFieldsFragment = gql`
     fragment ChangesetFields on Changeset {
         __typename
 
@@ -136,7 +136,7 @@ export const ChangesetFieldsFragment = gql`
         }
     }
 
-    ${DiffStatFields}
+    ${diffStatFields}
 
     ${changesetLabelFragment}
 `
@@ -177,7 +177,7 @@ export const queryChangesets = ({
                 }
             }
 
-            ${ChangesetFieldsFragment}
+            ${changesetFieldsFragment}
         `,
         variables: { campaign, first, externalState, reviewState, checkState },
     }).pipe(
@@ -273,9 +273,9 @@ export const externalChangesetFileDiffsFields = gql`
         }
     }
 
-    ${FileDiffFields}
+    ${fileDiffFields}
 
-    ${DiffStatFields}
+    ${diffStatFields}
 
     ${gitRefSpecFields}
 `
