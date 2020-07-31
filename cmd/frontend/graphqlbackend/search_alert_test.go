@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-
-	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchPatternForSuggestion(t *testing.T) {
@@ -198,7 +198,6 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 }
 
 func TestAlertForOverRepoLimit(t *testing.T) {
-	calledResolveRepositories := false
 
 	generateRepoRevs := func(numRepos int) []*search.RepositoryRevisions {
 		repoRevs := make([]*search.RepositoryRevisions, numRepos)
@@ -222,7 +221,6 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 
 	setMockResolveRepositories := func(numRepos int) {
 		mockResolveRepositories = func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, overLimit bool, err error) {
-			calledResolveRepositories = true
 			missingRepoRevs = make([]*search.RepositoryRevisions, 0)
 			repoRevs = generateRepoRevs(numRepos)
 			return repoRevs, missingRepoRevs, excludedRepos, true, nil
@@ -232,6 +230,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 
 	cases := []struct {
 		name      string
+		globbing  bool
 		repoRevs  int
 		query     string
 		wantAlert *searchAlert
@@ -270,6 +269,19 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			},
 		},
 		{
+			name:          "should return default alert because globbing is activated",
+			globbing:      true,
+			cancelContext: false,
+			repoRevs:      1,
+			query:         "foo",
+			wantAlert: &searchAlert{
+				prometheusType:  "over_repo_limit",
+				title:           "Too many matching repositories",
+				proposedQueries: nil,
+				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			},
+		},
+		{
 			name:          "should return smart alert",
 			cancelContext: false,
 			repoRevs:      1,
@@ -290,9 +302,10 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
+			mockDecodedViewerFinalSettings = &schema.Settings{SearchGlobbing: &test.globbing}
+			defer func() { mockDecodedViewerFinalSettings = nil }()
 			setMockResolveRepositories(test.repoRevs)
-			calledResolveRepositories = false
-			q, err := query.ParseAndCheck(test.query)
+			q, err := query.ProcessAndOr(test.query, query.ParserOptions{SearchType: query.SearchType(0), Globbing: test.globbing})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -304,14 +317,10 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			}
 			alert := sr.alertForOverRepoLimit(ctx)
 
-			if !calledResolveRepositories {
-				t.Error("!calledSearchRepositories")
-			}
 			wantAlert := test.wantAlert
 			if !reflect.DeepEqual(alert, wantAlert) {
 				t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
 			}
 		})
-
 	}
 }
