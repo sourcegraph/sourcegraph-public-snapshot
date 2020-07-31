@@ -10,7 +10,6 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../component
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
-import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
 import { UpdateBreadcrumbsProps } from '../../components/Breadcrumbs'
@@ -105,7 +104,7 @@ interface Props
     extends RepoHeaderContributionsLifecycleProps,
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
-        UpdateBread {
+        UpdateBreadcrumbsProps {
     repo: GQL.IRepository
 
     history: H.History
