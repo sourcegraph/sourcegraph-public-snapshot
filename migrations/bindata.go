@@ -92,7 +92,7 @@
 // 1528395694_lsif_nearest_uploads.up.sql (646B)
 // 1528395695_lsif_remove_commits.down.sql (1.075kB)
 // 1528395695_lsif_remove_commits.up.sql (734B)
-// 1528395696_repo_name_index.down.sql (43B)
+// 1528395696_repo_name_index.down.sql (53B)
 // 1528395696_repo_name_index.up.sql (198B)
 
 package migrations
@@ -2002,7 +2002,7 @@ func _1528395695_lsif_remove_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395696_repo_name_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\x28\x4a\x2d\xc8\x8f\xcf\x4b\xcc\x4d\x8d\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x3f\xcf\x37\xdd\x2b\x00\x00\x00")
+var __1528395696_repo_name_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x2d\xc8\x8f\xcf\x4b\xcc\x4d\x8d\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x43\x74\x26\x55\x35\x00\x00\x00")
 
 func _1528395696_repo_name_indexDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -2018,7 +2018,7 @@ func _1528395696_repo_name_indexDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395696_repo_name_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc5, 0x5c, 0x1b, 0xc4, 0xad, 0x1b, 0xff, 0x88, 0x89, 0x5e, 0x43, 0x49, 0x1d, 0xea, 0x69, 0x4f, 0x2d, 0x47, 0x56, 0x35, 0x16, 0xc2, 0xd2, 0x7a, 0xab, 0x3c, 0x91, 0x4f, 0xd8, 0x40, 0xa4, 0xd1}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x20, 0x96, 0xf1, 0x4f, 0x73, 0xa0, 0xe, 0x15, 0xfa, 0x48, 0xe3, 0x17, 0x9d, 0xb8, 0x2c, 0x8a, 0x2c, 0x21, 0x8c, 0xd9, 0x90, 0xd5, 0x34, 0x9b, 0xa9, 0x26, 0xa9, 0x9d, 0xe5, 0xd2, 0xe7, 0xf0}}
 	return a, nil
 }
 
