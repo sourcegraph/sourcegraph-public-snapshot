@@ -954,8 +954,15 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		return nil, err
 	}
 
+	query = Map(query, LowercaseFieldNames, SubstituteAliases)
+
 	switch options.SearchType {
-	case SearchTypeLiteral, SearchTypeStructural:
+	case SearchTypeLiteral:
+		query = substituteConcat(query, " ")
+	case SearchTypeStructural:
+		if containsNegatedPattern(query) {
+			return nil, errors.New("The query contains a negated search pattern. Structural search does not support negated search patterns at the moment.")
+		}
 		query = substituteConcat(query, " ")
 	case SearchTypeRegex:
 		query = EmptyGroupsToLiteral(query)
@@ -968,7 +975,6 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 		}
 	}
 
-	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {
 		return nil, err
