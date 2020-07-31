@@ -22,10 +22,6 @@ export class ProxySubscription extends Subscription {
     constructor(proxy: Pick<ProxyMethods, typeof releaseProxy>) {
         super(() => {
             proxy[releaseProxy]()
-
-            // Workaround for https://github.com/ReactiveX/rxjs/issues/5464
-            // Remove when fixed
-            ;(this as any)._unsubscribe = null
         })
     }
 }
