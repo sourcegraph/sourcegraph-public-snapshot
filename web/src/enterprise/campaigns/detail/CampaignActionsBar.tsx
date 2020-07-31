@@ -32,13 +32,13 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign })
             </div>
             <div className="d-flex mb-2 position-relative">
                 <div>
-                    <h1 className="m-0">{campaign.name}</h1>
-                    <h2 className="m-0">
+                    <h1 className="mb-1">{campaign.name}</h1>
+                    <div>
                         <CampaignStateBadge isClosed={campaignClosed} />
                         <small className="text-muted">
                             {0}% complete. {campaign.changesets.totalCount} changesets total
                         </small>
-                    </h2>
+                    </div>
                 </div>
             </div>
         </>
@@ -48,13 +48,13 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({ campaign })
 const CampaignStateBadge: React.FunctionComponent<{ isClosed: boolean }> = ({ isClosed }) => {
     if (isClosed) {
         return (
-            <span className="badge badge-danger mr-2">
+            <span className="badge badge-danger text-uppercase mr-2">
                 <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Closed
             </span>
         )
     }
     return (
-        <span className="badge badge-success mr-2">
+        <span className="badge badge-success text-uppercase mr-2">
             <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Open
         </span>
     )
