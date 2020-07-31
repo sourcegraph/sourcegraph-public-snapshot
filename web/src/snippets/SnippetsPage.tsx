@@ -98,7 +98,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, history
     return (
         <div className="container mt-3">
             <h1>
-                Snippet editor <span className="badge badge-warning">Experimental</span>
+                Snippet editor <span className="badge badge-warning text-uppercase">Experimental</span>
             </h1>
             {viewerId && modelUri && (
                 <>

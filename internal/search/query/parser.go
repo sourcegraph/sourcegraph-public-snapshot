@@ -8,6 +8,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/inconshreveable/log15"
 )
 
 /*
@@ -117,6 +119,7 @@ const (
 	SQUOTE keyword = "'"
 	DQUOTE keyword = "\""
 	SLASH  keyword = "/"
+	NOT    keyword = "not"
 )
 
 func isSpace(buf []byte) bool {
@@ -234,6 +237,22 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 	return strings.EqualFold(v, string(keyword))
 }
 
+// matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
+func (p *parser) matchUnaryKeyword(keyword keyword) bool {
+	if p.pos != 0 && !isSpace(p.buf[p.pos-1:p.pos]) {
+		return false
+	}
+	v, err := p.peek(len(string(keyword)))
+	if err != nil {
+		return false
+	}
+	after := p.pos + len(string(keyword))
+	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
+		return false
+	}
+	return strings.EqualFold(v, string(keyword))
+}
+
 // skipSpaces advances the input and places the parser position at the next
 // non-space value.
 func (p *parser) skipSpaces() error {
@@ -246,6 +265,39 @@ func (p *parser) skipSpaces() error {
 		return io.ErrShortBuffer
 	}
 	return nil
+}
+
+// parseNegatedLeafNode parses `NOT field:value` or `NOT pattern` and
+// translates it to `-field:value` or as negated pattern respectively.
+func (p *parser) parseNegatedLeafNode() (Node, error) {
+	start := p.pos
+	_ = p.expect(NOT)
+
+	err := p.skipSpaces()
+	if err != nil {
+		return Parameter{}, err
+	}
+
+	// try parsing as parameter. If it doesn't work we treat NOT's operand
+	// as pattern.
+	parameter, ok, err := p.ParseParameter()
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		pattern := p.ParsePattern()
+		pattern.Negated = true
+		pattern.Annotation.Range = newRange(start, p.pos)
+		return pattern, nil
+	}
+	// we don't support NOT -field:value
+	if parameter.Negated {
+		return nil, fmt.Errorf("Unexpected NOT before \"-%s:%s\". Remove NOT and try again.",
+			parameter.Field, parameter.Value)
+	}
+	parameter.Negated = true
+	parameter.Annotation.Range = newRange(start, p.pos)
+	return parameter, nil
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -464,7 +516,13 @@ func (p *parser) ParseFieldValue() (string, error) {
 	if p.match(DQUOTE) {
 		return delimited('"')
 	}
-	value, advance, _ := ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
+	// First try scan a field value for cases like (a b repo:foo), where a
+	// trailing ) may be closing a group, and not part of the value.
+	value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:])
+	if !ok {
+		// The above failed, so attempt a best effort.
+		value, advance, _ = ScanValue(p.buf[p.pos:], false)
+	}
 	p.pos += advance
 	return value, nil
 }
@@ -578,16 +636,18 @@ func partitionParameters(nodes []Node) []Node {
 
 // concatPatterns extends the left pattern with the right pattern, appropriately
 // updating the ranges and annotations.
-func concatPatterns(left, right Pattern) Pattern {
+func concatPatterns(left, right Pattern) (Pattern, error) {
 	if left.Annotation.Range.End.Column != right.Annotation.Range.Start.Column {
-		panic(fmt.Sprintf("Expected contiguous patterns to concatenate, but %s ends at %d and %s starts at %d",
-			left, left.Annotation.Range.End.Column,
-			right, right.Annotation.Range.Start.Column))
+		log15.Warn("parser can't process concatPatterns",
+			"left", left, "right", right,
+			"leftEnd", left.Annotation.Range.End.Column,
+			"rightBegin", right.Annotation.Range.Start.Column)
+		return Pattern{}, &UnsupportedError{Msg: "invalid query syntax"}
 	}
 	left.Value += right.Value
 	left.Annotation.Labels |= right.Annotation.Labels
 	left.Annotation.Range.End.Column += len(right.Value)
-	return left
+	return left, nil
 }
 
 // parseLeavesRegexp scans for consecutive leaf nodes when interpreting the
@@ -623,7 +683,11 @@ loop:
 							if len(nodes) > 0 {
 								if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
 									previous.Annotation.Labels = Regexp | HeuristicParensAsPatterns
-									nodes[len(nodes)-1] = concatPatterns(previous, pattern)
+									result, err := concatPatterns(previous, pattern)
+									if err != nil {
+										return nil, err
+									}
+									nodes[len(nodes)-1] = result
 									p.pos += advance
 									continue
 								}
@@ -671,6 +735,12 @@ loop:
 		case p.matchKeyword(AND), p.matchKeyword(OR):
 			// Caller advances.
 			break loop
+		case p.matchUnaryKeyword(NOT):
+			parameter, err := p.parseNegatedLeafNode()
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, parameter)
 		default:
 			parameter, ok, err := p.ParseParameter()
 			if err != nil {

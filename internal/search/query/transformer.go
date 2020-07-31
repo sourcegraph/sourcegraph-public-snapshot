@@ -160,9 +160,15 @@ func globToRegex(value string) (string, error) {
 		case '?':
 			sb.WriteRune('.')
 		case '\\':
-			// Handle escaped special characters.
+			// trailing backslashes are not allowed
+			if i == l-1 {
+				return "", ErrBadGlobPattern
+			}
+
 			sb.WriteRune('\\')
 			i++
+
+			// we only support escaping of special characters
 			if _, ok := globSpecialSymbols[r[i]]; !ok {
 				return "", ErrBadGlobPattern
 			}
@@ -203,17 +209,36 @@ func (g globError) Error() string {
 	return g.err.Error()
 }
 
+// reporevToRegex is a wrapper around globToRegex that takes care of
+// treating repo and rev (as in repo@rev) separately during translation
+// from glob to regex.
+func reporevToRegex(value string) (string, error) {
+	reporev := strings.SplitN(value, "@", 2)
+	repo, err := globToRegex(reporev[0])
+	if err != nil {
+		return "", err
+	}
+	value = repo
+	if len(reporev) > 1 {
+		value = value + "@" + reporev[1]
+	}
+	return value, nil
+}
+
 // mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
 func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	var globErrors []globError
-	var err error
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
+		var err error
+		switch field {
+		case FieldRepo:
+			value, err = reporevToRegex(value)
+		case FieldFile, FieldRepoHasFile:
 			value, err = globToRegex(value)
-			if err != nil {
-				globErrors = append(globErrors, globError{field: field, err: err})
-			}
+		}
+		if err != nil {
+			globErrors = append(globErrors, globError{field: field, err: err})
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
@@ -322,6 +347,67 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 		}
 	}
 	return left, right
+}
+
+// product appends the list of n elements in right to each of the m rows in
+// left. If left is empty, it is initialized with right.
+func product(left [][]Node, right []Node) [][]Node {
+	result := [][]Node{}
+	if len(left) == 0 {
+		return append(result, right)
+	}
+
+	for _, row := range left {
+		newRow := make([]Node, len(row))
+		copy(newRow, row)
+		result = append(result, append(newRow, right...))
+	}
+	return result
+}
+
+// distribute applies the distributed property to nodes. See the dnf function
+// for context. Its first argument takes the current set of prefixes to prepend
+// to each term in an or-expression.
+func distribute(prefixes [][]Node, nodes []Node) [][]Node {
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Operator:
+			switch v.Kind {
+			case Or:
+				result := [][]Node{}
+				for _, o := range v.Operands {
+					var newPrefixes [][]Node
+					newPrefixes = distribute(newPrefixes, []Node{o})
+					for _, newPrefix := range newPrefixes {
+						result = append(result, product(prefixes, newPrefix)...)
+					}
+				}
+				prefixes = result
+			case And, Concat:
+				prefixes = distribute(prefixes, v.Operands)
+			}
+		case Parameter, Pattern:
+			prefixes = product(prefixes, []Node{v})
+		}
+	}
+	return prefixes
+}
+
+// dnf returns the Disjunctive Normal Form of a query (a flat sequence of
+// or-expressions) by applying the distributive property on (possibly nested)
+// or-expressions. For example, the query:
+//
+// (repo:a (file:b OR file:c))
+// in DNF becomes:
+// (repo:a file:b) OR (repo:a file:c)
+//
+// Using the DNF expression makes it easy to support general nested queries that
+// imply scope, like the one above: We simply evaluate all disjuncts and union
+// the results. Note that various optimizations are possible
+// during evaluation, but those are separate query pre- or postprocessing steps
+// separate from this general transformation.
+func dnf(query []Node) [][]Node {
+	return distribute([][]Node{}, query)
 }
 
 func substituteOrForRegexp(nodes []Node) []Node {

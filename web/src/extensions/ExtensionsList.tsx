@@ -21,42 +21,6 @@ import { ExtensionCard } from './ExtensionCard'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 import { ErrorAlert } from '../components/alerts'
 
-export const registryExtensionFragment = gql`
-    fragment RegistryExtensionFields on RegistryExtension {
-        id
-        publisher {
-            __typename
-            ... on User {
-                id
-                username
-                displayName
-                url
-            }
-            ... on Org {
-                id
-                name
-                displayName
-                url
-            }
-        }
-        extensionID
-        extensionIDWithoutRegistry
-        name
-        manifest {
-            raw
-            description
-        }
-        createdAt
-        updatedAt
-        url
-        remoteURL
-        registryName
-        isLocal
-        isWorkInProgress
-        viewerCanAdminister
-    }
-`
-
 interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     location: H.Location
@@ -265,13 +229,46 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                 extensionRegistry {
                                     extensions(query: $query, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
                                         nodes {
-                                            ...RegistryExtensionFields
+                                            ...RegistryExtensionFieldsForList
                                         }
                                         error
                                     }
                                 }
                             }
-                            ${registryExtensionFragment}
+
+                            fragment RegistryExtensionFieldsForList on RegistryExtension {
+                                id
+                                publisher {
+                                    __typename
+                                    ... on User {
+                                        id
+                                        username
+                                        displayName
+                                        url
+                                    }
+                                    ... on Org {
+                                        id
+                                        name
+                                        displayName
+                                        url
+                                    }
+                                }
+                                extensionID
+                                extensionIDWithoutRegistry
+                                name
+                                manifest {
+                                    raw
+                                    description
+                                }
+                                createdAt
+                                updatedAt
+                                url
+                                remoteURL
+                                registryName
+                                isLocal
+                                isWorkInProgress
+                                viewerCanAdminister
+                            }
                         `,
                         {
                             ...args,

@@ -103,7 +103,7 @@ const CampaignSpecSchemaJSON = `{
           "description": "The name of the Git branch to create or update on each repository with the changes."
         },
         "commit": {
-          "title": "GitCommitDescription",
+          "title": "ExpandedGitCommitDescription",
           "type": "object",
           "description": "The Git commit to create with the changes.",
           "additionalProperties": false,

@@ -1565,14 +1565,12 @@ type CommitTemplate struct {
 
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 	c := &ChangesetSpec{RawSpec: rawSpec}
-	err := c.UnmarshalValidate()
-	if err != nil {
+
+	if err := c.UnmarshalValidate(); err != nil {
 		return nil, err
 	}
 
-	c.computeDiffStat()
-
-	return c, nil
+	return c, c.computeDiffStat()
 }
 
 type ChangesetSpec struct {

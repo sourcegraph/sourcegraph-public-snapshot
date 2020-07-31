@@ -17,6 +17,7 @@ func Symbols() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							PanelOptions:      PanelOptions().LegendFormat("failures"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -26,6 +27,7 @@ func Symbols() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 25},
 							PanelOptions:      PanelOptions().LegendFormat("size"),
+							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 					},
@@ -39,9 +41,12 @@ func Symbols() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerRestarts("symbols"),
-						sharedContainerMemoryUsage("symbols"),
 						sharedContainerCPUUsage("symbols"),
+						sharedContainerMemoryUsage("symbols"),
+					},
+					{
+						sharedContainerRestarts("symbols"),
+						sharedContainerFsInodes("symbols"),
 					},
 				},
 			},
@@ -56,6 +61,25 @@ func Symbols() *Container {
 					{
 						sharedProvisioningCPUUsage5m("symbols"),
 						sharedProvisioningMemoryUsage5m("symbols"),
+					},
+				},
+			},
+			{
+				Title:  "Golang runtime monitoring",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedGoGoroutines("symbols"),
+						sharedGoGcDuration("symbols"),
+					},
+				},
+			},
+			{
+				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedKubernetesPodsAvailable("symbols"),
 					},
 				},
 			},

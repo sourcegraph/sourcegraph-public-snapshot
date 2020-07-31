@@ -406,7 +406,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		defer cancel()
 	outer:
 		for i, repoParent := range pathParentsByFrequency(paths) {
-			if i >= maxParentsToPropose || ctx.Err() == nil {
+			if i >= maxParentsToPropose || ctx.Err() != nil {
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
@@ -478,6 +478,12 @@ func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierr
 					prometheusType: "structural_search_needs_more_memory",
 					title:          "Structural search needs more memory",
 					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+				}
+			} else if strings.Contains(err.Error(), "Out of memory") {
+				alert = &searchAlert{
+					prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
+					title:          "Structural search needs more memory",
+					description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
 				}
 			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
 				var msg string

@@ -111,7 +111,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(len(campaigns)); have != want {
+		if have, want := count, len(campaigns); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
@@ -120,7 +120,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(1); have != want {
+		if have, want := count, 1; have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
@@ -130,7 +130,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				if err != nil {
 					t.Fatal(err)
 				}
-				if have, want := count, int64(1); have != want {
+				if have, want := count, 1; have != want {
 					t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
 				}
 			}
@@ -449,7 +449,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if have, want := count, int64(len(campaigns)-(i+1)); have != want {
+			if have, want := count, len(campaigns)-(i+1); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
@@ -577,7 +577,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []string{}
+		var want []string
 		if diff := cmp.Diff(want, have); diff != "" {
 			t.Fatal(diff)
 		}
@@ -593,7 +593,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []string{}
+		var want []string
 		if diff := cmp.Diff(want, have); diff != "" {
 			t.Fatal(diff)
 		}
@@ -609,7 +609,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []string{}
+		var want []string
 		if diff := cmp.Diff(want, have); diff != "" {
 			t.Fatal(diff)
 		}
@@ -671,7 +671,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(len(changesets)); have != want {
+		if have, want := count, len(changesets); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
@@ -680,7 +680,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(1); have != want {
+		if have, want := count, 1; have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 	})
@@ -1168,7 +1168,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(len(events)); have != want {
+		if have, want := count, len(events); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
@@ -1177,7 +1177,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 			t.Fatal(err)
 		}
 
-		if have, want := count, int64(1); have != want {
+		if have, want := count, 1; have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 	})
