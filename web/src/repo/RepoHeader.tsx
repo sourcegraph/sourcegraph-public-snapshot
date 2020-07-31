@@ -17,6 +17,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
+import { Breadcrumbs } from '../components/Breadcrumbs'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
  *
@@ -159,6 +160,8 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
      */
     contributions?: RepoHeaderContribution[]
 
+    breadcrumbs?: React.ReactNode[]
+
     /**
      * Called in the constructor when the store is constructed. The parent component propagates these lifecycle
      * callbacks to its children for them to add and remove contributions.
@@ -224,13 +227,16 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                             location={this.props.location}
                         />
                     </UncontrolledPopover>
+                    {/* TODO: portal contributions to nav being replaced by Breadcrumbs */}
+                    {navActions.map((a, index) => (
+                        <div className="navbar-nav" key={a.element.key || index}>
+                            <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
+                            {a.element}
+                        </div>
+                    ))}
+                    {/* Breadcrump for the nav elements */}
+                    <Breadcrumbs breadcrumbs={this.props.breadcrumbs || []} />
                 </div>
-                {navActions.map((a, index) => (
-                    <div className="navbar-nav" key={a.element.key || index}>
-                        <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
-                        {a.element}
-                    </div>
-                ))}
                 <ul className="navbar-nav">
                     {leftActions.map((a, index) => (
                         <li className="nav-item" key={a.element.key || index}>

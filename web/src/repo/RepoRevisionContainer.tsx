@@ -1,12 +1,9 @@
-import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
-import { defer, Subject, Subscription, of } from 'rxjs'
-import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -18,7 +15,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { IS_CHROME } from '../marketing/util'
@@ -27,7 +24,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import { ResolvedRevision, resolveRevision } from './backend'
+import { ResolvedRevision } from './backend'
 import { RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -41,9 +38,6 @@ import { VersionContextProps } from '../../../shared/src/search/util'
 import { RevisionSpec } from '../../../shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { UpdateBreadcrumbsProps } from '../components/Breadcrumbs'
-import { useObservable } from '../../../shared/src/util/useObservable'
-import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
-import { useEffect } from '@storybook/addons'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -164,39 +158,39 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         resolvedRev: props.resolvedRevisionOrError,
     }
 
+    useEffect(
+        () =>
+            props.pushBreadcrumb(
+                <div className="d-flex align-items-center" key="repo-revision">
+                    <span className="test-revision">
+                        {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
+                            ? props.resolvedRevisionOrError.commitID.slice(0, 7)
+                            : props.revision) ||
+                            props.resolvedRevisionOrError.defaultBranch ||
+                            'HEAD'}
+                    </span>
+                    <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
+                        <MenuDownIcon className="icon-inline" />
+                    </button>
+                    <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
+                        <RevisionsPopover
+                            repo={props.repo.id}
+                            repoName={props.repo.name}
+                            defaultBranch={props.resolvedRevisionOrError.defaultBranch}
+                            currentRev={props.revision}
+                            currentCommitID={props.resolvedRevisionOrError.commitID}
+                            history={props.history}
+                            location={props.location}
+                        />
+                    </UncontrolledPopover>
+                </div>
+            ),
+        [props.revision, props.resolvedRevisionOrError, props.repo.id, props.repo.name]
+    )
+
     return (
         <div className="repo-revision-container">
             {IS_CHROME && <ChromeExtensionToast />}
-            <RepoHeaderContributionPortal
-                position="nav"
-                priority={100}
-                element={
-                    <div className="d-flex align-items-center" key="repo-revision">
-                        <span className="test-revision">
-                            {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
-                                ? props.resolvedRevisionOrError.commitID.slice(0, 7)
-                                : props.revision) ||
-                                props.resolvedRevisionOrError.defaultBranch ||
-                                'HEAD'}
-                        </span>
-                        <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
-                            <MenuDownIcon className="icon-inline" />
-                        </button>
-                        <UncontrolledPopover placement="bottom-start" target="repo-revision-popover" trigger="legacy">
-                            <RevisionsPopover
-                                repo={props.repo.id}
-                                repoName={props.repo.name}
-                                defaultBranch={props.resolvedRevisionOrError.defaultBranch}
-                                currentRev={props.revision}
-                                currentCommitID={props.resolvedRevisionOrError.commitID}
-                                history={props.history}
-                                location={props.location}
-                            />
-                        </UncontrolledPopover>
-                    </div>
-                }
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
             <Switch>
                 {/* eslint-disable react/jsx-no-bind */}
                 {props.routes.map(

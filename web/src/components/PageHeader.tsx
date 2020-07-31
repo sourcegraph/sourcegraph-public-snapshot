@@ -17,7 +17,7 @@ export const PageHeader = ({ title, icon, actions, badge, breadcrumbs }: Props) 
                 {icon} {title}
                 {badge && (
                     <sup>
-                        <span className="badge badge-primary">{badge}</span>
+                        <span className="badge badge-primary text-uppercase">{badge}</span>
                     </sup>
                 )}
             </h1>

@@ -21,7 +21,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & UpdateBreadcrumbsProps => {
 }
 
 export const Breadcrumbs: React.FunctionComponent<BreadcrumbsProps> = props => {
-    const breadcrumbs = ['Home', ...props.breadcrumbs]
+    const { breadcrumbs } = props
     return (
         <>
             {breadcrumbs.map((breadcrumb, index) => (

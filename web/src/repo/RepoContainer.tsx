@@ -179,7 +179,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     >()
 
     // The breadcrumbs and breadcrumb props for the repo header.
-    const { /* breadcrumbs,  */ pushBreadcrumb } = useBreadcrumbs()
+    const { breadcrumbs, pushBreadcrumb } = useBreadcrumbs()
 
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
@@ -285,9 +285,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 revision={revision}
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
+                breadcrumbs={breadcrumbs}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 contributions={[
-                    { position: 'right', priority: 1, element: <span>Hello world</span> },
                     {
                         position: 'right',
                         priority: 2,
