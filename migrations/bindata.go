@@ -92,6 +92,8 @@
 // 1528395694_lsif_nearest_uploads.up.sql (646B)
 // 1528395695_lsif_remove_commits.down.sql (1.075kB)
 // 1528395695_lsif_remove_commits.up.sql (734B)
+// 1528395696_repo_name_index.down.sql (53B)
+// 1528395696_repo_name_index.up.sql (198B)
 
 package migrations
 
@@ -2000,6 +2002,46 @@ func _1528395695_lsif_remove_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395696_repo_name_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x2d\xc8\x8f\xcf\x4b\xcc\x4d\x8d\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x43\x74\x26\x55\x35\x00\x00\x00")
+
+func _1528395696_repo_name_indexDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395696_repo_name_indexDownSql,
+		"1528395696_repo_name_index.down.sql",
+	)
+}
+
+func _1528395696_repo_name_indexDownSql() (*asset, error) {
+	bytes, err := _1528395696_repo_name_indexDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395696_repo_name_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x20, 0x96, 0xf1, 0x4f, 0x73, 0xa0, 0xe, 0x15, 0xfa, 0x48, 0xe3, 0x17, 0x9d, 0xb8, 0x2c, 0x8a, 0x2c, 0x21, 0x8c, 0xd9, 0x90, 0xd5, 0x34, 0x9b, 0xa9, 0x26, 0xa9, 0x9d, 0xe5, 0xd2, 0xe7, 0xf0}}
+	return a, nil
+}
+
+var __1528395696_repo_name_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8d\x41\x6a\x84\x30\x18\x46\xf7\x73\x8a\x8f\x59\xcd\x2c\xf4\x00\x76\x55\xd2\xb4\x04\x24\x01\x8d\x60\x57\x12\xe3\x8f\x84\xa6\x89\xc4\x5f\xea\xf1\x8b\x07\x98\xed\xe3\x3d\x5e\x55\x41\x67\xa6\x06\xa2\x93\xef\x56\x42\xe9\x0f\x39\x42\x18\x2d\x86\xae\x93\xda\xb6\xdf\xf0\x2e\xa5\xcc\x28\x47\x42\x48\x7b\x58\x08\x0e\x5c\x5c\xda\x9d\xe7\x90\x13\xe6\x98\xfd\xcf\xed\x75\xaf\x3e\xa1\x8d\x85\x1c\x55\x6f\x7b\x14\xda\xf2\x94\xdc\x2f\x4d\x61\x39\x61\x34\xb6\x63\x8e\xc1\xd7\x17\xc7\xd0\x2b\xfd\x85\x99\x0b\x11\x1e\x31\xff\x51\x79\x5c\x6a\xd3\x30\x9d\xfc\x84\x30\x6d\x7b\x4d\xb6\x75\xf2\x8e\x5d\xcc\x6b\x7d\x17\xf7\xe7\xdb\xed\x3f\x00\x00\xff\xff\xb3\x7e\x5b\x04\xc6\x00\x00\x00")
+
+func _1528395696_repo_name_indexUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395696_repo_name_indexUpSql,
+		"1528395696_repo_name_index.up.sql",
+	)
+}
+
+func _1528395696_repo_name_indexUpSql() (*asset, error) {
+	bytes, err := _1528395696_repo_name_indexUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395696_repo_name_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8d, 0xba, 0x1f, 0xd2, 0x5f, 0x2a, 0xfe, 0x6e, 0xe8, 0x7a, 0x7, 0x91, 0x4e, 0xe6, 0x13, 0xc5, 0xd7, 0xfb, 0x72, 0x9f, 0xe7, 0x85, 0x7d, 0xde, 0x9f, 0x6e, 0x81, 0x8d, 0x37, 0xfd, 0xbf, 0x14}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2183,6 +2225,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395694_lsif_nearest_uploads.up.sql":                                  _1528395694_lsif_nearest_uploadsUpSql,
 	"1528395695_lsif_remove_commits.down.sql":                                 _1528395695_lsif_remove_commitsDownSql,
 	"1528395695_lsif_remove_commits.up.sql":                                   _1528395695_lsif_remove_commitsUpSql,
+	"1528395696_repo_name_index.down.sql":                                     _1528395696_repo_name_indexDownSql,
+	"1528395696_repo_name_index.up.sql":                                       _1528395696_repo_name_indexUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2321,6 +2365,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395694_lsif_nearest_uploads.up.sql":                                  {_1528395694_lsif_nearest_uploadsUpSql, map[string]*bintree{}},
 	"1528395695_lsif_remove_commits.down.sql":                                 {_1528395695_lsif_remove_commitsDownSql, map[string]*bintree{}},
 	"1528395695_lsif_remove_commits.up.sql":                                   {_1528395695_lsif_remove_commitsUpSql, map[string]*bintree{}},
+	"1528395696_repo_name_index.down.sql":                                     {_1528395696_repo_name_indexDownSql, map[string]*bintree{}},
+	"1528395696_repo_name_index.up.sql":                                       {_1528395696_repo_name_indexUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
