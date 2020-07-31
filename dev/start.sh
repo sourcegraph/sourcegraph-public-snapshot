@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-if [[ ${BASH_VERSION:0:1} -lt 5 ]]; then
+if [[ ${BASH_VERSION:0:1} -lt 5 ]] && [[ "${OSTYPE}" == "darwin" ]]; then
   echo "Please upgrade bash to version 5. Currently on ${BASH_VERSION}."
   echo
   echo "  brew install bash"
