@@ -444,6 +444,28 @@ func Frontend() *Container {
 							PossibleSolutions: "none",
 						},
 					},
+					{
+						{
+							Name:              "observability_test_alert_warning",
+							Description:       "warning test alert metric",
+							Query:             `max by(owner) (observability_test_metric_warning)`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 1},
+							PanelOptions:      PanelOptions().Max(1),
+							Owner:             ObservableOwnerDistribution,
+							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
+						},
+						{
+							Name:              "observability_test_alert_critical",
+							Description:       "critical test alert metric",
+							Query:             `max by(owner) (observability_test_metric_critical)`,
+							DataMayNotExist:   true,
+							Critical:          Alert{GreaterOrEqual: 1},
+							PanelOptions:      PanelOptions().Max(1),
+							Owner:             ObservableOwnerDistribution,
+							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
+						},
+					},
 				},
 			},
 			{

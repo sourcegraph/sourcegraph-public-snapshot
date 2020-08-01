@@ -157,6 +157,26 @@ for assistance.
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
 
+# frontend: observability_test_alert_warning
+
+**Descriptions:**
+
+- _frontend: 1+ warning test alert metric_ (`warning_frontend_observability_test_alert_warning`)
+
+**Possible solutions:**
+
+This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
+
+# frontend: observability_test_alert_critical
+
+**Descriptions:**
+
+- _frontend: 1+ critical test alert metric_ (`critical_frontend_observability_test_alert_critical`)
+
+**Possible solutions:**
+
+This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
+
 # frontend: container_cpu_usage
 
 **Descriptions:**
