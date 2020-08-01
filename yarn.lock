@@ -4019,10 +4019,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-grid-layout@0.17.1":
-  version "0.17.1"
-  resolved "https://registry.npmjs.org/@types/react-grid-layout/-/react-grid-layout-0.17.1.tgz#07b5ab9e58af6ea7403e94d54c4e535209467a6f"
-  integrity sha512-1ssQjX3X2A89jx94jECJ0Ze2EHFRYlBHjRh2pnlwjJj1WaEijXUNvwKnUzKwgNFnyZ91Pzqu9Z3V7Atzi9ge7A==
+"@types/react-grid-layout@0.17.2":
+  version "0.17.2"
+  resolved "https://registry.npmjs.org/@types/react-grid-layout/-/react-grid-layout-0.17.2.tgz#43d59d2c342988966d2567b95a2c52b4f38b8f08"
+  integrity sha512-iLKQ5rI9KyPGs/BlWmeBfoikRnoOmTuddK8V5mOCgJ46e2JaecZuPhuIX1kV0mkQSk6X3XoEZALVW0XQbz9g5Q==
   dependencies:
     "@types/react" "*"
 
