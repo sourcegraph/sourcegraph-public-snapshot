@@ -107,7 +107,7 @@
     "@types/babel__core": "7.1.9",
     "@types/chai": "4.2.11",
     "@types/chai-as-promised": "7.1.3",
-    "@types/chrome": "0.0.118",
+    "@types/chrome": "0.0.122",
     "@types/classnames": "2.2.10",
     "@types/command-exists": "1.2.0",
     "@types/d3-axis": "1.0.12",
