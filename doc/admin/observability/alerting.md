@@ -88,7 +88,7 @@ mutation {
 }
 ```
 
-Once you have verified your notifiers are configured correctly, make sure to set the alert state to `firing: false` with another API request.
+The test alert may take up to a minute to fire. The triggered alert will automatically resolve itself as well.
 
 ### Silencing alerts
 
