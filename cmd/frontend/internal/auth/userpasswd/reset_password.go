@@ -1,6 +1,7 @@
 package userpasswd
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -74,6 +75,41 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
 		return
 	}
+}
+
+// If the instance is configured to do so, send the password reset link directly
+// to the user, rather than requiring the admin to send it to them
+func HandleResetPasswordEmail(ctx context.Context, e string) error {
+	usr, err := db.Users.GetByVerifiedEmail(ctx, e)
+	if err != nil {
+		// TODO: throw the correct error
+		return nil
+	}
+
+	resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID)
+	if err != nil {
+		// TODO: Throw the correct error
+		return nil
+	}
+
+	if !conf.CanSendEmail() {
+		// TODO: Throw the correct error
+		return nil
+	}
+	if err := txemail.Send(ctx, txemail.Message{
+		To:       []string{e},
+		Template: resetPasswordEmailTemplates,
+		Data: struct {
+			Username string
+			URL      string
+		}{
+			Username: usr.Username,
+			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
+		},
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
