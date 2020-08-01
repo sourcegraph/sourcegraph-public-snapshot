@@ -124,7 +124,7 @@
     "@types/is-absolute-url": "3.0.0",
     "@types/jest": "26.0.8",
     "@types/jsdom": "12.2.4",
-    "@types/lodash": "4.14.157",
+    "@types/lodash": "4.14.158",
     "@types/marked": "1.1.0",
     "@types/mime-types": "2.1.0",
     "@types/mini-css-extract-plugin": "0.9.1",
