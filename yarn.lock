@@ -3776,10 +3776,10 @@
   dependencies:
     "@types/jest" "*"
 
-"@types/jest@*", "@types/jest@26.0.4":
-  version "26.0.4"
-  resolved "https://registry.npmjs.org/@types/jest/-/jest-26.0.4.tgz#d2e513e85aca16992816f192582b5e67b0b15efb"
-  integrity sha512-4fQNItvelbNA9+sFgU+fhJo8ZFF+AS4Egk3GWwCW2jFtViukXbnztccafAdLhzE/0EiCogljtQQXP8aQ9J7sFg==
+"@types/jest@*", "@types/jest@26.0.8":
+  version "26.0.8"
+  resolved "https://registry.npmjs.org/@types/jest/-/jest-26.0.8.tgz#f5c5559cf25911ce227f7ce30f1f160f24966369"
+  integrity sha512-eo3VX9jGASSuv680D4VQ89UmuLZneNxv2MCZjfwlInav05zXVJTzfc//lavdV0GPwSxsXJTy2jALscB7Acqg0g==
   dependencies:
     jest-diff "^25.2.1"
     pretty-format "^25.2.1"
