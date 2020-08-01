@@ -82,9 +82,8 @@ Configured alerts can be tested using the Sourcegraph GraphQL API. Visit your AP
 
 ```gql
 mutation {
-  setObservabilityTestAlertState(
-    level: "critical",
-    firing: true
+  triggerObservabilityTestAlert(
+    level: "critical"
   ) { alwaysNil }
 }
 ```

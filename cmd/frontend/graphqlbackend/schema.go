@@ -447,12 +447,10 @@ type Mutation {
     #
 
     # Set the status of a test alert of the specified parameters - useful for validating
-    # 'observability.alerts' configuration.
-    setObservabilityTestAlertState(
+    # 'observability.alerts' configuration. Alerts may take up to a minute to fire.
+    triggerObservabilityTestAlert(
         # Level of alert to test - either warning or critical.
         level: String!
-        # Set firing state.
-        firing: Boolean!
     ): EmptyResponse!
 }
 

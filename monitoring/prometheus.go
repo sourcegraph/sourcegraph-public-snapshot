@@ -77,32 +77,6 @@ func Prometheus() *Container {
 					},
 				},
 			},
-			{
-				Title:  "Test alerts",
-				Hidden: true,
-				Rows: []Row{
-					{
-						{
-							Name:              "observability_sample_alert_warning",
-							Description:       "sample warning alert metric",
-							Query:             `max(observability_sample_metric_warning)`,
-							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 1},
-							Owner:             ObservableOwnerDistribution,
-							PossibleSolutions: "Disable this alert via the `setObservabilityTestAlertState` GraphQL endpoint.",
-						},
-						{
-							Name:              "observability_sample_alert_critical",
-							Description:       "sample critical alert metric",
-							Query:             `max(observability_sample_metric_critical)`,
-							DataMayNotExist:   true,
-							Critical:          Alert{GreaterOrEqual: 1},
-							Owner:             ObservableOwnerDistribution,
-							PossibleSolutions: "Disable this alert via the `setObservabilityTestAlertState` GraphQL endpoint.",
-						},
-					},
-				},
-			},
 		},
 	}
 }

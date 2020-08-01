@@ -3,18 +3,19 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 var testMetricWarning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "observability_sample_metric_warning",
-	Help: "Value is 1 if warning test alert should be firing, 0 otherwise.",
+	Name: "observability_test_metric_warning",
+	Help: "Value is 1 if warning test alert should be firing, 0 otherwise - triggered using triggerObservabilityTestAlert",
 }, nil)
 
 var testMetricCritical = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "observability_sample_metric_critical",
-	Help: "Value is 1 if critical test alert should be firing, 0 otherwise.",
+	Name: "observability_test_metric_critical",
+	Help: "Value is 1 if critical test alert should be firing, 0 otherwise - triggered using triggerObservabilityTestAlert",
 }, nil)
 
 func init() {
@@ -22,9 +23,8 @@ func init() {
 	prometheus.MustRegister(testMetricCritical)
 }
 
-func (r *schemaResolver) SetObservabilityTestAlertState(ctx context.Context, args *struct {
-	Level  string
-	Firing bool
+func (r *schemaResolver) TriggerObservabilityTestAlert(ctx context.Context, args *struct {
+	Level string
 }) (*EmptyResponse, error) {
 	var metric *prometheus.GaugeVec
 	switch args.Level {
@@ -35,10 +35,15 @@ func (r *schemaResolver) SetObservabilityTestAlertState(ctx context.Context, arg
 	default:
 		return nil, fmt.Errorf("invalid alert level %q", args.Level)
 	}
-	if args.Firing {
-		metric.With(nil).Set(1)
-	} else {
-		metric.With(nil).Set(0)
-	}
+
+	// set metric to firing state
+	metric.With(nil).Set(1)
+
+	// reset the metric after some amount of time
+	go func(m *prometheus.GaugeVec) {
+		time.Sleep(1 * time.Minute)
+		m.With(nil).Set(0)
+	}(metric)
+
 	return &EmptyResponse{}, nil
 }
