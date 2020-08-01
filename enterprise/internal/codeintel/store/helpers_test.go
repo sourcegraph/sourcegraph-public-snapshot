@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -36,16 +37,6 @@ func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
 }
 
-// getDumpVisibilities returns a map from dump identifiers to its visibility. Fails the test on error.
-func getDumpVisibilities(t *testing.T, db *sql.DB) map[int]bool {
-	visibilities, err := scanVisibilities(db.Query("SELECT id, visible_at_tip FROM lsif_dumps_with_repository_name"))
-	if err != nil {
-		t.Fatalf("unexpected error while scanning dump visibility: %s", err)
-	}
-
-	return visibilities
-}
-
 // insertUploads populates the lsif_uploads table with the given upload models.
 func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 	for _, upload := range uploads {
@@ -73,7 +64,6 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				id,
 				commit,
 				root,
-				visible_at_tip,
 				uploaded_at,
 				state,
 				failure_message,
@@ -86,12 +76,11 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				num_parts,
 				uploaded_parts,
 				upload_size
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
 			upload.Root,
-			upload.VisibleAtTip,
 			upload.UploadedAt,
 			upload.State,
 			upload.FailureMessage,
@@ -184,6 +173,54 @@ func insertPackageReferences(t *testing.T, store Store, packageReferences []type
 	}
 }
 
+// insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
+// with the given identifiers.
+func insertVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int, uploadIDs ...int) {
+	var rows []*sqlf.Query
+	for _, uploadID := range uploadIDs {
+		rows = append(rows, sqlf.Sprintf("(%s, %s)", repositoryID, uploadID))
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id) VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while updating uploads visible at tip: %s", err)
+	}
+}
+
+// insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
+func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads map[string][]UploadMeta) {
+	var rows []*sqlf.Query
+	for commit, metas := range uploads {
+		for _, meta := range metas {
+			rows = append(rows, sqlf.Sprintf("(%s, %s, %s, %s)", repositoryID, commit, meta.UploadID, meta.Distance))
+		}
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO lsif_nearest_uploads (repository_id, "commit", upload_id, distance) VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while updating commit graph: %s", err)
+	}
+}
+
+func toUploadMeta(uploads []Upload) map[string][]UploadMeta {
+	meta := map[string][]UploadMeta{}
+	for _, upload := range uploads {
+		meta[upload.Commit] = append(meta[upload.Commit], UploadMeta{
+			UploadID: upload.ID,
+			Root:     upload.Root,
+			Indexer:  upload.Indexer,
+		})
+	}
+
+	return meta
+}
+
 var UploadMetaComparer = cmp.Comparer(func(x, y UploadMeta) bool {
 	return x.UploadID == y.UploadID && x.Distance == y.Distance
 })
@@ -239,15 +276,12 @@ func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
 	return ids
 }
 
-// unwrapStore gets the underlying store from a store interface value.
-func unwrapStore(s Store) *store {
-	if s, ok := s.(*store); ok {
-		return s
+func normalizeVisibleUploads(uploads map[string][]UploadMeta) map[string][]UploadMeta {
+	for _, metas := range uploads {
+		sort.Slice(metas, func(i, j int) bool {
+			return metas[i].UploadID-metas[j].UploadID < 0
+		})
 	}
 
-	if observed, ok := s.(*ObservedStore); ok {
-		return unwrapStore(observed.store)
-	}
-
-	return nil
+	return uploads
 }

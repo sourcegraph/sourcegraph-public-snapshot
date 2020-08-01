@@ -62,7 +62,7 @@ To configure GitHub as an authentication provider (which will enable sign-in via
 
 ## Webhooks
 
-The `webhooks` setting allows specifying the org webhook secrets necessary to authenticate incoming webhook requests to `/.api/github-webhooks`.
+The `webhooks` setting allows specifying the organization webhook secrets necessary to authenticate incoming webhook requests to `/.api/github-webhooks`.
 
 ```json
 "webhooks": [
@@ -70,27 +70,32 @@ The `webhooks` setting allows specifying the org webhook secrets necessary to au
 ]
 ```
 
-These organization webhooks are optional, but if configured on GitHub, they allow faster metadata updates than the background syncing (i.e. polling) which `repo-updater` permits.
+Using webhooks is highly recommended when using [campaigns](../../user/campaigns/index.md), since they speed up the syncing of pull request data between GitHub and Sourcegraph and make it more efficient.
 
-The following [webhook events](https://developer.github.com/webhooks/) are currently used:
+To set up webhooks:
 
-- Issue comments
-- Pull requests
-- Pull request reviews
-- Pull request review comments
-- Check runs
-- Check suites
-- Statuses
+1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the GitHub configuration.
+1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
+1. Click **Update repositories**.
+1. Copy the webhook URL displayed below the **Update repositories** button.
+1. On GitHub, go to the settings page of your organization. From there, click **Settings**, then **Webhooks**, then **Add webhook**.
+1. Fill in the webhook form:
+   * **Payload URL**: the URL you copied above from Sourcegraph.
+   * **Content type**: this must be set to `application/json`.
+   * **Secret**: the secret token you configured Sourcegraph to use above.
+   * **Which events**: select **Let me select individual events**, and then enable:
+     - Issue comments
+     - Pull requests
+     - Pull request reviews
+     - Pull request review comments
+     - Check runs
+     - Check suites
+     - Statuses
+   * **Active**: ensure this is enabled.
+1. Click **Add webhook**.
+1. Confirm that the new webhook is listed.
 
-To set up a organization webhook on GitHub, go to the settings page of your organization. From there, click **Webhooks**, then **Add webhook**.
-
-Fill in the URL displayed after saving the `webhooks` setting mentioned above and make sure it is publicly available.
-
-The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the GitHub config.
-
-Click on **Enable SSL verification** if you have configured SSL with a valid certificate in your Sourcegraph instance.
-
-Select **the events mentioned above** on the events section, ensure **Active** is checked and finally create the webhook.
+Done! Sourcegraph will now receive webhook events from GitHub and use them to sync pull request events, used by [campaigns](../../user/campaigns/index.md), faster and more efficiently.
 
 ## Configuration
 

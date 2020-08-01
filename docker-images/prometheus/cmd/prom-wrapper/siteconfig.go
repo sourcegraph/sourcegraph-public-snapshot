@@ -43,6 +43,8 @@ type subscribedSiteConfig struct {
 
 	SilencedAlerts    []string
 	silencedAlertsSum [32]byte
+
+	ExternalURL string
 }
 
 // newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
@@ -69,6 +71,8 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 
 		SilencedAlerts:    config.ObservabilitySilenceAlerts,
 		silencedAlertsSum: sha256.Sum256(silencedAlertsBytes),
+
+		ExternalURL: config.ExternalURL,
 	}
 }
 
@@ -81,7 +85,7 @@ type siteConfigDiff struct {
 func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDiff {
 	var changes []siteConfigDiff
 
-	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) {
+	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) || c.ExternalURL != other.ExternalURL {
 		changes = append(changes, siteConfigDiff{Type: "alerts", Change: changeReceivers})
 	}
 

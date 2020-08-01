@@ -158,18 +158,16 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
     >
       <div>
         <h1
-          className="m-0"
+          className="mb-1"
         >
           n
         </h1>
-        <h2
-          className="m-0"
-        >
+        <div>
           <CampaignStateBadge
             isClosed={false}
           >
             <span
-              className="badge badge-success mr-2"
+              className="badge badge-success text-uppercase mr-2"
             >
               <CampaignsIcon
                 className="icon-inline campaign-actions-bar__campaign-icon"
@@ -185,7 +183,7 @@ exports[`CampaignDetails viewerCanAdminister: false viewing existing 1`] = `
             2
              changesets total
           </small>
-        </h2>
+        </div>
       </div>
     </div>
   </CampaignActionsBar>
@@ -397,18 +395,16 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
     >
       <div>
         <h1
-          className="m-0"
+          className="mb-1"
         >
           n
         </h1>
-        <h2
-          className="m-0"
-        >
+        <div>
           <CampaignStateBadge
             isClosed={false}
           >
             <span
-              className="badge badge-success mr-2"
+              className="badge badge-success text-uppercase mr-2"
             >
               <CampaignsIcon
                 className="icon-inline campaign-actions-bar__campaign-icon"
@@ -424,7 +420,7 @@ exports[`CampaignDetails viewerCanAdminister: true viewing existing 1`] = `
             2
              changesets total
           </small>
-        </h2>
+        </div>
       </div>
     </div>
   </CampaignActionsBar>

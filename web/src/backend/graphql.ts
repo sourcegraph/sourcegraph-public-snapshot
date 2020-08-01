@@ -15,11 +15,13 @@ const getHeaders = (): { [header: string]: string } => ({
  * @param request The GraphQL request (query or mutation)
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
+ * @template TResult The type of the query result (import from our auto-generated types).
+ * @template TVariables The type of the query input variables (import from our auto-generated types).
  */
-export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
+export const requestGraphQL = <TResult, TVariables = object>(
     request: string,
-    variables?: {}
-): Observable<GraphQLResult<T>> =>
+    variables?: TVariables
+): Observable<GraphQLResult<TResult>> =>
     requestGraphQLCommon({
         request,
         variables,
@@ -32,9 +34,11 @@ export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
  * @param request The GraphQL query
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
+ *
+ * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
  */
 export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IQuery>> =>
-    requestGraphQLCommon({
+    requestGraphQLCommon<GQL.IQuery>({
         request,
         variables,
         headers: getHeaders(),
@@ -46,9 +50,11 @@ export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQ
  * @param request The GraphQL mutation
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
+ *
+ * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
  */
 export const mutateGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IMutation>> =>
-    requestGraphQLCommon({
+    requestGraphQLCommon<GQL.IMutation>({
         request,
         variables,
         headers: getHeaders(),

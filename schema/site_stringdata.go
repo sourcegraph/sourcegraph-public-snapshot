@@ -1124,7 +1124,7 @@ const SiteSchemaJSON = `{
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type", "apiKey", "apiUrl"],
+      "required": ["type", "apiKey"],
       "properties": {
         "type": {
           "type": "string",

@@ -314,14 +314,14 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 // that were removed for that repository.
 func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error) {
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-	// a similar one on this index, but only for uploads that are  completed or visible at tip.
+	// a similar one on this index, but only for uploads that are completed or visible at tip.
 
 	return scanCounts(s.query(ctx, sqlf.Sprintf(`
 		WITH deleted_repos AS (
 			SELECT r.id AS id FROM repo r
 			WHERE
 				%s - r.deleted_at >= %s * interval '1 second' AND
-				EXISTS (SELECT COUNT(*) from lsif_indexes u WHERE u.repository_id = r.id)
+				EXISTS (SELECT 1 from lsif_indexes u WHERE u.repository_id = r.id)
 		),
 		deleted_uploads AS (
 			DELETE FROM lsif_indexes u WHERE repository_id IN (SELECT id FROM deleted_repos)

@@ -400,11 +400,11 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
                 }
 
                 viewerSettings {
-                    ...SettingsCascadeFields
+                    ...SiteAdminSettingsCascadeFields
                 }
             }
 
-            fragment SettingsCascadeFields on SettingsCascade {
+            fragment SiteAdminSettingsCascadeFields on SettingsCascade {
                 subjects {
                     __typename
                     latestSettings {
