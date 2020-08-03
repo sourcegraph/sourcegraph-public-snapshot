@@ -431,10 +431,13 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
 	cNew, cancel := context.WithCancel(context.Background())
 	go func() {
-		<-cOld.Done()
-		// cancel the new context if the old one is done for some reason other than the deadline passing.
-		if cOld.Err() != context.DeadlineExceeded {
-			cancel()
+		select {
+		case <-cOld.Done():
+			// cancel the new context if the old one is done for some reason other than the deadline passing.
+			if cOld.Err() != context.DeadlineExceeded {
+				cancel()
+			}
+		case <-cNew.Done():
 		}
 	}()
 
