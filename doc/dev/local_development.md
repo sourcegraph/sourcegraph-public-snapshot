@@ -327,7 +327,7 @@ You need a fresh Postgres database and a database user that has full ownership o
     export PGHOST=localhost
     export PGUSER=sgreader
     export PGPASSWORD=sgreader
-    export PGDATABASE=sgreader
+    export PGDATABASE=sourcegraph
     export PGSSLMODE=disable
     ```
 
