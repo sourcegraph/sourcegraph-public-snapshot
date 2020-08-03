@@ -20,8 +20,8 @@ export const ServerBanner: React.FunctionComponent = () => (
 export const ServerBannerNoRepo: React.FunctionComponent = () => (
     <DismissibleAlert partialStorageKey="set-up-self-hosted" className="alert alert-info">
         <span>
-            Sourcegraph.com searches over the top 100k GitHub repositories by default. You can search over other public
-            repositories by providing a repo: filter or you can search all of your own private code by{' '}
+            If an open-source repository is not yet indexed, you can add it by going to <code>sourcegraph.com/github.com/$OWNER/$REPO</code>,
+            or search your private code by
             <a href="https://docs.sourcegraph.com/#quickstart" onClick={onClickInstall}>
                 setting up a self-hosted Sourcegraph instance.
             </a>
