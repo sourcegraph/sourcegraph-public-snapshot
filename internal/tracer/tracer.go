@@ -11,13 +11,10 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"strconv"
 	"sync"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/inconshreveable/log15"
-	"github.com/lightstep/lightstep-tracer-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -33,8 +30,7 @@ import (
 )
 
 var (
-	lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
-	logColors                    = map[log15.Lvl]color.Attribute{
+	logColors = map[log15.Lvl]color.Attribute{
 		log15.LvlCrit:  color.FgRed,
 		log15.LvlError: color.FgRed,
 		log15.LvlWarn:  color.FgYellow,
@@ -135,36 +131,6 @@ func Init(options ...Option) {
 		handler = log15.LvlFilterHandler(lvl, handler)
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
-
-	// Legacy Lightstep support
-	lightstepAccessToken := conf.Get().LightstepAccessToken
-	if lightstepAccessToken != "" {
-		log15.Info("Distributed tracing enabled", "tracer", "Lightstep")
-		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
-			AccessToken: lightstepAccessToken,
-			UseGRPC:     true,
-			Tags: opentracing.Tags{
-				lightstep.ComponentNameKey: opts.serviceName,
-			},
-			DropSpanLogs: !lightstepIncludeSensitive,
-		}))
-		trace.SpanURL = lightStepSpanURL
-
-		// Ignore warnings from the tracer about SetTag calls with unrecognized value types. The
-		// github.com/lightstep/lightstep-tracer-go package calls fmt.Sprintf("%#v", ...) on them, which is fine.
-		defaultHandler := lightstep.NewEventLogOneError()
-		lightstep.SetGlobalEventHandler(func(e lightstep.Event) {
-			if _, ok := e.(lightstep.EventUnsupportedValue); ok {
-				// ignore
-			} else {
-				defaultHandler(e)
-			}
-		})
-
-		// If Lightstep is used, don't invoke initTracer, as that will conflict with the Lightstep
-		// configuration.
-		return
-	}
 
 	initTracer(opts.serviceName)
 }
@@ -323,14 +289,6 @@ func (t *switchableTracer) get() (tracer opentracing.Tracer, log bool) {
 }
 
 const tracingNotEnabledURL = "#tracing_not_enabled_for_this_request_add_?trace=1_to_url_to_enable"
-
-func lightStepSpanURL(span opentracing.Span) string {
-	spanCtx := span.Context().(lightstep.SpanContext)
-	t := span.(interface {
-		Start() time.Time
-	}).Start().UnixNano() / 1000
-	return fmt.Sprintf("https://app.lightstep.com/%s/trace?span_guid=%x&at_micros=%d#span-%x", conf.Get().LightstepProject, spanCtx.SpanID, t, spanCtx.SpanID)
-}
 
 func jaegerSpanURL(span opentracing.Span) string {
 	if span == nil {

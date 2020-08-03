@@ -60,7 +60,6 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Assign resource-hungry pods to larger nodes](#assign-resource-hungry-pods-to-larger-nodes)
 - [Configure Alertmanager](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/prometheus/alertmanager/README.md)
 - [Disable or customize Jaeger tracing](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/jaeger/README.md)
-- [Configure Lightstep tracing](#configure-lightstep-tracing)
 - [Configure custom Redis](#configure-custom-redis)
 - [Configure custom PostgreSQL](#configure-custom-postgres)
 - [Install without RBAC](#install-without-rbac)
@@ -497,30 +496,6 @@ GS=base/gitserver/gitserver.StatefulSet.yaml
 
 cat $GS | yj | jq  --arg STORAGE_CLASS_NAME $STORAGE_CLASS_NAME '.spec.volumeClaimTemplates = (.spec.volumeClaimTemplates | map( . * {spec:{storageClassName: $STORAGE_CLASS_NAME }}))' | jy -o $GS
 ```
-
-## Configure Lightstep tracing
-
-Lightstep is a closed-source distributed tracing and performance monitoring tool created by some of the authors of Dapper. Every Sourcegraph deployment supports Lightstep, and it can be configured via the following environment variables (with example values):
-
-```yaml
-env:
-  # https://about.sourcegraph.com/docs/config/site/#lightstepproject-string
-  - name: LIGHTSTEP_PROJECT
-    value: my_project
-
-  # https://about.sourcegraph.com/docs/config/site/#lightstepaccesstoken-string
-  - name: LIGHTSTEP_ACCESS_TOKEN
-    value: abcdefg
-
-  # If false, any logs (https://github.com/opentracing/specification/blob/master/specification.md#log-structured-data)
-  # from spans will be omitted from the spans sent to Lightstep.
-  - name: LIGHTSTEP_INCLUDE_SENSITIVE
-    value: true
-```
-
-To enable this, you must first purchase Lightstep and create a project corresponding to the Sourcegraph instance. Then, add the above environment to each deployment.
-
-> Note: Sourcegraph comes with built-in Jaeger tracing. Read the details [here](../../observability/tracing.md)
 
 ## Configure custom Redis
 
