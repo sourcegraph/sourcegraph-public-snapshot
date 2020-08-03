@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -298,7 +299,7 @@ func (s *Store) createChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		nullInt64Column(c.CurrentSpecID),
 		nullInt64Column(c.PreviousSpecID),
 		c.PublicationState,
-		c.ReconcilerState,
+		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
 		c.StartedAt,
 		c.FinishedAt,
@@ -503,7 +504,7 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 		sqlf.Sprintf("campaigns.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
 		sqlf.Sprintf("changesets.publication_state = %s", campaigns.ChangesetPublicationStatePublished),
-		sqlf.Sprintf("changesets.reconciler_state = %s", campaigns.ReconcilerStateCompleted),
+		sqlf.Sprintf("changesets.reconciler_state = %s", campaigns.ReconcilerStateCompleted.ToDB()),
 	}
 	if len(opts.ChangesetIDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
@@ -636,7 +637,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
 	}
 	if opts.ReconcilerState != nil {
-		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", *opts.ReconcilerState))
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", (*opts.ReconcilerState).ToDB()))
 	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
@@ -793,7 +794,7 @@ func (s *Store) updateChangesetQuery(c *campaigns.Changeset) (*sqlf.Query, error
 		nullInt64Column(c.CurrentSpecID),
 		nullInt64Column(c.PreviousSpecID),
 		c.PublicationState,
-		c.ReconcilerState,
+		c.ReconcilerState.ToDB(),
 		c.FailureMessage,
 		c.StartedAt,
 		c.FinishedAt,
@@ -1593,6 +1594,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		externalReviewState string
 		externalCheckState  string
 		failureMessage      string
+		reconcilerState     string
 	)
 	err := s.Scan(
 		&t.ID,
@@ -1619,7 +1621,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullInt64{N: &t.CurrentSpecID},
 		&dbutil.NullInt64{N: &t.PreviousSpecID},
 		&t.PublicationState,
-		&t.ReconcilerState,
+		&reconcilerState,
 		&dbutil.NullString{S: &failureMessage},
 		&t.StartedAt,
 		&t.FinishedAt,
@@ -1636,6 +1638,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	if failureMessage != "" {
 		t.FailureMessage = &failureMessage
 	}
+	t.ReconcilerState = campaigns.ReconcilerState(strings.ToUpper(reconcilerState))
 
 	switch t.ExternalServiceType {
 	case extsvc.TypeGitHub:

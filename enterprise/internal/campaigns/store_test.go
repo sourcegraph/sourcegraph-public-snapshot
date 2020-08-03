@@ -5,14 +5,17 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -544,6 +547,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatal("changeset is deleted")
 			}
 
+			if !have.ReconcilerState.Valid() {
+				t.Fatalf("reconciler state is invalid: %s", have.ReconcilerState)
+			}
+
 			want := have.Clone()
 
 			want.ID = have.ID
@@ -552,6 +559,45 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
+			}
+		}
+	})
+
+	t.Run("ReconcilerState database representation", func(t *testing.T) {
+		// campaigns.ReconcilerStates are defined as "enum" string constants.
+		// The string values are uppercase, because that way they can easily be
+		// serialized/deserialized in the GraphQL resolvers, since GraphQL
+		// expects the `ChangesetReconcilerState` values to be uppercase.
+		//
+		// But workerutil.Worker expects those values to be lowercase.
+		//
+		// So, what we do is to lowercase the Changeset.ReconcilerState value
+		// before it enters the database and uppercase it when it leaves the
+		// DB.
+		//
+		// If workerutils.Worker supports custom mappings for the state-machine
+		// states, we can remove this.
+
+		// This test ensures that the database representation is lowercase.
+
+		queryRawReconcilerState := func(ch *campaigns.Changeset) (string, error) {
+			q := sqlf.Sprintf("SELECT reconciler_state FROM changesets WHERE id = %s", ch.ID)
+			rawState, ok, err := basestore.ScanFirstString(s.Query(ctx, q))
+			if err != nil || !ok {
+				return rawState, err
+			}
+			return rawState, nil
+		}
+
+		for _, ch := range changesets {
+			have, err := queryRawReconcilerState(ch)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := strings.ToLower(string(ch.ReconcilerState))
+			if have != want {
+				t.Fatalf("wrong database representation. want=%q, have=%q", want, have)
 			}
 		}
 	})

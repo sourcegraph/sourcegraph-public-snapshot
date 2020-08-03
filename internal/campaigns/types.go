@@ -124,10 +124,10 @@ type ReconcilerState string
 
 // ReconcilerState constants.
 const (
-	ReconcilerStateQueued     ReconcilerState = "queued"
-	ReconcilerStateProcessing ReconcilerState = "processing"
-	ReconcilerStateErrored    ReconcilerState = "errored"
-	ReconcilerStateCompleted  ReconcilerState = "completed"
+	ReconcilerStateQueued     ReconcilerState = "QUEUED"
+	ReconcilerStateProcessing ReconcilerState = "PROCESSING"
+	ReconcilerStateErrored    ReconcilerState = "ERRORED"
+	ReconcilerStateCompleted  ReconcilerState = "COMPLETED"
 )
 
 // Valid returns true if the given ReconcilerState is valid.
@@ -143,19 +143,11 @@ func (s ReconcilerState) Valid() bool {
 	}
 }
 
-// ToGraphQL returns an uppercase version of ReconcilerState to be used in the
-// GraphQL API as an enum.
-func (s ReconcilerState) ToGraphQL() ReconcilerState {
-	return ReconcilerState(strings.ToUpper(string(s)))
-}
-
-// ReconcilerState takes in a string and tries to convert it to a
-// ReconcilerState.
-// This method is needed to convert between the uppercase usage of this enum in
-// GraphQL and the lowercase usage of the values in workerutils.Worker.
-func ReconcilerStateFromString(s string) ReconcilerState {
-	return ReconcilerState(strings.ToLower(s))
-}
+// ToDB returns the database representation of the reconciler state. That's
+// needed because we want to use UPPERCASE ReconcilerStates in the application
+// and GraphQL layer, but need to use lowercase in the database to make it work
+// with workerutils.Worker.
+func (s ReconcilerState) ToDB() string { return strings.ToLower(string(s)) }
 
 // ChangesetExternalState defines the possible states of a Changeset on a code host.
 type ChangesetExternalState string

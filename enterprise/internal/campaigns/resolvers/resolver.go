@@ -434,7 +434,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 	}
 
 	if args.ReconcilerState != nil {
-		reconcilerState := campaigns.ReconcilerStateFromString(string(*args.ReconcilerState))
+		reconcilerState := *args.ReconcilerState
 		if !reconcilerState.Valid() {
 			return opts, false, errors.New("changeset reconciler state not valid")
 		}
