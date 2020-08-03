@@ -2,11 +2,13 @@ package redispool
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"fmt"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 )
@@ -20,7 +22,7 @@ func init() {
 
 func redisCheck(name, addr string, timeout time.Duration, pool *redis.Pool) sysreq.CheckFunc {
 	return func(ctx context.Context) (problem, fix string, err error) {
-		check := func() (err error) {
+		check := func() error {
 			// Instead of just a PING, we also use this hook point to force a rewrite of
 			// the AOF file on startup of the frontend as a way to ensure it doesn't
 			// grow out of bounds which slows down future startups.
@@ -29,20 +31,27 @@ func redisCheck(name, addr string, timeout time.Duration, pool *redis.Pool) sysr
 			c := pool.Get()
 			defer func() { _ = c.Close() }()
 
-			if err = c.Send("PING"); err != nil {
+			if err := c.Send("PING"); err != nil {
 				return err
 			}
 
-			if err = c.Send("BGREWRITEAOF"); err != nil {
+			if err := c.Send("BGREWRITEAOF"); err != nil {
 				return err
 			}
 
-			if err = c.Flush(); err != nil {
+			if err := c.Flush(); err != nil {
 				return err
 			}
 
-			// We ignore the response from BGREWRITEAOF, as this is best effort.
-			_, err = c.Receive()
+			_, err := c.Receive()
+			if err != nil && strings.HasPrefix(err.Error(), "MISCONF") {
+				// This is best effort. The BGREWRITEAOF can fail if the target redis instance
+				// is not able to persist on disk. In this case we want to warn the operator,
+				// but not stop the frontend from starting up as all data we store in redis is
+				// considered flushable.
+				log15.Warn(err.Error())
+				return nil
+			}
 			return err
 		}
 
