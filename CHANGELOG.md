@@ -28,7 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-- Remove `CloneInProgress` option from GraphQL Repositories API. [#12560](https://github.com/sourcegraph/sourcegraph/pull/12560).
+- Removed `CloneInProgress` option from GraphQL Repositories API. [#12560](https://github.com/sourcegraph/sourcegraph/pull/12560)
 
 ## 3.18.0
 
