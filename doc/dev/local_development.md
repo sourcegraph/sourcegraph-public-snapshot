@@ -309,7 +309,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
     The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
-    Add these, for example, in your `~/.bashrc`:
+    By default, your development environment creates the read-write credentials necessary for accessing the database.  Add these, for example, in your `~/.bashrc`:
 
     ```
     export PGPORT=5432
@@ -317,6 +317,17 @@ You need a fresh Postgres database and a database user that has full ownership o
     export PGUSER=sourcegraph
     export PGPASSWORD=sourcegraph
     export PGDATABASE=sourcegraph
+    export PGSSLMODE=disable
+    ```
+
+    In production, we default to read-only access.  As such, when accessing production instances, please set up your `~/.bashrc` as below.
+
+    ```
+    export PGPORT=5432
+    export PGHOST=localhost
+    export PGUSER=sgreader
+    export PGPASSWORD=sgreader
+    export PGDATABASE=sgreader
     export PGSSLMODE=disable
     ```
 
