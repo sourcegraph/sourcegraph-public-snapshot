@@ -847,6 +847,9 @@ interface Changeset {
     # The publication state of the changeset.
     publicationState: ChangesetPublicationState!
 
+    # The reconciler state of the changeset.
+    reconcilerState: ChangesetReconcilerState!
+
     # The external state of the changeset, or null when not yet published to the code host.
     externalState: ChangesetExternalState
 
