@@ -15,6 +15,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -131,21 +132,29 @@ func Init(options ...Option) {
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
 
-	initTracer(opts)
+	initTracer(opts.serviceName)
+}
+
+type jaegerOpts struct {
+	ServiceName string
+	Enabled     bool
+	Debug       bool
 }
 
 // initTracer is a helper that should be called exactly once (from Init).
-func initTracer(opts *Options) {
+func initTracer(serviceName string) {
 	globalTracer := newSwitchableTracer()
 	opentracing.SetGlobalTracer(globalTracer)
-	var (
-		jaegerEnabledMu sync.Mutex
-		jaegerEnabled   = false
-	)
+
+	// Initially everything is disabled since we haven't read conf yet.
+	oldOpts := jaegerOpts{
+		ServiceName: serviceName,
+		Enabled:     false,
+		Debug:       false,
+	}
 
 	// Watch loop
 	conf.Watch(func() {
-		opentracing.SetGlobalTracer(globalTracer)
 		siteConfig := conf.Get()
 
 		// Set sampling strategy
@@ -167,47 +176,57 @@ func initTracer(opts *Options) {
 		}
 		ot.SetTracePolicy(samplingStrategy)
 
-		// Determine whether Jaeger should be enabled
-		_, lastShouldLog := globalTracer.get()
-		jaegerShouldBeEnabled := samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective
+		opts := jaegerOpts{
+			ServiceName: serviceName,
+			Enabled:     samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective,
+			Debug:       shouldLog,
+		}
 
-		// Set global tracer (Jaeger or No-op)
-		jaegerEnabledMu.Lock()
-		defer jaegerEnabledMu.Unlock()
-		if jaegerEnabled != jaegerShouldBeEnabled {
-			log15.Info("opentracing: Jaeger enablement change", "old", jaegerEnabled, "newValue", jaegerShouldBeEnabled)
+		if opts == oldOpts {
+			// Nothing changed
+			return
 		}
-		if jaegerShouldBeEnabled && (!jaegerEnabled || lastShouldLog != shouldLog) {
-			cfg, err := jaegercfg.FromEnv()
-			cfg.ServiceName = opts.serviceName
-			if err != nil {
-				log15.Warn("Could not initialize jaeger tracer from env", "error", err.Error())
-				return
-			}
-			if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
-				// Default sampler configuration for when it is not specified via
-				// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
-				// enough to connect Sourcegraph to Jaeger without any env vars.
-				cfg.Sampler.Type = jaeger.SamplerTypeConst
-				cfg.Sampler.Param = 1
-			}
-			tracer, closer, err := cfg.NewTracer(
-				jaegercfg.Logger(jaegerlog.StdLogger),
-				jaegercfg.Metrics(jaegermetrics.NullFactory),
-			)
-			if err != nil {
-				log15.Warn("Could not initialize jaeger tracer", "error", err.Error())
-				return
-			}
-			globalTracer.set(tracer, closer, shouldLog)
-			trace.SpanURL = jaegerSpanURL
-			jaegerEnabled = true
-		} else if !jaegerShouldBeEnabled && jaegerEnabled {
-			globalTracer.set(opentracing.NoopTracer{}, nil, shouldLog)
-			trace.SpanURL = trace.NoopSpanURL
-			jaegerEnabled = false
+
+		oldOpts = opts
+
+		tracer, urlFunc, closer, err := newTracer(&opts)
+		if err != nil {
+			log15.Warn("Could not initialize jaeger tracer", "error", err.Error())
+			return
 		}
+
+		globalTracer.set(tracer, closer, opts.Debug)
+		trace.SpanURL = urlFunc
 	})
+}
+
+func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span) string, io.Closer, error) {
+	if !opts.Enabled {
+		log15.Info("opentracing: Jaeger disabled")
+		return opentracing.NoopTracer{}, trace.NoopSpanURL, nil, nil
+	}
+
+	log15.Info("opentracing: Jaeger enabled")
+	cfg, err := jaegercfg.FromEnv()
+	cfg.ServiceName = opts.ServiceName
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
+	}
+	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
+		// Default sampler configuration for when it is not specified via
+		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
+		// enough to connect Sourcegraph to Jaeger without any env vars.
+		cfg.Sampler.Type = jaeger.SamplerTypeConst
+		cfg.Sampler.Param = 1
+	}
+	tracer, closer, err := cfg.NewTracer(
+		jaegercfg.Logger(jaegerlog.StdLogger),
+		jaegercfg.Metrics(jaegermetrics.NullFactory),
+	)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "jaegercfg.NewTracer failed")
+	}
+	return tracer, jaegerSpanURL, closer, nil
 }
 
 // switchableTracer implements opentracing.Tracer. The underlying tracer used is switchable (set via
