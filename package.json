@@ -289,7 +289,7 @@
     "highlightjs-graphql": "^1.0.1",
     "is-absolute-url": "^3.0.3",
     "lodash": "^4.17.15",
-    "marked": "^1.1.0",
+    "marked": "^1.1.1",
     "mdi-react": "^7.3.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.18.1",
