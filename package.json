@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": "^v14.5.0",
+    "node": "^v14.7.0",
     "yarn": "^1.10.1"
   },
   "scripts": {
