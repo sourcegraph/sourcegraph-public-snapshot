@@ -25,6 +25,7 @@ const PARSER_STATE: Monaco.languages.IState = {
 }
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz'
+const specialCharacters = ':-*]'
 
 /**
  * Returns the providers used by the Monaco query input to provide syntax highlighting,
@@ -73,7 +74,7 @@ export function getProviders(
         },
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
-            triggerCharacters: [':', '-', ...alphabet, ...alphabet.toUpperCase()],
+            triggerCharacters: [...specialCharacters, ...alphabet, ...alphabet.toUpperCase()],
             provideCompletionItems: (textModel, position, context, token) =>
                 combineLatest([parsedQueries, globbing])
                     .pipe(
