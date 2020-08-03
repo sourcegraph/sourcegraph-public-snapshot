@@ -137,6 +137,7 @@ func Init(options ...Option) {
 
 type jaegerOpts struct {
 	ServiceName string
+	ExternalURL string
 	Enabled     bool
 	Debug       bool
 }
@@ -149,6 +150,7 @@ func initTracer(serviceName string) {
 	// Initially everything is disabled since we haven't read conf yet.
 	oldOpts := jaegerOpts{
 		ServiceName: serviceName,
+		ExternalURL: conf.Get().ExternalURL,
 		Enabled:     false,
 		Debug:       false,
 	}
@@ -178,6 +180,7 @@ func initTracer(serviceName string) {
 
 		opts := jaegerOpts{
 			ServiceName: serviceName,
+			ExternalURL: siteConfig.ExternalURL,
 			Enabled:     samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective,
 			Debug:       shouldLog,
 		}
@@ -226,7 +229,22 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "jaegercfg.NewTracer failed")
 	}
-	return tracer, jaegerSpanURL, closer, nil
+
+	// We proxy jaeger so we can construct URLs to traces.
+	jaegerURL := opts.ExternalURL + "/-/debug/jaeger/trace/"
+
+	spanURL := func(span opentracing.Span) string {
+		if span == nil {
+			return tracingNotEnabledURL
+		}
+		spanCtx, ok := span.Context().(jaeger.SpanContext)
+		if !ok {
+			return tracingNotEnabledURL
+		}
+		return jaegerURL + spanCtx.TraceID().String()
+	}
+
+	return tracer, spanURL, closer, nil
 }
 
 // switchableTracer implements opentracing.Tracer. The underlying tracer used is switchable (set via
@@ -289,14 +307,3 @@ func (t *switchableTracer) get() (tracer opentracing.Tracer, log bool) {
 }
 
 const tracingNotEnabledURL = "#tracing_not_enabled_for_this_request_add_?trace=1_to_url_to_enable"
-
-func jaegerSpanURL(span opentracing.Span) string {
-	if span == nil {
-		return tracingNotEnabledURL
-	}
-	spanCtx, ok := span.Context().(jaeger.SpanContext)
-	if !ok {
-		return tracingNotEnabledURL
-	}
-	return spanCtx.TraceID().String()
-}
