@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type indexedRequestType string
@@ -440,6 +441,11 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 		case <-cNew.Done():
 		}
 	}()
+
+	// Set trace context so we still get spans propagated
+	if tr := trace.TraceFromContext(cOld); tr != nil {
+		cNew = trace.ContextWithTrace(cNew, tr)
+	}
 
 	return cNew, cancel
 }
