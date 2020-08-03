@@ -366,17 +366,6 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 
-# gitserver: container_memory_usage
-
-**Descriptions:**
-
-- _gitserver: 99%+ container memory usage by instance_ (`warning_gitserver_container_memory_usage`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
-
 # gitserver: container_restarts
 
 **Descriptions:**
@@ -416,19 +405,6 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 	- **Docker Compose:** Consider descreasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# gitserver: provisioning_container_memory_usage_7d
-
-**Descriptions:**
-
-- _gitserver: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_7d`)
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of gitserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-
 # gitserver: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
@@ -439,17 +415,6 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-
-# gitserver: provisioning_container_memory_usage_5m
-
-**Descriptions:**
-
-- _gitserver: 90%+ container memory usage (5m maximum) by instance_ (`warning_gitserver_provisioning_container_memory_usage_5m`)
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
 
 # github-proxy: container_cpu_usage
 
