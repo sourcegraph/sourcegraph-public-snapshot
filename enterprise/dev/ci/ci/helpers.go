@@ -84,7 +84,7 @@ func ComputeConfig() Config {
 	}
 
 	var changedFiles []string
-	if output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output(); err != nil {
+	if output, err := exec.Command("git", "diff", "--name-only", "origin/main...").Output(); err != nil {
 		panic(err)
 	} else {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
@@ -128,7 +128,7 @@ func (c Config) ensureCommit() error {
 	}
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.branch, c.commit, strings.Join(c.mustIncludeCommit, ", "))
-		fmt.Println("Rebase onto the latest master to get the latest CI fixes.")
+		fmt.Println("Rebase onto the latest main to get the latest CI fixes.")
 		fmt.Printf("Errors from `git merge-base --is-ancestor $COMMIT HEAD`: %s", errs.Error())
 		return errs
 	}
