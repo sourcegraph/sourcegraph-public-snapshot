@@ -78,7 +78,7 @@
     "@gql2ts/language-typescript": "^1.9.0",
     "@gql2ts/types": "^1.9.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
-    "@octokit/rest": "^16.36.0",
+    "@octokit/rest": "^18.0.3",
     "@percy/puppeteer": "^1.1.0",
     "@pollyjs/adapter-puppeteer": "^5.0.0",
     "@pollyjs/core": "^5.0.0",
