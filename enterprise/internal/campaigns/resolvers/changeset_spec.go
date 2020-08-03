@@ -150,7 +150,7 @@ type changesetDescriptionResolver struct {
 }
 
 func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlbackend.ExistingChangesetReferenceResolver, bool) {
-	if r.desc.IsExisting() {
+	if r.desc.IsImportingExisting() {
 		return r, true
 	}
 	return nil, false

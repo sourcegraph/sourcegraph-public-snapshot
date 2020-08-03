@@ -1692,7 +1692,7 @@ func (cs *ChangesetSpec) Clone() *ChangesetSpec {
 // diff stat fields that can be retrieved with DiffStat().
 // If the Diff is invalid or parsing failed, an error is returned.
 func (cs *ChangesetSpec) computeDiffStat() error {
-	if cs.Spec.IsExisting() {
+	if cs.Spec.IsImportingExisting() {
 		return nil
 	}
 
@@ -1802,7 +1802,7 @@ func (d *ChangesetSpecDescription) Type() ChangesetSpecDescriptionType {
 
 // IsExisting returns whether the description is of type
 // ChangesetSpecDescriptionTypeExisting.
-func (d *ChangesetSpecDescription) IsExisting() bool {
+func (d *ChangesetSpecDescription) IsImportingExisting() bool {
 	return d.Type() == ChangesetSpecDescriptionTypeExisting
 }
 

@@ -477,7 +477,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		}
 
 		// If we need to track a changeset, we need to find it.
-		if spec.Spec.IsExisting() {
+		if spec.Spec.IsImportingExisting() {
 			k := repoExternalID{repo: spec.RepoID, externalID: spec.Spec.ExternalID}
 
 			c, ok := changesetsByRepoExternalID[k]
