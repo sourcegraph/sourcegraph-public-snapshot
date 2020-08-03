@@ -16,7 +16,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -44,20 +43,6 @@ var SupportedExternalServices = map[string]struct{}{
 func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	_, ok := SupportedExternalServices[spec.ServiceType]
 	return ok
-}
-
-// CheckRepoSupported checks whether the given repository is supported by campaigns
-// and if not it returns an error.
-func CheckRepoSupported(repo *types.Repo) error {
-	if IsRepoSupported(&repo.ExternalRepo) {
-		return nil
-	}
-
-	return errors.Errorf(
-		"External service type %s of repository %q is currently not supported for use with campaigns",
-		repo.ExternalRepo.ServiceType,
-		repo.Name,
-	)
 }
 
 // IsKindSupported returns whether the given extsvc Kind is supported by

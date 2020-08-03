@@ -472,7 +472,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 			return nil, &db.RepoNotFoundErr{ID: spec.RepoID}
 		}
 
-		if err := campaigns.CheckRepoSupported(repo); err != nil {
+		if err := checkRepoSupported(repo); err != nil {
 			return nil, err
 		}
 
@@ -992,3 +992,17 @@ func checkNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID i
 
 // ErrNoNamespace is returned by checkNamespaceAccess if no valid namespace ID is given.
 var ErrNoNamespace = errors.New("no namespace given")
+
+// checkRepoSupported checks whether the given repository is supported by campaigns
+// and if not it returns an error.
+func checkRepoSupported(repo *types.Repo) error {
+	if campaigns.IsRepoSupported(&repo.ExternalRepo) {
+		return nil
+	}
+
+	return errors.Errorf(
+		"External service type %s of repository %q is currently not supported for use with campaigns",
+		repo.ExternalRepo.ServiceType,
+		repo.Name,
+	)
+}
