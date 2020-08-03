@@ -27,7 +27,12 @@ type Store interface {
 	// transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-	Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, tx Store, exists bool, err error)
+	Dequeue(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error)
+
+	// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
+	// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
+	// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
+	DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -198,9 +203,25 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 // transaction.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record Record, _ Store, exists bool, err error) {
+func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error) {
+	return s.dequeue(ctx, conditions, false)
+}
+
+// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
+// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
+// is useful if a longer-running transaction is managed explicitly bewteen multiple goroutines.
+func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (Record, Store, bool, error) {
+	return s.dequeue(ctx, conditions, true)
+}
+
+func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independentTxCtx bool) (record Record, _ Store, exists bool, err error) {
 	if s.InTransaction() {
 		return nil, nil, false, ErrDequeueTransaction
+	}
+
+	txCtx := ctx
+	if independentTxCtx {
+		txCtx = context.Background()
 	}
 
 	query := s.formatQuery(
@@ -224,7 +245,7 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record R
 
 		// Once we have an eligible identifier, we try to create a transaction and select the
 		// record in a way that takes a row lock for the duration of the transaction.
-		tx, err := s.Transact(ctx)
+		tx, err := s.Transact(txCtx)
 		if err != nil {
 			return nil, nil, false, err
 		}
@@ -254,7 +275,6 @@ func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record R
 			// by selecting another identifier - this one will be skipped on a second attempt as
 			// it is now locked.
 			continue
-
 		}
 
 		// The record is now locked in this transaction. As `TableName` and `ViewName` may have distinct

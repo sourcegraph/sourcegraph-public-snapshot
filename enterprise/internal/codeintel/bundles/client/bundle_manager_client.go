@@ -75,8 +75,8 @@ var requestMeter = metrics.NewRequestMeter("precise_code_intel_bundle_manager", 
 
 const MaxIdleConnectionsPerHost = 500
 
-// defaultTransport is the default transport used in the default client and the
-// default reverse proxy. ot.Transport will propagate opentracing spans.
+// defaultTransport is the default transport for bundle manager clients.
+// ot.Transport will propagate opentracing spans.
 var defaultTransport = &ot.Transport{
 	RoundTripper: requestMeter.Transport(&http.Transport{
 		// Default is 2, but we can send many concurrent requests

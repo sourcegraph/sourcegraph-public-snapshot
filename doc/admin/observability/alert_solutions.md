@@ -784,117 +784,117 @@ This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
 
-# precise-code-intel-indexer: frontend_internal_api_error_responses
+# precise-code-intel-index-manager: frontend_internal_api_error_responses
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 5+ frontend-internal API error responses every 5m by route_ (`warning_precise-code-intel-indexer_frontend_internal_api_error_responses`)
+- _precise-code-intel-index-manager: 5+ frontend-internal API error responses every 5m by route_ (`warning_precise-code-intel-index-manager_frontend_internal_api_error_responses`)
 
 **Possible solutions:**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
 	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs precise-code-intel-indexer` for logs indicate request failures to `frontend` or `frontend-internal`.
+	- Check `kubectl logs precise-code-intel-index-manager` for logs indicate request failures to `frontend` or `frontend-internal`.
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
+	- Check `docker logs precise-code-intel-index-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
 
-# precise-code-intel-indexer: container_cpu_usage
+# precise-code-intel-index-manager: container_cpu_usage
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-indexer_container_cpu_usage`)
+- _precise-code-intel-index-manager: 99%+ container cpu usage total (1m average) across all cores by instance_ (`warning_precise-code-intel-index-manager_container_cpu_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-index-manager container in `docker-compose.yml`.
 
-# precise-code-intel-indexer: container_memory_usage
+# precise-code-intel-index-manager: container_memory_usage
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 99%+ container memory usage by instance_ (`warning_precise-code-intel-indexer_container_memory_usage`)
+- _precise-code-intel-index-manager: 99%+ container memory usage by instance_ (`warning_precise-code-intel-index-manager_container_memory_usage`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-index-manager container in `docker-compose.yml`.
 
-# precise-code-intel-indexer: container_restarts
+# precise-code-intel-index-manager: container_restarts
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-indexer_container_restarts`)
+- _precise-code-intel-index-manager: 1+ container restarts every 5m by instance_ (`warning_precise-code-intel-index-manager_container_restarts`)
 
 **Possible solutions:**
 
 - **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-indexer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-indexer`.
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-index-manager` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-index-manager`.
 - **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-index-manager` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-index-manager container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-index-manager` (note this will include logs from the previous and currently running container).
 
-# precise-code-intel-indexer: fs_inodes_used
+# precise-code-intel-index-manager: fs_inodes_used
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-indexer_fs_inodes_used`)
+- _precise-code-intel-index-manager: 3e+06+ fs inodes in use by instance_ (`warning_precise-code-intel-index-manager_fs_inodes_used`)
 
 **Possible solutions:**
 
 		- Refer to your OS or cloud provider`s documentation for how to increase inodes.
 		- **Kubernetes:** consider provisioning more machines with less resources.
 
-# precise-code-intel-indexer: provisioning_container_cpu_usage_7d
+# precise-code-intel-index-manager: provisioning_container_cpu_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_7d`)
+- _precise-code-intel-index-manager: 80%+ or less than 30% container cpu usage total (7d maximum) across all cores by instance_ (`warning_precise-code-intel-index-manager_provisioning_container_cpu_usage_7d`)
 
 **Possible solutions:**
 
 - If usage is high:
 	- **Kubernetes:** Consider decreasing CPU limits in the the relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Docker Compose:** Consider descreasing `cpus:` of the precise-code-intel-index-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-indexer: provisioning_container_memory_usage_7d
+# precise-code-intel-index-manager: provisioning_container_memory_usage_7d
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_7d`)
+- _precise-code-intel-index-manager: 80%+ or less than 30% container memory usage (7d maximum) by instance_ (`warning_precise-code-intel-index-manager_provisioning_container_memory_usage_7d`)
 
 **Possible solutions:**
 
 - If usage is high:
 	- **Kubernetes:** Consider decreasing memory limit in relevant `Deployment.yaml`.
-	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+	- **Docker Compose:** Consider decreasing `memory:` of precise-code-intel-index-manager container in `docker-compose.yml`.
 - If usage is low, consider decreasing the above values.
 
-# precise-code-intel-indexer: provisioning_container_cpu_usage_5m
+# precise-code-intel-index-manager: provisioning_container_cpu_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-indexer_provisioning_container_cpu_usage_5m`)
+- _precise-code-intel-index-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance_ (`warning_precise-code-intel-index-manager_provisioning_container_cpu_usage_5m`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-index-manager container in `docker-compose.yml`.
 
-# precise-code-intel-indexer: provisioning_container_memory_usage_5m
+# precise-code-intel-index-manager: provisioning_container_memory_usage_5m
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-indexer_provisioning_container_memory_usage_5m`)
+- _precise-code-intel-index-manager: 90%+ container memory usage (5m maximum) by instance_ (`warning_precise-code-intel-index-manager_provisioning_container_memory_usage_5m`)
 
 **Possible solutions:**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-index-manager container in `docker-compose.yml`.
 
 # query-runner: frontend_internal_api_error_responses
 

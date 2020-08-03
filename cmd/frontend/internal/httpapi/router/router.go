@@ -120,7 +120,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
-	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

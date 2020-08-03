@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,15 +9,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	indexabilityupdater "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/indexability_updater"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/indexer"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/resetter"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-indexer/internal/server"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,18 +24,11 @@ func main() {
 	tracer.Init()
 
 	var (
-		frontendURL                      = mustGet(rawFrontendURL, "SRC_FRONTEND_INTERNAL")
-		resetInterval                    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
-		indexerPollInterval              = mustParseInterval(rawIndexerPollInterval, "PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL")
-		schedulerInterval                = mustParseInterval(rawSchedulerInterval, "PRECISE_CODE_INTEL_SCHEDULER_INTERVAL")
-		indexabilityUpdaterInterval      = mustParseInterval(rawIndexabilityUpdaterInterval, "PRECISE_CODE_INTEL_INDEXABILITY_UPDATER_INTERVAL")
-		janitorInterval                  = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		indexBatchSize                   = mustParseInt(rawIndexBatchSize, "PRECISE_CODE_INTEL_INDEX_BATCH_SIZE")
-		indexMinimumTimeSinceLastEnqueue = mustParseInterval(rawIndexMinimumTimeSinceLastEnqueue, "PRECISE_CODE_INTEL_INDEX_MINIMUM_TIME_SINCE_LAST_ENQUEUE")
-		indexMinimumSearchCount          = mustParseInt(rawIndexMinimumSearchCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_COUNT")
-		indexMinimumSearchRatio          = mustParsePercent(rawIndexMinimumSearchRatio, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_RATIO")
-		indexMinimumPreciseCount         = mustParseInt(rawIndexMinimumPreciseCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_PRECISE_COUNT")
-		disableJanitor                   = mustParseBool(rawDisableJanitor, "PRECISE_CODE_INTEL_DISABLE_JANITOR")
+		frontendURL              = mustGet(rawFrontendURL, "PRECISE_CODE_INTEL_EXTERNAL_URL")
+		frontendURLFromDocker    = mustGet(rawFrontendURLFromDocker, "PRECISE_CODE_INTEL_EXTERNAL_URL_FROM_DOCKER")
+		internalProxyAuthToken   = mustGet(rawInternalProxyAuthToken, "PRECISE_CODE_INTEL_INTERNAL_PROXY_AUTH_TOKEN")
+		indexerPollInterval      = mustParseInterval(rawIndexerPollInterval, "PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL")
+		indexerHeartbeatInterval = mustParseInterval(rawIndexerHeartbeatInterval, "PRECISE_CODE_INTEL_INDEXER_HEARTBEAT_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -51,59 +37,25 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	store := store.NewObserved(mustInitializeStore(), observationContext)
-	MustRegisterQueueMonitor(observationContext.Registerer, store)
-	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
-	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
-	indexerMetrics := indexer.NewIndexerMetrics(observationContext)
+	if frontendURLFromDocker == "" {
+		frontendURLFromDocker = frontendURL
+	}
+
 	server := server.New()
-	indexResetter := resetter.NewIndexResetter(store, resetInterval, resetterMetrics)
-
-	indexabilityUpdater := indexabilityupdater.NewUpdater(
-		store,
-		gitserver.DefaultClient,
-		indexabilityUpdaterInterval,
-		indexabilityUpdaterMetrics,
-	)
-
-	scheduler := scheduler.NewScheduler(
-		store,
-		gitserver.DefaultClient,
-		schedulerInterval,
-		indexBatchSize,
-		indexMinimumTimeSinceLastEnqueue,
-		indexMinimumSearchCount,
-		float64(indexMinimumSearchRatio)/100,
-		indexMinimumPreciseCount,
-		schedulerMetrics,
-	)
-
-	indexer := indexer.NewIndexer(
-		store,
-		gitserver.DefaultClient,
-		frontendURL,
-		indexerPollInterval,
-		indexerMetrics,
-	)
-
-	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
-	janitor := janitor.New(store, janitorInterval, janitorMetrics)
+	indexerMetrics := indexer.NewIndexerMetrics(observationContext)
+	indexer := indexer.NewIndexer(context.Background(), indexer.IndexerOptions{
+		FrontendURL:           frontendURL,
+		FrontendURLFromDocker: frontendURLFromDocker,
+		AuthToken:             internalProxyAuthToken,
+		PollInterval:          indexerPollInterval,
+		HeartbeatInterval:     indexerHeartbeatInterval,
+		Metrics:               indexerMetrics,
+	})
 
 	go server.Start()
-	go indexResetter.Start()
-	go indexabilityUpdater.Start()
-	go scheduler.Start()
 	go indexer.Start()
 	go debugserver.Start()
 
-	if !disableJanitor {
-		go janitor.Run()
-	} else {
-		log15.Warn("Janitor process is disabled.")
-	}
-
-	// Attempt to clean up after first shutdown signal
 	signals := make(chan os.Signal, 2)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
 	<-signals
@@ -115,25 +67,5 @@ func main() {
 	}()
 
 	server.Stop()
-	indexResetter.Stop()
 	indexer.Stop()
-	scheduler.Stop()
-	indexabilityUpdater.Stop()
-	janitor.Stop()
-}
-
-func mustInitializeStore() store.Store {
-	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
-		}
-	})
-
-	store, err := store.New(postgresDSN)
-	if err != nil {
-		log.Fatalf("failed to initialize store: %s", err)
-	}
-
-	return store
 }

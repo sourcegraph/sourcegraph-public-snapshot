@@ -2,7 +2,10 @@ package api
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
+	"github.com/opentracing/opentracing-go/log"
 	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -69,7 +72,18 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 // FindClosestDumps calls into the inner CodeIntelAPI and registers the observed results.
 func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (dumps []store.Dump, err error) {
 	ctx, endObservation := api.findClosestDumpsOperation.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
+	defer func() {
+		var dumpIDs []string
+		for _, dump := range dumps {
+			dumpIDs = append(dumpIDs, strconv.FormatInt(int64(dump.ID), 10))
+		}
+
+		endObservation(float64(len(dumps)), observation.Args{
+			LogFields: []log.Field{
+				log.String("dumpIDs", strings.Join(dumpIDs, ",")),
+			},
+		})
+	}()
 	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer)
 }
 

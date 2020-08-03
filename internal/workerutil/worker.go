@@ -123,7 +123,7 @@ func (w *Worker) Start() {
 
 loop:
 	for {
-		ok, err := w.dequeueAndHandle()
+		dequeued, err := w.dequeueAndHandle()
 		if err != nil {
 			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
 				if err == w.ctx.Err() {
@@ -135,7 +135,7 @@ loop:
 		}
 
 		delay := w.options.Interval
-		if ok {
+		if dequeued {
 			// If we had a successful dequeue, do not wait the poll interval.
 			// Just attempt to get another handler routine and process the next
 			// unit of work immediately.
