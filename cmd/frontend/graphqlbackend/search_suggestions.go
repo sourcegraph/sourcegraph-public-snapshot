@@ -44,6 +44,17 @@ var (
 )
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+
+	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
+	// from "field:^foo$" to "field:^foo".
+	globbing := false
+	if settings, err := decodedViewerFinalSettings(ctx); err != nil || getBoolPtr(settings.SearchGlobbing, false) {
+		globbing = true
+	}
+	if AndOrQuery, isAndOr := r.query.(*query.AndOrQuery); globbing && isAndOr {
+		AndOrQuery.Query = query.FuzzifyRegexPatterns(AndOrQuery.Query)
+	}
+
 	args.applyDefaultsAndConstraints()
 
 	if len(r.query.ParseTree()) == 0 {
