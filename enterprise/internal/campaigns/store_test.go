@@ -504,9 +504,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CurrentSpecID:     int64(i) + 1,
 				PreviousSpecID:    int64(i) + 1,
 				OwnedByCampaignID: int64(i) + 1,
-				PublicationState:  cmpgn.ChangesetPublicationStateUnpublished,
+				PublicationState:  cmpgn.ChangesetPublicationStatePublished,
 
-				ReconcilerState: "queued",
+				ReconcilerState: cmpgn.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
 				StartedAt:       clock.now(),
 				FinishedAt:      clock.now(),
@@ -774,6 +774,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
+		statePublished := cmpgn.ChangesetPublicationStatePublished
+		stateUnublished := cmpgn.ChangesetPublicationStateUnpublished
+		stateQueued := cmpgn.ReconcilerStateQueued
+		stateCompleted := cmpgn.ReconcilerStateCompleted
 		stateOpen := cmpgn.ChangesetExternalStateOpen
 		stateClosed := cmpgn.ChangesetExternalStateClosed
 		stateApproved := cmpgn.ChangesetReviewStateApproved
@@ -785,6 +789,30 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			opts      ListChangesetsOpts
 			wantCount int
 		}{
+			{
+				opts: ListChangesetsOpts{
+					PublicationState: &statePublished,
+				},
+				wantCount: 3,
+			},
+			{
+				opts: ListChangesetsOpts{
+					PublicationState: &stateUnublished,
+				},
+				wantCount: 0,
+			},
+			{
+				opts: ListChangesetsOpts{
+					ReconcilerState: &stateQueued,
+				},
+				wantCount: 0,
+			},
+			{
+				opts: ListChangesetsOpts{
+					ReconcilerState: &stateCompleted,
+				},
+				wantCount: 3,
+			},
 			{
 				opts: ListChangesetsOpts{
 					ExternalState: &stateOpen,
@@ -844,7 +872,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 					t.Fatal(err)
 				}
 				if len(have) != tc.wantCount {
-					t.Fatalf("have %d changesets. want %d", len(have), tc.wantCount)
+					t.Fatalf("opts: %+v. have %d changesets. want %d", tc.opts, len(have), tc.wantCount)
 				}
 			})
 		}

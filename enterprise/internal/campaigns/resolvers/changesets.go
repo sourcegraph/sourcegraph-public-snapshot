@@ -407,7 +407,7 @@ func (r *changesetResolver) PublicationState() campaigns.ChangesetPublicationSta
 }
 
 func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
-	return r.changeset.ReconcilerState
+	return r.changeset.ReconcilerState.ToGraphQL()
 }
 
 func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {

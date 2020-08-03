@@ -526,6 +526,8 @@ type ListChangesetsOpts struct {
 	CampaignID           int64
 	IDs                  []int64
 	WithoutDeleted       bool
+	PublicationState     *campaigns.ChangesetPublicationState
+	ReconcilerState      *campaigns.ReconcilerState
 	ExternalState        *campaigns.ChangesetExternalState
 	ExternalReviewState  *campaigns.ChangesetReviewState
 	ExternalCheckState   *campaigns.ChangesetCheckState
@@ -630,6 +632,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.external_deleted_at IS NULL"))
 	}
 
+	if opts.PublicationState != nil {
+		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
+	}
+	if opts.ReconcilerState != nil {
+		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state = %s", *opts.ReconcilerState))
+	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}

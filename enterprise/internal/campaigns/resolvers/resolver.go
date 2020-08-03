@@ -426,13 +426,19 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (opts ee
 	}
 
 	if args.PublicationState != nil {
-		// TODO(mrnugget): Implement this
-		return opts, false, errors.New("TODO: not implemented")
+		publicationState := *args.PublicationState
+		if !publicationState.Valid() {
+			return opts, false, errors.New("changeset publication state not valid")
+		}
+		opts.PublicationState = &publicationState
 	}
 
 	if args.ReconcilerState != nil {
-		// TODO(mrnugget): Implement this
-		return opts, false, errors.New("TODO: not implemented")
+		reconcilerState := campaigns.ReconcilerStateFromString(string(*args.ReconcilerState))
+		if !reconcilerState.Valid() {
+			return opts, false, errors.New("changeset reconciler state not valid")
+		}
+		opts.ReconcilerState = &reconcilerState
 	}
 
 	if args.ExternalState != nil {

@@ -1278,10 +1278,19 @@ mutation($campaign: ID!, $newName: String, $newNamespace: ID){
 
 func TestListChangesetOptsFromArgs(t *testing.T) {
 	var wantFirst int32 = 10
-	wantStates := []campaigns.ChangesetState{"SYNCED", "INVALID"}
+	wantPublicationStates := []campaigns.ChangesetPublicationState{
+		"PUBLISHED",
+		"INVALID",
+	}
+	reconcilerStates := []campaigns.ReconcilerState{
+		"PROCESSING",
+		campaigns.ReconcilerStateProcessing,
+		"INVALID",
+	}
 	wantExternalStates := []campaigns.ChangesetExternalState{"OPEN", "INVALID"}
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
+
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
 		wantSafe   bool
@@ -1302,20 +1311,39 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe:   true,
 			wantParsed: ee.ListChangesetsOpts{Limit: 10},
 		},
-		// Setting state is safe and not transferred to opts. TODO: This test will need adjustment once implemented.
+		// Setting publication state is safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[0],
+				PublicationState: &wantPublicationStates[0],
 			},
-			wantSafe:   true,
-			wantParsed: ee.ListChangesetsOpts{},
+			wantSafe: true,
+			wantParsed: ee.ListChangesetsOpts{
+				PublicationState: &wantPublicationStates[0],
+			},
 		},
-		// Setting invalid external state fails.
+		// Setting invalid publication state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[1],
+				PublicationState: &wantPublicationStates[1],
 			},
-			wantErr: "changeset state not valid",
+			wantErr: "changeset publication state not valid",
+		},
+		// Setting reconciler state is safe and transferred to opts as lowercase version.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ReconcilerState: &reconcilerStates[0],
+			},
+			wantSafe: true,
+			wantParsed: ee.ListChangesetsOpts{
+				ReconcilerState: &reconcilerStates[1],
+			},
+		},
+		// Setting invalid reconciler state fails.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				ReconcilerState: &reconcilerStates[2],
+			},
+			wantErr: "changeset reconciler state not valid",
 		},
 		// Setting external state is safe and transferred to opts.
 		{
